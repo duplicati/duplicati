@@ -1,0 +1,206 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1470F75F-D364-4010-91D0-FD4DDA1C5159}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Duplicati</RootNamespace>
+    <AssemblyName>Duplicati</AssemblyName>
+    <ApplicationIcon>TrayUnknown.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite, Version=1.0.46.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\SQLite\System.Data.SQLite.DLL</HintPath>
+    </Reference>
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ApplicationSetup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ApplicationSetup.Designer.cs">
+      <DependentUpon>ApplicationSetup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DatabaseUpgrader.cs" />
+    <Compile Include="DuplicityOutputParser.cs" />
+    <Compile Include="DuplicityRunner.cs" />
+    <Compile Include="KeyGenerator.cs" />
+    <Compile Include="LogViewer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LogViewer.Designer.cs">
+      <DependentUpon>LogViewer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="Scheduler.cs" />
+    <Compile Include="Service controls\Backends\FileSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\Backends\FileSettings.Designer.cs">
+      <DependentUpon>FileSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Service controls\Backends\S3Settings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\Backends\S3Settings.Designer.cs">
+      <DependentUpon>S3Settings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Service controls\ScheduleSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\ScheduleSettings.Designer.cs">
+      <DependentUpon>ScheduleSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Service controls\Backends\SSHSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\Backends\SSHSettings.Designer.cs">
+      <DependentUpon>SSHSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Service controls\TaskSettingsBase.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\TaskSettingsBase.Designer.cs">
+      <DependentUpon>TaskSettingsBase.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ServiceSetup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ServiceSetup.Designer.cs">
+      <DependentUpon>ServiceSetup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ServiceStatus.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ServiceStatus.Designer.cs">
+      <DependentUpon>ServiceStatus.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Timeparser.cs" />
+    <Compile Include="WorkerThread.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\LightDatamodel\LightDatamodel\LightDatamodel.csproj">
+      <Project>{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}</Project>
+      <Name>LightDatamodel</Name>
+    </ProjectReference>
+    <ProjectReference Include="Datamodel\Datamodel.csproj">
+      <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
+      <Name>Datamodel</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ApplicationSetup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ApplicationSetup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Database schema\Schema.sql" />
+    <EmbeddedResource Include="LogViewer.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>LogViewer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\Backends\FileSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FileSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\Backends\S3Settings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>S3Settings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\Backends\SSHSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SSHSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\ScheduleSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ScheduleSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\TaskSettingsBase.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>TaskSettingsBase.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ServiceSetup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ServiceSetup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ServiceStatus.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ServiceStatus.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Icons\Error.ico" />
+    <EmbeddedResource Include="Icons\OK.ico" />
+    <EmbeddedResource Include="Icons\Status Error.png" />
+    <EmbeddedResource Include="Icons\Status Warning.png" />
+    <EmbeddedResource Include="Icons\Status Working.png" />
+    <EmbeddedResource Include="Icons\TrayError.ico" />
+    <EmbeddedResource Include="Icons\TrayOK.ico" />
+    <EmbeddedResource Include="Icons\TrayUnknown.ico" />
+    <EmbeddedResource Include="Icons\TrayWarning.ico" />
+    <EmbeddedResource Include="Icons\Warning.ico" />
+    <EmbeddedResource Include="Icons\Working.ico" />
+    <EmbeddedResource Include="Icons\Working2.ico" />
+    <EmbeddedResource Include="Icons\TrayWorking.ico" />
+    <EmbeddedResource Include="Icons\Status OK.png" />
+    <EmbeddedResource Include="Icons\Status Working2.png" />
+    <EmbeddedResource Include="Icons\Close.ico" />
+    <EmbeddedResource Include="Icons\Status.ico" />
+    <EmbeddedResource Include="Icons\Settings.ico" />
+    <EmbeddedResource Include="Icons\Time.ico" />
+    <Content Include="sqlite3.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TrayUnknown.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
