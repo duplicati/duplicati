@@ -61,10 +61,10 @@ namespace Duplicati
                 this.Invoke(new EventHandler(Scheduler_NewSchedule), sender, e);
             else
             {
-                //TODO: This should be protected, as the thread might change it while we itterate
                 scheduledBackups.Items.Clear();
-                foreach (Schedule s in Program.Scheduler.Schedule)
-                    scheduledBackups.Items.Add(s.When.ToString("g") + " " + s.Name);
+                lock(Program.MainLock)
+                    foreach (Schedule s in Program.Scheduler.Schedule)
+                        scheduledBackups.Items.Add(s.When.ToString("g") + " " + s.Name);
             }
         }
 
@@ -108,6 +108,7 @@ namespace Duplicati
             else
             {
                 pendingBackups.Items.Clear();
+                //No locking here, the list is protected by the thread raising the event
                 foreach (Schedule s in Program.WorkThread.CurrentTasks)
                     pendingBackups.Items.Add(s.Name == null ? "" : s.Name);
 
@@ -149,8 +150,7 @@ namespace Duplicati
         private void BuildRecent()
         {
             Log[] logs;
-            lock(Program.MainLock)
-                logs = Program.DataConnection.GetObjects<Log>("EndTime > ? AND SubAction LIKE ? ORDER BY EndTime DESC", Timeparser.ParseTimeInterval(Program.ApplicationSettings.RecentBackupDuration, DateTime.Now, true), "Primary");
+            logs = Program.DataConnection.GetObjects<Log>("EndTime > ? AND SubAction LIKE ? ORDER BY EndTime DESC", Timeparser.ParseTimeInterval(Program.ApplicationSettings.RecentBackupDuration, DateTime.Now, true), "Primary");
 
 
             recentBackups.Items.Clear();

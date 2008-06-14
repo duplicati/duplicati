@@ -49,10 +49,7 @@ namespace Duplicati
             if (c <= 0)
                 log.ParsedStatus = "Warning";
 
-            log.Action = "Backup";
             log.Transfersize = c;
-            log.SubAction = "Primary";
-            log.EndTime = DateTime.Now;
         }
 
         private static long ExtractNumber(string output, string key, long @default)

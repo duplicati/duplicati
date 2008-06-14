@@ -127,6 +127,9 @@ namespace Duplicati
                     if (nextrun.TotalMilliseconds < 0)
                         continue;
 
+                    lock (m_datalock)
+                        m_connection.CommitAll();
+
                     waittime = (int)Math.Min(nextrun.TotalMilliseconds, 60 * 1000 * 5);
                 }
                 else

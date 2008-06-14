@@ -44,7 +44,8 @@ namespace Duplicati.Datamodel
             m_enum = new TranslatoryEnumerator(this, m_settings.GetEnumerator());
 
             foreach (TBase item in m_col)
-                m_settings.Add((TKey)m_keyfield.GetValue(item, null), item);
+                if (!m_settings.ContainsKey((TKey)m_keyfield.GetValue(item, null)))
+                    m_settings.Add((TKey)m_keyfield.GetValue(item, null), item);
         }
 
         public PropertyInfo KeyField { get { return m_keyfield; } }

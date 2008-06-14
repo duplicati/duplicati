@@ -160,6 +160,12 @@ namespace Duplicati
             if (e == null || e.Node == null)
                 return;
 
+            if (string.IsNullOrEmpty(e.Label))
+            {
+                e.CancelEdit = true;
+                return;
+            }
+
             e.Node.Text = e.Label;
 
             if (e.Node.Tag as Schedule == null)

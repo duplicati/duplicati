@@ -33,6 +33,16 @@ namespace Duplicati
     {
         private StringDictionary m_environment;
 
+        private enum DuplicityTaskType
+        {
+            IncrementalBackup,
+            FullBackup,
+            RemoveAllButNFull,
+            RemoveOlderThan,
+            Restore,
+            List
+        }
+
         public DuplicityRunner(string apppath, StringDictionary environment)
         {
             if (!apppath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
@@ -44,14 +54,9 @@ namespace Duplicati
                     m_environment[k] = environment[k];
         }
 
-        public void Execute(Schedule schedule)
+        private System.Diagnostics.ProcessStartInfo SetupEnv(Task task, DuplicityTaskType type, string extraparam)
         {
-            if (schedule.Tasks == null || schedule.Tasks.Count == 0)
-                throw new Exception("No tasks were assigned to the schedule");
-
-            Task task = schedule.Tasks[0];
             List<string> args = new List<string>();
-
             System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
 
             StringDictionary env = psi.EnvironmentVariables;
@@ -59,53 +64,99 @@ namespace Duplicati
             foreach (string key in m_environment.Keys)
                 env[key] = m_environment[key];
 
-            lock (Program.MainLock)
+            env["PATH"] = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.PGPPath) + System.IO.Path.PathSeparator + env["PATH"];
+
+            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.DuplicityPath) + "\"");
+
+            switch (type)
             {
-                env["PATH"] = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.PGPPath) + System.IO.Path.PathSeparator + env["PATH"];
+                case DuplicityTaskType.IncrementalBackup:
+                    args.Add("incremental");
+                    break;
+                case DuplicityTaskType.FullBackup:
+                    args.Add("full");
+                    break;
+                case DuplicityTaskType.RemoveAllButNFull:
+                    args.Add("remove-all-but-n-full");
+                    args.Add(extraparam);
+                    break;
+                case DuplicityTaskType.RemoveOlderThan:
+                    args.Add("remove-older-than");
+                    args.Add(extraparam);
+                    break;
+                case DuplicityTaskType.Restore:
+                    break;
+                case DuplicityTaskType.List:
+                    args.Add("collection-status");
+                    break;
 
-                args.Add("\"" + System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.DuplicityPath) + "\"");
-
-
-                args.Add("incremental");
-                args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.SourcePath) + "\"");
-                args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.GetDestinationPath()) + "\"");
-
-                if (!string.IsNullOrEmpty(schedule.FullAfter))
-                {
-                    args.Add("--full-if-older-than");
-                    args.Add(schedule.FullAfter);
-                }
-
-
-                if (string.IsNullOrEmpty(task.Encryptionkey))
-                    args.Add("--no-encryption");
-                else
-                    env["PASSPHRASE"] = task.Encryptionkey;
-
-                if (!string.IsNullOrEmpty(task.Signaturekey))
-                {
-                    args.Add("--sign-key");
-                    args.Add(task.Signaturekey);
-                }
-
-                task.GetExtraSettings(args, env);
-
-
-                psi.CreateNoWindow = true;
-                psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                psi.FileName = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.PythonPath);
-                psi.RedirectStandardError = true;
-                psi.RedirectStandardOutput = true;
-                psi.RedirectStandardInput = false;
-                psi.UseShellExecute = false;
-                lock (Program.MainLock)
-                    psi.WorkingDirectory = System.IO.Path.GetDirectoryName(psi.FileName);
+                default:
+                    throw new Exception("Bad duplicity operation given: " + type.ToString());
             }
 
+            switch (type)
+            {
+                case DuplicityTaskType.FullBackup:
+                case DuplicityTaskType.IncrementalBackup:
+                    args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.SourcePath) + "\"");
+                    args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.GetDestinationPath()) + "\"");
+                    break;
+                case DuplicityTaskType.RemoveAllButNFull:
+                case DuplicityTaskType.RemoveOlderThan:
+                    args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.GetDestinationPath()) + "\"");
+                    break;
+                case DuplicityTaskType.Restore:
+                case DuplicityTaskType.List:
+                    args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.GetDestinationPath()) + "\"");
+                    args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.SourcePath) + "\"");
+                    break;
+                default:
+                    throw new Exception("Bad duplicity operation given: " + type.ToString());
+            }
+
+            if (type == DuplicityTaskType.IncrementalBackup && !string.IsNullOrEmpty(extraparam))
+            {
+                args.Add("--full-if-older-than");
+                args.Add(extraparam);
+            }
+
+            if (string.IsNullOrEmpty(task.Encryptionkey))
+                args.Add("--no-encryption");
+            else
+                env["PASSPHRASE"] = task.Encryptionkey;
+
+            if (!string.IsNullOrEmpty(task.Signaturekey))
+            {
+                args.Add("--sign-key");
+                args.Add(task.Signaturekey);
+            }
+
+            if (type == DuplicityTaskType.RemoveAllButNFull || type == DuplicityTaskType.RemoveOlderThan)
+                args.Add("--force");
+
+            task.GetExtraSettings(args, env);
+
+
+            psi.CreateNoWindow = true;
+            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            psi.FileName = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.PythonPath);
+            psi.RedirectStandardError = true;
+            psi.RedirectStandardOutput = true;
+            psi.RedirectStandardInput = false;
+            psi.UseShellExecute = false;
+            psi.WorkingDirectory = System.IO.Path.GetDirectoryName(psi.FileName);
+
+
             psi.Arguments = string.Join(" ", args.ToArray());
+            return psi;
+        }
+
+        private string PerformBackup(Task task, bool forceFull, string fullAfter)
+        {
+            DateTime beginTime = DateTime.Now;
 
             System.Diagnostics.Process p = new System.Diagnostics.Process();
-            p.StartInfo = psi;
+            p.StartInfo = SetupEnv(task, forceFull ? DuplicityTaskType.FullBackup : DuplicityTaskType.IncrementalBackup, fullAfter);
             p.Start();
 
             p.WaitForExit();
@@ -126,10 +177,10 @@ namespace Duplicati
 
             lock (Program.MainLock)
             {
+                Log l = task.DataParent.Add<Log>();
                 LogBlob lb = task.DataParent.Add<LogBlob>();
                 lb.StringData = logentry;
 
-                Log l = task.DataParent.Add<Log>();
                 l.LogBlob = lb;
                 task.Logs.Add(l);
 
@@ -137,37 +188,59 @@ namespace Duplicati
                 DuplicityOutputParser.ParseData(l);
                 l.SubAction = "Primary";
                 l.Action = "Backup";
+                l.BeginTime = beginTime;
+                l.EndTime = DateTime.Now;
+
+                task.DataParent.CommitAll();
+                Program.DataConnection.CommitAll();
             }
 
+            return logentry;
+        }
+
+        public string IncrementalBackup(Task task)
+        {
+            return PerformBackup(task, false, null);
+        }
+
+        public string FullBackup(Task task)
+        {
+            return PerformBackup(task, true, null);
+        }
+
+        public void Execute(Schedule schedule)
+        {
+            if (schedule.Tasks == null || schedule.Tasks.Count == 0)
+                throw new Exception("No tasks were assigned to the schedule");
+
+            Task task = schedule.Tasks[0];
+
+            PerformBackup(task, false, schedule.FullAfter);
 
             if (schedule.KeepFull > 0)
             {
-                p = new System.Diagnostics.Process();
-                p.StartInfo = psi;
+                DateTime beginTime = DateTime.Now;
 
-                args[1] = "remove-all-but-n-full";
-                args[2] = schedule.KeepFull.ToString();
-                args.Add("--force");
-                p.StartInfo.Arguments = string.Join(" ", args.ToArray());            
-
+                System.Diagnostics.Process p = new System.Diagnostics.Process();
+                p.StartInfo = SetupEnv(task, DuplicityTaskType.RemoveAllButNFull, schedule.KeepFull.ToString());
+                
                 p.Start();
-
                 p.WaitForExit();
 
-                errorstream = p.StandardError.ReadToEnd();
-                outstream = p.StandardOutput.ReadToEnd();
+                string errorstream = p.StandardError.ReadToEnd();
+                string outstream = p.StandardOutput.ReadToEnd();
 
-                logentry = "";
+                string logentry = "";
                 if (!string.IsNullOrEmpty(errorstream))
                     logentry += "** Error stream: \r\n" + errorstream + "\r\n**\r\n";
                 logentry += outstream;
 
                 lock (Program.MainLock)
                 {
+                    Log l = task.DataParent.Add<Log>();
                     LogBlob lb = task.DataParent.Add<LogBlob>();
                     lb.StringData = logentry;
 
-                    Log l = task.DataParent.Add<Log>();
                     l.LogBlob = lb;
                     task.Logs.Add(l);
 
@@ -175,38 +248,35 @@ namespace Duplicati
                     DuplicityOutputParser.ParseData(l);
                     l.SubAction = "Cleanup";
                     l.Action = "Backup";
+                    l.BeginTime = beginTime;
+                    l.EndTime = DateTime.Now;
                 }
             }
 
             if (!string.IsNullOrEmpty(schedule.KeepTime))
             {
-                p = new System.Diagnostics.Process();
-                p.StartInfo = psi;
+                DateTime beginTime = DateTime.Now;
 
-                args[1] = "remove-older-than";
-                args[2] = schedule.KeepTime;
-                if (!args.Contains("--force"))
-                    args.Add("--force");
-                p.StartInfo.Arguments = string.Join(" ", args.ToArray());
+                System.Diagnostics.Process p = new System.Diagnostics.Process();
+                p.StartInfo = SetupEnv(task, DuplicityTaskType.RemoveOlderThan, schedule.KeepTime);
 
                 p.Start();
-
                 p.WaitForExit();
 
-                errorstream = p.StandardError.ReadToEnd();
-                outstream = p.StandardOutput.ReadToEnd();
+                string errorstream = p.StandardError.ReadToEnd();
+                string outstream = p.StandardOutput.ReadToEnd();
 
-                logentry = "";
+                string logentry = "";
                 if (!string.IsNullOrEmpty(errorstream))
                     logentry += "\r\n** Error stream: \r\n" + errorstream + "\r\n**\r\n";
                 logentry += outstream;
 
                 lock (Program.MainLock)
                 {
+                    Log l = task.DataParent.Add<Log>();
                     LogBlob lb = task.DataParent.Add<LogBlob>();
                     lb.StringData = logentry;
 
-                    Log l = task.DataParent.Add<Log>();
                     l.LogBlob = lb;
                     task.Logs.Add(l);
 
@@ -214,6 +284,8 @@ namespace Duplicati
                     DuplicityOutputParser.ParseData(l);
                     l.SubAction = "Cleanup";
                     l.Action = "Backup";
+                    l.BeginTime = beginTime;
+                    l.EndTime = DateTime.Now;
                 }
             }
 
