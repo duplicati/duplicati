@@ -48,22 +48,22 @@ namespace Duplicati.Service_controls
         private void InitializeComponent()
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.EncryptionCheckbox = new System.Windows.Forms.CheckBox();
-            this.EncrytionKey = new System.Windows.Forms.TextBox();
-            this.SignatureKey = new System.Windows.Forms.TextBox();
-            this.SignatureCheckbox = new System.Windows.Forms.CheckBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.ServiceTypeCombo = new System.Windows.Forms.ComboBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.GenerateEncryptionKey = new System.Windows.Forms.Button();
-            this.GenerateSignatureKey = new System.Windows.Forms.Button();
-            this.BrowseSourceFolder = new System.Windows.Forms.Button();
-            this.SourceFolder = new System.Windows.Forms.TextBox();
-            this.EditFilterButton = new System.Windows.Forms.Button();
+            this.ServicePanel = new System.Windows.Forms.Panel();
             this.sshSettings = new Duplicati.Service_controls.SSHSettings();
             this.s3Settings = new Duplicati.Service_controls.S3Settings();
             this.fileSettings = new Duplicati.Service_controls.FileSettings();
-            this.ServicePanel = new System.Windows.Forms.Panel();
+            this.EditFilterButton = new System.Windows.Forms.Button();
+            this.BrowseSourceFolder = new System.Windows.Forms.Button();
+            this.SourceFolder = new System.Windows.Forms.TextBox();
+            this.GenerateSignatureKey = new System.Windows.Forms.Button();
+            this.GenerateEncryptionKey = new System.Windows.Forms.Button();
+            this.label2 = new System.Windows.Forms.Label();
+            this.ServiceTypeCombo = new System.Windows.Forms.ComboBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.SignatureKey = new System.Windows.Forms.TextBox();
+            this.SignatureCheckbox = new System.Windows.Forms.CheckBox();
+            this.EncrytionKey = new System.Windows.Forms.TextBox();
+            this.EncryptionCheckbox = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.ServicePanel.SuspendLayout();
             this.SuspendLayout();
@@ -90,94 +90,52 @@ namespace Duplicati.Service_controls
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Backup properties";
             // 
-            // EncryptionCheckbox
+            // ServicePanel
             // 
-            this.EncryptionCheckbox.AutoSize = true;
-            this.EncryptionCheckbox.Location = new System.Drawing.Point(8, 16);
-            this.EncryptionCheckbox.Name = "EncryptionCheckbox";
-            this.EncryptionCheckbox.Size = new System.Drawing.Size(101, 17);
-            this.EncryptionCheckbox.TabIndex = 0;
-            this.EncryptionCheckbox.Text = "Encrypt backup";
-            this.EncryptionCheckbox.UseVisualStyleBackColor = true;
+            this.ServicePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.ServicePanel.Controls.Add(this.sshSettings);
+            this.ServicePanel.Controls.Add(this.s3Settings);
+            this.ServicePanel.Controls.Add(this.fileSettings);
+            this.ServicePanel.Location = new System.Drawing.Point(0, 144);
+            this.ServicePanel.Name = "ServicePanel";
+            this.ServicePanel.Size = new System.Drawing.Size(280, 272);
+            this.ServicePanel.TabIndex = 15;
             // 
-            // EncrytionKey
+            // sshSettings
             // 
-            this.EncrytionKey.Location = new System.Drawing.Point(112, 16);
-            this.EncrytionKey.Name = "EncrytionKey";
-            this.EncrytionKey.Size = new System.Drawing.Size(128, 20);
-            this.EncrytionKey.TabIndex = 1;
-            this.EncrytionKey.TextChanged += new System.EventHandler(this.EncrytionKey_TextChanged);
+            this.sshSettings.Location = new System.Drawing.Point(96, 32);
+            this.sshSettings.Name = "sshSettings";
+            this.sshSettings.Size = new System.Drawing.Size(88, 56);
+            this.sshSettings.TabIndex = 14;
+            this.sshSettings.Visible = false;
             // 
-            // SignatureKey
+            // s3Settings
             // 
-            this.SignatureKey.Location = new System.Drawing.Point(112, 40);
-            this.SignatureKey.Name = "SignatureKey";
-            this.SignatureKey.Size = new System.Drawing.Size(128, 20);
-            this.SignatureKey.TabIndex = 3;
-            this.SignatureKey.TextChanged += new System.EventHandler(this.SignatureKey_TextChanged);
+            this.s3Settings.Location = new System.Drawing.Point(176, 32);
+            this.s3Settings.Name = "s3Settings";
+            this.s3Settings.Size = new System.Drawing.Size(96, 56);
+            this.s3Settings.TabIndex = 13;
+            this.s3Settings.Visible = false;
             // 
-            // SignatureCheckbox
+            // fileSettings
             // 
-            this.SignatureCheckbox.AutoSize = true;
-            this.SignatureCheckbox.Location = new System.Drawing.Point(8, 40);
-            this.SignatureCheckbox.Name = "SignatureCheckbox";
-            this.SignatureCheckbox.Size = new System.Drawing.Size(86, 17);
-            this.SignatureCheckbox.TabIndex = 2;
-            this.SignatureCheckbox.Text = "Sign backup";
-            this.SignatureCheckbox.UseVisualStyleBackColor = true;
+            this.fileSettings.Location = new System.Drawing.Point(16, 32);
+            this.fileSettings.Name = "fileSettings";
+            this.fileSettings.Size = new System.Drawing.Size(88, 64);
+            this.fileSettings.TabIndex = 12;
+            this.fileSettings.Visible = false;
             // 
-            // label1
+            // EditFilterButton
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(8, 120);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(81, 13);
-            this.label1.TabIndex = 4;
-            this.label1.Text = "Backup service";
-            // 
-            // ServiceTypeCombo
-            // 
-            this.ServiceTypeCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.ServiceTypeCombo.FormattingEnabled = true;
-            this.ServiceTypeCombo.Items.AddRange(new object[] {
-            "Backup to network folder or drive",
-            "Backup via SSH ",
-            "Backup via FTP",
-            "Backup to Amazon S3",
-            "Backup to WebDAV",
-            "Custom "});
-            this.ServiceTypeCombo.Location = new System.Drawing.Point(112, 120);
-            this.ServiceTypeCombo.Name = "ServiceTypeCombo";
-            this.ServiceTypeCombo.Size = new System.Drawing.Size(160, 21);
-            this.ServiceTypeCombo.TabIndex = 5;
-            this.ServiceTypeCombo.SelectedIndexChanged += new System.EventHandler(this.ServiceTypeCombo_SelectedIndexChanged);
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(8, 64);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(87, 13);
-            this.label2.TabIndex = 6;
-            this.label2.Text = "Folder to backup";
-            // 
-            // GenerateEncryptionKey
-            // 
-            this.GenerateEncryptionKey.Location = new System.Drawing.Point(240, 16);
-            this.GenerateEncryptionKey.Name = "GenerateEncryptionKey";
-            this.GenerateEncryptionKey.Size = new System.Drawing.Size(24, 20);
-            this.GenerateEncryptionKey.TabIndex = 7;
-            this.GenerateEncryptionKey.UseVisualStyleBackColor = true;
-            this.GenerateEncryptionKey.Click += new System.EventHandler(this.GenerateEncryptionKey_Click);
-            // 
-            // GenerateSignatureKey
-            // 
-            this.GenerateSignatureKey.Location = new System.Drawing.Point(240, 40);
-            this.GenerateSignatureKey.Name = "GenerateSignatureKey";
-            this.GenerateSignatureKey.Size = new System.Drawing.Size(24, 20);
-            this.GenerateSignatureKey.TabIndex = 8;
-            this.GenerateSignatureKey.UseVisualStyleBackColor = true;
-            this.GenerateSignatureKey.Click += new System.EventHandler(this.GenerateSignatureKey_Click);
+            this.EditFilterButton.Location = new System.Drawing.Point(168, 88);
+            this.EditFilterButton.Name = "EditFilterButton";
+            this.EditFilterButton.Size = new System.Drawing.Size(96, 24);
+            this.EditFilterButton.TabIndex = 11;
+            this.EditFilterButton.Text = "Edit filter";
+            this.EditFilterButton.UseVisualStyleBackColor = true;
+            this.EditFilterButton.Click += new System.EventHandler(this.EditFilterButton_Click);
             // 
             // BrowseSourceFolder
             // 
@@ -197,49 +155,94 @@ namespace Duplicati.Service_controls
             this.SourceFolder.TabIndex = 9;
             this.SourceFolder.TextChanged += new System.EventHandler(this.SourceFolder_TextChanged);
             // 
-            // EditFilterButton
+            // GenerateSignatureKey
             // 
-            this.EditFilterButton.Location = new System.Drawing.Point(168, 88);
-            this.EditFilterButton.Name = "EditFilterButton";
-            this.EditFilterButton.Size = new System.Drawing.Size(96, 24);
-            this.EditFilterButton.TabIndex = 11;
-            this.EditFilterButton.Text = "Edit filter";
-            this.EditFilterButton.UseVisualStyleBackColor = true;
-            this.EditFilterButton.Click += new System.EventHandler(this.EditFilterButton_Click);
+            this.GenerateSignatureKey.Location = new System.Drawing.Point(240, 40);
+            this.GenerateSignatureKey.Name = "GenerateSignatureKey";
+            this.GenerateSignatureKey.Size = new System.Drawing.Size(24, 20);
+            this.GenerateSignatureKey.TabIndex = 8;
+            this.GenerateSignatureKey.UseVisualStyleBackColor = true;
+            this.GenerateSignatureKey.Click += new System.EventHandler(this.GenerateSignatureKey_Click);
             // 
-            // sshSettings
+            // GenerateEncryptionKey
             // 
-            this.sshSettings.Location = new System.Drawing.Point(96, 32);
-            this.sshSettings.Name = "sshSettings";
-            this.sshSettings.Size = new System.Drawing.Size(88, 56);
-            this.sshSettings.TabIndex = 14;
+            this.GenerateEncryptionKey.Location = new System.Drawing.Point(240, 16);
+            this.GenerateEncryptionKey.Name = "GenerateEncryptionKey";
+            this.GenerateEncryptionKey.Size = new System.Drawing.Size(24, 20);
+            this.GenerateEncryptionKey.TabIndex = 7;
+            this.GenerateEncryptionKey.UseVisualStyleBackColor = true;
+            this.GenerateEncryptionKey.Click += new System.EventHandler(this.GenerateEncryptionKey_Click);
             // 
-            // s3Settings
+            // label2
             // 
-            this.s3Settings.Location = new System.Drawing.Point(176, 32);
-            this.s3Settings.Name = "s3Settings";
-            this.s3Settings.Size = new System.Drawing.Size(96, 56);
-            this.s3Settings.TabIndex = 13;
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(8, 64);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(87, 13);
+            this.label2.TabIndex = 6;
+            this.label2.Text = "Folder to backup";
             // 
-            // fileSettings
+            // ServiceTypeCombo
             // 
-            this.fileSettings.Location = new System.Drawing.Point(16, 32);
-            this.fileSettings.Name = "fileSettings";
-            this.fileSettings.Size = new System.Drawing.Size(88, 64);
-            this.fileSettings.TabIndex = 12;
+            this.ServiceTypeCombo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.ServiceTypeCombo.FormattingEnabled = true;
+            this.ServiceTypeCombo.Items.AddRange(new object[] {
+            "Backup to network folder or drive",
+            "Backup via SSH ",
+            "Backup via FTP",
+            "Backup to Amazon S3",
+            "Backup to WebDAV",
+            "Custom "});
+            this.ServiceTypeCombo.Location = new System.Drawing.Point(112, 120);
+            this.ServiceTypeCombo.Name = "ServiceTypeCombo";
+            this.ServiceTypeCombo.Size = new System.Drawing.Size(160, 21);
+            this.ServiceTypeCombo.TabIndex = 5;
+            this.ServiceTypeCombo.SelectedIndexChanged += new System.EventHandler(this.ServiceTypeCombo_SelectedIndexChanged);
             // 
-            // ServicePanel
+            // label1
             // 
-            this.ServicePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.ServicePanel.Controls.Add(this.sshSettings);
-            this.ServicePanel.Controls.Add(this.s3Settings);
-            this.ServicePanel.Controls.Add(this.fileSettings);
-            this.ServicePanel.Location = new System.Drawing.Point(0, 144);
-            this.ServicePanel.Name = "ServicePanel";
-            this.ServicePanel.Size = new System.Drawing.Size(280, 272);
-            this.ServicePanel.TabIndex = 15;
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(8, 120);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(81, 13);
+            this.label1.TabIndex = 4;
+            this.label1.Text = "Backup service";
+            // 
+            // SignatureKey
+            // 
+            this.SignatureKey.Location = new System.Drawing.Point(112, 40);
+            this.SignatureKey.Name = "SignatureKey";
+            this.SignatureKey.Size = new System.Drawing.Size(128, 20);
+            this.SignatureKey.TabIndex = 3;
+            this.SignatureKey.TextChanged += new System.EventHandler(this.SignatureKey_TextChanged);
+            // 
+            // SignatureCheckbox
+            // 
+            this.SignatureCheckbox.AutoSize = true;
+            this.SignatureCheckbox.Location = new System.Drawing.Point(8, 40);
+            this.SignatureCheckbox.Name = "SignatureCheckbox";
+            this.SignatureCheckbox.Size = new System.Drawing.Size(86, 17);
+            this.SignatureCheckbox.TabIndex = 2;
+            this.SignatureCheckbox.Text = "Sign backup";
+            this.SignatureCheckbox.UseVisualStyleBackColor = true;
+            // 
+            // EncrytionKey
+            // 
+            this.EncrytionKey.Location = new System.Drawing.Point(112, 16);
+            this.EncrytionKey.Name = "EncrytionKey";
+            this.EncrytionKey.Size = new System.Drawing.Size(128, 20);
+            this.EncrytionKey.TabIndex = 1;
+            this.EncrytionKey.TextChanged += new System.EventHandler(this.EncrytionKey_TextChanged);
+            // 
+            // EncryptionCheckbox
+            // 
+            this.EncryptionCheckbox.AutoSize = true;
+            this.EncryptionCheckbox.Location = new System.Drawing.Point(8, 16);
+            this.EncryptionCheckbox.Name = "EncryptionCheckbox";
+            this.EncryptionCheckbox.Size = new System.Drawing.Size(101, 17);
+            this.EncryptionCheckbox.TabIndex = 0;
+            this.EncryptionCheckbox.Text = "Encrypt backup";
+            this.EncryptionCheckbox.UseVisualStyleBackColor = true;
             // 
             // TaskSettingsBase
             // 

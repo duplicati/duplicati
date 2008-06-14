@@ -34,13 +34,15 @@ namespace Duplicati
         private WorkerThread<Schedule> m_worker;
         private AutoResetEvent m_event;
         private object m_lock = new object();
+        private object m_datalock;
 
         public event EventHandler NewSchedule;
 
         private Schedule[] m_schedule;
 
-        public Scheduler(IDataFetcherCached connection, WorkerThread<Schedule> worker)
+        public Scheduler(IDataFetcherCached connection, WorkerThread<Schedule> worker, object datalock)
         {
+            m_datalock = datalock;
             m_connection = connection;
             m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
@@ -82,8 +84,11 @@ namespace Duplicati
             while (!m_terminate)
             {
                 List<Schedule> reps = new List<Schedule>();
+                List<Schedule> tmp;
+                lock (m_datalock)
+                    tmp = new List<Schedule>(m_connection.GetObjects<Schedule>());
 
-                foreach (Schedule sc in m_connection.GetObjects<Schedule>())
+                foreach (Schedule sc in tmp)
                 {
                     if (!string.IsNullOrEmpty(sc.Repeat))
                     {

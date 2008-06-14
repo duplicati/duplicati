@@ -64,40 +64,43 @@ namespace Duplicati
                 env["PATH"] = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.PGPPath) + System.IO.Path.PathSeparator + env["PATH"];
 
                 args.Add("\"" + System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.DuplicityPath) + "\"");
+
+
+                args.Add("incremental");
+                args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.SourcePath) + "\"");
+                args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.GetDestinationPath()) + "\"");
+
+                if (!string.IsNullOrEmpty(schedule.FullAfter))
+                {
+                    args.Add("--full-if-older-than");
+                    args.Add(schedule.FullAfter);
+                }
+
+
+                if (string.IsNullOrEmpty(task.Encryptionkey))
+                    args.Add("--no-encryption");
+                else
+                    env["PASSPHRASE"] = task.Encryptionkey;
+
+                if (!string.IsNullOrEmpty(task.Signaturekey))
+                {
+                    args.Add("--sign-key");
+                    args.Add(task.Signaturekey);
+                }
+
+                task.GetExtraSettings(args, env);
+
+
+                psi.CreateNoWindow = true;
+                psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                psi.FileName = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.PythonPath);
+                psi.RedirectStandardError = true;
+                psi.RedirectStandardOutput = true;
+                psi.RedirectStandardInput = false;
+                psi.UseShellExecute = false;
+                lock (Program.MainLock)
+                    psi.WorkingDirectory = System.IO.Path.GetDirectoryName(psi.FileName);
             }
-
-            args.Add("incremental");
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.SourcePath) + "\"");
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.GetDestinationPath()) + "\"");
-
-            if (!string.IsNullOrEmpty(schedule.FullAfter))
-            {
-                args.Add("--full-if-older-than");
-                args.Add(schedule.FullAfter);
-            }
-
-            if (string.IsNullOrEmpty(task.Encryptionkey))
-                args.Add("--no-encryption");
-            else
-                env["PASSPHRASE"] = task.Encryptionkey;
-
-            if (!string.IsNullOrEmpty(task.Signaturekey))
-            {
-                args.Add("--sign-key");
-                args.Add(task.Signaturekey);
-            }
-
-            task.GetExtraSettings(args, env);
-
-            psi.CreateNoWindow = true;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-            psi.FileName = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.PythonPath);
-            psi.RedirectStandardError = true;
-            psi.RedirectStandardOutput = true;
-            psi.RedirectStandardInput = false;
-            psi.UseShellExecute = false;
-            lock(Program.MainLock)
-                psi.WorkingDirectory = System.IO.Path.GetDirectoryName(psi.FileName);
 
             psi.Arguments = string.Join(" ", args.ToArray());
 
@@ -107,10 +110,11 @@ namespace Duplicati
 
             p.WaitForExit();
 
+
             string errorstream = p.StandardError.ReadToEnd();
             string outstream = p.StandardOutput.ReadToEnd();
 
-            string logentry = "******* Regular run *******\r\n";
+            string logentry = "";
             if (!string.IsNullOrEmpty(errorstream))
             {
                 string tmp = errorstream.Replace("gpg: CAST5 encrypted data", "").Replace("gpg: encrypted with 1 passphrase", "").Trim();
@@ -119,6 +123,22 @@ namespace Duplicati
                     logentry += "** Error stream: \r\n" + errorstream + "\r\n**\r\n";
             }
             logentry += outstream;
+
+            lock (Program.MainLock)
+            {
+                LogBlob lb = task.DataParent.Add<LogBlob>();
+                lb.StringData = logentry;
+
+                Log l = task.DataParent.Add<Log>();
+                l.LogBlob = lb;
+                task.Logs.Add(l);
+
+                //Keep some of the data in an easy to read manner
+                DuplicityOutputParser.ParseData(l);
+                l.SubAction = "Primary";
+                l.Action = "Backup";
+            }
+
 
             if (schedule.KeepFull > 0)
             {
@@ -137,10 +157,25 @@ namespace Duplicati
                 errorstream = p.StandardError.ReadToEnd();
                 outstream = p.StandardOutput.ReadToEnd();
 
-                logentry += "\r\n******* Clean up run (count) *******\r\n";
+                logentry = "";
                 if (!string.IsNullOrEmpty(errorstream))
                     logentry += "** Error stream: \r\n" + errorstream + "\r\n**\r\n";
                 logentry += outstream;
+
+                lock (Program.MainLock)
+                {
+                    LogBlob lb = task.DataParent.Add<LogBlob>();
+                    lb.StringData = logentry;
+
+                    Log l = task.DataParent.Add<Log>();
+                    l.LogBlob = lb;
+                    task.Logs.Add(l);
+
+                    //Keep some of the data in an easy to read manner
+                    DuplicityOutputParser.ParseData(l);
+                    l.SubAction = "Cleanup";
+                    l.Action = "Backup";
+                }
             }
 
             if (!string.IsNullOrEmpty(schedule.KeepTime))
@@ -161,25 +196,33 @@ namespace Duplicati
                 errorstream = p.StandardError.ReadToEnd();
                 outstream = p.StandardOutput.ReadToEnd();
 
-                logentry += "\r\n******* Clean up run (time) *******\r\n";
+                logentry = "";
                 if (!string.IsNullOrEmpty(errorstream))
                     logentry += "\r\n** Error stream: \r\n" + errorstream + "\r\n**\r\n";
                 logentry += outstream;
+
+                lock (Program.MainLock)
+                {
+                    LogBlob lb = task.DataParent.Add<LogBlob>();
+                    lb.StringData = logentry;
+
+                    Log l = task.DataParent.Add<Log>();
+                    l.LogBlob = lb;
+                    task.Logs.Add(l);
+
+                    //Keep some of the data in an easy to read manner
+                    DuplicityOutputParser.ParseData(l);
+                    l.SubAction = "Cleanup";
+                    l.Action = "Backup";
+                }
             }
 
-            LogBlob lb = task.DataParent.Add<LogBlob>();
-            lb.StringData = logentry;
-
-            Log l = task.DataParent.Add<Log>();
-            l.LogBlob = lb;
-            task.Logs.Add(l);
-
-            //Keep some of the data in an easy to read manner
-            DuplicityOutputParser.ParseData(l);
-
-            //TODO: Fix this once commit recursive is implemented
-            task.DataParent.CommitAll();
-            Program.DataConnection.CommitAll();
+            lock (Program.MainLock)
+            {
+                //TODO: Fix this once commit recursive is implemented
+                task.DataParent.CommitAll();
+                Program.DataConnection.CommitAll();
+            }
         }
     }
 }

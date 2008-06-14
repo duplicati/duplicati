@@ -38,6 +38,14 @@ namespace Duplicati
 
         public static DateTime ParseTimeInterval(string datestring, DateTime offset)
         {
+            return ParseTimeInterval(datestring, offset, false);
+        }
+
+        public static DateTime ParseTimeInterval(string datestring, DateTime offset, bool negate)
+        {
+
+            int multiplier = negate ? -1 : 1;
+
             if (string.IsNullOrEmpty(datestring)) 
                 return offset;
 
@@ -46,7 +54,7 @@ namespace Duplicati
 
             long l;
             if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out l))
-                return offset.AddSeconds(l);
+                return offset.AddSeconds(l * multiplier);
             
             DateTime t;
             if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentUICulture, System.Globalization.DateTimeStyles.None, out t))
@@ -63,6 +71,8 @@ namespace Duplicati
                 int factor;
                 if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out factor))
                     throw new Exception("Failed to parse the segment: " + partial + ", invalid integer");
+
+                factor *= multiplier;
 
                 switch (datestring[index])
                 {

@@ -52,10 +52,11 @@ namespace Duplicati
             this.panel1 = new System.Windows.Forms.Panel();
             this.CancelBtn = new System.Windows.Forms.Button();
             this.OKBtn = new System.Windows.Forms.Button();
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.MainTree = new System.Windows.Forms.TreeView();
             this.TreeMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.playToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.imageList = new System.Windows.Forms.ImageList(this.components);
+            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.MainTree = new System.Windows.Forms.TreeView();
             this.SetupMenuStrip = new System.Windows.Forms.ToolStrip();
             this.AddButton = new System.Windows.Forms.ToolStripDropDownButton();
             this.AddFolderMenu = new System.Windows.Forms.ToolStripMenuItem();
@@ -64,14 +65,13 @@ namespace Duplicati
             this.PropertyTabs = new System.Windows.Forms.TabControl();
             this.OccurencePage = new System.Windows.Forms.TabPage();
             this.FilePage = new System.Windows.Forms.TabPage();
-            this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.scheduleSettings = new Duplicati.Service_controls.ScheduleSettings();
             this.taskSettings = new Duplicati.Service_controls.TaskSettingsBase();
             this.panel1.SuspendLayout();
+            this.TreeMenuStrip.SuspendLayout();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
-            this.TreeMenuStrip.SuspendLayout();
             this.SetupMenuStrip.SuspendLayout();
             this.PropertyTabs.SuspendLayout();
             this.OccurencePage.SuspendLayout();
@@ -110,6 +110,29 @@ namespace Duplicati
             this.OKBtn.UseVisualStyleBackColor = true;
             this.OKBtn.Click += new System.EventHandler(this.OKBtn_Click);
             // 
+            // TreeMenuStrip
+            // 
+            this.TreeMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.playToolStripMenuItem});
+            this.TreeMenuStrip.Name = "TreeMenuStrip";
+            this.TreeMenuStrip.Size = new System.Drawing.Size(165, 48);
+            this.TreeMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.TreeMenuStrip_Opening);
+            // 
+            // playToolStripMenuItem
+            // 
+            this.playToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("playToolStripMenuItem.Image")));
+            this.playToolStripMenuItem.Name = "playToolStripMenuItem";
+            this.playToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.playToolStripMenuItem.Text = "Run backup now";
+            this.playToolStripMenuItem.Click += new System.EventHandler(this.playToolStripMenuItem_Click);
+            // 
+            // imageList
+            // 
+            this.imageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList.ImageStream")));
+            this.imageList.TransparentColor = System.Drawing.Color.Transparent;
+            this.imageList.Images.SetKeyName(0, "Folder");
+            this.imageList.Images.SetKeyName(1, "Backup");
+            // 
             // splitContainer1
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -143,21 +166,6 @@ namespace Duplicati
             this.MainTree.AfterLabelEdit += new System.Windows.Forms.NodeLabelEditEventHandler(this.MainTree_AfterLabelEdit);
             this.MainTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.MainTree_AfterSelect);
             // 
-            // TreeMenuStrip
-            // 
-            this.TreeMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.playToolStripMenuItem});
-            this.TreeMenuStrip.Name = "TreeMenuStrip";
-            this.TreeMenuStrip.Size = new System.Drawing.Size(165, 26);
-            // 
-            // playToolStripMenuItem
-            // 
-            this.playToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("playToolStripMenuItem.Image")));
-            this.playToolStripMenuItem.Name = "playToolStripMenuItem";
-            this.playToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
-            this.playToolStripMenuItem.Text = "Run backup now";
-            this.playToolStripMenuItem.Click += new System.EventHandler(this.playToolStripMenuItem_Click);
-            // 
             // SetupMenuStrip
             // 
             this.SetupMenuStrip.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
@@ -182,6 +190,7 @@ namespace Duplicati
             this.AddButton.Name = "AddButton";
             this.AddButton.Size = new System.Drawing.Size(29, 22);
             this.AddButton.Text = "toolStripDropDownButton1";
+            this.AddButton.ToolTipText = "Add a new item";
             // 
             // AddFolderMenu
             // 
@@ -202,11 +211,14 @@ namespace Duplicati
             // RemoveButton
             // 
             this.RemoveButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.RemoveButton.Enabled = false;
             this.RemoveButton.Image = ((System.Drawing.Image)(resources.GetObject("RemoveButton.Image")));
             this.RemoveButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.RemoveButton.Name = "RemoveButton";
             this.RemoveButton.Size = new System.Drawing.Size(23, 22);
             this.RemoveButton.Text = "toolStripButton2";
+            this.RemoveButton.ToolTipText = "Remove the selected item";
+            this.RemoveButton.Click += new System.EventHandler(this.RemoveButton_Click);
             // 
             // PropertyTabs
             // 
@@ -240,13 +252,6 @@ namespace Duplicati
             this.FilePage.Text = "Files";
             this.FilePage.UseVisualStyleBackColor = true;
             // 
-            // imageList
-            // 
-            this.imageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList.ImageStream")));
-            this.imageList.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageList.Images.SetKeyName(0, "Folder");
-            this.imageList.Images.SetKeyName(1, "Backup");
-            // 
             // scheduleSettings
             // 
             this.scheduleSettings.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -275,11 +280,11 @@ namespace Duplicati
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Duplicati Setup";
             this.panel1.ResumeLayout(false);
+            this.TreeMenuStrip.ResumeLayout(false);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel1.PerformLayout();
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.ResumeLayout(false);
-            this.TreeMenuStrip.ResumeLayout(false);
             this.SetupMenuStrip.ResumeLayout(false);
             this.SetupMenuStrip.PerformLayout();
             this.PropertyTabs.ResumeLayout(false);

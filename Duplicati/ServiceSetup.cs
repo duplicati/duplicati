@@ -43,8 +43,45 @@ namespace Duplicati
                 TreeNode t = new TreeNode(s.Name);
                 t.ImageIndex = t.SelectedImageIndex = imageList.Images.IndexOfKey("Backup");
                 t.Tag = s;
-                MainTree.Nodes.Add(t);
+
+                if (string.IsNullOrEmpty(s.Path))
+                    MainTree.Nodes.Add(t);
+                else
+                    FindNode(s.Path, true).Add(t);
             }
+        }
+
+        private TreeNodeCollection FindNode(string path, bool allowCreate)
+        {
+            TreeNodeCollection col = MainTree.Nodes;
+            TreeNode match = null;
+
+            foreach (string p in path.Split(MainTree.PathSeparator[0]))
+            {
+                match = null;
+
+                foreach(TreeNode n in col)
+                    if (n.Text == p)
+                    {
+                        match = n;
+                        col = n.Nodes;
+                        break;
+                    }
+
+                if (match == null)
+                    if (allowCreate)
+                    {
+                        match = new TreeNode(p);
+                        match.ImageIndex = match.SelectedImageIndex = imageList.Images.IndexOfKey("Folder");
+                        col.Add(match);
+                        col = match.Nodes;
+                        match.Expand();
+                    }
+                    else
+                        return MainTree.Nodes;
+            }
+
+            return col;
         }
 
         private void AddFolderMenu_Click(object sender, EventArgs e)
@@ -85,6 +122,7 @@ namespace Duplicati
 
         private void MainTree_AfterSelect(object sender, TreeViewEventArgs e)
         {
+            RemoveButton.Enabled = MainTree.SelectedNode != null;
             if (MainTree.SelectedNode == null || MainTree.SelectedNode.Tag as Schedule == null)
             {
                 PropertyTabs.Visible = false;
@@ -108,38 +146,116 @@ namespace Duplicati
         private void OKBtn_Click(object sender, EventArgs e)
         {
             //TODO: fix this when the "commit recursive" method is implemented
-            m_connection.CommitAll();
-            Program.DataConnection.CommitAll();
+            lock (Program.MainLock)
+            {
+                m_connection.CommitAll();
+                Program.DataConnection.CommitAll();
+            }
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
 
         private void MainTree_AfterLabelEdit(object sender, NodeLabelEditEventArgs e)
         {
-            if (e == null || e.Node == null || e.Node.Tag as Schedule == null)
+            if (e == null || e.Node == null)
                 return;
 
-            (e.Node.Tag as Schedule).Name = e.Node.Text;
-            if (e.Node.FullPath != e.Node.Text)
-                (e.Node.Tag as Schedule).Path = e.Node.FullPath.Substring(0, e.Node.FullPath.Length - e.Node.Text.Length - MainTree.PathSeparator.Length);
+            e.Node.Text = e.Label;
+
+            if (e.Node.Tag as Schedule == null)
+            {
+                Queue<TreeNodeCollection> nodelist = new Queue<TreeNodeCollection>();
+                nodelist.Enqueue(e.Node.Nodes);
+                while (nodelist.Count > 0)
+                {
+                    TreeNodeCollection col = nodelist.Dequeue();
+                    foreach (TreeNode n in col)
+                        if (n.Nodes.Count > 0)
+                            nodelist.Enqueue(n.Nodes);
+                        else if (n.Tag as Schedule != null)
+                            UpdatePathAndName(n);
+                }
+            }
+            else
+                UpdatePathAndName(e.Node);
+        }
+
+        private void UpdatePathAndName(TreeNode n)
+        {
+            if (n == null || n.Tag as Schedule == null)
+                return;
+
+            (n.Tag as Schedule).Name = n.Text;
+            if (n.FullPath != n.Text)
+                (n.Tag as Schedule).Path = n.FullPath.Substring(0, n.FullPath.Length - n.Text.Length - MainTree.PathSeparator.Length);
         }
 
         private void playToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            TreeNode n = MainTree.SelectedNode;
-            if (n == null || n.Tag as Schedule == null)
+            TreeNode n = playToolStripMenuItem.Tag as TreeNode;
+            if (n == null)
                 return;
 
-            /*string pgp_path = System.IO.Path.Combine(Application.StartupPath, "pgp");
-            string duplicity_path = System.IO.Path.Combine(Application.StartupPath, "duplicity\\duplicity.py");
-            string duplicity_lib_path = System.IO.Path.Combine(Application.StartupPath, "duplicity\\duplicity");
-            string python_path = System.IO.Path.Combine(Application.StartupPath, "python25\\python.exe");
-            System.Collections.Specialized.StringDictionary env = new System.Collections.Specialized.StringDictionary();
+            if (n.Tag as Schedule == null)
+            {
+                Queue<TreeNodeCollection> nodelist = new Queue<TreeNodeCollection>();
+                nodelist.Enqueue(n.Nodes);
+                while (nodelist.Count > 0)
+                {
+                    TreeNodeCollection col = nodelist.Dequeue();
+                    foreach (TreeNode nx in col)
+                        if (nx.Nodes.Count > 0)
+                            nodelist.Enqueue(nx.Nodes);
+                        else if (nx.Tag as Schedule != null)
+                            Program.WorkThread.AddTask(nx.Tag as Schedule);
+                }
+            }
+            else
+                Program.WorkThread.AddTask(n.Tag as Schedule);
+        }
 
-            DuplicityRunner runner = new DuplicityRunner(duplicity_path, pgp_path, python_path, duplicity_lib_path, env);
-            runner.Execute(n.Tag as Schedule);*/
+        private void RemoveButton_Click(object sender, EventArgs e)
+        {
+            if (MainTree.SelectedNode == null)
+                return;
 
-            Program.WorkThread.AddTask(n.Tag as Schedule);
+            if (MainTree.SelectedNode.Tag as Schedule != null)
+            {
+                if (MessageBox.Show(this, "Remove the backup '" + (MainTree.SelectedNode.Tag as Schedule).Name + "' ?", Application.ProductName, MessageBoxButtons.YesNoCancel) == DialogResult.Yes)
+                {
+                    m_connection.DeleteObject(MainTree.SelectedNode.Tag);
+                    MainTree.SelectedNode.Remove();
+                }
+            }
+            else
+            {
+                if (MessageBox.Show(this, "Do you want to delete this folder and all the backups contained in it?", Application.ProductName, MessageBoxButtons.YesNoCancel) == DialogResult.Yes)
+                {
+                    Queue<TreeNodeCollection> nodelist = new Queue<TreeNodeCollection>();
+                    nodelist.Enqueue(MainTree.SelectedNode.Nodes);
+                    while (nodelist.Count > 0)
+                    {
+                        TreeNodeCollection col = nodelist.Dequeue();
+                        foreach (TreeNode n in col)
+                            if (n.Nodes.Count > 0)
+                                nodelist.Enqueue(n.Nodes);
+                            else if (n.Tag as Schedule != null)
+                                m_connection.DeleteObject(n.Tag);
+                    }
+
+                    MainTree.SelectedNode.Remove();
+                }
+            }
+
+        }
+
+        private void TreeMenuStrip_Opening(object sender, CancelEventArgs e)
+        {
+            Point p = MainTree.PointToClient(Cursor.Position);
+            TreeNode n = MainTree.GetNodeAt(p);
+            MainTree.SelectedNode = n;
+            playToolStripMenuItem.Enabled = n != null;
+            playToolStripMenuItem.Tag = n;
         }
     }
 }

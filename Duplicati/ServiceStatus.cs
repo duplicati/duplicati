@@ -64,7 +64,7 @@ namespace Duplicati
                 //TODO: This should be protected, as the thread might change it while we itterate
                 scheduledBackups.Items.Clear();
                 foreach (Schedule s in Program.Scheduler.Schedule)
-                    scheduledBackups.Items.Add(s.When.ToString("g") + " " + s.Path);
+                    scheduledBackups.Items.Add(s.When.ToString("g") + " " + s.Name);
             }
         }
 
@@ -95,7 +95,7 @@ namespace Duplicati
             else
             {
                 Schedule c = Program.WorkThread.CurrentTask;
-                CurrentStatus.Text = c == null ? "Waiting for next backup" : "Running " + c.Path;
+                CurrentStatus.Text = c == null ? "Waiting for next backup" : "Running " + c.Name;
                 statusImage.Image = Program.WorkingImage;
                 WorkThread_AddedWork(sender, e);
             }
@@ -109,7 +109,7 @@ namespace Duplicati
             {
                 pendingBackups.Items.Clear();
                 foreach (Schedule s in Program.WorkThread.CurrentTasks)
-                    pendingBackups.Items.Add(s.Path == null ? "" : s.Path);
+                    pendingBackups.Items.Add(s.Name == null ? "" : s.Name);
 
             }
 
@@ -148,11 +148,15 @@ namespace Duplicati
 
         private void BuildRecent()
         {
-            Log[] logs = Program.DataConnection.GetObjects<Log>("EndTime > ? AND SubAction LIKE ? ORDER BY Time DESC", Timeparser.ParseTimeInterval(Program.ApplicationSettings.RecentBackupDuration, DateTime.Now), "Primary");
+            Log[] logs;
+            lock(Program.MainLock)
+                logs = Program.DataConnection.GetObjects<Log>("EndTime > ? AND SubAction LIKE ? ORDER BY EndTime DESC", Timeparser.ParseTimeInterval(Program.ApplicationSettings.RecentBackupDuration, DateTime.Now, true), "Primary");
+
+
             recentBackups.Items.Clear();
             foreach (Log l in logs)
             {
-                ListViewItem lvi = new ListViewItem(new string[] { l.EndTime.ToString("g", System.Globalization.CultureInfo.CurrentUICulture), l.OwnerTask.Schedule.Path, l.TransferSizeString });
+                ListViewItem lvi = new ListViewItem(new string[] { l.EndTime.ToString("g", System.Globalization.CultureInfo.CurrentUICulture), l.OwnerTask.Schedule.Name, l.TransferSizeString });
 
                 lvi.Tag = l;
                 lvi.ImageIndex = imageList.Images.ContainsKey(l.ParsedStatus) ? imageList.Images.IndexOfKey(l.ParsedStatus) : imageList.Images.IndexOfKey("Warning");
@@ -173,8 +177,8 @@ namespace Duplicati
 
             LogViewer dlg = new LogViewer();
             //TODO: Figure out why the LDM fails here
-            LogBlob lbl = l.DataParent.GetObjectById<LogBlob>(l.LogBlobID);
-            dlg.LogText.Text = lbl.StringData;//l.LogBlob.StringData;
+            dlg.LogText.Text = l.LogBlob.StringData;
+
             dlg.ShowDialog(this);
         }
 

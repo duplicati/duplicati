@@ -86,7 +86,7 @@ namespace Duplicati
 
             //This also opens the db for us :)
             DatabaseUpgrader.UpgradeDatebase(con, dbpath);
-            DataConnection = new DataFetcherCached(new SQLiteDataProvider(con));
+            DataConnection = new DataFetcherThreadSafe(MainLock, new DataFetcherCached(new SQLiteDataProvider(con)));
 
             System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly();
 
@@ -123,7 +123,7 @@ namespace Duplicati
 
             WorkThread = new WorkerThread<Duplicati.Datamodel.Schedule>(new WorkerThread<Duplicati.Datamodel.Schedule>.ProcessItemDelegate(runner.Execute));
 
-            Scheduler = new Scheduler(DataConnection, WorkThread);
+            Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
 
             WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
             WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
