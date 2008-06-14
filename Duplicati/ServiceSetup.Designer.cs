@@ -54,9 +54,7 @@ namespace Duplicati
             this.OKBtn = new System.Windows.Forms.Button();
             this.TreeMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.playToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.MainTree = new System.Windows.Forms.TreeView();
             this.SetupMenuStrip = new System.Windows.Forms.ToolStrip();
             this.AddButton = new System.Windows.Forms.ToolStripDropDownButton();
             this.AddFolderMenu = new System.Windows.Forms.ToolStripMenuItem();
@@ -65,8 +63,10 @@ namespace Duplicati
             this.PropertyTabs = new System.Windows.Forms.TabControl();
             this.OccurencePage = new System.Windows.Forms.TabPage();
             this.FilePage = new System.Windows.Forms.TabPage();
+            this.backupTreeView = new Duplicati.HelperControls.BackupTreeView();
             this.scheduleSettings = new Duplicati.Service_controls.ScheduleSettings();
             this.taskSettings = new Duplicati.Service_controls.TaskSettingsBase();
+            this.restoreFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1.SuspendLayout();
             this.TreeMenuStrip.SuspendLayout();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -113,9 +113,10 @@ namespace Duplicati
             // TreeMenuStrip
             // 
             this.TreeMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.playToolStripMenuItem});
+            this.playToolStripMenuItem,
+            this.restoreFilesToolStripMenuItem});
             this.TreeMenuStrip.Name = "TreeMenuStrip";
-            this.TreeMenuStrip.Size = new System.Drawing.Size(165, 48);
+            this.TreeMenuStrip.Size = new System.Drawing.Size(165, 70);
             this.TreeMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.TreeMenuStrip_Opening);
             // 
             // playToolStripMenuItem
@@ -126,13 +127,6 @@ namespace Duplicati
             this.playToolStripMenuItem.Text = "Run backup now";
             this.playToolStripMenuItem.Click += new System.EventHandler(this.playToolStripMenuItem_Click);
             // 
-            // imageList
-            // 
-            this.imageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList.ImageStream")));
-            this.imageList.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageList.Images.SetKeyName(0, "Folder");
-            this.imageList.Images.SetKeyName(1, "Backup");
-            // 
             // splitContainer1
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -141,7 +135,7 @@ namespace Duplicati
             // 
             // splitContainer1.Panel1
             // 
-            this.splitContainer1.Panel1.Controls.Add(this.MainTree);
+            this.splitContainer1.Panel1.Controls.Add(this.backupTreeView);
             this.splitContainer1.Panel1.Controls.Add(this.SetupMenuStrip);
             // 
             // splitContainer1.Panel2
@@ -150,21 +144,6 @@ namespace Duplicati
             this.splitContainer1.Size = new System.Drawing.Size(440, 477);
             this.splitContainer1.SplitterDistance = 146;
             this.splitContainer1.TabIndex = 1;
-            // 
-            // MainTree
-            // 
-            this.MainTree.ContextMenuStrip = this.TreeMenuStrip;
-            this.MainTree.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.MainTree.ImageIndex = 0;
-            this.MainTree.ImageList = this.imageList;
-            this.MainTree.LabelEdit = true;
-            this.MainTree.Location = new System.Drawing.Point(0, 25);
-            this.MainTree.Name = "MainTree";
-            this.MainTree.SelectedImageIndex = 0;
-            this.MainTree.Size = new System.Drawing.Size(146, 452);
-            this.MainTree.TabIndex = 1;
-            this.MainTree.AfterLabelEdit += new System.Windows.Forms.NodeLabelEditEventHandler(this.MainTree_AfterLabelEdit);
-            this.MainTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.MainTree_AfterSelect);
             // 
             // SetupMenuStrip
             // 
@@ -252,6 +231,14 @@ namespace Duplicati
             this.FilePage.Text = "Files";
             this.FilePage.UseVisualStyleBackColor = true;
             // 
+            // backupTreeView
+            // 
+            this.backupTreeView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.backupTreeView.Location = new System.Drawing.Point(0, 25);
+            this.backupTreeView.Name = "backupTreeView";
+            this.backupTreeView.Size = new System.Drawing.Size(146, 452);
+            this.backupTreeView.TabIndex = 1;
+            // 
             // scheduleSettings
             // 
             this.scheduleSettings.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -267,6 +254,14 @@ namespace Duplicati
             this.taskSettings.Name = "taskSettings";
             this.taskSettings.Size = new System.Drawing.Size(282, 451);
             this.taskSettings.TabIndex = 0;
+            // 
+            // restoreFilesToolStripMenuItem
+            // 
+            this.restoreFilesToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("restoreFilesToolStripMenuItem.Image")));
+            this.restoreFilesToolStripMenuItem.Name = "restoreFilesToolStripMenuItem";
+            this.restoreFilesToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.restoreFilesToolStripMenuItem.Text = "Restore files...";
+            this.restoreFilesToolStripMenuItem.Click += new System.EventHandler(this.restoreFilesToolStripMenuItem_Click);
             // 
             // ServiceSetup
             // 
@@ -300,7 +295,6 @@ namespace Duplicati
         private System.Windows.Forms.Button CancelBtn;
         private System.Windows.Forms.Button OKBtn;
         private System.Windows.Forms.SplitContainer splitContainer1;
-        private System.Windows.Forms.TreeView MainTree;
         private System.Windows.Forms.ToolStrip SetupMenuStrip;
         private System.Windows.Forms.TabControl PropertyTabs;
         private System.Windows.Forms.TabPage OccurencePage;
@@ -313,6 +307,7 @@ namespace Duplicati
         private Duplicati.Service_controls.TaskSettingsBase taskSettings;
         private System.Windows.Forms.ContextMenuStrip TreeMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem playToolStripMenuItem;
-        private System.Windows.Forms.ImageList imageList;
+        private Duplicati.HelperControls.BackupTreeView backupTreeView;
+        private System.Windows.Forms.ToolStripMenuItem restoreFilesToolStripMenuItem;
     }
 }

@@ -158,7 +158,6 @@ namespace Duplicati
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo = SetupEnv(task, forceFull ? DuplicityTaskType.FullBackup : DuplicityTaskType.IncrementalBackup, fullAfter);
             p.Start();
-
             p.WaitForExit();
 
 

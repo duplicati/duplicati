@@ -50,6 +50,18 @@
     <Compile Include="DatabaseUpgrader.cs" />
     <Compile Include="DuplicityOutputParser.cs" />
     <Compile Include="DuplicityRunner.cs" />
+    <Compile Include="HelperControls\BackupItems.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\BackupItems.Designer.cs">
+      <DependentUpon>BackupItems.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\BackupTreeView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\BackupTreeView.Designer.cs">
+      <DependentUpon>BackupTreeView.cs</DependentUpon>
+    </Compile>
     <Compile Include="KeyGenerator.cs" />
     <Compile Include="LogViewer.cs">
       <SubType>Form</SubType>
@@ -128,6 +140,10 @@
       <Project>{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}</Project>
       <Name>LightDatamodel</Name>
     </ProjectReference>
+    <ProjectReference Include="..\WizardForm\WizardForm.csproj">
+      <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
+      <Name>WizardForm</Name>
+    </ProjectReference>
     <ProjectReference Include="Datamodel\Datamodel.csproj">
       <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
       <Name>Datamodel</Name>
@@ -139,6 +155,14 @@
       <DependentUpon>ApplicationSetup.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Database schema\Schema.sql" />
+    <EmbeddedResource Include="HelperControls\BackupItems.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>BackupItems.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\BackupTreeView.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>BackupTreeView.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="LogViewer.resx">
       <SubType>Designer</SubType>
       <DependentUpon>LogViewer.cs</DependentUpon>
@@ -194,6 +218,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="TrayUnknown.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Wizard pages\Add backup\" />
+    <Folder Include="Wizard pages\Delete backup\" />
+    <Folder Include="Wizard pages\Modify backup\" />
+    <Folder Include="Wizard pages\Rearrange\" />
+    <Folder Include="Wizard pages\Restore\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
