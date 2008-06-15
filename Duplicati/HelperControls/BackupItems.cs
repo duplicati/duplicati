@@ -24,14 +24,87 @@ using System.Drawing;
 using System.Data;
 using System.Text;
 using System.Windows.Forms;
+using System.Threading;
+using Duplicati.Datamodel;
 
 namespace Duplicati.HelperControls
 {
     public partial class BackupItems : UserControl
     {
+        private Thread m_workThread;
+        private Schedule m_schedule;
+        private string[] m_backups;
+        private Exception m_exception;
+
+        public event EventHandler ListLoaded;
+        public event EventHandler LoadError;
+
         public BackupItems()
         {
             InitializeComponent();
         }
+
+        public void StartLoad(Schedule schedule)
+        {
+            if (m_workThread != null)
+                throw new Exception("Cannot re-use the loader dialog");
+
+            m_exception = null;
+            m_backups = null;
+            m_schedule = schedule;
+            m_workThread = new Thread(new ThreadStart(Runner));
+            m_workThread.Start();
+        }
+
+        private void Loaded(object sender, EventArgs e)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(new EventHandler(Loaded), sender, e);
+            else
+            {
+                WaitPanel.Visible = false;
+
+                if (m_exception != null)
+                {
+                    progressBar.Visible = false;
+                    statusLabel.Text = "Error: " + m_exception.Message;
+                    if (LoadError != null)
+                        LoadError(this, null);
+                    return;
+                }
+
+                try
+                {
+                    listView.BeginUpdate();
+                    listView.Items.Clear();
+
+                    foreach (string s in m_backups)
+                        listView.Items.Add(s);
+                }
+                finally
+                {
+                    listView.EndUpdate();
+                }
+
+                if (ListLoaded != null)
+                    ListLoaded(this, null);
+            }
+        }
+
+        private void Runner()
+        {
+            try
+            {
+                DuplicityRunner r = new DuplicityRunner(Application.StartupPath, null);
+                m_backups = r.ListBackups(m_schedule);
+            }
+            catch (Exception e)
+            {
+                m_exception = e;
+            }
+
+            Loaded(null, null);
+        }
+
     }
 }

@@ -25,6 +25,22 @@ using System.ComponentModel;
 
 namespace System.Windows.Forms.Wizard
 {
+    public enum PageChangedDirection
+    {
+        Next,
+        Back
+    }
+
+    public class PageChangedArgs : CancelEventArgs
+    {
+        public IWizardControl NextPage;
+        public bool TreatAsLast;
+        public PageChangedDirection Direction;
+
+    }
+
+    public delegate void PageChangeHandler(object sender, PageChangedArgs args);
+
     public interface IWizardForm
     {
         Button NextButton { get; }
@@ -44,6 +60,8 @@ namespace System.Windows.Forms.Wizard
         void UpdateButtons();
         void UpdateDisplay();
 
+        event PageChangeHandler NextPressed;
+        event PageChangeHandler BackPressed;
         event CancelEventHandler Finished;
         event EventHandler Cancelled;
     }

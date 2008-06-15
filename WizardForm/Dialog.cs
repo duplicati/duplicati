@@ -33,9 +33,12 @@ namespace System.Windows.Forms.Wizard
         private Image m_defaultImage;
         private string m_title;
         private IWizardControl m_currentPage;
+        private bool m_isLastPage = false;
 
         public event CancelEventHandler Finished;
         public event EventHandler Cancelled;
+        public event PageChangeHandler NextPressed;
+        public event PageChangeHandler BackPressed;
 
         public Dialog(string title)
             : this()
@@ -97,7 +100,8 @@ namespace System.Windows.Forms.Wizard
 
             _NextButton.Enabled = true;
             _BackButton.Enabled = m_currentPage != Pages[0];
-            if (m_currentPage == Pages[m_pages.Count - 1])
+
+            if (m_isLastPage)
                 _NextButton.Text = "Finish";
             else
                 _NextButton.Text = "Next >";
@@ -123,31 +127,60 @@ namespace System.Windows.Forms.Wizard
 
         private void BackBtn_Click(object sender, EventArgs e)
         {
+            PageChangedArgs args = new PageChangedArgs();
+            args.Cancel = false;
+            args.NextPage = null;
             int pos = Pages.IndexOf(CurrentPage);
             if (pos > 0)
-                CurrentPage = Pages[pos - 1];
+                args.NextPage = Pages[pos - 1];
+            args.TreatAsLast = false;
+            args.Direction = PageChangedDirection.Back;
+
+            if (BackPressed != null)
+                BackPressed(this, args);
+
+            if (args.Cancel || args.NextPage == null)
+                return;
+
+            m_isLastPage = args.TreatAsLast;
+            CurrentPage = args.NextPage;
         }
 
         private void NextBtn_Click(object sender, EventArgs e)
         {
+            if (m_isLastPage)
+            {
+                if (Finished != null)
+                {
+                    CancelEventArgs ce = new CancelEventArgs(false);
+                    Finished(this, ce);
+                    if (ce.Cancel)
+                        return;
+                }
+
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+
+                return;
+            }
+
+            PageChangedArgs args = new PageChangedArgs();
+            args.Cancel = false;
+            args.Direction = PageChangedDirection.Next;
+            args.NextPage = null;
+
             int pos = Pages.IndexOf(CurrentPage);
             if (pos >= 0)
-                if (pos == Pages.Count - 1)
-                {
-                    if (Finished != null)
-                    {
-                        CancelEventArgs ce = new CancelEventArgs(false);
-                        Finished(this, ce);
-                        if (ce.Cancel)
-                            return;
-                    }
+                args.NextPage = Pages[pos + 1];
+            args.TreatAsLast = Pages.IndexOf(args.NextPage) == Pages.Count - 1;
 
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
-                }
-                else
-                    CurrentPage = Pages[pos + 1];
+            if (NextPressed != null)
+                NextPressed(this, args);
+            if (args.Cancel || args.NextPage == null)
+                return;
 
+            m_isLastPage = args.TreatAsLast;
+            CurrentPage = args.NextPage;
         }
 
         private void CancelBtn_Click(object sender, EventArgs e)

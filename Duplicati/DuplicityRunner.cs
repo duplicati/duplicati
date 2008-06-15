@@ -197,6 +197,20 @@ namespace Duplicati
             return logentry;
         }
 
+        public string[] ListBackups(Schedule schedule)
+        {
+            Task t = schedule.Tasks[0];
+            System.Diagnostics.Process p = new System.Diagnostics.Process();
+            p.StartInfo = SetupEnv(t, DuplicityTaskType.List, null);
+            p.Start();
+            p.WaitForExit();
+
+            string output = p.StandardOutput.ReadToEnd();
+            string err = p.StandardError.ReadToEnd();
+
+            return output.Split('\n');
+        }
+
         public string IncrementalBackup(Task task)
         {
             return PerformBackup(task, false, null);

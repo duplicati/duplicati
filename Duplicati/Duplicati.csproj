@@ -133,6 +133,12 @@
       <DependentUpon>ServiceStatus.cs</DependentUpon>
     </Compile>
     <Compile Include="Timeparser.cs" />
+    <Compile Include="Wizard pages\Restore\SelectBackup.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\SelectBackup.Designer.cs">
+      <DependentUpon>SelectBackup.cs</DependentUpon>
+    </Compile>
     <Compile Include="WorkerThread.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -214,6 +220,10 @@
     <EmbeddedResource Include="Icons\Status.ico" />
     <EmbeddedResource Include="Icons\Settings.ico" />
     <EmbeddedResource Include="Icons\Time.ico" />
+    <EmbeddedResource Include="Wizard pages\Restore\SelectBackup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectBackup.cs</DependentUpon>
+    </EmbeddedResource>
     <Content Include="sqlite3.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -224,7 +234,6 @@
     <Folder Include="Wizard pages\Delete backup\" />
     <Folder Include="Wizard pages\Modify backup\" />
     <Folder Include="Wizard pages\Rearrange\" />
-    <Folder Include="Wizard pages\Restore\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
