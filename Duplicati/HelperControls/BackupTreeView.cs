@@ -157,6 +157,10 @@ namespace Duplicati.HelperControls
 
             Schedule s = n.Tag as Schedule;
 
+            RestoreBackup dlg = new RestoreBackup();
+            dlg.Setup(s);
+            dlg.ShowDialog(this);
+
         }
 
 

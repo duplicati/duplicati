@@ -1,6 +1,6 @@
-namespace Duplicati.Wizard_pages.Restore
+namespace Duplicati.Wizard_pages
 {
-    partial class SelectBackup
+    partial class MainPage
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,42 +28,18 @@ namespace Duplicati.Wizard_pages.Restore
         /// </summary>
         private void InitializeComponent()
         {
-            this.backupItems1 = new Duplicati.HelperControls.BackupItems();
-            this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
-            // backupItems1
-            // 
-            this.backupItems1.Location = new System.Drawing.Point(16, 40);
-            this.backupItems1.Name = "backupItems1";
-            this.backupItems1.Size = new System.Drawing.Size(480, 184);
-            this.backupItems1.TabIndex = 0;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(16, 16);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(187, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Select the backup you want to restore";
-            // 
-            // SelectBackup
+            // MainPage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.backupItems1);
-            this.Name = "SelectBackup";
+            this.Name = "MainPage";
             this.Size = new System.Drawing.Size(506, 242);
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
-
-        private Duplicati.HelperControls.BackupItems backupItems1;
-        private System.Windows.Forms.Label label1;
     }
 }

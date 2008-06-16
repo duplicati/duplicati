@@ -30,6 +30,8 @@ namespace Duplicati
     /// </summary>
     public static class Timeparser
     {
+        private static readonly List<string> MONTH_NAMES = new List<string>(new string[] { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" });
+    
         public static TimeSpan ParseTimeSpan(string datestring)
         {
             DateTime dt = new DateTime(0);
@@ -107,6 +109,37 @@ namespace Duplicati
                 throw new Exception("Unparsed data: " + datestring.Substring(previndex));
 
             return offset;
+        }
+
+        public static DateTime ParseDuplicityFileTime(string filetime)
+        {
+            string[] parts = filetime.Trim().Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+
+            int day, mon, year;
+
+            mon = MONTH_NAMES.IndexOf(parts[1].Trim().ToLower());
+            if (mon < 0)
+                throw new Exception("Unable to parse date: " + filetime + ", unkown month: " + parts[1]);
+
+            mon++;
+
+            day = -1;
+            year = -1;
+            int.TryParse(parts[2].Trim(), out day);
+            if (day < 0)
+                throw new Exception("Unable to parse date: " + filetime + ", unkown day: " + parts[2]);
+
+            int.TryParse(parts[4].Trim(), out year);
+            if (day < 0)
+                throw new Exception("Unable to parse date: " + filetime + ", unkown day: " + parts[2]);
+
+            DateTime t;
+            if (!DateTime.TryParse(parts[3].Trim(),null,  System.Globalization.DateTimeStyles.NoCurrentDateDefault, out t))
+                throw new Exception("Unable to parse date: " + filetime + ", invalid time: " + parts[3]);
+
+
+            return new DateTime(year, mon, day).Add(t.TimeOfDay);
+
         }
     }
 }

@@ -7,44 +7,45 @@ using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 
-namespace Duplicati.Wizard_pages.Restore
+namespace Duplicati.Wizard_pages
 {
-    public partial class SelectBackup : UserControl, IWizardControl
+    public partial class MainPage : UserControl, IWizardControl
     {
-        public SelectBackup()
+        public MainPage()
         {
             InitializeComponent();
         }
 
         #region IWizardControl Members
 
-        Control IWizardControl.Control
+        public new Control Control
         {
             get { return this; }
         }
 
-        string IWizardControl.Title
+        public string Title
         {
-            get { return "Select the backup to restore"; }
+            get { return "Welcome to the Duplicati Wizard"; }
         }
 
-        string IWizardControl.HelpText
+        public string HelpText
         {
-            get { return "The list below shows all the avalible backups. Select one to restore"; }
+            get { return "Please select the action you want to perform below"; }
         }
 
-        Image IWizardControl.Image
+        public Image Image
         {
             get { return null; }
         }
 
-        bool IWizardControl.FullSize
+        public bool FullSize
         {
             get { return false; }
         }
 
-        void IWizardControl.Displayed(IWizardForm owner)
+        public void Displayed(IWizardForm owner)
         {
+            
         }
 
         #endregion

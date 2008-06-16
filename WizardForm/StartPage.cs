@@ -27,7 +27,7 @@ using System.Windows.Forms;
 
 namespace System.Windows.Forms.Wizard
 {
-    public partial class StartPage : UserControl
+    public partial class StartPage : UserControl, IWizardControl
     {
         public StartPage()
         {
@@ -40,5 +40,39 @@ namespace System.Windows.Forms.Wizard
             WizardTitle.Text = title;
             WizardIntroduction.Text = introduction;
         }
+
+        #region IWizardControl Members
+
+        Control IWizardControl.Control
+        {
+            get { return this; }
+        }
+
+        public virtual string Title
+        {
+            get { return WizardTitle.Text; }
+        }
+
+        public virtual string HelpText
+        {
+            get { return WizardIntroduction.Text; }
+        }
+
+        public virtual Image Image
+        {
+            get { return null; }
+        }
+
+        public virtual bool FullSize
+        {
+            get { return true; }
+        }
+
+        public virtual void Displayed(IWizardForm owner)
+        {
+            
+        }
+
+        #endregion
     }
 }

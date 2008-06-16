@@ -103,12 +103,19 @@ namespace Duplicati
                     break;
                 case DuplicityTaskType.RemoveAllButNFull:
                 case DuplicityTaskType.RemoveOlderThan:
+                case DuplicityTaskType.List:
                     args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.GetDestinationPath()) + "\"");
                     break;
                 case DuplicityTaskType.Restore:
-                case DuplicityTaskType.List:
+                    if (!string.IsNullOrEmpty(extraparam))
+                    {
+                        args.Add("-t");
+                        args.Add(extraparam);
+                    }
+
                     args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.GetDestinationPath()) + "\"");
                     args.Add("\"" + System.Environment.ExpandEnvironmentVariables(task.SourcePath) + "\"");
+                    
                     break;
                 default:
                     throw new Exception("Bad duplicity operation given: " + type.ToString());
@@ -197,6 +204,52 @@ namespace Duplicati
             return logentry;
         }
 
+        public string Restore(Schedule schedule, DateTime when)
+        {
+            DateTime beginTime = DateTime.Now;
+
+            Task task = schedule.Tasks[0];
+            System.Diagnostics.Process p = new System.Diagnostics.Process();
+            p.StartInfo = SetupEnv(schedule.Tasks[0], DuplicityTaskType.Restore, when.Year < 10 ? null : when.ToString("s"));
+            p.Start();
+            p.WaitForExit();
+
+            string errorstream = p.StandardError.ReadToEnd();
+            string outstream = p.StandardOutput.ReadToEnd();
+
+            string logentry = "";
+            if (!string.IsNullOrEmpty(errorstream))
+            {
+                string tmp = errorstream.Replace("gpg: CAST5 encrypted data", "").Replace("gpg: encrypted with 1 passphrase", "").Trim();
+
+                if (tmp.Length > 0)
+                    logentry += "** Error stream: \r\n" + errorstream + "\r\n**\r\n";
+            }
+            logentry += outstream;
+
+            lock (Program.MainLock)
+            {
+                Log l = task.DataParent.Add<Log>();
+                LogBlob lb = task.DataParent.Add<LogBlob>();
+                lb.StringData = logentry;
+
+                l.LogBlob = lb;
+                task.Logs.Add(l);
+
+                //Keep some of the data in an easy to read manner
+                DuplicityOutputParser.ParseData(l);
+                l.SubAction = "Primary";
+                l.Action = "Restore";
+                l.BeginTime = beginTime;
+                l.EndTime = DateTime.Now;
+
+                task.DataParent.CommitAll();
+                Program.DataConnection.CommitAll();
+            }
+
+            return logentry;
+        }
+
         public string[] ListBackups(Schedule schedule)
         {
             Task t = schedule.Tasks[0];
@@ -208,7 +261,39 @@ namespace Duplicati
             string output = p.StandardOutput.ReadToEnd();
             string err = p.StandardError.ReadToEnd();
 
-            return output.Split('\n');
+            const string DIVIDER = "-------------------------\r\n";
+            const string HEADERS = " Type of backup set:                            Time:      Num volumes:";
+
+            List<string> res = new List<string>();
+
+            foreach(string part in output.Split(new string[] { DIVIDER },  StringSplitOptions.RemoveEmptyEntries))
+                if (part.IndexOf(HEADERS) >= 0)
+                {
+                    bool passedHeader = false;
+                    foreach (string line in part.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        if (line.StartsWith(HEADERS))
+                            passedHeader = true;
+                        else if (passedHeader)
+                        {
+                            string tmp = line.Trim();
+                            if (tmp.StartsWith("Full"))
+                                tmp = tmp.Substring("Full".Length).Trim();
+                            else if (tmp.StartsWith("Incremental"))
+                                tmp = tmp.Substring("Incremental".Length).Trim();
+
+                            string datetime = tmp.Substring(0, tmp.LastIndexOf(' ')).Trim();
+                            DateTime dt;
+                            /*if (DateTime.TryParse(datetime, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out dt))*/
+                                res.Add(datetime);
+                        }
+                    }
+                }
+
+
+            //System.Text.RegularExpressions.Regex regexp = new System.Text.RegularExpressions.Regex("----------------
+
+            return res.ToArray();
         }
 
         public string IncrementalBackup(Task task)

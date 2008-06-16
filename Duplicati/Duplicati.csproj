@@ -89,6 +89,12 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="RestoreBackup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RestoreBackup.Designer.cs">
+      <DependentUpon>RestoreBackup.cs</DependentUpon>
+    </Compile>
     <Compile Include="Scheduler.cs" />
     <Compile Include="Service controls\Backends\FileSettings.cs">
       <SubType>UserControl</SubType>
@@ -133,6 +139,12 @@
       <DependentUpon>ServiceStatus.cs</DependentUpon>
     </Compile>
     <Compile Include="Timeparser.cs" />
+    <Compile Include="Wizard pages\MainPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\MainPage.Designer.cs">
+      <DependentUpon>MainPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Restore\SelectBackup.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -172,6 +184,10 @@
     <EmbeddedResource Include="LogViewer.resx">
       <SubType>Designer</SubType>
       <DependentUpon>LogViewer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RestoreBackup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>RestoreBackup.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Service controls\Backends\FileSettings.resx">
       <SubType>Designer</SubType>
@@ -220,6 +236,10 @@
     <EmbeddedResource Include="Icons\Status.ico" />
     <EmbeddedResource Include="Icons\Settings.ico" />
     <EmbeddedResource Include="Icons\Time.ico" />
+    <EmbeddedResource Include="Wizard pages\MainPage.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>MainPage.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Restore\SelectBackup.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SelectBackup.cs</DependentUpon>

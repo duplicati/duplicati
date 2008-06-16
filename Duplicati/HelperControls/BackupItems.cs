@@ -44,7 +44,7 @@ namespace Duplicati.HelperControls
             InitializeComponent();
         }
 
-        public void StartLoad(Schedule schedule)
+        public void Setup(Schedule schedule)
         {
             if (m_workThread != null)
                 throw new Exception("Cannot re-use the loader dialog");
@@ -75,6 +75,7 @@ namespace Duplicati.HelperControls
 
                 try
                 {
+                    listView.Visible = true;
                     listView.BeginUpdate();
                     listView.Items.Clear();
 

@@ -123,6 +123,8 @@ namespace System.Windows.Forms.Wizard
             ContentPanel.Controls.Add(page.Control);
             page.Control.Dock = DockStyle.Fill;
             page.Displayed(this);
+            if (page.Control as IControl != null)
+                (page.Control as IControl).Displayed(this);
         }
 
         private void BackBtn_Click(object sender, EventArgs e)

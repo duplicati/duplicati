@@ -93,9 +93,9 @@ namespace Duplicati.HelperControls
 
         #endregion
 
-        private System.Windows.Forms.ListView listView;
         private System.Windows.Forms.Label statusLabel;
         private System.Windows.Forms.ProgressBar progressBar;
         private System.Windows.Forms.Panel WaitPanel;
+        public System.Windows.Forms.ListView listView;
     }
 }
