@@ -140,6 +140,30 @@
     </Compile>
     <Compile Include="TaskPackages.cs" />
     <Compile Include="Timeparser.cs" />
+    <Compile Include="Wizard pages\Add backup\IncrementalSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\IncrementalSettings.Designer.cs">
+      <DependentUpon>IncrementalSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\PasswordSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\PasswordSettings.Designer.cs">
+      <DependentUpon>PasswordSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectFiles.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectFiles.Designer.cs">
+      <DependentUpon>SelectFiles.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectWhen.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectWhen.Designer.cs">
+      <DependentUpon>SelectWhen.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\MainPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -237,6 +261,22 @@
     <EmbeddedResource Include="Icons\Status.ico" />
     <EmbeddedResource Include="Icons\Settings.ico" />
     <EmbeddedResource Include="Icons\Time.ico" />
+    <EmbeddedResource Include="Wizard pages\Add backup\IncrementalSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>IncrementalSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\PasswordSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>PasswordSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\SelectFiles.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectFiles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\SelectWhen.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectWhen.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\MainPage.resx">
       <SubType>Designer</SubType>
       <DependentUpon>MainPage.cs</DependentUpon>
@@ -251,7 +291,6 @@
     <Content Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Wizard pages\Add backup\" />
     <Folder Include="Wizard pages\Delete backup\" />
     <Folder Include="Wizard pages\Modify backup\" />
     <Folder Include="Wizard pages\Rearrange\" />
