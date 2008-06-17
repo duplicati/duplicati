@@ -66,7 +66,7 @@ namespace Duplicati
         /// <summary>
         /// This is the working thread
         /// </summary>
-        public static WorkerThread<Duplicati.Datamodel.Schedule> WorkThread;
+        public static WorkerThread<IDuplicityTask> WorkThread;
 
         /// <summary>
         /// The main entry point for the application.
@@ -121,7 +121,7 @@ namespace Duplicati
             ApplicationSettings = new ApplicationSettings(DataConnection);
             DuplicityRunner runner = new DuplicityRunner(Application.StartupPath, null);
 
-            WorkThread = new WorkerThread<Duplicati.Datamodel.Schedule>(new WorkerThread<Duplicati.Datamodel.Schedule>.ProcessItemDelegate(runner.Execute));
+            WorkThread = new WorkerThread<IDuplicityTask>(new WorkerThread<IDuplicityTask>.ProcessItemDelegate(runner.ExecuteTask));
 
             Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
 
@@ -150,7 +150,7 @@ namespace Duplicati
         static void WorkThread_StartingWork(object sender, EventArgs e)
         {
             TrayIcon.Icon = RunningIcon;
-            TrayIcon.Text = "Duplicati running " + (WorkThread.CurrentTask == null ? "" : WorkThread.CurrentTask.Name);
+            TrayIcon.Text = "Duplicati running " + (WorkThread.CurrentTask == null ? "" : WorkThread.CurrentTask.Schedule.Name);
         }
 
         static void WorkThread_CompletedWork(object sender, EventArgs e)
@@ -184,7 +184,7 @@ namespace Duplicati
             ShowStatus();
         }
 
-        private static void ShowStatus()
+        public static void ShowStatus()
         {
             if (StatusDialog == null || !StatusDialog.Visible)
                 StatusDialog = new ServiceStatus();
@@ -193,7 +193,7 @@ namespace Duplicati
             StatusDialog.Activate();
         }
 
-        private static void ShowSettings()
+        public static void ShowSettings()
         {
             if (SetupDialog == null || !SetupDialog.Visible)
                 SetupDialog = new ServiceSetup();
@@ -202,7 +202,7 @@ namespace Duplicati
             SetupDialog.Activate();
         }
 
-        private static void ShowSetup()
+        public static void ShowSetup()
         {
             lock (MainLock)
             {

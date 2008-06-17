@@ -138,6 +138,7 @@
     <Compile Include="ServiceStatus.Designer.cs">
       <DependentUpon>ServiceStatus.cs</DependentUpon>
     </Compile>
+    <Compile Include="TaskPackages.cs" />
     <Compile Include="Timeparser.cs" />
     <Compile Include="Wizard pages\MainPage.cs">
       <SubType>UserControl</SubType>

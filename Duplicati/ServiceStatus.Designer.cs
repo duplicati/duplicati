@@ -55,15 +55,15 @@ namespace Duplicati
             this.label5 = new System.Windows.Forms.Label();
             this.advancedPanel = new System.Windows.Forms.Panel();
             this.simplePanel = new System.Windows.Forms.Panel();
-            this.statusImage = new System.Windows.Forms.PictureBox();
-            this.ShowAdvanced = new System.Windows.Forms.Button();
-            this.CurrentStatus = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
             this.recentBackups = new System.Windows.Forms.ListView();
             this.columnHeader1 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader2 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader3 = new System.Windows.Forms.ColumnHeader();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
+            this.statusImage = new System.Windows.Forms.PictureBox();
+            this.ShowAdvanced = new System.Windows.Forms.Button();
+            this.CurrentStatus = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
             this.advancedPanel.SuspendLayout();
             this.simplePanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).BeginInit();
@@ -127,43 +127,6 @@ namespace Duplicati
             this.simplePanel.Size = new System.Drawing.Size(328, 160);
             this.simplePanel.TabIndex = 11;
             // 
-            // statusImage
-            // 
-            this.statusImage.Location = new System.Drawing.Point(0, 0);
-            this.statusImage.Name = "statusImage";
-            this.statusImage.Size = new System.Drawing.Size(32, 32);
-            this.statusImage.TabIndex = 14;
-            this.statusImage.TabStop = false;
-            // 
-            // ShowAdvanced
-            // 
-            this.ShowAdvanced.Location = new System.Drawing.Point(224, 48);
-            this.ShowAdvanced.Name = "ShowAdvanced";
-            this.ShowAdvanced.Size = new System.Drawing.Size(96, 24);
-            this.ShowAdvanced.TabIndex = 13;
-            this.ShowAdvanced.Text = "Advanced >>>";
-            this.ShowAdvanced.UseVisualStyleBackColor = true;
-            this.ShowAdvanced.Click += new System.EventHandler(this.ShowAdvanced_Click);
-            // 
-            // CurrentStatus
-            // 
-            this.CurrentStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.CurrentStatus.Location = new System.Drawing.Point(40, 0);
-            this.CurrentStatus.Name = "CurrentStatus";
-            this.CurrentStatus.Size = new System.Drawing.Size(280, 32);
-            this.CurrentStatus.TabIndex = 12;
-            this.CurrentStatus.Text = "Waiting for next backup";
-            this.CurrentStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(0, 56);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(145, 13);
-            this.label1.TabIndex = 10;
-            this.label1.Text = "Recently completed backups";
-            // 
             // recentBackups
             // 
             this.recentBackups.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
@@ -204,6 +167,43 @@ namespace Duplicati
             this.imageList.Images.SetKeyName(1, "Warning");
             this.imageList.Images.SetKeyName(2, "Error");
             // 
+            // statusImage
+            // 
+            this.statusImage.Location = new System.Drawing.Point(0, 0);
+            this.statusImage.Name = "statusImage";
+            this.statusImage.Size = new System.Drawing.Size(32, 32);
+            this.statusImage.TabIndex = 14;
+            this.statusImage.TabStop = false;
+            // 
+            // ShowAdvanced
+            // 
+            this.ShowAdvanced.Location = new System.Drawing.Point(224, 48);
+            this.ShowAdvanced.Name = "ShowAdvanced";
+            this.ShowAdvanced.Size = new System.Drawing.Size(96, 24);
+            this.ShowAdvanced.TabIndex = 13;
+            this.ShowAdvanced.Text = "Advanced >>>";
+            this.ShowAdvanced.UseVisualStyleBackColor = true;
+            this.ShowAdvanced.Click += new System.EventHandler(this.ShowAdvanced_Click);
+            // 
+            // CurrentStatus
+            // 
+            this.CurrentStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.CurrentStatus.Location = new System.Drawing.Point(40, 0);
+            this.CurrentStatus.Name = "CurrentStatus";
+            this.CurrentStatus.Size = new System.Drawing.Size(280, 32);
+            this.CurrentStatus.TabIndex = 12;
+            this.CurrentStatus.Text = "Waiting for next backup";
+            this.CurrentStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(0, 56);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(145, 13);
+            this.label1.TabIndex = 10;
+            this.label1.Text = "Recently completed backups";
+            // 
             // ServiceStatus
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -213,11 +213,13 @@ namespace Duplicati
             this.Controls.Add(this.advancedPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ServiceStatus";
             this.Text = "Duplicati Status";
             this.Load += new System.EventHandler(this.ServiceStatus_Load);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.ServiceStatus_KeyUp);
             this.advancedPanel.ResumeLayout(false);
             this.advancedPanel.PerformLayout();
             this.simplePanel.ResumeLayout(false);

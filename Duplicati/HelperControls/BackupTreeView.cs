@@ -172,10 +172,10 @@ namespace Duplicati.HelperControls
             if (n.Tag as Schedule == null)
             {
                 foreach(TreeNode nx in FlattenTree(n.Nodes, false))
-                    Program.WorkThread.AddTask(nx.Tag as Schedule);
+                    Program.WorkThread.AddTask(new IncrementalBackupTask(nx.Tag as Schedule));
             }
             else
-                Program.WorkThread.AddTask(n.Tag as Schedule);
+                Program.WorkThread.AddTask(new IncrementalBackupTask(n.Tag as Schedule));
         }
 
         public void RemoveNode(TreeNode n)

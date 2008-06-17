@@ -43,8 +43,7 @@ namespace Duplicati
             Program.WorkThread.AddedWork += new EventHandler(WorkThread_AddedWork);
             Program.Scheduler.NewSchedule += new EventHandler(Scheduler_NewSchedule);
 
-            Schedule c = Program.WorkThread.CurrentTask;
-            if (c == null)
+            if (Program.WorkThread.CurrentTask == null)
                 WorkThread_CompletedWork(null, null);
             else
                 WorkThread_StartingWork(null, null);
@@ -94,8 +93,10 @@ namespace Duplicati
                 this.Invoke(new EventHandler(WorkThread_StartingWork), sender, e);
             else
             {
-                Schedule c = Program.WorkThread.CurrentTask;
-                CurrentStatus.Text = c == null ? "Waiting for next backup" : "Running " + c.Name;
+                Schedule c = Program.WorkThread.CurrentTask.Schedule;
+                string prefix = Program.WorkThread.CurrentTask.TaskType == DuplicityTaskType.Restore ? "Restore: " : "Backup: ";
+
+                CurrentStatus.Text = c == null ? "Waiting for next backup" : prefix + c.Name;
                 statusImage.Image = Program.WorkingImage;
                 WorkThread_AddedWork(sender, e);
             }
@@ -109,8 +110,8 @@ namespace Duplicati
             {
                 pendingBackups.Items.Clear();
                 //No locking here, the list is protected by the thread raising the event
-                foreach (Schedule s in Program.WorkThread.CurrentTasks)
-                    pendingBackups.Items.Add(s.Name == null ? "" : s.Name);
+                foreach (IDuplicityTask t in Program.WorkThread.CurrentTasks)
+                    pendingBackups.Items.Add(t.TaskType.ToString() + ": " + t.Schedule.Name == null ? "" : t.Schedule.Name);
 
             }
 
@@ -180,6 +181,16 @@ namespace Duplicati
             dlg.LogText.Text = l.LogBlob.StringData;
 
             dlg.ShowDialog(this);
+        }
+
+        private void ServiceStatus_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape)
+            {
+                this.DialogResult = DialogResult.Cancel;
+                this.Close();
+                e.Handled = true;
+            }
         }
 
     }

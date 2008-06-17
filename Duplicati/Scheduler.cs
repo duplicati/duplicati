@@ -31,7 +31,7 @@ namespace Duplicati
         private Thread m_thread;
         private IDataFetcherCached m_connection;
         private volatile bool m_terminate;
-        private WorkerThread<Schedule> m_worker;
+        private WorkerThread<IDuplicityTask> m_worker;
         private AutoResetEvent m_event;
         private object m_lock = new object();
         private object m_datalock;
@@ -40,7 +40,7 @@ namespace Duplicati
 
         private Schedule[] m_schedule;
 
-        public Scheduler(IDataFetcherCached connection, WorkerThread<Schedule> worker, object datalock)
+        public Scheduler(IDataFetcherCached connection, WorkerThread<IDuplicityTask> worker, object datalock)
         {
             m_datalock = datalock;
             m_connection = connection;
@@ -96,7 +96,7 @@ namespace Duplicati
 
                         if (start <= DateTime.Now)
                         {
-                            m_worker.AddTask(sc);
+                            m_worker.AddTask(new IncrementalBackupTask(sc));
 
                             int i = 0;
                             while (start <= DateTime.Now && i++ < 500)

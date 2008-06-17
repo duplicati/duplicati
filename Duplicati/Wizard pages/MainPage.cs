@@ -18,7 +18,7 @@ namespace Duplicati.Wizard_pages
 
         #region IWizardControl Members
 
-        public new Control Control
+        public Control Control
         {
             get { return this; }
         }

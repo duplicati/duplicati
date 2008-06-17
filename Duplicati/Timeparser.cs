@@ -130,7 +130,7 @@ namespace Duplicati
                 throw new Exception("Unable to parse date: " + filetime + ", unkown day: " + parts[2]);
 
             int.TryParse(parts[4].Trim(), out year);
-            if (day < 0)
+            if (year < 0)
                 throw new Exception("Unable to parse date: " + filetime + ", unkown day: " + parts[2]);
 
             DateTime t;

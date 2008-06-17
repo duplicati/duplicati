@@ -43,9 +43,6 @@ namespace Duplicati
 
         private void OKBtn_Click(object sender, EventArgs e)
         {
-            //TODO: Should be able to enque this one
-            DuplicityRunner r = new DuplicityRunner(Application.StartupPath, null);
-
             DateTime dt = new DateTime();
             try
             {
@@ -59,7 +56,14 @@ namespace Duplicati
                 dt = new DateTime();
             }
 
-            r.Restore(m_schedule, dt);
+            if (System.IO.Directory.GetFileSystemEntries(TargetFolder.Text).Length > 0)
+                if (MessageBox.Show(this, "The selected folder is not empty.\r\nDo you want to restore there anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                    return;
+
+            Program.WorkThread.AddTask(new RestoreTask(m_schedule, TargetFolder.Text, dt));
+            Program.ShowStatus();
+            this.DialogResult = DialogResult.OK;
+            this.Close();
         }
     }
 }
