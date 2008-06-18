@@ -86,7 +86,11 @@ namespace System.Windows.Forms.Wizard
         public virtual IWizardControl CurrentPage
         {
             get { return m_currentPage; }
-            set { m_currentPage = value; DisplayPage(m_currentPage); }
+            set 
+            { 
+                m_currentPage = value; 
+                DisplayPage(m_currentPage); 
+            }
         }
 
         public virtual void UpdateButtons()
@@ -122,7 +126,9 @@ namespace System.Windows.Forms.Wizard
             ContentPanel.Controls.Clear();
             ContentPanel.Controls.Add(page.Control);
             page.Control.Dock = DockStyle.Fill;
-            page.Displayed(this);
+            UpdateButtons();
+
+            page.Enter(this);
             if (page.Control as IControl != null)
                 (page.Control as IControl).Displayed(this);
         }
@@ -150,6 +156,14 @@ namespace System.Windows.Forms.Wizard
 
         private void NextBtn_Click(object sender, EventArgs e)
         {
+            if (m_currentPage != null)
+            {
+                bool cancel = false;
+                m_currentPage.Leave(this, ref cancel);
+                if (cancel)
+                    return;
+            }
+
             if (m_isLastPage)
             {
                 if (Finished != null)
@@ -247,5 +261,11 @@ namespace System.Windows.Forms.Wizard
         }
 
         #endregion
+
+        private void Dialog_Load(object sender, EventArgs e)
+        {
+            if (this.Pages.Count > 0)
+                this.CurrentPage = Pages[0];
+        }
     }
 }

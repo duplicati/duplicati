@@ -30,9 +30,9 @@ namespace Duplicati.Wizard_pages
         {
             this.label1 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.radioButton1 = new System.Windows.Forms.RadioButton();
-            this.radioButton2 = new System.Windows.Forms.RadioButton();
-            this.radioButton3 = new System.Windows.Forms.RadioButton();
+            this.CreateNew = new System.Windows.Forms.RadioButton();
+            this.Edit = new System.Windows.Forms.RadioButton();
+            this.Restore = new System.Windows.Forms.RadioButton();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -47,46 +47,49 @@ namespace Duplicati.Wizard_pages
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.radioButton3);
-            this.panel1.Controls.Add(this.radioButton2);
-            this.panel1.Controls.Add(this.radioButton1);
+            this.panel1.Controls.Add(this.Restore);
+            this.panel1.Controls.Add(this.Edit);
+            this.panel1.Controls.Add(this.CreateNew);
             this.panel1.Location = new System.Drawing.Point(32, 32);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(440, 184);
             this.panel1.TabIndex = 1;
             // 
-            // radioButton1
+            // CreateNew
             // 
-            this.radioButton1.AutoSize = true;
-            this.radioButton1.Location = new System.Drawing.Point(0, 8);
-            this.radioButton1.Name = "radioButton1";
-            this.radioButton1.Size = new System.Drawing.Size(141, 17);
-            this.radioButton1.TabIndex = 0;
-            this.radioButton1.TabStop = true;
-            this.radioButton1.Text = "Schedule a new backup";
-            this.radioButton1.UseVisualStyleBackColor = true;
+            this.CreateNew.AutoSize = true;
+            this.CreateNew.Location = new System.Drawing.Point(0, 8);
+            this.CreateNew.Name = "CreateNew";
+            this.CreateNew.Size = new System.Drawing.Size(141, 17);
+            this.CreateNew.TabIndex = 0;
+            this.CreateNew.TabStop = true;
+            this.CreateNew.Text = "Schedule a new backup";
+            this.CreateNew.UseVisualStyleBackColor = true;
+            this.CreateNew.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
-            // radioButton2
+            // Edit
             // 
-            this.radioButton2.AutoSize = true;
-            this.radioButton2.Location = new System.Drawing.Point(0, 40);
-            this.radioButton2.Name = "radioButton2";
-            this.radioButton2.Size = new System.Drawing.Size(185, 17);
-            this.radioButton2.TabIndex = 1;
-            this.radioButton2.TabStop = true;
-            this.radioButton2.Text = "Edit or remove an existing backup";
-            this.radioButton2.UseVisualStyleBackColor = true;
+            this.Edit.AutoSize = true;
+            this.Edit.Location = new System.Drawing.Point(0, 40);
+            this.Edit.Name = "Edit";
+            this.Edit.Size = new System.Drawing.Size(185, 17);
+            this.Edit.TabIndex = 1;
+            this.Edit.TabStop = true;
+            this.Edit.Text = "Edit or remove an existing backup";
+            this.Edit.UseVisualStyleBackColor = true;
+            this.Edit.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
-            // radioButton3
+            // Restore
             // 
-            this.radioButton3.AutoSize = true;
-            this.radioButton3.Location = new System.Drawing.Point(0, 72);
-            this.radioButton3.Name = "radioButton3";
-            this.radioButton3.Size = new System.Drawing.Size(154, 17);
-            this.radioButton3.TabIndex = 2;
-            this.radioButton3.TabStop = true;
-            this.radioButton3.Text = "Restore files from a backup";
-            this.radioButton3.UseVisualStyleBackColor = true;
+            this.Restore.AutoSize = true;
+            this.Restore.Location = new System.Drawing.Point(0, 72);
+            this.Restore.Name = "Restore";
+            this.Restore.Size = new System.Drawing.Size(154, 17);
+            this.Restore.TabIndex = 2;
+            this.Restore.TabStop = true;
+            this.Restore.Text = "Restore files from a backup";
+            this.Restore.UseVisualStyleBackColor = true;
+            this.Restore.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
             // MainPage
             // 
@@ -107,8 +110,8 @@ namespace Duplicati.Wizard_pages
 
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.RadioButton radioButton3;
-        private System.Windows.Forms.RadioButton radioButton2;
-        private System.Windows.Forms.RadioButton radioButton1;
+        private System.Windows.Forms.RadioButton Restore;
+        private System.Windows.Forms.RadioButton Edit;
+        private System.Windows.Forms.RadioButton CreateNew;
     }
 }

@@ -81,6 +81,31 @@ namespace Duplicati
         }
 
         /// <summary>
+        /// This will clear the pending queue
+        /// <param name="abortThread">True if the current running thread should be aborted</param>
+        /// </summary>
+        public void ClearQueue(bool abortThread)
+        {
+            lock (m_lock)
+                m_tasks.Clear();
+
+            if (abortThread)
+            {
+                try
+                {
+                    m_thread.Abort();
+                    m_thread.Join(500);
+                }
+                catch
+                {
+                }
+
+                m_thread = new Thread(new ThreadStart(Runner));
+                m_thread.Start();
+            }
+        }
+
+        /// <summary>
         /// Gets a reference to the currently executing task.
         /// BEWARE: This is not protected by a mutex, DO NOT MODIFY IT!!!!
         /// </summary>

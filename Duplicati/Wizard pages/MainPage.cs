@@ -11,6 +11,8 @@ namespace Duplicati.Wizard_pages
 {
     public partial class MainPage : UserControl, IWizardControl
     {
+        private IWizardForm m_owner;
+
         public MainPage()
         {
             InitializeComponent();
@@ -18,36 +20,53 @@ namespace Duplicati.Wizard_pages
 
         #region IWizardControl Members
 
-        public Control Control
+        Control IWizardControl.Control
         {
             get { return this; }
         }
 
-        public string Title
+        string IWizardControl.Title
         {
             get { return "Welcome to the Duplicati Wizard"; }
         }
 
-        public string HelpText
+        string IWizardControl.HelpText
         {
             get { return "Please select the action you want to perform below"; }
         }
 
-        public Image Image
+        Image IWizardControl.Image
         {
             get { return null; }
         }
 
-        public bool FullSize
+        bool IWizardControl.FullSize
         {
             get { return false; }
         }
 
-        public void Displayed(IWizardForm owner)
+        void IWizardControl.Enter(IWizardForm owner)
         {
-            
+            m_owner = owner;
+            UpdateButtonState();
+        }
+
+        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
+        {
+        }
+
+
+        private void UpdateButtonState()
+        {
+            if (m_owner != null)
+                m_owner.NextButton.Enabled = CreateNew.Checked | Edit.Checked | Restore.Checked;
         }
 
         #endregion
+
+        private void Radio_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateButtonState();
+        }
     }
 }

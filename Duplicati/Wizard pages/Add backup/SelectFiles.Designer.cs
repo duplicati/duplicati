@@ -33,12 +33,12 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.BrowseFolderButton = new System.Windows.Forms.Button();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
             this.DocumentGroup = new System.Windows.Forms.GroupBox();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.appdataSize = new System.Windows.Forms.Label();
+            this.desktopSize = new System.Windows.Forms.Label();
+            this.myMoviesSize = new System.Windows.Forms.Label();
+            this.myMusicSize = new System.Windows.Forms.Label();
+            this.myPicturesSize = new System.Windows.Forms.Label();
+            this.myDocumentsSize = new System.Windows.Forms.Label();
             this.checkBox6 = new System.Windows.Forms.CheckBox();
             this.checkBox5 = new System.Windows.Forms.CheckBox();
             this.checkBox4 = new System.Windows.Forms.CheckBox();
@@ -47,9 +47,9 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.DocumentsRadio = new System.Windows.Forms.RadioButton();
             this.FolderGroup = new System.Windows.Forms.GroupBox();
-            this.label8 = new System.Windows.Forms.Label();
+            this.customSize = new System.Windows.Forms.Label();
             this.FolderRadio = new System.Windows.Forms.RadioButton();
-            this.label9 = new System.Windows.Forms.Label();
+            this.totalSize = new System.Windows.Forms.Label();
             this.DocumentGroup.SuspendLayout();
             this.FolderGroup.SuspendLayout();
             this.SuspendLayout();
@@ -69,6 +69,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.TargetFolder.Name = "TargetFolder";
             this.TargetFolder.Size = new System.Drawing.Size(248, 20);
             this.TargetFolder.TabIndex = 1;
+            this.TargetFolder.Leave += new System.EventHandler(this.TargetFolder_Leave);
             // 
             // BrowseFolderButton
             // 
@@ -82,12 +83,12 @@ namespace Duplicati.Wizard_pages.Add_backup
             // 
             // DocumentGroup
             // 
-            this.DocumentGroup.Controls.Add(this.label7);
-            this.DocumentGroup.Controls.Add(this.label6);
-            this.DocumentGroup.Controls.Add(this.label5);
-            this.DocumentGroup.Controls.Add(this.label4);
-            this.DocumentGroup.Controls.Add(this.label3);
-            this.DocumentGroup.Controls.Add(this.label2);
+            this.DocumentGroup.Controls.Add(this.appdataSize);
+            this.DocumentGroup.Controls.Add(this.desktopSize);
+            this.DocumentGroup.Controls.Add(this.myMoviesSize);
+            this.DocumentGroup.Controls.Add(this.myMusicSize);
+            this.DocumentGroup.Controls.Add(this.myPicturesSize);
+            this.DocumentGroup.Controls.Add(this.myDocumentsSize);
             this.DocumentGroup.Controls.Add(this.checkBox6);
             this.DocumentGroup.Controls.Add(this.checkBox5);
             this.DocumentGroup.Controls.Add(this.checkBox4);
@@ -100,53 +101,59 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.DocumentGroup.TabIndex = 3;
             this.DocumentGroup.TabStop = false;
             // 
-            // label7
+            // appdataSize
             // 
-            this.label7.Location = new System.Drawing.Point(392, 72);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(32, 16);
-            this.label7.TabIndex = 11;
-            this.label7.Text = "(...)";
+            this.appdataSize.AutoSize = true;
+            this.appdataSize.Location = new System.Drawing.Point(392, 72);
+            this.appdataSize.Name = "appdataSize";
+            this.appdataSize.Size = new System.Drawing.Size(22, 13);
+            this.appdataSize.TabIndex = 11;
+            this.appdataSize.Text = "(...)";
             // 
-            // label6
+            // desktopSize
             // 
-            this.label6.Location = new System.Drawing.Point(392, 48);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(32, 16);
-            this.label6.TabIndex = 10;
-            this.label6.Text = "(...)";
+            this.desktopSize.AutoSize = true;
+            this.desktopSize.Location = new System.Drawing.Point(392, 48);
+            this.desktopSize.Name = "desktopSize";
+            this.desktopSize.Size = new System.Drawing.Size(22, 13);
+            this.desktopSize.TabIndex = 10;
+            this.desktopSize.Text = "(...)";
             // 
-            // label5
+            // myMoviesSize
             // 
-            this.label5.Location = new System.Drawing.Point(392, 24);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(32, 16);
-            this.label5.TabIndex = 9;
-            this.label5.Text = "(...)";
+            this.myMoviesSize.AutoSize = true;
+            this.myMoviesSize.Location = new System.Drawing.Point(392, 24);
+            this.myMoviesSize.Name = "myMoviesSize";
+            this.myMoviesSize.Size = new System.Drawing.Size(22, 13);
+            this.myMoviesSize.TabIndex = 9;
+            this.myMoviesSize.Text = "(...)";
             // 
-            // label4
+            // myMusicSize
             // 
-            this.label4.Location = new System.Drawing.Point(168, 72);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(32, 16);
-            this.label4.TabIndex = 8;
-            this.label4.Text = "(...)";
+            this.myMusicSize.AutoSize = true;
+            this.myMusicSize.Location = new System.Drawing.Point(160, 72);
+            this.myMusicSize.Name = "myMusicSize";
+            this.myMusicSize.Size = new System.Drawing.Size(22, 13);
+            this.myMusicSize.TabIndex = 8;
+            this.myMusicSize.Text = "(...)";
             // 
-            // label3
+            // myPicturesSize
             // 
-            this.label3.Location = new System.Drawing.Point(168, 48);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(32, 16);
-            this.label3.TabIndex = 7;
-            this.label3.Text = "(...)";
+            this.myPicturesSize.AutoSize = true;
+            this.myPicturesSize.Location = new System.Drawing.Point(160, 48);
+            this.myPicturesSize.Name = "myPicturesSize";
+            this.myPicturesSize.Size = new System.Drawing.Size(22, 13);
+            this.myPicturesSize.TabIndex = 7;
+            this.myPicturesSize.Text = "(...)";
             // 
-            // label2
+            // myDocumentsSize
             // 
-            this.label2.Location = new System.Drawing.Point(168, 24);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(32, 16);
-            this.label2.TabIndex = 6;
-            this.label2.Text = "(...)";
+            this.myDocumentsSize.AutoSize = true;
+            this.myDocumentsSize.Location = new System.Drawing.Point(160, 24);
+            this.myDocumentsSize.Name = "myDocumentsSize";
+            this.myDocumentsSize.Size = new System.Drawing.Size(22, 13);
+            this.myDocumentsSize.TabIndex = 6;
+            this.myDocumentsSize.Text = "(...)";
             // 
             // checkBox6
             // 
@@ -229,8 +236,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             // 
             // FolderGroup
             // 
-            this.FolderGroup.Controls.Add(this.label8);
-            this.FolderGroup.Controls.Add(this.FolderRadio);
+            this.FolderGroup.Controls.Add(this.customSize);
             this.FolderGroup.Controls.Add(this.BrowseFolderButton);
             this.FolderGroup.Controls.Add(this.TargetFolder);
             this.FolderGroup.Controls.Add(this.label1);
@@ -241,18 +247,19 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.FolderGroup.TabIndex = 5;
             this.FolderGroup.TabStop = false;
             // 
-            // label8
+            // customSize
             // 
-            this.label8.Location = new System.Drawing.Point(104, 24);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(32, 16);
-            this.label8.TabIndex = 7;
-            this.label8.Text = "(...)";
+            this.customSize.AutoSize = true;
+            this.customSize.Location = new System.Drawing.Point(96, 24);
+            this.customSize.Name = "customSize";
+            this.customSize.Size = new System.Drawing.Size(22, 13);
+            this.customSize.TabIndex = 7;
+            this.customSize.Text = "(...)";
             // 
             // FolderRadio
             // 
             this.FolderRadio.AutoSize = true;
-            this.FolderRadio.Location = new System.Drawing.Point(16, 0);
+            this.FolderRadio.Location = new System.Drawing.Point(40, 128);
             this.FolderRadio.Name = "FolderRadio";
             this.FolderRadio.Size = new System.Drawing.Size(100, 17);
             this.FolderRadio.TabIndex = 6;
@@ -261,21 +268,22 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.FolderRadio.UseVisualStyleBackColor = true;
             this.FolderRadio.CheckedChanged += new System.EventHandler(this.TargetType_CheckedChanged);
             // 
-            // label9
+            // totalSize
             // 
-            this.label9.AutoSize = true;
-            this.label9.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label9.Location = new System.Drawing.Point(40, 200);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(256, 13);
-            this.label9.TabIndex = 6;
-            this.label9.Text = "The selected items take up {0} {1} of space";
+            this.totalSize.AutoSize = true;
+            this.totalSize.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.totalSize.Location = new System.Drawing.Point(40, 200);
+            this.totalSize.Name = "totalSize";
+            this.totalSize.Size = new System.Drawing.Size(96, 13);
+            this.totalSize.TabIndex = 6;
+            this.totalSize.Text = "Calculating size";
             // 
             // SelectFiles
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.label9);
+            this.Controls.Add(this.totalSize);
+            this.Controls.Add(this.FolderRadio);
             this.Controls.Add(this.FolderGroup);
             this.Controls.Add(this.DocumentsRadio);
             this.Controls.Add(this.DocumentGroup);
@@ -298,12 +306,12 @@ namespace Duplicati.Wizard_pages.Add_backup
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
         private System.Windows.Forms.GroupBox DocumentGroup;
         private System.Windows.Forms.RadioButton DocumentsRadio;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label appdataSize;
+        private System.Windows.Forms.Label desktopSize;
+        private System.Windows.Forms.Label myMoviesSize;
+        private System.Windows.Forms.Label myMusicSize;
+        private System.Windows.Forms.Label myPicturesSize;
+        private System.Windows.Forms.Label myDocumentsSize;
         private System.Windows.Forms.CheckBox checkBox6;
         private System.Windows.Forms.CheckBox checkBox5;
         private System.Windows.Forms.CheckBox checkBox4;
@@ -311,8 +319,8 @@ namespace Duplicati.Wizard_pages.Add_backup
         private System.Windows.Forms.CheckBox checkBox2;
         private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.GroupBox FolderGroup;
-        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.Label customSize;
         private System.Windows.Forms.RadioButton FolderRadio;
-        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.Label totalSize;
     }
 }

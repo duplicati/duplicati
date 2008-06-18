@@ -31,6 +31,7 @@ namespace System.Windows.Forms.Wizard
         string HelpText { get; }
         Image Image { get; }
         bool FullSize { get; }
-        void Displayed(IWizardForm owner);
+        void Enter(IWizardForm owner);
+        void Leave(IWizardForm owner, ref bool cancel);
     }
 }

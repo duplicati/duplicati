@@ -48,30 +48,35 @@ namespace System.Windows.Forms.Wizard
             get { return this; }
         }
 
-        public virtual string Title
+        string IWizardControl.Title
         {
             get { return WizardTitle.Text; }
         }
 
-        public virtual string HelpText
+        string IWizardControl.HelpText
         {
             get { return WizardIntroduction.Text; }
         }
 
-        public virtual Image Image
+        Image IWizardControl.Image
         {
             get { return null; }
         }
 
-        public virtual bool FullSize
+        bool IWizardControl.FullSize
         {
             get { return true; }
         }
 
-        public virtual void Displayed(IWizardForm owner)
+        void IWizardControl.Enter(IWizardForm owner)
         {
             
         }
+
+        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
+        {
+        }
+
 
         #endregion
     }

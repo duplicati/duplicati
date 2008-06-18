@@ -43,9 +43,14 @@ namespace Duplicati.Wizard_pages.Add_backup
             get { return false; }
         }
 
-        void IWizardControl.Displayed(IWizardForm owner)
+        void IWizardControl.Enter(IWizardForm owner)
         {
         }
+
+        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
+        {
+        }
+
 
         #endregion
     }

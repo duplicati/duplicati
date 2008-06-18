@@ -29,14 +29,7 @@ namespace Duplicati.Datamodel
         {
             get
             {
-                if (this.Transfersize > 1024 * 1024 * 1024)
-                    return string.Format("{0:N} GB", (double)this.Transfersize / 1024 * 1024 * 1024);
-                else if (this.Transfersize > 1024 * 1024)
-                    return string.Format("{0:N} MB", (double)this.Transfersize / 1024 * 1024);
-                else if (this.Transfersize > 1024)
-                    return string.Format("{0:N} KB", (double)this.Transfersize / 1024);
-                else
-                    return string.Format("{0} bytes", this.Transfersize);
+                return Utillity.FormatSizeString(this.Transfersize);
             }
         }
     }

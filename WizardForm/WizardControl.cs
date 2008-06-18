@@ -53,32 +53,36 @@ namespace System.Windows.Forms.Wizard
 
         #region IWizardControl Members
 
-        public Control Control
+        Control IWizardControl.Control
         {
             get { return m_control; }
         }
 
-        public string Title
+        string IWizardControl.Title
         {
             get { return m_title; }
         }
 
-        public string HelpText
+        string IWizardControl.HelpText
         {
             get { return m_helpText; }
         }
 
-        public Image Image
+        Image IWizardControl.Image
         {
             get { return m_image; }
         }
 
-        public bool FullSize
+        bool IWizardControl.FullSize
         {
             get { return m_fullSize; }
         }
 
-        public virtual void Displayed(IWizardForm owner)
+        void IWizardControl.Enter(IWizardForm owner)
+        {
+        }
+
+        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
         }
 
