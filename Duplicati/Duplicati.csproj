@@ -29,6 +29,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c7a68962c12dce64, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\thirdparty\LightDataModel\LightDatamodel.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.SQLite, Version=1.0.46.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
@@ -179,10 +183,6 @@
     <Compile Include="WorkerThread.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\LightDatamodel\LightDatamodel\LightDatamodel.csproj">
-      <Project>{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}</Project>
-      <Name>LightDatamodel</Name>
-    </ProjectReference>
     <ProjectReference Include="..\WizardForm\WizardForm.csproj">
       <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
       <Name>WizardForm</Name>
@@ -285,9 +285,6 @@
       <SubType>Designer</SubType>
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </EmbeddedResource>
-    <Content Include="sqlite3.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>

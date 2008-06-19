@@ -47,7 +47,7 @@ namespace System.Windows.Forms.Wizard
         Button BackButton { get; }
         Button CancelButton { get; }
         Panel ButtonPanel { get; }
-        Panel ContentPanel { get; }
+        GroupBox ContentPanel { get; }
         Panel InfoPanel { get; }
         PictureBox PageIcon { get; }
         Label InfoLabel { get; }

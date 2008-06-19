@@ -70,6 +70,10 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c7a68962c12dce64, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\LightDatamodel.dll</HintPath>
+    </Reference>
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
@@ -103,12 +107,6 @@
     <Compile Include="Log.Extension.cs" />
     <Compile Include="LogBlob.Extension.cs" />
     <Compile Include="Utillity.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\LightDatamodel\LightDatamodel\LightDatamodel.csproj">
-      <Project>{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}</Project>
-      <Name>LightDatamodel</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

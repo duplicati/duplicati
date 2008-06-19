@@ -230,7 +230,7 @@ namespace System.Windows.Forms.Wizard
             get { return _ButtonPanel; }
         }
 
-        public Panel ContentPanel
+        public GroupBox ContentPanel
         {
             get { return _ContentPanel; }
         }
