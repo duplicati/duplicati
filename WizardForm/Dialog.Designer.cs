@@ -36,7 +36,7 @@ namespace System.Windows.Forms.Wizard
             this._BackButton = new System.Windows.Forms.Button();
             this._NextButton = new System.Windows.Forms.Button();
             this._CancelButton = new System.Windows.Forms.Button();
-            this._ContentPanel = new System.Windows.Forms.Panel();
+            this._ContentPanel = new System.Windows.Forms.GroupBox();
             this._InfoPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this._PageIcon)).BeginInit();
             this._ButtonPanel.SuspendLayout();
@@ -123,21 +123,20 @@ namespace System.Windows.Forms.Wizard
             // 
             // _ContentPanel
             // 
-            this._ContentPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this._ContentPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._ContentPanel.Location = new System.Drawing.Point(0, 64);
+            this._ContentPanel.Location = new System.Drawing.Point(-1, 61);
             this._ContentPanel.Name = "_ContentPanel";
-            this._ContentPanel.Size = new System.Drawing.Size(506, 242);
+            this._ContentPanel.Size = new System.Drawing.Size(509, 244);
             this._ContentPanel.TabIndex = 2;
+            this._ContentPanel.TabStop = false;
             // 
             // Dialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(506, 354);
-            this.Controls.Add(this._ContentPanel);
             this.Controls.Add(this._ButtonPanel);
             this.Controls.Add(this._InfoPanel);
+            this.Controls.Add(this._ContentPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -162,6 +161,6 @@ namespace System.Windows.Forms.Wizard
         private Button _CancelButton;
         private Label _InfoLabel;
         private Label _TitleLabel;
-        private Panel _ContentPanel;
+        private GroupBox _ContentPanel;
     }
 }
