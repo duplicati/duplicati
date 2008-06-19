@@ -1,0 +1,15 @@
+Metadata-Version: 1.0
+Name: boto
+Version: 1.3a
+Summary: Amazon Web Services Library
+Home-page: http://code.google.com/p/boto/
+Author: Mitch Garnaat
+Author-email: mitch@garnaat.com
+License: MIT
+Description: Python interface to Amazon's Web Services.
+Platform: Posix; MacOS X; Windows
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Internet

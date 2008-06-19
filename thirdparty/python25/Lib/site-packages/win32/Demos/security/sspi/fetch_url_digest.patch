@@ -1,0 +1,160 @@
+Index: fetch_url.py
+===================================================================
+RCS file: /cvsroot/pywin32/pywin32/win32/Demos/security/sspi/fetch_url.py,v
+retrieving revision 1.1
+diff -r1.1 fetch_url.py
+14a15,16
+> import re
+> import win32security, sspicon
+24c26
+< #    h.set_debuglevel(9)
+---
+>     h.set_debuglevel(9)
+48c50,77
+<         ca = ClientAuth("NTLM", auth_info=auth_info)
+---
+>         for auth_hdr in resp.msg.getheaders("WWW-Authenticate"):
+>             # Eeek - this regex doesn't handle quoted quote chars!
+>             m = re.match('[ \t]*([^ \t]+)', auth_hdr)
+>             params = {}
+>             scheme = ""
+>             if m is not None:
+>                 scheme = m.group(1).lower()
+>                 rest = auth_hdr[m.span()[1]:]
+>                 auth_value = rest
+>                 while rest:
+>                     m = re.match('[ \t]*,?[ \t]*([^ \t]+)[ \t]*=[ \t]*"([^ \t]+)"', rest)
+>                     if m is None:
+>                         break
+>                     params[m.group(1)] = m.group(2)
+>                     rest = rest[m.span()[1]:]
+> 
+>             #sl = scheme.lower()
+>             if scheme.lower() in ["negotiate", "ntlm"]:
+>                 # If I pass 'negotiate' to ClientAuth here, it appears to
+>                 # perform the auth without the full NTLM dance??
+>                 ca = ClientAuth("NTLM", auth_info=auth_info)
+>                 break
+>             if scheme.lower() in ["digest"]:
+>                 ca = ClientAuth("WDigest", auth_info=auth_info)
+>                 break
+>             
+>         else:
+>             raise RuntimeError, "Don't handle any offered auth schemes"
+50c79,91
+<         data = None
+---
+> 
+> 
+>         credentials, \
+>         credentials_expiry=win32security.AcquireCredentialsHandle(
+>                                 None, auth_scheme,
+>                                 sspicon.SECPKG_CRED_OUTBOUND,
+>                                 None, None)
+> 
+> 
+>         #data = decodestring(params["nonce"])
+>         data = "Digest" + auth_value
+>         context = None
+>         last = False
+52,55c93,155
+<             err, out_buf = ca.authorize(data)
+<             data = out_buf[0].Buffer
+<             # Encode it as base64 as required by HTTP
+<             auth = encodestring(data).replace("\012", "")
+---
+> 
+>             context_in = context
+>             if context is None:
+>                 context = win32security.CtxtHandleType()
+> 
+>             ISC_REQ_HTTP = 0x10000000
+>             scflags = ISC_REQ_HTTP | sspicon.ISC_RET_REPLAY_DETECT
+>                       # sspicon.ISC_REQ_SEQUENCE_DETECT|\
+>                       # sspicon.ISC_REQ_REPLAY_DETECT|ISC_REQ_HTTP #|sspicon.ISC_REQ_ALLOCATE_MEMORY
+>                       # docs say can't use sspicon.ISC_REQ_CONFIDENTIALITY with ISC_REQ_HTTP
+>                       # sspicon.ISC_REQ_INTEGRITY|??
+> 
+>             print "The data is", data
+> 
+>             sec_buffer_new=win32security.SecBufferDescType()
+>             # 0 SECBUFFER_TOKEN Empty 
+>             tokenbuf=win32security.SecBufferType(ca.pkg_info['MaxToken'],
+>                                                  sspicon.SECBUFFER_TOKEN)
+>             tokenbuf.Buffer = data
+>             sec_buffer_new.append(tokenbuf)
+> 
+>             # 1 SECBUFFER_PKG_PARAMS Method 
+>             val = "GET"
+>             tokenbuf=win32security.SecBufferType(len(val)+1,
+>                                                  sspicon.SECBUFFER_PKG_PARAMS)
+>             tokenbuf.Buffer = val
+>             sec_buffer_new.append(tokenbuf)
+> 
+>             # 2 SECBUFFER_PKG_PARAMS Hentity.
+>             # as if...
+>             import md5
+>             val = md5.new('').hexdigest()
+>             #val = ''
+>             tokenbuf=win32security.SecBufferType(len(val)+1,
+>                                                  sspicon.SECBUFFER_PKG_PARAMS)
+>             tokenbuf.Buffer = val
+>             sec_buffer_new.append(tokenbuf)
+> 
+>             # NOT filled in by sspi due to ISC_REQ_ALLOCATE_MEMORY flag
+>             sec_buffer_out=win32security.SecBufferDescType()
+>             tokenbuf=win32security.SecBufferType(ca.pkg_info['MaxToken'],
+>                                                  sspicon.SECBUFFER_TOKEN)
+>             sec_buffer_out.append(tokenbuf)
+> 
+>             err, attr, exp=win32security.InitializeSecurityContext(
+>                 credentials,
+>                 context_in,
+>                 url,
+>                 scflags,
+>                 0,
+>                 sec_buffer_new,
+>                 context,
+>                 sec_buffer_out)
+> 
+>             print "InitializeSecurityContext returned", err, attr, exp
+> #            print "Buffer has", len(sec_buffer_out)
+> #            print sec_buffer_out[0].Buffer
+> 
+>             data = sec_buffer_out[0].Buffer
+>             print "challenge response is", data
+>             if last:
+>                 print "LAst one - breaking!"
+>                 break
+57c157
+<             h.putheader('Authorization', auth_scheme + ' ' + auth)
+---
+>             h.putheader('Authorization', 'Digest ' + data)
+67c167,168
+<                 break
+---
+>                 print "Err - 0 - flagging as last"
+>                 last = True
+73c174,178
+<                         print repr(resp.read(int(cl)))
+---
+>                         got = resp.read(int(cl))
+>                         if options.show_body:
+>                             print repr(got)
+>                         else:
+>                             print "<specify --show-body to see error page>"
+79,87c184,187
+<             assert not resp.will_close, "NTLM is per-connection - must not close"
+<             schemes = [s.strip() for s in resp.msg.get("WWW-Authenticate", "").split(",")]
+<             for scheme in schemes:
+<                 if scheme.startswith(auth_scheme):
+<                     data = decodestring(scheme[len(auth_scheme)+1:])
+<                     break
+<             else:
+<                 print "Could not find scheme '%s' in schemes %r" % (auth_scheme, schemes)
+<                 break
+---
+> #            assert not resp.will_close, "NTLM is per-connection - must not close"
+>             #if scheme.lower() in ["ntlm", "negotiate"]:
+> 
+>             data = resp.msg.get("WWW-Authenticate", "")

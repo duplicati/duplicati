@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati", "Duplicati\Duplicati.csproj", "{1470F75F-D364-4010-91D0-FD4DDA1C5159}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightDatamodel", "..\LightDatamodel\LightDatamodel\LightDatamodel.csproj", "{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datamodel", "Duplicati\Datamodel\Datamodel.csproj", "{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}"
@@ -15,10 +13,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{1470F75F-D364-4010-91D0-FD4DDA1C5159}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1470F75F-D364-4010-91D0-FD4DDA1C5159}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1470F75F-D364-4010-91D0-FD4DDA1C5159}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1470F75F-D364-4010-91D0-FD4DDA1C5159}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}.Release|Any CPU.ActiveCfg = Release|Any CPU

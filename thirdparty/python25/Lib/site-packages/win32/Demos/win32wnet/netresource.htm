@@ -1,0 +1,238 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-2">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>WIN32WNET</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<h1 align="center">WIN32WNET</h1>
+
+<h4 align="left">PyNETRESOURCE</h4>
+
+<p><font size="2">The PyNETRESOURCE object is the Python
+encapsulation of the Win32 NETRESOURCE structure used with
+WNetXXX networking functions and other Win32 APIs. The
+implementation can be compiled for Ascii or Unicode and has been
+tested on Python 1.5.1.</font></p>
+
+<h5>PyNETRESOURCE Object Members:</h5>
+
+<ul>
+    <li><font size="2">NETRESOURCE m_nr -- the actual NETRESOURCE
+        data structure</font></li>
+    <li><font size="2">TCHAR szLName -- local storage for the
+        lpLocalName member of the NETRESOURCE structure.<br
+        clear="right">
+        The names are stored locally and are not stored as native
+        Python strings.String length is 256 TCHARs maximum.</font></li>
+</ul>
+
+<ul>
+    <li><font size="2">TCHAR szRName -- lpRemoteName storage. See
+        szLName.</font></li>
+    <li><font size="2">TCHAR szProv -- lpProvider storage. See
+        szLName.</font></li>
+    <li><font size="2">TCHAR szComment -- lpComment storage. See
+        szLName.</font></li>
+</ul>
+
+<h5><font size="2">Relevant Python Methods:</font></h5>
+
+<ul>
+    <li><font size="2">x = win32wnet.NETRESOURCE() will
+        instantiate a new PyNETRESOURCE Object</font></li>
+    <li><font size="2">x.dwScope, x.dwType, x.dwDisplayType,
+        x.dwUsage -- Integer attributes corresponding to the
+        NETRESOURCE structure members. Attributes are both
+        readable and writeable using standard Python attribute
+        semantics. </font></li>
+    <li><font size="2">X.lpLocalName, x.lpRemoteName,
+        x.lpComment, x.lpProvider -- String pointers in the
+        NETRESOURCE structure. They are wrapped to point to
+        szLName, etc.... These strings are not stored as Python
+        strings and are therefore both readable and writeable.
+        Using standard Python attribute semantics, the attributes
+        return Python strings upon query and take python strings
+        as input.</font></li>
+</ul>
+
+<h5>'C' Programming Interface:</h5>
+
+<ul>
+    <li><font size="2">BOOL PyWinObject_AsNETRESOURCE(PyObject
+        *ob, NETRESOURCE **ppNetresource, BOOL bNoneOK = TRUE);</font></li>
+    <li><font size="2">PyObject
+        *PyWinObject_FromNETRESOURCE(const NETRESOURCE
+        *pNetresource</font></li>
+</ul>
+
+<h4>WIN32WNET Functions</h4>
+
+<p><strong>win32wnet.py</strong> is the Python extension
+providing access to the WNetXXX Win32APIs. This module is fully
+compilable for both Ascii and Unicode and contains conditional,
+if untested as of this writing, compiles for Windows CE. This
+module has been tested with Python 1.5.1 and Windows NT
+workstation 4.0 SP3.</p>
+
+<dl>
+    <dt><strong>WNetAddConnection2</strong> (</dt>
+    <dd><dl>
+            <dd><dl>
+                    <dd><dl>
+                            <dd>INTEGER Type, -
+                                RESOURCETYPE_DISK,
+                                RESOURCETYPE_PRINT, or
+                                RESOURCETYPE_ANY <br>
+                                STRING LocalName, - String or
+                                None<br>
+                                STRING RemoteName, - String
+                                (required to be in network format<br>
+                                STRING ProviderName, - String or
+                                None<br>
+                                STRING Username,<br>
+                                STRING Password</dd>
+                            <dd>)</dd>
+                            <dt>Returns: PyNone</dt>
+                        </dl>
+                    </dd>
+                </dl>
+            </dd>
+            <dd>The <strong>WNetAddConnection2</strong> function
+                makes a connection to a network resource. The
+                function can redirect a local device to the
+                network resource. This function was written
+                before the PyNETRESOURCE object was created and
+                thus does not use PyNETRESOURCE in this release
+                (this will be updated at a later date). The first
+                four parameters correspond to the NETRESOURCE
+                object that is being constructed for the Win32API
+                call. UserName and Password are obvious. Passing
+                None for UserName and Password will attempt a
+                NULL session connection. NOTE: when compiled for
+                Windows CE, this function is conditionally
+                compiled to call the <strong>WNetAddConnection3</strong>
+                API interface with a NULL hwnd parameter, making
+                it functionally equivalent to WNetAddConnection2.
+                WNetAddConnection3 is the only interface
+                supported by Windows CE.</dd>
+        </dl>
+    </dd>
+</dl>
+
+<dl>
+    <dt><strong>WNetCancelConnection2</strong> (</dt>
+    <dd><dl>
+            <dd><dl>
+                    <dd><dl>
+                            <dd>STRING Name,<br>
+                                INTEGER Flags,<br>
+                                INTEGER Force</dd>
+                            <dd>)</dd>
+                            <dt>Returns: PyNone</dt>
+                        </dl>
+                    </dd>
+                </dl>
+            </dd>
+            <dd>The <strong>WNetCancelConnection2 </strong>function
+                breaks an existing network connection. It can
+                also be used to remove remembered network
+                connections that are not currently connected. The
+                Python parameters correspond directly to the
+                Win32API call parameters. The Name string is the
+                name of the connection you wish to drop (i.e. O:,
+                <a href="\\bexar\support">\\bexar\support</a>,
+                etc...). The Flags parameter indicates wether the
+                permanent connection information should be
+                updated or not. A value of zero indicates that no
+                stored information about the connection should be
+                updated. A value of CONNECT_UPDATE_PROFILE
+                indicates that the persistent connection
+                information for this connection should be updated
+                (deleted). the Force parameter is a boolean
+                indicated whether connection termination should
+                be forced (i.e. open files and connects ignored).</dd>
+        </dl>
+    </dd>
+</dl>
+
+<dl>
+    <dt><strong>WNetOpenEnum</strong> (</dt>
+    <dd><dl>
+            <dd><dl>
+                    <dd>INTEGER Scope, - Specifies the scope of
+                        the enumeration.<br>
+                        INTEGER Type, - Specifies the resource
+                        types to enumerate.<br>
+                        INTEGER Usage, - Specifies the resource
+                        usage to be enumerated.<br>
+                        OBJECT NetResource - Python PyNETRESOURCE
+                        object.</dd>
+                    <dd>)<br>
+                        </dd>
+                    <dt>Returns: PyHANDLE</dt>
+                </dl>
+            </dd>
+            <dd>The <strong>WNetOpenEnum</strong> function starts
+                an enumeration of network resources or existing
+                connections. For full documentation, see the
+                Win32API references.</dd>
+        </dl>
+    </dd>
+</dl>
+
+<dl>
+    <dt><strong>WNetCloseEnum</strong> (</dt>
+    <dd><dl>
+            <dd><dl>
+                    <dd>OBJECT Handle - PyHANDLE object returned
+                        from a previous WNetOpenEnum call.<br>
+                        )</dd>
+                    <dt>Returns: PyNone</dt>
+                </dl>
+            </dd>
+            <dd>Closes a PyHANDLE that represents an Open
+                Enumeration (from WNetOpenEnum)</dd>
+        </dl>
+    </dd>
+</dl>
+
+<dl>
+    <dt><strong>WNetEnumResource</strong> (</dt>
+    <dd><dl>
+            <dd><dl>
+                    <dd>OBJECT Handle, - HANDLE (in form of
+                        PyHANDLE) to an open Enumeration Object
+                        (from WNetOpenEnum)<br>
+                        OPTIONAL INTEGER - how many items to try
+                        to recieve---0 will default to 64.</dd>
+                    <dd>)</dd>
+                    <dt>Returns: PyList</dt>
+                    <dd>The list contains PyNETRESOURCE objects.
+                        The total number of PyNETRESOURCE objects
+                        will be &lt;= number requested (excepting
+                        the default behavior of requesting 0,
+                        which returns up to 64)</dd>
+                </dl>
+            </dd>
+            <dd>Implements the <strong>WNetEnumResource</strong>
+                Win32 API call. Successive calls to
+                WNetEnumResource will enumerate starting where
+                the previous call stopped. That is, the
+                enumeration is not reset on successive calls
+                UNLESS the enumeration handle is closed and
+                reopened. This lets you process an enumeration in
+                small chunks (as small as 1 item at a time) and
+                still fully enumerate a network object! Network
+                resources are not guaranteed to be returned in
+                any particular order.<br>
+                </dd>
+        </dl>
+    </dd>
+</dl>
+</body>
+</html>
