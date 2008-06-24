@@ -32,6 +32,14 @@ namespace Duplicati.Wizard_pages
     {
         private IWizardForm m_owner;
 
+        public enum Action
+        {
+            Unknown,
+            Add,
+            Edit, 
+            Restore
+        }
+
         public MainPage()
         {
             InitializeComponent();
@@ -74,6 +82,7 @@ namespace Duplicati.Wizard_pages
         {
         }
 
+        #endregion
 
         private void UpdateButtonState()
         {
@@ -81,11 +90,25 @@ namespace Duplicati.Wizard_pages
                 m_owner.NextButton.Enabled = CreateNew.Checked | Edit.Checked | Restore.Checked;
         }
 
-        #endregion
-
         private void Radio_CheckedChanged(object sender, EventArgs e)
         {
             UpdateButtonState();
+        }
+
+        public Action SelectedAction
+        {
+            get
+            {
+                if (CreateNew.Checked)
+                    return Action.Add;
+                else if (Edit.Checked)
+                    return Action.Edit;
+                else if (Restore.Checked)
+                    return Action.Restore;
+                else
+                    return Action.Unknown;
+                    
+            }
         }
     }
 }

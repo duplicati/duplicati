@@ -30,6 +30,7 @@ namespace Duplicati.Wizard_pages.Add_backup
 {
     public partial class PasswordSettings : UserControl, IWizardControl
     {
+        private bool m_warnedNoPassword = false;
         public PasswordSettings()
         {
             InitializeComponent();
@@ -68,8 +69,81 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
+            if (EnablePassword.Checked && Password.Text.Trim().Length == 0)
+            {
+                MessageBox.Show(this, "You must enter a password, remove the check mark next to the box to disable encryption of the backups.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                cancel = true;
+                return;
+            }
+
+            if (EnableSigning.Checked && Signkey.Text.Trim().Length == 0)
+            {
+                MessageBox.Show(this, "You must enter a signature key, remove the check mark next to the box to disable signing of the backups.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                cancel = true;
+                return;
+            }
+
+            if (EnableSigning.Checked)
+            {
+                bool valid = true;
+
+                if (Signkey.Text.Length != 8)
+                    valid = false;
+                else
+                {
+                    List<char> l = new List<char>(KeyGenerator.HEX_CHARS);
+                    for (int i = 0; i < Signkey.Text.Length; i++)
+                        if (!l.Contains(Signkey.Text[i]))
+                        {
+                            valid = false;
+                            break;
+                        }
+                }
+
+                if (!valid)
+                {
+                    MessageBox.Show(this, "The signature key must be excatly eight characters, and only contain the letters A through F, and the numbers 0 to 9.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    cancel = true;
+                    return;
+                }
+            }
+
+            if (!m_warnedNoPassword && !EnablePassword.Checked)
+            {
+                if (MessageBox.Show(this, "If the backup is stored on machine or device that is not under your direct control,\nit is possible that others may view the files you have stored in the backups. It is highly recomended that you enable encryption.\nDo you want to continue without encryption?", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    cancel = true;
+                    return;
+                }
+            }
         }
 
         #endregion
+
+        private void GenerateSignKey_Click(object sender, EventArgs e)
+        {
+            Signkey.Text = KeyGenerator.GenerateSignKey();
+        }
+
+        private void GeneratePassword_Click(object sender, EventArgs e)
+        {
+            Password.Text = KeyGenerator.GenerateKey((int)PassphraseLength.Value, (int)PassphraseLength.Value);
+        }
+
+        private void EnablePassword_CheckedChanged(object sender, EventArgs e)
+        {
+            Password.Enabled = PasswordHelptext.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
+            m_warnedNoPassword = false;
+        }
+
+        private void EnableSigning_CheckedChanged(object sender, EventArgs e)
+        {
+            Signkey.Enabled = GenerateSignKey.Enabled = SignHelptext.Enabled = EnableSigning.Checked;
+        }
+
+        private void Password_TextChanged(object sender, EventArgs e)
+        {
+            m_warnedNoPassword = false;
+        }
     }
 }

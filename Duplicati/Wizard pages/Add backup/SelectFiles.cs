@@ -126,6 +126,22 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
+            if (DocumentsRadio.Checked)
+            {
+                MessageBox.Show(this, "This feature is not ready. Please manually point out the folder to back up.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                cancel = true;
+                return;
+            }
+            else
+            {
+                if (!System.IO.Directory.Exists(TargetFolder.Text))
+                {
+                    MessageBox.Show(this, "The folder \"" + TargetFolder.Text + "\" does not exist.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    cancel = true;
+                    return;
+                }
+            }
+            m_calculator.ClearQueue(true);
         }
 
         #endregion
@@ -208,6 +224,7 @@ namespace Duplicati.Wizard_pages.Add_backup
                     m_calculator.ClearQueue(true);
                     m_calculator.AddTask(TargetFolder.Text);
                 }
+
         }
     }
 }

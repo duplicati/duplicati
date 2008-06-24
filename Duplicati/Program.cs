@@ -214,22 +214,7 @@ namespace Duplicati
 
         public static void ShowWizard()
         {
-            System.Windows.Forms.Wizard.Dialog dlg = new System.Windows.Forms.Wizard.Dialog();
-            System.Windows.Forms.Wizard.IWizardControl[] pages = new System.Windows.Forms.Wizard.IWizardControl[] 
-            {
-                new Wizard_pages.MainPage(),
-                new Wizard_pages.Add_backup.SelectFiles(),
-                new Wizard_pages.Add_backup.SelectWhen(),
-                new Wizard_pages.Add_backup.IncrementalSettings(),
-                new Wizard_pages.Add_backup.PasswordSettings()
-            };
-
-            dlg.Pages.Clear();
-            dlg.Pages.AddRange(pages);
-            dlg.Text = "Duplicati setup wizard";
-            dlg.DefaultImage = Program.NeutralIcon.ToBitmap();
-
-            dlg.ShowDialog();
+            new WizardHandler().Show();
         }
 
     }

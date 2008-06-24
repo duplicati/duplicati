@@ -29,64 +29,126 @@ namespace Duplicati.Wizard_pages.Add_backup
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PasswordSettings));
-            this.checkBox1 = new System.Windows.Forms.CheckBox();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
-            this.button1 = new System.Windows.Forms.Button();
-            this.checkBox7 = new System.Windows.Forms.CheckBox();
-            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.EnablePassword = new System.Windows.Forms.CheckBox();
+            this.Password = new System.Windows.Forms.TextBox();
+            this.PasswordHelptext = new System.Windows.Forms.Label();
+            this.PasswordGeneratorSettings = new System.Windows.Forms.GroupBox();
+            this.PasswordCharacterSet = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
-            this.button2 = new System.Windows.Forms.Button();
-            this.label4 = new System.Windows.Forms.Label();
-            this.groupBox1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
+            this.GeneratePassword = new System.Windows.Forms.Button();
+            this.PassphraseLength = new System.Windows.Forms.NumericUpDown();
+            this.label2 = new System.Windows.Forms.Label();
+            this.EnableSigning = new System.Windows.Forms.CheckBox();
+            this.Signkey = new System.Windows.Forms.TextBox();
+            this.GenerateSignKey = new System.Windows.Forms.Button();
+            this.SignHelptext = new System.Windows.Forms.Label();
+            this.PasswordGeneratorSettings.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PassphraseLength)).BeginInit();
             this.SuspendLayout();
             // 
-            // checkBox1
+            // EnablePassword
             // 
-            this.checkBox1.AutoSize = true;
-            this.checkBox1.Checked = true;
-            this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox1.Location = new System.Drawing.Point(24, 16);
-            this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(211, 17);
-            this.checkBox1.TabIndex = 0;
-            this.checkBox1.Text = "Protect the backups with this password";
-            this.checkBox1.UseVisualStyleBackColor = true;
+            this.EnablePassword.AutoSize = true;
+            this.EnablePassword.Checked = true;
+            this.EnablePassword.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.EnablePassword.Location = new System.Drawing.Point(24, 8);
+            this.EnablePassword.Name = "EnablePassword";
+            this.EnablePassword.Size = new System.Drawing.Size(211, 17);
+            this.EnablePassword.TabIndex = 0;
+            this.EnablePassword.Text = "Protect the backups with this password";
+            this.EnablePassword.UseVisualStyleBackColor = true;
+            this.EnablePassword.CheckedChanged += new System.EventHandler(this.EnablePassword_CheckedChanged);
             // 
-            // textBox1
+            // Password
             // 
-            this.textBox1.Location = new System.Drawing.Point(240, 16);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(224, 20);
-            this.textBox1.TabIndex = 1;
+            this.Password.Location = new System.Drawing.Point(240, 8);
+            this.Password.Name = "Password";
+            this.Password.Size = new System.Drawing.Size(224, 20);
+            this.Password.TabIndex = 1;
+            this.Password.TextChanged += new System.EventHandler(this.Password_TextChanged);
             // 
-            // label1
+            // PasswordHelptext
             // 
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(24, 40);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(448, 48);
-            this.label1.TabIndex = 3;
-            this.label1.Text = resources.GetString("label1.Text");
+            this.PasswordHelptext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PasswordHelptext.Location = new System.Drawing.Point(24, 32);
+            this.PasswordHelptext.Name = "PasswordHelptext";
+            this.PasswordHelptext.Size = new System.Drawing.Size(448, 48);
+            this.PasswordHelptext.TabIndex = 3;
+            this.PasswordHelptext.Text = resources.GetString("PasswordHelptext.Text");
             // 
-            // groupBox1
+            // PasswordGeneratorSettings
             // 
-            this.groupBox1.Controls.Add(this.comboBox1);
-            this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.button1);
-            this.groupBox1.Controls.Add(this.numericUpDown1);
-            this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Location = new System.Drawing.Point(24, 88);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(448, 56);
-            this.groupBox1.TabIndex = 4;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Generate a password";
+            this.PasswordGeneratorSettings.Controls.Add(this.PasswordCharacterSet);
+            this.PasswordGeneratorSettings.Controls.Add(this.label3);
+            this.PasswordGeneratorSettings.Controls.Add(this.GeneratePassword);
+            this.PasswordGeneratorSettings.Controls.Add(this.PassphraseLength);
+            this.PasswordGeneratorSettings.Controls.Add(this.label2);
+            this.PasswordGeneratorSettings.Location = new System.Drawing.Point(24, 80);
+            this.PasswordGeneratorSettings.Name = "PasswordGeneratorSettings";
+            this.PasswordGeneratorSettings.Size = new System.Drawing.Size(448, 56);
+            this.PasswordGeneratorSettings.TabIndex = 4;
+            this.PasswordGeneratorSettings.TabStop = false;
+            this.PasswordGeneratorSettings.Text = "Generate a password";
+            // 
+            // PasswordCharacterSet
+            // 
+            this.PasswordCharacterSet.Enabled = false;
+            this.PasswordCharacterSet.FormattingEnabled = true;
+            this.PasswordCharacterSet.Items.AddRange(new object[] {
+            "Uppercase + Lowercase + Number + Punctiation + Various",
+            "Uppercase + Lowercase + Number + Punctiation",
+            "Uppercase + Lowercase + Numbers",
+            "Uppercase only",
+            "Lowercase only",
+            "Numbers only",
+            "Uppercase + Numbers",
+            "Lowercase + Numbers"});
+            this.PasswordCharacterSet.Location = new System.Drawing.Point(80, 24);
+            this.PasswordCharacterSet.Name = "PasswordCharacterSet";
+            this.PasswordCharacterSet.Size = new System.Drawing.Size(80, 21);
+            this.PasswordCharacterSet.TabIndex = 9;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Enabled = false;
+            this.label3.Location = new System.Drawing.Point(8, 24);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(58, 13);
+            this.label3.TabIndex = 8;
+            this.label3.Text = "Characters";
+            // 
+            // GeneratePassword
+            // 
+            this.GeneratePassword.Location = new System.Drawing.Point(312, 24);
+            this.GeneratePassword.Name = "GeneratePassword";
+            this.GeneratePassword.Size = new System.Drawing.Size(128, 24);
+            this.GeneratePassword.TabIndex = 7;
+            this.GeneratePassword.Text = "Generate password";
+            this.GeneratePassword.UseVisualStyleBackColor = true;
+            this.GeneratePassword.Click += new System.EventHandler(this.GeneratePassword_Click);
+            // 
+            // PassphraseLength
+            // 
+            this.PassphraseLength.Location = new System.Drawing.Point(232, 24);
+            this.PassphraseLength.Maximum = new decimal(new int[] {
+            64,
+            0,
+            0,
+            0});
+            this.PassphraseLength.Minimum = new decimal(new int[] {
+            8,
+            0,
+            0,
+            0});
+            this.PassphraseLength.Name = "PassphraseLength";
+            this.PassphraseLength.Size = new System.Drawing.Size(72, 20);
+            this.PassphraseLength.TabIndex = 6;
+            this.PassphraseLength.Value = new decimal(new int[] {
+            12,
+            0,
+            0,
+            0});
             // 
             // label2
             // 
@@ -97,117 +159,62 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.label2.TabIndex = 5;
             this.label2.Text = "Characters";
             // 
-            // numericUpDown1
+            // EnableSigning
             // 
-            this.numericUpDown1.Location = new System.Drawing.Point(232, 24);
-            this.numericUpDown1.Maximum = new decimal(new int[] {
-            64,
-            0,
-            0,
-            0});
-            this.numericUpDown1.Minimum = new decimal(new int[] {
-            8,
-            0,
-            0,
-            0});
-            this.numericUpDown1.Name = "numericUpDown1";
-            this.numericUpDown1.Size = new System.Drawing.Size(72, 20);
-            this.numericUpDown1.TabIndex = 6;
-            this.numericUpDown1.Value = new decimal(new int[] {
-            12,
-            0,
-            0,
-            0});
+            this.EnableSigning.AutoSize = true;
+            this.EnableSigning.Checked = true;
+            this.EnableSigning.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.EnableSigning.Location = new System.Drawing.Point(24, 152);
+            this.EnableSigning.Name = "EnableSigning";
+            this.EnableSigning.Size = new System.Drawing.Size(165, 17);
+            this.EnableSigning.TabIndex = 5;
+            this.EnableSigning.Text = "Sign the backup with this key";
+            this.EnableSigning.UseVisualStyleBackColor = true;
+            this.EnableSigning.CheckedChanged += new System.EventHandler(this.EnableSigning_CheckedChanged);
             // 
-            // button1
+            // Signkey
             // 
-            this.button1.Location = new System.Drawing.Point(312, 24);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(128, 24);
-            this.button1.TabIndex = 7;
-            this.button1.Text = "Generate password";
-            this.button1.UseVisualStyleBackColor = true;
+            this.Signkey.Location = new System.Drawing.Point(200, 152);
+            this.Signkey.Name = "Signkey";
+            this.Signkey.Size = new System.Drawing.Size(128, 20);
+            this.Signkey.TabIndex = 6;
             // 
-            // checkBox7
+            // GenerateSignKey
             // 
-            this.checkBox7.AutoSize = true;
-            this.checkBox7.Checked = true;
-            this.checkBox7.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox7.Location = new System.Drawing.Point(24, 160);
-            this.checkBox7.Name = "checkBox7";
-            this.checkBox7.Size = new System.Drawing.Size(165, 17);
-            this.checkBox7.TabIndex = 5;
-            this.checkBox7.Text = "Sign the backup with this key";
-            this.checkBox7.UseVisualStyleBackColor = true;
+            this.GenerateSignKey.Location = new System.Drawing.Point(336, 152);
+            this.GenerateSignKey.Name = "GenerateSignKey";
+            this.GenerateSignKey.Size = new System.Drawing.Size(136, 24);
+            this.GenerateSignKey.TabIndex = 7;
+            this.GenerateSignKey.Text = "Generate key";
+            this.GenerateSignKey.UseVisualStyleBackColor = true;
+            this.GenerateSignKey.Click += new System.EventHandler(this.GenerateSignKey_Click);
             // 
-            // textBox2
+            // SignHelptext
             // 
-            this.textBox2.Location = new System.Drawing.Point(200, 160);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(128, 20);
-            this.textBox2.TabIndex = 6;
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(8, 24);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(58, 13);
-            this.label3.TabIndex = 8;
-            this.label3.Text = "Characters";
-            // 
-            // comboBox1
-            // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Items.AddRange(new object[] {
-            "Uppercase + Lowercase + Number + Punctiation + Various",
-            "Uppercase + Lowercase + Number + Punctiation",
-            "Uppercase + Lowercase + Numbers",
-            "Uppercase only",
-            "Lowercase only",
-            "Numbers only",
-            "Uppercase + Numbers",
-            "Lowercase + Numbers"});
-            this.comboBox1.Location = new System.Drawing.Point(80, 24);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(80, 21);
-            this.comboBox1.TabIndex = 9;
-            // 
-            // button2
-            // 
-            this.button2.Location = new System.Drawing.Point(336, 160);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(136, 24);
-            this.button2.TabIndex = 7;
-            this.button2.Text = "Generate key";
-            this.button2.UseVisualStyleBackColor = true;
-            // 
-            // label4
-            // 
-            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(32, 184);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(448, 48);
-            this.label4.TabIndex = 8;
-            this.label4.Text = resources.GetString("label4.Text");
+            this.SignHelptext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.SignHelptext.Location = new System.Drawing.Point(32, 176);
+            this.SignHelptext.Name = "SignHelptext";
+            this.SignHelptext.Size = new System.Drawing.Size(448, 48);
+            this.SignHelptext.TabIndex = 8;
+            this.SignHelptext.Text = resources.GetString("SignHelptext.Text");
             // 
             // PasswordSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.button2);
-            this.Controls.Add(this.textBox2);
-            this.Controls.Add(this.checkBox7);
-            this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.textBox1);
-            this.Controls.Add(this.checkBox1);
+            this.Controls.Add(this.SignHelptext);
+            this.Controls.Add(this.GenerateSignKey);
+            this.Controls.Add(this.Signkey);
+            this.Controls.Add(this.EnableSigning);
+            this.Controls.Add(this.PasswordGeneratorSettings);
+            this.Controls.Add(this.PasswordHelptext);
+            this.Controls.Add(this.Password);
+            this.Controls.Add(this.EnablePassword);
             this.Name = "PasswordSettings";
             this.Size = new System.Drawing.Size(506, 242);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
+            this.PasswordGeneratorSettings.ResumeLayout(false);
+            this.PasswordGeneratorSettings.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PassphraseLength)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -215,18 +222,18 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         #endregion
 
-        private System.Windows.Forms.CheckBox checkBox1;
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.NumericUpDown numericUpDown1;
+        private System.Windows.Forms.CheckBox EnablePassword;
+        private System.Windows.Forms.TextBox Password;
+        private System.Windows.Forms.Label PasswordHelptext;
+        private System.Windows.Forms.GroupBox PasswordGeneratorSettings;
+        private System.Windows.Forms.Button GeneratePassword;
+        private System.Windows.Forms.NumericUpDown PassphraseLength;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.CheckBox checkBox7;
-        private System.Windows.Forms.TextBox textBox2;
-        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.CheckBox EnableSigning;
+        private System.Windows.Forms.TextBox Signkey;
+        private System.Windows.Forms.ComboBox PasswordCharacterSet;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Button GenerateSignKey;
+        private System.Windows.Forms.Label SignHelptext;
     }
 }

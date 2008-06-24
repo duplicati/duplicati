@@ -117,10 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="PasswordHelptext.Text" xml:space="preserve">
-    <value>It is highly recommended that you select a password for the backups. Selecting a password ensures that no one but you can retrieve the files. Be sure to write down the password, as the backups will be useless without it.</value>
-  </data>
-  <data name="SignHelptext.Text" xml:space="preserve">
-    <value>Signing the backup makes it almost impossible to tamper with the data. The signature key is an advanced option, but should be used. Be sure to write down the signature key, otherwise the backup cannot be verified.</value>
-  </data>
 </root>

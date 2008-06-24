@@ -30,6 +30,9 @@ namespace Duplicati.Wizard_pages.Add_backup
 {
     public partial class IncrementalSettings : UserControl, IWizardControl
     {
+        private bool m_warnedFull = false;
+        private bool m_warnedClean = false;
+
         public IncrementalSettings()
         {
             InitializeComponent();
@@ -49,7 +52,7 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         string IWizardControl.HelpText
         {
-            get { return "To avoid backuping up every single file each time, Duplicati can back up the files that have changed since the last run. It is still possible to restore all files, but the storage requirement is much lower."; }
+            get { return "To avoid large backups, Duplicati can back up only files that have changed. Each backup is much smaller, but all files are still avalible."; }
         }
 
         Image IWizardControl.Image
@@ -68,9 +71,100 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
+            if (FullBackups.Checked)
+            {
+                try
+                {
+                    if (Timeparser.ParseTimeSpan(FullDuration.Text).TotalMinutes < 10)
+                    {
+                        MessageBox.Show(this, "The duration entered is less than ten minutes. This will give very poor system performance.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        cancel = true;
+                        return;
+                    }
+                } 
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "The full backup duration entered is not valid: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    cancel = true;
+                    return;
+                }
+            }
+
+            if (EnableCleanupDuration.Checked)
+            {
+                try
+                {
+                    if (Timeparser.ParseTimeSpan(CleanupDuration.Text).TotalMinutes < 10)
+                    {
+                        MessageBox.Show(this, "The cleanup duration entered is less than ten minutes. This will give very poor system performance.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        cancel = true;
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "The cleanup duration entered is not valid: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    cancel = true;
+                    return;
+                }
+            }
+
+            if (!m_warnedFull && !FullBackups.Checked)
+            {
+                if (MessageBox.Show(this, "You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.\nDisabling full backups may result in a very lengthy restoration process, and may cause a restore to fault.\nDo you want to continue without full backups?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    cancel = true;
+                    return;
+                }
+                m_warnedFull = true;
+            }
+
+            if (!m_warnedClean && !(EnableCleanupDuration.Checked || EnableFullBackupClean.Checked))
+            {
+                if (MessageBox.Show(this, "You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.\nDisabling full backups may result in a very lengthy restore process, and may cause a restore to fault.\nDo you want to continue without full backups?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    cancel = true;
+                    return;
+                }
+                m_warnedClean = true;
+            }
+
         }
 
 
         #endregion
+
+        private void FullBackups_CheckedChanged(object sender, EventArgs e)
+        {
+            FullSettings.Enabled = FullBackups.Checked;
+            m_warnedFull = false;
+        }
+
+        private void EnableFullBackupClean_CheckedChanged(object sender, EventArgs e)
+        {
+            CleanFullBackupCount.Enabled = CleanFullBackupHelptext.Enabled = EnableFullBackupClean.Checked;
+            m_warnedClean = false;
+        }
+
+        private void EnableCleanupDuration_CheckedChanged(object sender, EventArgs e)
+        {
+            CleanupDuration.Enabled = CleanupDurationHelptext.Enabled = EnableCleanupDuration.Checked;
+            m_warnedClean = false;
+        }
+
+        private void FullDuration_TextChanged(object sender, EventArgs e)
+        {
+            m_warnedFull = false;
+        }
+
+        private void CleanFullBackupCount_ValueChanged(object sender, EventArgs e)
+        {
+            m_warnedClean = false; 
+        }
+
+        private void CleanupDuration_TextChanged(object sender, EventArgs e)
+        {
+            m_warnedClean = false;
+        }
     }
 }

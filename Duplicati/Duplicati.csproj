@@ -168,6 +168,36 @@
     <Compile Include="Wizard pages\Add backup\SelectWhen.Designer.cs">
       <DependentUpon>SelectWhen.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Backends\File\FileOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\File\FileOptions.Designer.cs">
+      <DependentUpon>FileOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\FTP\FTPOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\FTP\FTPOptions.Designer.cs">
+      <DependentUpon>FTPOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\S3\S3Options.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\S3\S3Options.Designer.cs">
+      <DependentUpon>S3Options.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\SSH\SSHOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\SSH\SSHOptions.Designer.cs">
+      <DependentUpon>SSHOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\WebDAV\WebDAVOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\WebDAV\WebDAVOptions.Designer.cs">
+      <DependentUpon>WebDAVOptions.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\MainPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -180,6 +210,13 @@
     <Compile Include="Wizard pages\Restore\SelectBackup.Designer.cs">
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\SelectBackend.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\SelectBackend.Designer.cs">
+      <DependentUpon>SelectBackend.cs</DependentUpon>
+    </Compile>
+    <Compile Include="WizardHandler.cs" />
     <Compile Include="WorkerThread.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -277,6 +314,26 @@
       <SubType>Designer</SubType>
       <DependentUpon>SelectWhen.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\File\FileOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FileOptions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\FTP\FTPOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FTPOptions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\S3\S3Options.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>S3Options.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\SSH\SSHOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SSHOptions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\WebDAV\WebDAVOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>WebDAVOptions.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\MainPage.resx">
       <SubType>Designer</SubType>
       <DependentUpon>MainPage.cs</DependentUpon>
@@ -284,6 +341,10 @@
     <EmbeddedResource Include="Wizard pages\Restore\SelectBackup.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SelectBackup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\SelectBackend.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectBackend.cs</DependentUpon>
     </EmbeddedResource>
     <Content Include="TrayUnknown.ico" />
   </ItemGroup>

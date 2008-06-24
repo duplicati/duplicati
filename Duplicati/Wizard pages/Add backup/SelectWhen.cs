@@ -30,6 +30,8 @@ namespace Duplicati.Wizard_pages.Add_backup
 {
     public partial class SelectWhen : UserControl, IWizardControl
     {
+        private bool m_hasWarned;
+
         public SelectWhen()
         {
             InitializeComponent();
@@ -69,8 +71,37 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
+            if (!m_hasWarned && !EnableRepeat.Checked)
+            {
+                DateTime newtime = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
+                string b = null;
+                if (DateTime.Now > newtime)
+                    b = "The time you entered is int the past.";
+                else if (DateTime.Now > newtime.AddMinutes(10))
+                    b = "The time you entered will occur shortly.";
+
+                if (b != null)
+                {
+                    if (MessageBox.Show(this, b + " You have no repetition set, so the backup will never run.\nThis is fine if you only want to run the backup manually, but it is not reccomended.\nDo you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                    {
+                        cancel = true;
+                        return;
+                    }
+                    m_hasWarned = true;
+                }
+            }
         }
 
         #endregion
+
+        private void OffsetDate_ValueChanged(object sender, EventArgs e)
+        {
+            m_hasWarned = false;
+        }
+
+        private void OffsetTime_ValueChanged(object sender, EventArgs e)
+        {
+            m_hasWarned = false;
+        }
     }
 }

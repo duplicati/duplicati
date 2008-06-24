@@ -28,43 +28,44 @@ namespace Duplicati.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
-            this.checkBox1 = new System.Windows.Forms.CheckBox();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.FullBackups = new System.Windows.Forms.CheckBox();
+            this.FullSettings = new System.Windows.Forms.GroupBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.FullDuration = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.checkBox2 = new System.Windows.Forms.CheckBox();
-            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
-            this.label1 = new System.Windows.Forms.Label();
-            this.checkBox3 = new System.Windows.Forms.CheckBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.textBox2 = new System.Windows.Forms.TextBox();
-            this.groupBox1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
+            this.EnableFullBackupClean = new System.Windows.Forms.CheckBox();
+            this.CleanFullBackupCount = new System.Windows.Forms.NumericUpDown();
+            this.CleanFullBackupHelptext = new System.Windows.Forms.Label();
+            this.EnableCleanupDuration = new System.Windows.Forms.CheckBox();
+            this.CleanupDurationHelptext = new System.Windows.Forms.Label();
+            this.CleanupDuration = new System.Windows.Forms.TextBox();
+            this.FullSettings.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.CleanFullBackupCount)).BeginInit();
             this.SuspendLayout();
             // 
-            // checkBox1
+            // FullBackups
             // 
-            this.checkBox1.AutoSize = true;
-            this.checkBox1.Checked = true;
-            this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox1.Location = new System.Drawing.Point(40, 16);
-            this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(161, 17);
-            this.checkBox1.TabIndex = 3;
-            this.checkBox1.Text = "Perfom full backups regularly";
-            this.checkBox1.UseVisualStyleBackColor = true;
+            this.FullBackups.AutoSize = true;
+            this.FullBackups.Checked = true;
+            this.FullBackups.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.FullBackups.Location = new System.Drawing.Point(32, 8);
+            this.FullBackups.Name = "FullBackups";
+            this.FullBackups.Size = new System.Drawing.Size(161, 17);
+            this.FullBackups.TabIndex = 3;
+            this.FullBackups.Text = "Perfom full backups regularly";
+            this.FullBackups.UseVisualStyleBackColor = true;
+            this.FullBackups.CheckedChanged += new System.EventHandler(this.FullBackups_CheckedChanged);
             // 
-            // groupBox1
+            // FullSettings
             // 
-            this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.textBox1);
-            this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Location = new System.Drawing.Point(24, 16);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(448, 88);
-            this.groupBox1.TabIndex = 2;
-            this.groupBox1.TabStop = false;
+            this.FullSettings.Controls.Add(this.label3);
+            this.FullSettings.Controls.Add(this.FullDuration);
+            this.FullSettings.Controls.Add(this.label2);
+            this.FullSettings.Location = new System.Drawing.Point(24, 8);
+            this.FullSettings.Name = "FullSettings";
+            this.FullSettings.Size = new System.Drawing.Size(448, 88);
+            this.FullSettings.TabIndex = 2;
+            this.FullSettings.TabStop = false;
             // 
             // label3
             // 
@@ -76,13 +77,14 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.label3.Text = "Time is entered as 2D for 2 days, and 1M3D for one month, three days. Valid types" +
                 " are s,m,h,D,W,M and Y.";
             // 
-            // textBox1
+            // FullDuration
             // 
-            this.textBox1.Location = new System.Drawing.Point(168, 24);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(264, 20);
-            this.textBox1.TabIndex = 1;
-            this.textBox1.Text = "1M";
+            this.FullDuration.Location = new System.Drawing.Point(168, 24);
+            this.FullDuration.Name = "FullDuration";
+            this.FullDuration.Size = new System.Drawing.Size(264, 20);
+            this.FullDuration.TabIndex = 1;
+            this.FullDuration.Text = "1M";
+            this.FullDuration.TextChanged += new System.EventHandler(this.FullDuration_TextChanged);
             // 
             // label2
             // 
@@ -93,85 +95,91 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.label2.TabIndex = 0;
             this.label2.Text = "Perform a full backup each";
             // 
-            // checkBox2
+            // EnableFullBackupClean
             // 
-            this.checkBox2.AutoSize = true;
-            this.checkBox2.Checked = true;
-            this.checkBox2.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox2.Location = new System.Drawing.Point(32, 120);
-            this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(239, 17);
-            this.checkBox2.TabIndex = 4;
-            this.checkBox2.Text = "Never keep more than this many full backups";
-            this.checkBox2.UseVisualStyleBackColor = true;
+            this.EnableFullBackupClean.AutoSize = true;
+            this.EnableFullBackupClean.Checked = true;
+            this.EnableFullBackupClean.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.EnableFullBackupClean.Location = new System.Drawing.Point(32, 112);
+            this.EnableFullBackupClean.Name = "EnableFullBackupClean";
+            this.EnableFullBackupClean.Size = new System.Drawing.Size(239, 17);
+            this.EnableFullBackupClean.TabIndex = 4;
+            this.EnableFullBackupClean.Text = "Never keep more than this many full backups";
+            this.EnableFullBackupClean.UseVisualStyleBackColor = true;
+            this.EnableFullBackupClean.CheckedChanged += new System.EventHandler(this.EnableFullBackupClean_CheckedChanged);
             // 
-            // numericUpDown1
+            // CleanFullBackupCount
             // 
-            this.numericUpDown1.Location = new System.Drawing.Point(288, 120);
-            this.numericUpDown1.Name = "numericUpDown1";
-            this.numericUpDown1.Size = new System.Drawing.Size(56, 20);
-            this.numericUpDown1.TabIndex = 5;
-            this.numericUpDown1.Value = new decimal(new int[] {
+            this.CleanFullBackupCount.Location = new System.Drawing.Point(288, 112);
+            this.CleanFullBackupCount.Name = "CleanFullBackupCount";
+            this.CleanFullBackupCount.Size = new System.Drawing.Size(56, 20);
+            this.CleanFullBackupCount.TabIndex = 5;
+            this.CleanFullBackupCount.Value = new decimal(new int[] {
             4,
             0,
             0,
             0});
+            this.CleanFullBackupCount.ValueChanged += new System.EventHandler(this.CleanFullBackupCount_ValueChanged);
             // 
-            // label1
+            // CleanFullBackupHelptext
             // 
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(32, 144);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(440, 16);
-            this.label1.TabIndex = 3;
-            this.label1.Text = "To prevent the backups from growing indefinetly, old backups should be deleted re" +
+            this.CleanFullBackupHelptext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.CleanFullBackupHelptext.Location = new System.Drawing.Point(32, 136);
+            this.CleanFullBackupHelptext.Name = "CleanFullBackupHelptext";
+            this.CleanFullBackupHelptext.Size = new System.Drawing.Size(440, 16);
+            this.CleanFullBackupHelptext.TabIndex = 3;
+            this.CleanFullBackupHelptext.Text = "To prevent the backups from growing indefinetly, old backups should be deleted re" +
                 "gularly";
             // 
-            // checkBox3
+            // EnableCleanupDuration
             // 
-            this.checkBox3.AutoSize = true;
-            this.checkBox3.Location = new System.Drawing.Point(32, 176);
-            this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(195, 17);
-            this.checkBox3.TabIndex = 6;
-            this.checkBox3.Text = "Never keep backups older than this";
-            this.checkBox3.UseVisualStyleBackColor = true;
+            this.EnableCleanupDuration.AutoSize = true;
+            this.EnableCleanupDuration.Location = new System.Drawing.Point(32, 168);
+            this.EnableCleanupDuration.Name = "EnableCleanupDuration";
+            this.EnableCleanupDuration.Size = new System.Drawing.Size(195, 17);
+            this.EnableCleanupDuration.TabIndex = 6;
+            this.EnableCleanupDuration.Text = "Never keep backups older than this";
+            this.EnableCleanupDuration.UseVisualStyleBackColor = true;
+            this.EnableCleanupDuration.CheckedChanged += new System.EventHandler(this.EnableCleanupDuration_CheckedChanged);
             // 
-            // label4
+            // CleanupDurationHelptext
             // 
-            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(32, 200);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(432, 32);
-            this.label4.TabIndex = 8;
-            this.label4.Text = "Time is entered as 2D for 2 days, and 1M3D for one month, three days. Valid types" +
+            this.CleanupDurationHelptext.Enabled = false;
+            this.CleanupDurationHelptext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.CleanupDurationHelptext.Location = new System.Drawing.Point(32, 192);
+            this.CleanupDurationHelptext.Name = "CleanupDurationHelptext";
+            this.CleanupDurationHelptext.Size = new System.Drawing.Size(432, 32);
+            this.CleanupDurationHelptext.TabIndex = 8;
+            this.CleanupDurationHelptext.Text = "Time is entered as 2D for 2 days, and 1M3D for one month, three days. Valid types" +
                 " are s,m,h,D,W,M and Y.";
             // 
-            // textBox2
+            // CleanupDuration
             // 
-            this.textBox2.Location = new System.Drawing.Point(232, 176);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(232, 20);
-            this.textBox2.TabIndex = 7;
-            this.textBox2.Text = "6M";
+            this.CleanupDuration.Enabled = false;
+            this.CleanupDuration.Location = new System.Drawing.Point(232, 168);
+            this.CleanupDuration.Name = "CleanupDuration";
+            this.CleanupDuration.Size = new System.Drawing.Size(232, 20);
+            this.CleanupDuration.TabIndex = 7;
+            this.CleanupDuration.Text = "6M";
+            this.CleanupDuration.TextChanged += new System.EventHandler(this.CleanupDuration_TextChanged);
             // 
             // IncrementalSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.textBox2);
-            this.Controls.Add(this.checkBox3);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.numericUpDown1);
-            this.Controls.Add(this.checkBox2);
-            this.Controls.Add(this.checkBox1);
-            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.CleanupDurationHelptext);
+            this.Controls.Add(this.CleanupDuration);
+            this.Controls.Add(this.EnableCleanupDuration);
+            this.Controls.Add(this.CleanFullBackupHelptext);
+            this.Controls.Add(this.CleanFullBackupCount);
+            this.Controls.Add(this.EnableFullBackupClean);
+            this.Controls.Add(this.FullBackups);
+            this.Controls.Add(this.FullSettings);
             this.Name = "IncrementalSettings";
             this.Size = new System.Drawing.Size(506, 242);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
+            this.FullSettings.ResumeLayout(false);
+            this.FullSettings.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.CleanFullBackupCount)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -179,16 +187,16 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         #endregion
 
-        private System.Windows.Forms.CheckBox checkBox1;
-        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.CheckBox FullBackups;
+        private System.Windows.Forms.GroupBox FullSettings;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox FullDuration;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.CheckBox checkBox2;
-        private System.Windows.Forms.NumericUpDown numericUpDown1;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.CheckBox checkBox3;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.CheckBox EnableFullBackupClean;
+        private System.Windows.Forms.NumericUpDown CleanFullBackupCount;
+        private System.Windows.Forms.Label CleanFullBackupHelptext;
+        private System.Windows.Forms.CheckBox EnableCleanupDuration;
+        private System.Windows.Forms.Label CleanupDurationHelptext;
+        private System.Windows.Forms.TextBox CleanupDuration;
     }
 }

@@ -39,12 +39,12 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.myMusicSize = new System.Windows.Forms.Label();
             this.myPicturesSize = new System.Windows.Forms.Label();
             this.myDocumentsSize = new System.Windows.Forms.Label();
-            this.checkBox6 = new System.Windows.Forms.CheckBox();
-            this.checkBox5 = new System.Windows.Forms.CheckBox();
-            this.checkBox4 = new System.Windows.Forms.CheckBox();
-            this.checkBox3 = new System.Windows.Forms.CheckBox();
-            this.checkBox2 = new System.Windows.Forms.CheckBox();
-            this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.IncludeDocuments = new System.Windows.Forms.CheckBox();
+            this.IncludeSettings = new System.Windows.Forms.CheckBox();
+            this.IncludeDesktop = new System.Windows.Forms.CheckBox();
+            this.IncludeMovies = new System.Windows.Forms.CheckBox();
+            this.IncludeMusic = new System.Windows.Forms.CheckBox();
+            this.IncludeImages = new System.Windows.Forms.CheckBox();
             this.DocumentsRadio = new System.Windows.Forms.RadioButton();
             this.FolderGroup = new System.Windows.Forms.GroupBox();
             this.customSize = new System.Windows.Forms.Label();
@@ -89,13 +89,13 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.DocumentGroup.Controls.Add(this.myMusicSize);
             this.DocumentGroup.Controls.Add(this.myPicturesSize);
             this.DocumentGroup.Controls.Add(this.myDocumentsSize);
-            this.DocumentGroup.Controls.Add(this.checkBox6);
-            this.DocumentGroup.Controls.Add(this.checkBox5);
-            this.DocumentGroup.Controls.Add(this.checkBox4);
-            this.DocumentGroup.Controls.Add(this.checkBox3);
-            this.DocumentGroup.Controls.Add(this.checkBox2);
-            this.DocumentGroup.Controls.Add(this.checkBox1);
-            this.DocumentGroup.Location = new System.Drawing.Point(24, 16);
+            this.DocumentGroup.Controls.Add(this.IncludeDocuments);
+            this.DocumentGroup.Controls.Add(this.IncludeSettings);
+            this.DocumentGroup.Controls.Add(this.IncludeDesktop);
+            this.DocumentGroup.Controls.Add(this.IncludeMovies);
+            this.DocumentGroup.Controls.Add(this.IncludeMusic);
+            this.DocumentGroup.Controls.Add(this.IncludeImages);
+            this.DocumentGroup.Location = new System.Drawing.Point(24, 8);
             this.DocumentGroup.Name = "DocumentGroup";
             this.DocumentGroup.Size = new System.Drawing.Size(448, 104);
             this.DocumentGroup.TabIndex = 3;
@@ -155,77 +155,77 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.myDocumentsSize.TabIndex = 6;
             this.myDocumentsSize.Text = "(...)";
             // 
-            // checkBox6
+            // IncludeDocuments
             // 
-            this.checkBox6.AutoSize = true;
-            this.checkBox6.Checked = true;
-            this.checkBox6.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox6.Location = new System.Drawing.Point(32, 24);
-            this.checkBox6.Name = "checkBox6";
-            this.checkBox6.Size = new System.Drawing.Size(116, 17);
-            this.checkBox6.TabIndex = 5;
-            this.checkBox6.Text = "Include documents";
-            this.checkBox6.UseVisualStyleBackColor = true;
+            this.IncludeDocuments.AutoSize = true;
+            this.IncludeDocuments.Checked = true;
+            this.IncludeDocuments.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.IncludeDocuments.Location = new System.Drawing.Point(32, 24);
+            this.IncludeDocuments.Name = "IncludeDocuments";
+            this.IncludeDocuments.Size = new System.Drawing.Size(116, 17);
+            this.IncludeDocuments.TabIndex = 5;
+            this.IncludeDocuments.Text = "Include documents";
+            this.IncludeDocuments.UseVisualStyleBackColor = true;
             // 
-            // checkBox5
+            // IncludeSettings
             // 
-            this.checkBox5.AutoSize = true;
-            this.checkBox5.Location = new System.Drawing.Point(224, 72);
-            this.checkBox5.Name = "checkBox5";
-            this.checkBox5.Size = new System.Drawing.Size(154, 17);
-            this.checkBox5.TabIndex = 4;
-            this.checkBox5.Text = "Include application settings";
-            this.checkBox5.UseVisualStyleBackColor = true;
+            this.IncludeSettings.AutoSize = true;
+            this.IncludeSettings.Location = new System.Drawing.Point(224, 72);
+            this.IncludeSettings.Name = "IncludeSettings";
+            this.IncludeSettings.Size = new System.Drawing.Size(154, 17);
+            this.IncludeSettings.TabIndex = 4;
+            this.IncludeSettings.Text = "Include application settings";
+            this.IncludeSettings.UseVisualStyleBackColor = true;
             // 
-            // checkBox4
+            // IncludeDesktop
             // 
-            this.checkBox4.AutoSize = true;
-            this.checkBox4.Checked = true;
-            this.checkBox4.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox4.Location = new System.Drawing.Point(224, 48);
-            this.checkBox4.Name = "checkBox4";
-            this.checkBox4.Size = new System.Drawing.Size(156, 17);
-            this.checkBox4.TabIndex = 3;
-            this.checkBox4.Text = "Include files on the desktop";
-            this.checkBox4.UseVisualStyleBackColor = true;
+            this.IncludeDesktop.AutoSize = true;
+            this.IncludeDesktop.Checked = true;
+            this.IncludeDesktop.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.IncludeDesktop.Location = new System.Drawing.Point(224, 48);
+            this.IncludeDesktop.Name = "IncludeDesktop";
+            this.IncludeDesktop.Size = new System.Drawing.Size(156, 17);
+            this.IncludeDesktop.TabIndex = 3;
+            this.IncludeDesktop.Text = "Include files on the desktop";
+            this.IncludeDesktop.UseVisualStyleBackColor = true;
             // 
-            // checkBox3
+            // IncludeMovies
             // 
-            this.checkBox3.AutoSize = true;
-            this.checkBox3.Location = new System.Drawing.Point(224, 24);
-            this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(113, 17);
-            this.checkBox3.TabIndex = 2;
-            this.checkBox3.Text = "Include my movies";
-            this.checkBox3.UseVisualStyleBackColor = true;
+            this.IncludeMovies.AutoSize = true;
+            this.IncludeMovies.Location = new System.Drawing.Point(224, 24);
+            this.IncludeMovies.Name = "IncludeMovies";
+            this.IncludeMovies.Size = new System.Drawing.Size(113, 17);
+            this.IncludeMovies.TabIndex = 2;
+            this.IncludeMovies.Text = "Include my movies";
+            this.IncludeMovies.UseVisualStyleBackColor = true;
             // 
-            // checkBox2
+            // IncludeMusic
             // 
-            this.checkBox2.AutoSize = true;
-            this.checkBox2.Location = new System.Drawing.Point(32, 72);
-            this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(107, 17);
-            this.checkBox2.TabIndex = 1;
-            this.checkBox2.Text = "Include my music";
-            this.checkBox2.UseVisualStyleBackColor = true;
+            this.IncludeMusic.AutoSize = true;
+            this.IncludeMusic.Location = new System.Drawing.Point(32, 72);
+            this.IncludeMusic.Name = "IncludeMusic";
+            this.IncludeMusic.Size = new System.Drawing.Size(107, 17);
+            this.IncludeMusic.TabIndex = 1;
+            this.IncludeMusic.Text = "Include my music";
+            this.IncludeMusic.UseVisualStyleBackColor = true;
             // 
-            // checkBox1
+            // IncludeImages
             // 
-            this.checkBox1.AutoSize = true;
-            this.checkBox1.Checked = true;
-            this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox1.Location = new System.Drawing.Point(32, 48);
-            this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(113, 17);
-            this.checkBox1.TabIndex = 0;
-            this.checkBox1.Text = "Include my images";
-            this.checkBox1.UseVisualStyleBackColor = true;
+            this.IncludeImages.AutoSize = true;
+            this.IncludeImages.Checked = true;
+            this.IncludeImages.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.IncludeImages.Location = new System.Drawing.Point(32, 48);
+            this.IncludeImages.Name = "IncludeImages";
+            this.IncludeImages.Size = new System.Drawing.Size(113, 17);
+            this.IncludeImages.TabIndex = 0;
+            this.IncludeImages.Text = "Include my images";
+            this.IncludeImages.UseVisualStyleBackColor = true;
             // 
             // DocumentsRadio
             // 
             this.DocumentsRadio.AutoSize = true;
             this.DocumentsRadio.Checked = true;
-            this.DocumentsRadio.Location = new System.Drawing.Point(40, 16);
+            this.DocumentsRadio.Location = new System.Drawing.Point(40, 8);
             this.DocumentsRadio.Name = "DocumentsRadio";
             this.DocumentsRadio.Size = new System.Drawing.Size(94, 17);
             this.DocumentsRadio.TabIndex = 4;
@@ -241,7 +241,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.FolderGroup.Controls.Add(this.TargetFolder);
             this.FolderGroup.Controls.Add(this.label1);
             this.FolderGroup.Enabled = false;
-            this.FolderGroup.Location = new System.Drawing.Point(24, 128);
+            this.FolderGroup.Location = new System.Drawing.Point(24, 120);
             this.FolderGroup.Name = "FolderGroup";
             this.FolderGroup.Size = new System.Drawing.Size(448, 56);
             this.FolderGroup.TabIndex = 5;
@@ -259,7 +259,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             // FolderRadio
             // 
             this.FolderRadio.AutoSize = true;
-            this.FolderRadio.Location = new System.Drawing.Point(40, 128);
+            this.FolderRadio.Location = new System.Drawing.Point(40, 120);
             this.FolderRadio.Name = "FolderRadio";
             this.FolderRadio.Size = new System.Drawing.Size(100, 17);
             this.FolderRadio.TabIndex = 6;
@@ -272,7 +272,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             // 
             this.totalSize.AutoSize = true;
             this.totalSize.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.totalSize.Location = new System.Drawing.Point(40, 200);
+            this.totalSize.Location = new System.Drawing.Point(40, 192);
             this.totalSize.Name = "totalSize";
             this.totalSize.Size = new System.Drawing.Size(96, 13);
             this.totalSize.TabIndex = 6;
@@ -312,12 +312,12 @@ namespace Duplicati.Wizard_pages.Add_backup
         private System.Windows.Forms.Label myMusicSize;
         private System.Windows.Forms.Label myPicturesSize;
         private System.Windows.Forms.Label myDocumentsSize;
-        private System.Windows.Forms.CheckBox checkBox6;
-        private System.Windows.Forms.CheckBox checkBox5;
-        private System.Windows.Forms.CheckBox checkBox4;
-        private System.Windows.Forms.CheckBox checkBox3;
-        private System.Windows.Forms.CheckBox checkBox2;
-        private System.Windows.Forms.CheckBox checkBox1;
+        private System.Windows.Forms.CheckBox IncludeDocuments;
+        private System.Windows.Forms.CheckBox IncludeSettings;
+        private System.Windows.Forms.CheckBox IncludeDesktop;
+        private System.Windows.Forms.CheckBox IncludeMovies;
+        private System.Windows.Forms.CheckBox IncludeMusic;
+        private System.Windows.Forms.CheckBox IncludeImages;
         private System.Windows.Forms.GroupBox FolderGroup;
         private System.Windows.Forms.Label customSize;
         private System.Windows.Forms.RadioButton FolderRadio;
