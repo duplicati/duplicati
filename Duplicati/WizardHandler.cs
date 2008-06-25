@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using System.Data.LightDatamodel;
 
 namespace Duplicati
 {
@@ -28,9 +29,12 @@ namespace Duplicati
         }
 
         IWizardForm m_form;
+        IDataFetcher m_connection;
 
         public WizardHandler()
         {
+            m_connection = new DataFetcherNested(Program.DataConnection);
+
             m_form = new Dialog();
             m_form.Title = "Duplicati Setup Wizard";
 
@@ -63,6 +67,7 @@ namespace Duplicati
                     {
                         case Duplicati.Wizard_pages.MainPage.Action.Add:
                             args.NextPage = m_form.Pages[(int)Pages.Add_SelectFiles];
+
                             break;
                         /*case Duplicati.Wizard_pages.MainPage.Action.Edit:
                             break;
@@ -98,16 +103,48 @@ namespace Duplicati
                             break;
                     }
                     break;
+
+                case Pages.Add_FileOptions:
+                case Pages.Add_FTPOptions:
+                case Pages.Add_SSHOptions:
+                case Pages.Add_WebDAVOptions:
+                case Pages.Add_S3Options:
+                    args.NextPage = m_form.Pages[(int)Pages.Add_Finished];
+                    break;
+
+                case Pages.Add_Finished:
+                    SetupFinishPage(m_form.Pages[(int)Pages.Add_Finished] as Wizard_pages.Add_backup.FinishedAdd);
+                    break;
+
+
             }
         }
 
         void m_form_BackPressed(object sender, PageChangedArgs args)
         {
+            switch ((Pages)m_form.Pages.IndexOf(m_form.CurrentPage))
+            {
+                case Pages.Add_FileOptions:
+                case Pages.Add_FTPOptions:
+                case Pages.Add_SSHOptions:
+                case Pages.Add_WebDAVOptions:
+                case Pages.Add_S3Options:
+                    args.NextPage = m_form.Pages[(int)Pages.Add_SelectService];
+                    break;
+                case Pages.Add_SelectFiles:
+                    args.NextPage = m_form.Pages[(int)Pages.MainAction];
+                    break;
+            }
         }
 
         public void Show()
         {
             (m_form as Form).ShowDialog();
+        }
+
+        private void SetupFinishPage(Wizard_pages.Add_backup.FinishedAdd page)
+        {
+
         }
     }
 }

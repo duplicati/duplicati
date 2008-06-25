@@ -34,13 +34,13 @@ namespace Duplicati.Wizard_pages.Backends.File
             this.TargetDrive = new System.Windows.Forms.ComboBox();
             this.BrowseTargetFolder = new System.Windows.Forms.Button();
             this.Credentials = new System.Windows.Forms.GroupBox();
-            this.UseCredentials = new System.Windows.Forms.CheckBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.Username = new System.Windows.Forms.TextBox();
-            this.Password = new System.Windows.Forms.TextBox();
             this.Domain = new System.Windows.Forms.TextBox();
+            this.Password = new System.Windows.Forms.TextBox();
+            this.Username = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
+            this.UseCredentials = new System.Windows.Forms.CheckBox();
             this.Folder = new System.Windows.Forms.TextBox();
             this.FolderLabel = new System.Windows.Forms.Label();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
@@ -80,6 +80,7 @@ namespace Duplicati.Wizard_pages.Backends.File
             // 
             // TargetDrive
             // 
+            this.TargetDrive.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.TargetDrive.Enabled = false;
             this.TargetDrive.FormattingEnabled = true;
             this.TargetDrive.Location = new System.Drawing.Point(136, 48);
@@ -112,34 +113,27 @@ namespace Duplicati.Wizard_pages.Backends.File
             this.Credentials.TabIndex = 5;
             this.Credentials.TabStop = false;
             // 
-            // UseCredentials
+            // Domain
             // 
-            this.UseCredentials.AutoSize = true;
-            this.UseCredentials.Location = new System.Drawing.Point(32, 96);
-            this.UseCredentials.Name = "UseCredentials";
-            this.UseCredentials.Size = new System.Drawing.Size(143, 17);
-            this.UseCredentials.TabIndex = 6;
-            this.UseCredentials.Text = "Use alternate credentials";
-            this.UseCredentials.UseVisualStyleBackColor = true;
-            this.UseCredentials.CheckedChanged += new System.EventHandler(this.UseCredentials_CheckedChanged);
+            this.Domain.Location = new System.Drawing.Point(120, 72);
+            this.Domain.Name = "Domain";
+            this.Domain.Size = new System.Drawing.Size(264, 20);
+            this.Domain.TabIndex = 9;
             // 
-            // label1
+            // Password
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(16, 24);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(55, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Username";
+            this.Password.Location = new System.Drawing.Point(120, 48);
+            this.Password.Name = "Password";
+            this.Password.PasswordChar = '*';
+            this.Password.Size = new System.Drawing.Size(264, 20);
+            this.Password.TabIndex = 8;
             // 
-            // label2
+            // Username
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(16, 48);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(53, 13);
-            this.label2.TabIndex = 1;
-            this.label2.Text = "Password";
+            this.Username.Location = new System.Drawing.Point(120, 24);
+            this.Username.Name = "Username";
+            this.Username.Size = new System.Drawing.Size(264, 20);
+            this.Username.TabIndex = 7;
             // 
             // label3
             // 
@@ -150,27 +144,34 @@ namespace Duplicati.Wizard_pages.Backends.File
             this.label3.TabIndex = 2;
             this.label3.Text = "Domain (optional)";
             // 
-            // Username
+            // label2
             // 
-            this.Username.Location = new System.Drawing.Point(120, 24);
-            this.Username.Name = "Username";
-            this.Username.Size = new System.Drawing.Size(264, 20);
-            this.Username.TabIndex = 7;
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(16, 48);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(53, 13);
+            this.label2.TabIndex = 1;
+            this.label2.Text = "Password";
             // 
-            // Password
+            // label1
             // 
-            this.Password.Location = new System.Drawing.Point(120, 48);
-            this.Password.Name = "Password";
-            this.Password.PasswordChar = '*';
-            this.Password.Size = new System.Drawing.Size(264, 20);
-            this.Password.TabIndex = 8;
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(16, 24);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(55, 13);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Username";
             // 
-            // Domain
+            // UseCredentials
             // 
-            this.Domain.Location = new System.Drawing.Point(120, 72);
-            this.Domain.Name = "Domain";
-            this.Domain.Size = new System.Drawing.Size(264, 20);
-            this.Domain.TabIndex = 9;
+            this.UseCredentials.AutoSize = true;
+            this.UseCredentials.Location = new System.Drawing.Point(32, 96);
+            this.UseCredentials.Name = "UseCredentials";
+            this.UseCredentials.Size = new System.Drawing.Size(143, 17);
+            this.UseCredentials.TabIndex = 6;
+            this.UseCredentials.Text = "Use alternate credentials";
+            this.UseCredentials.UseVisualStyleBackColor = true;
+            this.UseCredentials.CheckedChanged += new System.EventHandler(this.UseCredentials_CheckedChanged);
             // 
             // Folder
             // 

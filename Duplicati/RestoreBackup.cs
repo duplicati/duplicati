@@ -56,8 +56,14 @@ namespace Duplicati
                 dt = new DateTime();
             }
 
-            if (System.IO.Directory.GetFileSystemEntries(TargetFolder.Text).Length > 0)
-                if (MessageBox.Show(this, "The selected folder is not empty.\r\nDo you want to restore there anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+            if (System.IO.Directory.Exists(TargetFolder.Text))
+            {
+                if (System.IO.Directory.GetFileSystemEntries(TargetFolder.Text).Length > 0)
+                    if (MessageBox.Show(this, "The selected folder is not empty.\r\nDo you want to restore there anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                        return;
+            }
+            else
+                if (MessageBox.Show(this, "The selected folder does not exist.\r\nDo you want to restore there anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
                     return;
 
             Program.WorkThread.AddTask(new RestoreTask(m_schedule, TargetFolder.Text, dt));

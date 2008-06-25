@@ -53,7 +53,10 @@ namespace Duplicati.Wizard_pages.Backends.SSH
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
             if (!ValidateForm())
-                cancel = false;
+            {
+                cancel = true;
+                return;
+            }
 
             /*if (!m_hasTested)
                 if (MessageBox.Show(this, "Do you want to test the connection?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)

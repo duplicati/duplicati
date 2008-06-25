@@ -45,6 +45,15 @@ namespace Duplicati.Wizard_pages.Backends.File
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            if (TargetDrive.Items.Count == 0)
+            {
+                for (char i = 'A'; i < 'Z'; i++)
+                {
+                    System.IO.DriveInfo di = new System.IO.DriveInfo(i.ToString());
+                    if (di.DriveType == System.IO.DriveType.Removable)
+                        TargetDrive.Items.Add(i.ToString() + ":");
+                }
+            }
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -119,6 +128,12 @@ namespace Duplicati.Wizard_pages.Backends.File
         private void UseDisk_CheckedChanged(object sender, EventArgs e)
         {
             TargetDrive.Enabled = Folder.Enabled = FolderLabel.Enabled = UseDisk.Checked;
+            if (TargetDrive.Enabled && TargetDrive.Items.Count == 0)
+            {
+                MessageBox.Show(this, "No removable drives were found on your system. Please enter the path manually.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                UsePath.Checked = true;
+            }
+
         }
     }
 }

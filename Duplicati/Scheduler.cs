@@ -99,7 +99,7 @@ namespace Duplicati
                             m_worker.AddTask(new IncrementalBackupTask(sc));
 
                             int i = 0;
-                            while (start <= DateTime.Now && i++ < 500)
+                            while (start <= DateTime.Now && i++ < 50000)
                                 start = Timeparser.ParseTimeInterval(sc.Repeat, start);
 
                             if (start < DateTime.Now)

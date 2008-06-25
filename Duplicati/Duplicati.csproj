@@ -144,6 +144,13 @@
     </Compile>
     <Compile Include="TaskPackages.cs" />
     <Compile Include="Timeparser.cs" />
+    <Compile Include="UrlUtillity.cs" />
+    <Compile Include="Wizard pages\Add backup\FinishedAdd.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\FinishedAdd.Designer.cs">
+      <DependentUpon>FinishedAdd.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Add backup\IncrementalSettings.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -298,6 +305,10 @@
     <EmbeddedResource Include="Icons\Status.ico" />
     <EmbeddedResource Include="Icons\Settings.ico" />
     <EmbeddedResource Include="Icons\Time.ico" />
+    <EmbeddedResource Include="Wizard pages\Add backup\FinishedAdd.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FinishedAdd.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\IncrementalSettings.resx">
       <SubType>Designer</SubType>
       <DependentUpon>IncrementalSettings.cs</DependentUpon>

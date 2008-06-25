@@ -25,6 +25,7 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Add_backup
 {
@@ -32,10 +33,23 @@ namespace Duplicati.Wizard_pages.Add_backup
     {
         private bool m_warnedFull = false;
         private bool m_warnedClean = false;
+        
+        private Schedule m_schedule;
 
         public IncrementalSettings()
         {
             InitializeComponent();
+        }
+
+        public void Setup(Schedule schedule)
+        {
+            m_schedule = schedule;
+            if (m_schedule != null && !m_schedule.RelationManager.ExistsInDb(m_schedule))
+            {
+                m_schedule.Repeat = "1M";
+                m_schedule.KeepFull = 4;
+                m_schedule.KeepTime = "";
+            }
         }
 
         #region IWizardControl Members
@@ -67,6 +81,15 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            if (m_schedule != null)
+            {
+                FullDuration.Text = m_schedule.Repeat;
+                FullBackups.Enabled = !string.IsNullOrEmpty(m_schedule.Repeat);
+                CleanFullBackupCount.Value = m_schedule.KeepFull;
+                EnableFullBackupClean.Checked = m_schedule.KeepFull > 0;
+                CleanupDuration.Text = m_schedule.KeepTime;
+                EnableCleanupDuration.Checked = !string.IsNullOrEmpty(m_schedule.KeepTime);
+            }
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -127,6 +150,24 @@ namespace Duplicati.Wizard_pages.Add_backup
                     return;
                 }
                 m_warnedClean = true;
+            }
+
+            if (m_schedule != null)
+            {
+                if (FullBackups.Checked)
+                    m_schedule.Repeat = FullBackups.Text;
+                else
+                    m_schedule.Repeat = null;
+
+                if (EnableFullBackupClean.Checked)
+                    m_schedule.KeepFull = (int)CleanFullBackupCount.Value;
+                else
+                    m_schedule.KeepFull = 0;
+
+                if (EnableCleanupDuration.Checked)
+                    m_schedule.KeepTime = CleanupDuration.Text;
+                else
+                    m_schedule.KeepTime = null;
             }
 
         }
