@@ -6,13 +6,16 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Backends.SSH
 {
-    public partial class SSHOptions : UserControl, IWizardControl
+    public partial class SSHOptions : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
     {
         private bool m_warnedPath = false;
         private bool m_hasTested = false;
+
+        private Duplicati.Datamodel.Backends.SSH m_ssh;
 
         public SSHOptions()
         {
@@ -48,6 +51,18 @@ namespace Duplicati.Wizard_pages.Backends.SSH
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            bool backset = m_hasTested;
+            bool wp = m_warnedPath;
+
+            Servername.Text = m_ssh.Host;
+            Path.Text = m_ssh.Folder;
+            Username.Text = m_ssh.Username;
+            UsePassword.Checked = !m_ssh.Passwordless;
+            Password.Text = m_ssh.Password;
+            Port.Value = m_ssh.Port;
+
+            m_hasTested = backset;
+            m_warnedPath = wp;
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -76,6 +91,24 @@ namespace Duplicati.Wizard_pages.Backends.SSH
                 }
                 m_warnedPath = true;
             }
+
+            m_ssh.Host = Servername.Text;
+            m_ssh.Folder = Path.Text;
+            m_ssh.Username = Username.Text;
+            
+            if (UsePassword.Checked)
+            {
+                m_ssh.Passwordless = false;
+                m_ssh.Password = Password.Text;
+            }
+            else
+            {
+                m_ssh.Passwordless = true;
+                m_ssh.Password = null;
+            }
+            
+            m_ssh.Port = (int)Port.Value;
+
         }
 
         #endregion
@@ -139,6 +172,21 @@ namespace Duplicati.Wizard_pages.Backends.SSH
 
         private void Port_ValueChanged(object sender, EventArgs e)
         {
+            m_hasTested = false;
+        }
+
+        #region ITaskBased Members
+
+        public void Setup(Task task)
+        {
+            m_ssh = new Duplicati.Datamodel.Backends.SSH(task);
+        }
+
+        #endregion
+
+        private void UsePassword_CheckedChanged(object sender, EventArgs e)
+        {
+            Password.Enabled = UsePassword.Checked;
             m_hasTested = false;
         }
     }

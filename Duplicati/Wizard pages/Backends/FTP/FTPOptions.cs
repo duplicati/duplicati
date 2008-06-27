@@ -6,14 +6,17 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Backends.FTP
 {
-    public partial class FTPOptions : UserControl, IWizardControl
+    public partial class FTPOptions : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
     {
         private bool m_warnedPassword;
         private bool m_hasTested;
         private bool m_warnedPath;
+        
+        private Duplicati.Datamodel.Backends.FTP m_ftp;
 
         public FTPOptions()
         {
@@ -49,6 +52,17 @@ namespace Duplicati.Wizard_pages.Backends.FTP
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            bool backset = m_hasTested;
+            bool wp = m_warnedPath;
+            
+            Servername.Text = m_ftp.Host;
+            Path.Text = m_ftp.Folder;
+            Username.Text = m_ftp.Username;
+            Password.Text = m_ftp.Password;
+            Port.Value = m_ftp.Port;
+
+            m_hasTested = backset;
+            m_warnedPath = wp;
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -79,6 +93,12 @@ namespace Duplicati.Wizard_pages.Backends.FTP
                 }
                 m_warnedPath = true;
             }
+
+            m_ftp.Host = Servername.Text;
+            m_ftp.Folder = Path.Text;
+            m_ftp.Username = Username.Text;
+            m_ftp.Password = Password.Text;
+            m_ftp.Port = (int)Port.Value;
         }
 
         #endregion
@@ -162,5 +182,14 @@ namespace Duplicati.Wizard_pages.Backends.FTP
         {
             m_hasTested = false;
         }
+
+        #region ITaskBased Members
+
+        public void Setup(Duplicati.Datamodel.Task task)
+        {
+            m_ftp = new Duplicati.Datamodel.Backends.FTP(task);
+        }
+
+        #endregion
     }
 }

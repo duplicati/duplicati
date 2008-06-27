@@ -25,15 +25,17 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Add_backup
 {
-    public partial class SelectFiles : UserControl, IWizardControl
+    public partial class SelectFiles : UserControl, IWizardControl, Interfaces.IScheduleBased
     {
         IWizardForm m_owner;
         private WorkerThread<string> m_calculator;
         private object m_lock = new object();
         private Dictionary<string, long> m_sizes;
+        private Schedule m_schedule;
 
         private string m_myPictures;
         private string m_myMusic;
@@ -121,6 +123,8 @@ namespace Duplicati.Wizard_pages.Add_backup
         void IWizardControl.Enter(IWizardForm owner)
         {
             m_owner = owner;
+            if (m_schedule != null)
+                TargetFolder.Text = m_schedule.Path;
             Rescan();
         }
 
@@ -225,6 +229,16 @@ namespace Duplicati.Wizard_pages.Add_backup
                     m_calculator.AddTask(TargetFolder.Text);
                 }
 
+            m_schedule.Path = TargetFolder.Text;
         }
+
+        #region IScheduleBased Members
+
+        public void Setup(Duplicati.Datamodel.Schedule schedule)
+        {
+            m_schedule = schedule;
+        }
+
+        #endregion
     }
 }

@@ -133,7 +133,6 @@ namespace Duplicati.Wizard_pages.Backends.S3
             this.Controls.Add(this.label1);
             this.Name = "S3Options";
             this.Size = new System.Drawing.Size(506, 242);
-            this.Load += new System.EventHandler(this.S3Options_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

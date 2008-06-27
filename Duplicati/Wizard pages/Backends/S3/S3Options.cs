@@ -6,12 +6,14 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Backends.S3
 {
-    public partial class S3Options : UserControl, IWizardControl
+    public partial class S3Options : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
     {
         private const string LOGIN_PAGE = "http://aws.amazon.com/s3";
+        private Duplicati.Datamodel.Backends.S3 m_s3;
        
         public S3Options()
         {
@@ -47,6 +49,10 @@ namespace Duplicati.Wizard_pages.Backends.S3
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            AWS_ID.Text = m_s3.AccessID;
+            AWS_KEY.Text = m_s3.AccessKey;
+            BucketName.Text = m_s3.BucketName;
+            UseEuroBuckets.Checked = m_s3.UseEuroBucket;
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -72,6 +78,13 @@ namespace Duplicati.Wizard_pages.Backends.S3
                 return;
             }
 
+            m_s3.AccessID = AWS_ID.Text;
+            m_s3.AccessKey = AWS_KEY.Text;
+            m_s3.BucketName = BucketName.Text;
+            m_s3.ServerUrl = null;
+            m_s3.Prefix = null;
+            m_s3.UseEuroBucket = UseEuroBuckets.Checked;
+
         }
 
         #endregion
@@ -81,9 +94,13 @@ namespace Duplicati.Wizard_pages.Backends.S3
             UrlUtillity.OpenUrl(LOGIN_PAGE);
         }
 
-        private void S3Options_Load(object sender, EventArgs e)
-        {
+        #region ITaskBased Members
 
+        public void Setup(Task task)
+        {
+            m_s3 = new Duplicati.Datamodel.Backends.S3(task);
         }
+
+        #endregion
     }
 }

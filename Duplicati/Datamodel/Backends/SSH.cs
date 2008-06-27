@@ -31,6 +31,7 @@ namespace Duplicati.Datamodel.Backends
         private const string HOST = "Host";
         private const string FOLDER = "Folder";
         private const string PASWORDLESS = "Passwordless";
+        private const string PORT = "Port";
 
         private Task m_owner;
 
@@ -38,6 +39,7 @@ namespace Duplicati.Datamodel.Backends
         {
             m_owner = owner;
         }
+
         public string Username
         {
             get { return m_owner.Settings[USERNAME]; }
@@ -54,6 +56,19 @@ namespace Duplicati.Datamodel.Backends
         {
             get { return m_owner.Settings[HOST]; }
             set { m_owner.Settings[HOST] = value; }
+        }
+
+        public int Port
+        {
+            get
+            {
+                string port = m_owner.Settings[PORT];
+                int portn;
+                if (!int.TryParse(port, out portn))
+                    portn = 22;
+                return portn;
+            }
+            set { m_owner.Settings[PORT] = value.ToString(); }
         }
 
         public string Folder
@@ -80,7 +95,6 @@ namespace Duplicati.Datamodel.Backends
 
         public string GetDestinationPath()
         {
-
             return "ssh://" + this.Username + "@" + this.Host + "/" + this.Folder;
         }
 

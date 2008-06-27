@@ -25,12 +25,14 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Add_backup
 {
-    public partial class SelectWhen : UserControl, IWizardControl
+    public partial class SelectWhen : UserControl, IWizardControl, Interfaces.IScheduleBased
     {
         private bool m_hasWarned;
+        private Schedule m_schedule;
 
         public SelectWhen()
         {
@@ -66,7 +68,13 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Enter(IWizardForm owner)
         {
-            
+            if (m_schedule != null)
+            {
+                OffsetDate.Value = m_schedule.When;
+                OffsetTime.Value = m_schedule.When;
+                RepeatInterval.Text = m_schedule.Repeat;
+                EnableRepeat.Checked = !string.IsNullOrEmpty(m_schedule.Repeat);
+            }
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -90,6 +98,32 @@ namespace Duplicati.Wizard_pages.Add_backup
                     m_hasWarned = true;
                 }
             }
+
+            if (EnableRepeat.Checked)
+            {
+                try
+                {
+                    TimeSpan sp = Timeparser.ParseTimeSpan(RepeatInterval.Text);
+                    if (sp.TotalMinutes < 5)
+                    {
+                        MessageBox.Show(this, "The duration entered is less than five minutes. That is not acceptable.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        cancel = true;
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "The duration entered is not valid.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    cancel = true;
+                    return;
+                }
+            }
+
+            m_schedule.When = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
+            if (EnableRepeat.Checked)
+                m_schedule.Repeat = RepeatInterval.Text;
+            else
+                m_schedule.Repeat = null;
         }
 
         #endregion
@@ -103,5 +137,19 @@ namespace Duplicati.Wizard_pages.Add_backup
         {
             m_hasWarned = false;
         }
+
+        #region IScheduleBased Members
+
+        public void Setup(Duplicati.Datamodel.Schedule schedule)
+        {
+            m_schedule = schedule;
+            if (m_schedule != null && !m_schedule.RelationManager.ExistsInDb(m_schedule))
+            {
+                m_schedule.When = DateTime.Now.Date.AddHours(DateTime.Now.Hour + 1);
+                m_schedule.Repeat = "1D";
+            }
+        }
+
+        #endregion
     }
 }

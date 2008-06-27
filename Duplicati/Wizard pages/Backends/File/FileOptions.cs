@@ -9,8 +9,11 @@ using System.Windows.Forms.Wizard;
 
 namespace Duplicati.Wizard_pages.Backends.File
 {
-    public partial class FileOptions : UserControl, IWizardControl
+    public partial class FileOptions : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
     {
+        private Duplicati.Datamodel.Backends.File m_file;
+        private bool m_isUpdating = false;
+
         public FileOptions()
         {
             InitializeComponent();
@@ -53,6 +56,23 @@ namespace Duplicati.Wizard_pages.Backends.File
                     if (di.DriveType == System.IO.DriveType.Removable)
                         TargetDrive.Items.Add(i.ToString() + ":");
                 }
+            }
+
+
+            try
+            {
+                m_isUpdating = true;
+
+                UsePath.Checked = true;
+                TargetFolder.Text = m_file.DestinationFolder;
+                
+                UseCredentials.Checked = !string.IsNullOrEmpty(m_file.Username);
+                Username.Text = m_file.Username;
+                Password.Text = m_file.Password;
+            }
+            finally
+            {
+                m_isUpdating = false;
             }
         }
 
@@ -101,6 +121,18 @@ namespace Duplicati.Wizard_pages.Backends.File
                 cancel = true;
                 return;
             }
+
+            m_file.DestinationFolder = TargetFolder.Text;
+            if (UseCredentials.Checked)
+            {
+                m_file.Username = Username.Text;
+                m_file.Password = Password.Text;
+            }
+            else
+            {
+                m_file.Username = null;
+                m_file.Password = null;
+            }
         }
 
         #endregion
@@ -108,6 +140,10 @@ namespace Duplicati.Wizard_pages.Backends.File
         private void UseCredentials_CheckedChanged(object sender, EventArgs e)
         {
             Credentials.Enabled = UseCredentials.Checked;
+
+            if (m_isUpdating)
+                return;
+
             if (UseCredentials.Checked)
             {
                 MessageBox.Show(this, "This feature is not supported in the current version of Duplicati. You may enter the information now, and it may be used in later versions of Duplicati.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -128,6 +164,10 @@ namespace Duplicati.Wizard_pages.Backends.File
         private void UseDisk_CheckedChanged(object sender, EventArgs e)
         {
             TargetDrive.Enabled = Folder.Enabled = FolderLabel.Enabled = UseDisk.Checked;
+
+            if (m_isUpdating)
+                return;
+
             if (TargetDrive.Enabled && TargetDrive.Items.Count == 0)
             {
                 MessageBox.Show(this, "No removable drives were found on your system. Please enter the path manually.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -135,5 +175,14 @@ namespace Duplicati.Wizard_pages.Backends.File
             }
 
         }
+
+        #region ITaskBased Members
+
+        public void Setup(Duplicati.Datamodel.Task task)
+        {
+            m_file = new Duplicati.Datamodel.Backends.File(task);
+        }
+
+        #endregion
     }
 }

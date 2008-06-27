@@ -205,6 +205,8 @@
     <Compile Include="Wizard pages\Backends\WebDAV\WebDAVOptions.Designer.cs">
       <DependentUpon>WebDAVOptions.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Interfaces\IScheduleBased.cs" />
+    <Compile Include="Wizard pages\Interfaces\ITaskBased.cs" />
     <Compile Include="Wizard pages\MainPage.cs">
       <SubType>UserControl</SubType>
     </Compile>

@@ -35,16 +35,16 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             this.Path = new System.Windows.Forms.TextBox();
             this.Servername = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.UsePassword = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
             this.SuspendLayout();
             // 
             // TestConnection
             // 
-            this.TestConnection.Location = new System.Drawing.Point(272, 152);
+            this.TestConnection.Location = new System.Drawing.Point(272, 168);
             this.TestConnection.Name = "TestConnection";
             this.TestConnection.Size = new System.Drawing.Size(112, 24);
             this.TestConnection.TabIndex = 21;
@@ -54,7 +54,7 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             // 
             // Port
             // 
-            this.Port.Location = new System.Drawing.Point(96, 112);
+            this.Port.Location = new System.Drawing.Point(120, 112);
             this.Port.Maximum = new decimal(new int[] {
             65500,
             0,
@@ -77,7 +77,7 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             // 
             // Password
             // 
-            this.Password.Location = new System.Drawing.Point(96, 88);
+            this.Password.Location = new System.Drawing.Point(120, 88);
             this.Password.Name = "Password";
             this.Password.PasswordChar = '*';
             this.Password.Size = new System.Drawing.Size(288, 20);
@@ -86,7 +86,7 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             // 
             // Username
             // 
-            this.Username.Location = new System.Drawing.Point(96, 64);
+            this.Username.Location = new System.Drawing.Point(120, 64);
             this.Username.Name = "Username";
             this.Username.Size = new System.Drawing.Size(288, 20);
             this.Username.TabIndex = 18;
@@ -94,7 +94,7 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             // 
             // Path
             // 
-            this.Path.Location = new System.Drawing.Point(96, 40);
+            this.Path.Location = new System.Drawing.Point(120, 40);
             this.Path.Name = "Path";
             this.Path.Size = new System.Drawing.Size(288, 20);
             this.Path.TabIndex = 17;
@@ -102,7 +102,7 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             // 
             // Servername
             // 
-            this.Servername.Location = new System.Drawing.Point(96, 16);
+            this.Servername.Location = new System.Drawing.Point(120, 16);
             this.Servername.Name = "Servername";
             this.Servername.Size = new System.Drawing.Size(288, 20);
             this.Servername.TabIndex = 16;
@@ -116,15 +116,6 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             this.label5.Size = new System.Drawing.Size(72, 13);
             this.label5.TabIndex = 15;
             this.label5.Text = "Port (optional)";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(16, 88);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(53, 13);
-            this.label4.TabIndex = 14;
-            this.label4.Text = "Password";
             // 
             // label3
             // 
@@ -153,10 +144,24 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             this.label1.TabIndex = 11;
             this.label1.Text = "Server";
             // 
+            // UsePassword
+            // 
+            this.UsePassword.AutoSize = true;
+            this.UsePassword.Checked = true;
+            this.UsePassword.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.UsePassword.Location = new System.Drawing.Point(24, 88);
+            this.UsePassword.Name = "UsePassword";
+            this.UsePassword.Size = new System.Drawing.Size(72, 17);
+            this.UsePassword.TabIndex = 22;
+            this.UsePassword.Text = "Password";
+            this.UsePassword.UseVisualStyleBackColor = true;
+            this.UsePassword.CheckedChanged += new System.EventHandler(this.UsePassword_CheckedChanged);
+            // 
             // SSHOptions
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.UsePassword);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.Port);
             this.Controls.Add(this.Password);
@@ -164,7 +169,6 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             this.Controls.Add(this.Path);
             this.Controls.Add(this.Servername);
             this.Controls.Add(this.label5);
-            this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -185,9 +189,9 @@ namespace Duplicati.Wizard_pages.Backends.SSH
         private System.Windows.Forms.TextBox Path;
         private System.Windows.Forms.TextBox Servername;
         private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.CheckBox UsePassword;
     }
 }

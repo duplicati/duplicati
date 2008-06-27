@@ -29,7 +29,7 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Add_backup
 {
-    public partial class IncrementalSettings : UserControl, IWizardControl
+    public partial class IncrementalSettings : UserControl, IWizardControl, Interfaces.IScheduleBased
     {
         private bool m_warnedFull = false;
         private bool m_warnedClean = false;

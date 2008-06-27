@@ -98,15 +98,18 @@
     <Compile Include="CommandQueue.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="LogBlob.cs" />
-    <EmbeddedResource Include="C:\Documents and Settings\Kenneth\Dokumenter\duplicati\Duplicati\Datamodel\LightDataModel.Mapping.xml" />
     <Compile Include="ApplicationSettings.cs" />
     <Compile Include="ApplicationSetting.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LightDatamodel.snk" />
+    <Compile Include="Backends\FTP.cs" />
     <Compile Include="Log.Extension.cs" />
     <Compile Include="LogBlob.Extension.cs" />
     <Compile Include="Utillity.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="LightDataModel.Mapping.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

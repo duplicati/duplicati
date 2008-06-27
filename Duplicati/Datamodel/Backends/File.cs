@@ -29,6 +29,9 @@ namespace Duplicati.Datamodel.Backends
         private const string DESTINATION_FOLDER = "Destination";
         private const string TIME_SEPARATOR = "TimeSeparator";
 
+        private const string USERNAME = "Username";
+        private const string PASSWORD = "Password";
+
         private Task m_owner;
 
         public File(Task owner)
@@ -50,6 +53,17 @@ namespace Duplicati.Datamodel.Backends
             set { m_owner.Settings[TIME_SEPARATOR] = value; }
         }
 
+        public string Username
+        {
+            get { return m_owner.Settings[USERNAME]; }
+            set { m_owner.Settings[USERNAME] = value; }
+        }
+
+        public string Password
+        {
+            get { return m_owner.Settings[PASSWORD]; }
+            set { m_owner.Settings[PASSWORD] = value; }
+        }
 
         #region IBackend Members
 

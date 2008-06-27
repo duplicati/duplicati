@@ -30,7 +30,7 @@ namespace Duplicati.Wizard_pages.Add_backup
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.RepeatInterval = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.EnableRepeat = new System.Windows.Forms.CheckBox();
             this.OffsetTime = new System.Windows.Forms.DateTimePicker();
@@ -42,7 +42,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.textBox1);
+            this.groupBox1.Controls.Add(this.RepeatInterval);
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Location = new System.Drawing.Point(24, 40);
             this.groupBox1.Name = "groupBox1";
@@ -60,13 +60,13 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.label3.Text = "Time is entered as 2D for 2 days, and 1M3D for one month, three days. Valid types" +
                 " are s,m,h,D,W,M and Y.";
             // 
-            // textBox1
+            // RepeatInterval
             // 
-            this.textBox1.Location = new System.Drawing.Point(120, 24);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(312, 20);
-            this.textBox1.TabIndex = 1;
-            this.textBox1.Text = "1D";
+            this.RepeatInterval.Location = new System.Drawing.Point(120, 24);
+            this.RepeatInterval.Name = "RepeatInterval";
+            this.RepeatInterval.Size = new System.Drawing.Size(312, 20);
+            this.RepeatInterval.TabIndex = 1;
+            this.RepeatInterval.Text = "1D";
             // 
             // label2
             // 
@@ -139,7 +139,7 @@ namespace Duplicati.Wizard_pages.Add_backup
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.CheckBox EnableRepeat;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox RepeatInterval;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.DateTimePicker OffsetTime;
         private System.Windows.Forms.DateTimePicker OffsetDate;

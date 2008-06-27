@@ -25,12 +25,16 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Add_backup
 {
-    public partial class PasswordSettings : UserControl, IWizardControl
+    public partial class PasswordSettings : UserControl, IWizardControl, Interfaces.ITaskBased
     {
         private bool m_warnedNoPassword = false;
+        private bool m_showAsInitial = false;
+        private Task m_task;
+
         public PasswordSettings()
         {
             InitializeComponent();
@@ -65,6 +69,24 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            if (m_showAsInitial)
+            {
+                EnablePassword.Checked = true;
+                Password.Text = "";
+                EnableSigning.Checked = true;
+                Signkey.Text = "";
+                m_showAsInitial = false;
+            }
+            else
+            {
+                if (m_task != null)
+                {
+                    EnablePassword.Checked = !string.IsNullOrEmpty(m_task.Encryptionkey);
+                    Password.Text = m_task.Encryptionkey;
+                    EnableSigning.Checked = !string.IsNullOrEmpty(m_task.Signaturekey);
+                    Signkey.Text = m_task.Signaturekey;
+                }
+            }
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -116,6 +138,16 @@ namespace Duplicati.Wizard_pages.Add_backup
                     return;
                 }
             }
+
+            if (EnablePassword.Checked)
+                m_task.Encryptionkey = Password.Text;
+            else
+                m_task.Encryptionkey = null;
+
+            if (EnableSigning.Checked)
+                m_task.Signaturekey = Signkey.Text;
+            else
+                m_task.Signaturekey = null;
         }
 
         #endregion
@@ -145,5 +177,18 @@ namespace Duplicati.Wizard_pages.Add_backup
         {
             m_warnedNoPassword = false;
         }
+
+        #region IScheduleBased Members
+
+        public void Setup(Duplicati.Datamodel.Task task)
+        {
+            m_task = task;
+            if (m_task != null)
+            {
+                m_showAsInitial = !m_task.RelationManager.ExistsInDb(m_task);
+            }
+        }
+
+        #endregion
     }
 }

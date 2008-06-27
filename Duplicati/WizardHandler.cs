@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using System.Data.LightDatamodel;
+using Duplicati.Datamodel;
 
 namespace Duplicati
 {
@@ -30,10 +31,11 @@ namespace Duplicati
 
         IWizardForm m_form;
         IDataFetcher m_connection;
+        Schedule m_addedItem;
+        Schedule m_editItem;
 
         public WizardHandler()
         {
-            m_connection = new DataFetcherNested(Program.DataConnection);
 
             m_form = new Dialog();
             m_form.Title = "Duplicati Setup Wizard";
@@ -51,6 +53,7 @@ namespace Duplicati
                 new Wizard_pages.Backends.S3.S3Options(),
                 new Wizard_pages.Backends.SSH.SSHOptions(),
                 new Wizard_pages.Backends.WebDAV.WebDAVOptions(),
+                new Wizard_pages.Add_backup.FinishedAdd(),
             });
 
             m_form.DefaultImage = Program.NeutralIcon.ToBitmap();
@@ -67,6 +70,21 @@ namespace Duplicati
                     {
                         case Duplicati.Wizard_pages.MainPage.Action.Add:
                             args.NextPage = m_form.Pages[(int)Pages.Add_SelectFiles];
+
+                            if (m_addedItem == null || m_editItem != null)
+                            {
+                                m_connection = new DataFetcherNested(Program.DataConnection);
+                                m_addedItem = m_connection.Add<Schedule>();
+                                m_addedItem.Tasks.Add(m_connection.Add<Task>());
+
+                                foreach (IWizardControl c in m_form.Pages)
+                                {
+                                    if (c as Wizard_pages.Interfaces.IScheduleBased != null)
+                                        (c as Wizard_pages.Interfaces.IScheduleBased).Setup(m_addedItem);
+                                    if (c as Wizard_pages.Interfaces.ITaskBased != null)
+                                        (c as Wizard_pages.Interfaces.ITaskBased).Setup(m_addedItem.Tasks[0]);
+                                }
+                            }
 
                             break;
                         /*case Duplicati.Wizard_pages.MainPage.Action.Edit:

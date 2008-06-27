@@ -6,11 +6,14 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Add_backup
 {
-    public partial class FinishedAdd : UserControl, IWizardControl
+    public partial class FinishedAdd : UserControl, IWizardControl, Interfaces.IScheduleBased
     {
+        private Schedule m_schedule;
+
         public FinishedAdd()
         {
             InitializeComponent();
@@ -45,10 +48,22 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            Summary.Text =
+                "Action: Add new backup\r\n" +
+                "When: " + m_schedule.When.ToString() + "\r\n";
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
+        }
+
+        #endregion
+
+        #region IScheduleBased Members
+
+        public void Setup(Duplicati.Datamodel.Schedule schedule)
+        {
+            m_schedule = schedule;
         }
 
         #endregion

@@ -34,10 +34,8 @@ namespace Duplicati.Wizard_pages.Backends.File
             this.TargetDrive = new System.Windows.Forms.ComboBox();
             this.BrowseTargetFolder = new System.Windows.Forms.Button();
             this.Credentials = new System.Windows.Forms.GroupBox();
-            this.Domain = new System.Windows.Forms.TextBox();
             this.Password = new System.Windows.Forms.TextBox();
             this.Username = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.UseCredentials = new System.Windows.Forms.CheckBox();
@@ -100,25 +98,16 @@ namespace Duplicati.Wizard_pages.Backends.File
             // 
             // Credentials
             // 
-            this.Credentials.Controls.Add(this.Domain);
             this.Credentials.Controls.Add(this.Password);
             this.Credentials.Controls.Add(this.Username);
-            this.Credentials.Controls.Add(this.label3);
             this.Credentials.Controls.Add(this.label2);
             this.Credentials.Controls.Add(this.label1);
             this.Credentials.Enabled = false;
-            this.Credentials.Location = new System.Drawing.Point(16, 96);
+            this.Credentials.Location = new System.Drawing.Point(16, 120);
             this.Credentials.Name = "Credentials";
-            this.Credentials.Size = new System.Drawing.Size(456, 104);
+            this.Credentials.Size = new System.Drawing.Size(456, 80);
             this.Credentials.TabIndex = 5;
             this.Credentials.TabStop = false;
-            // 
-            // Domain
-            // 
-            this.Domain.Location = new System.Drawing.Point(120, 72);
-            this.Domain.Name = "Domain";
-            this.Domain.Size = new System.Drawing.Size(264, 20);
-            this.Domain.TabIndex = 9;
             // 
             // Password
             // 
@@ -134,15 +123,6 @@ namespace Duplicati.Wizard_pages.Backends.File
             this.Username.Name = "Username";
             this.Username.Size = new System.Drawing.Size(264, 20);
             this.Username.TabIndex = 7;
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(16, 72);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(89, 13);
-            this.label3.TabIndex = 2;
-            this.label3.Text = "Domain (optional)";
             // 
             // label2
             // 
@@ -165,7 +145,7 @@ namespace Duplicati.Wizard_pages.Backends.File
             // UseCredentials
             // 
             this.UseCredentials.AutoSize = true;
-            this.UseCredentials.Location = new System.Drawing.Point(32, 96);
+            this.UseCredentials.Location = new System.Drawing.Point(32, 120);
             this.UseCredentials.Name = "UseCredentials";
             this.UseCredentials.Size = new System.Drawing.Size(143, 17);
             this.UseCredentials.TabIndex = 6;
@@ -225,10 +205,8 @@ namespace Duplicati.Wizard_pages.Backends.File
         private System.Windows.Forms.ComboBox TargetDrive;
         private System.Windows.Forms.Button BrowseTargetFolder;
         private System.Windows.Forms.GroupBox Credentials;
-        private System.Windows.Forms.TextBox Domain;
         private System.Windows.Forms.TextBox Password;
         private System.Windows.Forms.TextBox Username;
-        private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox UseCredentials;
