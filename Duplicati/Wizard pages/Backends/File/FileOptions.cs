@@ -123,6 +123,7 @@ namespace Duplicati.Wizard_pages.Backends.File
             }
 
             m_file.DestinationFolder = TargetFolder.Text;
+            
             if (UseCredentials.Checked)
             {
                 m_file.Username = Username.Text;
@@ -133,6 +134,8 @@ namespace Duplicati.Wizard_pages.Backends.File
                 m_file.Username = null;
                 m_file.Password = null;
             }
+
+            m_file.SetService();
         }
 
         #endregion

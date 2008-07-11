@@ -103,6 +103,10 @@ namespace Duplicati.Datamodel.Backends
             env["AWS_ACCESS_KEY"] = this.AccessKey;
         }
 
+        public string FriendlyName { get { return "Amazon S3"; } }
+        public string SystemName { get { return "s3"; } }
+        public void SetService() { m_owner.Service = this.SystemName; }
+
         #endregion
     }
 }

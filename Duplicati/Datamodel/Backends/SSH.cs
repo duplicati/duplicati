@@ -106,6 +106,10 @@ namespace Duplicati.Datamodel.Backends
                 env["FTP_PASSWORD"] = this.Password;
         }
 
+        public string FriendlyName { get { return "SSH host"; } }
+        public string SystemName { get { return "ssh"; } }
+        public void SetService() { m_owner.Service = this.SystemName; }
+
         #endregion
     }
 }

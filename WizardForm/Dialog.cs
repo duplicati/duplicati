@@ -36,7 +36,7 @@ namespace System.Windows.Forms.Wizard
         private bool m_isLastPage = false;
 
         public event CancelEventHandler Finished;
-        public event EventHandler Cancelled;
+        public event CancelEventHandler Cancelled;
         public event PageChangeHandler NextPressed;
         public event PageChangeHandler BackPressed;
 
@@ -202,7 +202,12 @@ namespace System.Windows.Forms.Wizard
         private void CancelBtn_Click(object sender, EventArgs e)
         {
             if (Cancelled != null)
-                Cancelled(this, null);
+            {
+                CancelEventArgs ce = new CancelEventArgs(false);
+                Cancelled(this, ce);
+                if (ce.Cancel)
+                    return;
+            }
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
@@ -266,6 +271,13 @@ namespace System.Windows.Forms.Wizard
         {
             if (this.Pages.Count > 0)
                 this.CurrentPage = Pages[0];
+        }
+
+        private void Dialog_KeyUp(object sender, KeyEventArgs e)
+        {
+            //Setting the CancelButton property of the form does not allow canceling the event
+            if (e.KeyCode == Keys.Escape)
+                this.CancelBtn_Click(null, null);
         }
     }
 }

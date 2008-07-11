@@ -76,10 +76,19 @@ namespace Duplicati.Wizard_pages
         {
             m_owner = owner;
             UpdateButtonState();
+
+            this.Controls.Remove(ShowAdvanced);
+            m_owner.ButtonPanel.Controls.Add(ShowAdvanced);
+            ShowAdvanced.Top = m_owner.CancelButton.Top;
+            ShowAdvanced.Left = m_owner.ButtonPanel.Width - m_owner.CancelButton.Right;
+            ShowAdvanced.Visible = true;
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
+            m_owner.ButtonPanel.Controls.Remove(ShowAdvanced);
+            this.Controls.Add(ShowAdvanced);
+            ShowAdvanced.Visible = false;
         }
 
         #endregion
@@ -109,6 +118,13 @@ namespace Duplicati.Wizard_pages
                     return Action.Unknown;
                     
             }
+        }
+
+        private void ShowAdvanced_Click(object sender, EventArgs e)
+        {
+            Program.ShowSetup();
+            m_owner.Dialog.DialogResult = DialogResult.Cancel;
+            m_owner.Dialog.Close();
         }
     }
 }

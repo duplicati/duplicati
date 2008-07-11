@@ -108,6 +108,7 @@ namespace Duplicati.Wizard_pages.Backends.SSH
             }
             
             m_ssh.Port = (int)Port.Value;
+            m_ssh.SetService();
 
         }
 

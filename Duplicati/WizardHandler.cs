@@ -16,6 +16,7 @@ namespace Duplicati
         public enum Pages
         {
             MainAction,
+            Add_SelectName,
             Add_SelectFiles,
             Add_SelectWhen,
             Add_Incremental,
@@ -29,10 +30,30 @@ namespace Duplicati
             Add_Finished,
         }
 
+        /// <summary>
+        /// The main wizard form
+        /// </summary>
         IWizardForm m_form;
+
+        /// <summary>
+        /// The connection on which changes are made
+        /// </summary>
         IDataFetcher m_connection;
+
+        /// <summary>
+        /// The item to be commited, for the add procedure
+        /// </summary>
         Schedule m_addedItem;
+
+        /// <summary>
+        /// The item to be committed, for the edit procedure
+        /// </summary>
         Schedule m_editItem;
+
+        /// <summary>
+        /// The page that produced the finish page, used to go back to it
+        /// </summary>
+        IWizardControl m_addFinishedPage = null;
 
         public WizardHandler()
         {
@@ -43,6 +64,7 @@ namespace Duplicati
             m_form.Pages.Clear();
             m_form.Pages.AddRange(new IWizardControl[] {
                 new Wizard_pages.MainPage(),
+                new Wizard_pages.Add_backup.SelectName(),
                 new Wizard_pages.Add_backup.SelectFiles(),
                 new Wizard_pages.Add_backup.SelectWhen(),
                 new Wizard_pages.Add_backup.IncrementalSettings(),
@@ -59,7 +81,20 @@ namespace Duplicati
             m_form.DefaultImage = Program.NeutralIcon.ToBitmap();
             m_form.BackPressed += new PageChangeHandler(m_form_BackPressed);
             m_form.NextPressed += new PageChangeHandler(m_form_NextPressed);
+            m_form.Finished += new System.ComponentModel.CancelEventHandler(m_form_Finished);
         }
+
+        void m_form_Finished(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            //TODO: Implement CommitRecursive
+            m_connection.CommitAll();
+            Program.DataConnection.CommitAll();
+
+            if ((m_form.CurrentPage as Duplicati.Wizard_pages.Add_backup.FinishedAdd).RunNow.Checked)
+                Program.WorkThread.AddTask(new FullBackupTask(m_addedItem));
+        }
+
+        public bool Visible { get { return m_form.Dialog.Visible; } }
 
         void m_form_NextPressed(object sender, PageChangedArgs args)
         {
@@ -69,7 +104,7 @@ namespace Duplicati
                     switch (((Wizard_pages.MainPage)m_form.CurrentPage).SelectedAction)
                     {
                         case Duplicati.Wizard_pages.MainPage.Action.Add:
-                            args.NextPage = m_form.Pages[(int)Pages.Add_SelectFiles];
+                            args.NextPage = m_form.Pages[(int)Pages.Add_SelectName];
 
                             if (m_addedItem == null || m_editItem != null)
                             {
@@ -127,11 +162,12 @@ namespace Duplicati
                 case Pages.Add_SSHOptions:
                 case Pages.Add_WebDAVOptions:
                 case Pages.Add_S3Options:
+                    m_addFinishedPage = m_form.CurrentPage;
                     args.NextPage = m_form.Pages[(int)Pages.Add_Finished];
+                    args.TreatAsLast = true;
                     break;
 
                 case Pages.Add_Finished:
-                    SetupFinishPage(m_form.Pages[(int)Pages.Add_Finished] as Wizard_pages.Add_backup.FinishedAdd);
                     break;
 
 
@@ -152,6 +188,10 @@ namespace Duplicati
                 case Pages.Add_SelectFiles:
                     args.NextPage = m_form.Pages[(int)Pages.MainAction];
                     break;
+                case Pages.Add_Finished:
+                    if (m_addFinishedPage != null)
+                        args.NextPage = m_addFinishedPage;
+                    break;
             }
         }
 
@@ -160,9 +200,5 @@ namespace Duplicati
             (m_form as Form).ShowDialog();
         }
 
-        private void SetupFinishPage(Wizard_pages.Add_backup.FinishedAdd page)
-        {
-
-        }
     }
 }

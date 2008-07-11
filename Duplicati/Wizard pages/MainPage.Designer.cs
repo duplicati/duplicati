@@ -30,9 +30,10 @@ namespace Duplicati.Wizard_pages
         {
             this.label1 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.CreateNew = new System.Windows.Forms.RadioButton();
-            this.Edit = new System.Windows.Forms.RadioButton();
             this.Restore = new System.Windows.Forms.RadioButton();
+            this.Edit = new System.Windows.Forms.RadioButton();
+            this.CreateNew = new System.Windows.Forms.RadioButton();
+            this.ShowAdvanced = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -52,32 +53,8 @@ namespace Duplicati.Wizard_pages
             this.panel1.Controls.Add(this.CreateNew);
             this.panel1.Location = new System.Drawing.Point(32, 32);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(440, 184);
+            this.panel1.Size = new System.Drawing.Size(440, 104);
             this.panel1.TabIndex = 1;
-            // 
-            // CreateNew
-            // 
-            this.CreateNew.AutoSize = true;
-            this.CreateNew.Location = new System.Drawing.Point(0, 8);
-            this.CreateNew.Name = "CreateNew";
-            this.CreateNew.Size = new System.Drawing.Size(141, 17);
-            this.CreateNew.TabIndex = 0;
-            this.CreateNew.TabStop = true;
-            this.CreateNew.Text = "Schedule a new backup";
-            this.CreateNew.UseVisualStyleBackColor = true;
-            this.CreateNew.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
-            // 
-            // Edit
-            // 
-            this.Edit.AutoSize = true;
-            this.Edit.Location = new System.Drawing.Point(0, 40);
-            this.Edit.Name = "Edit";
-            this.Edit.Size = new System.Drawing.Size(185, 17);
-            this.Edit.TabIndex = 1;
-            this.Edit.TabStop = true;
-            this.Edit.Text = "Edit or remove an existing backup";
-            this.Edit.UseVisualStyleBackColor = true;
-            this.Edit.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
             // Restore
             // 
@@ -91,10 +68,45 @@ namespace Duplicati.Wizard_pages
             this.Restore.UseVisualStyleBackColor = true;
             this.Restore.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
+            // Edit
+            // 
+            this.Edit.AutoSize = true;
+            this.Edit.Location = new System.Drawing.Point(0, 40);
+            this.Edit.Name = "Edit";
+            this.Edit.Size = new System.Drawing.Size(185, 17);
+            this.Edit.TabIndex = 1;
+            this.Edit.TabStop = true;
+            this.Edit.Text = "Edit or remove an existing backup";
+            this.Edit.UseVisualStyleBackColor = true;
+            this.Edit.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
+            // 
+            // CreateNew
+            // 
+            this.CreateNew.AutoSize = true;
+            this.CreateNew.Location = new System.Drawing.Point(0, 8);
+            this.CreateNew.Name = "CreateNew";
+            this.CreateNew.Size = new System.Drawing.Size(141, 17);
+            this.CreateNew.TabIndex = 0;
+            this.CreateNew.TabStop = true;
+            this.CreateNew.Text = "Schedule a new backup";
+            this.CreateNew.UseVisualStyleBackColor = true;
+            this.CreateNew.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
+            // 
+            // ShowAdvanced
+            // 
+            this.ShowAdvanced.Location = new System.Drawing.Point(32, 184);
+            this.ShowAdvanced.Name = "ShowAdvanced";
+            this.ShowAdvanced.Size = new System.Drawing.Size(104, 24);
+            this.ShowAdvanced.TabIndex = 2;
+            this.ShowAdvanced.Text = "Advanced setup";
+            this.ShowAdvanced.UseVisualStyleBackColor = true;
+            this.ShowAdvanced.Click += new System.EventHandler(this.ShowAdvanced_Click);
+            // 
             // MainPage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.ShowAdvanced);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.label1);
             this.Name = "MainPage";
@@ -113,5 +125,6 @@ namespace Duplicati.Wizard_pages
         private System.Windows.Forms.RadioButton Restore;
         private System.Windows.Forms.RadioButton Edit;
         private System.Windows.Forms.RadioButton CreateNew;
+        private System.Windows.Forms.Button ShowAdvanced;
     }
 }

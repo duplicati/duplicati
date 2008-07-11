@@ -55,6 +55,7 @@ namespace Duplicati
 
         public static ServiceStatus StatusDialog;
         public static ServiceSetup SetupDialog;
+        public static WizardHandler Wizard;
 
         public static ApplicationSettings ApplicationSettings;
 
@@ -106,11 +107,11 @@ namespace Duplicati
 
             TrayIcon.ContextMenuStrip.Items.Add("Status", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Status.ico")), new EventHandler(Status_Clicked));
 
-            TrayIcon.ContextMenuStrip.Items.Add("Setup", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Time.ico")), new EventHandler(Settings_Clicked));
+            TrayIcon.ContextMenuStrip.Items.Add("Setup", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Time.ico")), new EventHandler(Setup_Clicked));
 
             TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
 
-            TrayIcon.ContextMenuStrip.Items.Add("Settings", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Settings.ico")), new EventHandler(Setup_Clicked));
+            TrayIcon.ContextMenuStrip.Items.Add("Settings", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Settings.ico")), new EventHandler(Settings_Clicked));
 
             TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
 
@@ -176,13 +177,12 @@ namespace Duplicati
 
         private static void Setup_Clicked(object sender, EventArgs e)
         {
-            ShowSetup();
+            ShowWizard();
         }
 
         private static void TrayIcon_DoubleClick(object sender, EventArgs e)
         {
-            //ShowStatus();
-            ShowWizard();
+            ShowStatus();
         }
 
         public static void ShowStatus()
@@ -194,7 +194,15 @@ namespace Duplicati
             StatusDialog.Activate();
         }
 
-        public static void ShowSettings()
+        public static void ShowWizard()
+        {
+            if (Wizard == null || Wizard.Visible)
+                Wizard = new WizardHandler();
+            
+            Wizard.Show();
+        }
+
+        public static void ShowSetup()
         {
             if (SetupDialog == null || !SetupDialog.Visible)
                 SetupDialog = new ServiceSetup();
@@ -203,18 +211,13 @@ namespace Duplicati
             SetupDialog.Activate();
         }
 
-        public static void ShowSetup()
+        public static void ShowSettings()
         {
             lock (MainLock)
             {
                 ApplicationSetup dlg = new ApplicationSetup();
                 dlg.ShowDialog();
             }
-        }
-
-        public static void ShowWizard()
-        {
-            new WizardHandler().Show();
         }
 
     }

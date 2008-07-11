@@ -48,9 +48,39 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         void IWizardControl.Enter(IWizardForm owner)
         {
-            Summary.Text =
-                "Action: Add new backup\r\n" +
-                "When: " + m_schedule.When.ToString() + "\r\n";
+            List<KeyValuePair<string, string>> strings = new List<KeyValuePair<string,string>>();
+            strings.Add(new KeyValuePair<string,string>("Action", "Add new backup"));
+            strings.Add(new KeyValuePair<string,string>("Source folder", m_schedule.Tasks[0].SourcePath));
+            strings.Add(new KeyValuePair<string,string>("When", m_schedule.When.ToString()));
+            if (!string.IsNullOrEmpty(m_schedule.Repeat))
+                strings.Add(new KeyValuePair<string,string>("Repeat", m_schedule.Repeat));
+            if (!string.IsNullOrEmpty(m_schedule.FullAfter))
+                strings.Add(new KeyValuePair<string,string>("Full backup each", m_schedule.FullAfter));
+            if (m_schedule.KeepFull > 0)
+                strings.Add(new KeyValuePair<string,string>("Keep full backups", m_schedule.KeepFull.ToString()));
+
+            if (m_schedule.Tasks != null && m_schedule.Tasks.Count == 1)
+            {
+                Duplicati.Datamodel.Backends.IBackend backend = m_schedule.Tasks[0].Backend;
+                strings.Add(new KeyValuePair<string, string>(null, null));
+                strings.Add(new KeyValuePair<string, string>("Destination", backend.FriendlyName));
+                strings.Add(new KeyValuePair<string, string>("Destination path", backend.GetDestinationPath()));
+            }
+
+            int maxlen = 0;
+            foreach(KeyValuePair<string, string> i in strings)
+                if (i.Key != null)
+                    maxlen = Math.Max(maxlen, i.Key.Length);
+
+            System.Text.StringBuilder sb = new StringBuilder();
+            foreach (KeyValuePair<string, string> i in strings)
+                if (i.Key == null)
+                    sb.Append("\r\n");
+                else
+                    sb.Append(i.Key + ": " + new String(' ', maxlen - i.Key.Length) + i.Value + "\r\n"); 
+
+            Summary.Text = sb.ToString();
+
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -67,5 +97,6 @@ namespace Duplicati.Wizard_pages.Add_backup
         }
 
         #endregion
+
     }
 }

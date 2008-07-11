@@ -113,6 +113,7 @@ namespace System.Windows.Forms.Wizard
             // 
             // _CancelButton
             // 
+            this._CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this._CancelButton.Location = new System.Drawing.Point(416, 16);
             this._CancelButton.Name = "_CancelButton";
             this._CancelButton.Size = new System.Drawing.Size(80, 24);
@@ -133,6 +134,7 @@ namespace System.Windows.Forms.Wizard
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this._CancelButton;
             this.ClientSize = new System.Drawing.Size(506, 354);
             this.Controls.Add(this._ButtonPanel);
             this.Controls.Add(this._InfoPanel);
@@ -143,6 +145,7 @@ namespace System.Windows.Forms.Wizard
             this.Name = "Dialog";
             this.Text = "Dialog";
             this.Load += new System.EventHandler(this.Dialog_Load);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Dialog_KeyUp);
             this._InfoPanel.ResumeLayout(false);
             this._InfoPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this._PageIcon)).EndInit();

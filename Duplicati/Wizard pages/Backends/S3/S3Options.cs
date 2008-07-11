@@ -84,6 +84,7 @@ namespace Duplicati.Wizard_pages.Backends.S3
             m_s3.ServerUrl = null;
             m_s3.Prefix = null;
             m_s3.UseEuroBucket = UseEuroBuckets.Checked;
+            m_s3.SetService();
 
         }
 

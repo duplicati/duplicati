@@ -39,7 +39,35 @@ namespace Duplicati.HelperControls
             InitializeComponent();
         }
 
-        public void Setup(IDataFetcher connection, bool allowEdit)
+        public string SelectedFolder
+        {
+            get 
+            {
+                if (treeView.SelectedNode == null)
+                    return "";
+                else
+                {
+                    string s = treeView.SelectedNode.FullPath;
+                    if (s == treeView.SelectedNode.Text)
+                        return "";
+                    else
+                        return s.Substring(0, s.Length - treeView.SelectedNode.Text.Length - treeView.PathSeparator.Length);
+                }
+            }
+
+            set
+            {
+                TreeNode match;
+                FindNode(value, false, out match);
+                if (match != null)
+                    match.TreeView.SelectedNode = match;
+                else
+                    treeView.SelectedNode = null;
+            }
+        }
+
+
+        public void Setup(IDataFetcher connection, bool allowEdit, bool onlyFolders)
         {
             m_connection = connection;
             m_allowEdit = allowEdit;
@@ -54,10 +82,15 @@ namespace Duplicati.HelperControls
                 t.ImageIndex = t.SelectedImageIndex = imageList.Images.IndexOfKey("Backup");
                 t.Tag = s;
 
+                TreeNodeCollection col;
+
                 if (string.IsNullOrEmpty(s.Path))
-                    treeView.Nodes.Add(t);
+                    col = treeView.Nodes;
                 else
-                    FindNode(s.Path, true).Add(t);
+                    col = FindNode(s.Path, true);
+
+                if (!onlyFolders)
+                    col.Add(t);
             }
 
             treeView.LabelEdit = m_allowEdit;
@@ -65,8 +98,16 @@ namespace Duplicati.HelperControls
 
         private TreeNodeCollection FindNode(string path, bool allowCreate)
         {
+            TreeNode dummy;
+            return FindNode(path, allowCreate, out dummy);
+        }
+
+        private TreeNodeCollection FindNode(string path, bool allowCreate, out TreeNode match)
+        {
             TreeNodeCollection col = treeView.Nodes;
-            TreeNode match = null;
+            match = null;
+            if (string.IsNullOrEmpty(path))
+                return col;
 
             foreach (string p in path.Split(treeView.PathSeparator[0]))
             {

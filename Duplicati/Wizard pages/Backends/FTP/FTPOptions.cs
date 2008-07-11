@@ -99,6 +99,7 @@ namespace Duplicati.Wizard_pages.Backends.FTP
             m_ftp.Username = Username.Text;
             m_ftp.Password = Password.Text;
             m_ftp.Port = (int)Port.Value;
+            m_ftp.SetService();
         }
 
         #endregion

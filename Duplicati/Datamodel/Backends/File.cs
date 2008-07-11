@@ -79,6 +79,10 @@ namespace Duplicati.Datamodel.Backends
             args.Add(this.TimeSeparator);
         }
 
+        public string FriendlyName { get { return "External drive or folder"; } }
+        public string SystemName { get { return "file"; } }
+        public void SetService() { m_owner.Service = this.SystemName; }
+
         #endregion
     }
 }

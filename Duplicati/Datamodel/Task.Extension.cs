@@ -53,6 +53,8 @@ namespace Duplicati.Datamodel
                         return new Backends.S3(this);
                     case "file":
                         return new Backends.File(this);
+                    case "ftp":
+                        return new Backends.FTP(this);
                 }
 
                 return null;

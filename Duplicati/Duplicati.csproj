@@ -169,6 +169,12 @@
     <Compile Include="Wizard pages\Add backup\SelectFiles.Designer.cs">
       <DependentUpon>SelectFiles.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectName.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectName.Designer.cs">
+      <DependentUpon>SelectName.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Add backup\SelectWhen.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -322,6 +328,10 @@
     <EmbeddedResource Include="Wizard pages\Add backup\SelectFiles.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SelectFiles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\SelectName.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectName.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\SelectWhen.resx">
       <SubType>Designer</SubType>

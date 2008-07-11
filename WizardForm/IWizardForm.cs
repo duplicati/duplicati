@@ -63,6 +63,6 @@ namespace System.Windows.Forms.Wizard
         event PageChangeHandler NextPressed;
         event PageChangeHandler BackPressed;
         event CancelEventHandler Finished;
-        event EventHandler Cancelled;
+        event CancelEventHandler Cancelled;
     }
 }

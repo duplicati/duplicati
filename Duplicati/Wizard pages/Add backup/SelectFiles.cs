@@ -124,7 +124,7 @@ namespace Duplicati.Wizard_pages.Add_backup
         {
             m_owner = owner;
             if (m_schedule != null)
-                TargetFolder.Text = m_schedule.Path;
+                TargetFolder.Text = m_schedule.Tasks[0].SourcePath;
             Rescan();
         }
 
@@ -229,7 +229,7 @@ namespace Duplicati.Wizard_pages.Add_backup
                     m_calculator.AddTask(TargetFolder.Text);
                 }
 
-            m_schedule.Path = TargetFolder.Text;
+            m_schedule.Tasks[0].SourcePath = TargetFolder.Text;
         }
 
         #region IScheduleBased Members

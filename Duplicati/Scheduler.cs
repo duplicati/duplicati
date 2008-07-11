@@ -100,7 +100,14 @@ namespace Duplicati
 
                             int i = 0;
                             while (start <= DateTime.Now && i++ < 50000)
-                                start = Timeparser.ParseTimeInterval(sc.Repeat, start);
+                                try
+                                {
+                                    start = Timeparser.ParseTimeInterval(sc.Repeat, start);
+                                }
+                                catch
+                                {
+                                    continue;
+                                }
 
                             if (start < DateTime.Now)
                                 continue;

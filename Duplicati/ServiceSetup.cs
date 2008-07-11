@@ -37,7 +37,7 @@ namespace Duplicati
             InitializeComponent();
             m_connection = new DataFetcherNested(Program.DataConnection);
 
-            backupTreeView.Setup(m_connection, true);
+            backupTreeView.Setup(m_connection, true, false);
             backupTreeView.treeView.AfterSelect += new TreeViewEventHandler(treeView_AfterSelect);
             backupTreeView.treeView.ContextMenuStrip = TreeMenuStrip;
         }

@@ -155,7 +155,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             if (m_schedule != null)
             {
                 if (FullBackups.Checked)
-                    m_schedule.Repeat = FullBackups.Text;
+                    m_schedule.Repeat = FullDuration.Text;
                 else
                     m_schedule.Repeat = null;
 

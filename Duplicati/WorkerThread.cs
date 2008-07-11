@@ -143,7 +143,7 @@ namespace Duplicati
                     if (m_tasks.Count > 0)
                         m_currentTask = m_tasks.Dequeue();
 
-                if (m_currentTask == null)
+                if (m_currentTask == null && !m_terminate)
                     m_event.WaitOne();
 
                 if (m_terminate)
