@@ -49,6 +49,7 @@ namespace Duplicati
             m_schedule = new Schedule[0];
             m_terminate = false;
             m_event = new AutoResetEvent(false);
+            m_thread.IsBackground = true;
             m_thread.Start();
         }
 

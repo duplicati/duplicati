@@ -48,6 +48,7 @@ namespace Duplicati
             m_terminate = false;
             m_tasks = new Queue<Tx>();
             m_thread = new Thread(new ThreadStart(Runner));
+            m_thread.IsBackground = true;
             m_thread.Start();
         }
 

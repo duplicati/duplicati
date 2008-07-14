@@ -47,7 +47,15 @@ namespace Duplicati.HelperControls
         public void Setup(Schedule schedule)
         {
             if (m_workThread != null)
-                throw new Exception("Cannot re-use the loader dialog");
+            {
+                if (m_workThread.IsAlive)
+                    m_workThread.Abort();
+                m_workThread.Join(500);
+            }
+
+            WaitPanel.Visible = true;
+            statusLabel.Visible = false;
+            listView.Visible = false;
 
             m_exception = null;
             m_backups = null;
@@ -85,12 +93,15 @@ namespace Duplicati.HelperControls
                 finally
                 {
                     listView.EndUpdate();
+                    listView.Visible = true;
                 }
 
                 if (ListLoaded != null)
                     ListLoaded(this, null);
             }
         }
+
+        public string SelectedItem { get { return listView.SelectedItems.Count == 1 ? listView.SelectedItems[0].Text : null; } }
 
         private void Runner()
         {

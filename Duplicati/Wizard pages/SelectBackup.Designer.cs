@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Restore
+namespace Duplicati.Wizard_pages
 {
     partial class SelectBackup
     {
@@ -28,25 +28,26 @@ namespace Duplicati.Wizard_pages.Restore
         /// </summary>
         private void InitializeComponent()
         {
-            this.BackupList = new Duplicati.HelperControls.BackupItems();
+            this.BackupList = new Duplicati.HelperControls.BackupTreeView();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // BackupList
             // 
-            this.BackupList.Location = new System.Drawing.Point(16, 40);
+            this.BackupList.Location = new System.Drawing.Point(32, 40);
             this.BackupList.Name = "BackupList";
-            this.BackupList.Size = new System.Drawing.Size(480, 184);
+            this.BackupList.SelectedFolder = "";
+            this.BackupList.Size = new System.Drawing.Size(432, 168);
             this.BackupList.TabIndex = 0;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(16, 16);
+            this.label1.Location = new System.Drawing.Point(32, 24);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(187, 13);
+            this.label1.Size = new System.Drawing.Size(121, 13);
             this.label1.TabIndex = 1;
-            this.label1.Text = "Select the backup you want to restore";
+            this.label1.Text = "Select backup to modify";
             // 
             // SelectBackup
             // 
@@ -63,7 +64,7 @@ namespace Duplicati.Wizard_pages.Restore
 
         #endregion
 
-        private Duplicati.HelperControls.BackupItems BackupList;
+        private Duplicati.HelperControls.BackupTreeView BackupList;
         private System.Windows.Forms.Label label1;
     }
 }

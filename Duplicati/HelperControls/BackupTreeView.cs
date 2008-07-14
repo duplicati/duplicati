@@ -45,6 +45,8 @@ namespace Duplicati.HelperControls
             {
                 if (treeView.SelectedNode == null)
                     return "";
+                else if (treeView.SelectedNode.Tag == null)
+                    return treeView.SelectedNode.FullPath;
                 else
                 {
                     string s = treeView.SelectedNode.FullPath;
@@ -63,6 +65,17 @@ namespace Duplicati.HelperControls
                     match.TreeView.SelectedNode = match;
                 else
                     treeView.SelectedNode = null;
+            }
+        }
+
+        public Schedule SelectedBackup
+        {
+            get
+            {
+                if (treeView.SelectedNode == null)
+                    return null;
+                else
+                    return treeView.SelectedNode.Tag as Schedule;
             }
         }
 
@@ -150,12 +163,13 @@ namespace Duplicati.HelperControls
                     return n.Parent.Nodes;
         }
 
-        public void AddFolder(string foldername)
+        public TreeNode AddFolder(string foldername)
         {
             TreeNode t = new TreeNode(string.IsNullOrEmpty(foldername) ? "New folder" : foldername);
             t.ImageIndex = t.SelectedImageIndex = imageList.Images.IndexOfKey("Folder");
 
             GetParentFolder(treeView.SelectedNode).Add(t);
+            return t;
         }
 
         public void AddBackup(string name)

@@ -125,7 +125,13 @@ namespace Duplicati.Wizard_pages.Add_backup
             m_owner = owner;
             if (m_schedule != null)
                 TargetFolder.Text = m_schedule.Tasks[0].SourcePath;
-            Rescan();
+            
+            FolderRadio.Checked = true;
+
+            if (FolderRadio.Checked)
+                TargetFolder_Leave(null, null);
+            else
+                Rescan();
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)

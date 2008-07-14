@@ -6,10 +6,11 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages
 {
-    public partial class SelectBackend : UserControl, IWizardControl
+    public partial class SelectBackend : UserControl, IWizardControl, Interfaces.ITaskBased
     {
         public enum Provider
         {
@@ -20,6 +21,8 @@ namespace Duplicati.Wizard_pages
             WebDAV,
             S3
         }
+
+        private Task m_task;
 
         public SelectBackend()
         {
@@ -55,6 +58,27 @@ namespace Duplicati.Wizard_pages
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            switch (m_task.Backend.SystemName)
+            {
+                case "file":
+                    File.Checked = true;
+                    break;
+                case "ftp":
+                    FTP.Checked = true;
+                    break;
+                case "ssh":
+                    SSH.Checked = true;
+                    break;
+                case "webdav":
+                    WebDAV.Checked = true;
+                    break;
+                case "s3":
+                    S3.Checked = true;
+                    break;
+                default:
+                    File.Checked = FTP.Checked = SSH.Checked = WebDAV.Checked = S3.Checked = false;
+                    break;
+            }
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
@@ -95,5 +119,14 @@ namespace Duplicati.Wizard_pages
                     return Provider.Unknown;
             }
         }
+
+        #region ITaskBased Members
+
+        public void Setup(Duplicati.Datamodel.Task task)
+        {
+            m_task = task;
+        }
+
+        #endregion
     }
 }

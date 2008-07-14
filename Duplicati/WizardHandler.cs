@@ -28,6 +28,12 @@ namespace Duplicati
             Add_SSHOptions,
             Add_WebDAVOptions,
             Add_Finished,
+            SelectBackup,
+            Restore_SelectDate,
+            Restore_TargetFolder,
+            Restore_Finished,
+            RunNow_Finished,
+            Delete_Finished,
         }
 
         /// <summary>
@@ -76,6 +82,12 @@ namespace Duplicati
                 new Wizard_pages.Backends.SSH.SSHOptions(),
                 new Wizard_pages.Backends.WebDAV.WebDAVOptions(),
                 new Wizard_pages.Add_backup.FinishedAdd(),
+                new Wizard_pages.SelectBackup(),
+                new Wizard_pages.Restore.SelectBackup(),
+                new Wizard_pages.Restore.TargetFolder(),
+                new Wizard_pages.Restore.FinishedRestore(),
+                new Wizard_pages.RunNow.RunNowFinished(),
+                new Wizard_pages.Delete_backup.DeleteFinished(),
             });
 
             m_form.DefaultImage = Program.NeutralIcon.ToBitmap();
@@ -86,12 +98,45 @@ namespace Duplicati
 
         void m_form_Finished(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            //TODO: Implement CommitRecursive
-            m_connection.CommitAll();
-            Program.DataConnection.CommitAll();
 
-            if ((m_form.CurrentPage as Duplicati.Wizard_pages.Add_backup.FinishedAdd).RunNow.Checked)
-                Program.WorkThread.AddTask(new FullBackupTask(m_addedItem));
+            if (m_form.CurrentPage == m_form.Pages[(int)Pages.Add_Finished])
+            {
+                //TODO: Implement CommitRecursive
+                m_connection.CommitAll();
+                Program.DataConnection.CommitAll();
+
+                if ((m_form.CurrentPage as Duplicati.Wizard_pages.Add_backup.FinishedAdd).RunNow.Checked)
+                    if (m_addedItem != null)
+                        Program.WorkThread.AddTask(new FullBackupTask(m_addedItem));
+                    else
+                        Program.WorkThread.AddTask(new IncrementalBackupTask(m_editItem));
+            }
+            else if (m_form.CurrentPage == m_form.Pages[(int)Pages.Restore_Finished])
+            {
+                Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
+                DateTime backup = (m_form.Pages[(int)Pages.Restore_SelectDate] as Wizard_pages.Restore.SelectBackup).SelectedBackup;
+                string target = (m_form.Pages[(int)Pages.Restore_TargetFolder] as Wizard_pages.Restore.TargetFolder).SelectedFolder;
+
+                if (backup.Ticks == 0)
+                    Program.WorkThread.AddTask(new RestoreTask(schedule, target));
+                else
+                    Program.WorkThread.AddTask(new RestoreTask(schedule, target, backup));
+            }
+            else if (m_form.CurrentPage == m_form.Pages[(int)Pages.RunNow_Finished])
+            {
+                Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
+                if ((m_form.Pages[(int)Pages.RunNow_Finished] as Wizard_pages.RunNow.RunNowFinished).ForceFullBackup)
+                    Program.WorkThread.AddTask(new FullBackupTask(m_editItem));
+                else
+                    Program.WorkThread.AddTask(new IncrementalBackupTask(m_editItem));
+            }
+            else if (m_form.CurrentPage == m_form.Pages[(int)Pages.Delete_Finished])
+            {
+                Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
+                m_connection.DeleteObject(m_editItem);
+                m_connection.CommitAll();
+                Program.DataConnection.CommitAll();
+            }
         }
 
         public bool Visible { get { return m_form.Dialog.Visible; } }
@@ -122,9 +167,27 @@ namespace Duplicati
                             }
 
                             break;
-                        /*case Duplicati.Wizard_pages.MainPage.Action.Edit:
+                        case Duplicati.Wizard_pages.MainPage.Action.Edit:
+                            m_connection = new DataFetcherNested(Program.DataConnection);
+                            args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
+                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.Wizard_pages.MainPage.Action.Edit);
                             break;
                         case Duplicati.Wizard_pages.MainPage.Action.Restore:
+                            m_connection = new DataFetcherNested(Program.DataConnection);
+                            args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
+                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.Wizard_pages.MainPage.Action.Restore);
+                            break;
+                        case Duplicati.Wizard_pages.MainPage.Action.Backup:
+                            m_connection = new DataFetcherNested(Program.DataConnection);
+                            args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
+                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.Wizard_pages.MainPage.Action.Backup);
+                            break;
+                        case Duplicati.Wizard_pages.MainPage.Action.Delete:
+                            m_connection = new DataFetcherNested(Program.DataConnection);
+                            args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
+                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.Wizard_pages.MainPage.Action.Delete);
+                            break;
+                        /*case Duplicati.Wizard_pages.MainPage.Action.Rearrange:
                             break;*/
                         default:
                             args.Cancel = true;
@@ -170,6 +233,47 @@ namespace Duplicati
                 case Pages.Add_Finished:
                     break;
 
+                case Pages.SelectBackup:
+
+                    m_editItem = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
+
+                    foreach (IWizardControl c in m_form.Pages)
+                    {
+                        if (c as Wizard_pages.Interfaces.IScheduleBased != null)
+                            (c as Wizard_pages.Interfaces.IScheduleBased).Setup(m_editItem);
+                        if (c as Wizard_pages.Interfaces.ITaskBased != null)
+                            (c as Wizard_pages.Interfaces.ITaskBased).Setup(m_editItem.Tasks[0]);
+                    }
+
+                    switch ((m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectType)
+                    {
+                        case Duplicati.Wizard_pages.MainPage.Action.Edit:
+                            args.NextPage = m_form.Pages[(int)Pages.Add_SelectName];
+                            break;
+                        case Duplicati.Wizard_pages.MainPage.Action.Backup:
+                            args.NextPage = m_form.Pages[(int)Pages.RunNow_Finished];
+                            args.TreatAsLast = true;
+                            break;
+                        case Duplicati.Wizard_pages.MainPage.Action.Delete:
+                            args.NextPage = m_form.Pages[(int)Pages.Delete_Finished];
+                            args.TreatAsLast = true;
+                            break;
+                        case Duplicati.Wizard_pages.MainPage.Action.Rearrange:
+                            break;
+                        case Duplicati.Wizard_pages.MainPage.Action.Restore:
+                            args.NextPage = m_form.Pages[(int)Pages.Restore_SelectDate];
+                            (m_form.Pages[(int)Pages.Restore_SelectDate] as Wizard_pages.Restore.SelectBackup).Setup(m_editItem);
+                            break;
+                    }
+                    break;
+                case Pages.Restore_TargetFolder:
+                    {
+                        Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
+                        DateTime backup = (m_form.Pages[(int)Pages.Restore_SelectDate] as Wizard_pages.Restore.SelectBackup).SelectedBackup;
+                        string target = (m_form.Pages[(int)Pages.Restore_TargetFolder] as Wizard_pages.Restore.TargetFolder).SelectedFolder;
+                        (m_form.Pages[(int)Pages.Restore_Finished] as Wizard_pages.Restore.FinishedRestore).Setup(schedule, backup, target);
+                    }
+                    break;
 
             }
         }
@@ -191,6 +295,17 @@ namespace Duplicati
                 case Pages.Add_Finished:
                     if (m_addFinishedPage != null)
                         args.NextPage = m_addFinishedPage;
+                    break;
+                case Pages.SelectBackup:
+                    args.NextPage = m_form.Pages[(int)Pages.MainAction];
+                    break;
+                case Pages.Add_SelectName:
+                    if (m_editItem != null)
+                        args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
+                    break;
+                case Pages.RunNow_Finished:
+                case Pages.Delete_Finished:
+                    args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
                     break;
             }
         }

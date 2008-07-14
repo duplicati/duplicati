@@ -25,11 +25,15 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.Wizard_pages.Restore
 {
-    public partial class SelectBackup : UserControl, IWizardControl
+    public partial class SelectBackup : UserControl, IWizardControl, Interfaces.IScheduleBased
     {
+        Schedule m_schedule;
+        DateTime m_selectedDate = new DateTime();
+
         public SelectBackup()
         {
             InitializeComponent();
@@ -64,12 +68,46 @@ namespace Duplicati.Wizard_pages.Restore
 
         void IWizardControl.Enter(IWizardForm owner)
         {
+            BackupList.Setup(m_schedule);
         }
 
         void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
         {
+            if (BackupList.SelectedItem == null)
+            {
+                MessageBox.Show(this, "You must select the backup to restore", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                cancel = true;
+                return;
+            }
+
+            m_selectedDate = new DateTime();
+            try
+            {
+                m_selectedDate = Timeparser.ParseDuplicityFileTime(BackupList.SelectedItem);
+            }
+            catch (Exception ex)
+            {
+                if (MessageBox.Show(this, "An error occured while parsing the time: " + ex.Message + "\r\nDo you want to try to restore the most current backup instead?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                {
+                    cancel = true;
+                    return;
+                }
+                m_selectedDate = new DateTime();
+            }
+
         }
 
         #endregion
+
+        #region IScheduleBased Members
+
+        public void Setup(Duplicati.Datamodel.Schedule schedule)
+        {
+            m_schedule = schedule;
+        }
+
+        #endregion
+
+        public DateTime SelectedBackup { get { return m_selectedDate; } }
     }
 }

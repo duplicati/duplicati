@@ -49,7 +49,11 @@ namespace Duplicati.Wizard_pages.Add_backup
         void IWizardControl.Enter(IWizardForm owner)
         {
             List<KeyValuePair<string, string>> strings = new List<KeyValuePair<string,string>>();
-            strings.Add(new KeyValuePair<string,string>("Action", "Add new backup"));
+            if (!m_schedule.RelationManager.ExistsInDb(m_schedule))
+                strings.Add(new KeyValuePair<string,string>("Action", "Add new backup"));
+            else
+                strings.Add(new KeyValuePair<string, string>("Action", "Modify backup"));
+
             strings.Add(new KeyValuePair<string,string>("Source folder", m_schedule.Tasks[0].SourcePath));
             strings.Add(new KeyValuePair<string,string>("When", m_schedule.When.ToString()));
             if (!string.IsNullOrEmpty(m_schedule.Repeat))

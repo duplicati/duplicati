@@ -36,8 +36,11 @@ namespace Duplicati.Wizard_pages
         {
             Unknown,
             Add,
-            Edit, 
-            Restore
+            Edit,
+            Delete,
+            Restore,
+            Backup,
+            Rearrange
         }
 
         public MainPage()
@@ -96,7 +99,7 @@ namespace Duplicati.Wizard_pages
         private void UpdateButtonState()
         {
             if (m_owner != null)
-                m_owner.NextButton.Enabled = CreateNew.Checked | Edit.Checked | Restore.Checked;
+                m_owner.NextButton.Enabled = CreateNew.Checked | Edit.Checked | Restore.Checked | Backup.Checked | Remove.Checked;
         }
 
         private void Radio_CheckedChanged(object sender, EventArgs e)
@@ -114,6 +117,10 @@ namespace Duplicati.Wizard_pages
                     return Action.Edit;
                 else if (Restore.Checked)
                     return Action.Restore;
+                else if (Backup.Checked)
+                    return Action.Backup;
+                else if (Remove.Checked)
+                    return Action.Delete;
                 else
                     return Action.Unknown;
                     

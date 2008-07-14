@@ -83,7 +83,7 @@ namespace Duplicati.Wizard_pages.Add_backup
         {
             if (m_schedule != null)
             {
-                FullDuration.Text = m_schedule.Repeat;
+                FullDuration.Text = m_schedule.FullAfter;
                 FullBackups.Enabled = !string.IsNullOrEmpty(m_schedule.Repeat);
                 CleanFullBackupCount.Value = m_schedule.KeepFull;
                 EnableFullBackupClean.Checked = m_schedule.KeepFull > 0;
@@ -155,9 +155,9 @@ namespace Duplicati.Wizard_pages.Add_backup
             if (m_schedule != null)
             {
                 if (FullBackups.Checked)
-                    m_schedule.Repeat = FullDuration.Text;
+                    m_schedule.FullAfter = FullDuration.Text;
                 else
-                    m_schedule.Repeat = null;
+                    m_schedule.FullAfter = null;
 
                 if (EnableFullBackupClean.Checked)
                     m_schedule.KeepFull = (int)CleanFullBackupCount.Value;

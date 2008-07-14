@@ -10,6 +10,8 @@
     <RootNamespace>Duplicati</RootNamespace>
     <AssemblyName>Duplicati</AssemblyName>
     <ApplicationIcon>TrayUnknown.ico</ApplicationIcon>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -84,6 +86,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="Duplicati.snk" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -211,6 +214,12 @@
     <Compile Include="Wizard pages\Backends\WebDAV\WebDAVOptions.Designer.cs">
       <DependentUpon>WebDAVOptions.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Delete backup\DeleteFinished.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Delete backup\DeleteFinished.Designer.cs">
+      <DependentUpon>DeleteFinished.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Interfaces\IScheduleBased.cs" />
     <Compile Include="Wizard pages\Interfaces\ITaskBased.cs" />
     <Compile Include="Wizard pages\MainPage.cs">
@@ -219,17 +228,41 @@
     <Compile Include="Wizard pages\MainPage.Designer.cs">
       <DependentUpon>MainPage.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Restore\FinishedRestore.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\FinishedRestore.Designer.cs">
+      <DependentUpon>FinishedRestore.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Restore\SelectBackup.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Wizard pages\Restore\SelectBackup.Designer.cs">
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Restore\TargetFolder.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\TargetFolder.Designer.cs">
+      <DependentUpon>TargetFolder.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\RunNow\RunNowFinished.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\RunNow\RunNowFinished.Designer.cs">
+      <DependentUpon>RunNowFinished.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\SelectBackend.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Wizard pages\SelectBackend.Designer.cs">
       <DependentUpon>SelectBackend.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\SelectBackup.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\SelectBackup.Designer.cs">
+      <DependentUpon>SelectBackup.cs</DependentUpon>
     </Compile>
     <Compile Include="WizardHandler.cs" />
     <Compile Include="WorkerThread.cs" />
@@ -357,23 +390,41 @@
       <SubType>Designer</SubType>
       <DependentUpon>WebDAVOptions.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Delete backup\DeleteFinished.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>DeleteFinished.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\MainPage.resx">
       <SubType>Designer</SubType>
       <DependentUpon>MainPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Restore\FinishedRestore.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FinishedRestore.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Restore\SelectBackup.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Restore\TargetFolder.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>TargetFolder.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\RunNow\RunNowFinished.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>RunNowFinished.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\SelectBackend.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SelectBackend.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\SelectBackup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectBackup.cs</DependentUpon>
+    </EmbeddedResource>
     <Content Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Wizard pages\Delete backup\" />
-    <Folder Include="Wizard pages\Modify backup\" />
     <Folder Include="Wizard pages\Rearrange\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

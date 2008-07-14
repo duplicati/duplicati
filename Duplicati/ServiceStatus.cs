@@ -157,7 +157,7 @@ namespace Duplicati
             recentBackups.Items.Clear();
             foreach (Log l in logs)
             {
-                ListViewItem lvi = new ListViewItem(new string[] { l.EndTime.ToString("g", System.Globalization.CultureInfo.CurrentUICulture), l.OwnerTask == null ? "" : l.OwnerTask.Schedule.Name, l.TransferSizeString });
+                ListViewItem lvi = new ListViewItem(new string[] { l.EndTime.ToString("g", System.Globalization.CultureInfo.CurrentUICulture), l.OwnerTask == null || l.OwnerTask.Schedule == null ? "" : l.OwnerTask.Schedule.Name, l.TransferSizeString });
 
                 lvi.Tag = l;
                 lvi.ImageIndex = imageList.Images.ContainsKey(l.ParsedStatus) ? imageList.Images.IndexOfKey(l.ParsedStatus) : imageList.Images.IndexOfKey("Warning");

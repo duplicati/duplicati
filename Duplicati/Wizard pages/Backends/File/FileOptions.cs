@@ -13,6 +13,7 @@ namespace Duplicati.Wizard_pages.Backends.File
     {
         private Duplicati.Datamodel.Backends.File m_file;
         private bool m_isUpdating = false;
+        private bool m_new = false;
 
         public FileOptions()
         {
@@ -83,9 +84,24 @@ namespace Duplicati.Wizard_pages.Backends.File
                 targetpath = TargetFolder.Text;
             else
                 targetpath = TargetDrive.Text + "\\" + Folder.Text;
-            
+
+
             try
             {
+                if (targetpath.Trim().Length == 0)
+                {
+                    MessageBox.Show(this, "You must enter a folder to backup to", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    cancel = true;
+                    return;
+                }
+
+                if(!System.IO.Path.IsPathRooted(targetpath))
+                {
+                    MessageBox.Show(this, "You must enter the full path of the folder", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    cancel = true;
+                    return;
+                }
+
                 if (!System.IO.Directory.Exists(targetpath))
                 {
                     switch (MessageBox.Show(this, "The selected folder does not exist. Do you want to create it?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
@@ -108,7 +124,7 @@ namespace Duplicati.Wizard_pages.Backends.File
 
             try
             {
-                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
+                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0 && m_new)
                     if (MessageBox.Show(this, "The selected folder is not empty. Do you want to use it anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         cancel = true;
@@ -183,6 +199,7 @@ namespace Duplicati.Wizard_pages.Backends.File
 
         public void Setup(Duplicati.Datamodel.Task task)
         {
+            bool m_new = !task.RelationManager.ExistsInDb(task);
             m_file = new Duplicati.Datamodel.Backends.File(task);
         }
 

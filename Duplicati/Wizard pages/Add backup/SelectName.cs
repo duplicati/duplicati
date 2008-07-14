@@ -102,7 +102,8 @@ namespace Duplicati.Wizard_pages.Add_backup
         private void button1_Click(object sender, EventArgs e)
         {
             BackupFolder.SelectedFolder = null;
-            BackupFolder.AddFolder(null);
+            //BackupFolder.Focus();
+            BackupFolder.AddFolder(null).BeginEdit();
         }
     }
 }

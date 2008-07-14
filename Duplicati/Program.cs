@@ -196,7 +196,7 @@ namespace Duplicati
 
         public static void ShowWizard()
         {
-            if (Wizard == null || Wizard.Visible)
+            if (Wizard == null || !Wizard.Visible)
                 Wizard = new WizardHandler();
             
             Wizard.Show();
