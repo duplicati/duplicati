@@ -279,8 +279,10 @@ namespace Duplicati
                         DateTime backup = (m_form.Pages[(int)Pages.Restore_SelectDate] as Wizard_pages.Restore.SelectBackup).SelectedBackup;
                         string target = (m_form.Pages[(int)Pages.Restore_TargetFolder] as Wizard_pages.Restore.TargetFolder).SelectedFolder;
                         (m_form.Pages[(int)Pages.Restore_Finished] as Wizard_pages.Restore.FinishedRestore).Setup(schedule, backup, target);
+                        args.TreatAsLast = true;
                     }
                     break;
+
 
             }
         }
