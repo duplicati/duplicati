@@ -47,14 +47,21 @@ namespace Duplicati.Wizard_pages.Add_backup
         {
             InitializeComponent();
             m_sizes = new Dictionary<string, long>();
-            m_calculator = new WorkerThread<string>(CalculateFolderSize);
-            m_calculator.CompletedWork += new EventHandler(m_calculator_CompletedWork);
 
             m_myPictures = System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
             m_myMusic = System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
             m_desktop = System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             m_appData = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             m_myDocuments = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        }
+
+        private void StartCalculator()
+        {
+            if (m_calculator == null)
+            {
+                m_calculator = new WorkerThread<string>(CalculateFolderSize);
+                m_calculator.CompletedWork += new EventHandler(m_calculator_CompletedWork);
+            }
         }
 
         void m_calculator_CompletedWork(object sender, EventArgs e)
@@ -151,7 +158,8 @@ namespace Duplicati.Wizard_pages.Add_backup
                     return;
                 }
             }
-            m_calculator.ClearQueue(true);
+            if (m_calculator != null)
+                m_calculator.ClearQueue(true);
         }
 
         #endregion
@@ -160,6 +168,7 @@ namespace Duplicati.Wizard_pages.Add_backup
         {
             lock (m_lock)
             {
+                StartCalculator();
                 if (!m_sizes.ContainsKey(m_myMusic))
                     m_calculator.AddTask(m_myMusic);
                 if (!m_sizes.ContainsKey(m_myPictures))
@@ -231,6 +240,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             lock(m_lock)
                 if (TargetFolder.Text.Trim().Length > 0 && !m_sizes.ContainsKey(TargetFolder.Text))
                 {
+                    StartCalculator();
                     m_calculator.ClearQueue(true);
                     m_calculator.AddTask(TargetFolder.Text);
                 }
@@ -246,5 +256,14 @@ namespace Duplicati.Wizard_pages.Add_backup
         }
 
         #endregion
+
+        private void SelectFiles_VisibleChanged(object sender, EventArgs e)
+        {
+            if (!this.Visible && m_calculator != null)
+            {
+                m_calculator.Terminate(false);
+                m_calculator = null;
+            }
+        }
     }
 }

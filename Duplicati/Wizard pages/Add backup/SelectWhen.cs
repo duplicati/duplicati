@@ -143,11 +143,6 @@ namespace Duplicati.Wizard_pages.Add_backup
         public void Setup(Duplicati.Datamodel.Schedule schedule)
         {
             m_schedule = schedule;
-            if (m_schedule != null && !m_schedule.RelationManager.ExistsInDb(m_schedule))
-            {
-                m_schedule.When = DateTime.Now.Date.AddHours(DateTime.Now.Hour + 1);
-                m_schedule.Repeat = "1D";
-            }
         }
 
         #endregion

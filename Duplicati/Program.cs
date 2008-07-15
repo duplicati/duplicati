@@ -85,8 +85,19 @@ namespace Duplicati
 #endif
             System.Data.SQLite.SQLiteConnection con = new System.Data.SQLite.SQLiteConnection();
 
-            //This also opens the db for us :)
-            DatabaseUpgrader.UpgradeDatebase(con, dbpath);
+            try
+            {
+                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(dbpath)))
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dbpath));
+
+                //This also opens the db for us :)
+                DatabaseUpgrader.UpgradeDatebase(con, dbpath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to create, open or upgrade the database.\r\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             DataConnection = new DataFetcherThreadSafe(MainLock, new DataFetcherCached(new SQLiteDataProvider(con)));
 
             System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly();
@@ -135,6 +146,12 @@ namespace Duplicati
 
             TrayIcon.DoubleClick += new EventHandler(TrayIcon_DoubleClick);
             TrayIcon.Visible = true;
+
+            if (Program.DataConnection.GetObjects<Schedule>().Length == 0)
+            {
+                MessageBox.Show("Since this is the first time Duplicati is being run, the Wizard will now be shown.\r\nIf you wish to access the wizard again at some other time, you can right click the Duplicati icon in your system tray.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ShowWizard();
+            }
 
             Application.Run();
 

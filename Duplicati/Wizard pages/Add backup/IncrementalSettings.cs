@@ -44,12 +44,6 @@ namespace Duplicati.Wizard_pages.Add_backup
         public void Setup(Schedule schedule)
         {
             m_schedule = schedule;
-            if (m_schedule != null && !m_schedule.RelationManager.ExistsInDb(m_schedule))
-            {
-                m_schedule.Repeat = "1M";
-                m_schedule.KeepFull = 4;
-                m_schedule.KeepTime = "";
-            }
         }
 
         #region IWizardControl Members
@@ -84,7 +78,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             if (m_schedule != null)
             {
                 FullDuration.Text = m_schedule.FullAfter;
-                FullBackups.Enabled = !string.IsNullOrEmpty(m_schedule.Repeat);
+                FullBackups.Enabled = !string.IsNullOrEmpty(m_schedule.FullAfter);
                 CleanFullBackupCount.Value = m_schedule.KeepFull;
                 EnableFullBackupClean.Checked = m_schedule.KeepFull > 0;
                 CleanupDuration.Text = m_schedule.KeepTime;

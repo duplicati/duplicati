@@ -156,6 +156,13 @@ namespace Duplicati
                                 m_connection = new DataFetcherNested(Program.DataConnection);
                                 m_addedItem = m_connection.Add<Schedule>();
                                 m_addedItem.Tasks.Add(m_connection.Add<Task>());
+                                
+                                m_addedItem.FullAfter = "1M";
+                                m_addedItem.KeepFull = 4;
+                                m_addedItem.KeepTime = "";
+                                m_addedItem.Name = "New backup";
+                                m_addedItem.Repeat = "1D";
+                                m_addedItem.When = DateTime.Now.Date.AddHours(DateTime.Now.Hour + 1);
 
                                 foreach (IWizardControl c in m_form.Pages)
                                 {

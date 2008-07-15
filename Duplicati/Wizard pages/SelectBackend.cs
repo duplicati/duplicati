@@ -58,7 +58,8 @@ namespace Duplicati.Wizard_pages
 
         void IWizardControl.Enter(IWizardForm owner)
         {
-            switch (m_task.Backend.SystemName)
+            string backend = m_task.Backend == null ? "" : m_task.Backend.SystemName;
+            switch (backend)
             {
                 case "file":
                     File.Checked = true;

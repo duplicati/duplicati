@@ -289,6 +289,7 @@ namespace Duplicati.Wizard_pages.Add_backup
             this.Controls.Add(this.DocumentGroup);
             this.Name = "SelectFiles";
             this.Size = new System.Drawing.Size(506, 242);
+            this.VisibleChanged += new System.EventHandler(this.SelectFiles_VisibleChanged);
             this.DocumentGroup.ResumeLayout(false);
             this.DocumentGroup.PerformLayout();
             this.FolderGroup.ResumeLayout(false);
