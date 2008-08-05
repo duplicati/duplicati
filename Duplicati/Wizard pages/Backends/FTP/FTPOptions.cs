@@ -84,7 +84,7 @@ namespace Duplicati.Wizard_pages.Backends.FTP
                     }
                 }
 
-            if (!m_warnedPath)
+            if (!m_warnedPath && Path.Text.Trim().Length == 0)
             {
                 if (MessageBox.Show(this, "You have not entered a path. This will store all backups in the default directory. Is this what you want?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
                 {
@@ -144,7 +144,7 @@ namespace Duplicati.Wizard_pages.Backends.FTP
                 {
                     System.Net.WebClient wc = new System.Net.WebClient();
                     wc.Credentials = new System.Net.NetworkCredential(Username.Text, Password.Text);
-                    string hostname = "ftp://" + Servername.Text + (Port.Value != 21 ? ":21/" : "/") + Path;
+                    string hostname = "ftp://" + Username.Text + "@" + Servername.Text + (Port.Value != 21 ? ":21/" : "/") + Path.Text;
                     wc.DownloadData(hostname);
 
                     MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);

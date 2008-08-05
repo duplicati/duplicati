@@ -47,6 +47,10 @@ namespace Duplicati
             this.PGPBrowser = new System.Windows.Forms.FolderBrowserDialog();
             this.PythonFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.DuplicityFileDialog = new System.Windows.Forms.OpenFileDialog();
+            this.BrowseNcFTP = new System.Windows.Forms.Button();
+            this.NcFTPPath = new System.Windows.Forms.TextBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.NcFTPBrowser = new System.Windows.Forms.FolderBrowserDialog();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -98,6 +102,9 @@ namespace Duplicati
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.BrowseNcFTP);
+            this.groupBox2.Controls.Add(this.NcFTPPath);
+            this.groupBox2.Controls.Add(this.label5);
             this.groupBox2.Controls.Add(this.BrowseDuplicity);
             this.groupBox2.Controls.Add(this.BrowsePython);
             this.groupBox2.Controls.Add(this.BrowsePGP);
@@ -109,7 +116,7 @@ namespace Duplicati
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Location = new System.Drawing.Point(8, 72);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(408, 104);
+            this.groupBox2.Size = new System.Drawing.Size(408, 128);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Path settings (VERY ADVANCED)";
@@ -181,7 +188,7 @@ namespace Duplicati
             // 
             // OKBtn
             // 
-            this.OKBtn.Location = new System.Drawing.Point(120, 192);
+            this.OKBtn.Location = new System.Drawing.Point(120, 224);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(80, 24);
             this.OKBtn.TabIndex = 6;
@@ -192,7 +199,7 @@ namespace Duplicati
             // CancelBtn
             // 
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(216, 192);
+            this.CancelBtn.Location = new System.Drawing.Point(216, 224);
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.Size = new System.Drawing.Size(72, 24);
             this.CancelBtn.TabIndex = 7;
@@ -219,12 +226,43 @@ namespace Duplicati
             this.DuplicityFileDialog.SupportMultiDottedExtensions = true;
             this.DuplicityFileDialog.Title = "Select the main Duplicity script file";
             // 
+            // BrowseNcFTP
+            // 
+            this.BrowseNcFTP.Location = new System.Drawing.Point(376, 96);
+            this.BrowseNcFTP.Name = "BrowseNcFTP";
+            this.BrowseNcFTP.Size = new System.Drawing.Size(24, 20);
+            this.BrowseNcFTP.TabIndex = 13;
+            this.BrowseNcFTP.Text = "...";
+            this.BrowseNcFTP.UseVisualStyleBackColor = true;
+            this.BrowseNcFTP.Click += new System.EventHandler(this.BrowseNcFTP_Click);
+            // 
+            // NcFTPPath
+            // 
+            this.NcFTPPath.Location = new System.Drawing.Point(128, 96);
+            this.NcFTPPath.Name = "NcFTPPath";
+            this.NcFTPPath.Size = new System.Drawing.Size(248, 20);
+            this.NcFTPPath.TabIndex = 12;
+            this.NcFTPPath.TextChanged += new System.EventHandler(this.NcFTPPath_TextChanged);
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(8, 96);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(70, 13);
+            this.label5.TabIndex = 11;
+            this.label5.Text = "NcFTP folder";
+            // 
+            // NcFTPBrowser
+            // 
+            this.NcFTPBrowser.ShowNewFolderButton = false;
+            // 
             // ApplicationSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(423, 226);
+            this.ClientSize = new System.Drawing.Size(423, 259);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.groupBox2);
@@ -264,5 +302,9 @@ namespace Duplicati
         private System.Windows.Forms.FolderBrowserDialog PGPBrowser;
         private System.Windows.Forms.OpenFileDialog PythonFileDialog;
         private System.Windows.Forms.OpenFileDialog DuplicityFileDialog;
+        private System.Windows.Forms.Button BrowseNcFTP;
+        private System.Windows.Forms.TextBox NcFTPPath;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.FolderBrowserDialog NcFTPBrowser;
     }
 }

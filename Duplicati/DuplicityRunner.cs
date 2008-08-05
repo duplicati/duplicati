@@ -56,6 +56,7 @@ namespace Duplicati
             foreach (string key in m_environment.Keys)
                 env[key] = m_environment[key];
 
+            env["PATH"] = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.NcFTPPath) + System.IO.Path.PathSeparator + env["PATH"];
             env["PATH"] = System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.PGPPath) + System.IO.Path.PathSeparator + env["PATH"];
 
             args.Add("\"" + System.Environment.ExpandEnvironmentVariables(Program.ApplicationSettings.DuplicityPath) + "\"");

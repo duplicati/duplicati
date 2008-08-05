@@ -29,6 +29,7 @@ namespace Duplicati
                 PGPPath.Text = m_settings.PGPPath;
                 PythonPath.Text = m_settings.PythonPath;
                 DuplicityPath.Text = m_settings.DuplicityPath;
+                NcFTPPath.Text = m_settings.NcFTPPath;
             }
             finally
             {
@@ -91,6 +92,19 @@ namespace Duplicati
 
             this.DialogResult = DialogResult.OK;
             this.Close();
+        }
+
+        private void BrowseNcFTP_Click(object sender, EventArgs e)
+        {
+            if (NcFTPBrowser.ShowDialog(this) == DialogResult.OK)
+                NcFTPPath.Text = NcFTPBrowser.SelectedPath;
+       }
+
+        private void NcFTPPath_TextChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+            m_settings.NcFTPPath  = DuplicityPath.Text;
         }
     }
 }

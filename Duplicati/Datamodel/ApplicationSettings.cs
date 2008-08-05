@@ -32,6 +32,7 @@ namespace Duplicati.Datamodel
         private const string PGP_PATH = "PGP path";
         private const string PYTHON_PATH = "Python path";
         private const string DUPLICITY_PATH = "Duplicity path";
+        private const string NCFTP_PATH = "NcFTP Path";
 
         public const string APP_PATH_ENV = "%APP_PATH%";
 
@@ -50,12 +51,21 @@ namespace Duplicati.Datamodel
         }
 
         /// <summary>
-        /// Gets or sets the path to the PGP path. May contain environment variables
+        /// Gets or sets the path to PGP. May contain environment variables
         /// </summary>
         public string PGPPath
         {
-            get { return string.IsNullOrEmpty(m_appset[PGP_PATH]) ? APP_PATH_ENV + "pgp" : m_appset[PGP_PATH]; }
+            get { return string.IsNullOrEmpty(m_appset[PGP_PATH]) ? APP_PATH_ENV + "gpg" : m_appset[PGP_PATH]; }
             set { m_appset[PGP_PATH] = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the path to NcFTP. May contain environment variables
+        /// </summary>
+        public string NcFTPPath
+        {
+            get { return string.IsNullOrEmpty(m_appset[NCFTP_PATH]) ? APP_PATH_ENV + "ncftp" : m_appset[NCFTP_PATH]; }
+            set { m_appset[NCFTP_PATH] = value; }
         }
 
         /// <summary>

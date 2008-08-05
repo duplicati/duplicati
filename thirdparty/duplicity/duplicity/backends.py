@@ -526,7 +526,8 @@ class ftpBackend(Backend):
 		except:
 			pass
 		# the expected error is 8 in the high-byte and some output
-		if ret != 0x0800 or not fout:
+		#if ret != 0x0800 or not fout:
+		if not fout:
 			log.FatalError("NcFTP not found:  Please install NcFTP version 3.1.9 or later")
 
 		# version is the second word of the first line
@@ -563,14 +564,14 @@ class ftpBackend(Backend):
 	def put(self, source_path, remote_filename = None):
 		"""Transfer source_path to remote_filename"""
 		remote_path = os.path.join(urllib.unquote(self.parsed_url.path.lstrip('/')), remote_filename).rstrip()
-		commandline = "ncftpput %s -m -V -C '%s' '%s'" % \
+		commandline = "ncftpput %s -m -V -C \"%s\" \"%s\"" % \
 					  (self.flags, source_path.name, remote_path)
 		self.run_command_persist(commandline)
 
 	def get(self, remote_filename, local_path):
 		"""Get remote filename, saving it to local_path"""
 		remote_path = os.path.join(urllib.unquote(self.parsed_url.path), remote_filename).rstrip()
-		commandline = "ncftpget %s -V -C '%s' '%s' '%s'" % \
+		commandline = "ncftpget %s -V -C \"%s\" \"%s\" \"%s\"" % \
 					  (self.flags, self.parsed_url.hostname, remote_path.lstrip('/'), local_path.name)
 		self.run_command_persist(commandline)
 		local_path.setdata()
@@ -578,14 +579,14 @@ class ftpBackend(Backend):
 	def list(self):
 		"""List files in directory"""
 		# try for a long listing to avoid connection reset
-		commandline = "ncftpls %s -l '%s'" % \
+		commandline = "ncftpls %s -l \"%s\"" % \
 					  (self.flags, self.url_string)
 		l = self.popen_persist(commandline).split('\n')
 		l = filter(lambda x: x, l)
 		if not l:
 			return l
 		# if long list is not empty, get short list of names only
-		commandline = "ncftpls -x '' %s '%s'" % \
+		commandline = "ncftpls -x '' %s \"%s\"" % \
 					  (self.flags, self.url_string)
 		l = self.popen_persist(commandline).split('\n')
 		l = [x.split()[-1] for x in l if x]
@@ -594,7 +595,7 @@ class ftpBackend(Backend):
 	def delete(self, filename_list):
 		"""Delete files in filename_list"""
 		for filename in filename_list:
-			commandline = "ncftpls -x '' %s -X 'DELE %s' '%s'" % \
+			commandline = "ncftpls -x '' %s -X \"DELE %s\" \"%s\"" % \
 						  (self.flags, filename, self.url_string)
 			self.popen_persist(commandline)
 
