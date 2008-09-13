@@ -24,7 +24,7 @@ using System.Text;
 using Duplicati.Datamodel;
 using System.Drawing;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     /// <summary>
     /// This class encapsulates all communication with Duplicity

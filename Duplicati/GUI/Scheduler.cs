@@ -24,7 +24,7 @@ using System.Threading;
 using Duplicati.Datamodel;
 using System.Data.LightDatamodel;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     public class Scheduler
     {

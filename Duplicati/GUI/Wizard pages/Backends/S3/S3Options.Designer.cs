@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Backends.S3
+namespace Duplicati.GUI.Wizard_pages.Backends.S3
 {
     partial class S3Options
     {

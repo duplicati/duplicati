@@ -26,7 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 
-namespace Duplicati.Wizard_pages
+namespace Duplicati.GUI.Wizard_pages
 {
     public partial class MainPage : UserControl, IWizardControl
     {

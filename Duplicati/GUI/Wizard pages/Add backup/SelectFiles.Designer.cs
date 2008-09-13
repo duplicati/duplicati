@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Add_backup
+namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     partial class SelectFiles
     {

@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
 
-namespace Duplicati.Wizard_pages.Restore
+namespace Duplicati.GUI.Wizard_pages.Restore
 {
     public partial class TargetFolder : UserControl, IWizardControl
     {

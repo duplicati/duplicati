@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Backends.SSH
+namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 {
     partial class SSHOptions
     {

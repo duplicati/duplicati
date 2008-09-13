@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.RunNow
+namespace Duplicati.GUI.Wizard_pages.RunNow
 {
     partial class RunNowFinished
     {

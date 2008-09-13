@@ -1,4 +1,4 @@
-namespace Duplicati
+namespace Duplicati.GUI
 {
     partial class ApplicationSetup
     {

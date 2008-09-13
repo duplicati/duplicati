@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using Duplicati.Datamodel;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     public enum DuplicityTaskType
     {

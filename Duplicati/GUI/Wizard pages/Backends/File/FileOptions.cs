@@ -26,7 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 
-namespace Duplicati.Wizard_pages.Backends.File
+namespace Duplicati.GUI.Wizard_pages.Backends.File
 {
     public partial class FileOptions : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
     {

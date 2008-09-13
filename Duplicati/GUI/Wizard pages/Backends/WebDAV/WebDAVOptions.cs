@@ -26,7 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 
-namespace Duplicati.Wizard_pages.Backends.WebDAV
+namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
 {
     public partial class WebDAVOptions : UserControl, IWizardControl
     {

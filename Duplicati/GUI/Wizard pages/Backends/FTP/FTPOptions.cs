@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
 
-namespace Duplicati.Wizard_pages.Backends.FTP
+namespace Duplicati.GUI.Wizard_pages.Backends.FTP
 {
     public partial class FTPOptions : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
     {

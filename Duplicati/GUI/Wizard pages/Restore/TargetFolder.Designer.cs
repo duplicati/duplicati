@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Restore
+namespace Duplicati.GUI.Wizard_pages.Restore
 {
     partial class TargetFolder
     {

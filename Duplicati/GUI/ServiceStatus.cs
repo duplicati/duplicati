@@ -26,7 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using Duplicati.Datamodel;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     public partial class ServiceStatus : Form
     {

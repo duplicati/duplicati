@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Data.LightDatamodel;
 using Duplicati.Datamodel;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     public partial class ApplicationSetup : Form
     {

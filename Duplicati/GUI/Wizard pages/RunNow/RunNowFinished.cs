@@ -28,7 +28,7 @@ using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
 
 
-namespace Duplicati.Wizard_pages.RunNow
+namespace Duplicati.GUI.Wizard_pages.RunNow
 {
     public partial class RunNowFinished : UserControl, IWizardControl, Interfaces.IScheduleBased
     {

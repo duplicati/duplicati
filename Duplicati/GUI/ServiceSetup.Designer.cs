@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-namespace Duplicati
+namespace Duplicati.GUI
 {
     partial class ServiceSetup
     {
@@ -63,9 +63,9 @@ namespace Duplicati
             this.PropertyTabs = new System.Windows.Forms.TabControl();
             this.OccurencePage = new System.Windows.Forms.TabPage();
             this.FilePage = new System.Windows.Forms.TabPage();
-            this.backupTreeView = new Duplicati.HelperControls.BackupTreeView();
-            this.scheduleSettings = new Duplicati.Service_controls.ScheduleSettings();
-            this.taskSettings = new Duplicati.Service_controls.TaskSettingsBase();
+            this.backupTreeView = new Duplicati.GUI.HelperControls.BackupTreeView();
+            this.scheduleSettings = new Duplicati.GUI.Service_controls.ScheduleSettings();
+            this.taskSettings = new Duplicati.GUI.Service_controls.TaskSettingsBase();
             this.restoreFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1.SuspendLayout();
             this.TreeMenuStrip.SuspendLayout();
@@ -299,15 +299,15 @@ namespace Duplicati
         private System.Windows.Forms.TabControl PropertyTabs;
         private System.Windows.Forms.TabPage OccurencePage;
         private System.Windows.Forms.TabPage FilePage;
-        private Duplicati.Service_controls.ScheduleSettings scheduleSettings;
+        private Duplicati.GUI.Service_controls.ScheduleSettings scheduleSettings;
         private System.Windows.Forms.ToolStripDropDownButton AddButton;
         private System.Windows.Forms.ToolStripMenuItem AddFolderMenu;
         private System.Windows.Forms.ToolStripMenuItem AddBackupMenu;
         private System.Windows.Forms.ToolStripButton RemoveButton;
-        private Duplicati.Service_controls.TaskSettingsBase taskSettings;
+        private Duplicati.GUI.Service_controls.TaskSettingsBase taskSettings;
         private System.Windows.Forms.ContextMenuStrip TreeMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem playToolStripMenuItem;
-        private Duplicati.HelperControls.BackupTreeView backupTreeView;
+        private Duplicati.GUI.HelperControls.BackupTreeView backupTreeView;
         private System.Windows.Forms.ToolStripMenuItem restoreFilesToolStripMenuItem;
     }
 }

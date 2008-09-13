@@ -7,7 +7,7 @@
     <ProjectGuid>{1470F75F-D364-4010-91D0-FD4DDA1C5159}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati</RootNamespace>
+    <RootNamespace>Duplicati.GUI</RootNamespace>
     <AssemblyName>Duplicati</AssemblyName>
     <ApplicationIcon>TrayUnknown.ico</ApplicationIcon>
     <SignAssembly>true</SignAssembly>
@@ -85,6 +85,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Duplicati.snk" />
     <None Include="Properties\Settings.settings">

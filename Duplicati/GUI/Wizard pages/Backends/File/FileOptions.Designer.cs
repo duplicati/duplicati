@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Backends.File
+namespace Duplicati.GUI.Wizard_pages.Backends.File
 {
     partial class FileOptions
     {

@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     public class WorkerThread<Tx> where Tx : class
     {

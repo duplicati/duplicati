@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages
+namespace Duplicati.GUI.Wizard_pages
 {
     partial class SelectBackup
     {
@@ -28,7 +28,7 @@ namespace Duplicati.Wizard_pages
         /// </summary>
         private void InitializeComponent()
         {
-            this.BackupList = new Duplicati.HelperControls.BackupTreeView();
+            this.BackupList = new Duplicati.GUI.HelperControls.BackupTreeView();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -64,7 +64,7 @@ namespace Duplicati.Wizard_pages
 
         #endregion
 
-        private Duplicati.HelperControls.BackupTreeView BackupList;
+        private Duplicati.GUI.HelperControls.BackupTreeView BackupList;
         private System.Windows.Forms.Label label1;
     }
 }

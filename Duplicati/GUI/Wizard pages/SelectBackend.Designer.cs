@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages
+namespace Duplicati.GUI.Wizard_pages
 {
     partial class SelectBackend
     {

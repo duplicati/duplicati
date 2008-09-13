@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Delete_backup
+namespace Duplicati.GUI.Wizard_pages.Delete_backup
 {
     partial class DeleteFinished
     {

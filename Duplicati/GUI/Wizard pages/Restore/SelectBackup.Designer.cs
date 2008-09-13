@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Restore
+namespace Duplicati.GUI.Wizard_pages.Restore
 {
     partial class SelectBackup
     {
@@ -28,7 +28,7 @@ namespace Duplicati.Wizard_pages.Restore
         /// </summary>
         private void InitializeComponent()
         {
-            this.BackupList = new Duplicati.HelperControls.BackupItems();
+            this.BackupList = new Duplicati.GUI.HelperControls.BackupItems();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -63,7 +63,7 @@ namespace Duplicati.Wizard_pages.Restore
 
         #endregion
 
-        private Duplicati.HelperControls.BackupItems BackupList;
+        private Duplicati.GUI.HelperControls.BackupItems BackupList;
         private System.Windows.Forms.Label label1;
     }
 }

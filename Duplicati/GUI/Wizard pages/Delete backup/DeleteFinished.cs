@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
 
-namespace Duplicati.Wizard_pages.Delete_backup
+namespace Duplicati.GUI.Wizard_pages.Delete_backup
 {
     public partial class DeleteFinished : UserControl, IWizardControl, Interfaces.IScheduleBased
     {

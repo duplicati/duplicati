@@ -28,7 +28,7 @@ using System.Windows.Forms.Wizard;
 using System.Data.LightDatamodel;
 using Duplicati.Datamodel;
 
-namespace Duplicati.Wizard_pages
+namespace Duplicati.GUI.Wizard_pages
 {
     public partial class SelectBackup : UserControl, IWizardControl
     {

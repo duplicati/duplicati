@@ -25,7 +25,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     public partial class LogViewer : Form
     {

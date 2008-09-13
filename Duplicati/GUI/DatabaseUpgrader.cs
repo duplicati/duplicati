@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     /// <summary>
     /// This class will read embedded files from the given folder.

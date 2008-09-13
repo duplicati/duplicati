@@ -25,7 +25,7 @@ using System.Windows.Forms.Wizard;
 using System.Data.LightDatamodel;
 using Duplicati.Datamodel;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     /// <summary>
     /// This class encapsulates the control of the wizard
@@ -124,7 +124,7 @@ namespace Duplicati
                 m_connection.CommitAll();
                 Program.DataConnection.CommitAll();
 
-                if ((m_form.CurrentPage as Duplicati.Wizard_pages.Add_backup.FinishedAdd).RunNow.Checked)
+                if ((m_form.CurrentPage as Duplicati.GUI.Wizard_pages.Add_backup.FinishedAdd).RunNow.Checked)
                     if (m_addedItem != null)
                         Program.WorkThread.AddTask(new FullBackupTask(m_addedItem));
                     else
@@ -167,7 +167,7 @@ namespace Duplicati
                 case Pages.MainAction:
                     switch (((Wizard_pages.MainPage)m_form.CurrentPage).SelectedAction)
                     {
-                        case Duplicati.Wizard_pages.MainPage.Action.Add:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Add:
                             args.NextPage = m_form.Pages[(int)Pages.Add_SelectName];
 
                             if (m_addedItem == null || m_editItem != null)
@@ -193,25 +193,25 @@ namespace Duplicati
                             }
 
                             break;
-                        case Duplicati.Wizard_pages.MainPage.Action.Edit:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Edit:
                             m_connection = new DataFetcherNested(Program.DataConnection);
                             args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
-                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.Wizard_pages.MainPage.Action.Edit);
+                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.GUI.Wizard_pages.MainPage.Action.Edit);
                             break;
-                        case Duplicati.Wizard_pages.MainPage.Action.Restore:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Restore:
                             m_connection = new DataFetcherNested(Program.DataConnection);
                             args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
-                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.Wizard_pages.MainPage.Action.Restore);
+                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.GUI.Wizard_pages.MainPage.Action.Restore);
                             break;
-                        case Duplicati.Wizard_pages.MainPage.Action.Backup:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Backup:
                             m_connection = new DataFetcherNested(Program.DataConnection);
                             args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
-                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.Wizard_pages.MainPage.Action.Backup);
+                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.GUI.Wizard_pages.MainPage.Action.Backup);
                             break;
-                        case Duplicati.Wizard_pages.MainPage.Action.Delete:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Delete:
                             m_connection = new DataFetcherNested(Program.DataConnection);
                             args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
-                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.Wizard_pages.MainPage.Action.Delete);
+                            (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.GUI.Wizard_pages.MainPage.Action.Delete);
                             break;
                         /*case Duplicati.Wizard_pages.MainPage.Action.Rearrange:
                             break;*/
@@ -224,19 +224,19 @@ namespace Duplicati
                 case Pages.Add_SelectService:
                     switch (((Wizard_pages.SelectBackend)m_form.CurrentPage).SelectedProvider)
                     {
-                        case Duplicati.Wizard_pages.SelectBackend.Provider.File:
+                        case Duplicati.GUI.Wizard_pages.SelectBackend.Provider.File:
                             args.NextPage = m_form.Pages[(int)Pages.Add_FileOptions];
                             break;
-                        case Duplicati.Wizard_pages.SelectBackend.Provider.FTP:
+                        case Duplicati.GUI.Wizard_pages.SelectBackend.Provider.FTP:
                             args.NextPage = m_form.Pages[(int)Pages.Add_FTPOptions];
                             break;
-                        case Duplicati.Wizard_pages.SelectBackend.Provider.SSH:
+                        case Duplicati.GUI.Wizard_pages.SelectBackend.Provider.SSH:
                             args.NextPage = m_form.Pages[(int)Pages.Add_SSHOptions];
                             break;
-                        case Duplicati.Wizard_pages.SelectBackend.Provider.WebDAV:
+                        case Duplicati.GUI.Wizard_pages.SelectBackend.Provider.WebDAV:
                             args.NextPage = m_form.Pages[(int)Pages.Add_WebDAVOptions];
                             break;
-                        case Duplicati.Wizard_pages.SelectBackend.Provider.S3:
+                        case Duplicati.GUI.Wizard_pages.SelectBackend.Provider.S3:
                             args.NextPage = m_form.Pages[(int)Pages.Add_S3Options];
                             break;
                         default:
@@ -273,20 +273,20 @@ namespace Duplicati
 
                     switch ((m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectType)
                     {
-                        case Duplicati.Wizard_pages.MainPage.Action.Edit:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Edit:
                             args.NextPage = m_form.Pages[(int)Pages.Add_SelectName];
                             break;
-                        case Duplicati.Wizard_pages.MainPage.Action.Backup:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Backup:
                             args.NextPage = m_form.Pages[(int)Pages.RunNow_Finished];
                             args.TreatAsLast = true;
                             break;
-                        case Duplicati.Wizard_pages.MainPage.Action.Delete:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Delete:
                             args.NextPage = m_form.Pages[(int)Pages.Delete_Finished];
                             args.TreatAsLast = true;
                             break;
-                        case Duplicati.Wizard_pages.MainPage.Action.Rearrange:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Rearrange:
                             break;
-                        case Duplicati.Wizard_pages.MainPage.Action.Restore:
+                        case Duplicati.GUI.Wizard_pages.MainPage.Action.Restore:
                             args.NextPage = m_form.Pages[(int)Pages.Restore_SelectDate];
                             (m_form.Pages[(int)Pages.Restore_SelectDate] as Wizard_pages.Restore.SelectBackup).Setup(m_editItem);
                             break;

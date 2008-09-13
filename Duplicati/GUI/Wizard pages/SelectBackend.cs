@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
 
-namespace Duplicati.Wizard_pages
+namespace Duplicati.GUI.Wizard_pages
 {
     public partial class SelectBackend : UserControl, IWizardControl, Interfaces.ITaskBased
     {

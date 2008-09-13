@@ -26,7 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using Duplicati.Datamodel.Backends;
 
-namespace Duplicati.Service_controls
+namespace Duplicati.GUI.Service_controls
 {
     public partial class FileSettings : UserControl
     {

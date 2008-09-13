@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-namespace Duplicati.Service_controls
+namespace Duplicati.GUI.Service_controls
 {
     partial class FileSettings
     {

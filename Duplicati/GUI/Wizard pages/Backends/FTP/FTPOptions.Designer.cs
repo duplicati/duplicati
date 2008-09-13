@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Backends.FTP
+namespace Duplicati.GUI.Wizard_pages.Backends.FTP
 {
     partial class FTPOptions
     {

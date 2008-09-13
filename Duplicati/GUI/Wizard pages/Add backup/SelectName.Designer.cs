@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Add_backup
+namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     partial class SelectName
     {
@@ -28,7 +28,7 @@ namespace Duplicati.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
-            this.BackupFolder = new Duplicati.HelperControls.BackupTreeView();
+            this.BackupFolder = new Duplicati.GUI.HelperControls.BackupTreeView();
             this.label1 = new System.Windows.Forms.Label();
             this.BackupName = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -95,7 +95,7 @@ namespace Duplicati.Wizard_pages.Add_backup
 
         #endregion
 
-        private Duplicati.HelperControls.BackupTreeView BackupFolder;
+        private Duplicati.GUI.HelperControls.BackupTreeView BackupFolder;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox BackupName;
         private System.Windows.Forms.Label label2;

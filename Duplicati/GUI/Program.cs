@@ -24,7 +24,7 @@ using System.Data.LightDatamodel;
 using System.Drawing;
 using Duplicati.Datamodel;
 
-namespace Duplicati
+namespace Duplicati.GUI
 {
     static class Program
     {

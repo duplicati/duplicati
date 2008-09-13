@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
 
-namespace Duplicati.Wizard_pages.Add_backup
+namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class SelectFiles : UserControl, IWizardControl, Interfaces.IScheduleBased
     {

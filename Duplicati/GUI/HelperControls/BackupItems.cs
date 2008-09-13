@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Threading;
 using Duplicati.Datamodel;
 
-namespace Duplicati.HelperControls
+namespace Duplicati.GUI.HelperControls
 {
     public partial class BackupItems : UserControl
     {

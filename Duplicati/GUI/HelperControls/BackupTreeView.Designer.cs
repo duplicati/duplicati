@@ -1,4 +1,4 @@
-namespace Duplicati.HelperControls
+namespace Duplicati.GUI.HelperControls
 {
     partial class BackupTreeView
     {

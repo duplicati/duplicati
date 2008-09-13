@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
 
-namespace Duplicati.Wizard_pages.Backends.S3
+namespace Duplicati.GUI.Wizard_pages.Backends.S3
 {
     public partial class S3Options : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
     {

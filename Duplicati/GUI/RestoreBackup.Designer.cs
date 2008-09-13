@@ -1,4 +1,4 @@
-namespace Duplicati
+namespace Duplicati.GUI
 {
     partial class RestoreBackup
     {
@@ -38,7 +38,7 @@ namespace Duplicati
             this.CancelBtn = new System.Windows.Forms.Button();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-            this.backupItems = new Duplicati.HelperControls.BackupItems();
+            this.backupItems = new Duplicati.GUI.HelperControls.BackupItems();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.SuspendLayout();
             // 
@@ -152,7 +152,7 @@ namespace Duplicati
         #endregion
 
         private System.Windows.Forms.Label label1;
-        private Duplicati.HelperControls.BackupItems backupItems;
+        private Duplicati.GUI.HelperControls.BackupItems backupItems;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox TargetFolder;
         private System.Windows.Forms.Button SelectTargetFolder;

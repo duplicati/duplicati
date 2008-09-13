@@ -1,4 +1,4 @@
-namespace Duplicati.Wizard_pages.Backends.WebDAV
+namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
 {
     partial class WebDAVOptions
     {

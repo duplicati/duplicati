@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using Duplicati.Datamodel;
 using System.Data.LightDatamodel;
 
-namespace Duplicati.HelperControls
+namespace Duplicati.GUI.HelperControls
 {
     public partial class BackupTreeView : UserControl
     {

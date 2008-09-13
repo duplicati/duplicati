@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-namespace Duplicati.Service_controls
+namespace Duplicati.GUI.Service_controls
 {
     partial class TaskSettingsBase
     {
@@ -49,9 +49,9 @@ namespace Duplicati.Service_controls
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.ServicePanel = new System.Windows.Forms.Panel();
-            this.sshSettings = new Duplicati.Service_controls.SSHSettings();
-            this.s3Settings = new Duplicati.Service_controls.S3Settings();
-            this.fileSettings = new Duplicati.Service_controls.FileSettings();
+            this.sshSettings = new Duplicati.GUI.Service_controls.SSHSettings();
+            this.s3Settings = new Duplicati.GUI.Service_controls.S3Settings();
+            this.fileSettings = new Duplicati.GUI.Service_controls.FileSettings();
             this.EditFilterButton = new System.Windows.Forms.Button();
             this.BrowseSourceFolder = new System.Windows.Forms.Button();
             this.SourceFolder = new System.Windows.Forms.TextBox();
