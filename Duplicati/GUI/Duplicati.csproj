@@ -1,0 +1,438 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1470F75F-D364-4010-91D0-FD4DDA1C5159}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Duplicati</RootNamespace>
+    <AssemblyName>Duplicati</AssemblyName>
+    <ApplicationIcon>TrayUnknown.ico</ApplicationIcon>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c7a68962c12dce64, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\thirdparty\LightDataModel\LightDatamodel.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite, Version=1.0.46.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\SQLite\System.Data.SQLite.DLL</HintPath>
+    </Reference>
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ApplicationSetup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ApplicationSetup.Designer.cs">
+      <DependentUpon>ApplicationSetup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DatabaseUpgrader.cs" />
+    <Compile Include="DuplicityOutputParser.cs" />
+    <Compile Include="DuplicityRunner.cs" />
+    <Compile Include="HelperControls\BackupItems.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\BackupItems.Designer.cs">
+      <DependentUpon>BackupItems.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\BackupTreeView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\BackupTreeView.Designer.cs">
+      <DependentUpon>BackupTreeView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="KeyGenerator.cs" />
+    <Compile Include="LogViewer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LogViewer.Designer.cs">
+      <DependentUpon>LogViewer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="Duplicati.snk" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="RestoreBackup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RestoreBackup.Designer.cs">
+      <DependentUpon>RestoreBackup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Scheduler.cs" />
+    <Compile Include="Service controls\Backends\FileSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\Backends\FileSettings.Designer.cs">
+      <DependentUpon>FileSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Service controls\Backends\S3Settings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\Backends\S3Settings.Designer.cs">
+      <DependentUpon>S3Settings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Service controls\ScheduleSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\ScheduleSettings.Designer.cs">
+      <DependentUpon>ScheduleSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Service controls\Backends\SSHSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\Backends\SSHSettings.Designer.cs">
+      <DependentUpon>SSHSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Service controls\TaskSettingsBase.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Service controls\TaskSettingsBase.Designer.cs">
+      <DependentUpon>TaskSettingsBase.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ServiceSetup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ServiceSetup.Designer.cs">
+      <DependentUpon>ServiceSetup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ServiceStatus.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ServiceStatus.Designer.cs">
+      <DependentUpon>ServiceStatus.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TaskPackages.cs" />
+    <Compile Include="Timeparser.cs" />
+    <Compile Include="UrlUtillity.cs" />
+    <Compile Include="Wizard pages\Add backup\FinishedAdd.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\FinishedAdd.Designer.cs">
+      <DependentUpon>FinishedAdd.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\IncrementalSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\IncrementalSettings.Designer.cs">
+      <DependentUpon>IncrementalSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\PasswordSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\PasswordSettings.Designer.cs">
+      <DependentUpon>PasswordSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectFiles.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectFiles.Designer.cs">
+      <DependentUpon>SelectFiles.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectName.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectName.Designer.cs">
+      <DependentUpon>SelectName.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectWhen.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SelectWhen.Designer.cs">
+      <DependentUpon>SelectWhen.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\File\FileOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\File\FileOptions.Designer.cs">
+      <DependentUpon>FileOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\FTP\FTPOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\FTP\FTPOptions.Designer.cs">
+      <DependentUpon>FTPOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\S3\S3Options.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\S3\S3Options.Designer.cs">
+      <DependentUpon>S3Options.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\SSH\SSHOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\SSH\SSHOptions.Designer.cs">
+      <DependentUpon>SSHOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\WebDAV\WebDAVOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\WebDAV\WebDAVOptions.Designer.cs">
+      <DependentUpon>WebDAVOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Delete backup\DeleteFinished.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Delete backup\DeleteFinished.Designer.cs">
+      <DependentUpon>DeleteFinished.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Interfaces\IScheduleBased.cs" />
+    <Compile Include="Wizard pages\Interfaces\ITaskBased.cs" />
+    <Compile Include="Wizard pages\MainPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\MainPage.Designer.cs">
+      <DependentUpon>MainPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\FinishedRestore.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\FinishedRestore.Designer.cs">
+      <DependentUpon>FinishedRestore.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\SelectBackup.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\SelectBackup.Designer.cs">
+      <DependentUpon>SelectBackup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\TargetFolder.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\TargetFolder.Designer.cs">
+      <DependentUpon>TargetFolder.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\RunNow\RunNowFinished.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\RunNow\RunNowFinished.Designer.cs">
+      <DependentUpon>RunNowFinished.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\SelectBackend.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\SelectBackend.Designer.cs">
+      <DependentUpon>SelectBackend.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\SelectBackup.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\SelectBackup.Designer.cs">
+      <DependentUpon>SelectBackup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="WizardHandler.cs" />
+    <Compile Include="WorkerThread.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\WizardForm\WizardForm.csproj">
+      <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
+      <Name>WizardForm</Name>
+    </ProjectReference>
+    <ProjectReference Include="Datamodel\Datamodel.csproj">
+      <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
+      <Name>Datamodel</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ApplicationSetup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ApplicationSetup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Database schema\Schema.sql" />
+    <EmbeddedResource Include="HelperControls\BackupItems.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>BackupItems.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\BackupTreeView.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>BackupTreeView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LogViewer.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>LogViewer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RestoreBackup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>RestoreBackup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\Backends\FileSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FileSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\Backends\S3Settings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>S3Settings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\Backends\SSHSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SSHSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\ScheduleSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ScheduleSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Service controls\TaskSettingsBase.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>TaskSettingsBase.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ServiceSetup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ServiceSetup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ServiceStatus.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ServiceStatus.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Icons\Error.ico" />
+    <EmbeddedResource Include="Icons\OK.ico" />
+    <EmbeddedResource Include="Icons\Status Error.png" />
+    <EmbeddedResource Include="Icons\Status Warning.png" />
+    <EmbeddedResource Include="Icons\Status Working.png" />
+    <EmbeddedResource Include="Icons\TrayError.ico" />
+    <EmbeddedResource Include="Icons\TrayOK.ico" />
+    <EmbeddedResource Include="Icons\TrayUnknown.ico" />
+    <EmbeddedResource Include="Icons\TrayWarning.ico" />
+    <EmbeddedResource Include="Icons\Warning.ico" />
+    <EmbeddedResource Include="Icons\Working.ico" />
+    <EmbeddedResource Include="Icons\Working2.ico" />
+    <EmbeddedResource Include="Icons\TrayWorking.ico" />
+    <EmbeddedResource Include="Icons\Status OK.png" />
+    <EmbeddedResource Include="Icons\Status Working2.png" />
+    <EmbeddedResource Include="Icons\Close.ico" />
+    <EmbeddedResource Include="Icons\Status.ico" />
+    <EmbeddedResource Include="Icons\Settings.ico" />
+    <EmbeddedResource Include="Icons\Time.ico" />
+    <EmbeddedResource Include="Wizard pages\Add backup\FinishedAdd.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FinishedAdd.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\IncrementalSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>IncrementalSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\PasswordSettings.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>PasswordSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\SelectFiles.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectFiles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\SelectName.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectName.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\SelectWhen.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectWhen.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\File\FileOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FileOptions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\FTP\FTPOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FTPOptions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\S3\S3Options.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>S3Options.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\SSH\SSHOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SSHOptions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\WebDAV\WebDAVOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>WebDAVOptions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Delete backup\DeleteFinished.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>DeleteFinished.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\MainPage.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>MainPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Restore\FinishedRestore.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FinishedRestore.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Restore\SelectBackup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectBackup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Restore\TargetFolder.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>TargetFolder.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\RunNow\RunNowFinished.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>RunNowFinished.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\SelectBackend.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectBackend.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\SelectBackup.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SelectBackup.cs</DependentUpon>
+    </EmbeddedResource>
+    <Content Include="TrayUnknown.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Wizard pages\Rearrange\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

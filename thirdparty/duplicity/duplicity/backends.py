@@ -304,8 +304,8 @@ class LocalBackend(Backend):
 # ssh or scp or to add more arguments.	However, the replacements must
 # have the same syntax.  Also these strings will be executed by the
 # shell, so shouldn't have strange characters in them.
-scp_command = "scp"
-sftp_command = "sftp"
+scp_command = "pscp"
+sftp_command = "psftp"
 
 # default to batch mode using public-key encryption
 ssh_askpass = False
@@ -1026,15 +1026,94 @@ class hsiBackend(Backend):
 			commandline = '%s "rm %s%s"' % (hsi_command, self.remote_prefix, fn)
 			self.run_command(commandline)
 
+			
+class anyBackend(Backend):
+	"""Connect to remote store using .Net helper program"""
+	def __init__(self, parsed_url):
+		Backend.__init__(self, parsed_url)
+
+		# we expect an error return, so go low-level and ignore it
+		try:
+			p = os.popen("DuplicatiBackend BACKENDS")
+			fout = p.read()
+			ret = p.close()
+		except:
+			pass
+
+		if ret != 0 or not fout:
+			log.FatalError("NcFTP not found:  Please install NcFTP version 3.1.9 or later")
+
+
+		self.parsed_url = parsed_url
+		self.url_string = straight_url(self.parsed_url)
+
+		# Use an explicit directory name.
+		if self.url_string[-1] != '/':
+			self.url_string += '/'
+
+		self.password = self.get_password()
+
+		#os.write(self.tempfile, "host %s\n" % self.parsed_url.hostname)
+ 		#os.write(self.tempfile, "user %s\n" % self.parsed_url.username)
+ 		#os.write(self.tempfile, "pass %s\n" % self.password)
+
+		#if parsed_url.port != None and parsed_url.port != 21:
+		#	self.flags += " -P '%s'" % (parsed_url.port)
+
+	def put(self, source_path, remote_filename = None):
+		"""Transfer source_path to remote_filename"""
+		remote_path = os.path.join(urllib.unquote(self.parsed_url.path.lstrip('/')), remote_filename).rstrip()
+		commandline = "DuplicatiBackend PUT --file=\"%s\" \"%s\"" % \
+					  (source_path.name, remote_path)
+		self.run_command_persist(commandline)
+
+	def get(self, remote_filename, local_path):
+		"""Get remote filename, saving it to local_path"""
+		remote_path = os.path.join(urllib.unquote(self.parsed_url.path), remote_filename).rstrip()
+		commandline = "DuplicatiBackend GET --file=\"%s\" \"%s\" "" % \
+					  (remote_path, local_path.name)
+		self.run_command_persist(commandline)
+		local_path.setdata()
+
+	def list(self):
+		"""List files in directory"""
+		# try for a long listing to avoid connection reset
+		commandline = "DuplicatiBackend LIST \"%s\"" % \
+					  (self.url_string)
+		l = self.popen_persist(commandline).split('\n')
+		return l
+
+	def delete(self, filename_list):
+		"""Delete files in filename_list"""
+		if self.url_string[-1] != '/'
+			self.url_string + = '/'
+		for filename in filename_list:
+			
+			commandline = "DuplicatiBackend DELETE \"%s\"" % \
+						  (self.url_string + filename)
+			self.popen_persist(commandline)
+
 # Dictionary relating protocol strings to backend_object classes.
-protocol_class_dict = {"file": LocalBackend,
-					   "ftp": ftpBackend,
-					   "hsi": hsiBackend,
-					   "rsync": rsyncBackend,
-					   "scp": sshBackend,
-					   "ssh": sshBackend,
-					   "s3": BotoBackend,
-					   "s3+http": BotoBackend,
-					   "webdav": webdavBackend,
-					   "webdavs": webdavBackend,
+#protocol_class_dict = {"file": LocalBackend,
+#					   "ftp": ftpBackend,
+#					   "hsi": hsiBackend,
+#					   "rsync": rsyncBackend,
+#					   "scp": sshBackend,
+#					   "ssh": sshBackend,
+#					   "s3": BotoBackend,
+#					   "s3+http": BotoBackend,
+#					   "webdav": webdavBackend,
+#					   "webdavs": webdavBackend,
+#					   }
+
+protocol_class_dict = {"file": anyBackend,
+					   "ftp": anyBackend,
+					   "hsi": anyBackend,
+					   "rsync": anyBackend,
+					   "scp": anyBackend,
+					   "ssh": anyBackend,
+					   "s3": anyBackend,
+					   "s3+http": anyBackend,
+					   "webdav": anyBackend,
+					   "webdavs": anyBackend,
 					   }

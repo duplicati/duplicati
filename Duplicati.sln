@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datamodel", "Duplicati\Datamodel\Datamodel.csproj", "{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datamodel", "Duplicati\GUI\Datamodel\Datamodel.csproj", "{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WizardForm", "WizardForm\WizardForm.csproj", "{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati", "Duplicati\Duplicati.csproj", "{1470F75F-D364-4010-91D0-FD4DDA1C5159}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati", "Duplicati\GUI\Duplicati.csproj", "{1470F75F-D364-4010-91D0-FD4DDA1C5159}"
 EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
