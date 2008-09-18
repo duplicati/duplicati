@@ -25,6 +25,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using Duplicati.Datamodel;
+using Duplicati.Core;
 
 namespace Duplicati.GUI
 {

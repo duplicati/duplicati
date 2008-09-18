@@ -49,6 +49,7 @@ namespace Duplicati.CommandLine
                         value = value.Substring(1, value.Length - 2);
                     options[key] = value;
 
+                    args.RemoveAt(i);
                     i--;
                 }
             }

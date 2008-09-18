@@ -25,6 +25,21 @@ namespace Duplicati.Backend
 {
     public class File : IBackendInterface
     {
+        private string m_path;
+        Dictionary<string, string> m_options;
+
+        public File()
+        {
+        }
+
+        public File(string url, Dictionary<string, string> options)
+        {
+            m_options = options;
+            m_path = ExtractFilename(url, m_options);
+            if (!System.IO.Path.IsPathRooted(url))
+                m_path = System.IO.Path.GetFullPath(m_path);
+        }
+
         #region IBackendInterface Members
 
         public string DisplayName
@@ -37,10 +52,9 @@ namespace Duplicati.Backend
             get { return "file"; }
         }
 
-        public List<FileEntry> List(string url, Dictionary<string, string> options)
+        public List<FileEntry> List()
         {
-            Uri u = new Uri(url);
-            string path = u.LocalPath;
+            string path = m_path;
             List<FileEntry> ls = new List<FileEntry>();
 
             //TODO: Impersonate, if username+password is applied
@@ -62,26 +76,28 @@ namespace Duplicati.Backend
             return ls;
         }
 
-        public void Put(string url, Dictionary<string, string> options, System.IO.Stream stream)
+        public void Put(string remotename, string filename)
         {
-            Uri u = new Uri(url);
-            string path = u.LocalPath;
-            using (System.IO.FileStream fs = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Utility.CopyStream(stream, fs, true);
+            string path = System.IO.Path.Combine(m_path, remotename);
+            System.IO.File.Copy(filename, path, true);
         }
 
-        public System.IO.Stream Get(string url, Dictionary<string, string> options)
+        public void Get(string remotename, string filename)
         {
-            Uri u = new Uri(url);
-            string path = u.LocalPath;
-            return new System.IO.FileStream(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None);
+            string path = System.IO.Path.Combine(m_path, remotename);
+            System.IO.File.Copy(path, filename, true);
         }
 
-        public void Delete(string url, Dictionary<string, string> options)
+        public void Delete(string remotename)
         {
-            Uri u = new Uri(url);
-            string path = u.LocalPath;
+            string path = System.IO.Path.Combine(m_path, remotename);
             System.IO.File.Delete(path);
+        }
+
+        private string ExtractFilename(string url, Dictionary<string, string> options)
+        {
+            //TODO: Read out username/password
+            return url.Substring("file://".Length);
         }
 
         #endregion

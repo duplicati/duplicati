@@ -147,7 +147,6 @@
       <DependentUpon>ServiceStatus.cs</DependentUpon>
     </Compile>
     <Compile Include="TaskPackages.cs" />
-    <Compile Include="Timeparser.cs" />
     <Compile Include="UrlUtillity.cs" />
     <Compile Include="Wizard pages\Add backup\FinishedAdd.cs">
       <SubType>UserControl</SubType>
@@ -272,6 +271,10 @@
     <ProjectReference Include="..\..\WizardForm\WizardForm.csproj">
       <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
       <Name>WizardForm</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Core\Duplicati.Core.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Core</Name>
     </ProjectReference>
     <ProjectReference Include="Datamodel\Datamodel.csproj">
       <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>

@@ -26,13 +26,13 @@ namespace Duplicati.Backend
     public class BackendLoader : IBackendInterface
     {
         private static object m_lock = new object();
-        private static Dictionary<string, IBackendInterface> m_backends;
+        private static Dictionary<string, Type> m_backends;
         private IBackendInterface m_interface;
 
-        public BackendLoader(string url)
+        public BackendLoader(string url, Dictionary<string, string> options)
             : this()
         {
-            m_interface = this[url];
+            m_interface = GetBackend(url, options);
             if (m_interface == null)
                 throw new ArgumentException("The supplied url is not supported");
         }
@@ -52,7 +52,7 @@ namespace Duplicati.Backend
                 lock (m_lock)
                     if (m_backends == null)
                     {
-                        Dictionary<string, IBackendInterface> backends = new Dictionary<string, IBackendInterface>();
+                        Dictionary<string, Type> backends = new Dictionary<string, Type>();
 
                         string path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
                         List<string> files = new List<string>();
@@ -75,7 +75,7 @@ namespace Duplicati.Backend
                                     if (typeof(IBackendInterface).IsAssignableFrom(t) && t != typeof(IBackendInterface))
                                     {
                                         IBackendInterface i = Activator.CreateInstance(t) as IBackendInterface;
-                                        backends[i.ProtocolKey] = i;
+                                        backends[i.ProtocolKey] = t;
                                     }
                             }
                             catch
@@ -93,23 +93,17 @@ namespace Duplicati.Backend
             LoadBackends();
         }
 
-        public static IBackendInterface GetBackend(string url)
+        public static IBackendInterface GetBackend(string url, Dictionary<string, string> options)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException("index");
 
-            if (url.Contains(":"))
-                url = new Uri(url).Scheme;
+            string scheme = new Uri(url).Scheme.ToLower();
 
-            if (m_backends.ContainsKey(url.ToLower()))
-                return m_backends[url.ToLower()];
+            if (m_backends.ContainsKey(scheme))
+                return (IBackendInterface)Activator.CreateInstance(m_backends[scheme], url, options);
             else
                 return null;
-        }
-
-        public IBackendInterface this[string index]
-        {
-            get { return GetBackend(index); }
         }
 
         #region IBackendInterface Members
@@ -136,60 +130,36 @@ namespace Duplicati.Backend
             }
         }
 
-        public List<FileEntry> List(string url, Dictionary<string, string> options)
+        public List<FileEntry> List()
         {
-            IBackendInterface i = m_interface;
-            if (i == null)
-                i = this[url];
-            else if (i != this[url])
-                throw new Exception("The supplied url matched a different backend");
-
-            if (i == null)
-                throw new ArgumentException("The supplied url is not supported");
+            if (m_interface == null)
+                throw new ArgumentException("This instance was not created with an URL");
             
-            return i.List(url, options);
+            return m_interface.List();
         }
 
-        public void Put(string url, Dictionary<string, string> options, System.IO.Stream stream)
+        public void Put(string remotename, string filename)
         {
-            IBackendInterface i = m_interface;
-            if (i == null)
-                i = this[url];
-            else if (i != this[url])
-                throw new Exception("The supplied url matched a different backend");
-
-            if (i == null)
-                throw new ArgumentException("The supplied url is not supported");
+            if (m_interface == null)
+                throw new ArgumentException("This instance was not created with an URL");
             
-            i.Put(url, options, stream);
+            m_interface.Put(remotename, filename);
         }
 
-        public System.IO.Stream Get(string url, Dictionary<string, string> options)
+        public void Get(string remotename, string filename)
         {
-            IBackendInterface i = m_interface;
-            if (i == null)
-                i = this[url];
-            else if (i != this[url])
-                throw new Exception("The supplied url matched a different backend");
+            if (m_interface == null)
+                throw new ArgumentException("This instance was not created with an URL");
 
-            if (i == null)
-                throw new ArgumentException("The supplied url is not supported");
-
-            return i.Get(url, options);
+            m_interface.Get(remotename, filename);
         }
 
-        public void Delete(string url, Dictionary<string, string> options)
+        public void Delete(string remotename)
         {
-            IBackendInterface i = m_interface;
-            if (i == null)
-                i = this[url];
-            else if (i != this[url])
-                throw new Exception("The supplied url matched a different backend");
+            if (m_interface == null)
+                throw new ArgumentException("This instance was not created with an URL");
 
-            if (i == null)
-                throw new ArgumentException("The supplied url is not supported");
-
-            i.Delete(url, options);
+            m_interface.Delete(remotename);
         }
 
         #endregion

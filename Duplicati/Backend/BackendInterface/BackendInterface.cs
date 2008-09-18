@@ -39,32 +39,29 @@ namespace Duplicati.Backend
         /// Returns a list of files found on the remote location
         /// </summary>
         /// <param name="url">The url passed</param>
-        /// <param name="options">A list of options passed</param>
         /// <returns>The list of files</returns>
-        List<FileEntry> List(string url, Dictionary<string, string> options);
+        List<FileEntry> List();
 
         /// <summary>
-        /// Puts the content of the stream to the url passed
+        /// Puts the content of the file to the url passed
         /// </summary>
-        /// <param name="url">The url passed</param>
-        /// <param name="options">A list of options passed</param>
-        /// <param name="stream">The stream containing the data to use</param>
-        void Put(string url, Dictionary<string, string> options, System.IO.Stream stream);
+        /// <param name="remotename">The remote filename, relative to the URL</param>
+        /// <param name="filename">The local filename</param>
+        void Put(string remotename, string filename);
 
         /// <summary>
-        /// Returns a stream with the remote data
+        /// Downloads a file with the remote data
         /// </summary>
-        /// <param name="url">The url passed</param>
-        /// <param name="options">A list of options passed</param>
+        /// <param name="remotename">The remote filename, relative to the URL</param>
+        /// <param name="filename">The local filename</param>
         /// <returns>A stream containing the remote data</returns>
-        System.IO.Stream Get(string url, Dictionary<string, string> options);
+        void Get(string remotename, string filename);
 
         /// <summary>
         /// Deletes the specified file
         /// </summary>
-        /// <param name="url">The url passed</param>
-        /// <param name="options">A list of options passed</param>
-        void Delete(string url, Dictionary<string, string> options);
+        /// <param name="remotename">The remote filename, relative to the URL</param>
+        void Delete(string remotename);
 
     }
 }

@@ -37,6 +37,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Core\Duplicati.Core.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BackendInterface\BackendInterface.csproj">
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
       <Name>BackendInterface</Name>

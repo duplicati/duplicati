@@ -23,6 +23,7 @@ using System.Text;
 using System.Threading;
 using Duplicati.Datamodel;
 using System.Data.LightDatamodel;
+using Duplicati.Core;
 
 namespace Duplicati.GUI
 {

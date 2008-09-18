@@ -4,11 +4,13 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{81765A64-3661-4E3E-B850-2F6F87A51F74}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.CommandLine</RootNamespace>
-    <AssemblyName>Duplicati.CommandLine</AssemblyName>
+    <RootNamespace>Duplicati.Core</RootNamespace>
+    <AssemblyName>Duplicati.Core</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,23 +35,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandLineParser.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="FilenameFilter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TempFile.cs" />
+    <Compile Include="TempFolder.cs" />
+    <Compile Include="Timeparser.cs" />
+    <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Backend\File\File.csproj">
-      <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
-      <Name>File</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Compression\Duplicati.Compression.csproj">
-      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
-      <Name>Duplicati.Compression</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Main\Duplicati.Main.csproj">
-      <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
-      <Name>Duplicati.Main</Name>
-    </ProjectReference>
+    <None Include="Duplicati.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
