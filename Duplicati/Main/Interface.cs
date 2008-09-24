@@ -28,6 +28,7 @@ namespace Duplicati.Main
         public static void Backup(string source, string target, Dictionary<string, string> options)
         {
             FilenameStrategy fns = new FilenameStrategy(options);
+            Core.FilenameFilter filter = new Duplicati.Core.FilenameFilter(options);
             bool full = options.ContainsKey("full");
 
             Backend.IBackendInterface backend = new Backend.BackendLoader(target, options);
@@ -67,10 +68,11 @@ namespace Duplicati.Main
                 DateTime backuptime = DateTime.Now;
 
                 RSync.RSyncDir dir = new Duplicati.Main.RSync.RSyncDir(source, basefolder);
-                dir.CalculateDiffFilelist(full);
+                dir.CalculateDiffFilelist(full, filter);
 
                 int volumesize = options.ContainsKey("volsize") ? int.Parse(options["volsize"]) : 5;
-                dir.CreateDeltas();
+                volumesize = Math.Max(1, volumesize);
+                //dir.CreateDeltas();
 
                 using(Core.TempFile zf = new Duplicati.Core.TempFile())
                 {
@@ -78,11 +80,14 @@ namespace Duplicati.Main
                     backend.Put(fns.GenerateFilename("duplicati", true, full, backuptime) + ".zip", zf);
                 }
 
-                using (Core.TempFile zf = new Duplicati.Core.TempFile())
-                {
-                    Compression.Compression.Compress(dir.NewDeltas, zf, dir.m_targetfolder);
-                    backend.Put(fns.GenerateFilename("duplicati", false, full, backuptime) + ".zip", zf);
-                }
+                int vol = 0;
+                while(dir.HasChanges || vol == 0)
+                    using (Core.TempFile zf = new Duplicati.Core.TempFile())
+                    {
+                        dir.CreateDeltas(zf, volumesize * 1024 * 1024);
+                        //Compression.Compression.Compress(dir.NewDeltas, zf, dir.m_targetfolder);
+                        backend.Put(fns.GenerateFilename("duplicati", false, full, backuptime, vol++) + ".zip", zf);
+                    }
             }
         }
 

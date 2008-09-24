@@ -62,24 +62,7 @@ namespace Duplicati.Core
         /// <returns>A list of the full filenames</returns>
         public static List<string> EnumerateFiles(string basepath)
         {
-            List<string> files = new List<string>();
-
-            if (!System.IO.Directory.Exists(basepath))
-                return files;
-
-            Queue<string> lst = new Queue<string>();
-            lst.Enqueue(basepath);
-
-            while (lst.Count > 0)
-            {
-                string f = lst.Dequeue();
-                foreach (string s in System.IO.Directory.GetDirectories(f))
-                    lst.Enqueue(s);
-
-                files.AddRange(System.IO.Directory.GetFiles(f));
-            }
-
-            return files;
+            return EnumerateFiles(basepath, null);
         }
 
         /// <summary>
@@ -89,6 +72,52 @@ namespace Duplicati.Core
         /// <param name="basepath">The folder to look in</param>
         /// <returns>A list of the full paths</returns>
         public static List<string> EnumerateFolders(string basepath)
+        {
+            return EnumerateFolders(basepath, null);
+        }
+
+        /// <summary>
+        /// Returns a list of all files found in the given folder.
+        /// The search is recursive.
+        /// </summary>
+        /// <param name="basepath">The folder to look in</param>
+        /// <param name="filter">An optional filter to apply to the filenames</param>
+        /// <returns>A list of the full filenames</returns>
+        public static List<string> EnumerateFiles(string basepath, FilenameFilter filter)
+        {
+            List<string> files = new List<string>();
+
+            if (!System.IO.Directory.Exists(basepath))
+                return files;
+
+            Queue<string> lst = new Queue<string>();
+            
+            lst.Enqueue(basepath);
+
+            while (lst.Count > 0)
+            {
+                string f = lst.Dequeue();
+                foreach (string s in System.IO.Directory.GetDirectories(f))
+                    if (filter == null || filter.ShouldInclude(basepath, AppendDirSeperator(s)))
+                        lst.Enqueue(s);
+
+                files.AddRange(System.IO.Directory.GetFiles(f));
+            }
+
+            if (filter == null)
+                return files;
+            else
+                return filter.FilterList(basepath, files);
+        }
+
+        /// <summary>
+        /// Returns a list of folder names found in the given folder.
+        /// The search is recursive.
+        /// </summary>
+        /// <param name="basepath">The folder to look in</param>
+        /// <param name="filter">An optional filter to apply to the folder names</param>
+        /// <returns>A list of the full paths</returns>
+        public static List<string> EnumerateFolders(string basepath, FilenameFilter filter)
         {
             List<string> folders = new List<string>();
 
@@ -103,13 +132,48 @@ namespace Duplicati.Core
                 string f = lst.Dequeue();
                 foreach (string s in System.IO.Directory.GetDirectories(f))
                 {
-                    folders.Add(s);
-                    lst.Enqueue(s);
+                    if (filter == null || filter.ShouldInclude(basepath, Core.Utility.AppendDirSeperator(s)))
+                    {
+                        folders.Add(s);
+                        lst.Enqueue(s);
+                    }
                 }
 
             }
 
             return folders;
+        }
+
+        public static string AppendDirSeperator(string path)
+        {
+            if (!path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                return path += System.IO.Path.DirectorySeparatorChar;
+            else
+                return path;
+        }
+
+        /// <summary>
+        /// Some streams can return a number that is less than the requested number of bytes.
+        /// This is usually due to fragmentation, and is solved by issuing a new read.
+        /// This function wraps that functionality.
+        /// </summary>
+        /// <param name="stream">The stream to read</param>
+        /// <param name="buf">The buffer to read into</param>
+        /// <param name="count">The amout of bytes to read</param>
+        /// <returns>The actual number of bytes read</returns>
+        public static int ForceStreamRead(System.IO.Stream stream, byte[] buf, int count)
+        {
+            int a;
+            int index = 0;
+            do
+            {
+                a = stream.Read(buf, index, count);
+                index += a;
+                count -= a;
+            }
+            while (a != 0 && count > 0);
+
+            return index;
         }
 
     }

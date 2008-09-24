@@ -87,15 +87,9 @@ namespace Duplicati.Main.RSync
 
         public RSyncDir(string sourcefolder, string basefolder)
         {
-            m_sourcefolder = sourcefolder;
-            m_basefolder = basefolder;
+            m_sourcefolder = Core.Utility.AppendDirSeperator(sourcefolder);
+            m_basefolder = Core.Utility.AppendDirSeperator(basefolder);
             m_targetfolder = new Duplicati.Core.TempFolder();
-
-            if (!m_sourcefolder.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                m_sourcefolder += System.IO.Path.DirectorySeparatorChar;
-
-            if (!m_basefolder.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                m_basefolder += System.IO.Path.DirectorySeparatorChar;
 
             PrepareTargetFolder();
             BuildIndex();
@@ -116,14 +110,10 @@ namespace Duplicati.Main.RSync
                 m_oldFolders = new Dictionary<string, string>();
                 return;
             }
-
-            if (!m_basefolder.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                m_basefolder += System.IO.Path.DirectorySeparatorChar;
+            m_basefolder = Core.Utility.AppendDirSeperator(m_basefolder);
 
             m_oldSignatures = new Dictionary<string,string>();
-            string sigfolder = System.IO.Path.Combine(m_basefolder, SIGNATURE_FOLDER);
-            if (!sigfolder.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                sigfolder += System.IO.Path.DirectorySeparatorChar;
+            string sigfolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(m_basefolder, SIGNATURE_FOLDER));
 
             foreach (string s in Core.Utility.EnumerateFiles(sigfolder))
                 m_oldSignatures.Add(s.Substring(sigfolder.Length), s);
@@ -135,7 +125,7 @@ namespace Duplicati.Main.RSync
                         m_oldFolders.Add(s, null);
         }
 
-        public void CalculateDiffFilelist(bool full)
+        public void CalculateDiffFilelist(bool full, Core.FilenameFilter filter)
         {
             if (full)
             {
@@ -149,7 +139,7 @@ namespace Duplicati.Main.RSync
             m_newfolders = new List<string>();
             m_deletedfolders = new List<string>();
 
-            foreach (string s in Core.Utility.EnumerateFiles(m_sourcefolder))
+            foreach (string s in Core.Utility.EnumerateFiles(m_sourcefolder, filter))
             {
                 string relpath = s.Substring(m_sourcefolder.Length);
                 string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_FOLDER), relpath);
@@ -172,7 +162,7 @@ namespace Duplicati.Main.RSync
 
             m_deletedfiles.AddRange(m_oldSignatures.Keys);
 
-            foreach (string s in Core.Utility.EnumerateFolders(m_sourcefolder))
+            foreach (string s in Core.Utility.EnumerateFolders(m_sourcefolder, filter))
             {
                 string relpath = s.Substring(m_sourcefolder.Length);
                 if (!m_oldFolders.ContainsKey(s))
@@ -185,6 +175,77 @@ namespace Duplicati.Main.RSync
             m_deletedfolders.AddRange(m_oldFolders.Keys);
 
         }
+
+        public void CreateDeltas(string zipfile, long volumesize)
+        {
+            long totalSize = 0;
+            Random r = new Random();
+            string[] tmp = new string[m_modifiedFiles.Keys.Count];
+            m_modifiedFiles.Keys.CopyTo(tmp, 0);
+            List<string> keys = new List<string>(tmp);
+            tmp = new string[m_newfiles.Keys.Count];
+            m_newfiles.Keys.CopyTo(tmp, 0);
+            keys.AddRange(tmp);
+
+            using (Compression.Compression c = new Duplicati.Compression.Compression(m_targetfolder, zipfile))
+            {
+
+                while (keys.Count > 0 && totalSize < volumesize)
+                {
+                    int index = r.Next(0, keys.Count);
+                    string s = keys[index];
+                    keys.RemoveAt(index);
+
+                    if (m_modifiedFiles.ContainsKey(s))
+                    {
+
+                        string relpath = s.Substring(m_sourcefolder.Length);
+                        string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, DELTA_FOLDER), relpath);
+                        string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_FOLDER), relpath);
+                        if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+
+                        RSync.RDiffWrapper.GenerateDelta(signature, s, target);
+
+                        totalSize = c.AddFile(target);
+                        System.IO.File.Delete(target);
+                        m_modifiedFiles.Remove(s);
+                    }
+                    else
+                    {
+                        string relpath = s.Substring(m_sourcefolder.Length);
+                        string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, BASE_FOLDER), relpath);
+
+                        System.IO.File.Copy(s, target);
+                        totalSize = c.AddFile(target);
+                        System.IO.File.Delete(target);
+                        m_newfiles.Remove(s);
+                    }
+                }
+
+                if (m_newfolders.Count > 0)
+                {
+                    System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, NEW_FOLDERS_FILE), m_newfolders.ToArray());
+                    c.AddFile(System.IO.Path.Combine(m_targetfolder, NEW_FOLDERS_FILE));
+                }
+                if (m_deletedfolders.Count > 0)
+                {
+                    System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS_FILE), m_deletedfolders.ToArray());
+                    c.AddFile(System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS_FILE));
+                }
+                if (m_modifiedFiles.Count > 0)
+                {
+                    System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FILES_FILE), m_deletedfiles.ToArray());
+                    c.AddFile(System.IO.Path.Combine(m_targetfolder, DELETED_FILES_FILE));
+                }
+            }
+
+            m_newfolders = new List<string>();
+            m_deletedfiles = new List<string>();
+            m_deletedfolders = new List<string>();
+        }
+
+        public bool HasChanges { get { return m_newfiles.Count > 0 || m_modifiedFiles.Count > 0; } }
 
         public void CreateDeltas()
         {
@@ -225,13 +286,9 @@ namespace Duplicati.Main.RSync
 
         public void Patch(string destination, string patch)
         {
-            string sourcefolder = System.IO.Path.Combine(patch, BASE_FOLDER);
+            string sourcefolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, BASE_FOLDER));
 
-            if (!sourcefolder.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                sourcefolder += System.IO.Path.DirectorySeparatorChar;
-
-            if (!destination.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                destination += System.IO.Path.DirectorySeparatorChar;
+            destination = Core.Utility.AppendDirSeperator(destination);
 
             foreach (string s in Core.Utility.EnumerateFiles(sourcefolder))
             {
@@ -242,10 +299,7 @@ namespace Duplicati.Main.RSync
                 System.IO.File.Copy(s, target);
             }
 
-            sourcefolder = System.IO.Path.Combine(patch, DELTA_FOLDER);
-
-            if (!sourcefolder.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                sourcefolder += System.IO.Path.DirectorySeparatorChar;
+            sourcefolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, DELTA_FOLDER));
 
             foreach (string s in Core.Utility.EnumerateFiles(sourcefolder))
             {
@@ -295,11 +349,8 @@ namespace Duplicati.Main.RSync
 
         public static void MergeSignatures(string basefolder, string updatefolder)
         {
-            if (!basefolder.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                basefolder += System.IO.Path.DirectorySeparatorChar;
-
-            if (!updatefolder.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                updatefolder += System.IO.Path.DirectorySeparatorChar;
+            basefolder = Core.Utility.AppendDirSeperator(basefolder);
+            updatefolder = Core.Utility.AppendDirSeperator(updatefolder);
 
             Dictionary<string, string> deletedfiles = new Dictionary<string, string>();
             if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, DELETED_FILES_FILE)))

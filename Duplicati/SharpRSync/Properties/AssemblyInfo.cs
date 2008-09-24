@@ -24,11 +24,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Duplicati.Compression")]
+[assembly: AssemblyTitle("Duplicati.SharpRSync")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
-[assembly: AssemblyProduct("Duplicati.Compression")]
+[assembly: AssemblyProduct("Duplicati.SharpRSync")]
 [assembly: AssemblyCopyright("Copyright © HexaD 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -39,7 +39,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("cb416dfd-ae77-43cd-8948-b89c7a148e99")]
+[assembly: Guid("c0e9568a-02f6-42d3-9601-c389767f7cee")]
 
 // Version information for an assembly consists of the following four values:
 //
