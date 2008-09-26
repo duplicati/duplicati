@@ -190,6 +190,14 @@ namespace Duplicati.SharpRSync
         /// <param name="count">The number of bytes to drop</param>
         public void DropTail(long count)
         {
+            if (count == this.Count)
+            {
+                m_buffers = new List<byte[]>();
+                m_buffers.Add(new byte[BUFFER_SIZE]);
+                m_headIndex = 0;
+                m_tailIndex = 0;
+            }
+
             if (count < (BUFFER_SIZE - m_tailIndex))
             {
                 m_tailIndex += (int)count;
@@ -210,6 +218,7 @@ namespace Duplicati.SharpRSync
             if (m_buffers.Count == 0)
             {
                 m_headIndex = 0;
+                m_tailIndex = 0;
                 m_buffers.Add(new byte[BUFFER_SIZE]);
             }
         }
