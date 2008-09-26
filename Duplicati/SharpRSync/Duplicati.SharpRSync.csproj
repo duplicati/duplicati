@@ -41,6 +41,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RDiffBinary.cs" />
     <Compile Include="RollingBuffer.cs" />
+    <Compile Include="SharpRSyncInterface.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
