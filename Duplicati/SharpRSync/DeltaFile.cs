@@ -79,7 +79,7 @@ namespace Duplicati.SharpRSync
                 if (command < 0)
                     throw new Exception("Stream ended but had no end marker");
 
-                if (Enum.IsDefined(typeof(RDiffBinary.LiteralDeltaCommand), command))
+                if (Enum.IsDefined(typeof(RDiffBinary.LiteralDeltaCommand), (RDiffBinary.LiteralDeltaCommand)command))
                 {
                     //Find out how many bytes of literal data there is
                     int len = RDiffBinary.GetLiteralLength((RDiffBinary.LiteralDeltaCommand)command);
@@ -93,7 +93,7 @@ namespace Duplicati.SharpRSync
                     //Copy the literal data from the patch to the output
                     Utility.StreamCopy(m_inputStream, output, size);
                 }
-                else if (Enum.IsDefined(typeof(RDiffBinary.CopyDeltaCommand), command))
+                else if (Enum.IsDefined(typeof(RDiffBinary.CopyDeltaCommand), (RDiffBinary.CopyDeltaCommand)command))
                 {
                     //Find the offset of the data in the base file
                     int len = RDiffBinary.GetCopyOffsetSize((RDiffBinary.CopyDeltaCommand)command);
@@ -144,14 +144,17 @@ namespace Duplicati.SharpRSync
 
             byte[] md4buffer = new byte[m_checksum.BlockLength];
 
-            int unmatched = 0;
+            long unmatched = 0;
+            long matched = 0;
+            long matched_offset = 0;
 
             do
             {
+                bool foundMatch = false;
                 List<KeyValuePair<int, byte[]>> strong = m_checksum.FindChunk(adler.Checksum);
                 
                 //No weak matches :(
-                if (strong != null && strong.Count == 0)
+                if (strong == null || strong.Count == 0)
                     unmatched++;
                 else
                 {
@@ -186,36 +189,58 @@ namespace Duplicati.SharpRSync
                             if (unmatched > 0)
                             {
                                 WriteLiteral(buffer.GetTail(unmatched), output);
+                                buffer.DropTail(unmatched);
                                 unmatched = 0;
                             }
+                            if (matched == 0)
+                                matched_offset = k.Key * m_checksum.BlockLength;
 
-                            //Send the matching bytes as a copy
-                            WriteCopy(k.Key * m_checksum.BlockLength, m_checksum.BlockLength, output);
-                            adler.Reset();
+                            matched += buffer.Count;
+                            foundMatch = true;
                             buffer.DropTail(buffer.Count);
                             break;
                         }
                     }
-
-                    //Avoid keeping too large blocks in memory.
-                    //This gives an overhead of app. 3 bytes pr. 2Kb data
-                    if (unmatched > m_checksum.BlockLength)
-                    {
-                        WriteLiteral(buffer.GetTail(unmatched), output);
-                        buffer.DropTail(unmatched);
-                        unmatched = 0;
-                        adler.Reset();
-                    }
                 }
-            } while (adler.AdvanceChecksum());
+
+                //If this byte was not matched, and we have queued up matches,
+                // flush them now
+                if (!foundMatch && matched > 0)
+                {
+                    //Send the matching bytes as a copy
+                    WriteCopy(matched_offset, matched, output);
+                    matched = 0;
+                    matched_offset = 0;
+                }
+
+                //Avoid keeping too large blocks in memory.
+                //This gives an overhead of app. 3 bytes pr. 2Kb data
+                if (unmatched >= m_checksum.BlockLength + 1)
+                {
+                    WriteLiteral(buffer.GetTail(unmatched - 1), output);
+                    buffer.DropTail(unmatched - 1);
+                    unmatched = 1;
+                }
+
+            } while ( buffer.Count == 0 ? adler.Reset() : adler.Rollbuffer());
+
+            //If it is still in the buffer, it was not matched
+            unmatched = buffer.Count;
+
+            if (matched > 0 && unmatched > 0)
+                throw new Exception("Internal error, had buffered both matched and unmatched blocks!");
+
+            if (matched > 0)
+            {
+                //Send the matching bytes as a copy
+                WriteCopy(matched_offset, matched, output);
+            }
 
             //Any trailing bytes are treated as a literal
             if (unmatched > 0)
             {
                 WriteLiteral(buffer.GetTail(unmatched), output);
                 buffer.DropTail(unmatched);
-                unmatched = 0;
-                adler.Reset();
             }
 
             output.WriteByte((byte)RDiffBinary.EndCommand);
@@ -242,7 +267,7 @@ namespace Duplicati.SharpRSync
         /// <param name="offset">The offset in the basefile where the data is located</param>
         /// <param name="length">The length of the data to copy</param>
         /// <param name="output">The output delta stream</param>
-        private void WriteCopy(long offset, int length, System.IO.Stream output)
+        private void WriteCopy(long offset, long length, System.IO.Stream output)
         {
             output.WriteByte((byte)RDiffBinary.FindCopyDeltaCommand(offset, length));
             byte[] len = RDiffBinary.EncodeLength(offset);

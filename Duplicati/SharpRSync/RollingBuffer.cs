@@ -38,11 +38,12 @@ namespace Duplicati.SharpRSync
         {
             m_stream = stream;
             m_buffers = new List<byte[]>();
+            m_buffers.Add(new byte[BUFFER_SIZE]);
             m_headIndex = 0;
             m_tailIndex = 0;
         }
 
-        public int Count { get { return m_buffers.Count * BUFFER_SIZE - m_tailIndex - (BUFFER_SIZE - m_headIndex); } }
+        public long Count { get { return m_buffers.Count * BUFFER_SIZE - m_tailIndex - (BUFFER_SIZE - m_headIndex); } }
 
         /// <summary>
         /// Reads the supplied amount of bytes
@@ -76,7 +77,7 @@ namespace Duplicati.SharpRSync
         /// </summary>
         /// <param name="count">The number of bytes to return</param>
         /// <returns>The bytes requested</returns>
-        public byte[] GetHead(int count)
+        public byte[] GetHead(long count)
         {
             byte[] tmp = new byte[count];
             GetHead(tmp, 0, count);
@@ -108,10 +109,10 @@ namespace Duplicati.SharpRSync
         /// <param name="buf">The buffer to write the bytes into</param>
         /// <param name="offset">The offset into the buffer</param>
         /// <returns>The bytes requested</returns>
-        public void GetHead(byte[] buf, int offset, int count)
+        public void GetHead(byte[] buf, long offset, long count)
         {
             int ix = 0;
-            int total = this.Count;
+            long total = this.Count;
             if (total < count)
                 throw new Exception("Buffer has too few bytes");
             
@@ -120,21 +121,23 @@ namespace Duplicati.SharpRSync
             while (total > count)
             {
                 int availible = GetAvalible(ix);
-                int diff = Math.Min(availible, total - count);
+                int diff = (int)Math.Min(availible, total - count);
                 total -= diff;
-                availible -= diff;
                 b += diff;
 
-                if (availible == 0)
+                if (b >= BUFFER_SIZE)
                 {
                     ix++;
                     b = 0;
                 }
             }
 
+            if (ix == 0)
+                b -= m_tailIndex;
+
             while (count > 0)
             {
-                int avalible = Math.Min(GetAvalible(ix), count);
+                int avalible = (int)Math.Min(GetAvalible(ix) - b, count);
                 Array.Copy(m_buffers[ix], b, buf, offset, avalible);
 
                 count -= avalible;
@@ -149,9 +152,9 @@ namespace Duplicati.SharpRSync
         /// </summary>
         /// <param name="count">The number of bytes to return</param>
         /// <returns>The bytes requested</returns>
-        public byte[] GetTail(int count)
+        public byte[] GetTail(long count)
         {
-            byte[] tmp = new byte[BUFFER_SIZE];
+            byte[] tmp = new byte[count];
             GetTail(tmp, 0, count);
             return tmp;
         }
@@ -162,7 +165,7 @@ namespace Duplicati.SharpRSync
         /// <param name="count">The number of bytes to return</param>
         /// <param name="buf">The buffer to write the bytes into</param>
         /// <param name="offset">The offset into the buffer</param>
-        public void GetTail(byte[] buf, int offset, int count)
+        public void GetTail(byte[] buf, long offset, long count)
         {
             int ix = 0;
             if (this.Count < count)
@@ -171,7 +174,7 @@ namespace Duplicati.SharpRSync
             int b = m_tailIndex;
             while (count > 0)
             {
-                int avalible = Math.Min(GetAvalible(ix), count);
+                int avalible = (int)Math.Min(GetAvalible(ix), count);
                 Array.Copy(m_buffers[ix], b, buf, offset, avalible);
 
                 count -= avalible;
@@ -185,11 +188,11 @@ namespace Duplicati.SharpRSync
         /// Removes the bytes from memory
         /// </summary>
         /// <param name="count">The number of bytes to drop</param>
-        public void DropTail(int count)
+        public void DropTail(long count)
         {
             if (count < (BUFFER_SIZE - m_tailIndex))
             {
-                m_tailIndex += count;
+                m_tailIndex += (int)count;
                 return;
             }
 
@@ -197,13 +200,42 @@ namespace Duplicati.SharpRSync
             count -= (BUFFER_SIZE - m_tailIndex);
             m_tailIndex = 0;
 
-            while (count > BUFFER_SIZE)
+            while (count >= BUFFER_SIZE)
             {
                 m_buffers.RemoveAt(0);
                 count -= BUFFER_SIZE;
             }
 
-            m_tailIndex += count;
+            m_tailIndex += (int)count;
+            if (m_buffers.Count == 0)
+            {
+                m_headIndex = 0;
+                m_buffers.Add(new byte[BUFFER_SIZE]);
+            }
+        }
+
+        /// <summary>
+        /// Returns the byte at the given position.
+        /// </summary>
+        /// <param name="index">The index of the byte</param>
+        /// <returns>The byte value</returns>
+        public byte GetByteAt(long index)
+        {
+            int ix = 0;
+            if (index > this.Count - 1)
+                throw new Exception("Buffer has too few bytes");
+            if (index < 0)
+                throw new Exception("Index cannot be negative");
+
+            while (GetAvalible(ix) <= index)
+            {
+                index -= GetAvalible(ix);
+                ix++;
+            }
+
+            long offset = ix == 0 ? m_tailIndex : 0;
+            offset += index;
+            return m_buffers[ix][offset];
         }
     }
 }

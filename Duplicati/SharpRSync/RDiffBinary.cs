@@ -72,13 +72,12 @@ namespace Duplicati.SharpRSync
         /// <returns>The number of bytes required</returns>
         public static int FindLength(long size)
         {
-            //These limits should be unsigned, but they are read as signed in RDiff?
             int count = 1;
             if (size > byte.MaxValue)
                 count++;
-            if (size > short.MaxValue)
+            if (size > ushort.MaxValue)
                 count += 2;
-            if (size > int.MaxValue)
+            if (size > uint.MaxValue)
                 count += 4;
             if (size > long.MaxValue)
                 throw new Exception("Value must be less than " + long.MaxValue);
@@ -95,11 +94,16 @@ namespace Duplicati.SharpRSync
             if (data.Length == 1)
                 return (long)data[0];
             else if (data.Length == 2)
-                return (long)BitConverter.ToInt16(FixEndian(data), 0);
+                return (long)BitConverter.ToUInt16(FixEndian(data), 0);
             else if (data.Length == 4)
-                return (long)BitConverter.ToInt32(FixEndian(data), 0);
+                return (long)BitConverter.ToUInt32(FixEndian(data), 0);
             else if (data.Length == 8)
-                return BitConverter.ToInt64(FixEndian(data), 0);
+            {
+                long tmp = BitConverter.ToInt64(FixEndian(data), 0);
+                if (tmp < 0)
+                    throw new Exception("Unable to size item, because it is larger than " + long.MaxValue.ToString());
+                return tmp;
+            }
             else
                 throw new Exception("Invalid data length");
         }
@@ -111,11 +115,11 @@ namespace Duplicati.SharpRSync
         /// </summary>
         /// <param name="size">The value to write</param>
         /// <returns>The written bytes</returns>
-        public static byte[] EncodeLength(int size)
+        public static byte[] EncodeLength(long size)
         {
             int len = FindLength(size);
             if (len == 1)
-                return FixEndian(BitConverter.GetBytes((byte)size));
+                return new byte[] { (byte)size };
             else if (len == 2)
                 return FixEndian(BitConverter.GetBytes((short)size));
             else if (len == 4)
@@ -132,11 +136,12 @@ namespace Duplicati.SharpRSync
         /// <param name="offset">The offset in the file where the copy begins</param>
         /// <param name="size">The size of the copy</param>
         /// <returns>The delta copy command</returns>
-        public static CopyDeltaCommand FindCopyDeltaCommand(int offset, int size)
+        public static CopyDeltaCommand FindCopyDeltaCommand(long offset, long size)
         {
             int i1 = FindLength(offset);
             int i2 = FindLength(size);
-            return CopyCommand[i1][i2];
+            //TODO: Not good, long = 8
+            return CopyCommand[i2 - 1][i1 - 1];
         }
 
         /// <summary>
