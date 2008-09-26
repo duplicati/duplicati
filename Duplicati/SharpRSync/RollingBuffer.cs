@@ -138,6 +138,8 @@ namespace Duplicati.SharpRSync
             while (count > 0)
             {
                 int avalible = (int)Math.Min(GetAvalible(ix) - b, count);
+                if (ix == 0)
+                    b += m_tailIndex;
                 Array.Copy(m_buffers[ix], b, buf, offset, avalible);
 
                 count -= avalible;
@@ -196,6 +198,7 @@ namespace Duplicati.SharpRSync
                 m_buffers.Add(new byte[BUFFER_SIZE]);
                 m_headIndex = 0;
                 m_tailIndex = 0;
+                return;
             }
 
             if (count < (BUFFER_SIZE - m_tailIndex))
@@ -221,6 +224,9 @@ namespace Duplicati.SharpRSync
                 m_tailIndex = 0;
                 m_buffers.Add(new byte[BUFFER_SIZE]);
             }
+
+            if (m_buffers.Count <= 1 && m_tailIndex > m_headIndex)
+                throw new Exception("This is one sad rolling buffer :(");
         }
 
         /// <summary>
