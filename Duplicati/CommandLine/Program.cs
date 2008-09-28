@@ -27,18 +27,15 @@ namespace Duplicati.CommandLine
     {
         static void Main(string[] args)
         {
-            Duplicati.SharpRSync.ChecksumFile cs1;
-            using(System.IO.FileStream fs = System.IO.File.OpenRead("test signature.sig"))
-                cs1 = new Duplicati.SharpRSync.ChecksumFile(fs);
-
-            Duplicati.SharpRSync.ChecksumFile cs2 = new Duplicati.SharpRSync.ChecksumFile();
-            using (System.IO.FileStream fs = System.IO.File.OpenRead("local\\Client.c"))
-                cs2.AddStream(fs);
-
-            using (System.IO.FileStream fs = System.IO.File.Create("test signature2.sig"))
-                cs2.Save(fs);
-
             List<string> cargs = new List<string>(args);
+#if DEBUG
+            if (cargs.Count > 1 && cargs[0].ToLower() == "unittest")
+            {
+                cargs.RemoveAt(0);
+                UnitTest.RunTest(cargs.ToArray());
+                return;
+            }
+#endif
             cargs.Add(Core.FilenameFilter.EncodeAsFilter(Core.FilenameFilter.ParseCommandLine(cargs, true)));
             Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
 

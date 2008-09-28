@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Main
 {
@@ -37,78 +38,66 @@ namespace Duplicati.Main
             //--short-filenames
             //--time-separator
             m_useShortFilenames = options.ContainsKey("short-filenames");
-            if (options.ContainsKey("time-seperator"))
-                m_timeSeperator = options["time-seperator"];
+            if (options.ContainsKey("time-separator"))
+                m_timeSeperator = options["time-separator"];
             else
                 m_timeSeperator = ":";
         }
 
-        public string GenerateFilename(string prefix, bool signatures, bool full, DateTime time, int volume)
+        public string GenerateFilename(string prefix, BackupEntry.EntryType type, bool full, DateTime time, int volume)
         {
-            return GenerateFilename(prefix, signatures, full, time) + ".vol" + volume.ToString();
+            return GenerateFilename(prefix, type, full, time) + ".vol" + volume.ToString();
         }
 
-        public string GenerateFilename(string prefix, bool signatures, bool full, DateTime time)
+        public string GenerateFilename(string prefix, BackupEntry.EntryType type, bool full, DateTime time)
         {
+            string t;
+            if (type == BackupEntry.EntryType.Manifest)
+                t = m_useShortFilenames ? "M" : "manifest";
+            else if (type == BackupEntry.EntryType.Content)
+                t = m_useShortFilenames ? "C" : "content";
+            else if (type == BackupEntry.EntryType.Signature)
+                t = m_useShortFilenames ? "S" : "signature";
+            else
+                throw new Exception("Invalid entry type specified");
+
             if (!m_useShortFilenames)
             {
                 string datetime = time.ToString().Replace(":", m_timeSeperator);
-                return prefix + "-" + (signatures ? "signatures" : "content") + "-" + (full ? "full" : "inc") + "." + datetime;
+                return prefix + "-" + (full ? "full" : "inc") + "-" + t + "." + datetime;
             }
             else
             {
                 //TODO: Finish this
                 byte[] tmp = new byte[4 + 2 + 2 + 2 + 2 + 2];
-                return prefix + "-" + (signatures ? "S" : "C") + (full ? "F" : "I") + "";
+                return prefix + "-" + t + (full ? "F" : "I") + "";
             }
         }
 
         public BackupEntry DecodeFilename(string prefix, Duplicati.Backend.FileEntry fe)
         {
-            //TODO: Use RegExp to parse it
-            //Filename looks like: "<prefix>-<content/signatures>-<full/inc>-<basename>.<date>.zip.pgp"
-            //or
-            //"<prefix>-<C/S><F/I>.<short date>.zip.pgp"
-            if (!fe.Name.StartsWith(prefix))
-                return null;
-            string c = fe.Name.Substring(prefix.Length + 1);
+            //TODO: Implement short filenames
+            string regexp = @"(?<prefix>%filename%)\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{2}\-\d{2}\-\d{4}.\d{2}\%timesep%\d{2}\%timesep%\d{2})\.(?<extension>.+)";
+            regexp = regexp.Replace("%filename%", prefix).Replace("%timesep%", m_timeSeperator);
 
-            bool isContent = false;
-            bool isFull = false;
-            DateTime time;
-
-            if (m_useShortFilenames)
-            {
-                //TODO: Finish this
+            Match m = Regex.Match(fe.Name, regexp);
+            if (!m.Success)
                 return null;
-            }
+
+            BackupEntry.EntryType type;
+            if (m.Groups["type"].Value == "manifest")
+                type = BackupEntry.EntryType.Manifest;
+            else if (m.Groups["type"].Value == "content")
+                type = BackupEntry.EntryType.Content;
+            else if (m.Groups["type"].Value == "signature")
+                type = BackupEntry.EntryType.Signature;
             else
-            {
-                if (c.StartsWith("content"))
-                    isContent = true;
-                else if (!c.StartsWith("signatures"))
-                    return null;
+                return null;
 
-                c = c.Substring((isContent ? "content" : "signatures").Length + 1);
+            bool isFull = m.Groups["inc"].Value == "full";
+            DateTime time = DateTime.Parse(m.Groups["time"].Value.Replace(m_timeSeperator, ":"));
 
-                if (c.StartsWith("full"))
-                    isFull = true;
-                else if (!c.StartsWith("inc"))
-                    return null;
-
-                c = c.Substring((isFull ? "full" : "inc").Length + 1);
-
-                try
-                {
-                    string datestring = c.Substring(0, c.IndexOf(".")).Replace(m_timeSeperator, ":");
-                    time = DateTime.Parse(datestring);
-                }
-                catch
-                {
-                    return null;
-                }
-            }
-            return new BackupEntry(fe, time, isContent, isFull);
+            return new BackupEntry(fe, time, type, isFull);
         }
 
     }

@@ -36,6 +36,7 @@
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UnitTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Backend\File\File.csproj">

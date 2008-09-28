@@ -34,6 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BackendInterface.cs" />
+    <Compile Include="FileBackendHelper.cs" />
     <Compile Include="FileEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

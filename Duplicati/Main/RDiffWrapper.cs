@@ -52,7 +52,6 @@ namespace Duplicati.Main.RSync
         /// <param name="signaturefile">The signature for the file</param>
         /// <param name="filename">The file to create the delta for</param>
         /// <param name="deltafile">The delta output file</param>
-        /// <returns></returns>
         public static void GenerateDelta(string signaturefile, string filename, string deltafile)
         {
             if (System.IO.File.Exists(deltafile))

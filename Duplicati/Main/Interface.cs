@@ -34,13 +34,11 @@ namespace Duplicati.Main
             Backend.IBackendInterface backend = new Backend.BackendLoader(target, options);
             List<BackupEntry> prev = ParseFileList(target, options);
 
+            if (prev.Count == 0)
+                full = true;
+
             if (!full && options.ContainsKey("full-if-older-than"))
-            {
-                if (prev.Count == 0)
-                    full = true;
-                else
-                    full = DateTime.Now > Core.Timeparser.ParseTimeInterval(options["full-if-older-than"], prev[prev.Count - 1].Time);
-            }
+                full = DateTime.Now > Core.Timeparser.ParseTimeInterval(options["full-if-older-than"], prev[prev.Count - 1].Time);
 
             using (Core.TempFolder basefolder = new Duplicati.Core.TempFolder())
             {
@@ -48,7 +46,7 @@ namespace Duplicati.Main
                 {
                     using (Core.TempFile t = new Duplicati.Core.TempFile())
                     {
-                        backend.Get(prev[prev.Count - 1].Filename, t);
+                        backend.Get(prev[prev.Count - 1].SignatureFile.Filename, t);
                         Compression.Compression.Decompress(t, basefolder);
                     }
 
@@ -74,10 +72,12 @@ namespace Duplicati.Main
                 volumesize = Math.Max(1, volumesize);
                 //dir.CreateDeltas();
 
+                dir.CreateFolders();
+
                 using(Core.TempFile zf = new Duplicati.Core.TempFile())
                 {
                     Compression.Compression.Compress(dir.NewSignatures, zf, dir.m_targetfolder);
-                    backend.Put(fns.GenerateFilename("duplicati", true, full, backuptime) + ".zip", zf);
+                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Signature , full, backuptime) + ".zip", zf);
                 }
 
                 int vol = 0;
@@ -86,12 +86,16 @@ namespace Duplicati.Main
                     {
                         dir.CreateDeltas(zf, volumesize * 1024 * 1024);
                         //Compression.Compression.Compress(dir.NewDeltas, zf, dir.m_targetfolder);
-                        backend.Put(fns.GenerateFilename("duplicati", false, full, backuptime, vol++) + ".zip", zf);
+                        backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Content, full, backuptime, vol++) + ".zip", zf);
                     }
+
+                using (Core.TempFile mf = new Duplicati.Core.TempFile())
+                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
+
             }
         }
 
-        public static void Restore(string source, string taget, Dictionary<string, string> options)
+        public static void Restore(string source, string target, Dictionary<string, string> options)
         {
             string specificfile = options.ContainsKey("file-to-restore") ? options["file-to-restore"] : "";
             string specifictime = options.ContainsKey("restore-time") ? options["restore-time"] : "now";
@@ -122,12 +126,20 @@ namespace Duplicati.Main
             {
                 using (Core.TempFile basezip = new Duplicati.Core.TempFile())
                 {
-                    backend.Get(bestFit.Filename, basezip);
+                    backend.Get(bestFit.SignatureFile.Filename, basezip);
                     Compression.Compression.Decompress(basezip, basefolder);
                 }
 
-                RSync.RSyncDir sync = new Duplicati.Main.RSync.RSyncDir(taget, basefolder);
-                sync.Restore(taget, new List<string>());
+                foreach (BackupEntry vol in bestFit.ContentVolumes)
+                    using (Core.TempFile basezip = new Duplicati.Core.TempFile())
+                    {
+                        backend.Get(vol.Filename, basezip);
+                        Compression.Compression.Decompress(basezip, basefolder);
+                    }
+
+
+                RSync.RSyncDir sync = new Duplicati.Main.RSync.RSyncDir(target, basefolder);
+                sync.Restore(target, new List<string>());
 
                 foreach (BackupEntry p in additions)
                 {
@@ -137,8 +149,15 @@ namespace Duplicati.Main
                         {
                             backend.Get(p.Filename, patchzip);
                             Compression.Compression.Decompress(patchzip, t);
-                            sync.Patch(taget, t);
                         }
+
+                        foreach (BackupEntry vol in p.ContentVolumes)
+                            using (Core.TempFile patchzip = new Duplicati.Core.TempFile())
+                            {
+                                backend.Get(vol.Filename, patchzip);
+                                Compression.Compression.Decompress(patchzip, t);
+                                sync.Patch(target, t);
+                            }
                     }
                 }
             }
@@ -154,11 +173,14 @@ namespace Duplicati.Main
             return res.ToArray();
         }
 
-        private static List<BackupEntry> ParseFileList(string source, Dictionary<string, string> options)
+        public static List<BackupEntry> ParseFileList(string source, Dictionary<string, string> options)
         {
             FilenameStrategy fns = new FilenameStrategy(options);
+
             List<BackupEntry> incrementals = new List<BackupEntry>();
             List<BackupEntry> fulls = new List<BackupEntry>();
+            Dictionary<string, BackupEntry> signatures = new Dictionary<string, BackupEntry>();
+            Dictionary<string, List<BackupEntry>> contents = new Dictionary<string, List<BackupEntry>>();
             string filename = "duplicati";
 
             Duplicati.Backend.IBackendInterface i = new Duplicati.Backend.BackendLoader(source, options);
@@ -169,25 +191,57 @@ namespace Duplicati.Main
                 if (be == null)
                     continue;
 
-                if (be.IsFull && !be.IsContent)
+                if (be.Type == BackupEntry.EntryType.Content)
+                {
+                    string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.Time) + ".manifest";
+                    if (!contents.ContainsKey(content))
+                        contents[content] = new List<BackupEntry>();
+                    contents[content].Add(be);
+                }
+                else if (be.Type == BackupEntry.EntryType.Signature)
+                {
+                    string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.Time) + ".manifest";
+                    signatures[content] = be;
+                }
+                else if (be.Type != BackupEntry.EntryType.Manifest)
+                    throw new Exception("Invalid entry type");
+                else if (be.IsFull)
                     fulls.Add(be);
-                else if (!be.IsFull && !be.IsContent)
+                else
                     incrementals.Add(be);
             }
 
             fulls.Sort(new Sorter());
             incrementals.Sort(new Sorter());
 
+            foreach (BackupEntry be in fulls)
+            {
+                if (contents.ContainsKey(be.Filename))
+                    be.ContentVolumes.AddRange(contents[be.Filename]);
+                if (signatures.ContainsKey(be.Filename))
+                    be.SignatureFile = signatures[be.Filename];
+            }
+
             int index = 0;
             foreach (BackupEntry be in incrementals)
+            {
+                if (contents.ContainsKey(be.Filename))
+                    be.ContentVolumes.AddRange(contents[be.Filename]);
+                if (signatures.ContainsKey(be.Filename))
+                    be.SignatureFile = signatures[be.Filename];
+
                 if (be.Time <= fulls[index].Time)
-                    continue; //TODO: Log this!
+                {
+                    //TODO: Log this!
+                    continue;
+                }
                 else
                 {
                     while (index < fulls.Count - 1 && be.Time > fulls[index].Time)
                         index++;
                     fulls[index].Incrementals.Add(be);
                 }
+            }
 
             return fulls;
         }

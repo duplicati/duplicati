@@ -26,15 +26,18 @@ namespace Duplicati.Compression
     public class Compression : IDisposable
     {
         private bool m_writing;
-        private ICSharpCode.SharpZipLib.Zip.ZipFile m_zipfile;
+        private ICSharpCode.SharpZipLib.Zip.ZipOutputStream m_zipfile;
+        private System.IO.FileStream m_filestream;
         private string m_filename;
+        private string m_basename;
 
         public Compression(string basefolder, string zipfile)
         {
+            m_basename = basefolder;
             m_writing = true;
             m_filename = zipfile;
-            m_zipfile = ICSharpCode.SharpZipLib.Zip.ZipFile.Create(zipfile);
-            m_zipfile.EntryFactory.NameTransform = new ICSharpCode.SharpZipLib.Zip.ZipNameTransform(Core.Utility.AppendDirSeperator(basefolder));
+            m_filestream = System.IO.File.Create(zipfile);
+            m_zipfile = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(m_filestream);
         }
 
         public long AddFile(string file)
@@ -42,9 +45,13 @@ namespace Duplicati.Compression
             if (!m_writing)
                 throw new InvalidOperationException("Cannot write to a file while reading it");
 
-            m_zipfile.BeginUpdate();
-            m_zipfile.Add(file);
-            m_zipfile.CommitUpdate();
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = new ICSharpCode.SharpZipLib.Zip.ZipEntry(file.Substring(m_basename.Length));
+            ze.DateTime = System.IO.File.GetLastWriteTime(file);
+
+            m_zipfile.PutNextEntry(ze);
+
+            using(System.IO.FileStream fs = System.IO.File.OpenRead(file))
+                Core.Utility.CopyStream(fs, m_zipfile);
 
             return new System.IO.FileInfo(m_filename).Length;
         }
@@ -69,12 +76,16 @@ namespace Duplicati.Compression
             
             file.EntryFactory.NameTransform = new ICSharpCode.SharpZipLib.Zip.ZipNameTransform(rootfolder);
 
+            file.BeginUpdate();
             foreach (string s in Core.Utility.EnumerateFiles(folder))
-            {
-                file.BeginUpdate();
                 file.Add(s);
-                file.CommitUpdate();
-            }
+
+            foreach (string s in Core.Utility.EnumerateFolders(folder))
+                file.AddDirectory(s);
+
+            file.CommitUpdate();
+
+            
 
             file.Close();
             
@@ -91,11 +102,19 @@ namespace Duplicati.Compression
             foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zip)
             {
                 string target = System.IO.Path.Combine(targetfolder, ze.Name);
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                if (ze.IsDirectory)
+                {
+                    if (!System.IO.Directory.Exists(target))
+                        System.IO.Directory.CreateDirectory(target);
+                }
+                else
+                {
+                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
 
-                using (System.IO.FileStream fs = new System.IO.FileStream(target, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                    Core.Utility.CopyStream(zip.GetInputStream(ze), fs);
+                    using (System.IO.FileStream fs = new System.IO.FileStream(target, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                        Core.Utility.CopyStream(zip.GetInputStream(ze), fs);
+                }
             }
         }
 

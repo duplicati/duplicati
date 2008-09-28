@@ -132,7 +132,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!m_warnedNoPassword && !EnablePassword.Checked)
             {
-                if (MessageBox.Show(this, "If the backup is stored on machine or device that is not under your direct control,\nit is possible that others may view the files you have stored in the backups. It is highly recomended that you enable encryption.\nDo you want to continue without encryption?", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning) != DialogResult.Yes)
+                if (MessageBox.Show(this, "If the backup is stored on machine or device that is not under your direct control,\nit is possible that others may view the files you have stored in the backups.\nIt is highly recomended that you enable encryption.\nDo you want to continue without encryption?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
                     cancel = true;
                     return;

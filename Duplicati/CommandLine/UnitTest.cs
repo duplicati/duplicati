@@ -1,0 +1,138 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Duplicati.CommandLine
+{
+    /// <summary>
+    /// This class encapsulates a simple method for testing the correctness of 
+    /// duplicati.
+    /// </summary>
+    public class UnitTest
+    {
+        /// <summary>
+        /// Running the unit test confirms the correctness of duplicati
+        /// </summary>
+        /// <param name="folders">The folders to backup. Folder at index 0 is the base, all others are incrementals</param>
+        public static void RunTest(string[] folders)
+        {
+            using (Core.TempFolder tf = new Duplicati.Core.TempFolder())
+            {
+                Dictionary<string, string> options = new Dictionary<string, string>();
+                options["time-separator"] = "'";
+                Console.WriteLine("Backing up the full copy: " + folders[0]);
+                Duplicati.Main.Interface.Backup(folders[0], "file://" + tf, options);
+
+                for (int i = 1; i < folders.Length; i++)
+                {
+                    Console.WriteLine("Backing up the incremental copy: " + folders[i]);
+                    Duplicati.Main.Interface.Backup(folders[i], "file://" + tf, options);
+                    //If the backups are too close, we can't pick the right one :(
+                    System.Threading.Thread.Sleep(5);
+                }
+
+                List<Main.BackupEntry> entries = Duplicati.Main.Interface.ParseFileList("file://" + tf, options);
+
+                if (entries.Count != 1 || entries[0].Incrementals.Count != folders.Length - 1)
+                    throw new Exception("Filename parsing problem, or corrupt storage");
+
+                List<Main.BackupEntry> t = new List<Duplicati.Main.BackupEntry>();
+                t.Add(entries[0]);
+                t.AddRange(entries[0].Incrementals);
+                entries = t;
+
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    using (Core.TempFolder ttf = new Duplicati.Core.TempFolder())
+                    {
+                        Console.WriteLine("Restoring the copy: " + folders[i]);
+
+                        Dictionary<string, string> opts = new Dictionary<string, string>();
+                        opts["restore-time"] = entries[i].Time.ToString();
+                        opts["time-separator"] = "'";
+                        Duplicati.Main.Interface.Restore("file://" + tf, ttf, opts);
+
+                        Console.WriteLine("Verifying the copy: " + folders[i]);
+
+                        VerifyDir(System.IO.Path.GetFullPath(folders[i]), ttf);
+                    }
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// Verifies the existence of all files and folders, and ensures that all
+        /// files are binary equal.
+        /// </summary>
+        /// <param name="f1">One folder</param>
+        /// <param name="f2">Another folder</param>
+        private static void VerifyDir(string f1, string f2)
+        {
+            f1 = Core.Utility.AppendDirSeperator(f1);
+            f2 = Core.Utility.AppendDirSeperator(f2);
+
+            List<string> folders1 = Core.Utility.EnumerateFolders(f1);
+            List<string> folders2 = Core.Utility.EnumerateFolders(f2);
+
+            foreach (string s in folders1)
+            {
+                string relpath = s.Substring(f1.Length);
+                string target = System.IO.Path.Combine(f2, relpath);
+                if (!folders2.Contains(target))
+                    Console.WriteLine("Missing folder: " + relpath);
+                else
+                    folders2.Remove(target);
+            }
+
+            foreach(string s in folders2)
+                Console.WriteLine("Extra folder: " + s.Substring(f2.Length));
+
+            List<string> files1 = Core.Utility.EnumerateFiles(f1);
+            List<string> files2 = Core.Utility.EnumerateFiles(f2);
+            foreach (string s in files1)
+            {
+                string relpath = s.Substring(f1.Length);
+                string target = System.IO.Path.Combine(f2, relpath);
+                if (!files2.Contains(target))
+                    Console.WriteLine("Missing folder: " + relpath);
+                else
+                {
+                    files2.Remove(target);
+                    if (!CompareFiles(s, target, relpath))
+                        Console.WriteLine("File differs: " + relpath);
+                }
+            }
+
+            foreach (string s in files2)
+                Console.WriteLine("Extra file: " + s.Substring(f2.Length));
+        }
+
+        /// <summary>
+        /// Compares two files by reading all bytes, and comparing one by one
+        /// </summary>
+        /// <param name="f1">One file</param>
+        /// <param name="f2">Another file</param>
+        /// <param name="display">File display name</param>
+        /// <returns>True if they are equal, false otherwise</returns>
+        private static bool CompareFiles(string f1, string f2, string display)
+        {
+            using (System.IO.FileStream fs1 = System.IO.File.OpenRead(f1))
+            using (System.IO.FileStream fs2 = System.IO.File.OpenRead(f2))
+                if (fs1.Length != fs2.Length)
+                {
+                    Console.WriteLine("Lengths differ: " + display + ", " + fs1.Length.ToString() + " vs. " + fs2.Length.ToString());
+                    return false;
+                }
+                else
+                    for (long l = 0; l < fs1.Length; l++)
+                        if (fs1.ReadByte() != fs2.ReadByte())
+                        {
+                            Console.WriteLine("Mismatch in byte " + l.ToString() + " in file " + display);
+                            return false;
+                        }
+
+            return true;
+        }
+    }
+}
