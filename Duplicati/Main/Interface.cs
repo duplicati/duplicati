@@ -53,7 +53,7 @@ namespace Duplicati.Main
                     foreach(BackupEntry be in prev[prev.Count - 1].Incrementals)
                         using (Core.TempFile t = new Duplicati.Core.TempFile())
                         {
-                            backend.Get(be.Filename, t);
+                            backend.Get(be.SignatureFile.Filename, t);
 
                             using (Core.TempFolder tf = new Duplicati.Core.TempFolder())
                             {
@@ -74,10 +74,17 @@ namespace Duplicati.Main
 
                 dir.CreateFolders();
 
-                using(Core.TempFile zf = new Duplicati.Core.TempFile())
+                using (Core.TempFile zf = new Duplicati.Core.TempFile())
                 {
-                    Compression.Compression.Compress(dir.NewSignatures, zf, dir.m_targetfolder);
-                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Signature , full, backuptime) + ".zip", zf);
+                    List<string> folders = Core.Utility.EnumerateFolders(dir.NewSignatures);
+                    List<string> files = Core.Utility.EnumerateFiles(dir.NewSignatures);
+                    if (System.IO.File.Exists(dir.DeletedFolders))
+                        files.Add(dir.DeletedFolders);
+                    if (System.IO.File.Exists(dir.DeletedFiles))
+                        files.Add(dir.DeletedFiles);
+
+                    Compression.Compression.Compress(files, folders, zf, dir.m_targetfolder);
+                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Signature, full, backuptime) + ".zip", zf);
                 }
 
                 int vol = 0;
@@ -88,6 +95,7 @@ namespace Duplicati.Main
                         //Compression.Compression.Compress(dir.NewDeltas, zf, dir.m_targetfolder);
                         backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Content, full, backuptime, vol++) + ".zip", zf);
                     }
+
 
                 using (Core.TempFile mf = new Duplicati.Core.TempFile())
                     backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
@@ -117,7 +125,7 @@ namespace Duplicati.Main
                 {
                     bestFit = be;
                     foreach (BackupEntry bex in be.Incrementals)
-                        if (bex.Time < timelimit)
+                        if (bex.Time <= timelimit)
                             additions.Add(bex);
 
                 }
@@ -147,7 +155,7 @@ namespace Duplicati.Main
                     {
                         using (Core.TempFile patchzip = new Duplicati.Core.TempFile())
                         {
-                            backend.Get(p.Filename, patchzip);
+                            backend.Get(p.SignatureFile.Filename, patchzip);
                             Compression.Compression.Decompress(patchzip, t);
                         }
 
@@ -156,10 +164,14 @@ namespace Duplicati.Main
                             {
                                 backend.Get(vol.Filename, patchzip);
                                 Compression.Compression.Decompress(patchzip, t);
-                                sync.Patch(target, t);
                             }
+
+                        sync.Patch(target, t);
+
                     }
                 }
+
+
             }
         }
 

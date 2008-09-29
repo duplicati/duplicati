@@ -63,6 +63,42 @@ namespace Duplicati.Compression
             ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(zipfile);
         }
 
+        /// <summary>
+        /// Compresses a list of files into a single archive
+        /// </summary>
+        /// <param name="files">The files to add</param>
+        /// <param name="folders">The folders to create</param>
+        /// <param name="outputfile">The file to write the output to</param>
+        /// <param name="rootfolder">The root folder, used to calculate relative paths</param>
+        public static void Compress(List<string> files, List<string> folders, string outputfile, string rootfolder)
+        {
+            ICSharpCode.SharpZipLib.Zip.ZipEntryFactory zef = new ICSharpCode.SharpZipLib.Zip.ZipEntryFactory();
+
+            rootfolder = Core.Utility.AppendDirSeperator(rootfolder);
+            using (System.IO.FileStream fs = System.IO.File.Create(outputfile))
+            using (ICSharpCode.SharpZipLib.Zip.ZipOutputStream zipfile = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(fs))
+            {
+                zipfile.SetLevel(9);
+
+                foreach (string f in folders)
+                {
+                    ICSharpCode.SharpZipLib.Zip.ZipEntry e = zef.MakeDirectoryEntry(f.Substring(rootfolder.Length), false);
+                    zipfile.PutNextEntry(e);
+                }
+
+                foreach (string f in files)
+                {
+                    ICSharpCode.SharpZipLib.Zip.ZipEntry e = zef.MakeFileEntry(f.Substring(rootfolder.Length), false);
+                    e.DateTime = System.IO.File.GetLastWriteTime(f);
+                    zipfile.PutNextEntry(e);
+
+                    using (System.IO.FileStream ffs = System.IO.File.OpenRead(f))
+                        Core.Utility.CopyStream(ffs, zipfile);
+                }
+                
+                zipfile.Close();
+            }
+        }
 
         /// <summary>
         /// Compresses a folder into a single compressed file
@@ -71,24 +107,7 @@ namespace Duplicati.Compression
         /// <param name="outputfile">The name of the compressed file</param>
         public static void Compress(string folder, string outputfile, string rootfolder)
         {
-            ICSharpCode.SharpZipLib.Zip.ZipFile file = ICSharpCode.SharpZipLib.Zip.ZipFile.Create(outputfile);
-            folder = Core.Utility.AppendDirSeperator(folder);
-            
-            file.EntryFactory.NameTransform = new ICSharpCode.SharpZipLib.Zip.ZipNameTransform(rootfolder);
-
-            file.BeginUpdate();
-            foreach (string s in Core.Utility.EnumerateFiles(folder))
-                file.Add(s);
-
-            foreach (string s in Core.Utility.EnumerateFolders(folder))
-                file.AddDirectory(s);
-
-            file.CommitUpdate();
-
-            
-
-            file.Close();
-            
+            Compress(Core.Utility.EnumerateFiles(folder), Core.Utility.EnumerateFolders(folder), outputfile, rootfolder);
         }
 
         /// <summary>

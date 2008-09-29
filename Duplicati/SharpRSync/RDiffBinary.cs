@@ -140,7 +140,12 @@ namespace Duplicati.SharpRSync
         {
             int i1 = FindLength(offset);
             int i2 = FindLength(size);
-            //TODO: Not good, long = 8
+
+            if (i1 == 4) i1 = 3;
+            if (i1 == 8) i1 = 4;
+            if (i2 == 4) i2 = 3;
+            if (i2 == 8) i2 = 4;
+
             return CopyCommand[i2 - 1][i1 - 1];
         }
 

@@ -164,7 +164,7 @@ namespace Duplicati.Main.RSync
             foreach (string s in Core.Utility.EnumerateFolders(m_sourcefolder, filter))
             {
                 string relpath = s.Substring(m_sourcefolder.Length);
-                if (!m_oldFolders.ContainsKey(s))
+                if (!m_oldFolders.ContainsKey(relpath))
                     m_newfolders.Add(relpath);
                 else
                     m_oldFolders.Remove(relpath);
@@ -200,7 +200,7 @@ namespace Duplicati.Main.RSync
 
                         string relpath = s.Substring(m_sourcefolder.Length);
                         string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, DELTA_ROOT), relpath);
-                        string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), relpath);
+                        string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_basefolder, SIGNATURE_ROOT), relpath);
                         if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
                             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
 
@@ -226,21 +226,8 @@ namespace Duplicati.Main.RSync
                     }
                 }
 
-                if (m_deletedfolders.Count > 0)
-                {
-                    System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS), m_deletedfolders.ToArray());
-                    c.AddFile(System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS));
-                }
-                if (m_deletedfiles.Count > 0)
-                {
-                    System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FILES), m_deletedfiles.ToArray());
-                    c.AddFile(System.IO.Path.Combine(m_targetfolder, DELETED_FILES));
-                }
             }
 
-            m_newfolders = new List<string>();
-            m_deletedfiles = new List<string>();
-            m_deletedfolders = new List<string>();
         }
 
         public bool HasChanges { get { return m_newfiles.Count > 0 || m_modifiedFiles.Count > 0; } }
@@ -253,6 +240,15 @@ namespace Duplicati.Main.RSync
                 if (!System.IO.Directory.Exists(target))
                     System.IO.Directory.CreateDirectory(target);
             }
+
+            if (m_deletedfolders.Count > 0)
+                System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS), m_deletedfolders.ToArray());
+            if (m_deletedfiles.Count > 0)
+                System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FILES), m_deletedfiles.ToArray());
+
+            m_newfolders = new List<string>();
+            m_deletedfiles = new List<string>();
+            m_deletedfolders = new List<string>();
 
         }
 
@@ -294,6 +290,52 @@ namespace Duplicati.Main.RSync
 
         public void Patch(string destination, string patch)
         {
+            string deletedfiles = System.IO.Path.Combine(patch, DELETED_FILES);
+            if (System.IO.File.Exists(deletedfiles))
+                foreach (string s in System.IO.File.ReadAllLines(deletedfiles))
+                {
+                    string target = System.IO.Path.Combine(destination, s.Trim());
+                    if (System.IO.File.Exists(target))
+                    {
+                        try
+                        {
+                            System.IO.File.Delete(target);
+                        }
+                        catch (Exception ex)
+                        {
+                            //TODO: Log this
+                        }
+                    }
+                    else
+                    {
+                        //TODO: Log this
+                    }
+                }
+
+            string deletedfolders = System.IO.Path.Combine(patch, DELETED_FOLDERS);
+            if (System.IO.File.Exists(deletedfolders))
+            {
+                //Make sure subfolders are deleted first
+                string[] folderlist = System.IO.File.ReadAllLines(deletedfolders);
+                Array.Sort(folderlist);
+                Array.Reverse(folderlist);
+
+                foreach (string s in folderlist)
+                {
+                    string target = System.IO.Path.Combine(destination, s.Trim());
+                    if (System.IO.Directory.Exists(target))
+                        try
+                        {
+                            System.IO.Directory.Delete(target, false);
+                        }
+                        catch (Exception ex)
+                        {
+                            //TODO: Log this
+                        }
+
+                }
+            }
+
             string foldersource = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, SIGNATURE_ROOT));
             foreach (string s in Core.Utility.EnumerateFolders(foldersource))
             {
@@ -301,6 +343,8 @@ namespace Duplicati.Main.RSync
                 if (!System.IO.Directory.Exists(target))
                     System.IO.Directory.CreateDirectory(target);
             }
+
+
 
             string sourcefolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, CONTENT_ROOT));
 
@@ -319,6 +363,7 @@ namespace Duplicati.Main.RSync
             {
                 string relpath = s.Substring(sourcefolder.Length);
                 string target = System.IO.Path.Combine(destination, relpath);
+                //string source = System.IO.Path.Combine(sourcefolder, relpath)
 
                 string tempfile = System.IO.Path.GetTempFileName();
                 SharpRSync.Interface.PatchFile(target, s, tempfile);
@@ -375,7 +420,8 @@ namespace Duplicati.Main.RSync
 
             if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
                 foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
-                    System.IO.Directory.Delete(System.IO.Path.Combine(System.IO.Path.Combine(basefolder, SIGNATURE_ROOT), s), true);
+                    if (System.IO.Directory.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basefolder, SIGNATURE_ROOT), s)))
+                        System.IO.Directory.Delete(System.IO.Path.Combine(System.IO.Path.Combine(basefolder, SIGNATURE_ROOT), s), true);
 
             List<string> updates = Core.Utility.EnumerateFiles(System.IO.Path.Combine(updatefolder, SIGNATURE_ROOT));
             foreach(string s in updates)
@@ -418,6 +464,9 @@ namespace Duplicati.Main.RSync
 
         public string NewSignatures { get { return System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT); } }
         public string NewDeltas { get { return System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT); } }
+
+        public string DeletedFolders { get { return System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS); } }
+        public string DeletedFiles { get { return System.IO.Path.Combine(m_targetfolder, DELETED_FILES); } }
 
     }
 }
