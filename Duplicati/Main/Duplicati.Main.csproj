@@ -57,6 +57,10 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Logging\Duplicati.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Logging</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SharpRSync\Duplicati.SharpRSync.csproj">
       <Project>{47FE73E1-0832-44F7-96B9-2580273206C3}</Project>
       <Name>Duplicati.SharpRSync</Name>

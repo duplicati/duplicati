@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Compression", "Du
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.SharpRSync", "Duplicati\SharpRSync\Duplicati.SharpRSync.csproj", "{47FE73E1-0832-44F7-96B9-2580273206C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Logging", "Duplicati\Logging\Duplicati.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -59,6 +61,10 @@ Global
 		{47FE73E1-0832-44F7-96B9-2580273206C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47FE73E1-0832-44F7-96B9-2580273206C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47FE73E1-0832-44F7-96B9-2580273206C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

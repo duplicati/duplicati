@@ -35,19 +35,25 @@ namespace Duplicati.CommandLine
         /// <param name="folders">The folders to backup. Folder at index 0 is the base, all others are incrementals</param>
         public static void RunTest(string[] folders)
         {
+            Logging.Log.CurrentLog = new Logging.StreamLog("unittest.log");
+            Logging.Log.LogLevel = Duplicati.Logging.LogMessageType.Profiling;
+            
+            using(new Logging.Timer("Total unittest"))
             using (Core.TempFolder tf = new Duplicati.Core.TempFolder())
             {
                 Dictionary<string, string> options = new Dictionary<string, string>();
                 options["time-separator"] = "'";
                 Console.WriteLine("Backing up the full copy: " + folders[0]);
-                Duplicati.Main.Interface.Backup(folders[0], "file://" + tf, options);
+                using (new Logging.Timer("Full backup of " + folders[0]))
+                    Duplicati.Main.Interface.Backup(folders[0], "file://" + tf, options);
 
                 for (int i = 1; i < folders.Length; i++)
                 {
                     //If the backups are too close, we can't pick the right one :(
                     System.Threading.Thread.Sleep(1000 * 5);
                     Console.WriteLine("Backing up the incremental copy: " + folders[i]);
-                    Duplicati.Main.Interface.Backup(folders[i], "file://" + tf, options);
+                    using (new Logging.Timer("Incremental backup of " + folders[i]))
+                        Duplicati.Main.Interface.Backup(folders[i], "file://" + tf, options);
                 }
 
                 List<Main.BackupEntry> entries = Duplicati.Main.Interface.ParseFileList("file://" + tf, options);
@@ -69,15 +75,20 @@ namespace Duplicati.CommandLine
                         Dictionary<string, string> opts = new Dictionary<string, string>();
                         opts["restore-time"] = entries[i].Time.ToString();
                         opts["time-separator"] = "'";
-                        Duplicati.Main.Interface.Restore("file://" + tf, ttf, opts);
+                        using (new Logging.Timer("Restore of " + folders[i]))
+                            Duplicati.Main.Interface.Restore("file://" + tf, ttf, opts);
 
                         Console.WriteLine("Verifying the copy: " + folders[i]);
 
-                        VerifyDir(System.IO.Path.GetFullPath(folders[i]), ttf);
+                        using (new Logging.Timer("Verification of " + folders[i]))
+                            VerifyDir(System.IO.Path.GetFullPath(folders[i]), ttf);
                     }
                 }
 
             }
+
+            (Logging.Log.CurrentLog as Logging.StreamLog).Dispose();
+            Logging.Log.CurrentLog = null;
         }
 
         /// <summary>

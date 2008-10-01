@@ -72,31 +72,34 @@ namespace Duplicati.Compression
         /// <param name="rootfolder">The root folder, used to calculate relative paths</param>
         public static void Compress(List<string> files, List<string> folders, string outputfile, string rootfolder)
         {
-            ICSharpCode.SharpZipLib.Zip.ZipEntryFactory zef = new ICSharpCode.SharpZipLib.Zip.ZipEntryFactory();
-
-            rootfolder = Core.Utility.AppendDirSeperator(rootfolder);
-            using (System.IO.FileStream fs = System.IO.File.Create(outputfile))
-            using (ICSharpCode.SharpZipLib.Zip.ZipOutputStream zipfile = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(fs))
+            using (new Logging.Timer("Compression of " + files.Count.ToString() + " files and " + folders.Count.ToString() + " folders"))
             {
-                zipfile.SetLevel(9);
+                ICSharpCode.SharpZipLib.Zip.ZipEntryFactory zef = new ICSharpCode.SharpZipLib.Zip.ZipEntryFactory();
 
-                foreach (string f in folders)
+                rootfolder = Core.Utility.AppendDirSeperator(rootfolder);
+                using (System.IO.FileStream fs = System.IO.File.Create(outputfile))
+                using (ICSharpCode.SharpZipLib.Zip.ZipOutputStream zipfile = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(fs))
                 {
-                    ICSharpCode.SharpZipLib.Zip.ZipEntry e = zef.MakeDirectoryEntry(f.Substring(rootfolder.Length), false);
-                    zipfile.PutNextEntry(e);
-                }
+                    zipfile.SetLevel(9);
 
-                foreach (string f in files)
-                {
-                    ICSharpCode.SharpZipLib.Zip.ZipEntry e = zef.MakeFileEntry(f.Substring(rootfolder.Length), false);
-                    e.DateTime = System.IO.File.GetLastWriteTime(f);
-                    zipfile.PutNextEntry(e);
+                    foreach (string f in folders)
+                    {
+                        ICSharpCode.SharpZipLib.Zip.ZipEntry e = zef.MakeDirectoryEntry(f.Substring(rootfolder.Length), false);
+                        zipfile.PutNextEntry(e);
+                    }
 
-                    using (System.IO.FileStream ffs = System.IO.File.OpenRead(f))
-                        Core.Utility.CopyStream(ffs, zipfile);
+                    foreach (string f in files)
+                    {
+                        ICSharpCode.SharpZipLib.Zip.ZipEntry e = zef.MakeFileEntry(f.Substring(rootfolder.Length), false);
+                        e.DateTime = System.IO.File.GetLastWriteTime(f);
+                        zipfile.PutNextEntry(e);
+
+                        using (System.IO.FileStream ffs = System.IO.File.OpenRead(f))
+                            Core.Utility.CopyStream(ffs, zipfile);
+                    }
+
+                    zipfile.Close();
                 }
-                
-                zipfile.Close();
             }
         }
 
@@ -117,22 +120,25 @@ namespace Duplicati.Compression
         /// <param name="targetfolder">The folder where the data is extracted to</param>
         public static void Decompress(string file, string targetfolder)
         {
-            ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(file);
-            foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zip)
+            using (new Logging.Timer("Decompression of " + file + " (" + new System.IO.FileInfo(file).Length.ToString() + ")"))
             {
-                string target = System.IO.Path.Combine(targetfolder, ze.Name);
-                if (ze.IsDirectory)
+                ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(file);
+                foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zip)
                 {
-                    if (!System.IO.Directory.Exists(target))
-                        System.IO.Directory.CreateDirectory(target);
-                }
-                else
-                {
-                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                    string target = System.IO.Path.Combine(targetfolder, ze.Name);
+                    if (ze.IsDirectory)
+                    {
+                        if (!System.IO.Directory.Exists(target))
+                            System.IO.Directory.CreateDirectory(target);
+                    }
+                    else
+                    {
+                        if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
 
-                    using (System.IO.FileStream fs = new System.IO.FileStream(target, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                        Core.Utility.CopyStream(zip.GetInputStream(ze), fs);
+                        using (System.IO.FileStream fs = new System.IO.FileStream(target, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                            Core.Utility.CopyStream(zip.GetInputStream(ze), fs);
+                    }
                 }
             }
         }
