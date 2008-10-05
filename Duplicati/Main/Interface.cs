@@ -48,70 +48,101 @@ namespace Duplicati.Main
                     {
                         using (new Logging.Timer("Reading incremental data"))
                         {
-                            using (Core.TempFile t = new Duplicati.Core.TempFile())
-                            {
-                                using (new Logging.Timer("Get " + prev[prev.Count - 1].SignatureFile.Filename))
-                                    backend.Get(prev[prev.Count - 1].SignatureFile.Filename, t);
-                                Compression.Compression.Decompress(t, basefolder);
-                            }
-
-                            foreach (BackupEntry be in prev[prev.Count - 1].Incrementals)
+                            foreach (BackupEntry be in prev[prev.Count - 1].SignatureFile) 
                                 using (Core.TempFile t = new Duplicati.Core.TempFile())
                                 {
-                                    using (new Logging.Timer("Get " + be.SignatureFile.Filename))
-                                        backend.Get(be.SignatureFile.Filename, t);
-
-                                    using (Core.TempFolder tf = new Duplicati.Core.TempFolder())
-                                    {
-                                        Compression.Compression.Decompress(t, tf);
-                                        using (new Logging.Timer("Full signature merge"))
-                                            Main.RSync.RSyncDir.MergeSignatures(basefolder, tf);
-                                    }
+                                    using (new Logging.Timer("Get " + be.Filename))
+                                        backend.Get(be.Filename, t);
+                                    Compression.Compression.Decompress(t, basefolder);
                                 }
+
+                            foreach (BackupEntry be in prev[prev.Count - 1].Incrementals)
+                                foreach (BackupEntry bes in be.SignatureFile) 
+                                    using (Core.TempFile t = new Duplicati.Core.TempFile())
+                                    {
+                                        using (new Logging.Timer("Get " + bes.Filename))
+                                            backend.Get(bes.Filename, t);
+
+                                        using (Core.TempFolder tf = new Duplicati.Core.TempFolder())
+                                        {
+                                            Compression.Compression.Decompress(t, tf);
+                                            using (new Logging.Timer("Full signature merge"))
+                                                Main.RSync.RSyncDir.MergeSignatures(basefolder, tf);
+                                        }
+                                    }
                         }
                     }
                     DateTime backuptime = DateTime.Now;
 
                     RSync.RSyncDir dir = new Duplicati.Main.RSync.RSyncDir(source, basefolder);
-                    using (new Logging.Timer("Scanning folder for changes"))
-                        dir.CalculateDiffFilelist(full, filter);
 
-                    int volumesize = options.ContainsKey("volsize") ? int.Parse(options["volsize"]) : 5;
-                    volumesize = Math.Max(1, volumesize);
-                    //dir.CreateDeltas();
+                    using (new Logging.Timer("Initiating multipass"))
+                        dir.InitiateMultiPassDiff(full, filter);
+
+                    int volumesize = (int)Core.Sizeparser.ParseSize(options.ContainsKey("volsize") ? options["volsize"] : "5", "mb");
+                    volumesize = Math.Max(1024 * 1024, volumesize);
+
+                    long totalmax = options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(options["totalsize"], "mb") : long.MaxValue;
+                    totalmax = Math.Max(volumesize, totalmax);
 
                     using (new Logging.Timer("Creating folders for signature file"))
                         dir.CreateFolders();
 
-                    using (Core.TempFile zf = new Duplicati.Core.TempFile())
+                    int vol = 0;
+                    long totalsize = 0;
+                    
+                    bool done = false;
+                    while (!done && totalsize < totalmax)
                     {
-                        List<string> folders = Core.Utility.EnumerateFolders(dir.NewSignatures);
-                        List<string> files = Core.Utility.EnumerateFiles(dir.NewSignatures);
-                        if (System.IO.File.Exists(dir.DeletedFolders))
-                            files.Add(dir.DeletedFolders);
-                        if (System.IO.File.Exists(dir.DeletedFiles))
-                            files.Add(dir.DeletedFiles);
+                        using (new Logging.Timer("Multipass " + (vol + 1).ToString()))
+                        {
+                            using (Core.TempFile zf = new Duplicati.Core.TempFile())
+                            {
+                                done = dir.MakeMultiPassDiff(zf, volumesize);
+                                totalsize += new System.IO.FileInfo(zf).Length;
+                                using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
+                                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
+                            }
 
-                        Compression.Compression.Compress(files, folders, zf, dir.m_targetfolder);
-                        using (new Logging.Timer("Writing remote signatures"))
-                            backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Signature, full, backuptime) + ".zip", zf);
+                            using (Core.TempFile zf = new Duplicati.Core.TempFile())
+                            {
+                                List<string> folders = Core.Utility.EnumerateFolders(dir.NewSignatures);
+                                List<string> files = Core.Utility.EnumerateFiles(dir.NewSignatures);
+                                if (System.IO.File.Exists(dir.DeletedFolders))
+                                    files.Add(dir.DeletedFolders);
+                                if (System.IO.File.Exists(dir.DeletedFiles))
+                                    files.Add(dir.DeletedFiles);
+
+                                Compression.Compression.Compress(files, folders, zf, dir.m_targetfolder);
+                                totalsize += new System.IO.FileInfo(zf).Length;
+                                using (new Logging.Timer("Writing remote signatures"))
+                                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", zf);
+
+                                if (System.IO.File.Exists(dir.DeletedFolders))
+                                    System.IO.File.Delete(dir.DeletedFolders);
+                                if (System.IO.File.Exists(dir.DeletedFiles))
+                                    System.IO.File.Delete(dir.DeletedFiles);
+                            }
+
+                            Core.Utility.DeleteFolder(dir.NewSignatures);
+                            Core.Utility.DeleteFolder(dir.NewDeltas);
+
+                            using (Core.TempFile mf = new Duplicati.Core.TempFile())
+                            using (new Logging.Timer("Writing manifest"))
+                            {
+                                //TODO: Actually read the manifest on restore
+                                System.IO.File.WriteAllLines(mf, new string[] {
+                                    "Manifest: Dummy type",
+                                    "Signature: Missing!",
+                                    "Volumes: " + (vol + 1).ToString()
+                                });
+                                backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
+                            }
+
+                            vol++;
+                        }
                     }
 
-                    int vol = 0;
-                    while (dir.HasChanges || vol == 0)
-                        using (Core.TempFile zf = new Duplicati.Core.TempFile())
-                        {
-                            using (new Logging.Timer("Delta generation " + (vol + 1).ToString()))
-                                dir.CreateDeltas(zf, volumesize * 1024 * 1024);
-                            //Compression.Compression.Compress(dir.NewDeltas, zf, dir.m_targetfolder);
-                            using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
-                                backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Content, full, backuptime, vol++) + ".zip", zf);
-                        }
-
-
-                    using (Core.TempFile mf = new Duplicati.Core.TempFile())
-                    using (new Logging.Timer("Writing manifest"))
-                        backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
 
                 }
             }
@@ -148,12 +179,13 @@ namespace Duplicati.Main
 
                 using (Core.TempFolder basefolder = new Duplicati.Core.TempFolder())
                 {
-                    using (Core.TempFile basezip = new Duplicati.Core.TempFile())
-                    {
-                        using (new Logging.Timer("Get " + bestFit.SignatureFile.Filename))
-                            backend.Get(bestFit.SignatureFile.Filename, basezip);
-                        Compression.Compression.Decompress(basezip, basefolder);
-                    }
+                    foreach(BackupEntry be in bestFit.SignatureFile)
+                        using (Core.TempFile basezip = new Duplicati.Core.TempFile())
+                        {
+                            using (new Logging.Timer("Get " + be.Filename))
+                                backend.Get(be.Filename, basezip);
+                            Compression.Compression.Decompress(basezip, basefolder);
+                        }
 
                     foreach (BackupEntry vol in bestFit.ContentVolumes)
                         using (Core.TempFile basezip = new Duplicati.Core.TempFile())
@@ -174,12 +206,13 @@ namespace Duplicati.Main
                     {
                         using (Core.TempFolder t = new Duplicati.Core.TempFolder())
                         {
-                            using (Core.TempFile patchzip = new Duplicati.Core.TempFile())
-                            {
-                                using (new Logging.Timer("Get " + p.SignatureFile.Filename))
-                                    backend.Get(p.SignatureFile.Filename, patchzip);
-                                Compression.Compression.Decompress(patchzip, t);
-                            }
+                            foreach (BackupEntry be in p.SignatureFile) 
+                                using (Core.TempFile patchzip = new Duplicati.Core.TempFile())
+                                {
+                                    using (new Logging.Timer("Get " + be.Filename))
+                                        backend.Get(be.Filename, patchzip);
+                                    Compression.Compression.Decompress(patchzip, t);
+                                }
 
                             foreach (BackupEntry vol in p.ContentVolumes)
                                 using (Core.TempFile patchzip = new Duplicati.Core.TempFile())
@@ -218,7 +251,7 @@ namespace Duplicati.Main
 
                 List<BackupEntry> incrementals = new List<BackupEntry>();
                 List<BackupEntry> fulls = new List<BackupEntry>();
-                Dictionary<string, BackupEntry> signatures = new Dictionary<string, BackupEntry>();
+                Dictionary<string, List<BackupEntry>> signatures = new Dictionary<string, List<BackupEntry>>();
                 Dictionary<string, List<BackupEntry>> contents = new Dictionary<string, List<BackupEntry>>();
                 string filename = "duplicati";
 
@@ -240,7 +273,9 @@ namespace Duplicati.Main
                     else if (be.Type == BackupEntry.EntryType.Signature)
                     {
                         string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.Time) + ".manifest";
-                        signatures[content] = be;
+                        if (!signatures.ContainsKey(content))
+                            signatures[content] = new List<BackupEntry>();
+                        signatures[content].Add(be);
                     }
                     else if (be.Type != BackupEntry.EntryType.Manifest)
                         throw new Exception("Invalid entry type");
@@ -258,7 +293,7 @@ namespace Duplicati.Main
                     if (contents.ContainsKey(be.Filename))
                         be.ContentVolumes.AddRange(contents[be.Filename]);
                     if (signatures.ContainsKey(be.Filename))
-                        be.SignatureFile = signatures[be.Filename];
+                        be.SignatureFile.AddRange(signatures[be.Filename]);
                 }
 
                 int index = 0;
@@ -267,11 +302,11 @@ namespace Duplicati.Main
                     if (contents.ContainsKey(be.Filename))
                         be.ContentVolumes.AddRange(contents[be.Filename]);
                     if (signatures.ContainsKey(be.Filename))
-                        be.SignatureFile = signatures[be.Filename];
+                        be.SignatureFile.AddRange(signatures[be.Filename]);
 
                     if (be.Time <= fulls[index].Time)
                     {
-                        //TODO: Log this!
+                        Logging.Log.WriteMessage("Failed to match incremental package to a full: " + be.Filename, Duplicati.Logging.LogMessageType.Warning);
                         continue;
                     }
                     else

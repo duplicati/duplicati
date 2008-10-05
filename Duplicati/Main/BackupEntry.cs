@@ -36,7 +36,7 @@ namespace Duplicati.Main
         private DateTime m_time;
         private List<BackupEntry> m_incrementals;
         private EntryType m_type;
-        private BackupEntry m_signature;
+        private List<BackupEntry> m_signature;
         private bool m_isFull;
         private List<BackupEntry> m_content;
 
@@ -46,7 +46,7 @@ namespace Duplicati.Main
         public bool IsFull { get { return m_isFull; } }
         public List<BackupEntry> Incrementals { get { return m_incrementals; } }
         public List<BackupEntry> ContentVolumes { get { return m_content; } }
-        public BackupEntry SignatureFile { get { return m_signature; } set { m_signature = value; } }
+        public List<BackupEntry> SignatureFile { get { return m_signature; } }
         public EntryType Type { get { return m_type; } }
 
         public BackupEntry(Backend.FileEntry fe, DateTime time, EntryType type, bool isFull)
@@ -55,7 +55,7 @@ namespace Duplicati.Main
             m_time = time;
             m_type = type;
             m_isFull = isFull;
-            m_signature = null;
+            m_signature = new List<BackupEntry>();
             m_content = new List<BackupEntry>();
             m_incrementals = new List<BackupEntry>();
         }

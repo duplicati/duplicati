@@ -82,6 +82,11 @@ namespace Duplicati.Main.RSync
         /// </summary>
         private List<string> m_deletedfolders;
 
+        /// <summary>
+        /// This is a list of unprocessed files, used in multipass runs
+        /// </summary>
+        private List<string> m_unproccesed;
+
         public RSyncDir(string sourcefolder, string basefolder)
         {
             if (!System.IO.Path.IsPathRooted(sourcefolder))
@@ -124,6 +129,67 @@ namespace Duplicati.Main.RSync
                 m_oldFolders.Add(s.Substring(sigfolder.Length), null);
         }
 
+        public void InitiateMultiPassDiff(bool full, Core.FilenameFilter filter)
+        {
+            if (full)
+            {
+                m_oldFolders = new Dictionary<string, string>();
+                m_oldSignatures = new Dictionary<string, string>();
+            }
+
+            m_newfiles = new Dictionary<string, string>();
+            m_modifiedFiles = new Dictionary<string, string>();
+            m_deletedfiles = new List<string>();
+            m_newfolders = new List<string>();
+            m_deletedfolders = new List<string>();
+
+            m_unproccesed = Core.Utility.EnumerateFiles(m_sourcefolder, filter);
+
+            foreach (string s in Core.Utility.EnumerateFolders(m_sourcefolder, filter))
+            {
+                string relpath = s.Substring(m_sourcefolder.Length);
+                if (!m_oldFolders.ContainsKey(relpath))
+                    m_newfolders.Add(relpath);
+                else
+                    m_oldFolders.Remove(relpath);
+            }
+
+            m_deletedfolders = new List<string>();
+            m_deletedfolders.AddRange(m_oldFolders.Keys);
+        }
+
+        public bool MakeMultiPassDiff(string zipfile, long volumesize)
+        {
+            if (m_unproccesed == null)
+                throw new Exception("Multi pass is not initialized");
+
+            Random r = new Random();
+            long totalSize = 0;
+
+            using (Compression.Compression c = new Duplicati.Compression.Compression(m_targetfolder, zipfile))
+            {
+                while (m_unproccesed.Count > 0 && totalSize < volumesize)
+                {
+                    int next = r.Next(0, m_unproccesed.Count);
+                    string s = m_unproccesed[next];
+                    m_unproccesed.RemoveAt(next);
+
+                    if (ProccessDiff(s))
+                        totalSize = AddFileToCompression(s, c);
+
+                }
+
+                if (m_unproccesed.Count == 0)
+                {
+                    m_deletedfiles.AddRange(m_oldSignatures.Keys);
+                    if (m_deletedfiles.Count > 0)
+                        System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FILES), m_deletedfiles.ToArray());
+                }
+            }
+
+            return m_unproccesed.Count == 0;
+        }
+
         public void CalculateDiffFilelist(bool full, Core.FilenameFilter filter)
         {
             if (full)
@@ -139,25 +205,7 @@ namespace Duplicati.Main.RSync
             m_deletedfolders = new List<string>();
 
             foreach (string s in Core.Utility.EnumerateFiles(m_sourcefolder, filter))
-            {
-                string relpath = s.Substring(m_sourcefolder.Length);
-                string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), relpath);
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
-
-                SharpRSync.Interface.GenerateSignature(s, target);
-
-                if (!m_oldSignatures.ContainsKey(relpath))
-                    m_newfiles.Add(s, target);
-                else
-                {
-                    if (!CompareFiles(m_oldSignatures[relpath], target))
-                        m_modifiedFiles.Add(s, target);
-                    else
-                        System.IO.File.Delete(target);
-                    m_oldSignatures.Remove(relpath);
-                }
-            }
+                ProccessDiff(s);
 
             m_deletedfiles.AddRange(m_oldSignatures.Keys);
 
@@ -174,6 +222,76 @@ namespace Duplicati.Main.RSync
             m_deletedfolders.AddRange(m_oldFolders.Keys);
 
         }
+
+        private bool ProccessDiff(string s)
+        {
+            string relpath = s.Substring(m_sourcefolder.Length);
+            string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), relpath);
+            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+
+            SharpRSync.Interface.GenerateSignature(s, target);
+
+            if (!m_oldSignatures.ContainsKey(relpath))
+            {
+                m_newfiles.Add(s, target);
+                return true;
+            }
+            else
+            {
+                if (!CompareFiles(m_oldSignatures[relpath], target))
+                {
+                    m_modifiedFiles.Add(s, target);
+                    m_oldSignatures.Remove(relpath);
+                    return true;
+                }
+                else
+                {
+                    System.IO.File.Delete(target);
+                    m_oldSignatures.Remove(relpath);
+                    return false;
+                }
+            }
+        }
+
+        private long AddFileToCompression(string s, Compression.Compression c)
+        {
+            long totalSize;
+            if (m_modifiedFiles.ContainsKey(s))
+            {
+                string relpath = s.Substring(m_sourcefolder.Length);
+                string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, DELTA_ROOT), relpath);
+                string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_basefolder, SIGNATURE_ROOT), relpath);
+                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+
+                SharpRSync.Interface.GenerateDelta(signature, s, target);
+
+                totalSize = c.AddFile(target);
+                System.IO.File.Delete(target);
+                m_modifiedFiles.Remove(s);
+            }
+            else
+            {
+                string relpath = s.Substring(m_sourcefolder.Length);
+                string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT), relpath);
+
+                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+
+                System.IO.File.Copy(s, target);
+                totalSize = c.AddFile(target);
+                try 
+                {
+                    System.IO.File.SetAttributes(target, FileAttributes.Normal);
+                    System.IO.File.Delete(target); 
+                }
+                catch { }
+                m_newfiles.Remove(s);
+            }
+            return totalSize;
+        }
+
 
         public void CreateDeltas(string zipfile, long volumesize)
         {
@@ -195,35 +313,7 @@ namespace Duplicati.Main.RSync
                     string s = keys[index];
                     keys.RemoveAt(index);
 
-                    if (m_modifiedFiles.ContainsKey(s))
-                    {
-
-                        string relpath = s.Substring(m_sourcefolder.Length);
-                        string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, DELTA_ROOT), relpath);
-                        string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_basefolder, SIGNATURE_ROOT), relpath);
-                        if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
-
-                        SharpRSync.Interface.GenerateDelta(signature, s, target);
-
-                        totalSize = c.AddFile(target);
-                        System.IO.File.Delete(target);
-                        m_modifiedFiles.Remove(s);
-                    }
-                    else
-                    {
-                        string relpath = s.Substring(m_sourcefolder.Length);
-                        string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT), relpath);
-
-                        if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
-
-                        System.IO.File.Copy(s, target);
-                        totalSize = c.AddFile(target);
-                        try { System.IO.File.Delete(target); }
-                        catch { }
-                        m_newfiles.Remove(s);
-                    }
+                    totalSize = AddFileToCompression(s, c);
                 }
 
             }
@@ -303,12 +393,12 @@ namespace Duplicati.Main.RSync
                         }
                         catch (Exception ex)
                         {
-                            //TODO: Log this
+                            Logging.Log.WriteMessage("Failed to delete file: " + target, Duplicati.Logging.LogMessageType.Warning, ex);
                         }
                     }
                     else
                     {
-                        //TODO: Log this
+                        Logging.Log.WriteMessage("Filed marked for deletion did not exist: " + target, Duplicati.Logging.LogMessageType.Warning);
                     }
                 }
 
@@ -330,7 +420,7 @@ namespace Duplicati.Main.RSync
                         }
                         catch (Exception ex)
                         {
-                            //TODO: Log this
+                            Logging.Log.WriteMessage("Failed to remove folder: " + s, Duplicati.Logging.LogMessageType.Warning, ex);
                         }
 
                 }
@@ -394,14 +484,9 @@ namespace Duplicati.Main.RSync
         /// <returns>True if they are binary equals, false otherwise</returns>
         private static bool CompareFiles(string file1, string file2)
         {
-            System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create();
-
             using (System.IO.FileStream fs1 = new System.IO.FileStream(file1, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
             using (System.IO.FileStream fs2 = new System.IO.FileStream(file2, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                if (fs1.Length != fs2.Length)
-                    return false;
-                else
-                    return Convert.ToBase64String(sha.ComputeHash(fs1)) == Convert.ToBase64String(sha.ComputeHash(fs2));
+                return Core.Utility.CompareStreams(fs1, fs2, true);
         }
 
         public static void MergeSignatures(string basefolder, string updatefolder)

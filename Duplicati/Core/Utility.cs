@@ -144,6 +144,12 @@ namespace Duplicati.Core
             return folders;
         }
 
+        /// <summary>
+        /// Appends the appropriate directory seperator to paths, depending on OS.
+        /// Does not append the seperator if the path already ends with it.
+        /// </summary>
+        /// <param name="path">The path to append to</param>
+        /// <returns>The path with the directory seperator appended</returns>
         public static string AppendDirSeperator(string path)
         {
             if (!path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
@@ -174,6 +180,81 @@ namespace Duplicati.Core
             while (a != 0 && count > 0);
 
             return index;
+        }
+
+        /// <summary>
+        /// Compares two streams to see if they are binary equals
+        /// </summary>
+        /// <param name="stream1">One stream</param>
+        /// <param name="stream2">Another stream</param>
+        /// <param name="checkLength">True if the length of the two streams should be compared</param>
+        /// <returns>True if they are equal, false otherwise</returns>
+        public static bool CompareStreams(System.IO.Stream stream1, System.IO.Stream stream2, bool checkLength)
+        {
+            if (checkLength)
+            {
+                try
+                {
+                    if (stream1.Length != stream2.Length)
+                        return false;
+                }
+                catch
+                {
+                    //We must read along, trying to determine if they are equals
+                }
+            }
+
+            int longSize = BitConverter.GetBytes((long)0).Length;
+            byte[] buf1 = new byte[longSize * 512];
+            byte[] buf2 = new byte[buf1.Length];
+
+            int a1, a2;
+            while ((a1 = ForceStreamRead(stream1, buf1, buf1.Length)) == (a2 = ForceStreamRead(stream2, buf2, buf2.Length)))
+            {
+                int ix = 0;
+                for (int i = 0; i < a1 / longSize; i++)
+                    if (BitConverter.ToUInt64(buf1, ix) != BitConverter.ToUInt64(buf2, ix))
+                        return false;
+                    else
+                        ix += longSize;
+
+                for (int i = 0; i < a1 % longSize; i++)
+                    if (buf1[ix] != buf2[ix])
+                        return false;
+                    else
+                        ix++;
+
+                if (a1 == 0)
+                    break;
+            }
+
+            return a1 == a2;
+        }
+
+        /// <summary>
+        /// Removes an entire folder, and its contents.
+        /// Equal to System.IO.Directory.Delete
+        /// </summary>
+        /// <param name="path">The folder to remove</param>
+        public static void DeleteFolder(string path)
+        {
+            if (!System.IO.Directory.Exists(path))
+                return;
+
+            foreach (string s in EnumerateFiles(path))
+            {
+                System.IO.File.SetAttributes(s, System.IO.FileAttributes.Normal);
+                System.IO.File.Delete(s);
+            }
+            
+            List<string> folders = Utility.EnumerateFolders(path);
+            folders.Sort();
+            folders.Reverse();
+
+            foreach (string s in folders)
+                System.IO.Directory.Delete(s);
+
+            System.IO.Directory.Delete(path);
         }
 
     }

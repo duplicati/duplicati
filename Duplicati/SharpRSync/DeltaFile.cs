@@ -107,8 +107,6 @@ namespace Duplicati.SharpRSync
                     //Find the length of the data to copy from the basefile
                     len = RDiffBinary.GetCopyLengthSize((RDiffBinary.CopyDeltaCommand)command);
                     tmp = new byte[len];
-                    if (tmp.Length != len)
-                        throw new Exception("Bad deal");
                     if (Utility.ForceStreamRead(m_inputStream, tmp, tmp.Length) != tmp.Length)
                         throw new Exception("Unexpected end of stream detected");
                     long length = RDiffBinary.DecodeLength(tmp);
