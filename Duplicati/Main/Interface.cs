@@ -85,6 +85,7 @@ namespace Duplicati.Main
                     long totalmax = options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(options["totalsize"], "mb") : long.MaxValue;
                     totalmax = Math.Max(volumesize, totalmax);
 
+                    //TODO: Just pass the dir list to the zip, don't stress the disk
                     using (new Logging.Timer("Creating folders for signature file"))
                         dir.CreateFolders();
 

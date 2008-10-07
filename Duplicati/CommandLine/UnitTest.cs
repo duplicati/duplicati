@@ -125,7 +125,7 @@ namespace Duplicati.CommandLine
                 string relpath = s.Substring(f1.Length);
                 string target = System.IO.Path.Combine(f2, relpath);
                 if (!files2.Contains(target))
-                    Console.WriteLine("Missing folder: " + relpath);
+                    Console.WriteLine("Missing file: " + relpath);
                 else
                 {
                     files2.Remove(target);

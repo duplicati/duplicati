@@ -174,6 +174,7 @@ namespace Duplicati.Main.RSync
                     string s = m_unproccesed[next];
                     m_unproccesed.RemoveAt(next);
 
+                    //TODO: Add the delta to zip, don't use temp file
                     if (ProccessDiff(s))
                         totalSize = AddFileToCompression(s, c);
 
@@ -456,9 +457,19 @@ namespace Duplicati.Main.RSync
                 //string source = System.IO.Path.Combine(sourcefolder, relpath)
 
                 string tempfile = System.IO.Path.GetTempFileName();
-                SharpRSync.Interface.PatchFile(target, s, tempfile);
-                System.IO.File.Delete(target);
-                System.IO.File.Move(tempfile, target);
+                try
+                {
+                    SharpRSync.Interface.PatchFile(target, s, tempfile);
+                    System.IO.File.Delete(target);
+                    System.IO.File.Move(tempfile, target);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteMessage("Failed to restore file " + relpath, Duplicati.Logging.LogMessageType.Error, ex);
+                    System.IO.File.Delete(target);
+                    System.IO.File.Delete(tempfile);
+                }
+
             }
         }
 

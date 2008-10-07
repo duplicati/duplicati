@@ -147,6 +147,7 @@ namespace Duplicati.SharpRSync
             long unmatched = 0;
             long matched = 0;
             long matched_offset = 0;
+            long next_match_key = 0;
 
             do
             {
@@ -167,6 +168,17 @@ namespace Duplicati.SharpRSync
                         buffer.GetHead(md4buffer, 0, md4buffer.Length);
                         tmp = md4buffer;
                     }
+
+                    //If there are two identical blocks, we try the next first as that produces the smallest delta file
+                    //NOTE: RDiff does not seem to have this optimization
+                    if (matched > 0 && strong[0].Key != next_match_key)
+                        foreach (KeyValuePair<int, byte[]> k in strong)
+                            if (k.Key == next_match_key)
+                            {
+                                strong.Remove(k);
+                                strong.Insert(0, k);
+                                break;
+                            }
 
                     foreach (KeyValuePair<int, byte[]> k in strong)
                     {
@@ -192,8 +204,18 @@ namespace Duplicati.SharpRSync
                                 buffer.DropTail(unmatched);
                                 unmatched = 0;
                             }
+                            
                             if (matched == 0)
                                 matched_offset = k.Key * m_checksum.BlockLength;
+                            else if (k.Key != next_match_key)
+                            {
+                                WriteCopy(matched_offset, matched, output);
+                                matched = 0;
+                                matched_offset = k.Key * m_checksum.BlockLength;
+                            }
+
+                            next_match_key = k.Key + 1;
+                            
 
                             matched += buffer.Count;
                             foundMatch = true;

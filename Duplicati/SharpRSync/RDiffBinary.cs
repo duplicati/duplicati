@@ -40,7 +40,7 @@ namespace Duplicati.SharpRSync
         /// <summary>
         /// The magic header value in an RDiff delta file
         /// </summary>
-        public static readonly byte[] DELTA_MAGIC = { (byte)'r', (byte)'s', 0x1, (byte)'6' };
+        public static readonly byte[] DELTA_MAGIC = { (byte)'r', (byte)'s', 0x2, (byte)'6' };
 
         /// <summary>
         /// Denotes the end of a delta stream.
