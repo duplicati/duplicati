@@ -27,6 +27,7 @@ namespace Duplicati.Compression
     {
         private bool m_writing;
         private ICSharpCode.SharpZipLib.Zip.ZipOutputStream m_zipfile;
+        private ICSharpCode.SharpZipLib.Zip.ZipEntryFactory m_zef;
         private System.IO.FileStream m_filestream;
         private string m_filename;
         private string m_basename;
@@ -38,6 +39,14 @@ namespace Duplicati.Compression
             m_filename = zipfile;
             m_filestream = System.IO.File.Create(zipfile);
             m_zipfile = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(m_filestream);
+            m_zef = new ICSharpCode.SharpZipLib.Zip.ZipEntryFactory();
+            m_zef.NameTransform = new ICSharpCode.SharpZipLib.Zip.ZipNameTransform(m_basename);
+        }
+
+        public void AddFolder(string folder)
+        {
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = m_zef.MakeDirectoryEntry(folder, true);
+            m_zipfile.PutNextEntry(ze);
         }
 
         public long AddFile(string file)
@@ -45,15 +54,33 @@ namespace Duplicati.Compression
             if (!m_writing)
                 throw new InvalidOperationException("Cannot write to a file while reading it");
 
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = new ICSharpCode.SharpZipLib.Zip.ZipEntry(file.Substring(m_basename.Length));
-            ze.DateTime = System.IO.File.GetLastWriteTime(file);
-
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = m_zef.MakeFileEntry(file, true);
             m_zipfile.PutNextEntry(ze);
 
             using(System.IO.FileStream fs = System.IO.File.OpenRead(file))
                 Core.Utility.CopyStream(fs, m_zipfile);
 
             return new System.IO.FileInfo(m_filename).Length;
+        }
+
+        public long Size 
+        {
+            get 
+            {
+                m_zipfile.Flush();
+                return new System.IO.FileInfo(m_filename).Length;
+            }
+        }
+
+        public System.IO.Stream AddStream(string filename)
+        {
+            if (!m_writing)
+                throw new InvalidOperationException("Cannot write to a file while reading it");
+
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = m_zef.MakeFileEntry(filename, true);
+            m_zipfile.PutNextEntry(ze);
+
+            return m_zipfile;
         }
 
         public Compression(string zipfile)
@@ -72,7 +99,7 @@ namespace Duplicati.Compression
         /// <param name="rootfolder">The root folder, used to calculate relative paths</param>
         public static void Compress(List<string> files, List<string> folders, string outputfile, string rootfolder)
         {
-            using (new Logging.Timer("Compression of " + files.Count.ToString() + " files and " + folders.Count.ToString() + " folders"))
+            using (new Logging.Timer("Compression of " + files.Count.ToString() + " files and " + (folders == null ? 0 : folders.Count).ToString() + " folders"))
             {
                 ICSharpCode.SharpZipLib.Zip.ZipEntryFactory zef = new ICSharpCode.SharpZipLib.Zip.ZipEntryFactory();
 
@@ -82,11 +109,12 @@ namespace Duplicati.Compression
                 {
                     zipfile.SetLevel(9);
 
-                    foreach (string f in folders)
-                    {
-                        ICSharpCode.SharpZipLib.Zip.ZipEntry e = zef.MakeDirectoryEntry(f.Substring(rootfolder.Length), false);
-                        zipfile.PutNextEntry(e);
-                    }
+                    if (folders != null)
+                        foreach (string f in folders)
+                        {
+                            ICSharpCode.SharpZipLib.Zip.ZipEntry e = zef.MakeDirectoryEntry(f.Substring(rootfolder.Length), false);
+                            zipfile.PutNextEntry(e);
+                        }
 
                     foreach (string f in files)
                     {

@@ -85,9 +85,9 @@ namespace Duplicati.Main
                     long totalmax = options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(options["totalsize"], "mb") : long.MaxValue;
                     totalmax = Math.Max(volumesize, totalmax);
 
-                    //TODO: Just pass the dir list to the zip, don't stress the disk
+                    List<string> folders;
                     using (new Logging.Timer("Creating folders for signature file"))
-                        dir.CreateFolders();
+                        folders = dir.CreateFolders();
 
                     int vol = 0;
                     long totalsize = 0;
@@ -105,9 +105,10 @@ namespace Duplicati.Main
                                     backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
                             }
 
+
                             using (Core.TempFile zf = new Duplicati.Core.TempFile())
                             {
-                                List<string> folders = Core.Utility.EnumerateFolders(dir.NewSignatures);
+                                //List<string> folders = Core.Utility.EnumerateFolders(dir.NewSignatures);
                                 List<string> files = Core.Utility.EnumerateFiles(dir.NewSignatures);
                                 if (System.IO.File.Exists(dir.DeletedFolders))
                                     files.Add(dir.DeletedFolders);
@@ -124,6 +125,8 @@ namespace Duplicati.Main
                                 if (System.IO.File.Exists(dir.DeletedFiles))
                                     System.IO.File.Delete(dir.DeletedFiles);
                             }
+
+                            folders = null;
 
                             Core.Utility.DeleteFolder(dir.NewSignatures);
                             Core.Utility.DeleteFolder(dir.NewDeltas);

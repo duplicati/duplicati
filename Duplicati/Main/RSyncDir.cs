@@ -257,19 +257,16 @@ namespace Duplicati.Main.RSync
 
         private long AddFileToCompression(string s, Compression.Compression c)
         {
-            long totalSize;
             if (m_modifiedFiles.ContainsKey(s))
             {
                 string relpath = s.Substring(m_sourcefolder.Length);
                 string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, DELTA_ROOT), relpath);
                 string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_basefolder, SIGNATURE_ROOT), relpath);
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
 
-                SharpRSync.Interface.GenerateDelta(signature, s, target);
+                using (System.IO.FileStream fs1 = System.IO.File.OpenRead(signature))
+                using (System.IO.FileStream fs2 = System.IO.File.OpenRead(s))
+                    SharpRSync.Interface.GenerateDelta(fs1, fs2, c.AddStream(target));
 
-                totalSize = c.AddFile(target);
-                System.IO.File.Delete(target);
                 m_modifiedFiles.Remove(s);
             }
             else
@@ -277,11 +274,9 @@ namespace Duplicati.Main.RSync
                 string relpath = s.Substring(m_sourcefolder.Length);
                 string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT), relpath);
 
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
+                    Core.Utility.CopyStream(fs, c.AddStream(target));
 
-                System.IO.File.Copy(s, target);
-                totalSize = c.AddFile(target);
                 try 
                 {
                     System.IO.File.SetAttributes(target, FileAttributes.Normal);
@@ -290,7 +285,7 @@ namespace Duplicati.Main.RSync
                 catch { }
                 m_newfiles.Remove(s);
             }
-            return totalSize;
+            return c.Size;
         }
 
 
@@ -323,14 +318,11 @@ namespace Duplicati.Main.RSync
 
         public bool HasChanges { get { return m_newfiles.Count > 0 || m_modifiedFiles.Count > 0; } }
 
-        public void CreateFolders()
+        public List<string> CreateFolders()
         {
-            foreach (string s in Core.Utility.EnumerateFolders(m_sourcefolder))
-            {
-                string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), s.Substring(m_sourcefolder.Length));
-                if (!System.IO.Directory.Exists(target))
-                    System.IO.Directory.CreateDirectory(target);
-            }
+            List<string> folders = Core.Utility.EnumerateFolders(m_sourcefolder);
+            for(int i = 0; i < folders.Count; i++)
+                folders[i] = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), folders[i].Substring(m_sourcefolder.Length));
 
             if (m_deletedfolders.Count > 0)
                 System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS), m_deletedfolders.ToArray());
@@ -341,6 +333,7 @@ namespace Duplicati.Main.RSync
             m_deletedfiles = new List<string>();
             m_deletedfolders = new List<string>();
 
+            return folders;
         }
 
         public void CreateDeltas()
