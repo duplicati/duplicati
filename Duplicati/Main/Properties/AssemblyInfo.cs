@@ -24,11 +24,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Duplicti.Core")]
+[assembly: AssemblyTitle("Duplicati.Main")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
-[assembly: AssemblyProduct("Duplicti.Core")]
+[assembly: AssemblyProduct("Duplicati.Main")]
 [assembly: AssemblyCopyright("Copyright © HexaD 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

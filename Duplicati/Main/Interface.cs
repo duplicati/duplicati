@@ -97,39 +97,39 @@ namespace Duplicati.Main
                     {
                         using (new Logging.Timer("Multipass " + (vol + 1).ToString()))
                         {
-                            using (Core.TempFile zf = new Duplicati.Core.TempFile())
+                            using (Core.TempFile sigzip = new Duplicati.Core.TempFile())
                             {
-                                done = dir.MakeMultiPassDiff(zf, volumesize);
-                                totalsize += new System.IO.FileInfo(zf).Length;
-                                using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
-                                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
-                            }
+                                using (Compression.Compression signature = new Duplicati.Compression.Compression(dir.m_targetfolder, sigzip))
+                                {
+                                    foreach(string s in folders)
+                                        signature.AddFolder(s);
 
+                                    folders = null;
 
-                            using (Core.TempFile zf = new Duplicati.Core.TempFile())
-                            {
-                                //List<string> folders = Core.Utility.EnumerateFolders(dir.NewSignatures);
-                                List<string> files = Core.Utility.EnumerateFiles(dir.NewSignatures);
-                                if (System.IO.File.Exists(dir.DeletedFolders))
-                                    files.Add(dir.DeletedFolders);
-                                if (System.IO.File.Exists(dir.DeletedFiles))
-                                    files.Add(dir.DeletedFiles);
+                                    if (System.IO.File.Exists(dir.DeletedFolders))
+                                    {
+                                        signature.AddFile(dir.DeletedFolders);
+                                        System.IO.File.Delete(dir.DeletedFolders);
+                                    }
+                                    if (System.IO.File.Exists(dir.DeletedFiles))
+                                    {
+                                        signature.AddFile(dir.DeletedFiles);
+                                        System.IO.File.Delete(dir.DeletedFiles);
+                                    }
 
-                                Compression.Compression.Compress(files, folders, zf, dir.m_targetfolder);
-                                totalsize += new System.IO.FileInfo(zf).Length;
+                                    using (Core.TempFile zf = new Duplicati.Core.TempFile())
+                                    {
+                                        done = dir.MakeMultiPassDiff(signature, zf, volumesize);
+                                        totalsize += new System.IO.FileInfo(zf).Length;
+                                        using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
+                                            backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
+                                    }
+                                }
+
+                                totalsize += new System.IO.FileInfo(sigzip).Length;
                                 using (new Logging.Timer("Writing remote signatures"))
-                                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", zf);
-
-                                if (System.IO.File.Exists(dir.DeletedFolders))
-                                    System.IO.File.Delete(dir.DeletedFolders);
-                                if (System.IO.File.Exists(dir.DeletedFiles))
-                                    System.IO.File.Delete(dir.DeletedFiles);
+                                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", sigzip);
                             }
-
-                            folders = null;
-
-                            Core.Utility.DeleteFolder(dir.NewSignatures);
-                            Core.Utility.DeleteFolder(dir.NewDeltas);
 
                             using (Core.TempFile mf = new Duplicati.Core.TempFile())
                             using (new Logging.Timer("Writing manifest"))

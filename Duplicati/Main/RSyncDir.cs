@@ -158,7 +158,7 @@ namespace Duplicati.Main.RSync
             m_deletedfolders.AddRange(m_oldFolders.Keys);
         }
 
-        public bool MakeMultiPassDiff(string zipfile, long volumesize)
+        public bool MakeMultiPassDiff(Compression.Compression sigfile, string zipfile, long volumesize)
         {
             if (m_unproccesed == null)
                 throw new Exception("Multi pass is not initialized");
@@ -175,7 +175,7 @@ namespace Duplicati.Main.RSync
                     m_unproccesed.RemoveAt(next);
 
                     //TODO: Add the delta to zip, don't use temp file
-                    if (ProccessDiff(s))
+                    if (ProccessDiff(s, sigfile))
                         totalSize = AddFileToCompression(s, c);
 
                 }
@@ -223,6 +223,48 @@ namespace Duplicati.Main.RSync
             m_deletedfolders.AddRange(m_oldFolders.Keys);
 
         }
+
+        private bool ProccessDiff(string s, Compression.Compression sigfile)
+        {
+            string relpath = s.Substring(m_sourcefolder.Length);
+            string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), relpath);
+
+            using (System.IO.MemoryStream ms = new MemoryStream())
+            {
+                using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
+                    SharpRSync.Interface.GenerateSignature(fs, ms);
+
+                if (!m_oldSignatures.ContainsKey(relpath))
+                {
+                    Core.Utility.CopyStream(ms, sigfile.AddStream(target), true);
+                    m_newfiles.Add(s, null);
+                    return true;
+                }
+                else
+                {
+                    ms.Position = 0;
+                    bool equals;
+
+                    using (System.IO.FileStream fs = System.IO.File.OpenRead(m_oldSignatures[relpath]))
+                        equals = Core.Utility.CompareStreams(fs, ms, true);
+
+                    if (!equals)
+                    {
+                        Core.Utility.CopyStream(ms, sigfile.AddStream(target), true);
+                        m_modifiedFiles.Add(s, null);
+                        m_oldSignatures.Remove(relpath);
+                        return true;
+                    }
+                    else
+                    {
+                        m_oldSignatures.Remove(relpath);
+                        return false;
+                    }
+                }
+            }
+        }
+
+
 
         private bool ProccessDiff(string s)
         {
