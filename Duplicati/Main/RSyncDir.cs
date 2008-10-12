@@ -174,10 +174,8 @@ namespace Duplicati.Main.RSync
                     string s = m_unproccesed[next];
                     m_unproccesed.RemoveAt(next);
 
-                    //TODO: Add the delta to zip, don't use temp file
                     if (ProccessDiff(s, sigfile))
                         totalSize = AddFileToCompression(s, c);
-
                 }
 
                 if (m_unproccesed.Count == 0)
