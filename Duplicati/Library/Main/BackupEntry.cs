@@ -38,23 +38,32 @@ namespace Duplicati.Library.Main
         private EntryType m_type;
         private List<BackupEntry> m_signature;
         private bool m_isFull;
+        private bool m_isShortName;
+        private string m_encryptionMode;
+        private string m_compressionMode;
         private List<BackupEntry> m_content;
 
         public string Filename { get { return m_fileentry.Name; } }
         public Backend.FileEntry FileEntry { get { return m_fileentry; } }
         public DateTime Time { get { return m_time; } }
         public bool IsFull { get { return m_isFull; } }
+        public bool IsShortName { get { return m_isShortName; } }
+        public string EncryptionMode { get { return m_encryptionMode; } }
+        public string CompressionMode { get { return m_compressionMode; } }
         public List<BackupEntry> Incrementals { get { return m_incrementals; } }
         public List<BackupEntry> ContentVolumes { get { return m_content; } }
         public List<BackupEntry> SignatureFile { get { return m_signature; } }
         public EntryType Type { get { return m_type; } }
 
-        public BackupEntry(Backend.FileEntry fe, DateTime time, EntryType type, bool isFull)
+        public BackupEntry(Backend.FileEntry fe, DateTime time, EntryType type, bool isFull, bool isShortName, string compressionMode, string encryptionMode)
         {
             m_fileentry = fe;
             m_time = time;
             m_type = type;
             m_isFull = isFull;
+            m_isShortName = isShortName;
+            m_compressionMode = compressionMode;
+            m_encryptionMode = encryptionMode;
             m_signature = new List<BackupEntry>();
             m_content = new List<BackupEntry>();
             m_incrementals = new List<BackupEntry>();

@@ -35,8 +35,6 @@ namespace Duplicati.Library.Main
 
         public FilenameStrategy(Dictionary<string, string> options)
         {
-            //--short-filenames
-            //--time-separator
             m_useShortFilenames = options.ContainsKey("short-filenames");
             if (options.ContainsKey("time-separator"))
                 m_timeSeperator = options["time-separator"];
@@ -51,17 +49,22 @@ namespace Duplicati.Library.Main
 
         public string GenerateFilename(string prefix, BackupEntry.EntryType type, bool full, DateTime time)
         {
+            return GenerateFilename(prefix, type, full, m_useShortFilenames, time);
+        }
+
+        public string GenerateFilename(string prefix, BackupEntry.EntryType type, bool full, bool shortName, DateTime time)
+        {
             string t;
             if (type == BackupEntry.EntryType.Manifest)
-                t = m_useShortFilenames ? "M" : "manifest";
+                t = shortName ? "M" : "manifest";
             else if (type == BackupEntry.EntryType.Content)
-                t = m_useShortFilenames ? "C" : "content";
+                t = shortName ? "C" : "content";
             else if (type == BackupEntry.EntryType.Signature)
-                t = m_useShortFilenames ? "S" : "signature";
+                t = shortName ? "S" : "signature";
             else
                 throw new Exception("Invalid entry type specified");
 
-            if (!m_useShortFilenames)
+            if (!shortName)
             {
                 string datetime = time.ToString().Replace(":", m_timeSeperator);
                 return prefix + "-" + (full ? "full" : "inc") + "-" + t + "." + datetime;
@@ -74,9 +77,10 @@ namespace Duplicati.Library.Main
 
         public BackupEntry DecodeFilename(string prefix, Duplicati.Library.Backend.FileEntry fe)
         {
-            string shortregexp = @"(?<prefix>%filename%)\-(?<type>(C|S|M)(?<inc>(F|I))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<extension>.+)";
+            string shortregexp = @"(?<prefix>%filename%)\-(?<type>(C|S|M))(?<inc>(F|I))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<extension>.+)";
             string regexp = @"(?<prefix>%filename%)\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{2}\-\d{2}\-\d{4}.\d{2}\%timesep%\d{2}\%timesep%\d{2})\.(?<extension>.+)";
             regexp = regexp.Replace("%filename%", prefix).Replace("%timesep%", m_timeSeperator);
+            shortregexp = shortregexp.Replace("%filename%", prefix);
 
             Match m = Regex.Match(fe.Name, regexp);
             if (!m.Success)
@@ -95,13 +99,28 @@ namespace Duplicati.Library.Main
                 return null;
 
             bool isFull = m.Groups["inc"].Value == "full" || m.Groups["inc"].Value == "F";
+            bool isShortName = m.Groups["inc"].Value.Length == 1;
             DateTime time;
-            if (m.Groups["inc"].Value == "F") //Short format
+            if (isShortName)
                 time = new DateTime(long.Parse(m.Groups["time"].Value, System.Globalization.NumberStyles.HexNumber) * TimeSpan.TicksPerSecond);
             else
                 time = DateTime.Parse(m.Groups["time"].Value.Replace(m_timeSeperator, ":"));
 
-            return new BackupEntry(fe, time, type, isFull);
+            string extension = m.Groups["extension"].Value;
+            if (extension.StartsWith("vol"))
+                extension = extension.Substring(extension.IndexOf(".") + 1);
+
+            string compression = extension;
+            string encryption = null;
+
+            int dotIndex = compression.IndexOf(".");
+            if (dotIndex > 0)
+            {
+                encryption = compression.Substring(dotIndex + 1);
+                compression = compression.Substring(0, dotIndex);
+            }
+
+            return new BackupEntry(fe, time, type, isFull, isShortName, compression, encryption);
         }
 
     }

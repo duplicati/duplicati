@@ -31,7 +31,7 @@ namespace Duplicati.Library.Core
         private string m_path;
 
         public TempFile()
-            : this(System.IO.Path.Combine(TempFolder.SystemTempPath, System.IO.Path.GetRandomFileName()))
+            : this(System.IO.Path.Combine(TempFolder.SystemTempPath, Guid.NewGuid().ToString()))
         {
         }
 

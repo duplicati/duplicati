@@ -42,6 +42,14 @@ namespace Duplicati.CommandLine
         {
             Log.CurrentLog = new StreamLog("unittest.log");
             Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
+
+            string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
+            if (System.IO.Directory.Exists(tempdir))
+                System.IO.Directory.Delete(tempdir, true);
+
+            System.IO.Directory.CreateDirectory(tempdir);
+
+            Duplicati.Library.Core.TempFolder.SystemTempPath = tempdir;
             
             using(new Timer("Total unittest"))
             using (TempFolder tf = new TempFolder())
@@ -49,7 +57,8 @@ namespace Duplicati.CommandLine
                 Dictionary<string, string> options = new Dictionary<string, string>();
                 options["time-separator"] = "'";
                 options["passphrase"] = "secret password!";
-                options["short-filenames"] = "";
+                //options["short-filenames"] = "";
+                options["no-encryption"] = "";
 
                 Console.WriteLine("Backing up the full copy: " + folders[0]);
                 using (new Timer("Full backup of " + folders[0]))
@@ -83,6 +92,7 @@ namespace Duplicati.CommandLine
                         Dictionary<string, string> opts = new Dictionary<string, string>();
                         opts["restore-time"] = entries[i].Time.ToString();
                         opts["time-separator"] = "'";
+                        opts["passphrase"] = "secret password!";
                         using (new Timer("Restore of " + folders[i]))
                             Duplicati.Library.Main.Interface.Restore("file://" + tf, ttf, opts);
 

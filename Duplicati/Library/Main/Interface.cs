@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main
                 Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(options);
                 bool full = options.ContainsKey("full");
 
-                Backend.IBackendInterface backend = new Encryption.EncryptedBackendWrapper(target, options);
+                Backend.IBackendInterface backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(Backend.BackendLoader.GetBackend(target, options), options);
                 List<BackupEntry> prev = ParseFileList(target, options);
 
                 if (prev.Count == 0)
@@ -163,7 +163,7 @@ namespace Duplicati.Library.Main
             {
                 string specificfile = options.ContainsKey("file-to-restore") ? options["file-to-restore"] : "";
                 string specifictime = options.ContainsKey("restore-time") ? options["restore-time"] : "now";
-                Backend.IBackendInterface backend = new Encryption.EncryptedBackendWrapper(source, options);
+                Backend.IBackendInterface backend = Backend.BackendLoader.GetBackend(source, options);
 
                 if (string.IsNullOrEmpty(specifictime))
                     specifictime = "now";
@@ -186,11 +186,26 @@ namespace Duplicati.Library.Main
 
                     }
 
+                if (bestFit.SignatureFile.Count == 0 || bestFit.ContentVolumes.Count == 0)
+                    throw new Exception("Unable to parse filenames for the desired volumes");
+
+                if (bestFit.EncryptionMode != null)
+                {
+                    //TODO: Use mode to determine the actual instance to use
+                    if (bestFit.EncryptionMode != "aes")
+                        throw new Exception("Unexpected encryption mode");
+
+                    backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, options);
+                }
+
                 using (Core.TempFolder basefolder = new Duplicati.Library.Core.TempFolder())
                 {
                     foreach(BackupEntry be in bestFit.SignatureFile)
                         using (Core.TempFile basezip = new Duplicati.Library.Core.TempFile())
                         {
+                            if (be.CompressionMode != "zip")
+                                throw new Exception("Unexpected compression mode");
+
                             using (new Logging.Timer("Get " + be.Filename))
                                 backend.Get(be.Filename, basezip);
                             Compression.Compression.Decompress(basezip, basefolder);
@@ -199,6 +214,9 @@ namespace Duplicati.Library.Main
                     foreach (BackupEntry vol in bestFit.ContentVolumes)
                         using (Core.TempFile basezip = new Duplicati.Library.Core.TempFile())
                         {
+                            if (vol.CompressionMode != "zip")
+                                throw new Exception("Unexpected compression mode");
+
                             using (new Logging.Timer("Get " + vol.Filename))
                                 backend.Get(vol.Filename, basezip);
                             Compression.Compression.Decompress(basezip, basefolder);
@@ -213,11 +231,17 @@ namespace Duplicati.Library.Main
 
                     foreach (BackupEntry p in additions)
                     {
+                        if (p.SignatureFile.Count == 0 || p.ContentVolumes.Count == 0)
+                            throw new Exception("Unable to parse filenames for the volume: " + p.Filename );
+
                         using (Core.TempFolder t = new Duplicati.Library.Core.TempFolder())
                         {
                             foreach (BackupEntry be in p.SignatureFile) 
                                 using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
                                 {
+                                    if (be.CompressionMode != "zip")
+                                        throw new Exception("Unexpected compression mode");
+
                                     using (new Logging.Timer("Get " + be.Filename))
                                         backend.Get(be.Filename, patchzip);
                                     Compression.Compression.Decompress(patchzip, t);
@@ -226,6 +250,9 @@ namespace Duplicati.Library.Main
                             foreach (BackupEntry vol in p.ContentVolumes)
                                 using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
                                 {
+                                    if (vol.CompressionMode != "zip")
+                                        throw new Exception("Unexpected compression mode");
+
                                     using (new Logging.Timer("Get " + vol.Filename))
                                         backend.Get(vol.Filename, patchzip);
                                     Compression.Compression.Decompress(patchzip, t);
@@ -278,14 +305,20 @@ namespace Duplicati.Library.Main
 
                     if (be.Type == BackupEntry.EntryType.Content)
                     {
-                        string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.Time) + ".manifest";
+                        string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
+                        if (be.EncryptionMode != null)
+                            content += "." + be.EncryptionMode;
+                        
                         if (!contents.ContainsKey(content))
                             contents[content] = new List<BackupEntry>();
                         contents[content].Add(be);
                     }
                     else if (be.Type == BackupEntry.EntryType.Signature)
                     {
-                        string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.Time) + ".manifest";
+                        string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
+                        if (be.EncryptionMode != null)
+                            content += "." + be.EncryptionMode;
+
                         if (!signatures.ContainsKey(content))
                             signatures[content] = new List<BackupEntry>();
                         signatures[content].Add(be);
