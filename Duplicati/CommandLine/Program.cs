@@ -39,15 +39,113 @@ namespace Duplicati.CommandLine
             cargs.Add(Core.FilenameFilter.EncodeAsFilter(Core.FilenameFilter.ParseCommandLine(cargs, true)));
             Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
 
+            //TODO: Print usage window
+            if (cargs.Count < 2)
+                throw new Exception("Not enough parameters");
+
             string source = cargs[0];
             string target = cargs[1];
 
+            if (source.Trim().ToLower() == "restore" && cargs.Count == 3)
+            {
+                source = target;
+                target = cargs[2];
+                options["restore"] = null;
+            }
+
+            if (!options.ContainsKey("passphrase"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
+                    options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
+
             if (source.Trim().ToLower() == "list")
                 Console.WriteLine(string.Join("\r\n", Duplicati.Main.Interface.List(target, options)));
-            else if (source.IndexOf("://") > 0)
+            else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
+            {
+                if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
+                {
+                    string pwd = ReadPassphraseFromConsole(false);
+                    if (pwd == null)
+                        return;
+                    else
+                        options["passphrase"] = pwd;
+                }
+
                 Duplicati.Main.Interface.Restore(source, target, options);
+            }
             else
+            {
+                if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
+                {
+                    string pwd = ReadPassphraseFromConsole(true);
+                    if (pwd == null)
+                        return;
+                    else
+                        options["passphrase"] = pwd;
+                }
+
                 Duplicati.Main.Interface.Backup(source, target, options);
+            }
+        }
+
+        private static string ReadPassphraseFromConsole(bool confirm)
+        {
+            Console.Write("\nEnter passphrase: ");
+            StringBuilder password = new StringBuilder();
+
+            while (true)
+            {
+                ConsoleKeyInfo k = Console.ReadKey(true);
+                if (k.Key == ConsoleKey.Enter)
+                    break;
+
+                if (k.Key == ConsoleKey.Escape)
+                    return null;
+
+                password.Append(k.KeyChar);
+
+                //Unix/Linux user know that there is no feedback, Win user gets scared :)
+                if (System.Environment.OSVersion.Platform != PlatformID.Unix)
+                    Console.Write("*");
+            }
+
+            Console.WriteLine();
+
+            if (confirm)
+            {
+                Console.Write("\nConfirm passphrase: ");
+                StringBuilder password2 = new StringBuilder();
+
+                while (true)
+                {
+                    ConsoleKeyInfo k = Console.ReadKey(true);
+                    if (k.Key == ConsoleKey.Enter)
+                        break;
+
+                    if (k.Key == ConsoleKey.Escape)
+                        return null;
+
+                    password2.Append(k.KeyChar);
+
+                    //Unix/Linux user know that there is no feedback, Win user gets scared :)
+                    if (System.Environment.OSVersion.Platform != PlatformID.Unix)
+                        Console.Write("*");
+                }
+                Console.WriteLine();
+
+                if (password.ToString() != password2.ToString())
+                {
+                    Console.WriteLine("The passwords do not match");
+                    return null;
+                }
+            }
+
+            if (password.ToString().Length == 0)
+            {
+                Console.WriteLine("Empty passwords are not allowed");
+                return null;
+            }
+
+            return password.ToString();
         }
     }
 }

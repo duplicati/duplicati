@@ -34,12 +34,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AESEncryption.cs" />
+    <Compile Include="EncryptedBackendWrapper.cs" />
     <Compile Include="EncryptionBase.cs" />
     <Compile Include="IEncryption.cs" />
     <Compile Include="GPGEncryption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Backend\BackendInterface\Duplicati.Backend.BackendInterface.csproj">
+      <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
+      <Name>Duplicati.Backend.BackendInterface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Backend\BackendLoader\Duplicati.Backend.BackendLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Backend.BackendLoader</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Core\Duplicati.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Core</Name>

@@ -31,7 +31,7 @@ namespace Duplicati.Core
         private string m_path;
 
         public TempFile()
-            : this(System.IO.Path.GetTempFileName())
+            : this(System.IO.Path.Combine(TempFolder.SystemTempPath, System.IO.Path.GetRandomFileName()))
         {
         }
 
@@ -39,7 +39,8 @@ namespace Duplicati.Core
         {
             m_path = path;
             if (!System.IO.File.Exists(m_path))
-                System.IO.File.Create(m_path);
+                using (System.IO.File.Create(m_path))
+                { /*Dispose it immediately*/ } 
         }
 
         public static implicit operator string(TempFile path)

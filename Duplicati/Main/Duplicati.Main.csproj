@@ -41,13 +41,13 @@
     <Compile Include="RSyncDir.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Backend\BackendInterface\BackendInterface.csproj">
+    <ProjectReference Include="..\Backend\BackendInterface\Duplicati.Backend.BackendInterface.csproj">
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
-      <Name>BackendInterface</Name>
+      <Name>Duplicati.Backend.BackendInterface</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Backend\BackendLoader\BackendLoader.csproj">
+    <ProjectReference Include="..\Backend\BackendLoader\Duplicati.Backend.BackendLoader.csproj">
       <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
-      <Name>BackendLoader</Name>
+      <Name>Duplicati.Backend.BackendLoader</Name>
     </ProjectReference>
     <ProjectReference Include="..\Compression\Duplicati.Compression.csproj">
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
@@ -56,6 +56,10 @@
     <ProjectReference Include="..\Core\Duplicati.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Encryption\Duplicati.Encryption.csproj">
+      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
+      <Name>Duplicati.Encryption</Name>
     </ProjectReference>
     <ProjectReference Include="..\Logging\Duplicati.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>

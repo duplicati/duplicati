@@ -48,8 +48,8 @@ namespace Duplicati.CommandLine
                     if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("\"") && value.EndsWith("\""))
                         value = value.Substring(1, value.Length - 2);
 
-                    //This is a bit ugly, but we want to preserve the order of "include" and "exclude"
-                    options.Add(key, value);
+                    //Last argument overwrites the current
+                    options[key] = value;
 
                     args.RemoveAt(i);
                     i--;

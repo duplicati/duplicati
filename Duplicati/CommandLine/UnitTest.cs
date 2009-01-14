@@ -17,6 +17,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+
+#if DEBUG
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -43,6 +46,8 @@ namespace Duplicati.CommandLine
             {
                 Dictionary<string, string> options = new Dictionary<string, string>();
                 options["time-separator"] = "'";
+                options["passphrase"] = "secret password!";
+
                 Console.WriteLine("Backing up the full copy: " + folders[0]);
                 using (new Logging.Timer("Full backup of " + folders[0]))
                     Duplicati.Main.Interface.Backup(folders[0], "file://" + tf, options);
@@ -166,3 +171,5 @@ namespace Duplicati.CommandLine
         }
     }
 }
+
+#endif

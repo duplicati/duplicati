@@ -4,11 +4,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</ProjectGuid>
+    <ProjectGuid>{FC9B7611-836F-4127-8B44-A7C31F506807}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Backend</RootNamespace>
-    <AssemblyName>Duplicati.Backend.BackendLoader</AssemblyName>
+    <AssemblyName>Duplicati.Backend.File</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,13 +33,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BackendLoader.cs" />
+    <Compile Include="FileBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BackendInterface\BackendInterface.csproj">
+    <ProjectReference Include="..\..\Core\Duplicati.Core.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BackendInterface\Duplicati.Backend.BackendInterface.csproj">
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
-      <Name>BackendInterface</Name>
+      <Name>Duplicati.Backend.BackendInterface</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -5,11 +5,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Main", "Duplicati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Duplicati\CommandLine\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackendInterface", "Duplicati\Backend\BackendInterface\BackendInterface.csproj", "{994F3D0A-E91E-4EEE-80EE-064485E09909}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Backend.BackendInterface", "Duplicati\Backend\BackendInterface\Duplicati.Backend.BackendInterface.csproj", "{994F3D0A-E91E-4EEE-80EE-064485E09909}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackendLoader", "Duplicati\Backend\BackendLoader\BackendLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Backend.BackendLoader", "Duplicati\Backend\BackendLoader\Duplicati.Backend.BackendLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "File", "Duplicati\Backend\File\File.csproj", "{FC9B7611-836F-4127-8B44-A7C31F506807}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Backend.File", "Duplicati\Backend\File\Duplicati.Backend.File.csproj", "{FC9B7611-836F-4127-8B44-A7C31F506807}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Core", "Duplicati\Core\Duplicati.Core.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
@@ -18,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.SharpRSync", "Duplicati\SharpRSync\Duplicati.SharpRSync.csproj", "{47FE73E1-0832-44F7-96B9-2580273206C3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Logging", "Duplicati\Logging\Duplicati.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Encryption", "Duplicati\Encryption\Duplicati.Encryption.csproj", "{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}"
 EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
@@ -65,6 +67,10 @@ Global
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

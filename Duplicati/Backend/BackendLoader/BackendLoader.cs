@@ -100,6 +100,9 @@ namespace Duplicati.Backend
 
             string scheme = new Uri(url).Scheme.ToLower();
 
+            if (m_backends == null)
+                LoadBackends();
+
             if (m_backends.ContainsKey(scheme))
                 return (IBackendInterface)Activator.CreateInstance(m_backends[scheme], url, options);
             else

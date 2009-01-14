@@ -39,9 +39,9 @@
     <Compile Include="UnitTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Backend\File\File.csproj">
+    <ProjectReference Include="..\Backend\File\Duplicati.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
-      <Name>File</Name>
+      <Name>Duplicati.Backend.File</Name>
     </ProjectReference>
     <ProjectReference Include="..\Compression\Duplicati.Compression.csproj">
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>

@@ -33,6 +33,8 @@ namespace Duplicati.Main
         private bool m_useShortFilenames;
         private string m_timeSeperator;
 
+        private const long TICKS_PR_SECOND = 10000000;
+
         public FilenameStrategy(Dictionary<string, string> options)
         {
             //--short-filenames
@@ -68,34 +70,38 @@ namespace Duplicati.Main
             }
             else
             {
-                //TODO: Finish this
-                byte[] tmp = new byte[4 + 2 + 2 + 2 + 2 + 2];
-                return prefix + "-" + t + (full ? "F" : "I") + "";
+                return prefix + "-" + t + (full ? "F" : "I") + (time.Ticks / TICKS_PR_SECOND).ToString("X");
             }
         }
 
         public BackupEntry DecodeFilename(string prefix, Duplicati.Backend.FileEntry fe)
         {
-            //TODO: Implement short filenames
+            string shortregexp = @"(?<prefix>%filename%)\-(?<type>(C|S|M)(?<inc>(F|I))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<extension>.+)";
             string regexp = @"(?<prefix>%filename%)\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{2}\-\d{2}\-\d{4}.\d{2}\%timesep%\d{2}\%timesep%\d{2})\.(?<extension>.+)";
             regexp = regexp.Replace("%filename%", prefix).Replace("%timesep%", m_timeSeperator);
 
             Match m = Regex.Match(fe.Name, regexp);
             if (!m.Success)
+                m = Regex.Match(fe.Name, shortregexp);
+            if (!m.Success)
                 return null;
 
             BackupEntry.EntryType type;
-            if (m.Groups["type"].Value == "manifest")
+            if (m.Groups["type"].Value == "manifest" || m.Groups["type"].Value == "M")
                 type = BackupEntry.EntryType.Manifest;
-            else if (m.Groups["type"].Value == "content")
+            else if (m.Groups["type"].Value == "content" || m.Groups["type"].Value == "C")
                 type = BackupEntry.EntryType.Content;
-            else if (m.Groups["type"].Value == "signature")
+            else if (m.Groups["type"].Value == "signature" || m.Groups["type"].Value == "S")
                 type = BackupEntry.EntryType.Signature;
             else
                 return null;
 
-            bool isFull = m.Groups["inc"].Value == "full";
-            DateTime time = DateTime.Parse(m.Groups["time"].Value.Replace(m_timeSeperator, ":"));
+            bool isFull = m.Groups["inc"].Value == "full" || m.Groups["inc"].Value == "F";
+            DateTime time;
+            if (m.Groups["inc"].Value == "F") //Short format
+                time = new DateTime(long.Parse(m.Groups["time"].Value, System.Globalization.NumberStyles.HexNumber) * TICKS_PR_SECOND);
+            else
+                time = DateTime.Parse(m.Groups["time"].Value.Replace(m_timeSeperator, ":"));
 
             return new BackupEntry(fe, time, type, isFull);
         }

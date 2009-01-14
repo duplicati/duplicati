@@ -41,15 +41,18 @@ namespace Duplicati.Core
         /// <returns>A parsed ordered set of filters</returns>
         public static List<KeyValuePair<bool, string>> ParseCommandLine(List<string> commandline, bool remove)
         {
+            //TODO: Support the options --include-filelist, --include-globbin-filelist, --include-regexp-filelist
+            //and the exclude variants (all work on the lines in a file)
+
             List<KeyValuePair<bool, string>> lst = new List<KeyValuePair<bool, string>>();
-            Regex includeOrExclude = new Regex(@"(?<prefix>(\-\-include\=)|(\-\-exclude\=)|(\-\-regexp\-include\=)|(\-\-regexp\-exclude\=))(?<content>.+)", RegexOptions.IgnoreCase);
+            Regex includeOrExclude = new Regex(@"(?<prefix>(\-\-include\=)|(\-\-exclude\=)|(\-\-include\-regexp\=)|(\-\-exclude\-regexp\=))(?<content>.+)", RegexOptions.IgnoreCase);
             for (int i = 0; i < commandline.Count; i++ )
             {
                 string s = commandline[i];
                 Match m = includeOrExclude.Match(s.ToLower());
                 if (m.Success)
                 {
-                    bool include = m.Groups["prefix"].Value.ToLower() == "--include=" || m.Groups["prefix"].Value.ToLower() == "--regexp-include=";
+                    bool include = m.Groups["prefix"].Value.ToLower() == "--include=" || m.Groups["prefix"].Value.ToLower() == "--include-regexp=";
                     string cmd = m.Groups["content"].Value;
                     if (!m.Groups["prefix"].Value.ToLower().StartsWith("--regexp"))
                         cmd = ConvertGlobbingToRegExp(cmd);

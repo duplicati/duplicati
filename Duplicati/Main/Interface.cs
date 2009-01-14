@@ -27,13 +27,15 @@ namespace Duplicati.Main
     {
         public static void Backup(string source, string target, Dictionary<string, string> options)
         {
+            SetupCommonOptions(options);
+
             using (new Logging.Timer("Backup from " + source + " to " + target))
             {
                 FilenameStrategy fns = new FilenameStrategy(options);
                 Core.FilenameFilter filter = new Duplicati.Core.FilenameFilter(options);
                 bool full = options.ContainsKey("full");
 
-                Backend.IBackendInterface backend = new Backend.BackendLoader(target, options);
+                Backend.IBackendInterface backend = new Encryption.EncryptedBackendWrapper(target, options);
                 List<BackupEntry> prev = ParseFileList(target, options);
 
                 if (prev.Count == 0)
@@ -101,8 +103,9 @@ namespace Duplicati.Main
                             {
                                 using (Compression.Compression signature = new Duplicati.Compression.Compression(dir.m_targetfolder, sigzip))
                                 {
-                                    foreach(string s in folders)
-                                        signature.AddFolder(s);
+                                    if (folders != null)
+                                        foreach(string s in folders)
+                                            signature.AddFolder(s);
 
                                     folders = null;
 
@@ -154,11 +157,13 @@ namespace Duplicati.Main
 
         public static void Restore(string source, string target, Dictionary<string, string> options)
         {
+            SetupCommonOptions(options);
+
             using (new Logging.Timer("Restore from " + source + " to " + target))
             {
                 string specificfile = options.ContainsKey("file-to-restore") ? options["file-to-restore"] : "";
                 string specifictime = options.ContainsKey("restore-time") ? options["restore-time"] : "now";
-                Backend.IBackendInterface backend = new Backend.BackendLoader(source, options);
+                Backend.IBackendInterface backend = new Encryption.EncryptedBackendWrapper(source, options);
 
                 if (string.IsNullOrEmpty(specifictime))
                     specifictime = "now";
@@ -239,6 +244,8 @@ namespace Duplicati.Main
 
         public static string[] List(string source, Dictionary<string, string> options)
         {
+            SetupCommonOptions(options);
+
             List<string> res = new List<string>();
             Duplicati.Backend.IBackendInterface i = new Duplicati.Backend.BackendLoader(source, options);
             foreach (Duplicati.Backend.FileEntry fe in i.List())
@@ -249,6 +256,8 @@ namespace Duplicati.Main
 
         public static List<BackupEntry> ParseFileList(string source, Dictionary<string, string> options)
         {
+            SetupCommonOptions(options);
+
             using (new Logging.Timer("Getting and sorting filelist from " + source))
             {
                 FilenameStrategy fns = new FilenameStrategy(options);
@@ -325,5 +334,11 @@ namespace Duplicati.Main
             }
         }
 
+
+        private static void SetupCommonOptions(Dictionary<string, string> options)
+        {
+            if (options.ContainsKey("tempdir"))
+                Core.TempFolder.SystemTempPath = options["tempdir"];
+        }
     }
 }

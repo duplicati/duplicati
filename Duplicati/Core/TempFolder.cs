@@ -31,7 +31,7 @@ namespace Duplicati.Core
         private string m_folder;
 
         public TempFolder()
-            : this(System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName()))
+            : this(System.IO.Path.Combine(SystemTempPath, System.IO.Path.GetRandomFileName()))
         {
         }
 
@@ -67,5 +67,22 @@ namespace Duplicati.Core
         }
 
         #endregion
+
+        private static string m_system_temp_dir = null;
+
+        /// <summary>
+        /// Gets or sets the global temporary path used to store temporary files.
+        /// Set to null to use the system default.
+        /// </summary>
+        public static string SystemTempPath
+        {
+            get { return m_system_temp_dir == null ? System.IO.Path.GetTempPath() : m_system_temp_dir; }
+            set 
+            {
+                if (!System.IO.Directory.Exists(value))
+                    throw new Exception("Temporary folder does not exist: " + value);
+                m_system_temp_dir = value; 
+            }
+        }
     }
 }
