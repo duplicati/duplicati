@@ -49,6 +49,7 @@ namespace Duplicati.CommandLine
                 Dictionary<string, string> options = new Dictionary<string, string>();
                 options["time-separator"] = "'";
                 options["passphrase"] = "secret password!";
+                options["short-filenames"] = "";
 
                 Console.WriteLine("Backing up the full copy: " + folders[0]);
                 using (new Timer("Full backup of " + folders[0]))

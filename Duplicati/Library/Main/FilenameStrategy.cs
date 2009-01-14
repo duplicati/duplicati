@@ -33,8 +33,6 @@ namespace Duplicati.Library.Main
         private bool m_useShortFilenames;
         private string m_timeSeperator;
 
-        private const long TICKS_PR_SECOND = 10000000;
-
         public FilenameStrategy(Dictionary<string, string> options)
         {
             //--short-filenames
@@ -70,7 +68,7 @@ namespace Duplicati.Library.Main
             }
             else
             {
-                return prefix + "-" + t + (full ? "F" : "I") + (time.Ticks / TICKS_PR_SECOND).ToString("X");
+                return prefix + "-" + t + (full ? "F" : "I") + (time.Ticks / TimeSpan.TicksPerSecond).ToString("X");
             }
         }
 
@@ -99,7 +97,7 @@ namespace Duplicati.Library.Main
             bool isFull = m.Groups["inc"].Value == "full" || m.Groups["inc"].Value == "F";
             DateTime time;
             if (m.Groups["inc"].Value == "F") //Short format
-                time = new DateTime(long.Parse(m.Groups["time"].Value, System.Globalization.NumberStyles.HexNumber) * TICKS_PR_SECOND);
+                time = new DateTime(long.Parse(m.Groups["time"].Value, System.Globalization.NumberStyles.HexNumber) * TimeSpan.TicksPerSecond);
             else
                 time = DateTime.Parse(m.Groups["time"].Value.Replace(m_timeSeperator, ":"));
 
