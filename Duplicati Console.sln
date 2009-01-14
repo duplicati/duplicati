@@ -1,25 +1,29 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Main", "Duplicati\Main\Duplicati.Main.csproj", "{10D2D1B7-C664-41D8-9B3A-00040C3D421B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Main", "Duplicati\Library\Main\Duplicati.Library.Main.csproj", "{10D2D1B7-C664-41D8-9B3A-00040C3D421B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Duplicati\CommandLine\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Backend.BackendInterface", "Duplicati\Backend\BackendInterface\Duplicati.Backend.BackendInterface.csproj", "{994F3D0A-E91E-4EEE-80EE-064485E09909}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.BackendInterface", "Duplicati\Library\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj", "{994F3D0A-E91E-4EEE-80EE-064485E09909}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Backend.BackendLoader", "Duplicati\Backend\BackendLoader\Duplicati.Backend.BackendLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.BackendLoader", "Duplicati\Library\Backend\BackendLoader\Duplicati.Library.Backend.BackendLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Backend.File", "Duplicati\Backend\File\Duplicati.Backend.File.csproj", "{FC9B7611-836F-4127-8B44-A7C31F506807}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.File", "Duplicati\Library\Backend\File\Duplicati.Library.Backend.File.csproj", "{FC9B7611-836F-4127-8B44-A7C31F506807}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Core", "Duplicati\Core\Duplicati.Core.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Core", "Duplicati\Library\Core\Duplicati.Library.Core.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Compression", "Duplicati\Compression\Duplicati.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Compression", "Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.SharpRSync", "Duplicati\SharpRSync\Duplicati.SharpRSync.csproj", "{47FE73E1-0832-44F7-96B9-2580273206C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SharpRSync", "Duplicati\Library\SharpRSync\Duplicati.Library.SharpRSync.csproj", "{47FE73E1-0832-44F7-96B9-2580273206C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Logging", "Duplicati\Logging\Duplicati.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Encryption", "Duplicati\Encryption\Duplicati.Encryption.csproj", "{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.FTP", "Duplicati\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj", "{F61679A9-E5DE-468A-B5A4-05F92D0143D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SSH", "Duplicati\Library\Backend\SSH\Duplicati.Library.Backend.SSH.csproj", "{6BA21DCB-1701-4936-B177-3B6D4DE3474E}"
 EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
@@ -71,6 +75,14 @@ Global
 		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F61679A9-E5DE-468A-B5A4-05F92D0143D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F61679A9-E5DE-468A-B5A4-05F92D0143D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F61679A9-E5DE-468A-B5A4-05F92D0143D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F61679A9-E5DE-468A-B5A4-05F92D0143D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BA21DCB-1701-4936-B177-3B6D4DE3474E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BA21DCB-1701-4936-B177-3B6D4DE3474E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BA21DCB-1701-4936-B177-3B6D4DE3474E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BA21DCB-1701-4936-B177-3B6D4DE3474E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

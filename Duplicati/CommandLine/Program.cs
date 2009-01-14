@@ -36,7 +36,7 @@ namespace Duplicati.CommandLine
                 return;
             }
 #endif
-            cargs.Add(Core.FilenameFilter.EncodeAsFilter(Core.FilenameFilter.ParseCommandLine(cargs, true)));
+            cargs.Add(Duplicati.Library.Core.FilenameFilter.EncodeAsFilter(Duplicati.Library.Core.FilenameFilter.ParseCommandLine(cargs, true)));
             Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
 
             //TODO: Print usage window
@@ -58,7 +58,7 @@ namespace Duplicati.CommandLine
                     options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
 
             if (source.Trim().ToLower() == "list")
-                Console.WriteLine(string.Join("\r\n", Duplicati.Main.Interface.List(target, options)));
+                Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
             else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
             {
                 if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
@@ -70,7 +70,7 @@ namespace Duplicati.CommandLine
                         options["passphrase"] = pwd;
                 }
 
-                Duplicati.Main.Interface.Restore(source, target, options);
+                Duplicati.Library.Main.Interface.Restore(source, target, options);
             }
             else
             {
@@ -83,7 +83,7 @@ namespace Duplicati.CommandLine
                         options["passphrase"] = pwd;
                 }
 
-                Duplicati.Main.Interface.Backup(source, target, options);
+                Duplicati.Library.Main.Interface.Backup(source, target, options);
             }
         }
 

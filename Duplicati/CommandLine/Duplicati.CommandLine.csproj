@@ -39,29 +39,37 @@
     <Compile Include="UnitTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Backend\File\Duplicati.Backend.File.csproj">
+    <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
-      <Name>Duplicati.Backend.File</Name>
+      <Name>Duplicati.Library.Backend.File</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Compression\Duplicati.Compression.csproj">
+    <ProjectReference Include="..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
+      <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
+      <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\SSH\Duplicati.Library.Backend.SSH.csproj">
+      <Project>{6BA21DCB-1701-4936-B177-3B6D4DE3474E}</Project>
+      <Name>Duplicati.Library.Backend.SSH</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
-      <Name>Duplicati.Compression</Name>
+      <Name>Duplicati.Library.Compression</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Core\Duplicati.Core.csproj">
+    <ProjectReference Include="..\Library\Core\Duplicati.Library.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Core</Name>
+      <Name>Duplicati.Library.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Logging\Duplicati.Logging.csproj">
+    <ProjectReference Include="..\Library\Logging\Duplicati.Library.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
-      <Name>Duplicati.Logging</Name>
+      <Name>Duplicati.Library.Logging</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Main\Duplicati.Main.csproj">
+    <ProjectReference Include="..\Library\Main\Duplicati.Library.Main.csproj">
       <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
-      <Name>Duplicati.Main</Name>
+      <Name>Duplicati.Library.Main</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SharpRSync\Duplicati.SharpRSync.csproj">
+    <ProjectReference Include="..\Library\SharpRSync\Duplicati.Library.SharpRSync.csproj">
       <Project>{47FE73E1-0832-44F7-96B9-2580273206C3}</Project>
-      <Name>Duplicati.SharpRSync</Name>
+      <Name>Duplicati.Library.SharpRSync</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

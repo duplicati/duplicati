@@ -23,6 +23,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Logging;
+using Duplicati.Library.Core;
 
 namespace Duplicati.CommandLine
 {
@@ -38,62 +40,62 @@ namespace Duplicati.CommandLine
         /// <param name="folders">The folders to backup. Folder at index 0 is the base, all others are incrementals</param>
         public static void RunTest(string[] folders)
         {
-            Logging.Log.CurrentLog = new Logging.StreamLog("unittest.log");
-            Logging.Log.LogLevel = Duplicati.Logging.LogMessageType.Profiling;
+            Log.CurrentLog = new StreamLog("unittest.log");
+            Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
             
-            using(new Logging.Timer("Total unittest"))
-            using (Core.TempFolder tf = new Duplicati.Core.TempFolder())
+            using(new Timer("Total unittest"))
+            using (TempFolder tf = new TempFolder())
             {
                 Dictionary<string, string> options = new Dictionary<string, string>();
                 options["time-separator"] = "'";
                 options["passphrase"] = "secret password!";
 
                 Console.WriteLine("Backing up the full copy: " + folders[0]);
-                using (new Logging.Timer("Full backup of " + folders[0]))
-                    Duplicati.Main.Interface.Backup(folders[0], "file://" + tf, options);
+                using (new Timer("Full backup of " + folders[0]))
+                    Duplicati.Library.Main.Interface.Backup(folders[0], "file://" + tf, options);
 
                 for (int i = 1; i < folders.Length; i++)
                 {
                     //If the backups are too close, we can't pick the right one :(
                     System.Threading.Thread.Sleep(1000 * 5);
                     Console.WriteLine("Backing up the incremental copy: " + folders[i]);
-                    using (new Logging.Timer("Incremental backup of " + folders[i]))
-                        Duplicati.Main.Interface.Backup(folders[i], "file://" + tf, options);
+                    using (new Timer("Incremental backup of " + folders[i]))
+                        Duplicati.Library.Main.Interface.Backup(folders[i], "file://" + tf, options);
                 }
 
-                List<Main.BackupEntry> entries = Duplicati.Main.Interface.ParseFileList("file://" + tf, options);
+                List<Duplicati.Library.Main.BackupEntry> entries = Duplicati.Library.Main.Interface.ParseFileList("file://" + tf, options);
 
                 if (entries.Count != 1 || entries[0].Incrementals.Count != folders.Length - 1)
                     throw new Exception("Filename parsing problem, or corrupt storage");
 
-                List<Main.BackupEntry> t = new List<Duplicati.Main.BackupEntry>();
+                List<Duplicati.Library.Main.BackupEntry> t = new List<Duplicati.Library.Main.BackupEntry>();
                 t.Add(entries[0]);
                 t.AddRange(entries[0].Incrementals);
                 entries = t;
 
                 for (int i = 0; i < entries.Count; i++)
                 {
-                    using (Core.TempFolder ttf = new Duplicati.Core.TempFolder())
+                    using (TempFolder ttf = new TempFolder())
                     {
                         Console.WriteLine("Restoring the copy: " + folders[i]);
 
                         Dictionary<string, string> opts = new Dictionary<string, string>();
                         opts["restore-time"] = entries[i].Time.ToString();
                         opts["time-separator"] = "'";
-                        using (new Logging.Timer("Restore of " + folders[i]))
-                            Duplicati.Main.Interface.Restore("file://" + tf, ttf, opts);
+                        using (new Timer("Restore of " + folders[i]))
+                            Duplicati.Library.Main.Interface.Restore("file://" + tf, ttf, opts);
 
                         Console.WriteLine("Verifying the copy: " + folders[i]);
 
-                        using (new Logging.Timer("Verification of " + folders[i]))
+                        using (new Timer("Verification of " + folders[i]))
                             VerifyDir(System.IO.Path.GetFullPath(folders[i]), ttf);
                     }
                 }
 
             }
 
-            (Logging.Log.CurrentLog as Logging.StreamLog).Dispose();
-            Logging.Log.CurrentLog = null;
+            (Log.CurrentLog as StreamLog).Dispose();
+            Log.CurrentLog = null;
         }
 
         /// <summary>
@@ -104,11 +106,11 @@ namespace Duplicati.CommandLine
         /// <param name="f2">Another folder</param>
         private static void VerifyDir(string f1, string f2)
         {
-            f1 = Core.Utility.AppendDirSeperator(f1);
-            f2 = Core.Utility.AppendDirSeperator(f2);
+            f1 = Utility.AppendDirSeperator(f1);
+            f2 = Utility.AppendDirSeperator(f2);
 
-            List<string> folders1 = Core.Utility.EnumerateFolders(f1);
-            List<string> folders2 = Core.Utility.EnumerateFolders(f2);
+            List<string> folders1 = Utility.EnumerateFolders(f1);
+            List<string> folders2 = Utility.EnumerateFolders(f2);
 
             foreach (string s in folders1)
             {
@@ -123,8 +125,8 @@ namespace Duplicati.CommandLine
             foreach(string s in folders2)
                 Console.WriteLine("Extra folder: " + s.Substring(f2.Length));
 
-            List<string> files1 = Core.Utility.EnumerateFiles(f1);
-            List<string> files2 = Core.Utility.EnumerateFiles(f2);
+            List<string> files1 = Utility.EnumerateFiles(f1);
+            List<string> files2 = Utility.EnumerateFiles(f2);
             foreach (string s in files1)
             {
                 string relpath = s.Substring(f1.Length);
