@@ -182,7 +182,9 @@ namespace Duplicati.Library.Main.RSync
                 {
                     m_deletedfiles.AddRange(m_oldSignatures.Keys);
                     if (m_deletedfiles.Count > 0)
-                        System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FILES), m_deletedfiles.ToArray());
+                        using (System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FILES)))
+                            foreach (string s in m_deletedfiles)
+                                sw.WriteLine(s);
                 }
             }
 
