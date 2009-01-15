@@ -257,5 +257,17 @@ namespace Duplicati.Library.Core
             System.IO.Directory.Delete(path);
         }
 
+        /// <summary>
+        /// Calculates the SHA256 hash of a given file, and returns the results as an base64 encoded string
+        /// </summary>
+        /// <param name="path">The path to the file to calculate the hash for</param>
+        /// <returns>The base64 encoded SHA256 hash</returns>
+        public static string CalculateHash(string path)
+        {
+            System.Security.Cryptography.HashAlgorithm sha = System.Security.Cryptography.HashAlgorithm.Create("SHA256");
+            using (System.IO.FileStream fs = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                return Convert.ToBase64String(sha.ComputeHash(fs));
+        }
+
     }
 }

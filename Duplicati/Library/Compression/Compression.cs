@@ -168,6 +168,7 @@ namespace Duplicati.Library.Compression
                             Core.Utility.CopyStream(zip.GetInputStream(ze), fs);
                     }
                 }
+                zip.Close();
             }
         }
 

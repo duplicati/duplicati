@@ -182,46 +182,27 @@ namespace Duplicati.Library.Main.RSync
                 {
                     m_deletedfiles.AddRange(m_oldSignatures.Keys);
                     if (m_deletedfiles.Count > 0)
-                        using (System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FILES)))
-                            foreach (string s in m_deletedfiles)
-                                sw.WriteLine(s);
+                    {
+                        System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FILES));
+                        foreach (string s in m_deletedfiles)
+                            sw.WriteLine(s);
+
+                        sw.Flush();
+                    }
+
+                    if (m_deletedfolders.Count > 0)
+                    {
+                        System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FOLDERS));
+                        foreach (string s in m_deletedfolders)
+                            sw.WriteLine(s);
+
+                        sw.Flush();
+                    }
+
                 }
             }
 
             return m_unproccesed.Count == 0;
-        }
-
-        public void CalculateDiffFilelist(bool full, Core.FilenameFilter filter)
-        {
-            if (full)
-            {
-                m_oldFolders = new Dictionary<string, string>();
-                m_oldSignatures = new Dictionary<string, string>();
-            }
-
-            m_newfiles = new Dictionary<string, string>();
-            m_modifiedFiles = new Dictionary<string, string>();
-            m_deletedfiles = new List<string>();
-            m_newfolders = new List<string>();
-            m_deletedfolders = new List<string>();
-
-            foreach (string s in Core.Utility.EnumerateFiles(m_sourcefolder, filter))
-                ProccessDiff(s);
-
-            m_deletedfiles.AddRange(m_oldSignatures.Keys);
-
-            foreach (string s in Core.Utility.EnumerateFolders(m_sourcefolder, filter))
-            {
-                string relpath = s.Substring(m_sourcefolder.Length);
-                if (!m_oldFolders.ContainsKey(relpath))
-                    m_newfolders.Add(relpath);
-                else
-                    m_oldFolders.Remove(relpath);
-            }
-
-            m_deletedfolders = new List<string>();
-            m_deletedfolders.AddRange(m_oldFolders.Keys);
-
         }
 
         private bool ProccessDiff(string s, Compression.Compression sigfile)
@@ -265,38 +246,6 @@ namespace Duplicati.Library.Main.RSync
         }
 
 
-
-        private bool ProccessDiff(string s)
-        {
-            string relpath = s.Substring(m_sourcefolder.Length);
-            string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), relpath);
-            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
-
-            SharpRSync.Interface.GenerateSignature(s, target);
-
-            if (!m_oldSignatures.ContainsKey(relpath))
-            {
-                m_newfiles.Add(s, target);
-                return true;
-            }
-            else
-            {
-                if (!CompareFiles(m_oldSignatures[relpath], target))
-                {
-                    m_modifiedFiles.Add(s, target);
-                    m_oldSignatures.Remove(relpath);
-                    return true;
-                }
-                else
-                {
-                    System.IO.File.Delete(target);
-                    m_oldSignatures.Remove(relpath);
-                    return false;
-                }
-            }
-        }
-
         private long AddFileToCompression(string s, Compression.Compression c)
         {
             if (m_modifiedFiles.ContainsKey(s))
@@ -330,78 +279,15 @@ namespace Duplicati.Library.Main.RSync
             return c.Size;
         }
 
-
-        public void CreateDeltas(string zipfile, long volumesize)
-        {
-            long totalSize = 0;
-            Random r = new Random();
-            string[] tmp = new string[m_modifiedFiles.Keys.Count];
-            m_modifiedFiles.Keys.CopyTo(tmp, 0);
-            List<string> keys = new List<string>(tmp);
-            tmp = new string[m_newfiles.Keys.Count];
-            m_newfiles.Keys.CopyTo(tmp, 0);
-            keys.AddRange(tmp);
-
-            using (Compression.Compression c = new Duplicati.Library.Compression.Compression(m_targetfolder, zipfile))
-            {
-
-                while (keys.Count > 0 && totalSize < volumesize)
-                {
-                    int index = r.Next(0, keys.Count);
-                    string s = keys[index];
-                    keys.RemoveAt(index);
-
-                    totalSize = AddFileToCompression(s, c);
-                }
-
-            }
-
-        }
-
         public bool HasChanges { get { return m_newfiles.Count > 0 || m_modifiedFiles.Count > 0; } }
 
-        public List<string> CreateFolders()
+        public List<string> EnumerateSourceFolders()
         {
             List<string> folders = Core.Utility.EnumerateFolders(m_sourcefolder);
-            for(int i = 0; i < folders.Count; i++)
+            for (int i = 0; i < folders.Count; i++)
                 folders[i] = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), folders[i].Substring(m_sourcefolder.Length));
-
-            if (m_deletedfolders.Count > 0)
-                System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS), m_deletedfolders.ToArray());
-            if (m_deletedfiles.Count > 0)
-                System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FILES), m_deletedfiles.ToArray());
-
-            m_newfolders = new List<string>();
-            m_deletedfiles = new List<string>();
-            m_deletedfolders = new List<string>();
-
+            
             return folders;
-        }
-
-        public void CreateDeltas()
-        {
-            foreach (string s in m_modifiedFiles.Keys)
-            {
-                string relpath = s.Substring(m_sourcefolder.Length);
-                string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, DELTA_ROOT), relpath);
-                string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), relpath);
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
-
-                SharpRSync.Interface.GenerateDelta(signature, s, target);
-            }
-
-            foreach (string s in m_newfiles.Keys)
-            {
-                string relpath = s.Substring(m_sourcefolder.Length);
-                string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT), relpath);
-
-                System.IO.File.Copy(s, target);
-            }
-
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS), m_deletedfolders.ToArray());
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(m_targetfolder, DELETED_FILES), m_deletedfiles.ToArray());
-
         }
 
         public void Restore(string destination, List<string> patchfolders)
@@ -412,7 +298,6 @@ namespace Duplicati.Library.Main.RSync
                 foreach (string s in patchfolders)
                     Patch(destination, s);
         }
-
 
         public void Patch(string destination, string patch)
         {
@@ -592,12 +477,5 @@ namespace Duplicati.Library.Main.RSync
             System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES), delfiles.ToArray());
 
         }
-
-        public string NewSignatures { get { return System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT); } }
-        public string NewDeltas { get { return System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT); } }
-
-        public string DeletedFolders { get { return System.IO.Path.Combine(m_targetfolder, DELETED_FOLDERS); } }
-        public string DeletedFiles { get { return System.IO.Path.Combine(m_targetfolder, DELETED_FILES); } }
-
     }
 }
