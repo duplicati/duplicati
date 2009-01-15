@@ -75,7 +75,7 @@ namespace Duplicati.Library.Backend
         #endregion
 
 
-        private Match MatchLine(string line)
+        private static Match MatchLine(string line)
         {
             Match m = null;
             foreach (Regex s in PARSEFORMATS)
@@ -85,7 +85,7 @@ namespace Duplicati.Library.Backend
             return null;
         }
 
-        private FileEntry ParseLine(string line)
+        public static FileEntry ParseLine(string line)
         {
             Match m = MatchLine(line);
             if (m == null)

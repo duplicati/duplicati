@@ -93,7 +93,11 @@ namespace Duplicati.CommandLine
 
                 Console.WriteLine("Backing up the full copy: " + folders[0]);
                 using (new Timer("Full backup of " + folders[0]))
+                {
+                    options["full"] = "";
                     Duplicati.Library.Main.Interface.Backup(folders[0], target, options);
+                    options.Remove("full");
+                }
 
                 for (int i = 1; i < folders.Length; i++)
                 {

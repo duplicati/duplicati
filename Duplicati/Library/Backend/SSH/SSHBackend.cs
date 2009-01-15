@@ -20,14 +20,21 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
     public class SSH : IBackendInterface
     {
-
+        private string m_server;
         private string m_path;
+        private string m_username;
+        private string m_password;
         Dictionary<string, string> m_options;
+
+        private string m_sftp;
+        private string m_scp;
+        private string m_ssh_options;
 
         public SSH()
         {
@@ -36,7 +43,55 @@ namespace Duplicati.Library.Backend
         public SSH(string url, Dictionary<string, string> options)
         {
             m_options = options;
-            //m_path = ExtractUrlParts(url, m_options);
+            Uri u = new Uri(url);
+            if (!string.IsNullOrEmpty(u.UserInfo))
+            {
+                if (u.UserInfo.IndexOf(":") >= 0)
+                {
+                    m_username = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
+                    m_password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
+                }
+                else
+                {
+                    m_username = u.UserInfo;
+                    if (options.ContainsKey("ftp_password"))
+                        m_password = options["ftp_password"];
+                }
+            }
+
+            m_path = u.AbsolutePath.Substring(1);
+            if (!m_path.EndsWith("/"))
+                m_path += "/";
+
+            m_server = u.Host;
+
+            if (options.ContainsKey("sftp-command"))
+                m_sftp = options["sftp-command"];
+            else
+            {
+                if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    m_sftp = "sftp";
+                else
+                    m_sftp = "psftp.exe";
+            }
+
+            if (options.ContainsKey("scp-command"))
+                m_scp = options["scp-command"];
+            else
+            {
+                if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    m_scp = "scp";
+                else
+                    m_scp = "pscp.exe";
+            }
+
+            if (options.ContainsKey("ssh-options"))
+                m_ssh_options = options["ssh-options"];
+            else
+                m_ssh_options = "-C";
+
+            if (!u.IsDefaultPort)
+                m_ssh_options += " -P " + u.Port;
         }
 
         #region IBackendInterface Members
@@ -53,24 +108,156 @@ namespace Duplicati.Library.Backend
 
         public List<FileEntry> List()
         {
-            throw new Exception("The method or operation is not implemented.");
+            List<FileEntry> files = new List<FileEntry>();
+
+            using (System.Diagnostics.Process p = GetConnection(true, null))
+            {
+                p.StandardInput.WriteLine("ls");
+                p.StandardInput.WriteLine("exit");
+
+                string s;
+                while ((s = p.StandardOutput.ReadLine()) != null)
+                {
+                    FileEntry fe = FTP.ParseLine(s);
+                    if (fe != null && fe.Name != "." && fe.Name != "..")
+                        files.Add(fe);
+                }
+
+                if (!p.WaitForExit(5000))
+                {
+                    p.Close();
+                    throw new Exception("Timeout while closing session");
+                }
+                
+                return files;
+            }
+
         }
+
 
         public void Put(string remotename, string filename)
         {
-            throw new Exception("The method or operation is not implemented.");
+            using (System.Diagnostics.Process p = GetConnection(false, "\"" + filename + "\" \"" + BuildEscapedPath(remotename) + "\""))
+            {
+                if (!p.WaitForExit(5 * 60 * 1000))
+                {
+                    p.Close();
+                    throw new Exception("Timeout while uploading file");
+                }
+
+                if (p.StandardError.Peek() != -1)
+                    throw new Exception(p.StandardError.ReadToEnd());
+            }
         }
 
         public void Get(string remotename, string filename)
         {
-            throw new Exception("The method or operation is not implemented.");
+            using (System.Diagnostics.Process p = GetConnection(false, "\"" + BuildEscapedPath(remotename) + "\" \"" + filename + "\""))
+            {
+                if (!p.WaitForExit(5 * 60 * 1000))
+                {
+                    p.Close();
+                    throw new Exception("Timeout while uploading file");
+                }
+
+                if (p.StandardError.Peek() != -1)
+                    throw new Exception(p.StandardError.ReadToEnd());
+            }
         }
 
         public void Delete(string remotename)
         {
-            throw new Exception("The method or operation is not implemented.");
+            using (System.Diagnostics.Process p = GetConnection(true, null))
+            {
+                p.StandardInput.WriteLine("rm \"" + remotename + "\"");
+                p.StandardInput.WriteLine("exit");
+                if (!p.WaitForExit(5000))
+                {
+                    p.Close();
+                    throw new Exception("Timeout while closing session");
+                }
+            }
         }
 
         #endregion
+
+        private string BuildEscapedPath(string remotename)
+        {
+            string path = m_path + remotename;
+
+            path = m_server + ":" + path;
+            if (!string.IsNullOrEmpty(m_username))
+                path = m_username + "@" + path;
+
+            return path;
+        }
+
+        private System.Diagnostics.Process GetConnection(bool sftp, string args)
+        {
+            System.Diagnostics.Process p = new System.Diagnostics.Process();
+            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.StartInfo.RedirectStandardInput = true;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            p.StartInfo.FileName = sftp ? m_sftp : m_scp;
+            p.StartInfo.Arguments = m_ssh_options;
+
+            if (sftp)
+                p.StartInfo.Arguments += " " + m_server;
+
+            if (args != null)
+                p.StartInfo.Arguments += " " + args;
+
+            p.Start();
+
+            //TODO: This is not the most robust way of dealing with
+            // the psftp and pscp commands. It is likely not very portable either
+
+            System.Text.StringBuilder prompts = new StringBuilder();
+
+            char[] tmp = new char[1000];
+            int t = p.StandardOutput.Read(tmp, 0, tmp.Length);
+            string greeting = new string(tmp, 0, t);
+            prompts.Append(greeting);
+
+            if (!string.IsNullOrEmpty(m_username) && greeting.Trim() == "login as:")
+            {
+                p.StandardInput.WriteLine(m_username);
+                t = p.StandardOutput.Read(tmp, 0, tmp.Length);
+                greeting = new string(tmp, 0, t);
+                prompts.Append(greeting);
+            }
+
+            if (!string.IsNullOrEmpty(m_password) && greeting.Trim().ToLower().EndsWith(" password:"))
+            {
+                p.StandardInput.WriteLine(m_password);
+
+                t = p.StandardOutput.Read(tmp, 0, tmp.Length);
+                greeting = new string(tmp, 0, t);
+                prompts.Append(greeting);
+            }
+
+            if (sftp && !greeting.Trim().ToLower().StartsWith("remote working directory"))
+            {
+                //Sometime the message comes a little delayed later
+                do
+                {
+                    t = p.StandardOutput.Read(tmp, 0, tmp.Length);
+                    greeting = new string(tmp, 0, t);
+                    prompts.Append(greeting);
+                } while (greeting.Length > 0 && greeting.Length < 4);
+
+                if (!greeting.Trim().ToLower().StartsWith("remote working directory"))
+                    throw new Exception("Failed to login, prompts were: " + prompts.ToString());
+            }
+
+            if (sftp)
+                if (!string.IsNullOrEmpty(m_path))
+                    p.StandardInput.WriteLine("cd \"" + m_path + "\"");
+
+            return p;
+        }
     }
 }

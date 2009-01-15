@@ -41,6 +41,10 @@
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
       <Name>Duplicati.Library.Backend.BackendInterface</Name>
     </ProjectReference>
+    <ProjectReference Include="..\FTP\Duplicati.Library.Backend.FTP.csproj">
+      <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
+      <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
