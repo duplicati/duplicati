@@ -31,7 +31,7 @@ namespace Duplicati.GUI
 {
     public partial class ServiceSetup : Form
     {
-        private IDataFetcher m_connection;
+        private IDataFetcherCached m_connection;
         public ServiceSetup()
         {
             InitializeComponent();

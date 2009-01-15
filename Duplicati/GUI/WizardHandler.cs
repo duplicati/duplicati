@@ -63,7 +63,7 @@ namespace Duplicati.GUI
         /// <summary>
         /// The connection on which changes are made
         /// </summary>
-        IDataFetcher m_connection;
+        IDataFetcherCached m_connection;
 
         /// <summary>
         /// The item to be commited, for the add procedure

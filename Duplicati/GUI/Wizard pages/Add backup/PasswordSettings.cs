@@ -184,9 +184,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             m_task = task;
             if (m_task != null)
-            {
-                m_showAsInitial = !m_task.RelationManager.ExistsInDb(m_task);
-            }
+                m_showAsInitial = !m_task.ExistsInDb;
         }
 
         #endregion

@@ -1,55 +1,42 @@
-#region Disclaimer / License
-// Copyright (C) 2008, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
 /// <metadata>
 /// <creator>This class was created by DataClassFileBuilder (LightDatamodel)</creator>
-/// <provider name="System.Data.LightDatamodel.SQLiteDataProvider" connectionstring="Version=3;Data Source=C:\Documents and Settings\Kenneth\Dokumenter\duplicati\Duplicati\Datamodel\Duplicati.sqlite;" />
+/// <provider name="System.Data.LightDatamodel.SQLiteDataProvider" connectionstring="Version=3;Data Source=D:\Dokumenter\duplicati\Duplicati\GUI\Datamodel\Duplicati.sqlite;" />
 /// <type>Table</type>
 /// <namespace>Duplicati.Datamodel</namespace>
 /// <name>Schedule</name>
 /// <sql></sql>
 /// </metadata>
 
+using System.Data.LightDatamodel;
+using System.Data.LightDatamodel.DataClassAttributes;
+
 namespace Duplicati.Datamodel
 {
 
-	public partial class Schedule : System.Data.LightDatamodel.DataClassBase
+	[DatabaseTable("Schedule")]
+	public partial class Schedule : DataClassBase
 	{
 
 #region " private members "
 
-		[System.Data.LightDatamodel.MemberModifierAutoIncrement()]
-		private System.Int64 m_ID = 0;
+		[AutoIncrement, PrimaryKey, Relation("TaskSchedule", typeof(Task), "ScheduleID", false), DatabaseField("ID")]
+		private System.Int64 m_ID = long.MinValue;
+		[DatabaseField("Name")]
 		private System.String m_Name = "";
+		[DatabaseField("Path")]
 		private System.String m_Path = "";
+		[DatabaseField("When")]
 		private System.DateTime m_When = new System.DateTime(1, 1, 1);
+		[DatabaseField("Repeat")]
 		private System.String m_Repeat = "";
+		[DatabaseField("Weekdays")]
 		private System.String m_Weekdays = "";
-		private System.Int64 m_KeepFull = 0;
+		[DatabaseField("KeepFull")]
+		private System.Int64 m_KeepFull = long.MinValue;
+		[DatabaseField("KeepTime")]
 		private System.String m_KeepTime = "";
+		[DatabaseField("FullAfter")]
 		private System.String m_FullAfter = "";
-#endregion
-
-#region " unique value "
-
-		public override object UniqueValue {get{return m_ID;}}
-		public override string UniqueColumn {get{return "ID";}}
 #endregion
 
 #region " properties "
@@ -112,14 +99,12 @@ namespace Duplicati.Datamodel
 
 #region " referenced properties "
 
-		private System.Collections.Generic.IList<Task> m_Tasks;
+		[Affects(typeof(Task))]
 		public System.Collections.Generic.IList<Task> Tasks
 		{
 			get
 			{
-				if (m_Tasks == null)
-					m_Tasks = base.RelationManager.GetReferenceCollection<Task>("Schedule", this);
-				return m_Tasks;
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<Task>("TaskSchedule", this);
 			}
 		}
 

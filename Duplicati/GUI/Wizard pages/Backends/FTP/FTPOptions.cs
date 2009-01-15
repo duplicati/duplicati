@@ -161,10 +161,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             {
                 try
                 {
-                    System.Net.WebClient wc = new System.Net.WebClient();
-                    wc.Credentials = new System.Net.NetworkCredential(Username.Text, Password.Text);
-                    string hostname = "ftp://" + Username.Text + "@" + Servername.Text + (Port.Value != 21 ? ":21/" : "/") + Path.Text;
-                    wc.DownloadData(hostname);
+                    string hostname = "ftp://" + Username.Text + ":" + Password.Text + "@" + Servername.Text + (Port.Value != 21 ? ":21/" : "/") + Path.Text;
+                    string[] files = Duplicati.Library.Main.Interface.List(hostname, new Dictionary<string, string>());
 
                     MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;

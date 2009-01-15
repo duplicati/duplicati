@@ -25,7 +25,7 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using Duplicati.Datamodel;
-using Duplicati.Core;
+using Duplicati.Library.Core;
 
 namespace Duplicati.GUI.Service_controls
 {

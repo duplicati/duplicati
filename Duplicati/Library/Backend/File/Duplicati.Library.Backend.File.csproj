@@ -9,6 +9,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Backend</RootNamespace>
     <AssemblyName>Duplicati.Library.Backend.File</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,6 +37,7 @@
   <ItemGroup>
     <Compile Include="FileBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Win32.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Duplicati.Library.Core.csproj">
@@ -45,6 +48,9 @@
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
       <Name>Duplicati.Library.Backend.BackendInterface</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Duplicati.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

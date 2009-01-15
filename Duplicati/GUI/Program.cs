@@ -98,7 +98,7 @@ namespace Duplicati.GUI
                 MessageBox.Show("Failed to create, open or upgrade the database.\r\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            DataConnection = new DataFetcherThreadSafe(MainLock, new DataFetcherCached(new SQLiteDataProvider(con)));
+            DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
 
             System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly();
 
@@ -131,7 +131,7 @@ namespace Duplicati.GUI
             TrayIcon.ContextMenuStrip.Items[0].Font = new Font(TrayIcon.ContextMenuStrip.Items[0].Font, FontStyle.Bold);
 
             ApplicationSettings = new ApplicationSettings(DataConnection);
-            DuplicityRunner runner = new DuplicityRunner(Application.StartupPath, null);
+            DuplicatiRunner runner = new DuplicatiRunner();
 
             WorkThread = new WorkerThread<IDuplicityTask>(new WorkerThread<IDuplicityTask>.ProcessItemDelegate(runner.ExecuteTask));
 

@@ -135,7 +135,22 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
         private void TestConnection_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(this, "Testing is not implemented for SSH yet.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (ValidateForm())
+            {
+                try
+                {
+                    string hostname = "ssh://" + Username.Text + ":" + Password.Text + "@" + Servername.Text + (Port.Value != 22 ? ":22/" : "/") + Path.Text;
+                    string[] files = Duplicati.Library.Main.Interface.List(hostname, new Dictionary<string, string>());
+
+                    MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    m_hasTested = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                }
+            }
         }
 
         private bool ValidateForm()

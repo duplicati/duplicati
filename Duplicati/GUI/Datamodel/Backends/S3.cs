@@ -97,10 +97,10 @@ namespace Duplicati.Datamodel.Backends
             return "s3://" + host + "/" + this.BucketName + (string.IsNullOrEmpty(this.Prefix) ? "" : "/" + this.Prefix);
         }
 
-        public void GetExtraSettings(List<string> args, StringDictionary env)
+        public void GetOptions(Dictionary<string, string> options)
         {
-            env["AWS_ACCESS_ID"] = this.AccessID;
-            env["AWS_ACCESS_KEY"] = this.AccessKey;
+            options["aws_access_id"] = this.AccessID;
+            options["aws_access_key"] = this.AccessKey;
         }
 
         public string FriendlyName { get { return "Amazon S3"; } }

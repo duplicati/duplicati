@@ -1,52 +1,36 @@
-#region Disclaimer / License
-// Copyright (C) 2008, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
 /// <metadata>
 /// <creator>This class was created by DataClassFileBuilder (LightDatamodel)</creator>
-/// <provider name="System.Data.LightDatamodel.SQLiteDataProvider" connectionstring="Version=3;Data Source=C:\Documents and Settings\Kenneth\Dokumenter\duplicati\Duplicati\Datamodel\Duplicati.sqlite;" />
+/// <provider name="System.Data.LightDatamodel.SQLiteDataProvider" connectionstring="Version=3;Data Source=D:\Dokumenter\duplicati\Duplicati\GUI\Datamodel\Duplicati.sqlite;" />
 /// <type>Table</type>
 /// <namespace>Duplicati.Datamodel</namespace>
 /// <name>Task</name>
 /// <sql></sql>
 /// </metadata>
 
+using System.Data.LightDatamodel;
+using System.Data.LightDatamodel.DataClassAttributes;
+
 namespace Duplicati.Datamodel
 {
 
-	public partial class Task : System.Data.LightDatamodel.DataClassBase
+	[DatabaseTable("Task")]
+	public partial class Task : DataClassBase
 	{
 
 #region " private members "
 
-		[System.Data.LightDatamodel.MemberModifierAutoIncrement()]
-		private System.Int64 m_ID = 0;
+		[AutoIncrement, PrimaryKey, Relation("TaskSettingTask", typeof(TaskSetting), "TaskID", false), Relation("LogTask", typeof(Log), "TaskID", false), DatabaseField("ID")]
+		private System.Int64 m_ID = long.MinValue;
+		[DatabaseField("Service")]
 		private System.String m_Service = "";
+		[DatabaseField("Encryptionkey")]
 		private System.String m_Encryptionkey = "";
+		[DatabaseField("Signaturekey")]
 		private System.String m_Signaturekey = "";
+		[DatabaseField("SourcePath")]
 		private System.String m_SourcePath = "";
-		private System.Int64 m_ScheduleID = -9223372036854775808;
-#endregion
-
-#region " unique value "
-
-		public override object UniqueValue {get{return m_ID;}}
-		public override string UniqueColumn {get{return "ID";}}
+		[Relation("TaskSchedule", typeof(Schedule), "ID"), DatabaseField("ScheduleID")]
+		private System.Int64 m_ScheduleID = long.MinValue;
 #endregion
 
 #region " properties "
@@ -91,31 +75,28 @@ namespace Duplicati.Datamodel
 
 #region " referenced properties "
 
+		[Affects(typeof(Schedule))]
 		public Schedule Schedule
 		{
-			get{ return base.RelationManager.GetReferenceObject<Schedule>("Schedule", this); }
-			set{ base.RelationManager.SetReferenceObject<Schedule>("Schedule", this, value); }
+			get{ return ((DataFetcherWithRelations)m_dataparent).GetRelatedObject<Schedule>("TaskSchedule", this); }
+			set{ ((DataFetcherWithRelations)m_dataparent).SetRelatedObject("TaskSchedule", this, value); }
 		}
 
-		private System.Collections.Generic.IList<TaskSetting> m_TaskSettings;
+		[Affects(typeof(TaskSetting))]
 		public System.Collections.Generic.IList<TaskSetting> TaskSettings
 		{
 			get
 			{
-				if (m_TaskSettings == null)
-					m_TaskSettings = base.RelationManager.GetReferenceCollection<TaskSetting>("Task", this);
-				return m_TaskSettings;
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<TaskSetting>("TaskSettingTask", this);
 			}
 		}
 
-		private System.Collections.Generic.IList<Log> m_Logs;
+		[Affects(typeof(Log))]
 		public System.Collections.Generic.IList<Log> Logs
 		{
 			get
 			{
-				if (m_Logs == null)
-					m_Logs = base.RelationManager.GetReferenceCollection<Log>("OwnerTask", this);
-				return m_Logs;
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<Log>("LogTask", this);
 			}
 		}
 

@@ -33,7 +33,7 @@ namespace Duplicati.GUI
 
         public static void ParseData(Log log)
         {
-            string text = log.LogBlob.StringData;
+            string text = log.Blob.StringData;
 
             log.ParsedStatus = "Error";
 

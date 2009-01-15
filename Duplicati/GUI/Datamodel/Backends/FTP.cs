@@ -80,12 +80,12 @@ namespace Duplicati.Datamodel.Backends
 
         public string GetDestinationPath()
         {
-            return "ftp://" + this.Username + "@" + this.Host + "/" + this.Folder;
+            return "ftp://" + this.Username + "@" + this.Host + ":" +  this.Port + "/" + this.Folder;
         }
 
-        public void GetExtraSettings(List<string> args, System.Collections.Specialized.StringDictionary env)
+        public void GetOptions(Dictionary<string, string> options)
         {
-            env["FTP_PASSWORD"] = this.Password;
+            options["ftp_password"] = this.Password;
         }
 
         public string FriendlyName { get { return "FTP host"; } }

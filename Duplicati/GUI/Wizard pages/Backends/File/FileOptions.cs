@@ -104,6 +104,12 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             else
                 targetpath = TargetDrive.Text + "\\" + Folder.Text;
 
+            if (UseCredentials.Checked)
+                if (!Duplicati.Library.Backend.File.PreAuthenticate(targetpath, Username.Text, Password.Text))
+                {
+                    MessageBox.Show(this, "Failed to authenticate using the given credentials.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
             try
             {
@@ -181,11 +187,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
 
             if (m_isUpdating)
                 return;
-
-            if (UseCredentials.Checked)
-            {
-                MessageBox.Show(this, "This feature is not supported in the current version of Duplicati. You may enter the information now, and it may be used in later versions of Duplicati.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
         }
 
         private void UsePath_CheckedChanged(object sender, EventArgs e)
@@ -218,7 +219,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
 
         public void Setup(Duplicati.Datamodel.Task task)
         {
-            bool m_new = !task.RelationManager.ExistsInDb(task);
             m_file = new Duplicati.Datamodel.Backends.File(task);
         }
 

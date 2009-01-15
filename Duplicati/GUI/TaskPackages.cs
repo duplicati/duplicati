@@ -43,9 +43,14 @@ namespace Duplicati.GUI
         event TaskCompletedHandler TaskCompleted;
         void RaiseTaskCompleted(string output);
         void GetArguments(List<string> args);
+        
         DateTime BeginTime { get; set; }
         Task Task { get; }
         Schedule Schedule { get; }
+
+        void GetOptions(Dictionary<string, string> options); 
+        string TargetPath { get; }
+        string SourcePath { get; }
     }
 
     public abstract class BackupTask : IDuplicityTask
@@ -73,6 +78,13 @@ namespace Duplicati.GUI
             if (TaskCompleted != null)
                 TaskCompleted(this, output);
         }
+
+        public abstract string TargetPath { get; }
+        public abstract string SourcePath { get; }
+        public virtual void GetOptions(Dictionary<string, string> options)
+        {
+            this.Task.GetOptions(options);
+        }
     }
 
     public abstract class FullOrIncrementalTask : BackupTask
@@ -91,7 +103,7 @@ namespace Duplicati.GUI
                 LogBlob lb = this.Task.DataParent.Add<LogBlob>();
                 lb.StringData = output;
 
-                l.LogBlob = lb;
+                l.Blob = lb;
                 this.Task.Logs.Add(l);
 
                 //Keep some of the data in an easy to read manner
@@ -101,7 +113,7 @@ namespace Duplicati.GUI
                 l.BeginTime = m_beginTime;
                 l.EndTime = DateTime.Now;
 
-                this.Task.DataParent.CommitAll();
+                (this.Task.DataParent as System.Data.LightDatamodel.IDataFetcherCached).CommitAll();
                 Program.DataConnection.CommitAll();
             }
         }
@@ -118,6 +130,23 @@ namespace Duplicati.GUI
             }
 
         }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+            if (!string.IsNullOrEmpty(this.Task.Signaturekey))
+                options.Add("sign-key", this.Task.Signaturekey);
+        }
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.SourcePath); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
     }
 
     public class FullBackupTask : FullOrIncrementalTask
@@ -133,6 +162,12 @@ namespace Duplicati.GUI
         {
             args.Add("full");
             base.GetArguments(args);
+        }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+            options.Add("full", "");
         }
 
     }
@@ -169,13 +204,22 @@ namespace Duplicati.GUI
                 args.Add(this.FullAfter);
             }
         }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+            options.Add("incremental", "");
+
+            if (!string.IsNullOrEmpty(this.FullAfter))
+                options.Add("full-if-older-than", this.FullAfter);
+        }
     }
 
     public class ListBackupsTask : BackupTask
     {
         private string[] m_backups = null;
         public override DuplicityTaskType TaskType { get { return DuplicityTaskType.ListBackups; } }
-        public string[] Backups { get { return m_backups; } }
+        public string[] Backups { get { return m_backups; } set { m_backups = value; } }
 
         public ListBackupsTask(Schedule schedule)
             : base(schedule)
@@ -185,6 +229,9 @@ namespace Duplicati.GUI
 
         void ListBackupsTask_TaskCompleted(IDuplicityTask owner, string output)
         {
+            if (string.IsNullOrEmpty(output))
+                return;
+
             const string DIVIDER = "-------------------------\r\n";
             const string HEADERS = " Type of backup set:                            Time:      Num volumes:";
 
@@ -224,6 +271,16 @@ namespace Duplicati.GUI
         {
             args.Add("collection-status");
             args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
+        }
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
         }
     }
 
@@ -281,7 +338,7 @@ namespace Duplicati.GUI
                 LogBlob lb = this.Task.DataParent.Add<LogBlob>();
                 lb.StringData = output;
 
-                l.LogBlob = lb;
+                l.Blob = lb;
                 this.Task.Logs.Add(l);
 
                 //Keep some of the data in an easy to read manner
@@ -291,7 +348,7 @@ namespace Duplicati.GUI
                 l.BeginTime = m_beginTime;
                 l.EndTime = DateTime.Now;
 
-                this.Task.DataParent.CommitAll();
+                (this.Task.DataParent as System.Data.LightDatamodel.IDataFetcherCached).CommitAll();
                 Program.DataConnection.CommitAll();
             }
         }
@@ -313,6 +370,28 @@ namespace Duplicati.GUI
             args.Add("--force");
             args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
             args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.TargetDir) + "\"");
+        }
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.TargetDir); }
+        }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+
+            options.Add("force", "");
+            if (!string.IsNullOrEmpty(When))
+                options.Add("restore-time", this.When);
+
+            if (!string.IsNullOrEmpty(this.SourceFiles))
+                options.Add("file-to-restore", this.SourceFiles);
         }
     }
 
@@ -337,7 +416,7 @@ namespace Duplicati.GUI
                 LogBlob lb = this.Task.DataParent.Add<LogBlob>();
                 lb.StringData = output;
 
-                l.LogBlob = lb;
+                l.Blob = lb;
                 this.Task.Logs.Add(l);
 
                 //Keep some of the data in an easy to read manner
@@ -355,6 +434,24 @@ namespace Duplicati.GUI
             args.Add(this.FullCount.ToString());
             args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
             args.Add("--force");
+        }
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+
+            options.Add("remove-all-but-n-full", this.FullCount.ToString());
+            options.Add("force", "");
         }
     }
 
@@ -380,7 +477,7 @@ namespace Duplicati.GUI
                 LogBlob lb = this.Task.DataParent.Add<LogBlob>();
                 lb.StringData = output;
 
-                l.LogBlob = lb;
+                l.Blob = lb;
                 this.Task.Logs.Add(l);
 
                 //Keep some of the data in an easy to read manner
@@ -398,6 +495,24 @@ namespace Duplicati.GUI
             args.Add(this.Older);
             args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
             args.Add("--force");
+        }
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+
+            options.Add("remove-older-than", this.Older);
+            options.Add("force", "");
         }
 
     }

@@ -26,6 +26,8 @@ namespace Duplicati.Library.Backend
     public class File : IBackendInterface
     {
         private string m_path;
+        private string m_username;
+        private string m_password;
         Dictionary<string, string> m_options;
 
         public File()
@@ -35,9 +37,28 @@ namespace Duplicati.Library.Backend
         public File(string url, Dictionary<string, string> options)
         {
             m_options = options;
-            m_path = ExtractFilename(url, m_options);
+            m_path = url.Substring("file://".Length);
+
+            if (m_path.IndexOf("@") > 0)
+            {
+                m_username = m_path.Substring(0, m_path.IndexOf("@"));
+                m_path = m_path.Substring(m_path.IndexOf("@") + 1);
+
+                if (m_username.IndexOf(":") > 0)
+                {
+                    m_password = m_username.Substring(0, m_username.IndexOf(":"));
+                    m_username = m_username.Substring(m_username.IndexOf(":") + 1);
+                }
+                else
+                {
+                    if (options.ContainsKey("ftp_password"))
+                        m_password = options["ftp_password"];
+                }
+            }
+
             if (!System.IO.Path.IsPathRooted(url))
                 m_path = System.IO.Path.GetFullPath(m_path);
+
         }
 
         #region IBackendInterface Members
@@ -57,7 +78,9 @@ namespace Duplicati.Library.Backend
             string path = m_path;
             List<FileEntry> ls = new List<FileEntry>();
 
-            //TODO: Impersonate, if username+password is applied
+            //Attempt to apply credentials
+            if (!string.IsNullOrEmpty(m_username) && m_password != null)
+                Win32.PreAuthenticate(m_path, m_username, m_password);
 
             foreach (string s in System.IO.Directory.GetFiles(path))
             {
@@ -94,12 +117,11 @@ namespace Duplicati.Library.Backend
             System.IO.File.Delete(path);
         }
 
-        private string ExtractFilename(string url, Dictionary<string, string> options)
-        {
-            //TODO: Read out username/password
-            return url.Substring("file://".Length);
-        }
-
         #endregion
+
+        public static bool PreAuthenticate(string path, string username, string password)
+        {
+            return Win32.PreAuthenticate(path, username, password);
+        }
     }
 }

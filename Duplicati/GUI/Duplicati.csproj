@@ -31,15 +31,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c7a68962c12dce64, processorArchitecture=MSIL">
+    <Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=180db27b8c387f04, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\thirdparty\LightDataModel\LightDatamodel.dll</HintPath>
+      <HintPath>Datamodel\LightDatamodel.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.SQLite, Version=1.0.46.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\SQLite\System.Data.SQLite.DLL</HintPath>
+      <HintPath>Datamodel\System.Data.SQLite.DLL</HintPath>
     </Reference>
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
@@ -54,8 +54,8 @@
       <DependentUpon>ApplicationSetup.cs</DependentUpon>
     </Compile>
     <Compile Include="DatabaseUpgrader.cs" />
+    <Compile Include="DuplicatiRunner.cs" />
     <Compile Include="DuplicityOutputParser.cs" />
-    <Compile Include="DuplicityRunner.cs" />
     <Compile Include="HelperControls\BackupItems.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -272,9 +272,29 @@
       <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
       <Name>WizardForm</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Core\Duplicati.Core.csproj">
+    <ProjectReference Include="..\Library\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
+      <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
+      <Name>Duplicati.Library.Backend.BackendInterface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
+      <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
+      <Name>Duplicati.Library.Backend.File</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
+      <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
+      <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\SSH\Duplicati.Library.Backend.SSH.csproj">
+      <Project>{6BA21DCB-1701-4936-B177-3B6D4DE3474E}</Project>
+      <Name>Duplicati.Library.Backend.SSH</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Core\Duplicati.Library.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Core</Name>
+      <Name>Duplicati.Library.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Main\Duplicati.Library.Main.csproj">
+      <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
+      <Name>Duplicati.Library.Main</Name>
     </ProjectReference>
     <ProjectReference Include="Datamodel\Datamodel.csproj">
       <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>

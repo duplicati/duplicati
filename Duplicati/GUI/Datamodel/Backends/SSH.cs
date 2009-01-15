@@ -98,12 +98,18 @@ namespace Duplicati.Datamodel.Backends
             return "ssh://" + this.Username + "@" + this.Host + "/" + this.Folder;
         }
 
-        public void GetExtraSettings(List<string> args, StringDictionary env)
+        public void GetOptions(Dictionary<string, string> options)
         {
             if (!this.Passwordless)
-                args.Add("--ssh-askpass");
+                options.Add("ssh-askpass", "");
             else
-                env["FTP_PASSWORD"] = this.Password;
+                options["ftp_password"] = this.Password;
+
+            if (!options.ContainsKey("ssh-options"))
+                options["ssh-options"] = "";
+
+            if (this.Port != 22)
+                options["ssh-options"] += "-P " + this.Port;
         }
 
         public string FriendlyName { get { return "SSH host"; } }

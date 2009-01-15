@@ -26,7 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
-using Duplicati.Core;
+using Duplicati.Library.Core;
 
 namespace Duplicati.GUI.Wizard_pages.Add_backup
 {

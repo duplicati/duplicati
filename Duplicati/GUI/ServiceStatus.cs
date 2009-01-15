@@ -25,7 +25,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using Duplicati.Datamodel;
-using Duplicati.Core;
+using Duplicati.Library.Core;
 
 namespace Duplicati.GUI
 {
@@ -179,7 +179,7 @@ namespace Duplicati.GUI
 
             LogViewer dlg = new LogViewer();
             //TODO: Figure out why the LDM fails here
-            dlg.LogText.Text = l.LogBlob.StringData;
+            dlg.LogText.Text = l.Blob.StringData;
 
             dlg.ShowDialog(this);
         }

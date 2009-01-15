@@ -66,9 +66,14 @@ namespace Duplicati.Datamodel
             return this.Backend.GetDestinationPath();
         }
 
-        public void GetExtraSettings(List<string> args, StringDictionary env)
+        public void GetOptions(Dictionary<string, string> options)
         {
-            this.Backend.GetExtraSettings(args, env);
+            this.Backend.GetOptions(options);
+        }
+
+        public bool ExistsInDb
+        {
+            get { return this.ID > 0; }
         }
 
     }

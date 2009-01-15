@@ -210,7 +210,14 @@ namespace Duplicati.Library.Backend
             if (args != null)
                 p.StartInfo.Arguments += " " + args;
 
-            p.Start();
+            try
+            {
+                p.Start();
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("Failed to start the SSH application (" + p.StartInfo.FileName + ").\r\nError message: " + ex.Message, ex);
+            }
 
             //TODO: This is not the most robust way of dealing with
             // the psftp and pscp commands. It is likely not very portable either

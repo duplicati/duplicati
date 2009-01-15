@@ -31,7 +31,7 @@ namespace Duplicati.GUI
 {
     public partial class ApplicationSetup : Form
     {
-        private IDataFetcher m_connection;
+        private IDataFetcherCached m_connection;
         private ApplicationSettings m_settings;
         private bool m_isUpdating = false;
 

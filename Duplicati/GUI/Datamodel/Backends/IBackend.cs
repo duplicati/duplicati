@@ -27,7 +27,7 @@ namespace Duplicati.Datamodel.Backends
     public interface IBackend
     {
         string GetDestinationPath();
-        void GetExtraSettings(List<string> args, StringDictionary env);
+        void GetOptions(Dictionary<string, string> options);
         string FriendlyName { get; }
         string SystemName { get; }
         void SetService();

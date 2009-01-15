@@ -23,7 +23,7 @@ using System.Text;
 using System.Threading;
 using Duplicati.Datamodel;
 using System.Data.LightDatamodel;
-using Duplicati.Core;
+using Duplicati.Library.Core;
 
 namespace Duplicati.GUI
 {
@@ -123,7 +123,7 @@ namespace Duplicati.GUI
                 System.Data.LightDatamodel.QueryModel.Operation op = System.Data.LightDatamodel.QueryModel.Parser.ParseQuery("ORDER BY When ASC");
 
                 lock(m_lock)
-                    m_schedule = op.EvaluateList<Schedule>(reps);
+                    m_schedule = op.EvaluateList<Schedule>(reps).ToArray();
 
                 if (NewSchedule != null)
                     NewSchedule(this, null);

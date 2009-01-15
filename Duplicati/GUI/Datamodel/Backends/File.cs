@@ -69,14 +69,17 @@ namespace Duplicati.Datamodel.Backends
 
         public string GetDestinationPath()
         {
-            return "file://" + this.DestinationFolder;
+            if (!string.IsNullOrEmpty(this.Username))
+                return "file://" + this.Username + "@" + this.DestinationFolder;
+            else
+                return "file://" + this.DestinationFolder;
         }
 
-        public void GetExtraSettings(List<string> args, StringDictionary env)
+        public void GetOptions(Dictionary<string, string> options)
         {
-            //TODO: Deal with authentication
-            args.Add("--time-separator");
-            args.Add(this.TimeSeparator);
+            options["time-separator"] = this.TimeSeparator;
+            if (!string.IsNullOrEmpty(this.Password))
+                options["ftp_password"] = this.Password;
         }
 
         public string FriendlyName { get { return "External drive or folder"; } }

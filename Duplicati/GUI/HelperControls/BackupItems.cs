@@ -107,7 +107,7 @@ namespace Duplicati.GUI.HelperControls
         {
             try
             {
-                DuplicityRunner r = new DuplicityRunner(Application.StartupPath, null);
+                DuplicatiRunner r = new DuplicatiRunner();
                 m_backups = r.ListBackups(m_schedule);
             }
             catch (Exception e)

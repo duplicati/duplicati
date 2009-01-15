@@ -68,7 +68,7 @@ namespace Duplicati.GUI.Service_controls
                     m_task = m_schedule.Tasks[0];
                 }
 
-                if (!m_task.RelationManager.ExistsInDb(m_task))
+                if (!m_task.ExistsInDb)
                 {
                     if (string.IsNullOrEmpty(m_task.Encryptionkey))
                         m_task.Encryptionkey = KeyGenerator.GenerateKey(64, 128);
@@ -106,7 +106,7 @@ namespace Duplicati.GUI.Service_controls
 
         private void GenerateEncryptionKey_Click(object sender, EventArgs e)
         {
-            if (m_task.RelationManager.ExistsInDb(m_task) && !string.IsNullOrEmpty(m_task.Encryptionkey))
+            if (m_task.ExistsInDb && !string.IsNullOrEmpty(m_task.Encryptionkey))
                 if (MessageBox.Show(this, "If you modify the encryption key, you can no longer recover any existing backups. Please make sure you have a copy of the key. Do you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel) != DialogResult.Yes)
                     return;
 
@@ -115,7 +115,7 @@ namespace Duplicati.GUI.Service_controls
 
         private void GenerateSignatureKey_Click(object sender, EventArgs e)
         {
-            if (m_task.RelationManager.ExistsInDb(m_task) && !string.IsNullOrEmpty(m_task.Encryptionkey))
+            if (m_task.ExistsInDb && !string.IsNullOrEmpty(m_task.Encryptionkey))
                 if (MessageBox.Show(this, "If you modify the signature key, you can no longer verify any existing backups. Please make sure you have a copy of the key. Do you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel) != DialogResult.Yes)
                     return;
 
@@ -163,7 +163,7 @@ namespace Duplicati.GUI.Service_controls
 
         private void ServiceTypeCombo_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (!m_isUpdating && m_task != null && m_task.RelationManager.ExistsInDb(m_task))
+            if (!m_isUpdating && m_task != null && m_task.ExistsInDb)
             {
                 if (MessageBox.Show(this, "Selecting a different backend will remove the settings from the current backend. Are you sure you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
