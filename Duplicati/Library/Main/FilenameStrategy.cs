@@ -32,6 +32,10 @@ namespace Duplicati.Library.Main
     {
         private bool m_useShortFilenames;
         private string m_timeSeperator;
+        private string m_prefix;
+
+        private Regex m_filenameRegExp;
+        private Regex m_shortRegExp;
 
         public FilenameStrategy(Dictionary<string, string> options)
         {
@@ -40,19 +44,27 @@ namespace Duplicati.Library.Main
                 m_timeSeperator = options["time-separator"];
             else
                 m_timeSeperator = ":";
+
+            if (!options.ContainsKey("backup-prefix"))
+                m_prefix = m_useShortFilenames ? "dpl" : "duplicati";
+            else
+                m_prefix = options["backup-prefix"];
+
+            m_filenameRegExp = new Regex(@"(?<prefix>" + m_prefix + @")\-(?<type>(C|S|M))(?<inc>(F|I))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<extension>.+)");
+            m_shortRegExp = new Regex(@"(?<prefix>" + m_prefix + @")\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{2}\-\d{2}\-\d{4}.\d{2}\" + m_timeSeperator + @"\d{2}\" + m_timeSeperator + @"\d{2})\.(?<extension>.+)");
         }
 
-        public string GenerateFilename(string prefix, BackupEntry.EntryType type, bool full, DateTime time, int volume)
+        public string GenerateFilename(BackupEntry.EntryType type, bool full, DateTime time, int volume)
         {
-            return GenerateFilename(prefix, type, full, time) + ".vol" + volume.ToString();
+            return GenerateFilename(type, full, time) + ".vol" + volume.ToString();
         }
 
-        public string GenerateFilename(string prefix, BackupEntry.EntryType type, bool full, DateTime time)
+        public string GenerateFilename(BackupEntry.EntryType type, bool full, DateTime time)
         {
-            return GenerateFilename(prefix, type, full, m_useShortFilenames, time);
+            return GenerateFilename(type, full, m_useShortFilenames, time);
         }
 
-        public string GenerateFilename(string prefix, BackupEntry.EntryType type, bool full, bool shortName, DateTime time)
+        public string GenerateFilename(BackupEntry.EntryType type, bool full, bool shortName, DateTime time)
         {
             string t;
             if (type == BackupEntry.EntryType.Manifest)
@@ -67,24 +79,19 @@ namespace Duplicati.Library.Main
             if (!shortName)
             {
                 string datetime = time.ToString().Replace(":", m_timeSeperator);
-                return prefix + "-" + (full ? "full" : "inc") + "-" + t + "." + datetime;
+                return m_prefix + "-" + (full ? "full" : "inc") + "-" + t + "." + datetime;
             }
             else
             {
-                return prefix + "-" + t + (full ? "F" : "I") + (time.Ticks / TimeSpan.TicksPerSecond).ToString("X");
+                return m_prefix + "-" + t + (full ? "F" : "I") + (time.Ticks / TimeSpan.TicksPerSecond).ToString("X");
             }
         }
 
-        public BackupEntry DecodeFilename(string prefix, Duplicati.Library.Backend.FileEntry fe)
+        public BackupEntry DecodeFilename(Duplicati.Library.Backend.FileEntry fe)
         {
-            string shortregexp = @"(?<prefix>%filename%)\-(?<type>(C|S|M))(?<inc>(F|I))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<extension>.+)";
-            string regexp = @"(?<prefix>%filename%)\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{2}\-\d{2}\-\d{4}.\d{2}\%timesep%\d{2}\%timesep%\d{2})\.(?<extension>.+)";
-            regexp = regexp.Replace("%filename%", prefix).Replace("%timesep%", m_timeSeperator);
-            shortregexp = shortregexp.Replace("%filename%", prefix);
-
-            Match m = Regex.Match(fe.Name, regexp);
+            Match m = m_filenameRegExp.Match(fe.Name);
             if (!m.Success)
-                m = Regex.Match(fe.Name, shortregexp);
+                m = m_shortRegExp.Match(fe.Name);
             if (!m.Success)
                 return null;
 

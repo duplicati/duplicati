@@ -26,6 +26,7 @@ namespace Duplicati.Library.Backend
 {
     public class FTP : IBackendInterface
     {
+        private System.Net.NetworkCredential m_userInfo;
         private string m_url;
         Dictionary<string, string> m_options;
 
@@ -35,6 +36,24 @@ namespace Duplicati.Library.Backend
 
         public FTP(string url, Dictionary<string, string> options)
         {
+            Uri u = new Uri(url);
+
+            if (!string.IsNullOrEmpty(u.UserInfo))
+            {
+                m_userInfo = new System.Net.NetworkCredential();
+                if (u.UserInfo.IndexOf(":") >= 0)
+                {
+                    m_userInfo.UserName = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
+                    m_userInfo.Password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
+                }
+                else
+                {
+                    m_userInfo.UserName = u.UserInfo;
+                    if (options.ContainsKey("ftp_password"))
+                        m_userInfo.Password = options["ftp_password"];
+                }
+            }
+
             m_options = options;
             m_url = url;
             if (!m_url.EndsWith("/"))
@@ -109,13 +128,16 @@ namespace Duplicati.Library.Backend
             req.UseBinary = false;
 
             List<FileEntry> lst = new List<FileEntry>();
-            using (System.IO.StreamReader sr = new System.IO.StreamReader(req.GetResponse().GetResponseStream()))
-            while(sr.Peek() >= 0)
-            {
-                FileEntry f = ParseLine(sr.ReadLine());
-                if (f != null)
-                    lst.Add(f);
-            }
+            using (System.Net.WebResponse resp = req.GetResponse())
+            using (System.IO.Stream rs = resp.GetResponseStream())
+            using (System.IO.StreamReader sr = new System.IO.StreamReader(rs))
+                while(sr.Peek() >= 0)
+                {
+                    FileEntry f = ParseLine(sr.ReadLine());
+                    if (f != null)
+                        lst.Add(f);
+                }
+
             return lst;
         }
 
@@ -123,33 +145,45 @@ namespace Duplicati.Library.Backend
         {
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
+            req.UseBinary = true;
+
             using(System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Core.Utility.CopyStream(fs, req.GetRequestStream(), true);
-            req.GetResponse().Close();
+            using(System.IO.Stream rs = req.GetRequestStream())
+                Core.Utility.CopyStream(fs, rs, true);
         }
 
         public void Get(string remotename, string localname)
         {
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
+            req.UseBinary = true;
+
             using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Core.Utility.CopyStream(req.GetResponse().GetResponseStream(), fs, false);
+            using (System.Net.WebResponse resp = req.GetResponse())
+            using (System.IO.Stream rs = resp.GetResponseStream())
+                Core.Utility.CopyStream(rs, fs, false);
         }
 
         public void Delete(string remotename)
         {
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DeleteFile;
-            req.GetResponse().Close();
+            using (req.GetResponse())
+            { }
         }
 
         #endregion
 
         private System.Net.FtpWebRequest CreateRequest(string remotename)
         {
-
             System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(m_url + remotename);
-            //TODO: Read out password, etc. from options
+            req.Credentials = m_userInfo;
+
+            if (m_options.ContainsKey("ftp-passive"))
+                req.UsePassive = true;
+            if (m_options.ContainsKey("ftp-regular"))
+                req.UsePassive = false;
+
             return req;
         }
 

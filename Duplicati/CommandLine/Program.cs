@@ -28,16 +28,31 @@ namespace Duplicati.CommandLine
         static void Main(string[] args)
         {
             List<string> cargs = new List<string>(args);
+
+            cargs.Add(Duplicati.Library.Core.FilenameFilter.EncodeAsFilter(Duplicati.Library.Core.FilenameFilter.ParseCommandLine(cargs, true)));
+            Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
+
 #if DEBUG
             if (cargs.Count > 1 && cargs[0].ToLower() == "unittest")
             {
+                //The unit test is only enabled in DEBUG builds
+                //it works by getting a list of folders, and treats them as 
+                //if they were they have the same data, but on different times
+
+                //The first folder is used to make a full backup,
+                //and each subsequent folder is used to make an incremental backup
+
+                //After all backups are made, the files are restored and verified against
+                //the original folders.
+
+                //The best way to test it, is to use SVN checkouts at different
+                //revisions, as this is how a regular folder would evolve
+
                 cargs.RemoveAt(0);
-                UnitTest.RunTest(cargs.ToArray());
+                UnitTest.RunTest(cargs.ToArray(), options);
                 return;
             }
 #endif
-            cargs.Add(Duplicati.Library.Core.FilenameFilter.EncodeAsFilter(Duplicati.Library.Core.FilenameFilter.ParseCommandLine(cargs, true)));
-            Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
 
             //TODO: Print usage window
             if (cargs.Count < 2)
@@ -56,6 +71,10 @@ namespace Duplicati.CommandLine
             if (!options.ContainsKey("passphrase"))
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
                     options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
+
+            if (!options.ContainsKey("ftp_password"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_PASSWORD")))
+                    options["ftp_password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");
 
             if (source.Trim().ToLower() == "list")
                 Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));

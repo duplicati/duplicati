@@ -59,6 +59,7 @@ namespace Duplicati.Library.Encryption
                 ms.Write(tmp, 0, (int)Math.Min(tmp.Length, len - ms.Length));
             }
 
+            //TODO: Is it better to change the IV for each compressed file?
             byte[] realkey = new byte[m_instance.Key.Length];
             byte[] iv = new byte[m_instance.IV.Length];
             ms.Position = 0;

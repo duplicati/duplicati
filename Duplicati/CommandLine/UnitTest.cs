@@ -38,7 +38,23 @@ namespace Duplicati.CommandLine
         /// Running the unit test confirms the correctness of duplicati
         /// </summary>
         /// <param name="folders">The folders to backup. Folder at index 0 is the base, all others are incrementals</param>
-        public static void RunTest(string[] folders)
+        public static void RunTest(string[] folders, Dictionary<string, string> options)
+        {
+            //Place a file called "unittest_target.txt" in the bin folder, and enter a connection string like "ftp://username:password@example.com"
+
+            string alttarget = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "unittest_target.txt");
+            if (System.IO.File.Exists(alttarget))
+                RunTest(folders, options, System.IO.File.ReadAllText(alttarget).Trim());
+            else
+                RunTest(folders, options, null);
+        }
+
+        /// <summary>
+        /// Running the unit test confirms the correctness of duplicati
+        /// </summary>
+        /// <param name="folders">The folders to backup. Folder at index 0 is the base, all others are incrementals</param>
+        /// <param name="target">The target destination for the backups</param>
+        public static void RunTest(string[] folders, Dictionary<string, string> options, string target)
         {
             Log.CurrentLog = new StreamLog("unittest.log");
             Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
@@ -50,19 +66,34 @@ namespace Duplicati.CommandLine
             System.IO.Directory.CreateDirectory(tempdir);
 
             Duplicati.Library.Core.TempFolder.SystemTempPath = tempdir;
-            
-            using(new Timer("Total unittest"))
-            using (TempFolder tf = new TempFolder())
-            {
-                Dictionary<string, string> options = new Dictionary<string, string>();
-                options["time-separator"] = "'";
+
+            //Set some defaults
+            if (!options.ContainsKey("passphrase"))
                 options["passphrase"] = "secret password!";
-                //options["short-filenames"] = "";
-                options["no-encryption"] = "";
+
+            if (!options.ContainsKey("backup-prefix"))
+                options["backup-prefix"] = "duplicati_unittest";
+
+
+            using(new Timer("Total unittest"))
+            using(TempFolder tf = new TempFolder())
+            {
+                if (string.IsNullOrEmpty(target))
+                {
+                    target = "file://" + tf;
+                    if (System.Environment.OSVersion.Platform != PlatformID.Unix)
+                        options["time-separator"] = "'";
+                }
+                else
+                {
+                    //TODO: Implement the cleanup part
+                    //Duplicati.Library.Main.Interface.RemoveAllButNFull(0);
+                }
+
 
                 Console.WriteLine("Backing up the full copy: " + folders[0]);
                 using (new Timer("Full backup of " + folders[0]))
-                    Duplicati.Library.Main.Interface.Backup(folders[0], "file://" + tf, options);
+                    Duplicati.Library.Main.Interface.Backup(folders[0], target, options);
 
                 for (int i = 1; i < folders.Length; i++)
                 {
@@ -70,10 +101,10 @@ namespace Duplicati.CommandLine
                     System.Threading.Thread.Sleep(1000 * 5);
                     Console.WriteLine("Backing up the incremental copy: " + folders[i]);
                     using (new Timer("Incremental backup of " + folders[i]))
-                        Duplicati.Library.Main.Interface.Backup(folders[i], "file://" + tf, options);
+                        Duplicati.Library.Main.Interface.Backup(folders[i], target, options);
                 }
 
-                List<Duplicati.Library.Main.BackupEntry> entries = Duplicati.Library.Main.Interface.ParseFileList("file://" + tf, options);
+                List<Duplicati.Library.Main.BackupEntry> entries = Duplicati.Library.Main.Interface.ParseFileList(target, options);
 
                 if (entries.Count != 1 || entries[0].Incrementals.Count != folders.Length - 1)
                     throw new Exception("Filename parsing problem, or corrupt storage");
@@ -89,12 +120,10 @@ namespace Duplicati.CommandLine
                     {
                         Console.WriteLine("Restoring the copy: " + folders[i]);
 
-                        Dictionary<string, string> opts = new Dictionary<string, string>();
-                        opts["restore-time"] = entries[i].Time.ToString();
-                        opts["time-separator"] = "'";
-                        opts["passphrase"] = "secret password!";
+                        options["restore-time"] = entries[i].Time.ToString();
+
                         using (new Timer("Restore of " + folders[i]))
-                            Duplicati.Library.Main.Interface.Restore("file://" + tf, ttf, opts);
+                            Duplicati.Library.Main.Interface.Restore(target, ttf, options);
 
                         Console.WriteLine("Verifying the copy: " + folders[i]);
 

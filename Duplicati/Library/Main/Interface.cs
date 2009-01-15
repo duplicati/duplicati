@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main
                                             totalsize += new System.IO.FileInfo(zf).Length;
                                             contenthashes.Add(Core.Utility.CalculateHash(zf));
                                             using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
-                                                backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
+                                                backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
                                         }
                                     }
 
@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main
                                     signaturehashes.Add(Core.Utility.CalculateHash(sigzip));
 
                                     using (new Logging.Timer("Writing remote signatures"))
-                                        backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", sigzip);
+                                        backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", sigzip);
                                 }
 
                                 using (Core.TempFile mf = new Duplicati.Library.Core.TempFile())
@@ -146,7 +146,7 @@ namespace Duplicati.Library.Main
                                     //TODO: Actually read the manifest on restore
                                     doc.Save(mf);
 
-                                    backend.Put(fns.GenerateFilename("duplicati", BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
+                                    backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
                                 }
 
                                 vol++;
@@ -295,19 +295,18 @@ namespace Duplicati.Library.Main
                 List<BackupEntry> fulls = new List<BackupEntry>();
                 Dictionary<string, List<BackupEntry>> signatures = new Dictionary<string, List<BackupEntry>>();
                 Dictionary<string, List<BackupEntry>> contents = new Dictionary<string, List<BackupEntry>>();
-                string filename = "duplicati";
 
                 Duplicati.Library.Backend.IBackendInterface i = new Duplicati.Library.Backend.BackendLoader(source, options);
 
                 foreach (Duplicati.Library.Backend.FileEntry fe in i.List())
                 {
-                    BackupEntry be = fns.DecodeFilename(filename, fe);
+                    BackupEntry be = fns.DecodeFilename(fe);
                     if (be == null)
                         continue;
 
                     if (be.Type == BackupEntry.EntryType.Content)
                     {
-                        string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
+                        string content = fns.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
                         if (be.EncryptionMode != null)
                             content += "." + be.EncryptionMode;
                         
@@ -317,7 +316,7 @@ namespace Duplicati.Library.Main
                     }
                     else if (be.Type == BackupEntry.EntryType.Signature)
                     {
-                        string content = fns.GenerateFilename(filename, BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
+                        string content = fns.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
                         if (be.EncryptionMode != null)
                             content += "." + be.EncryptionMode;
 
