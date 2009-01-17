@@ -81,6 +81,42 @@ namespace Duplicati.Library.Main.RSync
         /// This is the list of deleted folders
         /// </summary>
         private List<string> m_deletedfolders;
+        
+        /// <summary>
+        /// The total number of files found
+        /// </summary>
+        private long m_totalfiles;
+        /// <summary>
+        /// The number of files examined
+        /// </summary>
+        private long m_examinedfiles;
+        /// <summary>
+        /// The combined size of the examined files
+        /// </summary>
+        private long m_examinedfilesize;
+        /// <summary>
+        /// The number of files that are found to be modified
+        /// </summary>
+        private long m_diffedfiles;
+        /// <summary>
+        /// The combined size of all the modified files
+        /// </summary>
+        private long m_diffedfilessize;
+        /// <summary>
+        /// The combines size of all delta files generated
+        /// </summary>
+        private long m_diffsize;
+        /// <summary>
+        /// The number of files added
+        /// </summary>
+        private long m_addedfiles;
+        /// <summary>
+        /// The combined size of all added files
+        /// </summary>
+        private long m_addedfilessize;
+
+
+
 
         /// <summary>
         /// This is a list of unprocessed files, used in multipass runs
@@ -127,6 +163,8 @@ namespace Duplicati.Library.Main.RSync
             m_oldFolders = new Dictionary<string, string>();
             foreach (string s in Core.Utility.EnumerateFolders(sigfolder))
                 m_oldFolders.Add(s.Substring(sigfolder.Length), null);
+
+            
         }
 
         public void InitiateMultiPassDiff(bool full, Core.FilenameFilter filter)
@@ -144,6 +182,7 @@ namespace Duplicati.Library.Main.RSync
             m_deletedfolders = new List<string>();
 
             m_unproccesed = Core.Utility.EnumerateFiles(m_sourcefolder, filter);
+            m_totalfiles = m_unproccesed.Count;
 
             foreach (string s in Core.Utility.EnumerateFolders(m_sourcefolder, filter))
             {
@@ -152,6 +191,7 @@ namespace Duplicati.Library.Main.RSync
                     m_newfolders.Add(relpath);
                 else
                     m_oldFolders.Remove(relpath);
+
             }
 
             m_deletedfolders = new List<string>();
@@ -213,7 +253,11 @@ namespace Duplicati.Library.Main.RSync
             using (System.IO.MemoryStream ms = new MemoryStream())
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
+                {
+                    m_examinedfilesize += fs.Length;
+                    m_examinedfiles++;
                     SharpRSync.Interface.GenerateSignature(fs, ms);
+                }
 
                 if (!m_oldSignatures.ContainsKey(relpath))
                 {
@@ -256,7 +300,13 @@ namespace Duplicati.Library.Main.RSync
 
                 using (System.IO.FileStream fs1 = System.IO.File.OpenRead(signature))
                 using (System.IO.FileStream fs2 = System.IO.File.OpenRead(s))
-                    SharpRSync.Interface.GenerateDelta(fs1, fs2, c.AddStream(target));
+                {
+                    System.IO.Stream s3 = c.AddStream(target);
+                    SharpRSync.Interface.GenerateDelta(fs1, fs2, s3);
+                    m_diffsize += s3.Length;
+                    m_diffedfilessize += fs2.Length;
+                    m_diffedfiles++;
+                }
 
                 m_modifiedFiles.Remove(s);
             }
@@ -266,7 +316,11 @@ namespace Duplicati.Library.Main.RSync
                 string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT), relpath);
 
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
+                {
                     Core.Utility.CopyStream(fs, c.AddStream(target));
+                    m_addedfiles++;
+                    m_addedfilessize += fs.Length;
+                }
 
                 try 
                 {
@@ -477,5 +531,17 @@ namespace Duplicati.Library.Main.RSync
             System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES), delfiles.ToArray());
 
         }
+
+        public long DeletedFolders { get { return m_deletedfolders.Count; } }
+        public long DeletedFiles { get { return m_deletedfiles.Count; } }
+        public long AddedFiles { get { return m_addedfiles; } }
+        public long AddedFilesSize { get { return m_addedfilessize; } }
+        public long ExaminedFiles { get { return m_examinedfiles; } }
+        public long ExaminedFilesSize { get { return m_examinedfilesize; } }
+        public long ModifiedFiles { get { return m_diffedfiles; } }
+        public long ModifiedFilesSize { get { return m_diffedfilessize; } }
+        public long ModifiedFilesDeltaSize { get { return m_diffsize; } }
+        public long TotalFiles { get { return m_totalfiles; } }
+        public long UnprocessedFiles { get { return m_unproccesed.Count; } }
     }
 }

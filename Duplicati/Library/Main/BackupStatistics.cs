@@ -1,0 +1,132 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Duplicati.Library.Main
+{
+    internal class BackupStatistics
+    {
+        private DateTime m_beginTime;
+        private DateTime m_endTime;
+        private long m_deletedFiles;
+        private long m_deletedFolders;
+        private long m_modifiedFiles;
+        private long m_examinedFiles;
+        private long m_addedFiles;
+        private long m_sizeOfModifiedFiles;
+        private long m_sizeOfAddedFiles;
+        private long m_sizeOfExaminedFiles;
+        private long m_numberOfBytesUploaded;
+        private long m_numberOfRemoteCalls;
+        private long m_numberOfBytesDownloaded;
+
+        public BackupStatistics()
+        {
+            m_beginTime = m_endTime = DateTime.Now;
+        }
+
+        public DateTime BeginTime
+        {
+            get { return m_beginTime; }
+            set { m_beginTime = value; }
+        }
+
+        public DateTime EndTime
+        {
+            get { return m_endTime; }
+            set { m_endTime = value; }
+        }
+
+        public TimeSpan Duration
+        {
+            get { return m_endTime - m_beginTime; }
+        }
+
+        public long DeletedFiles
+        {
+            get { return m_deletedFiles; }
+            set { m_deletedFiles = value; }
+        }
+
+        public long DeletedFolders
+        {
+            get { return m_deletedFolders; }
+            set { m_deletedFolders = value; }
+        }
+
+        public long ModifiedFiles
+        {
+            get { return m_modifiedFiles; }
+            set { m_modifiedFiles = value; }
+        }
+
+        public long AddedFiles
+        {
+            get { return m_addedFiles; }
+            set { m_addedFiles = value; }
+        }
+
+        public long ExaminedFiles
+        {
+            get { return m_examinedFiles; }
+            set { m_examinedFiles = value; }
+        }
+
+        public long SizeOfModifiedFiles
+        {
+            get { return m_sizeOfModifiedFiles; }
+            set { m_sizeOfModifiedFiles = value; }
+        }
+
+        public long SizeOfAddedFiles
+        {
+            get { return m_sizeOfAddedFiles; }
+            set { m_sizeOfAddedFiles = value; }
+        }
+
+        public long SizeOfExaminedFiles
+        {
+            get { return m_sizeOfExaminedFiles; }
+            set { m_sizeOfExaminedFiles = value; }
+        }
+
+        public long NumberOfBytesUploaded
+        {
+            get { return m_numberOfBytesUploaded; }
+            set { m_numberOfBytesUploaded = value; }
+        }
+
+        public long NumberOfBytesDownloaded
+        {
+            get { return m_numberOfBytesDownloaded; }
+            set { m_numberOfBytesDownloaded = value; }
+        }
+
+        public long NumberOfRemoteCalls
+        {
+            get { return m_numberOfRemoteCalls; }
+            set { m_numberOfRemoteCalls = value; }
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("BeginTime       : " + this.BeginTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("EndTime         : " + this.EndTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("Duration        : " + this.Duration.ToString() + "\r\n");
+            sb.Append("DeletedFiles    : " + this.DeletedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("DeletedFolders  : " + this.DeletedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("ModifiedFiles   : " + this.ModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("AddedFiles      : " + this.ModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("ExaminedFiles   : " + this.ExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("SizeOfModified  : " + this.SizeOfModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("SizeOfAdded     : " + this.SizeOfAddedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("SizeOfExamined  : " + this.SizeOfExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("BytesUploaded   : " + this.NumberOfBytesUploaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("BytesDownloaded : " + this.NumberOfBytesDownloaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("RemoteCalls     : " + this.NumberOfRemoteCalls.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+
+            return sb.ToString();
+        }
+    }
+}

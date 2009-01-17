@@ -78,6 +78,53 @@ namespace Duplicati.CommandLine
 
             if (source.Trim().ToLower() == "list")
                 Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
+            else if (source.Trim().ToLower() == "delete-all-but-n-full")
+            {
+                int n = 0;
+                if (!int.TryParse(target, out n) || n < 0)
+                {
+                    Console.WriteLine("Unable to parse: \"" + target + "\" into a number");
+                    return;
+                }
+
+                options["remove-all-but-n-full"] = n.ToString();
+
+                cargs.RemoveAt(0);
+                cargs.RemoveAt(0);
+
+                if (cargs.Count != 1)
+                {
+                    Console.WriteLine("Wrong number of aguments");
+                    return;
+                }
+
+                Console.WriteLine(Duplicati.Library.Main.Interface.RemoveAllButNFull(cargs[0], options));
+            }
+            else if (source.Trim().ToLower() == "delete-older-than")
+            {
+                try
+                {
+                    Duplicati.Library.Core.Timeparser.ParseTimeSpan(target);
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine("Unable to parse \"" + target + "\" into a time offset: " + ex.Message);
+                    return;
+                }
+
+                options["remove-older-than"] = target;
+
+                cargs.RemoveAt(0);
+                cargs.RemoveAt(0);
+
+                if (cargs.Count != 1)
+                {
+                    Console.WriteLine("Wrong number of aguments");
+                    return;
+                }
+
+                Console.WriteLine(Duplicati.Library.Main.Interface.RemoveOlderThan(cargs[0], options));
+            }
             else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
             {
                 if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
@@ -89,7 +136,7 @@ namespace Duplicati.CommandLine
                         options["passphrase"] = pwd;
                 }
 
-                Duplicati.Library.Main.Interface.Restore(source, target, options);
+                Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target, options));
             }
             else
             {
@@ -102,7 +149,7 @@ namespace Duplicati.CommandLine
                         options["passphrase"] = pwd;
                 }
 
-                Duplicati.Library.Main.Interface.Backup(source, target, options);
+                Console.WriteLine(Duplicati.Library.Main.Interface.Backup(source, target, options));
             }
         }
 

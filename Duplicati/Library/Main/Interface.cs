@@ -25,8 +25,11 @@ namespace Duplicati.Library.Main
 {
     public static class Interface
     {
-        public static void Backup(string source, string target, Dictionary<string, string> options)
+        public static string Backup(string source, string target, Dictionary<string, string> options)
         {
+            //TODO: Rethink how the encryption is used, the hidden method prevents the actual size from being recorded
+            BackupStatistics bs = new BackupStatistics();
+
             SetupCommonOptions(options);
 
             using (new Logging.Timer("Backup from " + source + " to " + target))
@@ -37,6 +40,7 @@ namespace Duplicati.Library.Main
 
                 Backend.IBackendInterface backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(Backend.BackendLoader.GetBackend(target, options), options);
                 List<BackupEntry> prev = ParseFileList(target, options);
+                bs.NumberOfRemoteCalls++;
 
                 if (prev.Count == 0)
                     full = true;
@@ -56,6 +60,9 @@ namespace Duplicati.Library.Main
                                     using (new Logging.Timer("Get " + be.Filename))
                                         backend.Get(be.Filename, t);
                                     Compression.Compression.Decompress(t, basefolder);
+                                    
+                                    bs.NumberOfRemoteCalls++;
+                                    bs.NumberOfBytesDownloaded += new System.IO.FileInfo(t).Length;
                                 }
 
                             foreach (BackupEntry be in prev[prev.Count - 1].Incrementals)
@@ -64,6 +71,9 @@ namespace Duplicati.Library.Main
                                     {
                                         using (new Logging.Timer("Get " + bes.Filename))
                                             backend.Get(bes.Filename, t);
+
+                                        bs.NumberOfRemoteCalls++;
+                                        bs.NumberOfBytesDownloaded += new System.IO.FileInfo(t).Length;
 
                                         using (Core.TempFolder tf = new Duplicati.Library.Core.TempFolder())
                                         {
@@ -118,6 +128,9 @@ namespace Duplicati.Library.Main
                                             contenthashes.Add(Core.Utility.CalculateHash(zf));
                                             using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
                                                 backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
+
+                                            bs.NumberOfRemoteCalls++;
+                                            bs.NumberOfBytesUploaded += new System.IO.FileInfo(zf).Length;
                                         }
                                     }
 
@@ -126,6 +139,9 @@ namespace Duplicati.Library.Main
 
                                     using (new Logging.Timer("Writing remote signatures"))
                                         backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", sigzip);
+
+                                    bs.NumberOfRemoteCalls++;
+                                    bs.NumberOfBytesUploaded += new System.IO.FileInfo(sigzip).Length;
                                 }
 
                                 using (Core.TempFile mf = new Duplicati.Library.Core.TempFile())
@@ -147,20 +163,39 @@ namespace Duplicati.Library.Main
                                     doc.Save(mf);
 
                                     backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
+
+                                    bs.NumberOfRemoteCalls++;
+                                    bs.NumberOfBytesUploaded += new System.IO.FileInfo(mf).Length;
                                 }
 
                                 vol++;
+
                             }
                         }
 
+                        bs.DeletedFiles = dir.DeletedFiles;
+                        bs.DeletedFolders = dir.DeletedFolders;
+                        bs.ModifiedFiles = dir.ModifiedFiles;
+                        bs.AddedFiles = dir.AddedFiles;
+                        bs.ExaminedFiles = dir.ExaminedFiles;
+                        bs.SizeOfModifiedFiles = dir.ModifiedFilesSize;
+                        bs.SizeOfAddedFiles = dir.AddedFilesSize;
+                        bs.SizeOfExaminedFiles = dir.ExaminedFilesSize;
                     }
                 }
+
+
+
             }
+
+            bs.EndTime = DateTime.Now;
+            return bs.ToString();
         }
 
-        public static void Restore(string source, string target, Dictionary<string, string> options)
+        public static string Restore(string source, string target, Dictionary<string, string> options)
         {
             SetupCommonOptions(options);
+            RestoreStatistics rs = new RestoreStatistics();
 
             using (new Logging.Timer("Restore from " + source + " to " + target))
             {
@@ -174,6 +209,7 @@ namespace Duplicati.Library.Main
                 List<BackupEntry> backups = ParseFileList(source, options);
                 if (backups.Count == 0)
                     throw new Exception("No backups found at remote location");
+                rs.RemoteCalls++;
 
                 DateTime timelimit = Core.Timeparser.ParseTimeInterval(specifictime, DateTime.Now);
 
@@ -211,6 +247,9 @@ namespace Duplicati.Library.Main
 
                             using (new Logging.Timer("Get " + be.Filename))
                                 backend.Get(be.Filename, basezip);
+
+                            rs.RemoteCalls++;
+                            rs.BytesDownloaded += new System.IO.FileInfo(basezip).Length;
                             Compression.Compression.Decompress(basezip, basefolder);
                         }
 
@@ -222,6 +261,10 @@ namespace Duplicati.Library.Main
 
                             using (new Logging.Timer("Get " + vol.Filename))
                                 backend.Get(vol.Filename, basezip);
+
+                            rs.RemoteCalls++;
+                            rs.BytesDownloaded += new System.IO.FileInfo(basezip).Length;
+                            
                             Compression.Compression.Decompress(basezip, basefolder);
                         }
 
@@ -246,6 +289,10 @@ namespace Duplicati.Library.Main
 
                                         using (new Logging.Timer("Get " + be.Filename))
                                             backend.Get(be.Filename, patchzip);
+
+                                        rs.RemoteCalls++;
+                                        rs.BytesDownloaded += new System.IO.FileInfo(patchzip).Length;
+                                        
                                         Compression.Compression.Decompress(patchzip, t);
                                     }
 
@@ -257,6 +304,10 @@ namespace Duplicati.Library.Main
 
                                         using (new Logging.Timer("Get " + vol.Filename))
                                             backend.Get(vol.Filename, patchzip);
+                                        
+                                        rs.RemoteCalls++;
+                                        rs.BytesDownloaded += new System.IO.FileInfo(patchzip).Length;
+
                                         Compression.Compression.Decompress(patchzip, t);
                                     }
 
@@ -269,7 +320,119 @@ namespace Duplicati.Library.Main
 
                 }
             }
+
+            rs.EndTime = DateTime.Now;
+
+            //TODO: The RS should have the number of restored files, and the size of those
+
+            return rs.ToString();
         }
+
+        public static string RemoveAllButNFull(string source, Dictionary<string, string> options)
+        {
+            if (!options.ContainsKey("remove-all-but-n-full"))
+                throw new Exception("No count given for \"Remove All But N Full\"");
+
+            int x = int.Parse(options["remove-all-but-n-full"]);
+            List<BackupEntry> entries = ParseFileList(source, options);
+
+            Backend.IBackendInterface backend = Backend.BackendLoader.GetBackend(source, options);
+
+            List<BackupEntry> toremove = new List<BackupEntry>();
+
+            while (entries.Count > x)
+            {
+                BackupEntry be = entries[0];
+                entries.RemoveAt(0);
+
+                be.Incrementals.Reverse();
+                toremove.AddRange(be.Incrementals);
+                toremove.Add(be);
+            }
+
+            return RemoveBackupSets(backend, options, toremove);
+        }
+
+        public static string RemoveOlderThan(string source, Dictionary<string, string> options)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (!options.ContainsKey("remove-older-than"))
+                throw new Exception("No count given for \"Remove Older Than\"");
+
+            string duration = options["remove-older-than"];
+            List<BackupEntry> entries = ParseFileList(source, options);
+
+            Backend.IBackendInterface backend = Backend.BackendLoader.GetBackend(source, options);
+            DateTime expires = Core.Timeparser.ParseTimeInterval(duration, DateTime.Now, true);
+
+            List<BackupEntry> toremove = new List<BackupEntry>();
+
+            while (entries.Count > 0 && entries[0].Time > expires)
+            {
+                BackupEntry be = entries[0];
+                entries.RemoveAt(0);
+
+                bool hasNewer = false;
+                foreach (BackupEntry bex in be.Incrementals)
+                    if (bex.Time < expires)
+                    {
+                        hasNewer = true;
+                        break;
+                    }
+
+                if (hasNewer)
+                {
+                    List<BackupEntry> t = new List<BackupEntry>(be.Incrementals);
+                    t.Insert(0, be);
+
+                    for (int i = 0; i < t.Count; i++)
+                        if (t[i].Time > expires)
+                            sb.AppendLine("Not deleting backup at time: " + t[i].Time.ToString(System.Globalization.CultureInfo.InvariantCulture) + ", because later backups depend on it");
+
+                    break;
+                }
+                else
+                {
+                    be.Incrementals.Reverse();
+                    toremove.AddRange(be.Incrementals);
+                    toremove.Add(be);
+                }
+            }
+
+
+            sb.Append(RemoveBackupSets(backend, options, toremove));
+            
+            return sb.ToString();
+        }
+
+        private static string RemoveBackupSets(Backend.IBackendInterface backend, Dictionary<string, string> options, List<BackupEntry> entries)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (BackupEntry be in entries)
+            {
+                sb.AppendLine("Deleting backup at " + be.Time.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+                if (options.ContainsKey("force"))
+                {
+                    //Delete manifest
+                    backend.Delete(be.Filename);
+
+                    foreach (BackupEntry bex in be.ContentVolumes)
+                        backend.Delete(bex.Filename);
+
+                    foreach (BackupEntry bex in be.SignatureFile)
+                        backend.Delete(bex.Filename);
+                }
+            }
+
+            if (!options.ContainsKey("force"))
+                sb.AppendLine("Files are not deleted, use the --force command to actually remove files");
+
+            return sb.ToString();
+        }
+
 
         public static string[] List(string source, Dictionary<string, string> options)
         {

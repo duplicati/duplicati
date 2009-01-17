@@ -20,14 +20,14 @@ namespace Duplicati.GUI
                 options.Add("passphrase", task.Task.Encryptionkey);
 
 
-
             task.GetOptions(options);
+            string results = "";
 
             switch (task.TaskType)
             {
                 case DuplicityTaskType.FullBackup:
                 case DuplicityTaskType.IncrementalBackup:
-                    Interface.Backup(task.SourcePath, task.TargetPath, options);
+                    results = Interface.Backup(task.SourcePath, task.TargetPath, options);
                     break;
 
                 case DuplicityTaskType.ListBackups:
@@ -46,18 +46,19 @@ namespace Duplicati.GUI
                     return;
 
                 case DuplicityTaskType.RemoveAllButNFull:
+                    results = Interface.RemoveAllButNFull(task.SourcePath, options);
                     return;
                 case DuplicityTaskType.RemoveOlderThan:
+                    results = Interface.RemoveOlderThan(task.SourcePath, options);
                     return;
                 case DuplicityTaskType.Restore:
-
-                    Interface.Restore(task.SourcePath, task.TargetPath, options);
+                    results = Interface.Restore(task.SourcePath, task.TargetPath, options);
                     return;
                 default:
                     return;
             }
 
-            task.RaiseTaskCompleted("");
+            task.RaiseTaskCompleted(results);
 
             if (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup)
             {
