@@ -1,9 +1,0 @@
-NcFTP Client (also known as just NcFTP) is a set of FREE application programs implementing the File Transfer Protocol (FTP).
-
-The current version is: 3.2.1 (July 29, 2007).
-
-The program has been in service on UNIX systems since 1991 and is a popular alternative to the standard FTP program, /usr/bin/ftp. NcFTP offers many ease-of-use and performance enhancements over the stock ftp client, and runs on a wide variety of UNIX platforms as well as operating systems such Microsoft Windows and Apple Mac OS X.
-
-For more information about the client, send us e-mail. For more information about our server product, please see the NcFTPd Server home page.
-
-The programs are free, but we would appreciate a donation if you find them useful. Your support allows us to keep maintaining the project! 

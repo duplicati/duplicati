@@ -1,0 +1,95 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1A12C68D-7C3B-46A6-8406-10ADCFA51B7A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Affirma.ThreeSharp</RootNamespace>
+    <AssemblyName>Affirma.ThreeSharp</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Affirma.ThreeSharp.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Model\ACLChangeRequest.cs" />
+    <Compile Include="Model\ACLChangeResponse.cs" />
+    <Compile Include="Model\AWS100Request.cs" />
+    <Compile Include="Model\AWS100Response.cs" />
+    <Compile Include="Model\DistributionDeleteResponse.cs" />
+    <Compile Include="Model\DistributionDeleteRequest.cs" />
+    <Compile Include="Model\DistributionGetResponse.cs" />
+    <Compile Include="Model\DistributionGetRequest.cs" />
+    <Compile Include="Model\DistributionInfo.cs" />
+    <Compile Include="Model\DistributionUpdateResponse.cs" />
+    <Compile Include="Model\DistributionUpdateRequest.cs" />
+    <Compile Include="Model\DistributionSummary.cs" />
+    <Compile Include="Model\DistributionAddRequest.cs" />
+    <Compile Include="Model\DistributionAddResponse.cs" />
+    <Compile Include="Model\DistributionConfig.cs" />
+    <Compile Include="Model\DistributionListRequest.cs" />
+    <Compile Include="Model\DistributionListResponse.cs" />
+    <Compile Include="Model\ObjectCopyRequest.cs" />
+    <Compile Include="Model\ObjectCopyResponse.cs" />
+    <Compile Include="Model\S3Request.cs" />
+    <Compile Include="Model\S3Response.cs" />
+    <Compile Include="ThreeSharp.cs" />
+    <Compile Include="ThreeSharpConfig.cs" />
+    <Compile Include="ThreeSharpException.cs" />
+    <Compile Include="ThreeSharpUtils.cs" />
+    <Compile Include="Model\ACLGetRequest.cs" />
+    <Compile Include="Model\ACLGetResponse.cs" />
+    <Compile Include="Model\BucketAddRequest.cs" />
+    <Compile Include="Model\BucketAddResponse.cs" />
+    <Compile Include="Model\BucketDeleteRequest.cs" />
+    <Compile Include="Model\BucketDeleteResponse.cs" />
+    <Compile Include="Model\BucketListRequest.cs" />
+    <Compile Include="Model\BucketListResponse.cs" />
+    <Compile Include="Model\ObjectAddRequest.cs" />
+    <Compile Include="Model\ObjectAddResponse.cs" />
+    <Compile Include="Model\ObjectDeleteRequest.cs" />
+    <Compile Include="Model\ObjectDeleteResponse.cs" />
+    <Compile Include="Model\ObjectGetRequest.cs" />
+    <Compile Include="Model\ObjectGetResponse.cs" />
+    <Compile Include="Model\Request.cs" />
+    <Compile Include="Model\Response.cs" />
+    <Compile Include="Model\UrlGetRequest.cs" />
+    <Compile Include="Model\UrlGetResponse.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Query\ThreeSharpQuery.cs" />
+    <Compile Include="Statistics\ThreeSharpStatistics.cs" />
+    <Compile Include="Model\Transfer.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

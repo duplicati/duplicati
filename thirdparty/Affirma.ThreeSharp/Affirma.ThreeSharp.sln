@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Affirma.ThreeSharp", "Affirma.ThreeSharp\Affirma.ThreeSharp.csproj", "{1A12C68D-7C3B-46A6-8406-10ADCFA51B7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Affirma.ThreeSharp.ConsoleSample", "Affirma.ThreeSharp.ConsoleSample\Affirma.ThreeSharp.ConsoleSample.csproj", "{93D0D5A5-23E5-4DA0-BFC9-E5DE851250F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Affirma.ThreeSharp.Wrapper", "Affirma.ThreeSharp.Wrapper\Affirma.ThreeSharp.Wrapper.csproj", "{FD252676-D01F-453A-8DC1-4AC39DF7D22A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Affirma.ThreeSharp.FormSample", "Affirma.ThreeSharp.FormSample\Affirma.ThreeSharp.FormSample.csproj", "{D6FAAB2E-9E90-4E70-A913-2E5F5188364E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A12C68D-7C3B-46A6-8406-10ADCFA51B7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A12C68D-7C3B-46A6-8406-10ADCFA51B7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A12C68D-7C3B-46A6-8406-10ADCFA51B7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A12C68D-7C3B-46A6-8406-10ADCFA51B7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93D0D5A5-23E5-4DA0-BFC9-E5DE851250F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93D0D5A5-23E5-4DA0-BFC9-E5DE851250F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93D0D5A5-23E5-4DA0-BFC9-E5DE851250F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93D0D5A5-23E5-4DA0-BFC9-E5DE851250F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD252676-D01F-453A-8DC1-4AC39DF7D22A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD252676-D01F-453A-8DC1-4AC39DF7D22A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD252676-D01F-453A-8DC1-4AC39DF7D22A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD252676-D01F-453A-8DC1-4AC39DF7D22A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6FAAB2E-9E90-4E70-A913-2E5F5188364E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6FAAB2E-9E90-4E70-A913-2E5F5188364E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6FAAB2E-9E90-4E70-A913-2E5F5188364E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6FAAB2E-9E90-4E70-A913-2E5F5188364E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
