@@ -341,8 +341,8 @@ namespace Duplicati.Library.Main.RSync
                 {
                     System.IO.Stream s3 = c.AddStream(target);
                     SharpRSync.Interface.GenerateDelta(sigfs, fs, s3);
-                    //TODO: Is s3.Length the size of the archive?
-                    m_diffsize += s3.Length;
+                    //TODO: s3.Length the size of the archive
+                    //m_diffsize += s3.Length;
                     m_diffedfilessize += fs.Length;
                     m_diffedfiles++;
                 }
