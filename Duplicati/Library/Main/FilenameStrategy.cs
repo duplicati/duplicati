@@ -50,8 +50,8 @@ namespace Duplicati.Library.Main
             else
                 m_prefix = options["backup-prefix"];
 
-            m_filenameRegExp = new Regex(@"(?<prefix>" + m_prefix + @")\-(?<type>(C|S|M))(?<inc>(F|I))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<extension>.+)");
-            m_shortRegExp = new Regex(@"(?<prefix>" + m_prefix + @")\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{2}\-\d{2}\-\d{4}.\d{2}\" + m_timeSeperator + @"\d{2}\" + m_timeSeperator + @"\d{2})\.(?<extension>.+)");
+            m_shortRegExp = new Regex(@"(?<prefix>" + m_prefix + @")\-(?<type>(C|S|M))(?<inc>(F|I))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<extension>.+)");
+            m_filenameRegExp = new Regex(@"(?<prefix>" + m_prefix + @")\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{4}\-\d{2}\-\d{2}.\d{2}\" + m_timeSeperator + @"\d{2}\" + m_timeSeperator + @"\d{2}(?<timezone>([\+\-]\d{2}" + m_timeSeperator + @"\d{2})|Z)?)\.(?<extension>.+)");
         }
 
         public string GenerateFilename(BackupEntry.EntryType type, bool full, DateTime time, int volume)
@@ -78,12 +78,13 @@ namespace Duplicati.Library.Main
 
             if (!shortName)
             {
-                string datetime = time.ToString().Replace(":", m_timeSeperator);
+
+                string datetime = time.ToString("yyyy-MM-ddTHH:mm:ssK").Replace(":", m_timeSeperator);
                 return m_prefix + "-" + (full ? "full" : "inc") + "-" + t + "." + datetime;
             }
             else
             {
-                return m_prefix + "-" + t + (full ? "F" : "I") + (time.Ticks / TimeSpan.TicksPerSecond).ToString("X");
+                return m_prefix + "-" + t + (full ? "F" : "I") + (time.ToUniversalTime().Ticks / TimeSpan.TicksPerSecond).ToString("X");
             }
         }
 
@@ -109,7 +110,7 @@ namespace Duplicati.Library.Main
             bool isShortName = m.Groups["inc"].Value.Length == 1;
             DateTime time;
             if (isShortName)
-                time = new DateTime(long.Parse(m.Groups["time"].Value, System.Globalization.NumberStyles.HexNumber) * TimeSpan.TicksPerSecond);
+                time = new DateTime(long.Parse(m.Groups["time"].Value, System.Globalization.NumberStyles.HexNumber) * TimeSpan.TicksPerSecond, DateTimeKind.Utc).ToLocalTime();
             else
                 time = DateTime.Parse(m.Groups["time"].Value.Replace(m_timeSeperator, ":"));
 

@@ -39,8 +39,9 @@ namespace Duplicati.Library.Main
                 bool full = options.ContainsKey("full");
 
                 Backend.IBackendInterface backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(Backend.BackendLoader.GetBackend(target, options), options);
-                List<BackupEntry> prev = ParseFileList(target, options);
-                bs.NumberOfRemoteCalls++;
+                backend = new BackendWrapper(bs, backend, options);
+
+                List<BackupEntry> prev = ParseFileList(backend, options);
 
                 if (prev.Count == 0)
                     full = true;
@@ -60,9 +61,6 @@ namespace Duplicati.Library.Main
                                     using (new Logging.Timer("Get " + be.Filename))
                                         backend.Get(be.Filename, t);
                                     Compression.Compression.Decompress(t, basefolder);
-                                    
-                                    bs.NumberOfRemoteCalls++;
-                                    bs.NumberOfBytesDownloaded += new System.IO.FileInfo(t).Length;
                                 }
 
                             foreach (BackupEntry be in prev[prev.Count - 1].Incrementals)
@@ -71,9 +69,6 @@ namespace Duplicati.Library.Main
                                     {
                                         using (new Logging.Timer("Get " + bes.Filename))
                                             backend.Get(bes.Filename, t);
-
-                                        bs.NumberOfRemoteCalls++;
-                                        bs.NumberOfBytesDownloaded += new System.IO.FileInfo(t).Length;
 
                                         using (Core.TempFolder tf = new Duplicati.Library.Core.TempFolder())
                                         {
@@ -86,7 +81,7 @@ namespace Duplicati.Library.Main
                     }
                     DateTime backuptime = DateTime.Now;
 
-                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, basefolder))
+                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, basefolder, bs))
                     {
 
                         using (new Logging.Timer("Initiating multipass"))
@@ -128,20 +123,19 @@ namespace Duplicati.Library.Main
                                             contenthashes.Add(Core.Utility.CalculateHash(zf));
                                             using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
                                                 backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
-
-                                            bs.NumberOfRemoteCalls++;
-                                            bs.NumberOfBytesUploaded += new System.IO.FileInfo(zf).Length;
                                         }
+
+                                        totalsize += signature.Size;
+
+                                        if (totalsize >= totalmax)
+                                            dir.FinalizeMultiPass(signature);
                                     }
 
-                                    totalsize += new System.IO.FileInfo(sigzip).Length;
                                     signaturehashes.Add(Core.Utility.CalculateHash(sigzip));
+
 
                                     using (new Logging.Timer("Writing remote signatures"))
                                         backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", sigzip);
-
-                                    bs.NumberOfRemoteCalls++;
-                                    bs.NumberOfBytesUploaded += new System.IO.FileInfo(sigzip).Length;
                                 }
 
                                 using (Core.TempFile mf = new Duplicati.Library.Core.TempFile())
@@ -163,24 +157,12 @@ namespace Duplicati.Library.Main
                                     doc.Save(mf);
 
                                     backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
-
-                                    bs.NumberOfRemoteCalls++;
-                                    bs.NumberOfBytesUploaded += new System.IO.FileInfo(mf).Length;
                                 }
 
                                 vol++;
 
                             }
                         }
-
-                        bs.DeletedFiles = dir.DeletedFiles;
-                        bs.DeletedFolders = dir.DeletedFolders;
-                        bs.ModifiedFiles = dir.ModifiedFiles;
-                        bs.AddedFiles = dir.AddedFiles;
-                        bs.ExaminedFiles = dir.ExaminedFiles;
-                        bs.SizeOfModifiedFiles = dir.ModifiedFilesSize;
-                        bs.SizeOfAddedFiles = dir.AddedFilesSize;
-                        bs.SizeOfExaminedFiles = dir.ExaminedFilesSize;
                     }
                 }
 
@@ -202,14 +184,14 @@ namespace Duplicati.Library.Main
                 string specificfile = options.ContainsKey("file-to-restore") ? options["file-to-restore"] : "";
                 string specifictime = options.ContainsKey("restore-time") ? options["restore-time"] : "now";
                 Backend.IBackendInterface backend = Backend.BackendLoader.GetBackend(source, options);
+                backend = new BackendWrapper(rs, backend, options);
 
                 if (string.IsNullOrEmpty(specifictime))
                     specifictime = "now";
 
-                List<BackupEntry> backups = ParseFileList(source, options);
+                List<BackupEntry> backups = ParseFileList(backend, options);
                 if (backups.Count == 0)
                     throw new Exception("No backups found at remote location");
-                rs.RemoteCalls++;
 
                 DateTime timelimit = Core.Timeparser.ParseTimeInterval(specifictime, DateTime.Now);
 
@@ -248,8 +230,6 @@ namespace Duplicati.Library.Main
                             using (new Logging.Timer("Get " + be.Filename))
                                 backend.Get(be.Filename, basezip);
 
-                            rs.RemoteCalls++;
-                            rs.BytesDownloaded += new System.IO.FileInfo(basezip).Length;
                             Compression.Compression.Decompress(basezip, basefolder);
                         }
 
@@ -261,14 +241,11 @@ namespace Duplicati.Library.Main
 
                             using (new Logging.Timer("Get " + vol.Filename))
                                 backend.Get(vol.Filename, basezip);
-
-                            rs.RemoteCalls++;
-                            rs.BytesDownloaded += new System.IO.FileInfo(basezip).Length;
-                            
+                           
                             Compression.Compression.Decompress(basezip, basefolder);
                         }
 
-                    using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, basefolder))
+                    using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, basefolder, rs))
                     {
 
                         using (new Logging.Timer("Full restore to " + target))
@@ -290,9 +267,6 @@ namespace Duplicati.Library.Main
                                         using (new Logging.Timer("Get " + be.Filename))
                                             backend.Get(be.Filename, patchzip);
 
-                                        rs.RemoteCalls++;
-                                        rs.BytesDownloaded += new System.IO.FileInfo(patchzip).Length;
-                                        
                                         Compression.Compression.Decompress(patchzip, t);
                                     }
 
@@ -304,9 +278,6 @@ namespace Duplicati.Library.Main
 
                                         using (new Logging.Timer("Get " + vol.Filename))
                                             backend.Get(vol.Filename, patchzip);
-                                        
-                                        rs.RemoteCalls++;
-                                        rs.BytesDownloaded += new System.IO.FileInfo(patchzip).Length;
 
                                         Compression.Compression.Decompress(patchzip, t);
                                     }
@@ -324,6 +295,7 @@ namespace Duplicati.Library.Main
             rs.EndTime = DateTime.Now;
 
             //TODO: The RS should have the number of restored files, and the size of those
+            //but that is a little difficult, because some may be restored, and then removed
 
             return rs.ToString();
         }
@@ -334,9 +306,10 @@ namespace Duplicati.Library.Main
                 throw new Exception("No count given for \"Remove All But N Full\"");
 
             int x = int.Parse(options["remove-all-but-n-full"]);
-            List<BackupEntry> entries = ParseFileList(source, options);
-
             Backend.IBackendInterface backend = Backend.BackendLoader.GetBackend(source, options);
+
+            List<BackupEntry> entries = ParseFileList(backend, options);
+
 
             List<BackupEntry> toremove = new List<BackupEntry>();
 
@@ -360,10 +333,11 @@ namespace Duplicati.Library.Main
             if (!options.ContainsKey("remove-older-than"))
                 throw new Exception("No count given for \"Remove Older Than\"");
 
-            string duration = options["remove-older-than"];
-            List<BackupEntry> entries = ParseFileList(source, options);
-
             Backend.IBackendInterface backend = Backend.BackendLoader.GetBackend(source, options);
+
+            string duration = options["remove-older-than"];
+            List<BackupEntry> entries = ParseFileList(backend, options);
+
             DateTime expires = Core.Timeparser.ParseTimeInterval(duration, DateTime.Now, true);
 
             List<BackupEntry> toremove = new List<BackupEntry>();
@@ -446,11 +420,16 @@ namespace Duplicati.Library.Main
             return res.ToArray();
         }
 
-        public static List<BackupEntry> ParseFileList(string source, Dictionary<string, string> options)
+        public static List<BackupEntry> ParseFileList(string backend, Dictionary<string, string> options)
+        {
+            return ParseFileList(Backend.BackendLoader.GetBackend(backend, options), options);
+        }
+
+        public static List<BackupEntry> ParseFileList(Duplicati.Library.Backend.IBackendInterface backend, Dictionary<string, string> options)
         {
             SetupCommonOptions(options);
 
-            using (new Logging.Timer("Getting and sorting filelist from " + source))
+            using (new Logging.Timer("Getting and sorting filelist from " + backend.DisplayName))
             {
                 FilenameStrategy fns = new FilenameStrategy(options);
 
@@ -459,9 +438,7 @@ namespace Duplicati.Library.Main
                 Dictionary<string, List<BackupEntry>> signatures = new Dictionary<string, List<BackupEntry>>();
                 Dictionary<string, List<BackupEntry>> contents = new Dictionary<string, List<BackupEntry>>();
 
-                Duplicati.Library.Backend.IBackendInterface i = new Duplicati.Library.Backend.BackendLoader(source, options);
-
-                foreach (Duplicati.Library.Backend.FileEntry fe in i.List())
+                foreach (Duplicati.Library.Backend.FileEntry fe in backend.List())
                 {
                     BackupEntry be = fns.DecodeFilename(fe);
                     if (be == null)

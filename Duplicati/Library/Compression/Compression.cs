@@ -68,9 +68,10 @@ namespace Duplicati.Library.Compression
             get 
             {
                 m_zipfile.Flush();
-                return new System.IO.FileInfo(m_filename).Length;
+                return m_zipfile.Length;
             }
         }
+
 
         public System.IO.Stream AddStream(string filename)
         {

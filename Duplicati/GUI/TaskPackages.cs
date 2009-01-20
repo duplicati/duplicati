@@ -107,7 +107,7 @@ namespace Duplicati.GUI
                 this.Task.Logs.Add(l);
 
                 //Keep some of the data in an easy to read manner
-                DuplicityOutputParser.ParseData(l);
+                DuplicatiOutputParser.ParseData(l);
                 l.SubAction = "Primary";
                 l.Action = "Backup";
                 l.BeginTime = m_beginTime;
@@ -342,7 +342,7 @@ namespace Duplicati.GUI
                 this.Task.Logs.Add(l);
 
                 //Keep some of the data in an easy to read manner
-                DuplicityOutputParser.ParseData(l);
+                DuplicatiOutputParser.ParseData(l);
                 l.SubAction = "Primary";
                 l.Action = "Restore";
                 l.BeginTime = m_beginTime;
@@ -420,7 +420,7 @@ namespace Duplicati.GUI
                 this.Task.Logs.Add(l);
 
                 //Keep some of the data in an easy to read manner
-                DuplicityOutputParser.ParseData(l);
+                DuplicatiOutputParser.ParseData(l);
                 l.SubAction = "Cleanup";
                 l.Action = "Backup";
                 l.BeginTime = m_beginTime;
@@ -481,7 +481,7 @@ namespace Duplicati.GUI
                 this.Task.Logs.Add(l);
 
                 //Keep some of the data in an easy to read manner
-                DuplicityOutputParser.ParseData(l);
+                DuplicatiOutputParser.ParseData(l);
                 l.SubAction = "Cleanup";
                 l.Action = "Backup";
                 l.BeginTime = m_beginTime;

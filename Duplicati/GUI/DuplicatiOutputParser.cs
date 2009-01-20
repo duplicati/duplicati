@@ -24,12 +24,12 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI
 {
-    public class DuplicityOutputParser
+    public class DuplicatiOutputParser
     {
-        private const string OK_INDICATOR = "--------------[ Backup Statistics ]--------------";
-        private const string WARNING_INDICATOR = "Errors ";
+        private const string OK_INDICATOR = "Duration";
+        private const string WARNING_INDICATOR = "NumberOfErrors";
 
-        private const string SIZE_INDICATOR = "TotalDestinationSizeChange ";
+        private const string SIZE_INDICATOR = "BytesUploaded";
 
         public static void ParseData(Log log)
         {
@@ -41,7 +41,7 @@ namespace Duplicati.GUI
                 log.ParsedStatus = "OK";
 
             long c = ExtractNumber(text, WARNING_INDICATOR, -1);
-            if (c != 0)
+            if (c > 0)
                 log.ParsedStatus = "Warning";
 
             c = ExtractNumber(text, SIZE_INDICATOR, 0);
@@ -58,7 +58,8 @@ namespace Duplicati.GUI
             if (output.IndexOf(key) >= 0)
             {
                 int pos = output.IndexOf(key) + key.Length;
-                int p2 = output.IndexOfAny(new char[] {' ', '\r', '\n', '\t'}, pos);
+                pos = output.IndexOf(':', pos) + 1;
+                int p2 = output.IndexOfAny(new char[] { '\r', '\n' }, pos);
                 string number = output.Substring(pos, p2 - pos).Trim();
                 if (!long.TryParse(number, out count))
                     count = @default;

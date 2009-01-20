@@ -23,39 +23,46 @@ namespace Duplicati.GUI
             task.GetOptions(options);
             string results = "";
 
-            switch (task.TaskType)
+            try
             {
-                case DuplicityTaskType.FullBackup:
-                case DuplicityTaskType.IncrementalBackup:
-                    results = Interface.Backup(task.SourcePath, task.TargetPath, options);
-                    break;
+                switch (task.TaskType)
+                {
+                    case DuplicityTaskType.FullBackup:
+                    case DuplicityTaskType.IncrementalBackup:
+                        results = Interface.Backup(task.SourcePath, task.TargetPath, options);
+                        break;
 
-                case DuplicityTaskType.ListBackups:
+                    case DuplicityTaskType.ListBackups:
 
-                    List<string> res = new List<string>();
-                    foreach (BackupEntry be in Interface.ParseFileList(task.SourcePath, options))
-                    {
-                        res.Add(be.Time.ToString());
-                        foreach (BackupEntry bei in be.Incrementals)
-                            res.Add(bei.Time.ToString());
-                    }
+                        List<string> res = new List<string>();
+                        foreach (BackupEntry be in Interface.ParseFileList(task.SourcePath, options))
+                        {
+                            res.Add(be.Time.ToString());
+                            foreach (BackupEntry bei in be.Incrementals)
+                                res.Add(bei.Time.ToString());
+                        }
 
-                    (task as ListBackupsTask).Backups = res.ToArray();
-                    break;
-                case DuplicityTaskType.ListFiles:
-                    return;
+                        (task as ListBackupsTask).Backups = res.ToArray();
+                        break;
+                    case DuplicityTaskType.ListFiles:
+                        return;
 
-                case DuplicityTaskType.RemoveAllButNFull:
-                    results = Interface.RemoveAllButNFull(task.SourcePath, options);
-                    return;
-                case DuplicityTaskType.RemoveOlderThan:
-                    results = Interface.RemoveOlderThan(task.SourcePath, options);
-                    return;
-                case DuplicityTaskType.Restore:
-                    results = Interface.Restore(task.SourcePath, task.TargetPath, options);
-                    return;
-                default:
-                    return;
+                    case DuplicityTaskType.RemoveAllButNFull:
+                        results = Interface.RemoveAllButNFull(task.SourcePath, options);
+                        return;
+                    case DuplicityTaskType.RemoveOlderThan:
+                        results = Interface.RemoveOlderThan(task.SourcePath, options);
+                        return;
+                    case DuplicityTaskType.Restore:
+                        results = Interface.Restore(task.SourcePath, task.TargetPath, options);
+                        return;
+                    default:
+                        return;
+                }
+            }
+            catch (Exception ex)
+            {
+                results = "Error: " + ex.Message;
             }
 
             task.RaiseTaskCompleted(results);

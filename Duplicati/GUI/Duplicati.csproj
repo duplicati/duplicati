@@ -55,7 +55,7 @@
     </Compile>
     <Compile Include="DatabaseUpgrader.cs" />
     <Compile Include="DuplicatiRunner.cs" />
-    <Compile Include="DuplicityOutputParser.cs" />
+    <Compile Include="DuplicatiOutputParser.cs" />
     <Compile Include="HelperControls\BackupItems.cs">
       <SubType>UserControl</SubType>
     </Compile>

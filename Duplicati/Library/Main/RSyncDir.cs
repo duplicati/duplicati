@@ -115,6 +115,15 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private long m_addedfilessize;
 
+        /// <summary>
+        /// Statistics reporting
+        /// </summary>
+        private CommunicationStatistics m_stat;
+        /// <summary>
+        /// Flag indicating if the final values are written to the signature file
+        /// </summary>
+        private bool m_finalized = false;
+
 
 
 
@@ -123,7 +132,7 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private List<string> m_unproccesed;
 
-        public RSyncDir(string sourcefolder, string basefolder)
+        public RSyncDir(string sourcefolder, string basefolder, CommunicationStatistics stat)
         {
             if (!System.IO.Path.IsPathRooted(sourcefolder))
                 sourcefolder = System.IO.Path.GetFullPath(sourcefolder);
@@ -132,6 +141,7 @@ namespace Duplicati.Library.Main.RSync
             m_sourcefolder = Core.Utility.AppendDirSeperator(sourcefolder);
             m_basefolder = Core.Utility.AppendDirSeperator(basefolder);
             m_targetfolder = new Duplicati.Library.Core.TempFolder();
+            m_stat = stat;
 
             PrepareTargetFolder();
             BuildIndex();
@@ -198,6 +208,48 @@ namespace Duplicati.Library.Main.RSync
             m_deletedfolders.AddRange(m_oldFolders.Keys);
         }
 
+        public void FinalizeMultiPass(Compression.Compression sigfile)
+        {
+            if (!m_finalized)
+            {
+                m_deletedfiles.AddRange(m_oldSignatures.Keys);
+                if (m_deletedfiles.Count > 0)
+                {
+                    System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FILES));
+                    foreach (string s in m_deletedfiles)
+                        sw.WriteLine(s);
+
+                    sw.Flush();
+                }
+
+                if (m_deletedfolders.Count > 0)
+                {
+                    System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FOLDERS));
+                    foreach (string s in m_deletedfolders)
+                        sw.WriteLine(s);
+
+                    sw.Flush();
+                }
+
+                if (m_stat is BackupStatistics)
+                {
+                    BackupStatistics bs = m_stat as BackupStatistics;
+
+                    bs.DeletedFiles = m_deletedfiles.Count;
+                    bs.DeletedFolders = m_deletedfolders.Count;
+                    bs.ModifiedFiles = m_diffedfiles;
+                    bs.AddedFiles = m_addedfiles;
+                    bs.ExaminedFiles = m_examinedfiles;
+                    bs.SizeOfModifiedFiles = m_diffedfilessize;
+                    bs.SizeOfAddedFiles = m_addedfilessize;
+                    bs.SizeOfExaminedFiles = m_examinedfilesize;
+                    bs.UnprocessedFiles = m_unproccesed.Count;
+                }
+
+                m_finalized = true;
+            }
+        }
+
         public bool MakeMultiPassDiff(Compression.Compression sigfile, string zipfile, long volumesize)
         {
             if (m_unproccesed == null)
@@ -214,50 +266,37 @@ namespace Duplicati.Library.Main.RSync
                     string s = m_unproccesed[next];
                     m_unproccesed.RemoveAt(next);
 
-                    if (ProccessDiff(s, sigfile))
-                        totalSize = AddFileToCompression(s, c);
+                    try
+                    {
+                        using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            if (ProccessDiff(fs, s, sigfile))
+                                totalSize = AddFileToCompression(fs, s, c);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (m_stat != null)
+                            m_stat.LogError("Failed to process file: \"" + s + "\", Error message: " + ex.Message);
+                        Logging.Log.WriteMessage("Failed to process file: \"" + s + "\"", Duplicati.Library.Logging.LogMessageType.Error, ex);                        
+                    }
                 }
 
                 if (m_unproccesed.Count == 0)
-                {
-                    m_deletedfiles.AddRange(m_oldSignatures.Keys);
-                    if (m_deletedfiles.Count > 0)
-                    {
-                        System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FILES));
-                        foreach (string s in m_deletedfiles)
-                            sw.WriteLine(s);
-
-                        sw.Flush();
-                    }
-
-                    if (m_deletedfolders.Count > 0)
-                    {
-                        System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FOLDERS));
-                        foreach (string s in m_deletedfolders)
-                            sw.WriteLine(s);
-
-                        sw.Flush();
-                    }
-
-                }
+                    FinalizeMultiPass(sigfile);
             }
 
             return m_unproccesed.Count == 0;
         }
 
-        private bool ProccessDiff(string s, Compression.Compression sigfile)
+        private bool ProccessDiff(System.IO.FileStream fs, string s, Compression.Compression sigfile)
         {
             string relpath = s.Substring(m_sourcefolder.Length);
             string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), relpath);
 
             using (System.IO.MemoryStream ms = new MemoryStream())
             {
-                using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
-                {
-                    m_examinedfilesize += fs.Length;
-                    m_examinedfiles++;
-                    SharpRSync.Interface.GenerateSignature(fs, ms);
-                }
+                m_examinedfilesize += fs.Length;
+                m_examinedfiles++;
+                SharpRSync.Interface.GenerateSignature(fs, ms);
 
                 if (!m_oldSignatures.ContainsKey(relpath))
                 {
@@ -270,8 +309,8 @@ namespace Duplicati.Library.Main.RSync
                     ms.Position = 0;
                     bool equals;
 
-                    using (System.IO.FileStream fs = System.IO.File.OpenRead(m_oldSignatures[relpath]))
-                        equals = Core.Utility.CompareStreams(fs, ms, true);
+                    using (System.IO.FileStream fs2 = System.IO.File.OpenRead(m_oldSignatures[relpath]))
+                        equals = Core.Utility.CompareStreams(fs2, ms, true);
 
                     if (!equals)
                     {
@@ -290,7 +329,7 @@ namespace Duplicati.Library.Main.RSync
         }
 
 
-        private long AddFileToCompression(string s, Compression.Compression c)
+        private long AddFileToCompression(System.IO.FileStream fs, string s, Compression.Compression c)
         {
             if (m_modifiedFiles.ContainsKey(s))
             {
@@ -298,13 +337,13 @@ namespace Duplicati.Library.Main.RSync
                 string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, DELTA_ROOT), relpath);
                 string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_basefolder, SIGNATURE_ROOT), relpath);
 
-                using (System.IO.FileStream fs1 = System.IO.File.OpenRead(signature))
-                using (System.IO.FileStream fs2 = System.IO.File.OpenRead(s))
+                using (System.IO.FileStream sigfs = System.IO.File.OpenRead(signature))
                 {
                     System.IO.Stream s3 = c.AddStream(target);
-                    SharpRSync.Interface.GenerateDelta(fs1, fs2, s3);
+                    SharpRSync.Interface.GenerateDelta(sigfs, fs, s3);
+                    //TODO: Is s3.Length the size of the archive?
                     m_diffsize += s3.Length;
-                    m_diffedfilessize += fs2.Length;
+                    m_diffedfilessize += fs.Length;
                     m_diffedfiles++;
                 }
 
@@ -315,19 +354,10 @@ namespace Duplicati.Library.Main.RSync
                 string relpath = s.Substring(m_sourcefolder.Length);
                 string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT), relpath);
 
-                using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
-                {
-                    Core.Utility.CopyStream(fs, c.AddStream(target));
-                    m_addedfiles++;
-                    m_addedfilessize += fs.Length;
-                }
+                Core.Utility.CopyStream(fs, c.AddStream(target));
+                m_addedfiles++;
+                m_addedfilessize += fs.Length;
 
-                try 
-                {
-                    System.IO.File.SetAttributes(target, FileAttributes.Normal);
-                    System.IO.File.Delete(target); 
-                }
-                catch { }
                 m_newfiles.Remove(s);
             }
             return c.Size;
@@ -368,6 +398,8 @@ namespace Duplicati.Library.Main.RSync
                         }
                         catch (Exception ex)
                         {
+                            if (m_stat != null)
+                                m_stat.LogError("Failed to delete file: \"" + target + "\", Error message: " + ex.Message);
                             Logging.Log.WriteMessage("Failed to delete file: " + target, Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                     }
@@ -395,7 +427,9 @@ namespace Duplicati.Library.Main.RSync
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteMessage("Failed to remove folder: " + s, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                            if (m_stat != null)
+                                m_stat.LogError("Failed to remove folder: \"" + target + "\", Error message: " + ex.Message);
+                            Logging.Log.WriteMessage("Failed to remove folder: " + target, Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
 
                 }
@@ -415,11 +449,22 @@ namespace Duplicati.Library.Main.RSync
 
             destination = Core.Utility.AppendDirSeperator(destination);
 
+            //TODO: Handle file access exceptions
             foreach (string s in Core.Utility.EnumerateFiles(sourcefolder))
             {
                 string relpath = s.Substring(sourcefolder.Length);
                 string target = System.IO.Path.Combine(destination, relpath);
-                System.IO.File.Copy(s, target);
+                try
+                {
+                    System.IO.File.Copy(s, target);
+                }
+                catch (Exception ex)
+                {
+                        if (m_stat != null)
+                            m_stat.LogError("Failed to restore file: \"" + relpath + "\", Error message: " + ex.Message);
+                    Logging.Log.WriteMessage("Failed to restore file " + relpath, Duplicati.Library.Logging.LogMessageType.Error, ex);
+                }
+
             }
 
             sourcefolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, DELTA_ROOT));
@@ -439,6 +484,8 @@ namespace Duplicati.Library.Main.RSync
                 }
                 catch (Exception ex)
                 {
+                        if (m_stat != null)
+                            m_stat.LogError("Failed to restore file: \"" + relpath + "\", Error message: " + ex.Message);
                     Logging.Log.WriteMessage("Failed to restore file " + relpath, Duplicati.Library.Logging.LogMessageType.Error, ex);
                     System.IO.File.Delete(target);
                     System.IO.File.Delete(tempfile);
@@ -532,16 +579,5 @@ namespace Duplicati.Library.Main.RSync
 
         }
 
-        public long DeletedFolders { get { return m_deletedfolders.Count; } }
-        public long DeletedFiles { get { return m_deletedfiles.Count; } }
-        public long AddedFiles { get { return m_addedfiles; } }
-        public long AddedFilesSize { get { return m_addedfilessize; } }
-        public long ExaminedFiles { get { return m_examinedfiles; } }
-        public long ExaminedFilesSize { get { return m_examinedfilesize; } }
-        public long ModifiedFiles { get { return m_diffedfiles; } }
-        public long ModifiedFilesSize { get { return m_diffedfilessize; } }
-        public long ModifiedFilesDeltaSize { get { return m_diffsize; } }
-        public long TotalFiles { get { return m_totalfiles; } }
-        public long UnprocessedFiles { get { return m_unproccesed.Count; } }
     }
 }

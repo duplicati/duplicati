@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Duplicati.Library.Main
 {
-    internal class BackupStatistics
+    public class BackupStatistics : CommunicationStatistics
     {
         private DateTime m_beginTime;
         private DateTime m_endTime;
@@ -16,9 +16,7 @@ namespace Duplicati.Library.Main
         private long m_sizeOfModifiedFiles;
         private long m_sizeOfAddedFiles;
         private long m_sizeOfExaminedFiles;
-        private long m_numberOfBytesUploaded;
-        private long m_numberOfRemoteCalls;
-        private long m_numberOfBytesDownloaded;
+        private long m_unprocessedFiles;
 
         public BackupStatistics()
         {
@@ -90,23 +88,12 @@ namespace Duplicati.Library.Main
             set { m_sizeOfExaminedFiles = value; }
         }
 
-        public long NumberOfBytesUploaded
+        public long UnprocessedFiles
         {
-            get { return m_numberOfBytesUploaded; }
-            set { m_numberOfBytesUploaded = value; }
+            get { return m_unprocessedFiles; }
+            set { m_unprocessedFiles = value; }
         }
 
-        public long NumberOfBytesDownloaded
-        {
-            get { return m_numberOfBytesDownloaded; }
-            set { m_numberOfBytesDownloaded = value; }
-        }
-
-        public long NumberOfRemoteCalls
-        {
-            get { return m_numberOfRemoteCalls; }
-            set { m_numberOfRemoteCalls = value; }
-        }
 
         public override string ToString()
         {
@@ -122,10 +109,9 @@ namespace Duplicati.Library.Main
             sb.Append("SizeOfModified  : " + this.SizeOfModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfAdded     : " + this.SizeOfAddedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfExamined  : " + this.SizeOfExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-            sb.Append("BytesUploaded   : " + this.NumberOfBytesUploaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-            sb.Append("BytesDownloaded : " + this.NumberOfBytesDownloaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-            sb.Append("RemoteCalls     : " + this.NumberOfRemoteCalls.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-
+            sb.Append("Unprocessed     : " + this.UnprocessedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            
+            sb.Append(base.ToString());
             return sb.ToString();
         }
     }
