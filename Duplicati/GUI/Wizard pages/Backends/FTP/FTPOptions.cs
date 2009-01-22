@@ -31,7 +31,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
 {
     public partial class FTPOptions : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
     {
-        private bool m_warnedPassword;
+        private bool m_warnedPassword = false; 
+        private bool m_warnedUsername = false;
         private bool m_hasTested;
         private bool m_warnedPath;
         
@@ -134,22 +135,27 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
                 return false;
             }
 
-            if (Username.Text.Trim().Length <= 0)
+            if (Username.Text.Trim().Length <= 0 && !m_warnedUsername)
             {
-                MessageBox.Show(this, "You must enter a username", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                try { Username.Focus(); }
-                catch { }
+                if (MessageBox.Show(this, "You have not entered a username.\nThis is fine if the server allows anonymous uploads, but likely a username is required\nProceed without a password?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                {
+                    try { Username.Focus(); }
+                    catch { }
 
-                return false;
+                    return false;
+                }
             }
 
-            if (Password.Text.Trim().Length <= 0)
+            if (Password.Text.Trim().Length <= 0 && !m_warnedPassword)
             {
-                MessageBox.Show(this, "You must enter a password", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                try { Password.Focus(); }
-                catch { }
+                if (MessageBox.Show(this, "You have not entered a password.\nProceed without a password?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                {
+                    try { Password.Focus(); }
+                    catch { }
 
-                return false;
+                    return false;
+                }
+                m_warnedPassword = true;
             }
 
             return true;
@@ -183,11 +189,13 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         private void Password_TextChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
+            m_warnedPassword = false;
         }
 
         private void Username_TextChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
+            m_warnedUsername = false;
         }
 
         private void Path_TextChanged(object sender, EventArgs e)

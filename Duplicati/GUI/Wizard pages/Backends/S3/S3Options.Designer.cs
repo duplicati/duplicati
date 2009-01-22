@@ -113,9 +113,9 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.UseEuroBuckets.AutoSize = true;
             this.UseEuroBuckets.Location = new System.Drawing.Point(24, 128);
             this.UseEuroBuckets.Name = "UseEuroBuckets";
-            this.UseEuroBuckets.Size = new System.Drawing.Size(329, 17);
+            this.UseEuroBuckets.Size = new System.Drawing.Size(176, 17);
             this.UseEuroBuckets.TabIndex = 10;
-            this.UseEuroBuckets.Text = "Use buckets on european server (advanced, not recommended)";
+            this.UseEuroBuckets.Text = "Store files on a european server";
             this.UseEuroBuckets.UseVisualStyleBackColor = true;
             // 
             // S3Options

@@ -55,6 +55,7 @@ namespace Duplicati.GUI.Service_controls
             this.RepeatInterval = new System.Windows.Forms.TextBox();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.CleanupDuration = new System.Windows.Forms.TextBox();
+            this.ForceFullBackupTimespan = new System.Windows.Forms.TextBox();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
             this.label2 = new System.Windows.Forms.Label();
             this.WeekdayPicker = new System.Windows.Forms.CheckedListBox();
@@ -64,13 +65,22 @@ namespace Duplicati.GUI.Service_controls
             this.KeepIntervalCheckbox = new System.Windows.Forms.CheckBox();
             this.KeepNFullCheckbox = new System.Windows.Forms.CheckBox();
             this.FullGroup = new System.Windows.Forms.GroupBox();
-            this.ForceFullBackupTimespan = new System.Windows.Forms.TextBox();
             this.ForceFullBackup = new System.Windows.Forms.CheckBox();
+            this.Throttles = new System.Windows.Forms.GroupBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
+            this.MaxUploaded = new System.Windows.Forms.TextBox();
+            this.VolumeSize = new System.Windows.Forms.TextBox();
+            this.UploadBandwidth = new System.Windows.Forms.TextBox();
+            this.DownloadBandwidth = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.TimingGroup.SuspendLayout();
             this.CleanGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.CleanupFullCount)).BeginInit();
             this.FullGroup.SuspendLayout();
+            this.Throttles.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -124,13 +134,24 @@ namespace Duplicati.GUI.Service_controls
             // CleanupDuration
             // 
             this.errorProvider.SetIconAlignment(this.CleanupDuration, System.Windows.Forms.ErrorIconAlignment.MiddleLeft);
-            this.CleanupDuration.Location = new System.Drawing.Point(120, 64);
+            this.CleanupDuration.Location = new System.Drawing.Point(192, 40);
             this.CleanupDuration.Name = "CleanupDuration";
-            this.CleanupDuration.Size = new System.Drawing.Size(152, 20);
+            this.CleanupDuration.Size = new System.Drawing.Size(80, 20);
             this.CleanupDuration.TabIndex = 5;
             this.toolTip.SetToolTip(this.CleanupDuration, "Enter the duration as a string, ea.: 1Y2M = 1 year, 2 months.  Valid identifiers " +
                     "are: s, m, h, D, M, Y.");
             this.CleanupDuration.TextChanged += new System.EventHandler(this.CleanupDuration_TextChanged);
+            // 
+            // ForceFullBackupTimespan
+            // 
+            this.errorProvider.SetIconAlignment(this.ForceFullBackupTimespan, System.Windows.Forms.ErrorIconAlignment.MiddleLeft);
+            this.ForceFullBackupTimespan.Location = new System.Drawing.Point(192, 24);
+            this.ForceFullBackupTimespan.Name = "ForceFullBackupTimespan";
+            this.ForceFullBackupTimespan.Size = new System.Drawing.Size(80, 20);
+            this.ForceFullBackupTimespan.TabIndex = 5;
+            this.toolTip.SetToolTip(this.ForceFullBackupTimespan, "Enter the duration as a string, ea.: 1Y2M = 1 year, 2 months.  Valid identifiers " +
+                    "are: s, m, h, D, M, Y.");
+            this.ForceFullBackupTimespan.TextChanged += new System.EventHandler(this.ForceFullBackupTimespan_TextChanged);
             // 
             // errorProvider
             // 
@@ -189,7 +210,7 @@ namespace Duplicati.GUI.Service_controls
             this.CleanGroup.Controls.Add(this.KeepNFullCheckbox);
             this.CleanGroup.Location = new System.Drawing.Point(0, 264);
             this.CleanGroup.Name = "CleanGroup";
-            this.CleanGroup.Size = new System.Drawing.Size(280, 96);
+            this.CleanGroup.Size = new System.Drawing.Size(280, 64);
             this.CleanGroup.TabIndex = 8;
             this.CleanGroup.TabStop = false;
             this.CleanGroup.Text = "Clean up settings";
@@ -226,23 +247,12 @@ namespace Duplicati.GUI.Service_controls
             // 
             this.FullGroup.Controls.Add(this.ForceFullBackupTimespan);
             this.FullGroup.Controls.Add(this.ForceFullBackup);
-            this.FullGroup.Location = new System.Drawing.Point(0, 368);
+            this.FullGroup.Location = new System.Drawing.Point(0, 328);
             this.FullGroup.Name = "FullGroup";
-            this.FullGroup.Size = new System.Drawing.Size(280, 80);
+            this.FullGroup.Size = new System.Drawing.Size(280, 48);
             this.FullGroup.TabIndex = 9;
             this.FullGroup.TabStop = false;
             this.FullGroup.Text = "Incremental";
-            // 
-            // ForceFullBackupTimespan
-            // 
-            this.errorProvider.SetIconAlignment(this.ForceFullBackupTimespan, System.Windows.Forms.ErrorIconAlignment.MiddleLeft);
-            this.ForceFullBackupTimespan.Location = new System.Drawing.Point(120, 48);
-            this.ForceFullBackupTimespan.Name = "ForceFullBackupTimespan";
-            this.ForceFullBackupTimespan.Size = new System.Drawing.Size(152, 20);
-            this.ForceFullBackupTimespan.TabIndex = 5;
-            this.toolTip.SetToolTip(this.ForceFullBackupTimespan, "Enter the duration as a string, ea.: 1Y2M = 1 year, 2 months.  Valid identifiers " +
-                    "are: s, m, h, D, M, Y.");
-            this.ForceFullBackupTimespan.TextChanged += new System.EventHandler(this.ForceFullBackupTimespan_TextChanged);
             // 
             // ForceFullBackup
             // 
@@ -254,15 +264,111 @@ namespace Duplicati.GUI.Service_controls
             this.ForceFullBackup.Text = "Force a full backup after:";
             this.ForceFullBackup.UseVisualStyleBackColor = true;
             // 
+            // Throttles
+            // 
+            this.Throttles.Controls.Add(this.DownloadBandwidth);
+            this.Throttles.Controls.Add(this.UploadBandwidth);
+            this.Throttles.Controls.Add(this.VolumeSize);
+            this.Throttles.Controls.Add(this.MaxUploaded);
+            this.Throttles.Controls.Add(this.label6);
+            this.Throttles.Controls.Add(this.label5);
+            this.Throttles.Controls.Add(this.label4);
+            this.Throttles.Controls.Add(this.label3);
+            this.Throttles.Location = new System.Drawing.Point(0, 376);
+            this.Throttles.Name = "Throttles";
+            this.Throttles.Size = new System.Drawing.Size(280, 112);
+            this.Throttles.TabIndex = 10;
+            this.Throttles.TabStop = false;
+            this.Throttles.Text = "Throttle";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(16, 16);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(137, 13);
+            this.label3.TabIndex = 0;
+            this.label3.Text = "Max data stored pr. backup";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(16, 64);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(139, 13);
+            this.label4.TabIndex = 1;
+            this.label4.Text = "Max data upload pr. second";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(16, 88);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(153, 13);
+            this.label5.TabIndex = 2;
+            this.label5.Text = "Max data download pr. second";
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(16, 40);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(124, 13);
+            this.label6.TabIndex = 3;
+            this.label6.Text = "Max size of each volume";
+            // 
+            // MaxUploaded
+            // 
+            this.errorProvider.SetIconAlignment(this.MaxUploaded, System.Windows.Forms.ErrorIconAlignment.MiddleLeft);
+            this.MaxUploaded.Location = new System.Drawing.Point(192, 16);
+            this.MaxUploaded.Name = "MaxUploaded";
+            this.MaxUploaded.Size = new System.Drawing.Size(80, 20);
+            this.MaxUploaded.TabIndex = 6;
+            this.toolTip.SetToolTip(this.MaxUploaded, "Enter the size, optionally with a suffix, eg: 5 mb. Default size is mb.");
+            this.MaxUploaded.TextChanged += new System.EventHandler(this.MaxUploaded_TextChanged);
+            // 
+            // VolumeSize
+            // 
+            this.errorProvider.SetIconAlignment(this.VolumeSize, System.Windows.Forms.ErrorIconAlignment.MiddleLeft);
+            this.VolumeSize.Location = new System.Drawing.Point(192, 40);
+            this.VolumeSize.Name = "VolumeSize";
+            this.VolumeSize.Size = new System.Drawing.Size(80, 20);
+            this.VolumeSize.TabIndex = 7;
+            this.toolTip.SetToolTip(this.VolumeSize, "Enter the size, optionally with a suffix, eg: 5 mb. Default size is mb.");
+            this.VolumeSize.TextChanged += new System.EventHandler(this.VolumeSize_TextChanged);
+            // 
+            // UploadBandwidth
+            // 
+            this.errorProvider.SetIconAlignment(this.UploadBandwidth, System.Windows.Forms.ErrorIconAlignment.MiddleLeft);
+            this.UploadBandwidth.Location = new System.Drawing.Point(192, 64);
+            this.UploadBandwidth.Name = "UploadBandwidth";
+            this.UploadBandwidth.Size = new System.Drawing.Size(80, 20);
+            this.UploadBandwidth.TabIndex = 8;
+            this.toolTip.SetToolTip(this.UploadBandwidth, "Enter the size allowed pr. second, optionally with a suffix, eg: 5 kb. Default si" +
+                    "ze is kb.");
+            this.UploadBandwidth.TextChanged += new System.EventHandler(this.UploadBandwidth_TextChanged);
+            // 
+            // DownloadBandwidth
+            // 
+            this.errorProvider.SetIconAlignment(this.DownloadBandwidth, System.Windows.Forms.ErrorIconAlignment.MiddleLeft);
+            this.DownloadBandwidth.Location = new System.Drawing.Point(192, 88);
+            this.DownloadBandwidth.Name = "DownloadBandwidth";
+            this.DownloadBandwidth.Size = new System.Drawing.Size(80, 20);
+            this.DownloadBandwidth.TabIndex = 9;
+            this.toolTip.SetToolTip(this.DownloadBandwidth, "Enter the size allowed pr. second, optionally with a suffix, eg: 5 kb. Default si" +
+                    "ze is kb.");
+            this.DownloadBandwidth.TextChanged += new System.EventHandler(this.DownloadBandwidth_TextChanged);
+            // 
             // ScheduleSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.Throttles);
             this.Controls.Add(this.FullGroup);
             this.Controls.Add(this.CleanGroup);
             this.Controls.Add(this.TimingGroup);
             this.Name = "ScheduleSettings";
-            this.Size = new System.Drawing.Size(283, 452);
+            this.Size = new System.Drawing.Size(283, 532);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.TimingGroup.ResumeLayout(false);
             this.TimingGroup.PerformLayout();
@@ -271,6 +377,8 @@ namespace Duplicati.GUI.Service_controls
             ((System.ComponentModel.ISupportInitialize)(this.CleanupFullCount)).EndInit();
             this.FullGroup.ResumeLayout(false);
             this.FullGroup.PerformLayout();
+            this.Throttles.ResumeLayout(false);
+            this.Throttles.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -295,5 +403,14 @@ namespace Duplicati.GUI.Service_controls
         private System.Windows.Forms.GroupBox FullGroup;
         private System.Windows.Forms.TextBox ForceFullBackupTimespan;
         private System.Windows.Forms.CheckBox ForceFullBackup;
+        private System.Windows.Forms.GroupBox Throttles;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox DownloadBandwidth;
+        private System.Windows.Forms.TextBox UploadBandwidth;
+        private System.Windows.Forms.TextBox VolumeSize;
+        private System.Windows.Forms.TextBox MaxUploaded;
+        private System.Windows.Forms.Label label6;
     }
 }

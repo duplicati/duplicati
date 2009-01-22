@@ -38,10 +38,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.GeneratePassword = new System.Windows.Forms.Button();
             this.PassphraseLength = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
-            this.EnableSigning = new System.Windows.Forms.CheckBox();
-            this.Signkey = new System.Windows.Forms.TextBox();
-            this.GenerateSignKey = new System.Windows.Forms.Button();
-            this.SignHelptext = new System.Windows.Forms.Label();
             this.PasswordGeneratorSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PassphraseLength)).BeginInit();
             this.SuspendLayout();
@@ -159,53 +155,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.label2.TabIndex = 5;
             this.label2.Text = "Characters";
             // 
-            // EnableSigning
-            // 
-            this.EnableSigning.AutoSize = true;
-            this.EnableSigning.Checked = true;
-            this.EnableSigning.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.EnableSigning.Location = new System.Drawing.Point(24, 152);
-            this.EnableSigning.Name = "EnableSigning";
-            this.EnableSigning.Size = new System.Drawing.Size(165, 17);
-            this.EnableSigning.TabIndex = 5;
-            this.EnableSigning.Text = "Sign the backup with this key";
-            this.EnableSigning.UseVisualStyleBackColor = true;
-            this.EnableSigning.CheckedChanged += new System.EventHandler(this.EnableSigning_CheckedChanged);
-            // 
-            // Signkey
-            // 
-            this.Signkey.Location = new System.Drawing.Point(200, 152);
-            this.Signkey.Name = "Signkey";
-            this.Signkey.Size = new System.Drawing.Size(128, 20);
-            this.Signkey.TabIndex = 6;
-            // 
-            // GenerateSignKey
-            // 
-            this.GenerateSignKey.Location = new System.Drawing.Point(336, 152);
-            this.GenerateSignKey.Name = "GenerateSignKey";
-            this.GenerateSignKey.Size = new System.Drawing.Size(136, 24);
-            this.GenerateSignKey.TabIndex = 7;
-            this.GenerateSignKey.Text = "Generate key";
-            this.GenerateSignKey.UseVisualStyleBackColor = true;
-            this.GenerateSignKey.Click += new System.EventHandler(this.GenerateSignKey_Click);
-            // 
-            // SignHelptext
-            // 
-            this.SignHelptext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SignHelptext.Location = new System.Drawing.Point(32, 176);
-            this.SignHelptext.Name = "SignHelptext";
-            this.SignHelptext.Size = new System.Drawing.Size(448, 48);
-            this.SignHelptext.TabIndex = 8;
-            this.SignHelptext.Text = resources.GetString("SignHelptext.Text");
-            // 
             // PasswordSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.SignHelptext);
-            this.Controls.Add(this.GenerateSignKey);
-            this.Controls.Add(this.Signkey);
-            this.Controls.Add(this.EnableSigning);
             this.Controls.Add(this.PasswordGeneratorSettings);
             this.Controls.Add(this.PasswordHelptext);
             this.Controls.Add(this.Password);
@@ -229,11 +182,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.Button GeneratePassword;
         private System.Windows.Forms.NumericUpDown PassphraseLength;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.CheckBox EnableSigning;
-        private System.Windows.Forms.TextBox Signkey;
         private System.Windows.Forms.ComboBox PasswordCharacterSet;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Button GenerateSignKey;
-        private System.Windows.Forms.Label SignHelptext;
     }
 }

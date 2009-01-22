@@ -37,6 +37,14 @@ namespace Duplicati.Datamodel
 		private System.String m_KeepTime = "";
 		[DatabaseField("FullAfter")]
 		private System.String m_FullAfter = "";
+		[Default(""), DatabaseField("DownloadBandwidth")]
+		private System.String m_DownloadBandwidth = "";
+		[Default(""), DatabaseField("UploadBandwidth")]
+		private System.String m_UploadBandwidth = "";
+		[Default(""), DatabaseField("VolumeSize")]
+		private System.String m_VolumeSize = "";
+		[DatabaseField("MaxUploadsize")]
+		private System.String m_MaxUploadsize = "";
 #endregion
 
 #region " properties "
@@ -93,6 +101,30 @@ namespace Duplicati.Datamodel
 		{
 			get{return m_FullAfter;}
 			set{object oldvalue = m_FullAfter;OnBeforeDataChange(this, "FullAfter", oldvalue, value);m_FullAfter = value;OnAfterDataChange(this, "FullAfter", oldvalue, value);}
+		}
+
+		public System.String DownloadBandwidth
+		{
+			get{return m_DownloadBandwidth;}
+			set{object oldvalue = m_DownloadBandwidth;OnBeforeDataChange(this, "DownloadBandwidth", oldvalue, value);m_DownloadBandwidth = value;OnAfterDataChange(this, "DownloadBandwidth", oldvalue, value);}
+		}
+
+		public System.String UploadBandwidth
+		{
+			get{return m_UploadBandwidth;}
+			set{object oldvalue = m_UploadBandwidth;OnBeforeDataChange(this, "UploadBandwidth", oldvalue, value);m_UploadBandwidth = value;OnAfterDataChange(this, "UploadBandwidth", oldvalue, value);}
+		}
+
+		public System.String VolumeSize
+		{
+			get{return m_VolumeSize;}
+			set{object oldvalue = m_VolumeSize;OnBeforeDataChange(this, "VolumeSize", oldvalue, value);m_VolumeSize = value;OnAfterDataChange(this, "VolumeSize", oldvalue, value);}
+		}
+
+		public System.String MaxUploadsize
+		{
+			get{return m_MaxUploadsize;}
+			set{object oldvalue = m_MaxUploadsize;OnBeforeDataChange(this, "MaxUploadsize", oldvalue, value);m_MaxUploadsize = value;OnAfterDataChange(this, "MaxUploadsize", oldvalue, value);}
 		}
 
 #endregion

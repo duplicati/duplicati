@@ -91,6 +91,11 @@ namespace Duplicati.GUI.Service_controls
 
                 ForceFullBackup.Checked = !string.IsNullOrEmpty(m_schedule.FullAfter);
                 ForceFullBackupTimespan.Text = m_schedule.FullAfter;
+
+                MaxUploaded.Text = m_schedule.MaxUploadsize;
+                VolumeSize.Text = m_schedule.VolumeSize;
+                DownloadBandwidth.Text = m_schedule.DownloadBandwidth;
+                UploadBandwidth.Text =m_schedule.UploadBandwidth;
             }
             finally
             {
@@ -219,6 +224,75 @@ namespace Duplicati.GUI.Service_controls
 
             m_schedule.KeepFull = Convert.ToInt32(CleanupFullCount.Value);
             KeepNFullCheckbox.Checked = m_schedule.KeepFull > 0;
+        }
+
+        private void MaxUploaded_TextChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating || m_schedule == null)
+                return;
+
+            try
+            {
+                Library.Core.Sizeparser.ParseSize(MaxUploaded.Text);
+                m_schedule.MaxUploadsize = MaxUploaded.Text;
+                errorProvider.SetError(MaxUploaded, "");
+            }
+            catch (Exception ex)
+            {
+                errorProvider.SetError(MaxUploaded, ex.Message);
+            }
+        }
+
+        private void VolumeSize_TextChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating || m_schedule == null)
+                return;
+
+            try
+            {
+                Library.Core.Sizeparser.ParseSize(VolumeSize.Text);
+                m_schedule.VolumeSize = VolumeSize.Text;
+                errorProvider.SetError(VolumeSize, "");
+            }
+            catch (Exception ex)
+            {
+                errorProvider.SetError(VolumeSize, ex.Message);
+            }
+        }
+
+        private void UploadBandwidth_TextChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating || m_schedule == null)
+                return;
+
+            try
+            {
+                Library.Core.Sizeparser.ParseSize(UploadBandwidth.Text);
+                m_schedule.UploadBandwidth = UploadBandwidth.Text;
+                errorProvider.SetError(UploadBandwidth, "");
+            }
+            catch (Exception ex)
+            {
+                errorProvider.SetError(UploadBandwidth, ex.Message);
+            }
+
+        }
+
+        private void DownloadBandwidth_TextChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating || m_schedule == null)
+                return;
+
+            try
+            {
+                Library.Core.Sizeparser.ParseSize(DownloadBandwidth.Text);
+                m_schedule.DownloadBandwidth = DownloadBandwidth.Text;
+                errorProvider.SetError(DownloadBandwidth, "");
+            }
+            catch (Exception ex)
+            {
+                errorProvider.SetError(DownloadBandwidth, ex.Message);
+            }
         }
     }
 }

@@ -191,6 +191,53 @@
           <IgnoreWithInsert>false</IgnoreWithInsert>
           <Index>false</Index>
         </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>DownloadBandwidth</Name>
+          <Fieldname>DownloadBandwidth</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <Default xsi:type="xsd:string" />
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>UploadBandwidth</Name>
+          <Fieldname>UploadBandwidth</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <Default xsi:type="xsd:string" />
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>VolumeSize</Name>
+          <Fieldname>VolumeSize</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <Default xsi:type="xsd:string" />
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>MaxUploadsize</Name>
+          <Fieldname>MaxUploadsize</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
       </Columns>
       <Ignore>false</Ignore>
       <Relations />

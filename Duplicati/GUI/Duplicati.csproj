@@ -284,6 +284,10 @@
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
+      <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
+      <Name>Duplicati.Library.Backend.S3</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SSH\Duplicati.Library.Backend.SSH.csproj">
       <Project>{6BA21DCB-1701-4936-B177-3B6D4DE3474E}</Project>
       <Name>Duplicati.Library.Backend.SSH</Name>
@@ -446,6 +450,7 @@
       <SubType>Designer</SubType>
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </EmbeddedResource>
+    <Content Include="Database schema\1.Throttle options.sql" />
     <Content Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>

@@ -44,9 +44,9 @@ namespace Duplicati.GUI
             if (c > 0)
                 log.ParsedStatus = "Warning";
 
-            c = ExtractNumber(text, SIZE_INDICATOR, 0);
+            c = ExtractNumber(text, SIZE_INDICATOR, -1);
 
-            if (c <= 0)
+            if (c == 0)
                 log.ParsedStatus = "Warning";
 
             log.Transfersize = c;

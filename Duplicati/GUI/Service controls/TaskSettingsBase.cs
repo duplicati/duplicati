@@ -77,7 +77,6 @@ namespace Duplicati.GUI.Service_controls
                 }
 
                 EncrytionKey.Text = m_task.Encryptionkey;
-                SignatureKey.Text = m_task.Signaturekey;
                 SourceFolder.Text = m_task.SourcePath;
 
                 switch (m_task.Service.Trim().ToLower())
@@ -113,15 +112,6 @@ namespace Duplicati.GUI.Service_controls
             EncrytionKey.Text = KeyGenerator.GenerateKey(64, 128);
         }
 
-        private void GenerateSignatureKey_Click(object sender, EventArgs e)
-        {
-            if (m_task.ExistsInDb && !string.IsNullOrEmpty(m_task.Encryptionkey))
-                if (MessageBox.Show(this, "If you modify the signature key, you can no longer verify any existing backups. Please make sure you have a copy of the key. Do you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel) != DialogResult.Yes)
-                    return;
-
-            SignatureKey.Text = KeyGenerator.GenerateSignKey();
-        }
-
         private void EncrytionKey_TextChanged(object sender, EventArgs e)
         {
             EncryptionCheckbox.Checked = EncrytionKey.Text.Trim().Length > 0;
@@ -129,15 +119,6 @@ namespace Duplicati.GUI.Service_controls
                 return;
 
             m_task.Encryptionkey = EncrytionKey.Text;
-        }
-
-        private void SignatureKey_TextChanged(object sender, EventArgs e)
-        {
-            SignatureCheckbox.Checked = SignatureKey.Text.Trim().Length > 0;
-            if (m_isUpdating || m_task == null)
-                return;
-
-            m_task.Signaturekey = SignatureKey.Text;
         }
 
         private void BrowseSourceFolder_Click(object sender, EventArgs e)

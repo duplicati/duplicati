@@ -54,6 +54,7 @@ namespace Duplicati.GUI
             this.OKBtn = new System.Windows.Forms.Button();
             this.TreeMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.playToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.restoreFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.SetupMenuStrip = new System.Windows.Forms.ToolStrip();
             this.AddButton = new System.Windows.Forms.ToolStripDropDownButton();
@@ -66,7 +67,6 @@ namespace Duplicati.GUI
             this.backupTreeView = new Duplicati.GUI.HelperControls.BackupTreeView();
             this.scheduleSettings = new Duplicati.GUI.Service_controls.ScheduleSettings();
             this.taskSettings = new Duplicati.GUI.Service_controls.TaskSettingsBase();
-            this.restoreFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1.SuspendLayout();
             this.TreeMenuStrip.SuspendLayout();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -83,7 +83,7 @@ namespace Duplicati.GUI
             this.panel1.Controls.Add(this.CancelBtn);
             this.panel1.Controls.Add(this.OKBtn);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel1.Location = new System.Drawing.Point(0, 477);
+            this.panel1.Location = new System.Drawing.Point(0, 516);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(440, 40);
             this.panel1.TabIndex = 0;
@@ -116,7 +116,7 @@ namespace Duplicati.GUI
             this.playToolStripMenuItem,
             this.restoreFilesToolStripMenuItem});
             this.TreeMenuStrip.Name = "TreeMenuStrip";
-            this.TreeMenuStrip.Size = new System.Drawing.Size(165, 70);
+            this.TreeMenuStrip.Size = new System.Drawing.Size(165, 48);
             this.TreeMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.TreeMenuStrip_Opening);
             // 
             // playToolStripMenuItem
@@ -126,6 +126,14 @@ namespace Duplicati.GUI
             this.playToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.playToolStripMenuItem.Text = "Run backup now";
             this.playToolStripMenuItem.Click += new System.EventHandler(this.playToolStripMenuItem_Click);
+            // 
+            // restoreFilesToolStripMenuItem
+            // 
+            this.restoreFilesToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("restoreFilesToolStripMenuItem.Image")));
+            this.restoreFilesToolStripMenuItem.Name = "restoreFilesToolStripMenuItem";
+            this.restoreFilesToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.restoreFilesToolStripMenuItem.Text = "Restore files...";
+            this.restoreFilesToolStripMenuItem.Click += new System.EventHandler(this.restoreFilesToolStripMenuItem_Click);
             // 
             // splitContainer1
             // 
@@ -141,7 +149,7 @@ namespace Duplicati.GUI
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.PropertyTabs);
-            this.splitContainer1.Size = new System.Drawing.Size(440, 477);
+            this.splitContainer1.Size = new System.Drawing.Size(440, 516);
             this.splitContainer1.SplitterDistance = 146;
             this.splitContainer1.TabIndex = 1;
             // 
@@ -207,7 +215,7 @@ namespace Duplicati.GUI
             this.PropertyTabs.Location = new System.Drawing.Point(0, 0);
             this.PropertyTabs.Name = "PropertyTabs";
             this.PropertyTabs.SelectedIndex = 0;
-            this.PropertyTabs.Size = new System.Drawing.Size(290, 477);
+            this.PropertyTabs.Size = new System.Drawing.Size(290, 516);
             this.PropertyTabs.TabIndex = 0;
             this.PropertyTabs.Visible = false;
             // 
@@ -216,7 +224,7 @@ namespace Duplicati.GUI
             this.OccurencePage.Controls.Add(this.scheduleSettings);
             this.OccurencePage.Location = new System.Drawing.Point(4, 22);
             this.OccurencePage.Name = "OccurencePage";
-            this.OccurencePage.Size = new System.Drawing.Size(282, 451);
+            this.OccurencePage.Size = new System.Drawing.Size(282, 490);
             this.OccurencePage.TabIndex = 0;
             this.OccurencePage.Text = "Occurence";
             this.OccurencePage.UseVisualStyleBackColor = true;
@@ -226,7 +234,7 @@ namespace Duplicati.GUI
             this.FilePage.Controls.Add(this.taskSettings);
             this.FilePage.Location = new System.Drawing.Point(4, 22);
             this.FilePage.Name = "FilePage";
-            this.FilePage.Size = new System.Drawing.Size(282, 451);
+            this.FilePage.Size = new System.Drawing.Size(282, 467);
             this.FilePage.TabIndex = 1;
             this.FilePage.Text = "Files";
             this.FilePage.UseVisualStyleBackColor = true;
@@ -236,7 +244,8 @@ namespace Duplicati.GUI
             this.backupTreeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.backupTreeView.Location = new System.Drawing.Point(0, 25);
             this.backupTreeView.Name = "backupTreeView";
-            this.backupTreeView.Size = new System.Drawing.Size(146, 452);
+            this.backupTreeView.SelectedFolder = "";
+            this.backupTreeView.Size = new System.Drawing.Size(146, 491);
             this.backupTreeView.TabIndex = 1;
             // 
             // scheduleSettings
@@ -244,30 +253,23 @@ namespace Duplicati.GUI
             this.scheduleSettings.Dock = System.Windows.Forms.DockStyle.Fill;
             this.scheduleSettings.Location = new System.Drawing.Point(0, 0);
             this.scheduleSettings.Name = "scheduleSettings";
-            this.scheduleSettings.Size = new System.Drawing.Size(282, 451);
+            this.scheduleSettings.Size = new System.Drawing.Size(282, 490);
             this.scheduleSettings.TabIndex = 0;
+            this.scheduleSettings.Load += new System.EventHandler(this.scheduleSettings_Load);
             // 
             // taskSettings
             // 
             this.taskSettings.Dock = System.Windows.Forms.DockStyle.Fill;
             this.taskSettings.Location = new System.Drawing.Point(0, 0);
             this.taskSettings.Name = "taskSettings";
-            this.taskSettings.Size = new System.Drawing.Size(282, 451);
+            this.taskSettings.Size = new System.Drawing.Size(282, 467);
             this.taskSettings.TabIndex = 0;
-            // 
-            // restoreFilesToolStripMenuItem
-            // 
-            this.restoreFilesToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("restoreFilesToolStripMenuItem.Image")));
-            this.restoreFilesToolStripMenuItem.Name = "restoreFilesToolStripMenuItem";
-            this.restoreFilesToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
-            this.restoreFilesToolStripMenuItem.Text = "Restore files...";
-            this.restoreFilesToolStripMenuItem.Click += new System.EventHandler(this.restoreFilesToolStripMenuItem_Click);
             // 
             // ServiceSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(440, 517);
+            this.ClientSize = new System.Drawing.Size(440, 556);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.panel1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));

@@ -19,7 +19,6 @@ namespace Duplicati.GUI
             else
                 options.Add("passphrase", task.Task.Encryptionkey);
 
-
             task.GetOptions(options);
             string results = "";
 
@@ -62,6 +61,8 @@ namespace Duplicati.GUI
             }
             catch (Exception ex)
             {
+                while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
+                    ex = ex.InnerException;
                 results = "Error: " + ex.Message;
             }
 

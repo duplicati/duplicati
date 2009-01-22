@@ -113,5 +113,10 @@ namespace Duplicati.GUI
         {
             backupTreeView.RestoreNode(restoreFilesToolStripMenuItem.Tag as TreeNode);
         }
+
+        private void scheduleSettings_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

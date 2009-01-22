@@ -30,8 +30,11 @@ namespace Duplicati.Datamodel.Backends
         private const string ACCESS_KEY = "AccessKey";
         private const string BUCKET_NAME = "Bucketname";
         private const string EUROBUCKET = "UseEuroBucket";
+        private const string SUBDOMAIN = "UseSubdomainStrategy";
         private const string SERVER_URL = "ServerUrl";
         private const string PREFIX = "Prefix";
+
+        private const string S3_PATH = "s3.amazonaws.com";
 
         private Task m_owner;
 
@@ -83,24 +86,43 @@ namespace Duplicati.Datamodel.Backends
             set { m_owner.Settings[EUROBUCKET] = value.ToString(); }
         }
 
+        public bool UseSubdomainStrategy
+        {
+            get
+            {
+                bool v;
+                if (bool.TryParse(m_owner.Settings[SUBDOMAIN], out v))
+                    return v;
+                else
+                    return false;
+            }
+            set { m_owner.Settings[SUBDOMAIN] = value.ToString(); }
+        }
+
         #region IBackend Members
 
         public string GetDestinationPath()
         {
             string host = this.ServerUrl;
             if (string.IsNullOrEmpty(host))
-                if (this.UseEuroBucket)
-                    host = "s3.amazonaws.com";
+            {
+                if (this.UseEuroBucket || this.UseSubdomainStrategy)
+                    host = this.BucketName + "." +  S3_PATH;
                 else
-                    host = "s3.amazonaws.com";
+                    host = S3_PATH;
+            }
 
-            return "s3://" + host + "/" + this.BucketName + (string.IsNullOrEmpty(this.Prefix) ? "" : "/" + this.Prefix);
+            if (this.UseEuroBucket || this.UseSubdomainStrategy)
+                return "s3://" + host + "/" + (string.IsNullOrEmpty(this.Prefix) ? "" : this.Prefix);
+            else
+                return "s3://" + host + "/" + this.BucketName + (string.IsNullOrEmpty(this.Prefix) ? "" : "/" + this.Prefix);
+
         }
 
         public void GetOptions(Dictionary<string, string> options)
         {
-            options["aws_access_id"] = this.AccessID;
-            options["aws_access_key"] = this.AccessKey;
+            options["aws_access_key_id"] = this.AccessID;
+            options["aws_secret_access_key"] = this.AccessKey;
         }
 
         public string FriendlyName { get { return "Amazon S3"; } }

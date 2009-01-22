@@ -73,8 +73,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 EnablePassword.Checked = true;
                 Password.Text = "";
-                EnableSigning.Checked = true;
-                Signkey.Text = "";
                 m_showAsInitial = false;
             }
             else
@@ -83,8 +81,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 {
                     EnablePassword.Checked = !string.IsNullOrEmpty(m_task.Encryptionkey);
                     Password.Text = m_task.Encryptionkey;
-                    EnableSigning.Checked = !string.IsNullOrEmpty(m_task.Signaturekey);
-                    Signkey.Text = m_task.Signaturekey;
                 }
             }
         }
@@ -96,38 +92,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 MessageBox.Show(this, "You must enter a password, remove the check mark next to the box to disable encryption of the backups.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 cancel = true;
                 return;
-            }
-
-            if (EnableSigning.Checked && Signkey.Text.Trim().Length == 0)
-            {
-                MessageBox.Show(this, "You must enter a signature key, remove the check mark next to the box to disable signing of the backups.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
-                return;
-            }
-
-            if (EnableSigning.Checked)
-            {
-                bool valid = true;
-
-                if (Signkey.Text.Length != 8)
-                    valid = false;
-                else
-                {
-                    List<char> l = new List<char>(KeyGenerator.HEX_CHARS);
-                    for (int i = 0; i < Signkey.Text.Length; i++)
-                        if (!l.Contains(Signkey.Text[i]))
-                        {
-                            valid = false;
-                            break;
-                        }
-                }
-
-                if (!valid)
-                {
-                    MessageBox.Show(this, "The signature key must be excatly eight characters, and only contain the letters A through F, and the numbers 0 to 9.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    cancel = true;
-                    return;
-                }
             }
 
             if (!m_warnedNoPassword && !EnablePassword.Checked)
@@ -144,18 +108,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             else
                 m_task.Encryptionkey = null;
 
-            if (EnableSigning.Checked)
-                m_task.Signaturekey = Signkey.Text;
-            else
-                m_task.Signaturekey = null;
+            m_task.Signaturekey = null;
         }
 
         #endregion
-
-        private void GenerateSignKey_Click(object sender, EventArgs e)
-        {
-            Signkey.Text = KeyGenerator.GenerateSignKey();
-        }
 
         private void GeneratePassword_Click(object sender, EventArgs e)
         {
@@ -166,11 +122,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             Password.Enabled = PasswordHelptext.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
             m_warnedNoPassword = false;
-        }
-
-        private void EnableSigning_CheckedChanged(object sender, EventArgs e)
-        {
-            Signkey.Enabled = GenerateSignKey.Enabled = SignHelptext.Enabled = EnableSigning.Checked;
         }
 
         private void Password_TextChanged(object sender, EventArgs e)

@@ -97,12 +97,60 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
                 return;
             }
 
+            if (!BucketName.Text.ToLower().StartsWith(AWS_ID.Text.ToLower()))
+            {
+                DialogResult res = MessageBox.Show(this, "The bucket name does not start with your user ID.\nTo avoid using a bucket owned by another user,\nit is recommended that you put your user ID in front of the bucket name.\nDo you want to insert the user ID in front of the bucket name?", Application.ProductName, MessageBoxButtons.YesNoCancel , MessageBoxIcon.Warning);
+                if (res == DialogResult.Yes)
+                    BucketName.Text = AWS_ID.Text.ToLower() + "-" + BucketName.Text;
+                else if (res == DialogResult.Cancel)
+                {
+                    cancel = true;
+                    return;
+                }
+            }
+
+            string bucketname;
+            string prefix;
+
+            if (BucketName.Text.Contains("/"))
+            {
+                bucketname = BucketName.Text.Substring(0, BucketName.Text.IndexOf("/"));
+                prefix = BucketName.Text.Substring(BucketName.Text.IndexOf("/") + 1);
+            }
+            else
+            {
+                bucketname = BucketName.Text;
+                prefix = null;
+            }
+
+
+
+            if (bucketname.ToLower() != bucketname)
+            {
+                string reason = UseEuroBuckets.Checked ?
+                    "The european buckets require that the bucket name is in lower case." :
+                    "The new amazon s3 API requires that bucket names are all lower case.";
+
+                DialogResult res = MessageBox.Show(this, "The bucket name is not in all lower case.\n" + reason +  "\nDo you want to convert the bucket name to lower case?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                if (res == DialogResult.Yes)
+                {
+                    bucketname = bucketname.ToLower();
+                    BucketName.Text = bucketname + "/" + prefix;
+                }
+                else if (res == DialogResult.Cancel || UseEuroBuckets.Checked)
+                {
+                    cancel = true;
+                    return;
+                }
+            }
+
             m_s3.AccessID = AWS_ID.Text;
             m_s3.AccessKey = AWS_KEY.Text;
-            m_s3.BucketName = BucketName.Text;
+            m_s3.BucketName = bucketname;
+            m_s3.Prefix = prefix;
             m_s3.ServerUrl = null;
-            m_s3.Prefix = null;
             m_s3.UseEuroBucket = UseEuroBuckets.Checked;
+            m_s3.UseSubdomainStrategy = bucketname.ToLower() == bucketname;
             m_s3.SetService();
 
         }

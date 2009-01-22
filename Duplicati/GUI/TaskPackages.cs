@@ -83,6 +83,7 @@ namespace Duplicati.GUI
         public abstract string SourcePath { get; }
         public virtual void GetOptions(Dictionary<string, string> options)
         {
+            this.Schedule.GetOptions(options);
             this.Task.GetOptions(options);
         }
     }

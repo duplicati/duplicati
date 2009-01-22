@@ -16,6 +16,10 @@ CREATE TABLE "Schedule" (
     "Weekdays" TEXT NULL,
     "KeepFull" INTEGER NULL,
     "KeepTime" TEXT NULL,
+    "MaxUploadsize" TEXT NULL,
+    "UploadBandwidth" TEXT NULL,
+    "DownloadBandwidth" TEXT NULL,
+    "VolumeSize" TEXT NULL,
 	"FullAfter" TEXT
 );
 

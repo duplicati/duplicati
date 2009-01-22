@@ -110,7 +110,7 @@ namespace Duplicati.GUI
             string prefix = typeof(DatabaseUpgrader).Namespace + "." + FOLDER_NAME + ".";
             foreach (string s in asm.GetManifestResourceNames())
             {
-                //The resource name will be "TimeRegistrator.DatabaseUpgrades.1.Sample upgrade.sql"
+                //The resource name will be "Duplicati.GUI.Database_schema.1.Sample upgrade.sql"
                 //The number indicates the version that will be upgraded to
                 if (s.StartsWith(prefix) && !s.Equals(prefix + SCHEMA_NAME))
                 {
