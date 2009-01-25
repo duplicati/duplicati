@@ -24,7 +24,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class FTP : IBackendInterface
+    public class FTP : IStreamingBackend
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
@@ -121,6 +121,11 @@ namespace Duplicati.Library.Backend
             get { return "ftp"; }
         }
 
+        public bool SupportsStreaming
+        {
+            get { return true; }
+        }
+
         public List<FileEntry> List()
         {
             System.Net.FtpWebRequest req = CreateRequest("");
@@ -141,27 +146,37 @@ namespace Duplicati.Library.Backend
             return lst;
         }
 
-        public void Put(string remotename, string localname)
+        public void Put(string remotename, System.IO.Stream input)
         {
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
             req.UseBinary = true;
 
-            using(System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-            using(System.IO.Stream rs = req.GetRequestStream())
-                Core.Utility.CopyStream(fs, rs, true);
+            using (System.IO.Stream rs = req.GetRequestStream())
+                Core.Utility.CopyStream(input, rs, true);
         }
 
-        public void Get(string remotename, string localname)
+        public void Put(string remotename, string localname)
+        {
+            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                Put(remotename, fs);
+        }
+
+        public void Get(string remotename, System.IO.Stream output)
         {
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
             req.UseBinary = true;
 
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
             using (System.Net.WebResponse resp = req.GetResponse())
             using (System.IO.Stream rs = resp.GetResponseStream())
-                Core.Utility.CopyStream(rs, fs, false);
+                Core.Utility.CopyStream(rs, output, false);
+        }
+
+        public void Get(string remotename, string localname)
+        {
+            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                Get(remotename, fs);
         }
 
         public void Delete(string remotename)
@@ -170,6 +185,18 @@ namespace Duplicati.Library.Backend
             req.Method = System.Net.WebRequestMethods.Ftp.DeleteFile;
             using (req.GetResponse())
             { }
+        }
+
+        #endregion
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            if (m_userInfo != null)
+                m_userInfo = null;
+            if (m_options != null)
+                m_options = null;
         }
 
         #endregion

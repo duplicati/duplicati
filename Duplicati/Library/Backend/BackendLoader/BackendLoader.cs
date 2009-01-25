@@ -23,11 +23,11 @@ using System.Text;
 
 namespace Duplicati.Library.Backend
 {
-    public class BackendLoader : IBackendInterface
+    public class BackendLoader : IBackend
     {
         private static object m_lock = new object();
         private static Dictionary<string, Type> m_backends;
-        private IBackendInterface m_interface;
+        private IBackend m_interface;
 
         public BackendLoader(string url, Dictionary<string, string> options)
             : this()
@@ -72,9 +72,9 @@ namespace Duplicati.Library.Backend
                                     continue;
 
                                 foreach (Type t in asm.GetExportedTypes())
-                                    if (typeof(IBackendInterface).IsAssignableFrom(t) && t != typeof(IBackendInterface))
+                                    if (typeof(IBackend).IsAssignableFrom(t) && t != typeof(IBackend))
                                     {
-                                        IBackendInterface i = Activator.CreateInstance(t) as IBackendInterface;
+                                        IBackend i = Activator.CreateInstance(t) as IBackend;
                                         backends[i.ProtocolKey] = t;
                                     }
                             }
@@ -93,7 +93,7 @@ namespace Duplicati.Library.Backend
             LoadBackends();
         }
 
-        public static IBackendInterface GetBackend(string url, Dictionary<string, string> options)
+        public static IBackend GetBackend(string url, Dictionary<string, string> options)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException("index");
@@ -104,7 +104,7 @@ namespace Duplicati.Library.Backend
                 LoadBackends();
 
             if (m_backends.ContainsKey(scheme))
-                return (IBackendInterface)Activator.CreateInstance(m_backends[scheme], url, options);
+                return (IBackend)Activator.CreateInstance(m_backends[scheme], url, options);
             else
                 return null;
         }
@@ -163,6 +163,20 @@ namespace Duplicati.Library.Backend
                 throw new ArgumentException("This instance was not created with an URL");
 
             m_interface.Delete(remotename);
+        }
+
+        #endregion
+
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            if (m_interface != null)
+            {
+                m_interface.Dispose();
+                m_interface = null;
+            }
         }
 
         #endregion

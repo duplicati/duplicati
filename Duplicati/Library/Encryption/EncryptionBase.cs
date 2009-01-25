@@ -30,6 +30,8 @@ namespace Duplicati.Library.Encryption
     {
         #region IEncryption Members
 
+        public abstract string FilenameExtension { get; }
+
         public virtual void Encrypt(string inputfile, string outputfile)
         {
             using (System.IO.FileStream fs1 = System.IO.File.OpenRead(inputfile))
@@ -37,7 +39,13 @@ namespace Duplicati.Library.Encryption
                 this.Encrypt(fs1, fs2);
         }
 
-        public abstract void Encrypt(System.IO.Stream input, System.IO.Stream output);
+        public virtual void Encrypt(System.IO.Stream input, System.IO.Stream output)
+        {
+            using (System.IO.Stream cs = Encrypt(output))
+                Core.Utility.CopyStream(input, cs);
+        }
+
+        public abstract System.IO.Stream Encrypt(System.IO.Stream input);
 
         public virtual void Decrypt(string inputfile, string outputfile)
         {
@@ -46,7 +54,21 @@ namespace Duplicati.Library.Encryption
                 this.Decrypt(fs1, fs2);
         }
 
-        public abstract void Decrypt(System.IO.Stream input, System.IO.Stream output);
+        public abstract System.IO.Stream Decrypt(System.IO.Stream input);
+
+        public virtual void Decrypt(System.IO.Stream input, System.IO.Stream output)
+        {
+            try
+            {
+                using (System.IO.Stream cs = Decrypt(input))
+                    Core.Utility.CopyStream(cs, output);
+            }
+            catch (System.Security.Cryptography.CryptographicException cex)
+            {
+                //Better error message than "Padding is invalid and cannot be removed" :)
+                throw new Exception("Failed to decrypt data (bad key?): " + cex.Message, cex);
+            }
+        }
 
         #endregion
     }

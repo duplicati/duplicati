@@ -56,5 +56,24 @@ namespace Duplicati.Library.Encryption
         /// <param name="input">The stream to decrypt</param>
         /// <param name="output">The decrypted stream</param>
         void Decrypt(Stream input, Stream output);
+
+        /// <summary>
+        /// Decrypts the stream to the output stream
+        /// </summary>
+        /// <param name="input">The encrypted stream</param>
+        /// <returns>The unencrypted stream</returns>
+        Stream Decrypt(Stream input);
+
+        /// <summary>
+        /// Encrypts the stream
+        /// </summary>
+        /// <param name="input">The unencrypted stream</param>
+        /// <returns>The encrypted stream</returns>
+        Stream Encrypt(Stream input);
+
+        /// <summary>
+        /// Returns the extension that the encryption implementation adds to the filename
+        /// </summary>
+        string FilenameExtension { get; }
     }
 }

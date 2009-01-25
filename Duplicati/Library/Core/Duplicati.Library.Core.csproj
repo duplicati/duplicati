@@ -40,6 +40,7 @@
     <Compile Include="Sizeparser.cs" />
     <Compile Include="TempFile.cs" />
     <Compile Include="TempFolder.cs" />
+    <Compile Include="ThrottledStream.cs" />
     <Compile Include="Timeparser.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>

@@ -24,7 +24,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSH : IBackendInterface
+    public class SSH : IBackend
     {
         private string m_server;
         private string m_path;
@@ -178,6 +178,22 @@ namespace Duplicati.Library.Backend
                 }
             }
         }
+
+        #endregion
+
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            if (m_options != null)
+                m_options = null;
+            if (m_username != null)
+                m_username = null;
+            if (m_password != null)
+                m_password = null;
+        }
+
 
         #endregion
 

@@ -29,6 +29,7 @@ namespace Duplicati.Library.Core
     public class TempFolder : IDisposable
     {
         private string m_folder;
+        private bool m_protect;
 
         public TempFolder()
             : this(System.IO.Path.Combine(SystemTempPath, Guid.NewGuid().ToString()))
@@ -37,8 +38,19 @@ namespace Duplicati.Library.Core
 
         public TempFolder(string folder)
         {
+            m_protect = false;
             m_folder = Core.Utility.AppendDirSeperator(folder);
             System.IO.Directory.CreateDirectory(m_folder);
+        }
+
+        /// <summary>
+        /// A value indicating if the folder is protected, meaning that it will not be deleted when the instance is disposed.
+        /// Defaults to false, meaning that the folder will be deleted when disposed.
+        /// </summary>
+        public bool Protected
+        {
+            get { return m_protect; }
+            set { m_protect = value; }
         }
 
         public static implicit operator string(TempFolder folder)
@@ -57,7 +69,7 @@ namespace Duplicati.Library.Core
         {
             try
             {
-                if (m_folder != null && System.IO.Directory.Exists(m_folder))
+                if (!m_protect && m_folder != null && System.IO.Directory.Exists(m_folder))
                     System.IO.Directory.Delete(m_folder, true);
                 m_folder = null;
             }

@@ -32,7 +32,7 @@ namespace Duplicati.Library.Main.RSync
         private static readonly string SIGNATURE_ROOT = "signature";
         private static readonly string CONTENT_ROOT = "snapshot";
         private static readonly string DELTA_ROOT = "diff";
-        private static readonly string DACL_ROOT = "dacl";
+        //private static readonly string DACL_ROOT = "dacl";
 
         private static readonly string DELETED_FILES = "deleted_files.txt";
         private static readonly string DELETED_FOLDERS = "deleted_folders.txt";
@@ -331,6 +331,8 @@ namespace Duplicati.Library.Main.RSync
 
         private long AddFileToCompression(System.IO.FileStream fs, string s, Compression.Compression c)
         {
+            fs.Position = 0;
+
             if (m_modifiedFiles.ContainsKey(s))
             {
                 string relpath = s.Substring(m_sourcefolder.Length);

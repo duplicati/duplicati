@@ -36,8 +36,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AESEncryption.cs" />
+    <Compile Include="CryptoStreamWrapper.cs" />
     <Compile Include="EncryptedBackendWrapper.cs" />
     <Compile Include="EncryptionBase.cs" />
+    <Compile Include="GPGStreamWrapper.cs" />
     <Compile Include="IEncryption.cs" />
     <Compile Include="GPGEncryption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

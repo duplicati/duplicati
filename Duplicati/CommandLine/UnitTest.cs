@@ -29,8 +29,7 @@ using Duplicati.Library.Core;
 namespace Duplicati.CommandLine
 {
     /// <summary>
-    /// This class encapsulates a simple method for testing the correctness of 
-    /// duplicati.
+    /// This class encapsulates a simple method for testing the correctness of duplicati.
     /// </summary>
     public class UnitTest
     {
@@ -78,7 +77,6 @@ namespace Duplicati.CommandLine
             if (!options.ContainsKey("backup-prefix"))
                 options["backup-prefix"] = "duplicati_unittest";
 
-
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
@@ -90,8 +88,11 @@ namespace Duplicati.CommandLine
                 }
                 else
                 {
-                    //TODO: Implement the cleanup part
-                    //Duplicati.Library.Main.Interface.RemoveAllButNFull(0);
+                    Dictionary<string, string> tmp = new Dictionary<string, string>(options);
+                    tmp["remove-all-but-n-full"] = "0";
+                    tmp["force"] = "";
+                    using (new Timer("Cleaning up any existing backups")) 
+                        Console.WriteLine(Duplicati.Library.Main.Interface.RemoveAllButNFull(target, tmp));
                 }
 
 
@@ -105,6 +106,7 @@ namespace Duplicati.CommandLine
 
                 for (int i = 1; i < folders.Length; i++)
                 {
+                    //options["passphrase"] = "bad password";
                     //If the backups are too close, we can't pick the right one :(
                     System.Threading.Thread.Sleep(1000 * 5);
                     Console.WriteLine("Backing up the incremental copy: " + folders[i]);

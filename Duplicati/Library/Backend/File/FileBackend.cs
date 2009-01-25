@@ -23,7 +23,7 @@ using System.Text;
 
 namespace Duplicati.Library.Backend
 {
-    public class File : IBackendInterface
+    public class File : IStreamingBackend
     {
         private string m_path;
         private string m_username;
@@ -73,6 +73,11 @@ namespace Duplicati.Library.Backend
             get { return "file"; }
         }
 
+        public bool SupportsStreaming
+        {
+            get { return true; }
+        }
+
         public List<FileEntry> List()
         {
             string path = m_path;
@@ -99,16 +104,30 @@ namespace Duplicati.Library.Backend
             return ls;
         }
 
-        public void Put(string remotename, string filename)
+        public void Put(string remotename, System.IO.Stream stream)
         {
             string path = System.IO.Path.Combine(m_path, remotename);
-            System.IO.File.Copy(filename, path, true);
+            using (System.IO.FileStream writestream = System.IO.File.Open(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                Core.Utility.CopyStream(stream, writestream);
+        }
+
+        public void Put(string remotename, string filename)
+        {
+            using (System.IO.FileStream readstream = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                Put(remotename, filename);
+        }
+
+        public void Get(string remotename, System.IO.Stream stream)
+        {
+            string path = System.IO.Path.Combine(m_path, remotename);
+            using (System.IO.FileStream readstream = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                Core.Utility.CopyStream(readstream, stream);
         }
 
         public void Get(string remotename, string filename)
         {
-            string path = System.IO.Path.Combine(m_path, remotename);
-            System.IO.File.Copy(path, filename, true);
+            using (System.IO.FileStream writestream = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                Get(remotename, writestream);
         }
 
         public void Delete(string remotename)
@@ -119,9 +138,25 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
+        #region IDisposable Members
+        
+        public void Dispose()
+        {
+            if (m_options != null)
+                m_options = null;
+            if (m_username != null)
+                m_username = null;
+            if (m_password != null)
+                m_password = null;
+        }
+
+        #endregion
+
+
         public static bool PreAuthenticate(string path, string username, string password)
         {
             return Win32.PreAuthenticate(path, username, password);
         }
+
     }
 }

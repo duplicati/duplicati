@@ -35,8 +35,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BackendInterface.cs" />
+    <Compile Include="IBackend.cs" />
     <Compile Include="FileEntry.cs" />
+    <Compile Include="IStreamingBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

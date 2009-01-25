@@ -23,7 +23,10 @@ using System.Text;
 
 namespace Duplicati.Library.Backend
 {
-    public interface IBackendInterface
+    /// <summary>
+    /// The interface all backends must implement
+    /// </summary>
+    public interface IBackend : IDisposable
     {
         /// <summary>
         /// The name to display for this backend
@@ -54,7 +57,6 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="filename">The local filename</param>
-        /// <returns>A stream containing the remote data</returns>
         void Get(string remotename, string filename);
 
         /// <summary>

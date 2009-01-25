@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SharpRSyn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.S3", "Duplicati\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj", "{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -95,6 +97,10 @@ Global
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

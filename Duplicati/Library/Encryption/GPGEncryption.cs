@@ -32,17 +32,17 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// The PGP program to use, should be with absolute path
         /// </summary>
-        public static string PGP_PROGRAM = "pgp";
+        public static string PGP_PROGRAM = "gpg";
 
         /// <summary>
         /// Always present commandline args
         /// </summary>
-        private const string COMMANDLINE_ARGS = "--symmetric --armor";
+        private const string COMMANDLINE_ARGS = "--armor --passphrase-fd 0";
 
         /// <summary>
         /// Commandline switches for encryption
         /// </summary>
-        private const string ENCRYPTION_ARGS = "--encrypt";
+        private const string ENCRYPTION_ARGS = "--symmetric --local-user --encrypt";
 
         /// <summary>
         /// Commandline switches for decryption
@@ -72,14 +72,16 @@ namespace Duplicati.Library.Encryption
 
         #region IEncryption Members
 
-        public override void Encrypt(System.IO.Stream input, System.IO.Stream output)
+        public override string FilenameExtension { get { return "gpg"; } }
+
+        public override System.IO.Stream Encrypt(System.IO.Stream input)
         {
-            this.Execute(COMMANDLINE_ARGS + " " + ENCRYPTION_ARGS, input, output);
+            return this.Execute(COMMANDLINE_ARGS + " " + ENCRYPTION_ARGS, input, true);
         }
 
-        public override void Decrypt(System.IO.Stream input, System.IO.Stream output)
+        public override System.IO.Stream Decrypt(System.IO.Stream input)
         {
-            this.Execute(COMMANDLINE_ARGS + " " + DECRYPTION_ARGS, input, output);
+            return this.Execute(COMMANDLINE_ARGS + " " + DECRYPTION_ARGS, input, false);
         }
 
         /// <summary>
@@ -88,7 +90,7 @@ namespace Duplicati.Library.Encryption
         /// <param name="args">The commandline arguments</param>
         /// <param name="input">The input stream</param>
         /// <param name="output">The output stream</param>
-        private void Execute(string args, System.IO.Stream input, System.IO.Stream output)
+        private System.IO.Stream Execute(string args, System.IO.Stream input, bool encrypt)
         {
             System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
             psi.Arguments = args;
@@ -100,22 +102,40 @@ namespace Duplicati.Library.Encryption
             psi.UseShellExecute = false;
             psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
 
-            System.Diagnostics.Process p = System.Diagnostics.Process.Start(psi);
-            p.StandardInput.WriteLine(m_key);
+#if DEBUG
+            psi.CreateNoWindow = false;
+            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
+#endif
 
-            //Prevent blocking of the output buffer
-            System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
-            t.Start(new object[] {p.StandardOutput.BaseStream, output});
+            System.Diagnostics.Process p;
 
-            //Copy input stream to GPG
-            Core.Utility.CopyStream(input, p.StandardInput.BaseStream);
-            p.StandardInput.Close();
+            try
+            {
+                p = System.Diagnostics.Process.Start(psi);
+                p.StandardInput.WriteLine(m_key);
+                p.StandardInput.Flush();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to execute GPG at \"" + PGP_PROGRAM + "\": " + ex.Message, ex);
+            }
 
-            if (!t.Join(5000))
-                throw new Exception("Failure while invoking GnuPG, program won't flush output");
+            if (encrypt)
+            {
+                //Prevent blocking of the output buffer
+                System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
+                t.Start(new object[] { p.StandardOutput.BaseStream, input });
 
-            if (!p.WaitForExit(5000))
-                throw new Exception("Failure while invoking GnuPG, program won't terminate");
+                return new GPGStreamWrapper(p, t, p.StandardInput.BaseStream);
+            }
+            else
+            {
+                //Prevent blocking of the input buffer
+                System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
+                t.Start(new object[] { input, p.StandardInput.BaseStream });
+
+                return new GPGStreamWrapper(p, t, p.StandardOutput.BaseStream);
+            }
         }
 
         private void Runner(object x)
@@ -123,6 +143,7 @@ namespace Duplicati.Library.Encryption
             //Unwrap arguments and read stream
             object[] tmp = (object[])x;
             Core.Utility.CopyStream((Stream)tmp[0], (Stream)tmp[1]);
+            ((Stream)tmp[1]).Close();
         }
 
         #endregion

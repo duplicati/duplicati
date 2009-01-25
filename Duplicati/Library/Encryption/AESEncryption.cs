@@ -72,31 +72,30 @@ namespace Duplicati.Library.Encryption
             m_instance.IV = iv;
             m_instance.Key = realkey;
             m_instance.Mode = System.Security.Cryptography.CipherMode.CBC;
+            m_instance.Padding = System.Security.Cryptography.PaddingMode.PKCS7;
         }
 
         #region IEncryption Members
 
-        public override void Encrypt(System.IO.Stream input, System.IO.Stream output)
+        public override string FilenameExtension { get { return "aes"; } }
+
+        public override System.IO.Stream Encrypt(System.IO.Stream input)
         {
             if (m_instance.Mode == System.Security.Cryptography.CipherMode.ECB)
                 throw new Exception("Useless encryption detected");
 
             System.Security.Cryptography.ICryptoTransform ct = m_instance.CreateEncryptor();
-            using (System.Security.Cryptography.CryptoStream cs = new System.Security.Cryptography.CryptoStream(output, ct, System.Security.Cryptography.CryptoStreamMode.Write))
-            {
-                Core.Utility.CopyStream(input, cs);
-                cs.FlushFinalBlock();
-            }
+            return new CryptoStreamWrapper(new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Write));
         }
 
-        public override void Decrypt(System.IO.Stream input, System.IO.Stream output)
+        public override System.IO.Stream Decrypt(System.IO.Stream input)
         {
             if (m_instance.Mode == System.Security.Cryptography.CipherMode.ECB)
                 throw new Exception("Useless encryption detected");
 
             System.Security.Cryptography.ICryptoTransform ct = m_instance.CreateDecryptor();
-            using (System.Security.Cryptography.CryptoStream cs = new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Read))
-                Core.Utility.CopyStream(cs, output);
+            return new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Read);
+
         }
 
         #endregion

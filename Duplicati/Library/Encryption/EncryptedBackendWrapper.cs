@@ -26,9 +26,9 @@ namespace Duplicati.Library.Encryption
     /// <summary>
     /// Class that wraps a backend and transparently encrypts and decrypts data to and from the backend
     /// </summary>
-    public class EncryptedBackendWrapper : Backend.IBackendInterface
+    public class EncryptedBackendWrapper : Backend.IStreamingBackend
     {
-        private Backend.IBackendInterface m_realbackend;
+        private Backend.IBackend m_realbackend;
         private IEncryption m_encryptionEngine;
 
         public EncryptedBackendWrapper(string target, Dictionary<string, string> options)
@@ -36,7 +36,7 @@ namespace Duplicati.Library.Encryption
         {
         }
 
-        public EncryptedBackendWrapper(Backend.IBackendInterface backend, Dictionary<string, string> options)
+        public EncryptedBackendWrapper(Backend.IBackend backend, Dictionary<string, string> options)
         {
             if (!options.ContainsKey("passphrase") || string.IsNullOrEmpty(options["passphrase"]))
                 throw new Exception("No passphrase set");
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Encryption
                 m_encryptionEngine = new AESEncryption(passphrase);
         }
 
-        #region IBackendInterface Members
+        #region IStreamingBackend Members
 
         public string DisplayName
         {
@@ -62,9 +62,26 @@ namespace Duplicati.Library.Encryption
             get { return m_realbackend.ProtocolKey; }
         }
 
+        public bool SupportsStreaming
+        {
+            get { return m_realbackend is Backend.IStreamingBackend ? ((Backend.IStreamingBackend)m_realbackend).SupportsStreaming : false; } 
+        }
+
         public List<Duplicati.Library.Backend.FileEntry> List()
         {
             return m_realbackend.List();
+        }
+
+        public void Put(string remotename, System.IO.Stream stream)
+        {
+            if (!SupportsStreaming)
+                throw new Exception("This backend does not support streaming");
+            else
+            {
+                remotename += "." + m_encryptionEngine.FilenameExtension;
+                ((Backend.IStreamingBackend)m_realbackend).Put(remotename, m_encryptionEngine.Encrypt(stream));
+            }
+
         }
 
         public void Put(string remotename, string filename)
@@ -74,6 +91,19 @@ namespace Duplicati.Library.Encryption
             {
                 m_encryptionEngine.Encrypt(filename, tf);
                 m_realbackend.Put(remotename, tf);
+                tf.Protected = true;
+
+                System.IO.File.Delete(filename);
+            }
+        }
+
+        public void Get(string remotename, System.IO.Stream stream)
+        {
+            if (!SupportsStreaming)
+                throw new Exception("This backend does not support streaming");
+            else
+            {
+                ((Backend.IStreamingBackend)m_realbackend).Get(remotename, m_encryptionEngine.Decrypt(stream));
             }
         }
 
@@ -93,13 +123,45 @@ namespace Duplicati.Library.Encryption
 
         #endregion
 
-        public static Backend.IBackendInterface WrapWithEncryption(Backend.IBackendInterface backend, Dictionary<string, string> options)
+        public static Backend.IBackend WrapWithEncryption(Backend.IBackend backend, Dictionary<string, string> options)
         {
             if (options.ContainsKey("no-encryption"))
                 return backend;
             else
                 return new EncryptedBackendWrapper(backend, options);
         }
+
+        public static Backend.IBackend WrapWithEncryption(Backend.IBackend backend, string extension, Dictionary<string, string> options)
+        {
+            if (string.IsNullOrEmpty(extension))
+                return backend;
+            else if (extension == "aes")
+            {
+                if (options.ContainsKey("gpg-encryption"))
+                    options.Remove("gpg-encryption");
+            }
+            else if (extension == "gpg")
+                options["gpg-encryption"] = "";
+            else
+                throw new Exception("Unsupported encryption extension");
+
+            return new EncryptedBackendWrapper(backend, options);
+        }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            if (m_realbackend != null)
+            {
+                m_realbackend.Dispose();
+                m_realbackend = null;
+
+                m_encryptionEngine = null;
+            }
+        }
+
+        #endregion
 
     }
 }

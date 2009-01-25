@@ -29,6 +29,7 @@ namespace Duplicati.Library.Core
     public class TempFile : IDisposable 
     {
         private string m_path;
+        private bool m_protect;
 
         public TempFile()
             : this(System.IO.Path.Combine(TempFolder.SystemTempPath, Guid.NewGuid().ToString()))
@@ -38,9 +39,20 @@ namespace Duplicati.Library.Core
         public TempFile(string path)
         {
             m_path = path;
+            m_protect = false;
             if (!System.IO.File.Exists(m_path))
                 using (System.IO.File.Create(m_path))
                 { /*Dispose it immediately*/ } 
+        }
+
+        /// <summary>
+        /// A value indicating if the file is protected, meaning that it will not be deleted when the instance is disposed.
+        /// Defaults to false, meaning that the file will be deleted when disposed.
+        /// </summary>
+        public bool Protected
+        {
+            get { return m_protect; }
+            set { m_protect = value; }
         }
 
         public static implicit operator string(TempFile path)
@@ -59,7 +71,7 @@ namespace Duplicati.Library.Core
         {
             try
             {
-                if (m_path != null && System.IO.File.Exists(m_path))
+                if (!m_protect && m_path != null && System.IO.File.Exists(m_path))
                     System.IO.File.Delete(m_path);
                 m_path = null;
             }

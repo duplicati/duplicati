@@ -24,7 +24,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IBackendInterface
+    public class S3 : IStreamingBackend
     {
         private string m_awsID;
         private string m_awsKey;
@@ -141,6 +141,11 @@ namespace Duplicati.Library.Backend
             get { return "s3"; }
         }
 
+        public bool SupportsStreaming
+        {
+            get { return true; }
+        }
+
         public List<FileEntry> List()
         {
 
@@ -161,10 +166,16 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, string localname)
         {
+            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                Put(remotename, fs);
+        }
+
+        public void Put(string remotename, System.IO.Stream input)
+        {
             S3Wrapper con = CreateRequest();
             try
             {
-                con.AddFileObject(m_bucket, GetFullKey(remotename), localname);
+                con.AddFileStream(m_bucket, GetFullKey(remotename), input);
             }
             catch (System.Net.WebException wex)
             {
@@ -176,7 +187,7 @@ namespace Duplicati.Library.Backend
                         try
                         {
                             con.AddBucket(m_bucket);
-                            con.AddFileObject(m_bucket, m_prefix + remotename, localname);
+                            con.AddFileStream(m_bucket, m_prefix + remotename, input);
                             return;
                         }
                         catch
@@ -193,14 +204,34 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, string localname)
         {
+            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                Get(remotename, fs);
+        }
+
+        public void Get(string remotename, System.IO.Stream output)
+        {
             S3Wrapper con = CreateRequest();
-            con.GetFileObject(m_bucket, GetFullKey(remotename), localname);
+            con.GetFileStream(m_bucket, GetFullKey(remotename), output);
         }
 
         public void Delete(string remotename)
         {
             S3Wrapper con = CreateRequest();
             con.DeleteObject(m_bucket, GetFullKey(remotename));
+        }
+
+        #endregion
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            if (m_options != null)
+                m_options = null;
+            if (m_awsID != null)
+                m_awsID = null;
+            if (m_awsKey != null)
+                m_awsKey = null;
         }
 
         #endregion

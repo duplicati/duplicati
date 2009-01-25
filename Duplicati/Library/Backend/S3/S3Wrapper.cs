@@ -9,7 +9,8 @@ using System.Xml;
 namespace Duplicati.Library.Backend
 {
     /// <summary>
-    /// Helper class that allows a little more configuration than the original wrapper
+    /// Helper class that allows a little more configuration than the original wrapper,
+    /// and fixes various problems with it, such as EU bucket support
     /// </summary>
     public class S3Wrapper : Affirma.ThreeSharp.Wrapper.ThreeSharpWrapper
     {
@@ -45,21 +46,38 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public override void GetFileObject(string bucketName, string keyName, string localfile)
+        public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
         {
             using (ObjectGetRequest objectGetRequest = new ObjectGetRequest(bucketName, keyName))
             {
                 objectGetRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
                 using (ObjectGetResponse objectGetResponse = this.service.ObjectGet(objectGetRequest))
-                    objectGetResponse.StreamResponseToFile(localfile);
+                    Core.Utility.CopyStream(objectGetResponse.DataStream, target);
             }
+        }
+
+        public override void GetFileObject(string bucketName, string keyName, string localfile)
+        {
+            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                GetFileStream(bucketName, keyName, fs);
         }
 
         public override void AddFileObject(string bucketName, string keyName, string localfile)
         {
+            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                AddFileStream(bucketName, keyName, fs);
+        }
+
+        public virtual void AddFileStream(string bucketName, string keyName, System.IO.Stream source)
+        {
             using (ObjectAddRequest objectAddRequest = new ObjectAddRequest(bucketName, keyName))
             {
-                objectAddRequest.LoadStreamWithFile(localfile);
+                objectAddRequest.DataStream = source;
+
+                //objectAddRequest.ContentType = "application/octet-stream";
+                try { objectAddRequest.BytesTotal = source.Length; }
+                catch { }
+
                 objectAddRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
 
                 using (ObjectAddResponse objectAddResponse = this.service.ObjectAdd(objectAddRequest))
