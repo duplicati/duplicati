@@ -29,124 +29,88 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages
 {
-    public partial class SelectBackend : UserControl, IWizardControl, Interfaces.ITaskBased
+    public partial class SelectBackend : WizardControl
     {
-        public enum Provider
-        {
-            Unknown,
-            File,
-            FTP,
-            SSH,
-            WebDAV,
-            S3
-        }
-
         private Task m_task;
 
         public SelectBackend()
+            : base("Select a place to store the backups", "On this page you can select the type of device or service that store the backups. You may need information from the service provider when you continue.")
         {
             InitializeComponent();
+            base.PageEnter += new PageChangeHandler(SelectBackend_PageEnter);
+            base.PageLeave += new PageChangeHandler(SelectBackend_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void SelectBackend_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            if (args.Direction == PageChangedDirection.Back)
+                return;
 
-        string IWizardControl.Title
-        {
-            get { return "Select a place to store the backups"; }
-        }
-
-        string IWizardControl.HelpText
-        {
-            get { return "On this page you can select the type of device or service that store the backups. You may need information from the service provider when you continue."; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            string backend = m_task.Backend == null ? "" : m_task.Backend.SystemName;
-            switch (backend)
-            {
-                case "file":
-                    File.Checked = true;
-                    break;
-                case "ftp":
-                    FTP.Checked = true;
-                    break;
-                case "ssh":
-                    SSH.Checked = true;
-                    break;
-                case "webdav":
-                    WebDAV.Checked = true;
-                    break;
-                case "s3":
-                    S3.Checked = true;
-                    break;
-                default:
-                    File.Checked = FTP.Checked = SSH.Checked = WebDAV.Checked = S3.Checked = false;
-                    break;
-            }
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
             if (!(File.Checked || FTP.Checked || SSH.Checked || WebDAV.Checked || S3.Checked))
             {
                 MessageBox.Show(this, "You must enter the storage method before you can continue.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
 
             if (WebDAV.Checked)
             {
                 MessageBox.Show(this, "WebDAV is not implemented yet.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
-        }
 
-        #endregion
+            SaveSettings();
 
-
-        public Provider SelectedProvider
-        {
-            get
+            switch ((string)m_settings["Backend:Backend"])
             {
-                if (File.Checked)
-                    return Provider.File;
-                else if (FTP.Checked)
-                    return Provider.FTP;
-                else if (SSH.Checked)
-                    return Provider.SSH;
-                else if (WebDAV.Checked)
-                    return Provider.WebDAV;
-                else if (S3.Checked)
-                    return Provider.S3;
-                else
-                    return Provider.Unknown;
+                case "file":
+                    args.NextPage = new Backends.File.FileOptions();
+                    break;
+                case "ftp":
+                    args.NextPage = new Backends.FTP.FTPOptions();
+                    break;
+                case "ssh":
+                    args.NextPage = new Backends.SSH.SSHOptions();
+                    break;
+                case "webdav":
+                    args.NextPage = new Backends.WebDAV.WebDAVOptions();
+                    break;
+                case "s3":
+                    args.NextPage = new Backends.S3.S3Options();
+                    break;
+                default:
+                    args.NextPage = null;
+                    args.Cancel = true;
+                    return;
             }
         }
 
-        #region ITaskBased Members
-
-        public void Setup(Duplicati.Datamodel.Task task)
+        private void SaveSettings()
         {
-            m_task = task;
+            if (File.Checked)
+                m_settings["Backend:Backend"] = "file";
+            else if (FTP.Checked)
+                m_settings["Backend:Backend"] = "ftp";
+            else if (SSH.Checked)
+                m_settings["Backend:Backend"] = "ssh";
+            else if (WebDAV.Checked)
+                m_settings["Backend:Backend"] = "webdav";
+            else if (S3.Checked)
+                m_settings["Backend:Backend"] = "s3";
+
         }
 
-        #endregion
+        void SelectBackend_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_task = ((Schedule)m_settings["Schedule"]).Tasks[0];
+            Item_CheckChanged(null, null);
+
+        }
+
+        private void Item_CheckChanged(object sender, EventArgs e)
+        {
+            m_owner.NextButton.Enabled = File.Checked || FTP.Checked || SSH.Checked || WebDAV.Checked || S3.Checked;
+        }
     }
 }

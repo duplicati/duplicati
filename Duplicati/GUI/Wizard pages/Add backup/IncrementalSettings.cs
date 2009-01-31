@@ -30,7 +30,7 @@ using Duplicati.Library.Core;
 
 namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
-    public partial class IncrementalSettings : UserControl, IWizardControl, Interfaces.IScheduleBased
+    public partial class IncrementalSettings : WizardControl
     {
         private bool m_warnedFull = false;
         private bool m_warnedClean = false;
@@ -38,72 +38,37 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private Schedule m_schedule;
 
         public IncrementalSettings()
+            : base("Select incremental options", "To avoid large backups, Duplicati can back up only files that have changed. Each backup is much smaller, but all files are still avalible.")
         {
             InitializeComponent();
+
+            base.PageEnter += new PageChangeHandler(IncrementalSettings_PageEnter);
+            base.PageLeave += new PageChangeHandler(IncrementalSettings_PageLeave);
         }
 
-        public void Setup(Schedule schedule)
+        void IncrementalSettings_PageLeave(object sender, PageChangedArgs args)
         {
-            m_schedule = schedule;
-        }
 
-        #region IWizardControl Members
+            SaveSettings();
 
-        Control IWizardControl.Control
-        {
-            get { return this; }
-        }
+            if (args.Direction == PageChangedDirection.Back)
+                return;
 
-        string IWizardControl.Title
-        {
-            get { return "Select incremental options"; }
-        }
-
-        string IWizardControl.HelpText
-        {
-            get { return "To avoid large backups, Duplicati can back up only files that have changed. Each backup is much smaller, but all files are still avalible."; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            if (m_schedule != null)
-            {
-                FullDuration.Text = m_schedule.FullAfter;
-                FullBackups.Enabled = !string.IsNullOrEmpty(m_schedule.FullAfter);
-                CleanFullBackupCount.Value = m_schedule.KeepFull;
-                EnableFullBackupClean.Checked = m_schedule.KeepFull > 0;
-                CleanupDuration.Text = m_schedule.KeepTime;
-                EnableCleanupDuration.Checked = !string.IsNullOrEmpty(m_schedule.KeepTime);
-            }
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
             if (FullBackups.Checked)
             {
                 try
                 {
-                    if (Timeparser.ParseTimeSpan(FullDuration.Text).TotalMinutes < 10)
+                    if (Timeparser.ParseTimeSpan(FullDuration.Value).TotalMinutes < 10)
                     {
                         MessageBox.Show(this, "The duration entered is less than ten minutes. This will give very poor system performance.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        cancel = true;
+                        args.Cancel = true;
                         return;
                     }
-                } 
+                }
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, "The full backup duration entered is not valid: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
             }
@@ -112,17 +77,17 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 try
                 {
-                    if (Timeparser.ParseTimeSpan(CleanupDuration.Text).TotalMinutes < 10)
+                    if (Timeparser.ParseTimeSpan(CleanupDuration.Value).TotalMinutes < 10)
                     {
                         MessageBox.Show(this, "The cleanup duration entered is less than ten minutes. This will give very poor system performance.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        cancel = true;
+                        args.Cancel = true;
                         return;
                     }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, "The cleanup duration entered is not valid: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
             }
@@ -131,7 +96,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 if (MessageBox.Show(this, "You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.\nDisabling full backups may result in a very lengthy restoration process, and may cause a restore to fault.\nDo you want to continue without full backups?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
                 m_warnedFull = true;
@@ -141,34 +106,70 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 if (MessageBox.Show(this, "You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.\nDisabling full backups may result in a very lengthy restore process, and may cause a restore to fault.\nDo you want to continue without full backups?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
                 m_warnedClean = true;
             }
 
-            if (m_schedule != null)
-            {
-                if (FullBackups.Checked)
-                    m_schedule.FullAfter = FullDuration.Text;
-                else
-                    m_schedule.FullAfter = null;
+            SaveSettings();
 
-                if (EnableFullBackupClean.Checked)
-                    m_schedule.KeepFull = (int)CleanFullBackupCount.Value;
-                else
-                    m_schedule.KeepFull = 0;
-
-                if (EnableCleanupDuration.Checked)
-                    m_schedule.KeepTime = CleanupDuration.Text;
-                else
-                    m_schedule.KeepTime = null;
-            }
-
+            if ((bool)m_settings["Advanced:Throttle"])
+                args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
+            else
+                args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }
 
+        private void SaveSettings()
+        {
+            if (FullBackups.Checked)
+                m_schedule.FullAfter = FullDuration.Value;
+            else
+                m_schedule.FullAfter = null;
 
-        #endregion
+            if (EnableFullBackupClean.Checked)
+                m_schedule.KeepFull = (int)CleanFullBackupCount.Value;
+            else
+                m_schedule.KeepFull = 0;
+
+            if (EnableCleanupDuration.Checked)
+                m_schedule.KeepTime = CleanupDuration.Value;
+            else
+                m_schedule.KeepTime = null;
+
+            m_settings["Incremental:WarnedFull"] = m_warnedFull;
+            m_settings["Incremental:WarnedClean"] = m_warnedClean;
+        }
+
+        void IncrementalSettings_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_schedule = (Schedule)m_settings["Schedule"];
+
+            if (!m_valuesAutoLoaded)
+            {
+
+                FullDuration.Value = m_schedule.FullAfter;
+                FullBackups.Checked = !string.IsNullOrEmpty(m_schedule.FullAfter);
+                if (m_schedule.KeepFull > 0)
+                {
+                    CleanFullBackupCount.Value = m_schedule.KeepFull;
+                    EnableFullBackupClean.Checked = true;
+                }
+                else
+                {
+                    CleanFullBackupCount.Value = 0;
+                    EnableFullBackupClean.Checked = false;
+                }
+
+                CleanupDuration.Value = m_schedule.KeepTime;
+                EnableCleanupDuration.Checked = !string.IsNullOrEmpty(m_schedule.KeepTime);
+            }
+
+            if (m_settings.ContainsKey("Incremental:WarnedFull"))
+                m_warnedFull = (bool)m_settings["Incremental:WarnedFull"];
+            if (m_settings.ContainsKey("Incremental:WarnedClean"))
+                m_warnedClean = (bool)m_settings["Incremental:WarnedClean"];
+        }
 
         private void FullBackups_CheckedChanged(object sender, EventArgs e)
         {
@@ -178,19 +179,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void EnableFullBackupClean_CheckedChanged(object sender, EventArgs e)
         {
-            CleanFullBackupCount.Enabled = CleanFullBackupHelptext.Enabled = EnableFullBackupClean.Checked;
+            CleanFullBackupCount.Enabled = EnableFullBackupClean.Checked;
             m_warnedClean = false;
         }
 
         private void EnableCleanupDuration_CheckedChanged(object sender, EventArgs e)
         {
-            CleanupDuration.Enabled = CleanupDurationHelptext.Enabled = EnableCleanupDuration.Checked;
+            CleanupDuration.Enabled = EnableCleanupDuration.Checked;
             m_warnedClean = false;
-        }
-
-        private void FullDuration_TextChanged(object sender, EventArgs e)
-        {
-            m_warnedFull = false;
         }
 
         private void CleanFullBackupCount_ValueChanged(object sender, EventArgs e)
@@ -198,9 +194,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_warnedClean = false; 
         }
 
-        private void CleanupDuration_TextChanged(object sender, EventArgs e)
+        private void CleanupDuration_ValueChanged(object sender, EventArgs e)
         {
             m_warnedClean = false;
+        }
+
+        private void FullDuration_ValueChanged(object sender, EventArgs e)
+        {
+            m_warnedFull = false;
         }
     }
 }

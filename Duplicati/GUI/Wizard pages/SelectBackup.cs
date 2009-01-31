@@ -30,24 +30,30 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages
 {
-    public partial class SelectBackup : UserControl, IWizardControl
+    public partial class SelectBackup : WizardControl
     {
         private MainPage.Action m_selectType;
 
         public SelectBackup()
+            : base ("", "")
         {
             InitializeComponent();
             BackupList.treeView.HideSelection = false;
+
+            base.PageLeave += new PageChangeHandler(SelectBackup_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void SelectBackup_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
+            if (BackupList.SelectedBackup == null)
+            {
+                MessageBox.Show(this, "You must select a backup before you can continue", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                args.Cancel = true;
+                return;
+            }
         }
 
-        string IWizardControl.Title
+        public override string Title
         {
             get
             {
@@ -64,12 +70,13 @@ namespace Duplicati.GUI.Wizard_pages
                     default:
                         return "Unknown action";
                 }
+
             }
         }
 
-        string IWizardControl.HelpText
+        public override string HelpText
         {
-            get 
+            get
             {
                 switch (m_selectType)
                 {
@@ -86,33 +93,6 @@ namespace Duplicati.GUI.Wizard_pages
                 }
             }
         }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
-            if (BackupList.SelectedBackup == null)
-            {
-                MessageBox.Show(this, "You must select a backup before you can continue", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
-                return;
-            }
-
-        }
-
-        #endregion
 
         public void Setup(IDataFetcher connection, MainPage.Action selectType)
         {

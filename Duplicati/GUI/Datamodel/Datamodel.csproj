@@ -1,1 +1,118 @@
-﻿<?xml version="1.0" encoding="utf-8"?><Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"><PropertyGroup><ProjectType>Local</ProjectType><ProductVersion>8.0.50727</ProductVersion><SchemaVersion>2.0</SchemaVersion><ProjectGuid>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</ProjectGuid><Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration><Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform><ApplicationIcon /><AssemblyKeyContainerName /><AssemblyName>Datamodel</AssemblyName><AssemblyOriginatorKeyFile>LightDatamodel.snk</AssemblyOriginatorKeyFile><DefaultClientScript>JScript</DefaultClientScript><DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout><DefaultTargetSchema>IE50</DefaultTargetSchema><DelaySign>false</DelaySign><OutputType>Library</OutputType><RootNamespace>Duplicati.Datamodel</RootNamespace><RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent><StartupObject /><FileUpgradeFlags /><UpgradeBackupLocation /><SignAssembly>true</SignAssembly></PropertyGroup><PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "><OutputPath>bin\Debug\</OutputPath><AllowUnsafeBlocks>false</AllowUnsafeBlocks><BaseAddress>285212672</BaseAddress><CheckForOverflowUnderflow>false</CheckForOverflowUnderflow><ConfigurationOverrideFile></ConfigurationOverrideFile><DefineConstants>DEBUG;TRACE</DefineConstants><DocumentationFile></DocumentationFile><DebugSymbols>true</DebugSymbols><FileAlignment>4096</FileAlignment><NoStdLib>false</NoStdLib><NoWarn></NoWarn><Optimize>false</Optimize><RegisterForComInterop>false</RegisterForComInterop><RemoveIntegerChecks>false</RemoveIntegerChecks><TreatWarningsAsErrors>false</TreatWarningsAsErrors><WarningLevel>4</WarningLevel><DebugType>full</DebugType><ErrorReport>prompt</ErrorReport></PropertyGroup><PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' "><OutputPath>bin\Release\</OutputPath><AllowUnsafeBlocks>false</AllowUnsafeBlocks><BaseAddress>285212672</BaseAddress><CheckForOverflowUnderflow>false</CheckForOverflowUnderflow><ConfigurationOverrideFile></ConfigurationOverrideFile><DefineConstants>TRACE</DefineConstants><DocumentationFile></DocumentationFile><DebugSymbols>false</DebugSymbols><FileAlignment>4096</FileAlignment><NoStdLib>false</NoStdLib><NoWarn></NoWarn><Optimize>true</Optimize><RegisterForComInterop>false</RegisterForComInterop><RemoveIntegerChecks>false</RemoveIntegerChecks><TreatWarningsAsErrors>false</TreatWarningsAsErrors><WarningLevel>4</WarningLevel><DebugType>none</DebugType><ErrorReport>prompt</ErrorReport></PropertyGroup><ItemGroup><Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c7a68962c12dce64, processorArchitecture=MSIL"><SpecificVersion>False</SpecificVersion><HintPath>.\LightDatamodel.dll</HintPath></Reference><Reference Include="System"><Name>System</Name></Reference><Reference Include="System.Data"><Name>System.Data</Name></Reference><Reference Include="System.XML"><Name>System.XML</Name></Reference></ItemGroup><ItemGroup><Compile Include="AssemblyInfo.cs" /><Compile Include="Backends\File.cs" /><Compile Include="Backends\IBackend.cs" /><Compile Include="Backends\S3.cs" /><Compile Include="Backends\SSH.cs" /><Compile Include="SettingsHelper.cs" /><Compile Include="Task.Extension.cs" /><Compile Include="Task.cs" /><Compile Include="Schedule.cs" /><Compile Include="TaskSetting.cs" /><Compile Include="CommandQueue.cs" /><Compile Include="Log.cs" /><Compile Include="LogBlob.cs" /><Compile Include="ApplicationSettings.cs" /><Compile Include="ApplicationSetting.cs" /></ItemGroup><ItemGroup><None Include="LightDatamodel.snk" /><Compile Include="Backends\FTP.cs" /><Compile Include="Log.Extension.cs" /><Compile Include="LogBlob.Extension.cs" /><Compile Include="Schedule.Extension.cs" /><Compile Include="Utillity.cs" /></ItemGroup><Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" /></Project>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon />
+    <AssemblyKeyContainerName />
+    <AssemblyName>Datamodel</AssemblyName>
+    <AssemblyOriginatorKeyFile>LightDatamodel.snk</AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Duplicati.Datamodel</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject />
+    <FileUpgradeFlags />
+    <UpgradeBackupLocation />
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>false</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>none</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c7a68962c12dce64, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\LightDatamodel.dll</HintPath>
+    </Reference>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Data">
+      <Name>System.Data</Name>
+    </Reference>
+    <Reference Include="System.XML">
+      <Name>System.XML</Name>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Backends\File.cs" />
+    <Compile Include="Backends\IBackend.cs" />
+    <Compile Include="Backends\S3.cs" />
+    <Compile Include="Backends\SSH.cs" />
+    <Compile Include="SettingsHelper.cs" />
+    <Compile Include="Task.Extension.cs" />
+    <Compile Include="Task.cs" />
+    <Compile Include="Schedule.cs" />
+    <Compile Include="TaskSetting.cs" />
+    <Compile Include="CommandQueue.cs" />
+    <Compile Include="Log.cs" />
+    <Compile Include="LogBlob.cs" />
+    <Compile Include="ApplicationSettings.cs" />
+    <Compile Include="ApplicationSetting.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="LightDatamodel.snk" />
+    <Compile Include="Backends\FTP.cs" />
+    <Compile Include="Log.Extension.cs" />
+    <Compile Include="LogBlob.Extension.cs" />
+    <Compile Include="Schedule.Extension.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\Core\Duplicati.Library.Core.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>

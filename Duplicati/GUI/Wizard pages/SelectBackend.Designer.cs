@@ -46,6 +46,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.File.TabStop = true;
             this.File.Text = "An external disk or network drive";
             this.File.UseVisualStyleBackColor = true;
+            this.File.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // FTP
             // 
@@ -57,6 +58,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.FTP.TabStop = true;
             this.FTP.Text = "FTP to a remote server";
             this.FTP.UseVisualStyleBackColor = true;
+            this.FTP.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // SSH
             // 
@@ -68,6 +70,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.SSH.TabStop = true;
             this.SSH.Text = "SSH (SFTP) to a remote server";
             this.SSH.UseVisualStyleBackColor = true;
+            this.SSH.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // WebDAV
             // 
@@ -79,6 +82,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.WebDAV.TabStop = true;
             this.WebDAV.Text = "WebDAV to a remote server";
             this.WebDAV.UseVisualStyleBackColor = true;
+            this.WebDAV.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // S3
             // 
@@ -90,6 +94,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.S3.TabStop = true;
             this.S3.Text = "Amazon S3 storage";
             this.S3.UseVisualStyleBackColor = true;
+            this.S3.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // label1
             // 

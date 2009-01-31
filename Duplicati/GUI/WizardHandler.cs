@@ -32,28 +32,30 @@ namespace Duplicati.GUI
     /// </summary>
     public class WizardHandler
     {
-        public enum Pages
+        /*public enum Pages
         {
             MainAction,
             Add_SelectName,
             Add_SelectFiles,
-            Add_SelectWhen,
-            Add_Incremental,
-            Add_Password,
             Add_SelectService,
             Add_FileOptions,
             Add_FTPOptions,
             Add_S3Options,
             Add_SSHOptions,
             Add_WebDAVOptions,
+            Add_AdvancedChoices,
+            Add_SelectWhen,
+            Add_Incremental,
+            Add_Password,
             Add_Finished,
+
             SelectBackup,
             Restore_SelectDate,
             Restore_TargetFolder,
             Restore_Finished,
             RunNow_Finished,
             Delete_Finished,
-        }
+        }*/
 
         /// <summary>
         /// The main wizard form
@@ -87,38 +89,16 @@ namespace Duplicati.GUI
             m_form.Title = "Duplicati Setup Wizard";
 
             m_form.Pages.Clear();
-            m_form.Pages.AddRange(new IWizardControl[] {
-                new Wizard_pages.MainPage(),
-                new Wizard_pages.Add_backup.SelectName(),
-                new Wizard_pages.Add_backup.SelectFiles(),
-                new Wizard_pages.Add_backup.SelectWhen(),
-                new Wizard_pages.Add_backup.IncrementalSettings(),
-                new Wizard_pages.Add_backup.PasswordSettings(),
-                new Wizard_pages.SelectBackend(),
-                new Wizard_pages.Backends.File.FileOptions(),
-                new Wizard_pages.Backends.FTP.FTPOptions(),
-                new Wizard_pages.Backends.S3.S3Options(),
-                new Wizard_pages.Backends.SSH.SSHOptions(),
-                new Wizard_pages.Backends.WebDAV.WebDAVOptions(),
-                new Wizard_pages.Add_backup.FinishedAdd(),
-                new Wizard_pages.SelectBackup(),
-                new Wizard_pages.Restore.SelectBackup(),
-                new Wizard_pages.Restore.TargetFolder(),
-                new Wizard_pages.Restore.FinishedRestore(),
-                new Wizard_pages.RunNow.RunNowFinished(),
-                new Wizard_pages.Delete_backup.DeleteFinished(),
-            });
+            m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.MainPage() });
 
             m_form.DefaultImage = Program.NeutralIcon.ToBitmap();
-            m_form.BackPressed += new PageChangeHandler(m_form_BackPressed);
-            m_form.NextPressed += new PageChangeHandler(m_form_NextPressed);
             m_form.Finished += new System.ComponentModel.CancelEventHandler(m_form_Finished);
         }
 
         void m_form_Finished(object sender, System.ComponentModel.CancelEventArgs e)
         {
 
-            if (m_form.CurrentPage == m_form.Pages[(int)Pages.Add_Finished])
+            if (m_form.CurrentPage is Wizard_pages.Add_backup.FinishedAdd)
             {
                 //TODO: Implement CommitRecursive
                 m_connection.CommitAll();
@@ -130,37 +110,37 @@ namespace Duplicati.GUI
                     else
                         Program.WorkThread.AddTask(new IncrementalBackupTask(m_editItem));
             }
-            else if (m_form.CurrentPage == m_form.Pages[(int)Pages.Restore_Finished])
+            else if (m_form.CurrentPage is Wizard_pages.Restore.FinishedRestore)
             {
-                Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
+                /*Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
                 DateTime backup = (m_form.Pages[(int)Pages.Restore_SelectDate] as Wizard_pages.Restore.SelectBackup).SelectedBackup;
                 string target = (m_form.Pages[(int)Pages.Restore_TargetFolder] as Wizard_pages.Restore.TargetFolder).SelectedFolder;
 
                 if (backup.Ticks == 0)
                     Program.WorkThread.AddTask(new RestoreTask(schedule, target));
                 else
-                    Program.WorkThread.AddTask(new RestoreTask(schedule, target, backup));
+                    Program.WorkThread.AddTask(new RestoreTask(schedule, target, backup));*/
             }
-            else if (m_form.CurrentPage == m_form.Pages[(int)Pages.RunNow_Finished])
+            else if (m_form.CurrentPage is Wizard_pages.RunNow.RunNowFinished)
             {
-                Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
+                /*Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
                 if ((m_form.Pages[(int)Pages.RunNow_Finished] as Wizard_pages.RunNow.RunNowFinished).ForceFullBackup)
                     Program.WorkThread.AddTask(new FullBackupTask(m_editItem));
                 else
-                    Program.WorkThread.AddTask(new IncrementalBackupTask(m_editItem));
+                    Program.WorkThread.AddTask(new IncrementalBackupTask(m_editItem));*/
             }
-            else if (m_form.CurrentPage == m_form.Pages[(int)Pages.Delete_Finished])
+            else if (m_form.CurrentPage is Wizard_pages.Delete_backup.DeleteFinished)
             {
-                Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
+                /*Schedule schedule = (m_form.Pages[(int)Pages.SelectBackup] as Wizard_pages.SelectBackup).SelectedBackup;
                 m_connection.DeleteObject(m_editItem);
                 m_connection.CommitAll();
-                Program.DataConnection.CommitAll();
+                Program.DataConnection.CommitAll();*/
             }
         }
 
         public bool Visible { get { return m_form.Dialog.Visible; } }
 
-        void m_form_NextPressed(object sender, PageChangedArgs args)
+        /*void m_form_NextPressed(object sender, PageChangedArgs args)
         {
             switch ((Pages)m_form.Pages.IndexOf(m_form.CurrentPage))
             {
@@ -213,8 +193,8 @@ namespace Duplicati.GUI
                             args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
                             (args.NextPage as Wizard_pages.SelectBackup).Setup(m_connection, Duplicati.GUI.Wizard_pages.MainPage.Action.Delete);
                             break;
-                        /*case Duplicati.Wizard_pages.MainPage.Action.Rearrange:
-                            break;*/
+                        //case Duplicati.Wizard_pages.MainPage.Action.Rearrange:
+                        //    break;
                         default:
                             args.Cancel = true;
                             MessageBox.Show(m_form as Form, "Unknown option selected", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -253,9 +233,11 @@ namespace Duplicati.GUI
                 case Pages.Add_S3Options:
                     m_addFinishedPage = m_form.CurrentPage;
                     args.NextPage = m_form.Pages[(int)Pages.Add_Finished];
-                    args.TreatAsLast = true;
+                    args.TreatAsLast = false;
                     break;
 
+                case Pages.Add_AdvancedChoices:
+                    break;
                 case Pages.Add_Finished:
                     break;
 
@@ -336,7 +318,7 @@ namespace Duplicati.GUI
                     args.NextPage = m_form.Pages[(int)Pages.SelectBackup];
                     break;
             }
-        }
+        } */
 
         public void Show()
         {

@@ -1,0 +1,91 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Text;
+using System.Windows.Forms;
+
+namespace Duplicati.GUI.HelperControls
+{
+    public partial class DurationEditor : UserControl
+    {
+        private string[] m_values = { "1D", "1W", "2W", "1M", "" };
+
+        public DurationEditor()
+        {
+            InitializeComponent();
+        }
+
+        public event EventHandler ValueChanged;
+
+        /// <summary>
+        /// Sets the avalible intervals
+        /// </summary>
+        /// <param name="values">A dictionary where the key is the string to display and the value is the duplicity time string</param>
+        public void SetIntervals(Dictionary<string, string> values)
+        {
+            List<string> vx = new List<string>(values.Values);
+            vx.Add("");
+
+            m_values = vx.ToArray();
+            EasyDuration.Items.Clear();
+            EasyDuration.Items.AddRange(new List<string>(values.Keys).ToArray());
+        }
+
+        private void EasyDuration_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            CustomDuration.Visible = (EasyDuration.SelectedIndex == EasyDuration.Items.Count - 1);
+            if (EasyDuration.SelectedIndex == EasyDuration.Items.Count - 1)
+                CustomDuration.Text = m_values[EasyDuration.Items.Count - 1];
+
+            if (ValueChanged != null)
+                ValueChanged(sender, e);
+        }
+
+        private void CustomDuration_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                TimeSpan ts = Duplicati.Library.Core.Timeparser.ParseTimeSpan(CustomDuration.Text);
+            }
+            catch (Exception ex)
+            {
+                errorProvider.SetError(CustomDuration, ex.Message);
+                return;
+            }
+
+            errorProvider.SetError(CustomDuration, "");
+            m_values[EasyDuration.Items.Count - 1] = CustomDuration.Text;
+
+            if (ValueChanged != null)
+                ValueChanged(sender, e);
+        }
+
+        public string Value
+        {
+            get
+            {
+                if (EasyDuration.SelectedIndex < 0)
+                    return "";
+                else
+                    return m_values[EasyDuration.SelectedIndex];
+            }
+            set
+            {
+                for (int i = 0; i < m_values.Length; i++)
+                    if (m_values[i] == value)
+                    {
+                        EasyDuration.SelectedIndex = i;
+                        return;
+                    }
+
+                m_values[EasyDuration.Items.Count - 1] = value;
+                EasyDuration.SelectedIndex = EasyDuration.Items.Count - 1;
+
+                if (ValueChanged != null)
+                    ValueChanged(this, null);
+            }
+        }
+    }
+}

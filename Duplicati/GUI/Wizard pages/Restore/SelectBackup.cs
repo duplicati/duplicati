@@ -30,54 +30,31 @@ using Duplicati.Library.Core;
 
 namespace Duplicati.GUI.Wizard_pages.Restore
 {
-    public partial class SelectBackup : UserControl, IWizardControl, Interfaces.IScheduleBased
+    public partial class SelectBackup : WizardControl
     {
         Schedule m_schedule;
         DateTime m_selectedDate = new DateTime();
 
         public SelectBackup()
+            : base("Select the backup to restore", "The list below shows all the avalible backups. Select one to restore")
         {
             InitializeComponent();
+
+            base.PageEnter += new PageChangeHandler(SelectBackup_PageEnter);
+            base.PageLeave += new PageChangeHandler(SelectBackup_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void SelectBackup_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            m_settings["Restore:Date"] = BackupList.SelectedItem;
 
-        string IWizardControl.Title
-        {
-            get { return "Select the backup to restore"; }
-        }
+            if (args.Direction == PageChangedDirection.Back)
+                return;
 
-        string IWizardControl.HelpText
-        {
-            get { return "The list below shows all the avalible backups. Select one to restore"; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            BackupList.Setup(m_schedule);
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
             if (BackupList.SelectedItem == null)
             {
                 MessageBox.Show(this, "You must select the backup to restore", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
 
@@ -90,25 +67,20 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             {
                 if (MessageBox.Show(this, "An error occured while parsing the time: " + ex.Message + "\r\nDo you want to try to restore the most current backup instead?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                 {
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
                 m_selectedDate = new DateTime();
             }
 
+            args.NextPage = new TargetFolder();
         }
 
-        #endregion
-
-        #region IScheduleBased Members
-
-        public void Setup(Duplicati.Datamodel.Schedule schedule)
+        void SelectBackup_PageEnter(object sender, PageChangedArgs args)
         {
-            m_schedule = schedule;
+            m_schedule = (Schedule)m_settings["Schedule"]; 
+            
+            BackupList.Setup(m_schedule);
         }
-
-        #endregion
-
-        public DateTime SelectedBackup { get { return m_selectedDate; } }
     }
 }

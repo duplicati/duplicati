@@ -29,62 +29,28 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Delete_backup
 {
-    public partial class DeleteFinished : UserControl, IWizardControl, Interfaces.IScheduleBased
+    public partial class DeleteFinished : WizardControl
     {
         Schedule m_schedule;
 
         public DeleteFinished()
+            : base("Delete backup", "You are now ready to delete the backup. Please note that you cannot restore the backup ever again")
         {
             InitializeComponent();
+
+            base.PageEnter += new PageChangeHandler(DeleteFinished_PageEnter);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void DeleteFinished_PageEnter(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            m_schedule = (Schedule)m_settings["Schedule"];
 
-        string IWizardControl.Title
-        {
-            get { return "Delete backup"; }
-        }
-
-        string IWizardControl.HelpText
-        {
-            get { return "You are now ready to delete the backup. Please note that you cannot restore the backup ever again"; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
             Summary.Text =
                 "Action: Delete backup\r\n" +
                 "Name: " + m_schedule.Name;
+
+            args.TreatAsLast = true;
         }
 
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
-        }
-
-        #endregion
-
-        #region IScheduleBased Members
-
-        public void Setup(Schedule schedule)
-        {
-            m_schedule = schedule;
-        }
-
-        #endregion
     }
 }

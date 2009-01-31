@@ -29,8 +29,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private void InitializeComponent()
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.RepeatInterval = new System.Windows.Forms.TextBox();
+            this.RepeatInterval = new Duplicati.GUI.HelperControls.DurationEditor();
             this.label2 = new System.Windows.Forms.Label();
             this.EnableRepeat = new System.Windows.Forms.CheckBox();
             this.OffsetTime = new System.Windows.Forms.DateTimePicker();
@@ -41,32 +40,22 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.RepeatInterval);
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Location = new System.Drawing.Point(24, 40);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(448, 88);
+            this.groupBox1.Size = new System.Drawing.Size(448, 56);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             // 
-            // label3
-            // 
-            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(16, 48);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(416, 32);
-            this.label3.TabIndex = 2;
-            this.label3.Text = "Time is entered as 2D for 2 days, and 1M3D for one month, three days. Valid types" +
-                " are s,m,h,D,W,M and Y.";
-            // 
             // RepeatInterval
             // 
-            this.RepeatInterval.Location = new System.Drawing.Point(120, 24);
+            this.RepeatInterval.Location = new System.Drawing.Point(144, 24);
             this.RepeatInterval.Name = "RepeatInterval";
-            this.RepeatInterval.Size = new System.Drawing.Size(312, 20);
+            this.RepeatInterval.Size = new System.Drawing.Size(221, 21);
             this.RepeatInterval.TabIndex = 1;
-            this.RepeatInterval.Text = "1D";
+            this.RepeatInterval.Value = "";
+            this.RepeatInterval.ValueChanged += new System.EventHandler(this.RepeatInterval_ValueChanged);
             // 
             // label2
             // 
@@ -138,11 +127,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.CheckBox EnableRepeat;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox RepeatInterval;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.DateTimePicker OffsetTime;
         private System.Windows.Forms.DateTimePicker OffsetDate;
         private System.Windows.Forms.Label label1;
+        private Duplicati.GUI.HelperControls.DurationEditor RepeatInterval;
     }
 }

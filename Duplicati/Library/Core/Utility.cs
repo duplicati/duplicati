@@ -269,5 +269,22 @@ namespace Duplicati.Library.Core
                 return Convert.ToBase64String(sha.ComputeHash(fs));
         }
 
+
+        /// <summary>
+        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot;.
+        /// </summary>
+        /// <param name="size">The size to format</param>
+        /// <returns>A human readable string representing the size</returns>
+        public static string FormatSizeString(long size)
+        {
+            if (size > 1024 * 1024 * 1024)
+                return string.Format("{0:N} GB", (double)size / (1024 * 1024 * 1024));
+            else if (size > 1024 * 1024)
+                return string.Format("{0:N} MB", (double)size / (1024 * 1024));
+            else if (size > 1024)
+                return string.Format("{0:N} KB", (double)size / 1024);
+            else
+                return string.Format("{0} bytes", size);
+        }
     }
 }

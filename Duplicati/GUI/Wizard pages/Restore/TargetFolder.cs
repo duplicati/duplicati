@@ -29,61 +29,44 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Restore
 {
-    public partial class TargetFolder : UserControl, IWizardControl
+    public partial class TargetFolder : WizardControl
     {
         public TargetFolder()
+            : base("Select restore folder", "Please select the folder into which the backup will be restored")
         {
             InitializeComponent();
+
+            base.PageLeave += new PageChangeHandler(TargetFolder_PageLeave);
+            base.PageEnter += new PageChangeHandler(TargetFolder_PageEnter);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void TargetFolder_PageEnter(object sender, PageChangedArgs args)
         {
-            get { return this; }
+            if (m_settings.ContainsKey("Restore:TargetPath"))
+                TargetPath.Text = (string)m_settings["Restore:TargetPath"];
         }
 
-        string IWizardControl.Title
-        {
-            get { return "Select restore folder"; }
-        }
-
-        string IWizardControl.HelpText
-        {
-            get { return "Please select the folder into which the backup will be restored"; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
+        void TargetFolder_PageLeave(object sender, PageChangedArgs args)
         {
             string targetpath = TargetPath.Text;
+            m_settings["Restore:TargetPath"] = targetpath;
+
+            if (args.Direction == PageChangedDirection.Back)
+                return;
 
             try
             {
                 if (targetpath.Trim().Length == 0)
                 {
                     MessageBox.Show(this, "You must enter a folder to backup to", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
 
                 if (!System.IO.Path.IsPathRooted(targetpath))
                 {
                     MessageBox.Show(this, "You must enter the full path of the folder", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
 
@@ -95,7 +78,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                             System.IO.Directory.CreateDirectory(targetpath);
                             break;
                         case DialogResult.Cancel:
-                            cancel = true;
+                            args.Cancel = true;
                             return;
                     }
                 }
@@ -103,7 +86,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             catch (Exception ex)
             {
                 MessageBox.Show(this, "An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
 
@@ -112,20 +95,18 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
                     if (MessageBox.Show(this, "The selected folder is not empty. Do you want to use it anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
-                        cancel = true;
+                        args.Cancel = true;
                         return;
                     }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(this, "An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
 
         }
-
-        #endregion
 
         private void TargetFolder_Load(object sender, EventArgs e)
         {

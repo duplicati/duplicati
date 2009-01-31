@@ -158,9 +158,14 @@ namespace Duplicati.Library.Backend
                     lst[i].Name = lst[i].Name.Substring(m_prefix.Length);
                 return lst;
             }
-            catch
+            catch (System.Net.WebException wex)
             {
-                return new List<FileEntry>();
+                //Catch "non-existing" buckets
+                if (wex.Status == System.Net.WebExceptionStatus.ProtocolError)
+                    if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                        return new List<FileEntry>();
+
+                throw;
             }
         }
 

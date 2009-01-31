@@ -29,49 +29,13 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Restore
 {
-    public partial class FinishedRestore : UserControl, IWizardControl
+    public partial class FinishedRestore : WizardControl
     {
         public FinishedRestore()
+            : base("Ready to restore files", "Duplicati is now ready to restore your files.")
         {
             InitializeComponent();
         }
-
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
-        {
-            get { return this; }
-        }
-
-        string IWizardControl.Title
-        {
-            get { return "Ready to restore files"; }
-        }
-
-        string IWizardControl.HelpText
-        {
-            get { return "Duplicati is now ready to restore your files."; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
-        }
-
-        #endregion
 
         public void Setup(Schedule schedule, DateTime backup, string target)
         {

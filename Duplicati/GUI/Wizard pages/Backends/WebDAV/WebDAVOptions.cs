@@ -28,48 +28,12 @@ using System.Windows.Forms.Wizard;
 
 namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
 {
-    public partial class WebDAVOptions : UserControl, IWizardControl
+    public partial class WebDAVOptions : WizardControl
     {
         public WebDAVOptions()
+            : base("Backup storage options", "On this page you can select where to store the backup data.")
         {
             InitializeComponent();
         }
-
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
-        {
-            get { return this; }
-        }
-
-        string IWizardControl.Title
-        {
-            get { return "Backup storage options"; }
-        }
-
-        string IWizardControl.HelpText
-        {
-            get { return "On this page you can select where to store the backup data."; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
-        }
-
-        #endregion
     }
 }

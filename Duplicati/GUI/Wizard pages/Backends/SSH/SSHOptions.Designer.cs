@@ -44,7 +44,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             // 
             // TestConnection
             // 
-            this.TestConnection.Location = new System.Drawing.Point(272, 168);
+            this.TestConnection.Location = new System.Drawing.Point(296, 168);
             this.TestConnection.Name = "TestConnection";
             this.TestConnection.Size = new System.Drawing.Size(112, 24);
             this.TestConnection.TabIndex = 21;

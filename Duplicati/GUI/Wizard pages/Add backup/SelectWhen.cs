@@ -30,56 +30,33 @@ using Duplicati.Library.Core;
 
 namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
-    public partial class SelectWhen : UserControl, IWizardControl, Interfaces.IScheduleBased
+    public partial class SelectWhen : WizardControl
     {
         private bool m_hasWarned;
         private Schedule m_schedule;
 
         public SelectWhen()
+            : base("Select when the backup should run", "On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.")
         {
             InitializeComponent();
+
+            base.PageEnter += new PageChangeHandler(SelectWhen_PageEnter);
+            base.PageLeave += new PageChangeHandler(SelectWhen_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void SelectWhen_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            m_schedule.When = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
+            if (EnableRepeat.Checked)
+                m_schedule.Repeat = RepeatInterval.Value;
+            else
+                m_schedule.Repeat = null;
 
-        string IWizardControl.Title
-        {
-            get { return "Select when the backup should run"; }
-        }
+            m_settings["When:HasWarned"] = m_hasWarned;
 
-        string IWizardControl.HelpText
-        {
-            get { return "On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you."; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            if (m_schedule != null)
-            {
-                OffsetDate.Value = m_schedule.When;
-                OffsetTime.Value = m_schedule.When;
-                RepeatInterval.Text = m_schedule.Repeat;
-                EnableRepeat.Checked = !string.IsNullOrEmpty(m_schedule.Repeat);
-            }
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
+            if (args.Direction == PageChangedDirection.Back)
+                return;
+            
             if (!m_hasWarned && !EnableRepeat.Checked)
             {
                 DateTime newtime = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
@@ -93,7 +70,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 {
                     if (MessageBox.Show(this, b + " You have no repetition set, so the backup will never run.\nThis is fine if you only want to run the backup manually, but it is not reccomended.\nDo you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                     {
-                        cancel = true;
+                        args.Cancel = true;
                         return;
                     }
                     m_hasWarned = true;
@@ -104,30 +81,47 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 try
                 {
-                    TimeSpan sp = Timeparser.ParseTimeSpan(RepeatInterval.Text);
+                    TimeSpan sp = Timeparser.ParseTimeSpan(RepeatInterval.Value);
                     if (sp.TotalMinutes < 5)
                     {
                         MessageBox.Show(this, "The duration entered is less than five minutes. That is not acceptable.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        cancel = true;
+                        args.Cancel = true;
                         return;
                     }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, "The duration entered is not valid.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
             }
 
-            m_schedule.When = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
-            if (EnableRepeat.Checked)
-                m_schedule.Repeat = RepeatInterval.Text;
+            m_settings["When:HasWarned"] = m_hasWarned;
+
+            if ((bool)m_settings["Advanced:Incremental"])
+                args.NextPage = new Wizard_pages.Add_backup.IncrementalSettings();
+            else if ((bool)m_settings["Advanced:Throttle"])
+                args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
             else
-                m_schedule.Repeat = null;
+                args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }
 
-        #endregion
+        void SelectWhen_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_schedule = (Schedule)m_settings["Schedule"];
+
+            if (!m_valuesAutoLoaded)
+            {
+                OffsetDate.Value = m_schedule.When;
+                OffsetTime.Value = m_schedule.When;
+                RepeatInterval.Value = m_schedule.Repeat;
+                EnableRepeat.Checked = !string.IsNullOrEmpty(m_schedule.Repeat);
+            }
+
+            if (m_settings.ContainsKey("When:HasWarned"))
+                m_hasWarned = (bool)m_settings["When:HasWarned"];
+        }
 
         private void OffsetDate_ValueChanged(object sender, EventArgs e)
         {
@@ -139,13 +133,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_hasWarned = false;
         }
 
-        #region IScheduleBased Members
-
-        public void Setup(Duplicati.Datamodel.Schedule schedule)
+        private void RepeatInterval_ValueChanged(object sender, EventArgs e)
         {
-            m_schedule = schedule;
-        }
 
-        #endregion
+        }
     }
 }

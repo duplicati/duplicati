@@ -30,63 +30,25 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.RunNow
 {
-    public partial class RunNowFinished : UserControl, IWizardControl, Interfaces.IScheduleBased
+    public partial class RunNowFinished : WizardControl
     {
         Schedule m_schedule;
 
         public RunNowFinished()
+            : base("Ready to run backup", "You are now ready to run the backup")
         {
             InitializeComponent();
+            base.PageEnter += new PageChangeHandler(RunNowFinished_PageEnter);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void RunNowFinished_PageEnter(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            m_schedule = (Schedule)m_settings["Schedule"];
 
-        string IWizardControl.Title
-        {
-            get { return "Ready to run backup"; }
-        }
-
-        string IWizardControl.HelpText
-        {
-            get { return "You are now ready to run the backup"; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
             Summary.Text =
                 "Action: Run backup now\r\n" +
                 "Name:   " + m_schedule.Name;
         }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
-        }
-
-        #endregion
-
-        #region IScheduleBased Members
-
-        public void Setup(Schedule schedule)
-        {
-            m_schedule = schedule;
-        }
-
-        #endregion
 
         public bool ForceFullBackup { get { return ForceFull.Checked; } }
     }

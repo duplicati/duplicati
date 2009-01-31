@@ -29,7 +29,7 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Backends.FTP
 {
-    public partial class FTPOptions : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
+    public partial class FTPOptions : WizardControl
     {
         private bool m_warnedPassword = false; 
         private bool m_warnedUsername = false;
@@ -39,90 +39,74 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         private Duplicati.Datamodel.Backends.FTP m_ftp;
 
         public FTPOptions()
+            : base("Backup storage options", "On this page you can select where to store the backup data.")
         {
             InitializeComponent();
+
+            base.PageEnter += new PageChangeHandler(FTPOptions_PageEnter);
+            base.PageLeave += new PageChangeHandler(FTPOptions_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void FTPOptions_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            SaveSettings();
 
-        string IWizardControl.Title
-        {
-            get { return "Backup storage options"; }
-        }
+            if (args.Direction == PageChangedDirection.Back)
+                return;
 
-        string IWizardControl.HelpText
-        {
-            get { return "On this page you can select where to store the backup data."; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            bool backset = m_hasTested;
-            bool wp = m_warnedPath;
-            
-            Servername.Text = m_ftp.Host;
-            Path.Text = m_ftp.Folder;
-            Username.Text = m_ftp.Username;
-            Password.Text = m_ftp.Password;
-            Port.Value = m_ftp.Port;
-
-            m_hasTested = backset;
-            m_warnedPath = wp;
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
             if (!ValidateForm())
             {
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
 
             if (!m_hasTested)
-                if (MessageBox.Show(this, "Do you want to test the connection?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    TestConnection_Click(null, null);
-                    if (!m_hasTested)
-                    {
-                        cancel = true;
+                switch (MessageBox.Show(this, "Do you want to test the connection?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                { 
+                    case DialogResult.Yes:
+                        TestConnection_Click(null, null);
+                        if (!m_hasTested)
+                        {
+                            args.Cancel = true;
+                            return;
+                        }
+                        break;
+                    case DialogResult.No:
+                        break;
+                    default: //Cancel
+                        args.Cancel = true;
                         return;
-                    }
                 }
 
-            if (!m_warnedPath && Path.Text.Trim().Length == 0)
-            {
-                if (MessageBox.Show(this, "You have not entered a path. This will store all backups in the default directory. Is this what you want?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
-                {
-                    cancel = true;
-                    return;
-                }
-                m_warnedPath = true;
-            }
-
-            m_ftp.Host = Servername.Text;
-            m_ftp.Folder = Path.Text;
-            m_ftp.Username = Username.Text;
-            m_ftp.Password = Password.Text;
-            m_ftp.Port = (int)Port.Value;
-            m_ftp.SetService();
+            SaveSettings();
+            args.NextPage = new Add_backup.AdvancedOptions();
         }
 
-        #endregion
+        void FTPOptions_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_ftp = new Duplicati.Datamodel.Backends.FTP(((Schedule)m_settings["Schedule"]).Tasks[0]);
+
+            if (m_settings.ContainsKey("FTP:HasTested"))
+                m_hasTested = (bool)m_settings["FTP:HasTested"];
+
+            if (m_settings.ContainsKey("FTP:WarnedPath"))
+                m_warnedPath = (bool)m_settings["FTP:WarnedPath"];
+
+            if (m_settings.ContainsKey("FTP:WarnedUsername"))
+                m_warnedUsername = (bool)m_settings["FTP:WarnedUsername"];
+
+            if (m_settings.ContainsKey("FTP:WarnedPassword"))
+                m_warnedPassword = (bool)m_settings["FTP:WarnedPassword"];
+
+            if (!m_valuesAutoLoaded)
+            {
+                Servername.Text = m_ftp.Host;
+                Path.Text = m_ftp.Folder;
+                Username.Text = m_ftp.Username;
+                Password.Text = m_ftp.Password;
+                Port.Value = m_ftp.Port;
+            }
+        }
 
         private bool ValidateForm()
         {
@@ -161,14 +145,34 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             return true;
         }
 
+        private void SaveSettings()
+        {
+            m_ftp.Host = Servername.Text;
+            m_ftp.Folder = Path.Text;
+            m_ftp.Username = Username.Text;
+            m_ftp.Password = Password.Text;
+            m_ftp.Port = (int)Port.Value;
+
+            m_ftp.SetService();
+
+            m_settings["FTP:HasWarned"] = m_hasTested;
+            m_settings["FTP:WarnedPath"] = m_warnedPath;
+            m_settings["FTP:WarnedUsername"] = m_warnedUsername;
+            m_settings["FTP:WarnedPassword"] = m_warnedPassword;
+        }
+
         private void TestConnection_Click(object sender, EventArgs e)
         {
             if (ValidateForm())
             {
+                SaveSettings();
+
                 try
                 {
-                    string hostname = "ftp://" + Username.Text + ":" + Password.Text + "@" + Servername.Text + (Port.Value != 21 ? ":21/" : "/") + Path.Text;
-                    string[] files = Duplicati.Library.Main.Interface.List(hostname, new Dictionary<string, string>());
+                    string hostname = m_ftp.GetDestinationPath();
+                    Dictionary<string, string> options = new Dictionary<string, string>();
+                    m_ftp.GetOptions(options);
+                    string[] files = Duplicati.Library.Main.Interface.List(hostname, options);
 
                     MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
@@ -208,14 +212,5 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         {
             m_hasTested = false;
         }
-
-        #region ITaskBased Members
-
-        public void Setup(Duplicati.Datamodel.Task task)
-        {
-            m_ftp = new Duplicati.Datamodel.Backends.FTP(task);
-        }
-
-        #endregion
     }
 }

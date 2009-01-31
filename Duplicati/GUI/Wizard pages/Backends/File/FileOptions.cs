@@ -25,79 +25,33 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Backends.File
 {
-    public partial class FileOptions : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
+    public partial class FileOptions : WizardControl
     {
         private Duplicati.Datamodel.Backends.File m_file;
         private bool m_isUpdating = false;
-        private bool m_new = false;
 
         public FileOptions()
+            : base("Backup storage options", "On this page you can select where to store the backup data.")
         {
             InitializeComponent();
+
+            m_autoFillValues = false;
+
+            base.PageEnter += new PageChangeHandler(FileOptions_PageEnter);
+            base.PageLeave += new PageChangeHandler(FileOptions_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void FileOptions_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            SaveDialogSettings();
 
-        string IWizardControl.Title
-        {
-            get { return "Backup storage options"; }
-        }
+            if (args.Direction == PageChangedDirection.Back)
+                return;
 
-        string IWizardControl.HelpText
-        {
-            get { return "On this page you can select where to store the backup data."; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            if (TargetDrive.Items.Count == 0)
-            {
-                for (char i = 'A'; i < 'Z'; i++)
-                {
-                    System.IO.DriveInfo di = new System.IO.DriveInfo(i.ToString());
-                    if (di.DriveType == System.IO.DriveType.Removable)
-                        TargetDrive.Items.Add(i.ToString() + ":");
-                }
-            }
-
-
-            try
-            {
-                m_isUpdating = true;
-
-                UsePath.Checked = true;
-                TargetFolder.Text = m_file.DestinationFolder;
-                
-                UseCredentials.Checked = !string.IsNullOrEmpty(m_file.Username);
-                Username.Text = m_file.Username;
-                Password.Text = m_file.Password;
-            }
-            finally
-            {
-                m_isUpdating = false;
-            }
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
             string targetpath;
             if (UsePath.Checked)
                 targetpath = TargetFolder.Text;
@@ -116,14 +70,14 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
                 if (targetpath.Trim().Length == 0)
                 {
                     MessageBox.Show(this, "You must enter a folder to backup to", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
 
-                if(!System.IO.Path.IsPathRooted(targetpath))
+                if (!System.IO.Path.IsPathRooted(targetpath))
                 {
                     MessageBox.Show(this, "You must enter the full path of the folder", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
 
@@ -135,7 +89,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
                             System.IO.Directory.CreateDirectory(targetpath);
                             break;
                         case DialogResult.Cancel:
-                            cancel = true;
+                            args.Cancel = true;
                             return;
                     }
                 }
@@ -143,28 +97,34 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             catch (Exception ex)
             {
                 MessageBox.Show(this, "An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
 
             try
             {
-                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0 && m_new)
+                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0 && !((Schedule)m_settings["Schedule"]).Tasks[0].ExistsInDb)
                     if (MessageBox.Show(this, "The selected folder is not empty. Do you want to use it anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
-                        cancel = true;
+                        args.Cancel = true;
                         return;
                     }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(this, "An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
 
+            SaveSettings();
+            args.NextPage = new Add_backup.AdvancedOptions();
+        }
+
+        private void SaveSettings()
+        {
             m_file.DestinationFolder = TargetFolder.Text;
-            
+
             if (UseCredentials.Checked)
             {
                 m_file.Username = Username.Text;
@@ -179,7 +139,43 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             m_file.SetService();
         }
 
-        #endregion
+        private void RescanDrives()
+        {
+            TargetDrive.Items.Clear();
+
+            for (char i = 'A'; i < 'Z'; i++)
+            {
+                System.IO.DriveInfo di = new System.IO.DriveInfo(i.ToString());
+                if (di.DriveType == System.IO.DriveType.Removable)
+                    TargetDrive.Items.Add(i.ToString() + ":");
+            }
+        }
+
+        void FileOptions_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_file = new Duplicati.Datamodel.Backends.File(((Schedule)m_settings["Schedule"]).Tasks[0]);
+
+            RescanDrives();
+
+            try
+            {
+                m_isUpdating = true;
+
+                if (!LoadDialogSettings())
+                {
+                    UsePath.Checked = true;
+                    TargetFolder.Text = m_file.DestinationFolder;
+
+                    UseCredentials.Checked = !string.IsNullOrEmpty(m_file.Username);
+                    Username.Text = m_file.Username;
+                    Password.Text = m_file.Password;
+                }
+            }
+            finally
+            {
+                m_isUpdating = false;
+            }
+        }
 
         private void UseCredentials_CheckedChanged(object sender, EventArgs e)
         {
@@ -207,6 +203,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             if (m_isUpdating)
                 return;
 
+            RescanDrives();
+
             if (TargetDrive.Enabled && TargetDrive.Items.Count == 0)
             {
                 MessageBox.Show(this, "No removable drives were found on your system. Please enter the path manually.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -214,14 +212,5 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             }
 
         }
-
-        #region ITaskBased Members
-
-        public void Setup(Duplicati.Datamodel.Task task)
-        {
-            m_file = new Duplicati.Datamodel.Backends.File(task);
-        }
-
-        #endregion
     }
 }

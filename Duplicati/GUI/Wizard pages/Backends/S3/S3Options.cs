@@ -29,83 +29,116 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Backends.S3
 {
-    public partial class S3Options : UserControl, IWizardControl, Wizard_pages.Interfaces.ITaskBased
+    public partial class S3Options : WizardControl
     {
         private const string LOGIN_PAGE = "http://aws.amazon.com/s3";
         private Duplicati.Datamodel.Backends.S3 m_s3;
+        private bool m_hasTested;
        
         public S3Options()
+            : base("Backup storage options", "On this page you can select where to store the backup data.")
         {
             InitializeComponent();
+
+            base.PageEnter += new PageChangeHandler(S3Options_PageEnter);
+            base.PageLeave += new PageChangeHandler(S3Options_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void S3Options_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
+            SaveSettings();
+
+            if (args.Direction == PageChangedDirection.Back)
+                return;
+
+            if (!ValidateForm())
+            {
+                args.Cancel = true;
+                return;
+            }
+
+            if (!m_hasTested)
+                switch (MessageBox.Show(this, "Do you want to test the connection?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                {
+                    case DialogResult.Yes:
+                        TestConnection_Click(null, null);
+                        if (!m_hasTested)
+                        {
+                            args.Cancel = true;
+                            return;
+                        }
+                        break;
+                    case DialogResult.No:
+                        break;
+                    default: //Cancel
+                        args.Cancel = true;
+                        return;
+                }
+
+
+            SaveSettings();
+
+            args.NextPage = new Add_backup.AdvancedOptions();
         }
 
-        string IWizardControl.Title
+        void S3Options_PageEnter(object sender, PageChangedArgs args)
         {
-            get { return "Backup storage options"; }
+            m_s3 = new Duplicati.Datamodel.Backends.S3(((Schedule)m_settings["Schedule"]).Tasks[0]);
+
+            if (!m_valuesAutoLoaded)
+            {
+                AWS_ID.Text = m_s3.AccessID;
+                AWS_KEY.Text = m_s3.AccessKey;
+                BucketName.Text = m_s3.BucketName + "/" + m_s3.Prefix;
+                UseEuroBuckets.Checked = m_s3.UseEuroBucket;
+            }
+
+            if (!m_settings.ContainsKey("S3:HasTested"))
+                m_hasTested = false;
+            else
+                m_hasTested = (bool)m_settings["S3:HasTested"];
+            
         }
 
-        string IWizardControl.HelpText
+        private void SaveSettings()
         {
-            get { return "On this page you can select where to store the backup data."; }
+            m_s3.AccessID = AWS_ID.Text;
+            m_s3.AccessKey = AWS_KEY.Text;
+            m_s3.ServerUrl = null;
+            m_s3.UseEuroBucket = UseEuroBuckets.Checked;
+            m_s3.SetService();
+            m_settings["S3:Path"] = BucketName.Text;
+            m_settings["S3:HasTested"] = m_hasTested;
         }
 
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            AWS_ID.Text = m_s3.AccessID;
-            AWS_KEY.Text = m_s3.AccessKey;
-            BucketName.Text = m_s3.BucketName;
-            UseEuroBuckets.Checked = m_s3.UseEuroBucket;
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
+        private bool ValidateForm()
         {
             if (AWS_ID.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, "You must enter your AWS Access ID.\nYou may click the link to the right\nto open the AWS login page, and retrieve it.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
-                return;
+                return false;
             }
 
             if (AWS_KEY.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, "You must enter your AWS Access ID.\nYou may click the link to the right\nto open the AWS login page, and retrieve it.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
-                return;
+                return false;
             }
 
             if (BucketName.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, "You must enter a name for the bucket.\nYou must use a unique name for each backup.\nYou may enter any name you like.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
-                return;
+                return false;
             }
 
             if (!BucketName.Text.ToLower().StartsWith(AWS_ID.Text.ToLower()))
             {
-                DialogResult res = MessageBox.Show(this, "The bucket name does not start with your user ID.\nTo avoid using a bucket owned by another user,\nit is recommended that you put your user ID in front of the bucket name.\nDo you want to insert the user ID in front of the bucket name?", Application.ProductName, MessageBoxButtons.YesNoCancel , MessageBoxIcon.Warning);
+                DialogResult res = MessageBox.Show(this, "The bucket name does not start with your user ID.\nTo avoid using a bucket owned by another user,\nit is recommended that you put your user ID in front of the bucket name.\nDo you want to insert the user ID in front of the bucket name?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 if (res == DialogResult.Yes)
                     BucketName.Text = AWS_ID.Text.ToLower() + "-" + BucketName.Text;
                 else if (res == DialogResult.Cancel)
                 {
-                    cancel = true;
-                    return;
+                    return false;
                 }
             }
 
@@ -123,15 +156,13 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
                 prefix = null;
             }
 
-
-
             if (bucketname.ToLower() != bucketname)
             {
                 string reason = UseEuroBuckets.Checked ?
                     "The european buckets require that the bucket name is in lower case." :
                     "The new amazon s3 API requires that bucket names are all lower case.";
 
-                DialogResult res = MessageBox.Show(this, "The bucket name is not in all lower case.\n" + reason +  "\nDo you want to convert the bucket name to lower case?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                DialogResult res = MessageBox.Show(this, "The bucket name is not in all lower case.\n" + reason + "\nDo you want to convert the bucket name to lower case?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 if (res == DialogResult.Yes)
                 {
                     bucketname = bucketname.ToLower();
@@ -139,36 +170,65 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
                 }
                 else if (res == DialogResult.Cancel || UseEuroBuckets.Checked)
                 {
-                    cancel = true;
-                    return;
+                    return false;
                 }
             }
 
-            m_s3.AccessID = AWS_ID.Text;
-            m_s3.AccessKey = AWS_KEY.Text;
             m_s3.BucketName = bucketname;
             m_s3.Prefix = prefix;
-            m_s3.ServerUrl = null;
-            m_s3.UseEuroBucket = UseEuroBuckets.Checked;
             m_s3.UseSubdomainStrategy = bucketname.ToLower() == bucketname;
-            m_s3.SetService();
 
+            return true;
         }
-
-        #endregion
 
         private void SignUpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             UrlUtillity.OpenUrl(LOGIN_PAGE);
         }
 
-        #region ITaskBased Members
-
-        public void Setup(Task task)
+        private void TestConnection_Click(object sender, EventArgs e)
         {
-            m_s3 = new Duplicati.Datamodel.Backends.S3(task);
+            if (ValidateForm())
+            {
+                SaveSettings();
+
+                try
+                {
+                    string target = m_s3.GetDestinationPath();
+                    Dictionary<string, string> options = new Dictionary<string, string>();
+                    m_s3.GetOptions(options);
+
+                    string[] files = Duplicati.Library.Main.Interface.List(target, options);
+
+                    MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    m_hasTested = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                }
+            }
         }
 
-        #endregion
+        private void AWS_ID_TextChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+        }
+
+        private void AWS_KEY_TextChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+        }
+
+        private void BucketName_TextChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+        }
+
+        private void UseEuroBuckets_CheckedChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+        }
     }
 }

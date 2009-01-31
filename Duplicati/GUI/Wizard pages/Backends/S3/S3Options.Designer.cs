@@ -37,6 +37,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.SignUpLink = new System.Windows.Forms.LinkLabel();
             this.label4 = new System.Windows.Forms.Label();
             this.UseEuroBuckets = new System.Windows.Forms.CheckBox();
+            this.TestConnection = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -72,6 +73,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.AWS_ID.Name = "AWS_ID";
             this.AWS_ID.Size = new System.Drawing.Size(144, 20);
             this.AWS_ID.TabIndex = 4;
+            this.AWS_ID.TextChanged += new System.EventHandler(this.AWS_ID_TextChanged);
             // 
             // AWS_KEY
             // 
@@ -79,6 +81,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.AWS_KEY.Name = "AWS_KEY";
             this.AWS_KEY.Size = new System.Drawing.Size(144, 20);
             this.AWS_KEY.TabIndex = 5;
+            this.AWS_KEY.TextChanged += new System.EventHandler(this.AWS_KEY_TextChanged);
             // 
             // BucketName
             // 
@@ -86,6 +89,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.BucketName.Name = "BucketName";
             this.BucketName.Size = new System.Drawing.Size(144, 20);
             this.BucketName.TabIndex = 6;
+            this.BucketName.TextChanged += new System.EventHandler(this.BucketName_TextChanged);
             // 
             // SignUpLink
             // 
@@ -117,11 +121,23 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.UseEuroBuckets.TabIndex = 10;
             this.UseEuroBuckets.Text = "Store files on a european server";
             this.UseEuroBuckets.UseVisualStyleBackColor = true;
+            this.UseEuroBuckets.CheckedChanged += new System.EventHandler(this.UseEuroBuckets_CheckedChanged);
+            // 
+            // TestConnection
+            // 
+            this.TestConnection.Location = new System.Drawing.Point(360, 120);
+            this.TestConnection.Name = "TestConnection";
+            this.TestConnection.Size = new System.Drawing.Size(112, 24);
+            this.TestConnection.TabIndex = 11;
+            this.TestConnection.Text = "Test Connection";
+            this.TestConnection.UseVisualStyleBackColor = true;
+            this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
             // S3Options
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.UseEuroBuckets);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.SignUpLink);
@@ -149,5 +165,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
         private System.Windows.Forms.LinkLabel SignUpLink;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.CheckBox UseEuroBuckets;
+        private System.Windows.Forms.Button TestConnection;
     }
 }

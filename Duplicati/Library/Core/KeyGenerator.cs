@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.GUI
+namespace Duplicati.Library.Core
 {
     public static class KeyGenerator
     {

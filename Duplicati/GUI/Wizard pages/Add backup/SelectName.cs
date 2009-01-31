@@ -29,81 +29,101 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
-    public partial class SelectName : UserControl, IWizardControl, Interfaces.IScheduleBased
+    public partial class SelectName : WizardControl
     {
         private Schedule m_schedule;
 
         public SelectName()
+            : base("Enter a name for the backup", "On this page you can enter a name for the backup, so you can find and modify it later")
         {
             InitializeComponent();
             BackupFolder.treeView.HideSelection = false;
+
+            base.PageEnter += new PageChangeHandler(SelectName_PageEnter);
+            base.PageLeave += new PageChangeHandler(SelectName_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void SelectName_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            m_settings["Name:Backup"] = BackupFolder.SelectedFolder;
 
-        string IWizardControl.Title
-        {
-            get { return "Enter a name for the backup"; }
-        }
+            if (args.Direction == PageChangedDirection.Back)
+                return;
 
-        string IWizardControl.HelpText
-        {
-            get { return "On this page you can enter a name for the backup, so you can find and modify it later"; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            BackupName.Text = m_schedule.Name;
-            BackupFolder.SelectedFolder = (string.IsNullOrEmpty(m_schedule.Path) ? "" : m_schedule.Path + BackupFolder.treeView.PathSeparator) + m_schedule.Name;
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
             if (BackupName.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, "You must enter a name for the backup", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
+
+            Schedule[] tmp = ((System.Data.LightDatamodel.IDataFetcher)m_settings["Connection"]).GetObjects<Schedule>("Name LIKE ? AND Path Like ?", BackupName.Text, BackupFolder.SelectedFolder);
+            if ((tmp.Length == 1 && tmp[0] != m_schedule) || tmp.Length > 1)
+            {
+                MessageBox.Show(this, "There already exists a backup with that name", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                args.Cancel = true;
+                return;
+            }
+
+            if (m_schedule == null)
+            {
+                m_schedule = ((System.Data.LightDatamodel.IDataFetcher)m_settings["Connection"]).Add<Schedule>();
+                m_schedule.Tasks.Add(((System.Data.LightDatamodel.IDataFetcher)m_settings["Connection"]).Add<Task>());
+            }
+
             m_schedule.Name = BackupName.Text;
-            if (BackupFolder.treeView.SelectedNode != null)
-                m_schedule.Path = BackupFolder.SelectedFolder;
-            else
-                m_schedule.Path = "";
+            m_schedule.Path = BackupFolder.SelectedFolder;
+
+            m_settings["Schedule"] = m_schedule;
+
+            SetupDefaults();
+
+            args.NextPage = new SelectFiles();
         }
 
-        #endregion
-
-        #region IScheduleBased Members
-
-        public void Setup(Schedule schedule)
+        void SelectName_PageEnter(object sender, PageChangedArgs args)
         {
-            m_schedule = schedule;
-            BackupFolder.Setup(schedule.DataParent, true, true);
-        }
+            if (!m_settings.ContainsKey("Schedule"))
+                m_schedule = null;
+            else
+                m_schedule = (Schedule)m_settings["Schedule"];
 
-        #endregion
+            if (m_settings.ContainsKey("Name:Path"))
+                BackupFolder.SelectedFolder = (string)m_settings["Name:Path"];
+            else
+                BackupFolder.SelectedFolder = "";
+
+            if (m_schedule != null && m_schedule.ExistsInDb)
+                BackupName.Text = m_schedule.Name;
+        }
 
         private void button1_Click(object sender, EventArgs e)
         {
             BackupFolder.SelectedFolder = null;
             //BackupFolder.Focus();
             BackupFolder.AddFolder(null).BeginEdit();
+        }
+
+        /// <summary>
+        /// The purpose of this function is to set the default
+        /// settings on the new backup.
+        /// </summary>
+        private void SetupDefaults()
+        {
+            //TODO: These settings should be read from a file, 
+            //so they are customizable by the end user
+
+            m_schedule.FullAfter = "1M";
+            m_schedule.KeepFull = 4;
+            m_schedule.KeepTime = "";
+            m_schedule.Repeat = "1D";
+            m_schedule.VolumeSize = "5MB";
+            //Run each day at 13:00 (1 pm)
+            m_schedule.When = DateTime.Now.Date.AddHours(13);
+
+            //TODO: Probably not a good idea to hide the fact that the backup needs this key to be restored!
+            //TODO: !!!! Decide how to represent this to the user
+            m_schedule.Tasks[0].Encryptionkey = Duplicati.Library.Core.KeyGenerator.GenerateKey(32, 40);
         }
     }
 }

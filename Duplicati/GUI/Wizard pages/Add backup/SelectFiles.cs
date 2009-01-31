@@ -29,9 +29,8 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
-    public partial class SelectFiles : UserControl, IWizardControl, Interfaces.IScheduleBased
+    public partial class SelectFiles : WizardControl
     {
-        IWizardForm m_owner;
         private WorkerThread<string> m_calculator;
         private object m_lock = new object();
         private Dictionary<string, long> m_sizes;
@@ -44,6 +43,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private string m_myDocuments;
 
         public SelectFiles()
+            : base("Select files to backup", "On this page you must select the folder and files you wish to backup")
         {
             InitializeComponent();
             m_sizes = new Dictionary<string, long>();
@@ -53,6 +53,54 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_desktop = System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             m_appData = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             m_myDocuments = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            base.PageEnter += new PageChangeHandler(SelectFiles_PageEnter);
+            base.PageLeave += new PageChangeHandler(SelectFiles_PageLeave);
+        }
+
+        void SelectFiles_PageLeave(object sender, PageChangedArgs args)
+        {
+            if (args.Direction == PageChangedDirection.Back)
+                return;
+
+            if (DocumentsRadio.Checked)
+            {
+                MessageBox.Show(this, "This feature is not ready. Please manually point out the folder to back up.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                args.Cancel = true;
+                return;
+            }
+            else
+            {
+                if (!System.IO.Directory.Exists(TargetFolder.Text))
+                {
+                    MessageBox.Show(this, "The folder \"" + TargetFolder.Text + "\" does not exist.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    args.Cancel = true;
+                    return;
+                }
+            }
+
+            if (m_calculator != null)
+                m_calculator.ClearQueue(true);
+
+            m_schedule.Path = m_schedule.Tasks[0].SourcePath;
+
+            args.NextPage = new SelectBackend();
+        }
+
+        void SelectFiles_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_schedule = (Schedule)m_settings["Schedule"];
+
+            if (!m_valuesAutoLoaded)
+            {
+                FolderRadio.Checked = true;
+                TargetFolder.Text = m_schedule.Path;
+            }
+
+            if (FolderRadio.Checked)
+                TargetFolder_Leave(null, null);
+            else
+                Rescan();
         }
 
         private void StartCalculator()
@@ -78,91 +126,25 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 else
                     s = m_sizes.ContainsKey(TargetFolder.Text) ? m_sizes[TargetFolder.Text] : 0;
 
-                totalSize.Text = string.Format("The selected items take up {0} of space", Duplicati.Datamodel.Utillity.FormatSizeString(s));
+                totalSize.Text = string.Format("The selected items take up {0} of space", Library.Core.Utility.FormatSizeString(s));
 
                 if (m_sizes.ContainsKey(m_myMusic))
-                    myMusicSize.Text = Duplicati.Datamodel.Utillity.FormatSizeString(m_sizes[m_myMusic]);
+                    myMusicSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myMusic]);
                 if (m_sizes.ContainsKey(m_myPictures))
-                    myPicturesSize.Text = Duplicati.Datamodel.Utillity.FormatSizeString(m_sizes[m_myPictures]);
+                    myPicturesSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myPictures]);
                 if (m_sizes.ContainsKey(m_desktop))
-                    desktopSize.Text = Duplicati.Datamodel.Utillity.FormatSizeString(m_sizes[m_desktop]);
+                    desktopSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_desktop]);
                 if (m_sizes.ContainsKey(m_appData))
-                    appdataSize.Text = Duplicati.Datamodel.Utillity.FormatSizeString(m_sizes[m_appData]);
+                    appdataSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_appData]);
 
                 //TODO: Do not count myMusic and myPictures, if they are inside myDocuments
                 if (m_sizes.ContainsKey(m_myDocuments))
-                    myMusicSize.Text = Duplicati.Datamodel.Utillity.FormatSizeString(m_sizes[m_myDocuments]);
+                    myMusicSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myDocuments]);
 
                 if (m_sizes.ContainsKey(TargetFolder.Text))
-                    customSize.Text = Duplicati.Datamodel.Utillity.FormatSizeString(m_sizes[TargetFolder.Text]);
-
-
+                    customSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[TargetFolder.Text]);
             }
         }
-
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
-        {
-            get { return this; }
-        }
-
-        string IWizardControl.Title
-        {
-            get { return "Select files to backup"; }
-        }
-
-        string IWizardControl.HelpText
-        {
-            get { return "On this page you must select the folder and files you wish to backup"; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            m_owner = owner;
-            if (m_schedule != null)
-                TargetFolder.Text = m_schedule.Tasks[0].SourcePath;
-            
-            FolderRadio.Checked = true;
-
-            if (FolderRadio.Checked)
-                TargetFolder_Leave(null, null);
-            else
-                Rescan();
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
-            if (DocumentsRadio.Checked)
-            {
-                MessageBox.Show(this, "This feature is not ready. Please manually point out the folder to back up.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
-                return;
-            }
-            else
-            {
-                if (!System.IO.Directory.Exists(TargetFolder.Text))
-                {
-                    MessageBox.Show(this, "The folder \"" + TargetFolder.Text + "\" does not exist.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    cancel = true;
-                    return;
-                }
-            }
-            if (m_calculator != null)
-                m_calculator.ClearQueue(true);
-        }
-
-        #endregion
 
         private void Rescan()
         {
@@ -247,15 +229,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             m_schedule.Tasks[0].SourcePath = TargetFolder.Text;
         }
-
-        #region IScheduleBased Members
-
-        public void Setup(Duplicati.Datamodel.Schedule schedule)
-        {
-            m_schedule = schedule;
-        }
-
-        #endregion
 
         private void SelectFiles_VisibleChanged(object sender, EventArgs e)
         {

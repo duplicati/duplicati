@@ -29,68 +29,31 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
-    public partial class PasswordSettings : UserControl, IWizardControl, Interfaces.ITaskBased
+    public partial class PasswordSettings : WizardControl
     {
         private bool m_warnedNoPassword = false;
-        private bool m_showAsInitial = false;
         private Task m_task;
 
         public PasswordSettings()
+            : base("Select password for the backup", "On this page you can select options that protect your backups from being read or altered.") 
         {
             InitializeComponent();
+
+            base.PageEnter += new PageChangeHandler(PasswordSettings_PageEnter);
+            base.PageLeave += new PageChangeHandler(PasswordSettings_PageLeave);
         }
 
-        #region IWizardControl Members
-
-        Control IWizardControl.Control
+        void PasswordSettings_PageLeave(object sender, PageChangedArgs args)
         {
-            get { return this; }
-        }
+            SaveSettings();
 
-        string IWizardControl.Title
-        {
-            get { return "Select password for the backup"; }
-        }
+            if (args.Direction == PageChangedDirection.Back)
+                return;
 
-        string IWizardControl.HelpText
-        {
-            get { return "On this page you can select options that protect your backups from being read or altered."; }
-        }
-
-        Image IWizardControl.Image
-        {
-            get { return null; }
-        }
-
-        bool IWizardControl.FullSize
-        {
-            get { return false; }
-        }
-
-        void IWizardControl.Enter(IWizardForm owner)
-        {
-            if (m_showAsInitial)
-            {
-                EnablePassword.Checked = true;
-                Password.Text = "";
-                m_showAsInitial = false;
-            }
-            else
-            {
-                if (m_task != null)
-                {
-                    EnablePassword.Checked = !string.IsNullOrEmpty(m_task.Encryptionkey);
-                    Password.Text = m_task.Encryptionkey;
-                }
-            }
-        }
-
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
-        {
             if (EnablePassword.Checked && Password.Text.Trim().Length == 0)
             {
                 MessageBox.Show(this, "You must enter a password, remove the check mark next to the box to disable encryption of the backups.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancel = true;
+                args.Cancel = true;
                 return;
             }
 
@@ -98,24 +61,52 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 if (MessageBox.Show(this, "If the backup is stored on machine or device that is not under your direct control,\nit is possible that others may view the files you have stored in the backups.\nIt is highly recomended that you enable encryption.\nDo you want to continue without encryption?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
-                    cancel = true;
+                    args.Cancel = true;
                     return;
                 }
+
+                m_warnedNoPassword = true;
             }
 
+            SaveSettings();
+
+            args.NextPage = null;
+        }
+
+        private void SaveSettings()
+        {
             if (EnablePassword.Checked)
                 m_task.Encryptionkey = Password.Text;
             else
                 m_task.Encryptionkey = null;
 
             m_task.Signaturekey = null;
+            m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
+            m_settings["Password:PasswordChecked"] = EnablePassword.Checked;
         }
 
-        #endregion
+        void PasswordSettings_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_task = ((Schedule)m_settings["Schedule"]).Tasks[0];
+
+            if (m_settings.ContainsKey("Password:PasswordChecked"))
+            {
+                EnablePassword.Checked = (bool)m_settings["Password:PasswordChecked"];
+                Password.Text = m_task.Encryptionkey;
+            }
+            else
+            {
+                EnablePassword.Checked = true;
+                Password.Text = "";
+            }
+
+            if (m_settings.ContainsKey("Password:WarnedNoPassword"))
+                m_warnedNoPassword = (bool)m_settings["Password:WarnedNoPassword"];
+        }
 
         private void GeneratePassword_Click(object sender, EventArgs e)
         {
-            Password.Text = KeyGenerator.GenerateKey((int)PassphraseLength.Value, (int)PassphraseLength.Value);
+            Password.Text = Duplicati.Library.Core.KeyGenerator.GenerateKey((int)PassphraseLength.Value, (int)PassphraseLength.Value);
         }
 
         private void EnablePassword_CheckedChanged(object sender, EventArgs e)
@@ -129,15 +120,5 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_warnedNoPassword = false;
         }
 
-        #region IScheduleBased Members
-
-        public void Setup(Duplicati.Datamodel.Task task)
-        {
-            m_task = task;
-            if (m_task != null)
-                m_showAsInitial = !m_task.ExistsInDb;
-        }
-
-        #endregion
     }
 }

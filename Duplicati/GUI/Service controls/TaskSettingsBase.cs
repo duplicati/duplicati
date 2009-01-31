@@ -71,9 +71,9 @@ namespace Duplicati.GUI.Service_controls
                 if (!m_task.ExistsInDb)
                 {
                     if (string.IsNullOrEmpty(m_task.Encryptionkey))
-                        m_task.Encryptionkey = KeyGenerator.GenerateKey(64, 128);
+                        m_task.Encryptionkey = Library.Core.KeyGenerator.GenerateKey(64, 128);
                     if (string.IsNullOrEmpty(m_task.Signaturekey))
-                        m_task.Signaturekey = KeyGenerator.GenerateSignKey();
+                        m_task.Signaturekey = Library.Core.KeyGenerator.GenerateSignKey();
                 }
 
                 EncrytionKey.Text = m_task.Encryptionkey;
@@ -109,7 +109,7 @@ namespace Duplicati.GUI.Service_controls
                 if (MessageBox.Show(this, "If you modify the encryption key, you can no longer recover any existing backups. Please make sure you have a copy of the key. Do you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel) != DialogResult.Yes)
                     return;
 
-            EncrytionKey.Text = KeyGenerator.GenerateKey(64, 128);
+            EncrytionKey.Text = Library.Core.KeyGenerator.GenerateKey(64, 128);
         }
 
         private void EncrytionKey_TextChanged(object sender, EventArgs e)

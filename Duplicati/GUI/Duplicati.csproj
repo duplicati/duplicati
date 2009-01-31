@@ -68,7 +68,12 @@
     <Compile Include="HelperControls\BackupTreeView.Designer.cs">
       <DependentUpon>BackupTreeView.cs</DependentUpon>
     </Compile>
-    <Compile Include="KeyGenerator.cs" />
+    <Compile Include="HelperControls\DurationEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\DurationEditor.Designer.cs">
+      <DependentUpon>DurationEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="LogViewer.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -148,6 +153,12 @@
     </Compile>
     <Compile Include="TaskPackages.cs" />
     <Compile Include="UrlUtillity.cs" />
+    <Compile Include="Wizard pages\Add backup\AdvancedOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\AdvancedOptions.Designer.cs">
+      <DependentUpon>AdvancedOptions.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Add backup\FinishedAdd.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -183,6 +194,12 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\SelectWhen.Designer.cs">
       <DependentUpon>SelectWhen.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\ThrottleOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\ThrottleOptions.Designer.cs">
+      <DependentUpon>ThrottleOptions.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Backends\File\FileOptions.cs">
       <SubType>UserControl</SubType>
@@ -220,8 +237,6 @@
     <Compile Include="Wizard pages\Delete backup\DeleteFinished.Designer.cs">
       <DependentUpon>DeleteFinished.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Interfaces\IScheduleBased.cs" />
-    <Compile Include="Wizard pages\Interfaces\ITaskBased.cs" />
     <Compile Include="Wizard pages\MainPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -319,6 +334,10 @@
       <SubType>Designer</SubType>
       <DependentUpon>BackupTreeView.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\DurationEditor.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>DurationEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="LogViewer.resx">
       <SubType>Designer</SubType>
       <DependentUpon>LogViewer.cs</DependentUpon>
@@ -374,6 +393,10 @@
     <EmbeddedResource Include="Icons\Status.ico" />
     <EmbeddedResource Include="Icons\Settings.ico" />
     <EmbeddedResource Include="Icons\Time.ico" />
+    <EmbeddedResource Include="Wizard pages\Add backup\AdvancedOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>AdvancedOptions.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\FinishedAdd.resx">
       <SubType>Designer</SubType>
       <DependentUpon>FinishedAdd.cs</DependentUpon>
@@ -397,6 +420,10 @@
     <EmbeddedResource Include="Wizard pages\Add backup\SelectWhen.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SelectWhen.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\ThrottleOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ThrottleOptions.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\File\FileOptions.resx">
       <SubType>Designer</SubType>
