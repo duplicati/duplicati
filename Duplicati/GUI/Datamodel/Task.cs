@@ -19,7 +19,7 @@ namespace Duplicati.Datamodel
 
 #region " private members "
 
-		[AutoIncrement, PrimaryKey, Relation("TaskSettingTask", typeof(TaskSetting), "TaskID", false), Relation("LogTask", typeof(Log), "TaskID", false), DatabaseField("ID")]
+		[AutoIncrement, PrimaryKey, Relation("TaskSettingTask", typeof(TaskSetting), "TaskID", false), Relation("LogTask", typeof(Log), "TaskID", false), Relation("TaskFilterTask", typeof(TaskFilter), "TaskID", false), DatabaseField("ID")]
 		private System.Int64 m_ID = long.MinValue;
 		[DatabaseField("Service")]
 		private System.String m_Service = "";
@@ -97,6 +97,15 @@ namespace Duplicati.Datamodel
 			get
 			{
 				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<Log>("LogTask", this);
+			}
+		}
+
+		[Affects(typeof(TaskFilter))]
+		public System.Collections.Generic.IList<TaskFilter> Filters
+		{
+			get
+			{
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<TaskFilter>("TaskFilterTask", this);
 			}
 		}
 

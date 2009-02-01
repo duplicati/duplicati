@@ -32,6 +32,8 @@ namespace Duplicati.GUI
         private volatile bool m_terminate;
         private Thread m_thread;
 
+        private volatile bool m_active;
+
         private Tx m_currentTask;
         private ProcessItemDelegate m_delegate;
 
@@ -63,6 +65,14 @@ namespace Duplicati.GUI
                     return new List<Tx>(m_tasks);
             }
 
+        }
+
+        /// <summary>
+        /// Gets a value indicating if the worker is running
+        /// </summary>
+        public bool Active
+        {
+            get { return m_active; }
         }
 
         /// <summary>
@@ -161,7 +171,9 @@ namespace Duplicati.GUI
                 if (StartingWork != null)
                     StartingWork(this, null);
 
+                m_active = true;
                 m_delegate(m_currentTask);
+                m_active = false;
 
                 if (CompletedWork != null)
                     CompletedWork(this, null);

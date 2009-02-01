@@ -33,9 +33,20 @@ namespace System.Windows.Forms.Wizard
 
     public class PageChangedArgs : CancelEventArgs
     {
+        public PageChangedArgs(IWizardForm owner, bool treatAsLast, PageChangedDirection direction)
+            : base()
+        {
+            this.Owner = owner;
+            this.Settings = owner.Settings;
+            this.Direction = direction;
+            this.TreatAsLast = treatAsLast;
+        }
+
         public IWizardControl NextPage;
         public bool TreatAsLast;
         public PageChangedDirection Direction;
+        public Dictionary<string, object> Settings;
+        public IWizardForm Owner;
 
     }
 
@@ -59,6 +70,7 @@ namespace System.Windows.Forms.Wizard
         Image DefaultImage { get; set; }
         void UpdateButtons();
         void UpdateDisplay();
+        Dictionary<string, object> Settings { get; }
 
         event PageChangeHandler NextPressed;
         event PageChangeHandler BackPressed;

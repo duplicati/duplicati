@@ -148,7 +148,7 @@ namespace Duplicati.Library.Core
         /// </summary>
         /// <param name="globexp"></param>
         /// <returns></returns>
-        private static string ConvertGlobbingToRegExp(string globexp)
+        public static string ConvertGlobbingToRegExp(string globexp)
         {
             //First escape all special characters
             globexp = Regex.Replace(globexp, BADCHARS, "\\$&");

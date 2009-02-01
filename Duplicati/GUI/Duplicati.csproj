@@ -31,10 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=180db27b8c387f04, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>Datamodel\LightDatamodel.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.SQLite, Version=1.0.46.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
@@ -158,6 +154,18 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\AdvancedOptions.Designer.cs">
       <DependentUpon>AdvancedOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\FilterDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\FilterDialog.Designer.cs">
+      <DependentUpon>FilterDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\FilterEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\FilterEditor.Designer.cs">
+      <DependentUpon>FilterEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Add backup\FinishedAdd.cs">
       <SubType>UserControl</SubType>
@@ -283,6 +291,10 @@
     <Compile Include="WorkerThread.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\LightDatamodel\LightDatamodel\LightDatamodel.csproj">
+      <Project>{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}</Project>
+      <Name>LightDatamodel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\WizardForm\WizardForm.csproj">
       <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
       <Name>WizardForm</Name>
@@ -397,6 +409,14 @@
       <SubType>Designer</SubType>
       <DependentUpon>AdvancedOptions.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\FilterDialog.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FilterDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\FilterEditor.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FilterEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\FinishedAdd.resx">
       <SubType>Designer</SubType>
       <DependentUpon>FinishedAdd.cs</DependentUpon>
@@ -478,6 +498,7 @@
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </EmbeddedResource>
     <Content Include="Database schema\1.Throttle options.sql" />
+    <EmbeddedResource Include="Database schema\2.Filter support.sql" />
     <Content Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>

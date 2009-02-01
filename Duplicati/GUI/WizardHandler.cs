@@ -100,9 +100,8 @@ namespace Duplicati.GUI
 
             if (m_form.CurrentPage is Wizard_pages.Add_backup.FinishedAdd)
             {
-                //TODO: Implement CommitRecursive
-                m_connection.CommitAll();
-                Program.DataConnection.CommitAll();
+                Schedule schedule = (Schedule)m_form.Settings["Schedule"];
+                ((IDataFetcherCached)schedule.DataParent).CommitRecursiveWithRelations(schedule);
 
                 if ((m_form.CurrentPage as Duplicati.GUI.Wizard_pages.Add_backup.FinishedAdd).RunNow.Checked)
                     if (m_addedItem != null)

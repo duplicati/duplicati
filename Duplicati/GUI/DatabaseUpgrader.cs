@@ -133,13 +133,14 @@ namespace Duplicati.GUI
 
             if (upgrades.Count > 0)
             {
-                string backupfile = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), System.Windows.Forms.Application.ProductName);
+                string backupfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sourcefile), "backup " + DateTime.Now.ToString("yyyyMMddhhmmss") + ".sqlite");
 
                 try
                 {
-                    //Keep a backup
-                    backupfile = System.IO.Path.Combine(backupfile, "backup " + DateTime.Now.ToString("yyyyMMddhhmmss") + ".sqlite");
+                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(backupfile)))
+                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backupfile));
 
+                    //Keep a backup
                     System.IO.File.Copy(sourcefile, backupfile, false);
 
                     int newversion = -1;

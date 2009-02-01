@@ -147,7 +147,11 @@ namespace Duplicati.GUI
             TrayIcon.DoubleClick += new EventHandler(TrayIcon_DoubleClick);
             TrayIcon.Visible = true;
 
-            if (Program.DataConnection.GetObjects<Schedule>().Length == 0)
+            long count = 0;
+            lock (MainLock)
+                count = Program.DataConnection.GetObjects<Schedule>().Length;
+
+            if (count == 0)
             {
                 MessageBox.Show("Since this is the first time Duplicati is being run, the Wizard will now be shown.\r\nIf you wish to access the wizard again at some other time, you can right click the Duplicati icon in your system tray.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 ShowWizard();

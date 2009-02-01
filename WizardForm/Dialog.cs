@@ -34,6 +34,10 @@ namespace System.Windows.Forms.Wizard
         private string m_title;
         private IWizardControl m_currentPage;
         private bool m_isLastPage = false;
+        private Dictionary<string, object> m_settings;
+
+        //The path the user has chosen
+        private Stack<IWizardControl> m_visited;
 
         public event CancelEventHandler Finished;
         public event CancelEventHandler Cancelled;
@@ -64,6 +68,8 @@ namespace System.Windows.Forms.Wizard
             InitializeComponent();
             m_pages = new List<IWizardControl>();
             m_defaultImage = null;
+            m_settings = new Dictionary<string, object>();
+            m_visited = new Stack<IWizardControl>();
         }
 
         public virtual string Title
@@ -83,6 +89,8 @@ namespace System.Windows.Forms.Wizard
             get { return m_pages; }
         }
 
+        public virtual Dictionary<string, object> Settings { get { return m_settings; } }
+
         public virtual IWizardControl CurrentPage
         {
             get { return m_currentPage; }
@@ -95,15 +103,15 @@ namespace System.Windows.Forms.Wizard
 
         public virtual void UpdateButtons()
         {
-            if (Pages.Count == 0)
+            /*if (Pages.Count == 0)
             {
                 _NextButton.Enabled = false;
                 _BackButton.Enabled = false;
                 return;
-            }
+            }*/
 
             _NextButton.Enabled = true;
-            _BackButton.Enabled = m_currentPage != Pages[0];
+            _BackButton.Enabled = m_visited.Count > 0;
 
             if (m_isLastPage)
                 _NextButton.Text = "Finish";
@@ -113,12 +121,18 @@ namespace System.Windows.Forms.Wizard
 
         public virtual void UpdateDisplay()
         {
-            UpdateButtons();
             DisplayPage(CurrentPage);
+            UpdateButtons();
         }
 
         protected virtual void DisplayPage(IWizardControl page)
         {
+            PageChangedArgs args = new PageChangedArgs(this, this.Pages.IndexOf(page) == this.Pages.Count - 1, PageChangedDirection.Next);
+
+            page.Enter(this, args);
+            if (page.Control as IControl != null)
+                (page.Control as IControl).Displayed(this);
+
             InfoPanel.Visible = !page.FullSize;
             TitleLabel.Text = page.Title;
             InfoLabel.Text = page.HelpText;
@@ -126,24 +140,21 @@ namespace System.Windows.Forms.Wizard
             ContentPanel.Controls.Clear();
             ContentPanel.Controls.Add(page.Control);
             page.Control.Dock = DockStyle.Fill;
-            UpdateButtons();
+            m_isLastPage = args.TreatAsLast;
 
-            page.Enter(this);
-            if (page.Control as IControl != null)
-                (page.Control as IControl).Displayed(this);
+            UpdateButtons();
         }
 
         private void BackBtn_Click(object sender, EventArgs e)
         {
-            PageChangedArgs args = new PageChangedArgs();
-            args.Cancel = false;
-            args.NextPage = null;
-            int pos = Pages.IndexOf(CurrentPage);
-            if (pos > 0)
-                args.NextPage = Pages[pos - 1];
-            args.TreatAsLast = false;
-            args.Direction = PageChangedDirection.Back;
+            PageChangedArgs args = new PageChangedArgs(this, false, PageChangedDirection.Back);
 
+            if (m_visited.Count > 0)
+                args.NextPage = m_visited.Pop();
+
+            if (this.CurrentPage != null)
+                this.CurrentPage.Leave(this, args);
+            
             if (BackPressed != null)
                 BackPressed(this, args);
 
@@ -156,11 +167,18 @@ namespace System.Windows.Forms.Wizard
 
         private void NextBtn_Click(object sender, EventArgs e)
         {
+            IWizardControl nextpage = null;
+            int pos = Pages.IndexOf(CurrentPage);
+            if (pos >= 0 && pos < Pages.Count - 1)
+                nextpage = Pages[pos + 1];
+
+            PageChangedArgs args = new PageChangedArgs(this, Pages.IndexOf(nextpage) == Pages.Count - 1 && Pages.Count != 0, PageChangedDirection.Next);
+            args.NextPage = nextpage;
+
             if (m_currentPage != null)
             {
-                bool cancel = false;
-                m_currentPage.Leave(this, ref cancel);
-                if (cancel)
+                m_currentPage.Leave(this, args);
+                if (args.Cancel)
                     return;
             }
 
@@ -180,23 +198,16 @@ namespace System.Windows.Forms.Wizard
                 return;
             }
 
-            PageChangedArgs args = new PageChangedArgs();
-            args.Cancel = false;
-            args.Direction = PageChangedDirection.Next;
-            args.NextPage = null;
-
-            int pos = Pages.IndexOf(CurrentPage);
-            if (pos >= 0)
-                args.NextPage = Pages[pos + 1];
-            args.TreatAsLast = Pages.IndexOf(args.NextPage) == Pages.Count - 1;
-
             if (NextPressed != null)
                 NextPressed(this, args);
             if (args.Cancel || args.NextPage == null)
                 return;
 
+            if (CurrentPage != null)
+                m_visited.Push(CurrentPage);
             m_isLastPage = args.TreatAsLast;
             CurrentPage = args.NextPage;
+            UpdateButtons();
         }
 
         private void CancelBtn_Click(object sender, EventArgs e)
@@ -211,7 +222,6 @@ namespace System.Windows.Forms.Wizard
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
-
 
         #region IWizardForm Members
 

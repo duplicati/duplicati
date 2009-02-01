@@ -69,6 +69,17 @@ namespace Duplicati.Datamodel
         public void GetOptions(Dictionary<string, string> options)
         {
             this.Backend.GetOptions(options);
+
+            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
+            foreach (TaskFilter f in this.SortedFilters)
+                filters.Add(new KeyValuePair<bool, string>(f.Include, f.Filter));
+            if (filters.Count > 0)
+            {
+                string o = Library.Core.FilenameFilter.EncodeAsFilter(filters);
+                if (!o.StartsWith("--filter=")) throw new Exception("What happend here?");
+                o = o.Substring("--filter=".Length);
+                options["filter"] = o;
+            }
         }
 
         public bool ExistsInDb
@@ -76,5 +87,29 @@ namespace Duplicati.Datamodel
             get { return this.ID > 0; }
         }
 
-    }
+
+        public TaskFilter[] SortedFilters
+        {
+            get
+            {
+                return System.Data.LightDatamodel.Query.Parse("ORDER BY SortOrder").EvaluateList<TaskFilter>(this.Filters).ToArray();
+            }
+            set
+            {
+                foreach (TaskFilter t in this.SortedFilters)
+                    if (Array.IndexOf<TaskFilter>(value, t) >= 0)
+                        this.Filters.Remove(t);
+                    else
+                        t.DataParent.DeleteObject(t);
+
+                int index = 0;
+                foreach (TaskFilter t in value)
+                {
+                    t.SortOrder = index++;
+                    this.Filters.Add(t);
+                }
+            }
+        }
+
+        }
 }

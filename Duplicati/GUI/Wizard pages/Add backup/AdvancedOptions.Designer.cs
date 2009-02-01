@@ -31,6 +31,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.SelectWhen = new System.Windows.Forms.CheckBox();
             this.SelectIncremental = new System.Windows.Forms.CheckBox();
             this.ThrottleOptions = new System.Windows.Forms.CheckBox();
+            this.EditFilters = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // SelectWhen
@@ -64,10 +65,21 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.ThrottleOptions.Text = "Select options that limit machine usage, such as bandwidth limits";
             this.ThrottleOptions.UseVisualStyleBackColor = true;
             // 
+            // EditFilters
+            // 
+            this.EditFilters.AutoSize = true;
+            this.EditFilters.Location = new System.Drawing.Point(32, 128);
+            this.EditFilters.Name = "EditFilters";
+            this.EditFilters.Size = new System.Drawing.Size(316, 17);
+            this.EditFilters.TabIndex = 4;
+            this.EditFilters.Text = "Modify filters that control what files are included in the backup";
+            this.EditFilters.UseVisualStyleBackColor = true;
+            // 
             // AdvancedOptions
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.EditFilters);
             this.Controls.Add(this.ThrottleOptions);
             this.Controls.Add(this.SelectIncremental);
             this.Controls.Add(this.SelectWhen);
@@ -83,5 +95,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.CheckBox SelectWhen;
         private System.Windows.Forms.CheckBox SelectIncremental;
         private System.Windows.Forms.CheckBox ThrottleOptions;
+        private System.Windows.Forms.CheckBox EditFilters;
     }
 }

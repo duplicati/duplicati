@@ -95,6 +95,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (m_schedule != null && m_schedule.ExistsInDb)
                 BackupName.Text = m_schedule.Name;
+
+            try { BackupName.Focus(); }
+            catch { }
         }
 
         private void button1_Click(object sender, EventArgs e)

@@ -24,27 +24,39 @@ using System.Drawing;
 
 namespace System.Windows.Forms.Wizard
 {
-    public class WizardControl : IWizardControl
+    public class WizardControl : UserControl, IWizardControl
     {
-        private Control m_control;
-        private string m_title;
-        private string m_helpText;
-        private Image m_image;
-        private bool m_fullSize;
+        protected string m_title;
+        protected string m_helpText;
+        protected Image m_image;
+        protected bool m_fullSize;
 
-        public WizardControl(Control control, string title, string helptext)
-            : this(control, title, helptext, null)
+        protected bool m_autoFillValues = true;
+        protected bool m_valuesAutoLoaded = false;
+
+        protected IWizardForm m_owner;
+        protected Dictionary<string, object> m_settings;
+
+        protected event PageChangeHandler PageEnter;
+        protected event PageChangeHandler PageLeave;
+
+        //Windows forms designer support
+        private WizardControl()
         {
         }
 
-        public WizardControl(Control control, string title, string helptext, Image image)
-            : this(control, title, helptext, image, false)
+        public WizardControl(string title, string helptext)
+            : this(title, helptext, null)
         {
         }
 
-        public WizardControl(Control control, string title, string helptext, Image image, bool fullsize)
+        public WizardControl(string title, string helptext, Image image)
+            : this(title, helptext, image, false)
         {
-            m_control = control;
+        }
+
+        public WizardControl(string title, string helptext, Image image, bool fullsize)
+        {
             m_title = title;
             m_helpText = helptext;
             m_image = image;
@@ -53,39 +65,175 @@ namespace System.Windows.Forms.Wizard
 
         #region IWizardControl Members
 
-        Control IWizardControl.Control
+        public virtual Control Control
         {
-            get { return m_control; }
+            get { return this; }
         }
 
-        string IWizardControl.Title
+        public virtual string Title
         {
             get { return m_title; }
         }
 
-        string IWizardControl.HelpText
+        public virtual string HelpText
         {
             get { return m_helpText; }
         }
 
-        Image IWizardControl.Image
+        public virtual Image Image
         {
             get { return m_image; }
         }
 
-        bool IWizardControl.FullSize
+        public virtual bool FullSize
         {
             get { return m_fullSize; }
         }
 
-        void IWizardControl.Enter(IWizardForm owner)
+        void IWizardControl.Enter(IWizardForm owner, PageChangedArgs args)
         {
+            m_owner = args.Owner;
+            m_settings = args.Settings;
+
+            if (m_autoFillValues)
+                m_valuesAutoLoaded = LoadDialogSettings();
+
+            if (PageEnter != null)
+                PageEnter(owner, args);
         }
 
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
+        void IWizardControl.Leave(IWizardForm owner, PageChangedArgs args)
         {
+            if (PageLeave != null)
+                PageLeave(owner, args);
+
+            if (m_autoFillValues)
+                SaveDialogSettings();
         }
 
         #endregion
+
+        protected Control[] FindAllControls()
+        {
+            Dictionary<Control, object> visited = new Dictionary<Control, object>();
+            List<Control> items = new List<Control>();
+            List<Control> result = new List<Control>();
+
+            foreach (Control c in this.Controls)
+                items.Add(c);
+
+            while (items.Count > 0)
+            {
+                Control c = items[0];
+                items.RemoveAt(0);
+
+                if (visited.ContainsKey(c))
+                    continue;
+                else
+                    visited.Add(c, null);
+
+                //Filter out display items
+                if (!(c is Label || c is Button || c is GroupBox || c is Panel))
+                    result.Add(c);
+
+                foreach (Control cx in c.Controls)
+                    items.Add(cx);
+            }
+
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// Loads previously saved settings
+        /// </summary>
+        /// <returns>True if there were settings loaded, false otherwise. Use this flag to detect if the control should get default values.</returns>
+        protected virtual bool LoadDialogSettings()
+        {
+            string prefix = this.GetType().FullName + ".";
+            bool anyloaded = false;
+
+            foreach(Control c in FindAllControls())
+            {
+                if (m_settings.ContainsKey(prefix + c.Name))
+                {
+                    anyloaded = true;
+
+                    if (c is CheckBox)
+                        ((CheckBox)c).Checked = (bool)m_settings[prefix + c.Name];
+                    else if (c is TextBox)
+                        c.Text = (string)m_settings[prefix + c.Name];
+                    else if (c is ComboBox)
+                    {
+                        if (((ComboBox)c).DropDownStyle == ComboBoxStyle.DropDownList)
+                            ((ComboBox)c).SelectedIndex = (int)m_settings[prefix + c.Name];
+                        else
+                            c.Text = (string)m_settings[prefix + c.Name];
+                    }
+                    else if (c is RadioButton)
+                        ((RadioButton)c).Checked = (bool)m_settings[prefix + c.Name];
+                    else if (c is NumericUpDown)
+                        ((NumericUpDown)c).Value = (decimal)m_settings[prefix + c.Name];
+                    else if (c is DateTimePicker)
+                        ((DateTimePicker)c).Value = (DateTime)m_settings[prefix + c.Name];
+                    else
+                    {
+                        //Default to "Value" if it exists, otherwise use "Text"
+                        System.Reflection.PropertyInfo pi = c.GetType().GetProperty("Value");
+                        if (pi == null)
+                            c.Text = (string)m_settings[prefix + c.Name];
+                        else
+                            pi.SetValue(c, m_settings[prefix + c.Name], null);
+                    }
+                }
+            }
+
+            return anyloaded;
+        }
+
+        protected virtual void SaveDialogSettings()
+        {
+            string prefix = this.GetType().FullName + ".";
+
+            foreach (Control c in FindAllControls())
+                if (c is CheckBox)
+                    m_settings[prefix + c.Name] = ((CheckBox)c).Checked;
+                else if (c is TextBox)
+                    m_settings[prefix + c.Name] = c.Text;
+                else if (c is ComboBox)
+                {
+                    if (((ComboBox)c).DropDownStyle == ComboBoxStyle.DropDownList)
+                        m_settings[prefix + c.Name] = ((ComboBox)c).SelectedIndex;
+                    else
+                        m_settings[prefix + c.Name] = c.Text;
+                }
+                else if (c is RadioButton)
+                    m_settings[prefix + c.Name] = ((RadioButton)c).Checked;
+                else if (c is NumericUpDown) 
+                    m_settings[prefix + c.Name] = ((NumericUpDown)c).Value;
+                else if (c is DateTimePicker)
+                    m_settings[prefix + c.Name] = ((DateTimePicker)c).Value;
+                else
+                {
+                    //Default to "Value" if it exists, otherwise use "Text"
+                    System.Reflection.PropertyInfo pi = c.GetType().GetProperty("Value");
+                    if (pi == null)
+                        m_settings[prefix + c.Name] = c.Text;
+                    else
+                        m_settings[prefix + c.Name] = pi.GetValue(c, null);
+
+                }
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            // 
+            // WizardControl
+            // 
+            this.Name = "WizardControl";
+            this.Size = new System.Drawing.Size(506, 242);
+            this.ResumeLayout(false);
+
+        }
     }
 }

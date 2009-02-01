@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.label1 = new System.Windows.Forms.Label();
             this.TargetFolder = new System.Windows.Forms.TextBox();
             this.BrowseFolderButton = new System.Windows.Forms.Button();
@@ -35,14 +36,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.DocumentGroup = new System.Windows.Forms.GroupBox();
             this.appdataSize = new System.Windows.Forms.Label();
             this.desktopSize = new System.Windows.Forms.Label();
-            this.myMoviesSize = new System.Windows.Forms.Label();
             this.myMusicSize = new System.Windows.Forms.Label();
             this.myPicturesSize = new System.Windows.Forms.Label();
             this.myDocumentsSize = new System.Windows.Forms.Label();
             this.IncludeDocuments = new System.Windows.Forms.CheckBox();
             this.IncludeSettings = new System.Windows.Forms.CheckBox();
             this.IncludeDesktop = new System.Windows.Forms.CheckBox();
-            this.IncludeMovies = new System.Windows.Forms.CheckBox();
             this.IncludeMusic = new System.Windows.Forms.CheckBox();
             this.IncludeImages = new System.Windows.Forms.CheckBox();
             this.DocumentsRadio = new System.Windows.Forms.RadioButton();
@@ -50,6 +49,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.customSize = new System.Windows.Forms.Label();
             this.FolderRadio = new System.Windows.Forms.RadioButton();
             this.totalSize = new System.Windows.Forms.Label();
+            this.FolderTooltip = new System.Windows.Forms.ToolTip(this.components);
             this.DocumentGroup.SuspendLayout();
             this.FolderGroup.SuspendLayout();
             this.SuspendLayout();
@@ -65,9 +65,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // TargetFolder
             // 
-            this.TargetFolder.Location = new System.Drawing.Point(152, 24);
+            this.TargetFolder.Location = new System.Drawing.Point(192, 24);
             this.TargetFolder.Name = "TargetFolder";
-            this.TargetFolder.Size = new System.Drawing.Size(248, 20);
+            this.TargetFolder.Size = new System.Drawing.Size(208, 20);
             this.TargetFolder.TabIndex = 1;
             this.TargetFolder.Leave += new System.EventHandler(this.TargetFolder_Leave);
             // 
@@ -85,14 +85,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             this.DocumentGroup.Controls.Add(this.appdataSize);
             this.DocumentGroup.Controls.Add(this.desktopSize);
-            this.DocumentGroup.Controls.Add(this.myMoviesSize);
             this.DocumentGroup.Controls.Add(this.myMusicSize);
             this.DocumentGroup.Controls.Add(this.myPicturesSize);
             this.DocumentGroup.Controls.Add(this.myDocumentsSize);
             this.DocumentGroup.Controls.Add(this.IncludeDocuments);
             this.DocumentGroup.Controls.Add(this.IncludeSettings);
             this.DocumentGroup.Controls.Add(this.IncludeDesktop);
-            this.DocumentGroup.Controls.Add(this.IncludeMovies);
             this.DocumentGroup.Controls.Add(this.IncludeMusic);
             this.DocumentGroup.Controls.Add(this.IncludeImages);
             this.DocumentGroup.Location = new System.Drawing.Point(24, 8);
@@ -104,7 +102,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // appdataSize
             // 
             this.appdataSize.AutoSize = true;
-            this.appdataSize.Location = new System.Drawing.Point(392, 72);
+            this.appdataSize.Location = new System.Drawing.Point(392, 48);
             this.appdataSize.Name = "appdataSize";
             this.appdataSize.Size = new System.Drawing.Size(22, 13);
             this.appdataSize.TabIndex = 11;
@@ -113,20 +111,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // desktopSize
             // 
             this.desktopSize.AutoSize = true;
-            this.desktopSize.Location = new System.Drawing.Point(392, 48);
+            this.desktopSize.Location = new System.Drawing.Point(392, 24);
             this.desktopSize.Name = "desktopSize";
             this.desktopSize.Size = new System.Drawing.Size(22, 13);
             this.desktopSize.TabIndex = 10;
             this.desktopSize.Text = "(...)";
-            // 
-            // myMoviesSize
-            // 
-            this.myMoviesSize.AutoSize = true;
-            this.myMoviesSize.Location = new System.Drawing.Point(392, 24);
-            this.myMoviesSize.Name = "myMoviesSize";
-            this.myMoviesSize.Size = new System.Drawing.Size(22, 13);
-            this.myMoviesSize.TabIndex = 9;
-            this.myMoviesSize.Text = "(...)";
             // 
             // myMusicSize
             // 
@@ -166,38 +155,31 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.IncludeDocuments.TabIndex = 5;
             this.IncludeDocuments.Text = "Include documents";
             this.IncludeDocuments.UseVisualStyleBackColor = true;
+            this.IncludeDocuments.CheckedChanged += new System.EventHandler(this.m_calculator_CompletedWork);
             // 
             // IncludeSettings
             // 
             this.IncludeSettings.AutoSize = true;
-            this.IncludeSettings.Location = new System.Drawing.Point(224, 72);
+            this.IncludeSettings.Location = new System.Drawing.Point(224, 48);
             this.IncludeSettings.Name = "IncludeSettings";
             this.IncludeSettings.Size = new System.Drawing.Size(154, 17);
             this.IncludeSettings.TabIndex = 4;
             this.IncludeSettings.Text = "Include application settings";
             this.IncludeSettings.UseVisualStyleBackColor = true;
+            this.IncludeSettings.CheckedChanged += new System.EventHandler(this.m_calculator_CompletedWork);
             // 
             // IncludeDesktop
             // 
             this.IncludeDesktop.AutoSize = true;
             this.IncludeDesktop.Checked = true;
             this.IncludeDesktop.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.IncludeDesktop.Location = new System.Drawing.Point(224, 48);
+            this.IncludeDesktop.Location = new System.Drawing.Point(224, 24);
             this.IncludeDesktop.Name = "IncludeDesktop";
             this.IncludeDesktop.Size = new System.Drawing.Size(156, 17);
             this.IncludeDesktop.TabIndex = 3;
             this.IncludeDesktop.Text = "Include files on the desktop";
             this.IncludeDesktop.UseVisualStyleBackColor = true;
-            // 
-            // IncludeMovies
-            // 
-            this.IncludeMovies.AutoSize = true;
-            this.IncludeMovies.Location = new System.Drawing.Point(224, 24);
-            this.IncludeMovies.Name = "IncludeMovies";
-            this.IncludeMovies.Size = new System.Drawing.Size(113, 17);
-            this.IncludeMovies.TabIndex = 2;
-            this.IncludeMovies.Text = "Include my movies";
-            this.IncludeMovies.UseVisualStyleBackColor = true;
+            this.IncludeDesktop.CheckedChanged += new System.EventHandler(this.m_calculator_CompletedWork);
             // 
             // IncludeMusic
             // 
@@ -208,6 +190,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.IncludeMusic.TabIndex = 1;
             this.IncludeMusic.Text = "Include my music";
             this.IncludeMusic.UseVisualStyleBackColor = true;
+            this.IncludeMusic.CheckedChanged += new System.EventHandler(this.m_calculator_CompletedWork);
             // 
             // IncludeImages
             // 
@@ -220,6 +203,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.IncludeImages.TabIndex = 0;
             this.IncludeImages.Text = "Include my images";
             this.IncludeImages.UseVisualStyleBackColor = true;
+            this.IncludeImages.CheckedChanged += new System.EventHandler(this.m_calculator_CompletedWork);
             // 
             // DocumentsRadio
             // 
@@ -309,19 +293,18 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.RadioButton DocumentsRadio;
         private System.Windows.Forms.Label appdataSize;
         private System.Windows.Forms.Label desktopSize;
-        private System.Windows.Forms.Label myMoviesSize;
         private System.Windows.Forms.Label myMusicSize;
         private System.Windows.Forms.Label myPicturesSize;
         private System.Windows.Forms.Label myDocumentsSize;
         private System.Windows.Forms.CheckBox IncludeDocuments;
         private System.Windows.Forms.CheckBox IncludeSettings;
         private System.Windows.Forms.CheckBox IncludeDesktop;
-        private System.Windows.Forms.CheckBox IncludeMovies;
         private System.Windows.Forms.CheckBox IncludeMusic;
         private System.Windows.Forms.CheckBox IncludeImages;
         private System.Windows.Forms.GroupBox FolderGroup;
         private System.Windows.Forms.Label customSize;
         private System.Windows.Forms.RadioButton FolderRadio;
         private System.Windows.Forms.Label totalSize;
+        private System.Windows.Forms.ToolTip FolderTooltip;
     }
 }

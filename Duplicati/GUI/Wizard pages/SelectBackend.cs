@@ -104,7 +104,31 @@ namespace Duplicati.GUI.Wizard_pages
         void SelectBackend_PageEnter(object sender, PageChangedArgs args)
         {
             m_task = ((Schedule)m_settings["Schedule"]).Tasks[0];
+
+            if (!m_valuesAutoLoaded)
+            {
+                switch (m_task.Service)
+                {
+                    case "file":
+                        File.Checked = true;
+                        break;
+                    case "ftp":
+                        FTP.Checked = true;
+                        break;
+                    case "ssh":
+                        SSH.Checked = true;
+                        break;
+                    case "webdav":
+                        WebDAV.Checked = true;
+                        break;
+                    case "s3":
+                        S3.Checked = true;
+                        break;
+                }
+            }
+
             Item_CheckChanged(null, null);
+
 
         }
 

@@ -44,6 +44,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             base.PageEnter += new PageChangeHandler(IncrementalSettings_PageEnter);
             base.PageLeave += new PageChangeHandler(IncrementalSettings_PageLeave);
+
+            List<KeyValuePair<string, string>> ix = new List<KeyValuePair<string, string>>();
+            ix.Add(new KeyValuePair<string, string>("One day", "1D"));
+            ix.Add(new KeyValuePair<string, string>("One week", "1W"));
+            ix.Add(new KeyValuePair<string, string>("Two weeks", "2W"));
+            ix.Add(new KeyValuePair<string, string>("One month", "1M"));
+            CleanupDuration.SetIntervals(ix);
         }
 
         void IncrementalSettings_PageLeave(object sender, PageChangedArgs args)
@@ -116,6 +123,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if ((bool)m_settings["Advanced:Throttle"])
                 args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
+            else if ((bool)m_settings["Advanced:Filters"])
+                args.NextPage = new Wizard_pages.Add_backup.FilterEditor();
             else
                 args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }

@@ -77,6 +77,17 @@ namespace Duplicati.GUI.HelperControls
                 else
                     return treeView.SelectedNode.Tag as Schedule;
             }
+            set
+            {
+                if (value == null)
+                    treeView.SelectedNode = null;
+                else
+                {
+                    TreeNode t;
+                    FindNode((string.IsNullOrEmpty(value.Path) ? "" : value.Path + treeView.PathSeparator) + value.Name, false, out t);
+                    treeView.SelectedNode = t;
+                }
+            }
         }
 
 

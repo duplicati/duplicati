@@ -42,7 +42,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (size != 0)
             {
                 for (int i = 0; i < combo.Items.Count; i++)
-                    if (size < Math.Pow(2, 10 * i + 1))
+                    if (size < Math.Pow(2, 10 * (i + 1)))
                     {
                         combo.SelectedIndex = i;
                         number.Value = (int)(size / (long)Math.Pow(2, 10 * i));
@@ -94,7 +94,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             m_schedule.VolumeSize = VolumeSizeLimitNumber.Value.ToString() + VolumeSizeLimitSuffix.Text;
 
-            args.NextPage = new FinishedAdd();
+            if ((bool)m_settings["Advanced:Filters"])
+                args.NextPage = new Wizard_pages.Add_backup.FilterEditor();
+            else
+                args.NextPage = new FinishedAdd();
         }
 
 

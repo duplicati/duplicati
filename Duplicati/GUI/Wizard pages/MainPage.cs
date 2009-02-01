@@ -30,17 +30,6 @@ namespace Duplicati.GUI.Wizard_pages
 {
     public partial class MainPage : WizardControl
     {
-        public enum Action
-        {
-            Unknown,
-            Add,
-            Edit,
-            Delete,
-            Restore,
-            Backup,
-            Rearrange
-        }
-
         public MainPage()
             : base("Welcome to the Duplicati Wizard", "Please select the action you want to perform below")
         {
@@ -107,26 +96,6 @@ namespace Duplicati.GUI.Wizard_pages
         private void Radio_CheckedChanged(object sender, EventArgs e)
         {
             UpdateButtonState();
-        }
-
-        public Action SelectedAction
-        {
-            get
-            {
-                if (CreateNew.Checked)
-                    return Action.Add;
-                else if (Edit.Checked)
-                    return Action.Edit;
-                else if (Restore.Checked)
-                    return Action.Restore;
-                else if (Backup.Checked)
-                    return Action.Backup;
-                else if (Remove.Checked)
-                    return Action.Delete;
-                else
-                    return Action.Unknown;
-                    
-            }
         }
 
         private void ShowAdvanced_Click(object sender, EventArgs e)

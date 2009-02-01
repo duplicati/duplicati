@@ -42,17 +42,33 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private string m_appData;
         private string m_myDocuments;
 
+        private string[] m_specialFolders;
+
         public SelectFiles()
             : base("Select files to backup", "On this page you must select the folder and files you wish to backup")
         {
             InitializeComponent();
             m_sizes = new Dictionary<string, long>();
 
-            m_myPictures = System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            m_myMusic = System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
-            m_desktop = System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            m_appData = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            m_myDocuments = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            m_myPictures = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
+            m_myMusic = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
+            m_desktop = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+            m_appData = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            m_myDocuments = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+
+            FolderTooltip.SetToolTip(IncludeDocuments, m_myDocuments.Substring(1));
+            FolderTooltip.SetToolTip(IncludeMusic, m_myMusic.Substring(1));
+            FolderTooltip.SetToolTip(IncludeImages, m_myPictures.Substring(1));
+            FolderTooltip.SetToolTip(IncludeDesktop, m_desktop.Substring(1));
+            FolderTooltip.SetToolTip(IncludeSettings, m_appData.Substring(1));
+
+            m_specialFolders = new string[] { 
+                m_myDocuments.Substring(1), 
+                m_myMusic.Substring(1), 
+                m_myPictures.Substring(1), 
+                m_appData.Substring(1), 
+                m_desktop.Substring(1)
+            };
 
             base.PageEnter += new PageChangeHandler(SelectFiles_PageEnter);
             base.PageLeave += new PageChangeHandler(SelectFiles_PageLeave);
@@ -60,14 +76,119 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void SelectFiles_PageLeave(object sender, PageChangedArgs args)
         {
+            m_settings["Files:Sizes"] = m_sizes;
+
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
             if (DocumentsRadio.Checked)
             {
-                MessageBox.Show(this, "This feature is not ready. Please manually point out the folder to back up.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                args.Cancel = true;
-                return;
+                List<string> folders = new List<string>();
+                List<string> exfolders = new List<string>();
+                if (IncludeDocuments.Checked)
+                    folders.Add(m_myDocuments.Substring(1));
+                else
+                    exfolders.Add(m_myDocuments.Substring(1));
+
+                if (IncludeImages.Checked)
+                    folders.Add(m_myPictures.Substring(1));
+                else
+                    exfolders.Add(m_myPictures.Substring(1));
+
+                if (IncludeMusic.Checked)
+                    folders.Add(m_myMusic.Substring(1));
+                else
+                    exfolders.Add(m_myMusic.Substring(1));
+
+                if (IncludeDesktop.Checked)
+                    folders.Add(m_desktop.Substring(1));
+                else
+                    exfolders.Add(m_desktop.Substring(1));
+
+                if (IncludeSettings.Checked)
+                    folders.Add(m_appData.Substring(1));
+                else
+                    exfolders.Add(m_appData.Substring(1));
+
+                if (folders.Count == 0)
+                {
+                    MessageBox.Show(this, "You have not included any files.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    args.Cancel = true;
+                    return;
+                }
+
+                //Find the most common root
+                string basefolder = folders[0];
+                bool hasCommonParent = false;
+
+                foreach (string f in folders)
+                    if (basefolder.StartsWith(f))
+                        basefolder = f;
+                    else if (!f.StartsWith(basefolder))
+                    {
+                        string[] p1 = basefolder.Split(System.IO.Path.DirectorySeparatorChar);
+                        string[] p2 = f.Split(System.IO.Path.DirectorySeparatorChar);
+
+                        int ix = 0;
+                        while (p1.Length > ix && p2.Length > ix && p1[ix] == p2[ix])
+                            ix++;
+
+                        if (ix == 0)
+                        {
+                            MessageBox.Show(this, "Due to your machine setup, it is not possible to backup\nthe selected folders in the same backup.\nTry unchecking some items, and create more than one backup.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            args.Cancel = true;
+                            return;
+                        }
+
+                        hasCommonParent = true;
+                        basefolder = Library.Core.Utility.AppendDirSeperator(string.Join(System.IO.Path.DirectorySeparatorChar.ToString(), p1, 0, ix));
+                    }
+
+                m_schedule.Tasks[0].SourcePath = basefolder;
+
+                List<TaskFilter> filters = new List<TaskFilter>();
+
+                //Exclude everything if they have a non-included parent
+                if (hasCommonParent)
+                {
+                    TaskFilter tf = m_schedule.DataParent.Add<TaskFilter>();
+                    tf.Include = false;
+                    tf.Filter = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(basefolder + "*");
+                    filters.Add(tf);
+                }
+
+                //Include selected folders
+                foreach (string f in folders)
+                {
+                    TaskFilter tfx = m_schedule.DataParent.Add<TaskFilter>();
+                    tfx.Include = true;
+                    tfx.Filter = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f + "*");
+                    filters.Add(tfx);
+
+                    //Exclude subfolders
+                    foreach (string s in exfolders)
+                        if (s.StartsWith(f) && (basefolder == s || s.StartsWith(basefolder)))
+                        {
+                            TaskFilter tfp = m_schedule.DataParent.Add<TaskFilter>();
+                            tfp.Include = false;
+                            tfp.Filter = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*");
+                            filters.Add(tfp);
+                        }
+                }
+
+                List<TaskFilter> extras = new List<TaskFilter>();
+                string key = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(basefolder);
+                foreach(TaskFilter tf in m_schedule.Tasks[0].Filters)
+                    if (!tf.Filter.StartsWith(key))
+                        extras.Add(tf);
+
+                if (filters.Count < 2)
+                    m_schedule.Tasks[0].SortedFilters = extras.ToArray();
+                else
+                {
+                    filters.AddRange(extras);
+                    m_schedule.Tasks[0].SortedFilters = filters.ToArray();
+                }
             }
             else
             {
@@ -77,12 +198,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     args.Cancel = true;
                     return;
                 }
+
+                m_schedule.Tasks[0].SourcePath = TargetFolder.Text;
             }
 
             if (m_calculator != null)
                 m_calculator.ClearQueue(true);
-
-            m_schedule.Path = m_schedule.Tasks[0].SourcePath;
 
             args.NextPage = new SelectBackend();
         }
@@ -91,10 +212,46 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             m_schedule = (Schedule)m_settings["Schedule"];
 
+            if (m_settings.ContainsKey("Files:Sizes"))
+                m_sizes = (Dictionary<string, long>)m_settings["Files:Sizes"];
+
+
             if (!m_valuesAutoLoaded)
             {
-                FolderRadio.Checked = true;
-                TargetFolder.Text = m_schedule.Path;
+                List<string> filters = new List<string>();
+                foreach (TaskFilter tf in m_schedule.Tasks[0].Filters)
+                    if (tf.Include && tf.Filter.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_schedule.Tasks[0].SourcePath)))
+                        filters.Add(tf.Filter);
+
+                if (filters.Count == 0)
+                    TargetFolder.Text = m_schedule.Path;
+
+                List<string> included = new List<string>();
+                foreach (string s in m_specialFolders)
+                    if (filters.Contains(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*")))
+                        included.Add(s);
+
+                if (included.Count == 0)
+                {
+                    FolderRadio.Checked = true;
+                    TargetFolder.Text = m_schedule.Path;
+                }
+                else
+                {
+                    DocumentsRadio.Checked = true;
+                    IncludeDocuments.Checked = included.Contains(m_myDocuments.Substring(1));
+                    IncludeImages.Checked = included.Contains(m_myPictures.Substring(1));
+                    IncludeMusic.Checked = included.Contains(m_myMusic.Substring(1));
+                    IncludeDesktop.Checked = included.Contains(m_desktop.Substring(1));
+                    IncludeSettings.Checked = included.Contains(m_appData.Substring(1));
+
+                    if (!(IncludeDocuments.Checked || IncludeMusic.Checked || IncludeImages.Checked || IncludeDesktop.Checked || IncludeSettings.Checked))
+                    {
+                        FolderRadio.Checked = true;
+                        TargetFolder.Text = m_schedule.Path;
+                    }
+                }
+                    
             }
 
             if (FolderRadio.Checked)
@@ -107,6 +264,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             if (m_calculator == null)
             {
+                totalSize.Text = "Calculating size ...";
                 m_calculator = new WorkerThread<string>(CalculateFolderSize);
                 m_calculator.CompletedWork += new EventHandler(m_calculator_CompletedWork);
             }
@@ -114,19 +272,36 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void m_calculator_CompletedWork(object sender, EventArgs e)
         {
+
             if (this.InvokeRequired)
                 this.Invoke(new EventHandler(m_calculator_CompletedWork), sender, e);
             else
             {
+                if (m_calculator == null)
+                    return;
+
                 long s = 0;
 
                 if (DocumentsRadio.Checked)
-                    foreach (long l in m_sizes.Values)
-                        s += l;
+                {
+                    if (m_sizes.ContainsKey(m_myDocuments) && IncludeDocuments.Checked)
+                        s += m_sizes[m_myDocuments];
+                    if (m_sizes.ContainsKey(m_myMusic) && IncludeMusic.Checked)
+                        s += m_sizes[m_myMusic];
+                    if (m_sizes.ContainsKey(m_myPictures) && IncludeImages.Checked)
+                        s += m_sizes[m_myPictures];
+                    if (m_sizes.ContainsKey(m_appData) && IncludeSettings.Checked)
+                        s += m_sizes[m_appData];
+                    if (m_sizes.ContainsKey(m_desktop) && IncludeDesktop.Checked)
+                        s += m_sizes[m_desktop];
+                }
                 else
                     s = m_sizes.ContainsKey(TargetFolder.Text) ? m_sizes[TargetFolder.Text] : 0;
-
-                totalSize.Text = string.Format("The selected items take up {0} of space", Library.Core.Utility.FormatSizeString(s));
+                
+                if (m_calculator.CurrentTasks.Count == 0 && !m_calculator.Active)
+                    totalSize.Text = string.Format("The selected items take up {0} of space", Library.Core.Utility.FormatSizeString(s));
+                else
+                    totalSize.Text = string.Format("Calculating ... (using more than {0} of space)", Library.Core.Utility.FormatSizeString(s));
 
                 if (m_sizes.ContainsKey(m_myMusic))
                     myMusicSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myMusic]);
@@ -136,10 +311,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     desktopSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_desktop]);
                 if (m_sizes.ContainsKey(m_appData))
                     appdataSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_appData]);
-
-                //TODO: Do not count myMusic and myPictures, if they are inside myDocuments
                 if (m_sizes.ContainsKey(m_myDocuments))
-                    myMusicSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myDocuments]);
+                    myDocumentsSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myDocuments]);
 
                 if (m_sizes.ContainsKey(TargetFolder.Text))
                     customSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[TargetFolder.Text]);
@@ -161,6 +334,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     m_calculator.AddTask(m_appData);
                 if (!m_sizes.ContainsKey(m_myDocuments))
                     m_calculator.AddTask(m_myDocuments);
+                
+                m_calculator_CompletedWork(null, null);
             }
         }
 
@@ -179,6 +354,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             FolderGroup.Enabled = FolderRadio.Checked;
             if (DocumentsRadio.Checked)
                 Rescan();
+            else
+                TargetFolder_Leave(sender, e);
         }
 
         private void CalculateFolderSize(string folder)
@@ -188,46 +365,60 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     return;
 
             long size = 0;
+
+            Library.Core.FilenameFilter fnf = null;
+            string folderkey = folder;
+
+            //Special folders, extended logic
+            if (folder.StartsWith("!"))
+            {
+                folder = folder.Substring(1);
+                List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool,string>>();
+
+                filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(folder + "*")));
+
+                foreach (string s in m_specialFolders)
+                    if (s != folder && s.StartsWith(folder))
+                        filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*")));
+
+
+                if (filters.Count > 1)
+                    fnf = new Duplicati.Library.Core.FilenameFilter(filters);
+            }
+
             if (System.IO.Directory.Exists(folder))
             {
-                Queue<string> work = new Queue<string>();
-                work.Enqueue(folder);
                 try
                 {
-                    while(work.Count > 0)
-                        try
-                        {
-                            string f = work.Dequeue();
-                            foreach (string s in System.IO.Directory.GetDirectories(f))
-                                work.Enqueue(s);
-                            foreach (string s in System.IO.Directory.GetFiles(f))
-                                try { size += new System.IO.FileInfo(s).Length; }
-                                catch { }
-                        }
-                        catch
-                        {
-                        }
+                    foreach (string file in Duplicati.Library.Core.Utility.EnumerateFiles(folder, fnf))
+                        try { size += new System.IO.FileInfo(file).Length; }
+                        catch { }
                 }
-                catch
-                {
-                }
+                catch { }
             }
 
             lock (m_lock)
-                m_sizes[folder] = size;
+                m_sizes[folderkey] = size;
         }
 
         private void TargetFolder_Leave(object sender, EventArgs e)
         {
-            lock(m_lock)
+            lock (m_lock)
                 if (TargetFolder.Text.Trim().Length > 0 && !m_sizes.ContainsKey(TargetFolder.Text))
                 {
                     StartCalculator();
                     m_calculator.ClearQueue(true);
                     m_calculator.AddTask(TargetFolder.Text);
+                    m_calculator_CompletedWork(null, null);
                 }
-
-            m_schedule.Tasks[0].SourcePath = TargetFolder.Text;
+                else if (TargetFolder.Text == "")
+                    totalSize.Text = "";
+                else if (m_sizes.ContainsKey(TargetFolder.Text))
+                {
+                    StartCalculator();
+                    m_calculator.ClearQueue(true);
+                    m_calculator_CompletedWork(null, null);
+                }
         }
 
         private void SelectFiles_VisibleChanged(object sender, EventArgs e)

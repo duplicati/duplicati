@@ -32,8 +32,6 @@ namespace Duplicati.GUI.Wizard_pages
 {
     public partial class SelectBackup : WizardControl
     {
-        private MainPage.Action m_selectType;
-
         public SelectBackup()
             : base ("", "")
         {
@@ -41,31 +39,45 @@ namespace Duplicati.GUI.Wizard_pages
             BackupList.treeView.HideSelection = false;
 
             base.PageLeave += new PageChangeHandler(SelectBackup_PageLeave);
+            base.PageEnter += new PageChangeHandler(SelectBackup_PageEnter);
+        }
+
+        void SelectBackup_PageEnter(object sender, PageChangedArgs args)
+        {
+            BackupList.Setup((IDataFetcher)m_settings["Connection"], false, false);
+            if (m_settings.ContainsKey("Schedule"))
+                BackupList.SelectedBackup = (Schedule)m_settings["Schedule"];
         }
 
         void SelectBackup_PageLeave(object sender, PageChangedArgs args)
         {
+            if (args.Direction == PageChangedDirection.Back)
+                return;
+
             if (BackupList.SelectedBackup == null)
             {
                 MessageBox.Show(this, "You must select a backup before you can continue", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
+
+            m_settings["Schedule"] = BackupList.SelectedBackup;
+            args.NextPage = new Add_backup.SelectName();
         }
 
         public override string Title
         {
             get
             {
-                switch (m_selectType)
+                switch ((string)m_settings["Main:Action"])
                 {
-                    case MainPage.Action.Backup:
+                    case "backup":
                         return "Select the backup to run now";
-                    case MainPage.Action.Delete:
+                    case "delete":
                         return "Select the backup to remove";
-                    case MainPage.Action.Edit:
+                    case "edit":
                         return "Select the backup to modify";
-                    case MainPage.Action.Restore:
+                    case "restore":
                         return "Select the backup to restore";
                     default:
                         return "Unknown action";
@@ -78,34 +90,20 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get
             {
-                switch (m_selectType)
+                switch ((string)m_settings["Main:Action"])
                 {
-                    case MainPage.Action.Backup:
+                    case "backup":
                         return "In the list below, select the backup you want to run immediately";
-                    case MainPage.Action.Delete:
+                    case "delete":
                         return "In the list below, select the backup you want to delete";
-                    case MainPage.Action.Edit:
+                    case "edit":
                         return "In the list below, select the backup you want to modify";
-                    case MainPage.Action.Restore:
+                    case "restore":
                         return "In the list below, select the backup you want to restore";
                     default:
                         return "Unknown action";
                 }
             }
         }
-
-        public void Setup(IDataFetcher connection, MainPage.Action selectType)
-        {
-            m_selectType = selectType;
-            BackupList.Setup(connection, false, false);
-        }
-
-        public MainPage.Action SelectType
-        {
-            get { return m_selectType; }
-            set { m_selectType = value; }
-        }
-
-        public Schedule SelectedBackup { get { return BackupList.SelectedBackup; } }
     }
 }

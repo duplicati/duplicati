@@ -24,6 +24,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_settings["Advanced:When"] = SelectWhen.Checked;
             m_settings["Advanced:Incremental"] = SelectIncremental.Checked;
             m_settings["Advanced:Throttle"] = ThrottleOptions.Checked;
+            m_settings["Advanced:Filters"] = EditFilters.Checked;
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
@@ -34,6 +35,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 args.NextPage = new Wizard_pages.Add_backup.IncrementalSettings();
             else if (ThrottleOptions.Checked)
                 args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
+            else if (EditFilters.Checked)
+                args.NextPage = new Wizard_pages.Add_backup.FilterEditor();
             else
                 args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }

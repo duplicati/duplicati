@@ -66,5 +66,13 @@ CREATE TABLE "ApplicationSetting" (
     "Value" TEXT NULL
 );
 
+CREATE TABLE "TaskFilter" (
+    "ID" INTEGER PRIMARY KEY,
+    "SortOrder" INTEGER NULL,
+    "Include" BOOLEAN NULL,
+    "Filter" TEXT NULL,
+    "TaskID" INTEGER NULL
+);
 
-INSERT INTO "Version" ("Version") VALUES (1);
+
+INSERT INTO "Version" ("Version") VALUES (2);

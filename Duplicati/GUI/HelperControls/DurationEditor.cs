@@ -23,14 +23,19 @@ namespace Duplicati.GUI.HelperControls
         /// Sets the avalible intervals
         /// </summary>
         /// <param name="values">A dictionary where the key is the string to display and the value is the duplicity time string</param>
-        public void SetIntervals(Dictionary<string, string> values)
+        public void SetIntervals(List<KeyValuePair<string, string>> values)
         {
-            List<string> vx = new List<string>(values.Values);
-            vx.Add("");
-
-            m_values = vx.ToArray();
             EasyDuration.Items.Clear();
-            EasyDuration.Items.AddRange(new List<string>(values.Keys).ToArray());
+
+            if (values[values.Count - 1].Key != "")
+                values.Add(new KeyValuePair<string, string>("", ""));
+
+            m_values = new string[values.Count];
+            for (int i = 0; i < values.Count; i++)
+            {
+                m_values[i] = values[i].Value;
+                EasyDuration.Items.Add(values[i].Key);
+            }
         }
 
         private void EasyDuration_SelectedIndexChanged(object sender, EventArgs e)

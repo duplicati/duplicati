@@ -103,6 +103,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 args.NextPage = new Wizard_pages.Add_backup.IncrementalSettings();
             else if ((bool)m_settings["Advanced:Throttle"])
                 args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
+            else if ((bool)m_settings["Advanced:Filters"])
+                args.NextPage = new Wizard_pages.Add_backup.FilterEditor();
             else
                 args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }

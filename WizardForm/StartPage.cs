@@ -68,12 +68,12 @@ namespace System.Windows.Forms.Wizard
             get { return true; }
         }
 
-        void IWizardControl.Enter(IWizardForm owner)
+        void IWizardControl.Enter(IWizardForm owner, PageChangedArgs args)
         {
             
         }
 
-        void IWizardControl.Leave(IWizardForm owner, ref bool cancel)
+        void IWizardControl.Leave(IWizardForm owner, PageChangedArgs args)
         {
         }
 

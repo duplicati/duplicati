@@ -70,10 +70,6 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LightDatamodel, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c7a68962c12dce64, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\LightDatamodel.dll</HintPath>
-    </Reference>
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
@@ -100,6 +96,7 @@
     <Compile Include="LogBlob.cs" />
     <Compile Include="ApplicationSettings.cs" />
     <Compile Include="ApplicationSetting.cs" />
+    <Compile Include="TaskFilter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LightDatamodel.snk" />
@@ -109,6 +106,10 @@
     <Compile Include="Schedule.Extension.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\LightDatamodel\LightDatamodel\LightDatamodel.csproj">
+      <Project>{CAE8433B-F013-474E-B7FC-4DE0D5933AD1}</Project>
+      <Name>LightDatamodel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Core\Duplicati.Library.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Core</Name>
