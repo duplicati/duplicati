@@ -91,7 +91,7 @@ namespace Duplicati.Library.Core
                 return files;
 
             Queue<string> lst = new Queue<string>();
-            
+
             lst.Enqueue(basepath);
 
             while (lst.Count > 0)
@@ -101,13 +101,62 @@ namespace Duplicati.Library.Core
                     if (filter == null || filter.ShouldInclude(basepath, AppendDirSeperator(s)))
                         lst.Enqueue(s);
 
-                files.AddRange(System.IO.Directory.GetFiles(f));
+                foreach (string s in System.IO.Directory.GetFiles(f))
+                    if (filter == null || filter.ShouldInclude(basepath, s))
+                        files.Add(s);
             }
 
-            if (filter == null)
-                return files;
-            else
-                return filter.FilterList(basepath, files);
+            return files;
+        }
+
+        /// <summary>
+        /// Returns a list of all files and subfolders found in the given folder.
+        /// The search is recursive.
+        /// </summary>
+        /// <param name="basepath">The folder to look in.</param>
+        /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseperator char</returns>
+        public static List<string> EnumerateFileSystemEntries(string basepath)
+        {
+            return EnumerateFileSystemEntries(basepath, null);
+        }
+
+        /// <summary>
+        /// Returns a list of all files and subfolders found in the given folder.
+        /// The search is recursive.
+        /// </summary>
+        /// <param name="basepath">The folder to look in.</param>
+        /// <param name="filter">An optional filter to apply to the filenames</param>
+        /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseperator char</returns>
+        public static List<string> EnumerateFileSystemEntries(string basepath, FilenameFilter filter)
+        {
+            List<string> entries = new List<string>();
+
+            if (!System.IO.Directory.Exists(basepath))
+                return entries;
+
+            Queue<string> lst = new Queue<string>();
+
+            lst.Enqueue(basepath);
+
+            while (lst.Count > 0)
+            {
+                string f = lst.Dequeue();
+                foreach (string s in System.IO.Directory.GetDirectories(f))
+                {
+                    string folder = AppendDirSeperator(s);
+                    if (filter == null || filter.ShouldInclude(basepath, folder))
+                    {
+                        lst.Enqueue(folder);
+                        entries.Add(folder);
+                    }
+                }
+
+                foreach (string s in System.IO.Directory.GetFiles(f))
+                    if (filter == null || filter.ShouldInclude(basepath, s))
+                        entries.Add(s);
+            }
+
+            return entries;
         }
 
         /// <summary>

@@ -54,6 +54,7 @@ namespace Duplicati.Library.Main
                     if (!full && options.ContainsKey("full-if-older-than"))
                         full = DateTime.Now > Core.Timeparser.ParseTimeInterval(options["full-if-older-than"], prev[prev.Count - 1].Time);
 
+                    //TODO: Empty folder creation takes up too much of the processing time
                     using (Core.TempFolder basefolder = new Duplicati.Library.Core.TempFolder())
                     {
                         if (!full)
@@ -88,7 +89,6 @@ namespace Duplicati.Library.Main
 
                         using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, basefolder, bs))
                         {
-
                             using (new Logging.Timer("Initiating multipass"))
                                 dir.InitiateMultiPassDiff(full, filter);
 
@@ -97,8 +97,6 @@ namespace Duplicati.Library.Main
 
                             long totalmax = options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(options["totalsize"], "mb") : long.MaxValue;
                             totalmax = Math.Max(volumesize, totalmax);
-
-                            List<string> folders = dir.EnumerateSourceFolders();
 
                             int vol = 0;
                             long totalsize = 0;
@@ -115,12 +113,6 @@ namespace Duplicati.Library.Main
                                     {
                                         using (Compression.Compression signature = new Duplicati.Library.Compression.Compression(dir.m_targetfolder, sigzip))
                                         {
-                                            if (folders != null)
-                                                foreach (string s in folders)
-                                                    signature.AddFolder(s);
-
-                                            folders = null;
-
                                             using (Core.TempFile zf = new Duplicati.Library.Core.TempFile())
                                             {
                                                 done = dir.MakeMultiPassDiff(signature, zf, volumesize);

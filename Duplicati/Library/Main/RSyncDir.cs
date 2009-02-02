@@ -37,6 +37,8 @@ namespace Duplicati.Library.Main.RSync
         private static readonly string DELETED_FILES = "deleted_files.txt";
         private static readonly string DELETED_FOLDERS = "deleted_folders.txt";
 
+        private static readonly string ADDED_FOLDERS = "added_folders.txt";
+
         /// <summary>
         /// This is the folder being backed up
         /// </summary>
@@ -171,8 +173,9 @@ namespace Duplicati.Library.Main.RSync
                 m_oldSignatures.Add(s.Substring(sigfolder.Length), s);
 
             m_oldFolders = new Dictionary<string, string>();
-            foreach (string s in Core.Utility.EnumerateFolders(sigfolder))
-                m_oldFolders.Add(s.Substring(sigfolder.Length), null);
+            if (System.IO.File.Exists(System.IO.Path.Combine(m_basefolder, ADDED_FOLDERS)))
+                foreach(string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(m_basefolder, ADDED_FOLDERS)))
+                    m_oldFolders.Add(s, s);
 
             
         }
@@ -191,16 +194,25 @@ namespace Duplicati.Library.Main.RSync
             m_newfolders = new List<string>();
             m_deletedfolders = new List<string>();
 
-            m_unproccesed = Core.Utility.EnumerateFiles(m_sourcefolder, filter);
+            //TODO: Figure out how to make this faster, but still random
+            m_unproccesed = Core.Utility.EnumerateFileSystemEntries(m_sourcefolder, filter);
             m_totalfiles = m_unproccesed.Count;
 
-            foreach (string s in Core.Utility.EnumerateFolders(m_sourcefolder, filter))
+            string dirmarker = System.IO.Path.DirectorySeparatorChar.ToString();
+            for(int i = 0; i < m_unproccesed.Count; i++)
             {
-                string relpath = s.Substring(m_sourcefolder.Length);
-                if (!m_oldFolders.ContainsKey(relpath))
-                    m_newfolders.Add(relpath);
-                else
-                    m_oldFolders.Remove(relpath);
+                string s = m_unproccesed[i];
+                if (s.EndsWith(dirmarker))
+                {
+                    string relpath = s.Substring(m_sourcefolder.Length);
+                    if (!m_oldFolders.ContainsKey(relpath))
+                        m_newfolders.Add(relpath);
+                    else
+                        m_oldFolders.Remove(relpath);
+
+                    m_unproccesed.RemoveAt(i);
+                    i--;
+                }
 
             }
 
@@ -212,7 +224,8 @@ namespace Duplicati.Library.Main.RSync
         {
             if (!m_finalized)
             {
-                m_deletedfiles.AddRange(m_oldSignatures.Keys);
+                if (m_unproccesed.Count == 0)
+                    m_deletedfiles.AddRange(m_oldSignatures.Keys);
                 if (m_deletedfiles.Count > 0)
                 {
                     System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FILES));
@@ -226,6 +239,15 @@ namespace Duplicati.Library.Main.RSync
                 {
                     System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FOLDERS));
                     foreach (string s in m_deletedfolders)
+                        sw.WriteLine(s);
+
+                    sw.Flush();
+                }
+
+                if (m_newfolders.Count > 0)
+                {
+                    System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(ADDED_FOLDERS));
+                    foreach (string s in m_newfolders)
                         sw.WriteLine(s);
 
                     sw.Flush();
@@ -437,18 +459,33 @@ namespace Duplicati.Library.Main.RSync
                 }
             }
 
-            string foldersource = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, SIGNATURE_ROOT));
-            foreach (string s in Core.Utility.EnumerateFolders(foldersource))
+            string addedfolders = System.IO.Path.Combine(patch, ADDED_FOLDERS);
+            if (System.IO.File.Exists(addedfolders))
             {
-                string target = System.IO.Path.Combine(destination, s.Substring(foldersource.Length));
-                if (!System.IO.Directory.Exists(target))
-                    System.IO.Directory.CreateDirectory(target);
+                //Make sure subfolders are deleted first
+                string[] folderlist = System.IO.File.ReadAllLines(addedfolders);
+                Array.Sort(folderlist);
+                Array.Reverse(folderlist);
+
+                foreach (string s in folderlist)
+                {
+                    string target = System.IO.Path.Combine(destination, s.Trim());
+                    if (!System.IO.Directory.Exists(target))
+                        try
+                        {
+                            System.IO.Directory.CreateDirectory(target);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (m_stat != null)
+                                m_stat.LogError("Failed to create folder: \"" + target + "\", Error message: " + ex.Message);
+                            Logging.Log.WriteMessage("Failed to create folder: " + target, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                        }
+                }
             }
 
 
-
             string sourcefolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, CONTENT_ROOT));
-
             destination = Core.Utility.AppendDirSeperator(destination);
 
             //TODO: Handle file access exceptions
@@ -537,10 +574,27 @@ namespace Duplicati.Library.Main.RSync
                 foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
                     System.IO.File.Delete(System.IO.Path.Combine(System.IO.Path.Combine(basefolder, SIGNATURE_ROOT), s));
 
+            Dictionary<string, string> addedfolders = new Dictionary<string, string>();
+            if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, ADDED_FOLDERS)))
+                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS)))
+                    addedfolders.Add(s, s);
+
+            Dictionary<string, string> deletedfolders = new Dictionary<string, string>();
+            if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, DELETED_FOLDERS)))
+                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS)))
+                    deletedfolders.Add(s,s );
+
             if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
                 foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
-                    if (System.IO.Directory.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basefolder, SIGNATURE_ROOT), s)))
-                        System.IO.Directory.Delete(System.IO.Path.Combine(System.IO.Path.Combine(basefolder, SIGNATURE_ROOT), s), true);
+                {
+                    if (addedfolders.ContainsKey(s))
+                        addedfolders.Remove(s);
+                    deletedfolders[s] = s;
+                }
+
+            if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, ADDED_FOLDERS)))
+                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, ADDED_FOLDERS)))
+                    addedfolders[s] = s;
 
             List<string> updates = Core.Utility.EnumerateFiles(System.IO.Path.Combine(updatefolder, SIGNATURE_ROOT));
             foreach(string s in updates)
@@ -558,15 +612,6 @@ namespace Duplicati.Library.Main.RSync
                     deletedfiles.Remove(relpath);
             }
 
-            List<string> deltedfolders = new List<string>();
-            if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, DELETED_FOLDERS)))
-                deltedfolders.AddRange(System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS)));
-
-            if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
-                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
-                    if (!deltedfolders.Contains(s))
-                        deltedfolders.Add(s);
-
             List<string> delfiles = new List<string>(deletedfiles.Values);
             if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
                 foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
@@ -576,9 +621,17 @@ namespace Duplicati.Library.Main.RSync
             if (!System.IO.Directory.Exists(basefolder))
                 System.IO.Directory.CreateDirectory(basefolder);
 
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS), deltedfolders.ToArray());
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES), delfiles.ToArray());
+            List<string> dfo = new List<string>(deletedfolders.Values);
+            List<string> dfi = new List<string>(deletedfiles.Values);
+            List<string> afo = new List<string>(addedfolders.Values);
 
+            /*dfo.Sort();
+            dfi.Sort();
+            afo.Sort();*/
+
+            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS), dfo.ToArray());
+            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES), dfi.ToArray());
+            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS), afo.ToArray());
         }
 
     }
