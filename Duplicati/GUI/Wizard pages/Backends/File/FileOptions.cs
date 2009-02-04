@@ -100,7 +100,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
 
             try
             {
-                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0 && !((Schedule)m_settings["Schedule"]).Tasks[0].ExistsInDb)
+                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0 && new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.Add)
                     if (MessageBox.Show(this, "The selected folder is not empty. Do you want to use it anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         args.Cancel = true;
