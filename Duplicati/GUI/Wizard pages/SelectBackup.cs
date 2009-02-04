@@ -32,6 +32,8 @@ namespace Duplicati.GUI.Wizard_pages
 {
     public partial class SelectBackup : WizardControl
     {
+        private WizardSettingsWrapper m_wrapper;
+
         public SelectBackup()
             : base ("", "")
         {
@@ -44,9 +46,11 @@ namespace Duplicati.GUI.Wizard_pages
 
         void SelectBackup_PageEnter(object sender, PageChangedArgs args)
         {
-            BackupList.Setup((IDataFetcher)m_settings["Connection"], false, false);
-            if (m_settings.ContainsKey("Schedule"))
-                BackupList.SelectedBackup = (Schedule)m_settings["Schedule"];
+            BackupList.Setup(Program.DataConnection, true, false);
+            m_wrapper = new WizardSettingsWrapper(m_settings);
+
+            if (m_wrapper.ScheduleID > 0)
+                BackupList.SelectedBackup = Program.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
         }
 
         void SelectBackup_PageLeave(object sender, PageChangedArgs args)
@@ -61,7 +65,23 @@ namespace Duplicati.GUI.Wizard_pages
                 return;
             }
 
-            m_settings["Schedule"] = BackupList.SelectedBackup;
+            m_wrapper.ReflectSchedule(BackupList.SelectedBackup);
+            switch (m_wrapper.PrimayAction)
+            {
+                case WizardSettingsWrapper.MainAction.Edit:
+                    args.NextPage = new Add_backup.SelectName();
+                    break;
+                case WizardSettingsWrapper.MainAction.Remove:
+                    args.NextPage = new Delete_backup.DeleteFinished();
+                    break;
+                case WizardSettingsWrapper.MainAction.Restore:
+                    args.NextPage = new Restore.SelectBackup();
+                    break;
+                case WizardSettingsWrapper.MainAction.RunNow:
+                    args.NextPage = new RunNow.RunNowFinished();
+                    break;
+            }
+
             args.NextPage = new Add_backup.SelectName();
         }
 
@@ -69,15 +89,16 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get
             {
-                switch ((string)m_settings["Main:Action"])
+                m_wrapper = new WizardSettingsWrapper(m_settings);
+                switch (m_wrapper.PrimayAction)
                 {
-                    case "backup":
+                    case WizardSettingsWrapper.MainAction.RunNow:
                         return "Select the backup to run now";
-                    case "delete":
+                    case WizardSettingsWrapper.MainAction.Remove:
                         return "Select the backup to remove";
-                    case "edit":
+                    case WizardSettingsWrapper.MainAction.Edit:
                         return "Select the backup to modify";
-                    case "restore":
+                    case WizardSettingsWrapper.MainAction.Restore:
                         return "Select the backup to restore";
                     default:
                         return "Unknown action";
@@ -90,15 +111,16 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get
             {
-                switch ((string)m_settings["Main:Action"])
+                m_wrapper = new WizardSettingsWrapper(m_settings);
+                switch (m_wrapper.PrimayAction)
                 {
-                    case "backup":
+                    case WizardSettingsWrapper.MainAction.RunNow:
                         return "In the list below, select the backup you want to run immediately";
-                    case "delete":
+                    case WizardSettingsWrapper.MainAction.Remove:
                         return "In the list below, select the backup you want to delete";
-                    case "edit":
+                    case WizardSettingsWrapper.MainAction.Edit:
                         return "In the list below, select the backup you want to modify";
-                    case "restore":
+                    case WizardSettingsWrapper.MainAction.Restore:
                         return "In the list below, select the backup you want to restore";
                     default:
                         return "Unknown action";

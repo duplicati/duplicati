@@ -11,7 +11,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class ThrottleOptions : System.Windows.Forms.Wizard.WizardControl
     {
-        private Schedule m_schedule;
+        private WizardSettingsWrapper m_wrapper;
 
         public ThrottleOptions()
             : base("Select how to limit the backup", "On this page you may select limits that prevent the backup procedure from using too many resources")
@@ -62,13 +62,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void ThrottleOptions_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
         {
-            m_schedule = (Schedule)m_settings["Schedule"];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
             if (!m_valuesAutoLoaded)
             {
-                LoadItem("Upload", 1, m_schedule.UploadBandwidth);
-                LoadItem("Download", 1, m_schedule.DownloadBandwidth);
-                LoadItem("Backup", 2, m_schedule.MaxUploadsize);
-                LoadItem("VolumeSize", 2, m_schedule.VolumeSize);
+                LoadItem("Upload", 1, m_wrapper.UploadSpeedLimit);
+                LoadItem("Download", 1, m_wrapper.DownloadSpeedLimit);
+                LoadItem("Backup", 2, m_wrapper.BackupSizeLimit);
+                LoadItem("VolumeSize", 2, m_wrapper.VolumeSize);
             }
         }
 
@@ -77,25 +77,25 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (args.Direction == System.Windows.Forms.Wizard.PageChangedDirection.Back)
                 return;
 
-            if (UploadLimitEnabled.Checked)
-                m_schedule.UploadBandwidth = UploadLimitNumber.Value.ToString() + UploadLimitSuffix.Text.Substring(0, UploadLimitSuffix.Text.Length - 2);
-            else
-                m_schedule.UploadBandwidth = "";
+            m_wrapper.UploadSpeedLimit =
+                UploadLimitEnabled.Checked ? 
+                UploadLimitNumber.Value.ToString() + UploadLimitSuffix.Text.Substring(0, UploadLimitSuffix.Text.Length - 2) :
+                "";
 
-            if (DownloadLimitEnabled.Checked)
-                m_schedule.DownloadBandwidth = DownloadLimitNumber.Value.ToString() + DownloadLimitSuffix.Text.Substring(0, DownloadLimitSuffix.Text.Length - 2);
-            else
-                m_schedule.DownloadBandwidth = "";
+            m_wrapper.DownloadSpeedLimit =
+                DownloadLimitEnabled.Checked ?
+                DownloadLimitNumber.Value.ToString() + DownloadLimitSuffix.Text.Substring(0, DownloadLimitSuffix.Text.Length - 2) :
+                "";
 
-            if (BackupLimitEnabled.Checked)
-                m_schedule.MaxUploadsize = BackupLimitNumber.Value.ToString() + BackupLimitSuffix.Text;
-            else
-                m_schedule.MaxUploadsize = "";
+            m_wrapper.BackupSizeLimit =
+               BackupLimitEnabled.Checked ?
+               BackupLimitNumber.Value.ToString() + BackupLimitSuffix.Text.Substring(0, BackupLimitSuffix.Text.Length - 2) :
+               "";
 
-            m_schedule.VolumeSize = VolumeSizeLimitNumber.Value.ToString() + VolumeSizeLimitSuffix.Text;
+            m_wrapper.VolumeSize = VolumeSizeLimitNumber.Value.ToString() + VolumeSizeLimitSuffix.Text;
 
             if ((bool)m_settings["Advanced:Filters"])
-                args.NextPage = new Wizard_pages.Add_backup.FilterEditor();
+                args.NextPage = new Wizard_pages.Add_backup.EditFilters();
             else
                 args.NextPage = new FinishedAdd();
         }
@@ -114,6 +114,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private void BackupLimitEnabled_CheckedChanged(object sender, EventArgs e)
         {
             BackupLimitNumber.Enabled = BackupLimitSuffix.Enabled = BackupLimitEnabled.Checked;
+        }
+
+        private void ThreadPriorityEnabled_CheckedChanged(object sender, EventArgs e)
+        {
+            ThreadPriority.Enabled = ThreadPriorityEnabled.Checked;
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         private bool m_warnedPath = false;
         private bool m_hasTested = false;
 
-        private Duplicati.Datamodel.Backends.SSH m_ssh;
+        private SSHSettings m_wrapper;
 
         public SSHOptions()
             : base("Backup storage options", "On this page you can select where to store the backup data.")
@@ -47,7 +47,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
         void SSHOptions_PageLeave(object sender, PageChangedArgs args)
         {
-            SaveSettings();
+            m_settings["SSH:HasWarned"] = m_hasTested;
+            m_settings["SSH:WarnedPath"] = m_warnedPath;
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
@@ -66,29 +67,37 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
                         return;
                 }
 
-            SaveSettings();
+            m_settings["SSH:HasWarned"] = m_hasTested;
+            m_settings["SSH:WarnedPath"] = m_warnedPath;
+
+            m_wrapper.Passwordless = !UsePassword.Checked;
+            m_wrapper.Password = m_wrapper.Passwordless ? "" : Password.Text;
+            m_wrapper.Port = (int)Port.Value;
+            m_wrapper.Server = Servername.Text;
+            m_wrapper.Path = Path.Text;
+            m_wrapper.Username = Username.Text;
 
             args.NextPage = new Add_backup.AdvancedOptions();
         }
 
         void SSHOptions_PageEnter(object sender, PageChangedArgs args)
         {
-            m_ssh = new Duplicati.Datamodel.Backends.SSH(((Schedule)m_settings["Schedule"]).Tasks[0]);
+            m_wrapper = new WizardSettingsWrapper(m_settings).SSHSettings;
 
             if (!m_valuesAutoLoaded)
             {
-                Servername.Text = m_ssh.Host;
-                Path.Text = m_ssh.Folder;
-                Username.Text = m_ssh.Username;
-                UsePassword.Checked = !m_ssh.Passwordless;
-                Password.Text = m_ssh.Password;
-                Port.Value = m_ssh.Port;
+                Servername.Text = m_wrapper.Server;
+                Path.Text = m_wrapper.Path;
+                Username.Text = m_wrapper.Username;
+                UsePassword.Checked = !m_wrapper.Passwordless;
+                Password.Text = m_wrapper.Password;
+                Port.Value = m_wrapper.Port;
             }
 
-            if (!m_settings.ContainsKey("SSH:HasTested"))
+            if (m_settings.ContainsKey("SSH:HasTested"))
                 m_hasTested = (bool)m_settings["SSH:HasTested"];
 
-            if (!m_settings.ContainsKey("SSH:WarnedPath"))
+            if (m_settings.ContainsKey("SSH:WarnedPath"))
                 m_warnedPath = (bool)m_settings["SSH:WarnedPath"];
         }
 
@@ -96,13 +105,21 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         {
             if (ValidateForm())
             {
-                SaveSettings();
-
                 try
                 {
-                    string target = m_ssh.GetDestinationPath();
+                    System.Data.LightDatamodel.IDataFetcherCached con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+                    Datamodel.Backends.SSH ssh = new Duplicati.Datamodel.Backends.SSH(con.Add<Task>());
+
+                    ssh.Folder = Path.Text;
+                    ssh.Host = Servername.Text;
+                    ssh.Password = UsePassword.Checked ? Password.Text : "";
+                    ssh.Passwordless = !UsePassword.Checked;
+                    ssh.Port = (int)Port.Value;
+                    ssh.Username = Username.Text;
+
+                    string target = ssh.GetDestinationPath();
                     Dictionary<string, string> options = new Dictionary<string, string>();
-                    m_ssh.GetOptions(options);
+                    ssh.GetOptions(options);
 
                     string[] files = Duplicati.Library.Main.Interface.List(target, options);
 
@@ -115,30 +132,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
                 }
             }
-        }
-
-        private void SaveSettings()
-        {
-            if (UsePassword.Checked)
-            {
-                m_ssh.Passwordless = false;
-                m_ssh.Password = Password.Text;
-            }
-            else
-            {
-                m_ssh.Passwordless = true;
-                m_ssh.Password = null;
-            }
-
-            m_ssh.Port = (int)Port.Value;
-            m_ssh.Host = Servername.Text;
-            m_ssh.Folder = Path.Text;
-            m_ssh.Username = Username.Text;
-
-            m_settings["SSH:HasWarned"] = m_hasTested;
-            m_settings["SSH:WarnedPath"] = m_warnedPath;
-
-            m_ssh.SetService();
         }
 
         private bool ValidateForm()
@@ -207,15 +200,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         {
             m_hasTested = false;
         }
-
-        #region ITaskBased Members
-
-        public void Setup(Task task)
-        {
-            m_ssh = new Duplicati.Datamodel.Backends.SSH(task);
-        }
-
-        #endregion
 
         private void UsePassword_CheckedChanged(object sender, EventArgs e)
         {

@@ -89,7 +89,38 @@ namespace Duplicati.Library.Core
                 sb.Append(x.Key ? "i:" : "e:");
                 sb.Append(x.Value.Replace(";", "\\;"));
             }
-            return "--filter=" + sb.ToString();
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// When all filters are encoded into a single filter option, it must be decoded.
+        /// </summary>
+        /// <param name="options">The encoded filter string</param>
+        /// <returns>The decoded ordered list of filters</returns>
+        public static List<KeyValuePair<bool, string>> DecodeFilter(string filter)
+        {
+            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
+
+            if (string.IsNullOrEmpty(filter))
+                return filters;
+
+            int x = 0;
+            do
+            {
+                x = filter.IndexOf(";", x);
+                if (x > 0 && filter[x - 1] != '\\')
+                {
+                    string fx = filter.Substring(0, x);
+                    filters.Add(new KeyValuePair<bool, string>(fx.StartsWith("i:"), fx.Substring(2)));
+                    filter = filter.Substring(x + 1);
+                    x = 0;
+                }
+            } while (x >= 0);
+
+            if (filter.Length > 0)
+                filters.Add(new KeyValuePair<bool, string>(filter.StartsWith("i:"), filter.Substring(2)));
+
+            return filters;
         }
 
         /// <summary>
@@ -99,28 +130,10 @@ namespace Duplicati.Library.Core
         /// <returns>The decoded ordered list of filters</returns>
         private static List<KeyValuePair<bool, string>> ExtractOptionFilter(Dictionary<string, string> options)
         {
-            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool,string>>();
             if (options.ContainsKey("filter"))
-            {
-                string f = options["filter"];
-                int x = 0;
-                do
-                {
-                    x = f.IndexOf(";", x);
-                    if (x > 0 && f[x - 1] != '\\')
-                    {
-                        string fx = f.Substring(0, x);
-                        filters.Add(new KeyValuePair<bool, string>(fx.StartsWith("i:"), fx.Substring(2)));
-                        f = f.Substring(x + 1);
-                        x = 0;
-                    }
-                } while (x >= 0);
-
-                if (f.Length > 0)
-                    filters.Add(new KeyValuePair<bool, string>(f.StartsWith("i:"), f.Substring(2)));
-            }
-
-            return filters;
+                return DecodeFilter(options["filter"]);
+            else
+                return new List<KeyValuePair<bool, string>>();
         }
 
         /// <summary>

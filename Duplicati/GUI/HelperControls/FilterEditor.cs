@@ -1,59 +1,83 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
+using System.Data;
 using System.Text;
 using System.Windows.Forms;
-using Duplicati.Datamodel;
 
-namespace Duplicati.GUI.Wizard_pages.Add_backup
+namespace Duplicati.GUI.HelperControls
 {
-    public partial class FilterEditor : System.Windows.Forms.Wizard.WizardControl
+    public partial class FilterEditor : UserControl
     {
-        Task m_task;
+        private string m_basepath = "";
+        private string m_filter = "";
 
         public FilterEditor()
-            : base("Edit filters", "On this page you can modify filters that control what files are included in the backup.")
         {
             InitializeComponent();
-
-            base.PageEnter += new System.Windows.Forms.Wizard.PageChangeHandler(FilterEditor_PageEnter);
-            base.PageLeave += new System.Windows.Forms.Wizard.PageChangeHandler(FilterEditor_PageLeave);
         }
 
-        void FilterEditor_PageLeave(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
+        private List<KeyValuePair<bool, string>> GetFilterList()
         {
-            if (args.Direction == System.Windows.Forms.Wizard.PageChangedDirection.Back)
-                return;
-
-            List<TaskFilter> filters = new List<TaskFilter>();
+            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
             foreach (ListViewItem lvi in listView.Items)
-            {
-                if ((lvi.Tag as TaskFilter).DataParent == null)
-                    m_task.DataParent.Add(lvi.Tag as TaskFilter);
-                filters.Add(lvi.Tag as TaskFilter);
-            }
+                filters.Add(new KeyValuePair<bool, string>(lvi.ImageIndex == 0, lvi.Text));
 
-            m_task.SortedFilters = filters.ToArray();
-
-            args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
+            return filters;
         }
 
-        void FilterEditor_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
+        public string Filter
         {
-            m_task = m_task = ((Schedule)m_settings["Schedule"]).Tasks[0];
+            get { return Library.Core.FilenameFilter.EncodeAsFilter(GetFilterList()); }
+            set { m_filter = value; RefreshList(); FilenameTester_TextChanged(null, null); }
+        }
 
+        public string BasePath
+        {
+            get { return m_basepath; }
+            set { m_basepath = value; FilenameTester_TextChanged(null, null); }
+        }
+
+        private void RefreshList()
+        {
             listView.Items.Clear();
-            foreach (TaskFilter tf in m_task.SortedFilters)
-            {
-                ListViewItem lvi = new ListViewItem(tf.Filter, tf.Include ? 0 : 1);
-                lvi.Tag = tf;
-                listView.Items.Add(lvi);
-            }
+            foreach (KeyValuePair<bool, string> f in Library.Core.FilenameFilter.DecodeFilter(m_filter))
+                listView.Items.Add(f.Value, f.Key ? 0 : 1);
 
             if (listView.Items.Count > 0)
                 listView.Items[0].Selected = true;
+        }
+
+        private void FilenameTester_TextChanged(object sender, EventArgs e)
+        {
+            if (FilenameTester.Text.Trim().Length == 0 || string.IsNullOrEmpty(m_basepath))
+            {
+                TestResults.Visible = false;
+                return;
+            }
+
+
+            string filename = FilenameTester.Text;
+
+            if (filename.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+            {
+                TestResults.Visible = false;
+                return;
+            }
+
+            if (!System.IO.Path.IsPathRooted(filename))
+                filename = System.IO.Path.Combine(m_basepath, filename);
+
+            if (!filename.StartsWith(m_basepath))
+            {
+                TestResults.Visible = false;
+                return;
+            }
+
+            Library.Core.FilenameFilter fn = new Duplicati.Library.Core.FilenameFilter(GetFilterList());
+            TestResults.Image = imageList1.Images[fn.ShouldInclude(m_basepath, filename) ? 0 : 1];
+            TestResults.Visible = true;
         }
 
         private void listView_SelectedIndexChanged(object sender, EventArgs e)
@@ -70,20 +94,19 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void RemoveFilterButton_Click(object sender, EventArgs e)
         {
-            while(listView.SelectedItems.Count > 0)
+            while (listView.SelectedItems.Count > 0)
                 listView.Items.Remove(listView.SelectedItems[0]);
         }
 
         private void EditFilterButton_Click(object sender, EventArgs e)
         {
-            if (listView.SelectedItems.Count == 1 && listView.SelectedItems[0].Tag is TaskFilter)
+            if (listView.SelectedItems.Count == 1)
             {
-                TaskFilter tf = listView.SelectedItems[0].Tag as TaskFilter;
-                FilterDialog dlg = new FilterDialog(tf);
+                FilterDialog dlg = new FilterDialog(new KeyValuePair<bool, string>(listView.SelectedItems[0].ImageIndex == 0, listView.SelectedItems[0].Text));
                 if (dlg.ShowDialog(this) == DialogResult.OK)
                 {
-                    listView.SelectedItems[0].Text = tf.Filter;
-                    listView.SelectedItems[0].ImageIndex = tf.Include ? 0 : 1;
+                    listView.SelectedItems[0].Text = dlg.Filter.Value;
+                    listView.SelectedItems[0].ImageIndex = dlg.Filter.Key ? 0 : 1;
                 }
             }
         }
@@ -138,16 +161,15 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void AddFilterButton_Click(object sender, EventArgs e)
         {
-            TaskFilter tf = new TaskFilter();
-            FilterDialog dlg = new FilterDialog(tf);
+            FilterDialog dlg = new FilterDialog(new KeyValuePair<bool, string>(true, ""));
             if (dlg.ShowDialog(this) == DialogResult.OK)
-            {
-                ListViewItem lvi = new ListViewItem(tf.Filter, tf.Include ? 0 : 1);
-                lvi.Tag = tf;
-                listView.Items.Add(lvi);
-            }
+                listView.Items.Add(dlg.Filter.Value, dlg.Filter.Key ? 0 : 1);
+        }
 
+        private void FilterEditor_Load(object sender, EventArgs e)
+        {
+            if (listView.Items.Count != 0)
+                listView.Items[0].Selected = true;
         }
     }
 }
-

@@ -32,22 +32,31 @@ namespace Duplicati.GUI.Wizard_pages.RunNow
 {
     public partial class RunNowFinished : WizardControl
     {
-        Schedule m_schedule;
+        private WizardSettingsWrapper m_wrapper;
 
         public RunNowFinished()
             : base("Ready to run backup", "You are now ready to run the backup")
         {
             InitializeComponent();
             base.PageEnter += new PageChangeHandler(RunNowFinished_PageEnter);
+            base.PageLeave += new PageChangeHandler(RunNowFinished_PageLeave);
+        }
+
+        void RunNowFinished_PageLeave(object sender, PageChangedArgs args)
+        {
+            if (args.Direction == PageChangedDirection.Back)
+                return;
+
+            m_wrapper.ForceFull = ForceFull.Checked;
         }
 
         void RunNowFinished_PageEnter(object sender, PageChangedArgs args)
         {
-            m_schedule = (Schedule)m_settings["Schedule"];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
 
             Summary.Text =
                 "Action: Run backup now\r\n" +
-                "Name:   " + m_schedule.Name;
+                "Name:   " + m_wrapper.ScheduleName;
         }
 
         public bool ForceFullBackup { get { return ForceFull.Checked; } }

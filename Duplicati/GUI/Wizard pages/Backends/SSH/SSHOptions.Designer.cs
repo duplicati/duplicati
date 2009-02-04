@@ -149,7 +149,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             this.UsePassword.AutoSize = true;
             this.UsePassword.Checked = true;
             this.UsePassword.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.UsePassword.Location = new System.Drawing.Point(24, 88);
+            this.UsePassword.Location = new System.Drawing.Point(20, 88);
             this.UsePassword.Name = "UsePassword";
             this.UsePassword.Size = new System.Drawing.Size(72, 17);
             this.UsePassword.TabIndex = 22;

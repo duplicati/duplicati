@@ -36,7 +36,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             else if (ThrottleOptions.Checked)
                 args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
             else if (EditFilters.Checked)
-                args.NextPage = new Wizard_pages.Add_backup.FilterEditor();
+                args.NextPage = new Wizard_pages.Add_backup.EditFilters();
             else
                 args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }

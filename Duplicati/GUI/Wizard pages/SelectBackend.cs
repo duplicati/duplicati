@@ -31,7 +31,7 @@ namespace Duplicati.GUI.Wizard_pages
 {
     public partial class SelectBackend : WizardControl
     {
-        private Task m_task;
+        private WizardSettingsWrapper m_wrapper;
 
         public SelectBackend()
             : base("Select a place to store the backups", "On this page you can select the type of device or service that store the backups. You may need information from the service provider when you continue.")
@@ -60,68 +60,62 @@ namespace Duplicati.GUI.Wizard_pages
                 return;
             }
 
-            SaveSettings();
-
-            switch ((string)m_settings["Backend:Backend"])
+            if (File.Checked)
             {
-                case "file":
-                    args.NextPage = new Backends.File.FileOptions();
-                    break;
-                case "ftp":
-                    args.NextPage = new Backends.FTP.FTPOptions();
-                    break;
-                case "ssh":
-                    args.NextPage = new Backends.SSH.SSHOptions();
-                    break;
-                case "webdav":
-                    args.NextPage = new Backends.WebDAV.WebDAVOptions();
-                    break;
-                case "s3":
-                    args.NextPage = new Backends.S3.S3Options();
-                    break;
-                default:
-                    args.NextPage = null;
-                    args.Cancel = true;
-                    return;
+                args.NextPage = new Backends.File.FileOptions();
+                m_wrapper.Backend = WizardSettingsWrapper.BackendType.File;
+            }
+            else if (FTP.Checked)
+            {
+                args.NextPage = new Backends.FTP.FTPOptions();
+                m_wrapper.Backend = WizardSettingsWrapper.BackendType.FTP;
+            }
+            else if (SSH.Checked)
+            {
+                args.NextPage = new Backends.SSH.SSHOptions();
+                m_wrapper.Backend = WizardSettingsWrapper.BackendType.SSH;
+            }
+            else if (WebDAV.Checked)
+            {
+                args.NextPage = new Backends.WebDAV.WebDAVOptions();
+                m_wrapper.Backend = WizardSettingsWrapper.BackendType.WebDav;
+            }
+            else if (S3.Checked)
+            {
+                args.NextPage = new Backends.S3.S3Options();
+                m_wrapper.Backend = WizardSettingsWrapper.BackendType.S3;
+            }
+            else
+            {
+                m_wrapper.Backend = WizardSettingsWrapper.BackendType.Unknown;
+                args.NextPage = null;
+                args.Cancel = true;
+                return;
             }
         }
 
-        private void SaveSettings()
-        {
-            if (File.Checked)
-                m_settings["Backend:Backend"] = "file";
-            else if (FTP.Checked)
-                m_settings["Backend:Backend"] = "ftp";
-            else if (SSH.Checked)
-                m_settings["Backend:Backend"] = "ssh";
-            else if (WebDAV.Checked)
-                m_settings["Backend:Backend"] = "webdav";
-            else if (S3.Checked)
-                m_settings["Backend:Backend"] = "s3";
-
-        }
 
         void SelectBackend_PageEnter(object sender, PageChangedArgs args)
         {
-            m_task = ((Schedule)m_settings["Schedule"]).Tasks[0];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
 
             if (!m_valuesAutoLoaded)
             {
-                switch (m_task.Service)
+                switch (m_wrapper.Backend)
                 {
-                    case "file":
+                    case WizardSettingsWrapper.BackendType.File:
                         File.Checked = true;
                         break;
-                    case "ftp":
+                    case WizardSettingsWrapper.BackendType.FTP:
                         FTP.Checked = true;
                         break;
-                    case "ssh":
+                    case WizardSettingsWrapper.BackendType.SSH:
                         SSH.Checked = true;
                         break;
-                    case "webdav":
+                    case WizardSettingsWrapper.BackendType.WebDav:
                         WebDAV.Checked = true;
                         break;
-                    case "s3":
+                    case WizardSettingsWrapper.BackendType.S3:
                         S3.Checked = true;
                         break;
                 }

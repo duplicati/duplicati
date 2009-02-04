@@ -32,7 +32,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     public partial class PasswordSettings : WizardControl
     {
         private bool m_warnedNoPassword = false;
-        private Task m_task;
+        private WizardSettingsWrapper m_wrapper;
 
         public PasswordSettings()
             : base("Select password for the backup", "On this page you can select options that protect your backups from being read or altered.") 
@@ -45,8 +45,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void PasswordSettings_PageLeave(object sender, PageChangedArgs args)
         {
-            SaveSettings();
-
+            m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
@@ -68,36 +67,20 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_warnedNoPassword = true;
             }
 
-            SaveSettings();
-
-            args.NextPage = null;
-        }
-
-        private void SaveSettings()
-        {
-            if (EnablePassword.Checked)
-                m_task.Encryptionkey = Password.Text;
-            else
-                m_task.Encryptionkey = null;
-
-            m_task.Signaturekey = null;
             m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
-            m_settings["Password:PasswordChecked"] = EnablePassword.Checked;
+            m_wrapper.BackupPassword = EnablePassword.Checked ? Password.Text : "";
+
+            args.NextPage = new SelectBackend();
         }
 
         void PasswordSettings_PageEnter(object sender, PageChangedArgs args)
         {
-            m_task = ((Schedule)m_settings["Schedule"]).Tasks[0];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            if (m_settings.ContainsKey("Password:PasswordChecked"))
+            if (!m_valuesAutoLoaded)
             {
-                EnablePassword.Checked = (bool)m_settings["Password:PasswordChecked"];
-                Password.Text = m_task.Encryptionkey;
-            }
-            else
-            {
-                EnablePassword.Checked = true;
-                Password.Text = "";
+                EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword);
+                Password.Text = m_wrapper.BackupPassword;
             }
 
             if (m_settings.ContainsKey("Password:WarnedNoPassword"))

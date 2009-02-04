@@ -32,7 +32,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 {
     public partial class SelectBackup : WizardControl
     {
-        Schedule m_schedule;
+        WizardSettingsWrapper m_wrapper;
         DateTime m_selectedDate = new DateTime();
 
         public SelectBackup()
@@ -46,8 +46,6 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
         void SelectBackup_PageLeave(object sender, PageChangedArgs args)
         {
-            m_settings["Restore:Date"] = BackupList.SelectedItem;
-
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
@@ -73,14 +71,14 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 m_selectedDate = new DateTime();
             }
 
+            m_wrapper.RestoreTime = m_selectedDate;
             args.NextPage = new TargetFolder();
         }
 
         void SelectBackup_PageEnter(object sender, PageChangedArgs args)
         {
-            m_schedule = (Schedule)m_settings["Schedule"]; 
-            
-            BackupList.Setup(m_schedule);
+            m_wrapper = new WizardSettingsWrapper(m_settings);
+            BackupList.Setup(Program.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID));
         }
     }
 }

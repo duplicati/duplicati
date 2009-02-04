@@ -1,4 +1,4 @@
-namespace Duplicati.GUI.Wizard_pages.Add_backup
+namespace Duplicati.GUI.HelperControls
 {
     partial class FilterDialog
     {
@@ -31,7 +31,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Inclusive = new System.Windows.Forms.RadioButton();
             this.Exclusive = new System.Windows.Forms.RadioButton();
             this.label1 = new System.Windows.Forms.Label();
-            this.Filter = new System.Windows.Forms.TextBox();
+            this.FilterText = new System.Windows.Forms.TextBox();
             this.OKBtn = new System.Windows.Forms.Button();
             this.CancelBtn = new System.Windows.Forms.Button();
             this.IsRegExp = new System.Windows.Forms.CheckBox();
@@ -68,12 +68,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.label1.TabIndex = 2;
             this.label1.Text = "Filter";
             // 
-            // Filter
+            // FilterText
             // 
-            this.Filter.Location = new System.Drawing.Point(56, 64);
-            this.Filter.Name = "Filter";
-            this.Filter.Size = new System.Drawing.Size(320, 20);
-            this.Filter.TabIndex = 3;
+            this.FilterText.Location = new System.Drawing.Point(56, 64);
+            this.FilterText.Name = "FilterText";
+            this.FilterText.Size = new System.Drawing.Size(320, 20);
+            this.FilterText.TabIndex = 3;
             // 
             // OKBtn
             // 
@@ -114,7 +114,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
             this.ClientSize = new System.Drawing.Size(389, 126);
-            this.Controls.Add(this.Filter);
+            this.Controls.Add(this.FilterText);
             this.Controls.Add(this.IsRegExp);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
@@ -136,7 +136,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.RadioButton Inclusive;
         private System.Windows.Forms.RadioButton Exclusive;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox Filter;
+        private System.Windows.Forms.TextBox FilterText;
         private System.Windows.Forms.Button OKBtn;
         private System.Windows.Forms.Button CancelBtn;
         private System.Windows.Forms.CheckBox IsRegExp;

@@ -34,7 +34,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private WorkerThread<string> m_calculator;
         private object m_lock = new object();
         private Dictionary<string, long> m_sizes;
-        private Schedule m_schedule;
+
+        private WizardSettingsWrapper m_wrapper;
 
         private string m_myPictures;
         private string m_myMusic;
@@ -144,51 +145,38 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                         basefolder = Library.Core.Utility.AppendDirSeperator(string.Join(System.IO.Path.DirectorySeparatorChar.ToString(), p1, 0, ix));
                     }
 
-                m_schedule.Tasks[0].SourcePath = basefolder;
-
-                List<TaskFilter> filters = new List<TaskFilter>();
+                List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
 
                 //Exclude everything if they have a non-included parent
                 if (hasCommonParent)
-                {
-                    TaskFilter tf = m_schedule.DataParent.Add<TaskFilter>();
-                    tf.Include = false;
-                    tf.Filter = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(basefolder + "*");
-                    filters.Add(tf);
-                }
+                    filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(basefolder + "*")));
 
                 //Include selected folders
                 foreach (string f in folders)
                 {
-                    TaskFilter tfx = m_schedule.DataParent.Add<TaskFilter>();
-                    tfx.Include = true;
-                    tfx.Filter = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f + "*");
-                    filters.Add(tfx);
+                    filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f + "*")));
 
                     //Exclude subfolders
                     foreach (string s in exfolders)
                         if (s.StartsWith(f) && (basefolder == s || s.StartsWith(basefolder)))
-                        {
-                            TaskFilter tfp = m_schedule.DataParent.Add<TaskFilter>();
-                            tfp.Include = false;
-                            tfp.Filter = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*");
-                            filters.Add(tfp);
-                        }
+                            filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*")));
                 }
 
-                List<TaskFilter> extras = new List<TaskFilter>();
-                string key = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(basefolder);
-                foreach(TaskFilter tf in m_schedule.Tasks[0].Filters)
-                    if (!tf.Filter.StartsWith(key))
+                List<KeyValuePair<bool, string>> extras = new List<KeyValuePair<bool, string>>();
+                string key = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_wrapper.SourcePath);
+                foreach(KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
+                    if (!tf.Value.StartsWith(key))
                         extras.Add(tf);
 
-                if (filters.Count < 2)
-                    m_schedule.Tasks[0].SortedFilters = extras.ToArray();
+                if (filters.Count <= 1)
+                    m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(extras);
                 else
                 {
                     filters.AddRange(extras);
-                    m_schedule.Tasks[0].SortedFilters = filters.ToArray();
+                    m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(filters);
                 }
+
+                m_wrapper.SourcePath = basefolder;
             }
             else
             {
@@ -199,32 +187,28 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     return;
                 }
 
-                m_schedule.Tasks[0].SourcePath = TargetFolder.Text;
+                m_wrapper.SourcePath = TargetFolder.Text;
             }
 
             if (m_calculator != null)
                 m_calculator.ClearQueue(true);
 
-            args.NextPage = new SelectBackend();
+            args.NextPage = new PasswordSettings();
         }
 
         void SelectFiles_PageEnter(object sender, PageChangedArgs args)
         {
-            m_schedule = (Schedule)m_settings["Schedule"];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
 
             if (m_settings.ContainsKey("Files:Sizes"))
                 m_sizes = (Dictionary<string, long>)m_settings["Files:Sizes"];
 
-
             if (!m_valuesAutoLoaded)
             {
                 List<string> filters = new List<string>();
-                foreach (TaskFilter tf in m_schedule.Tasks[0].Filters)
-                    if (tf.Include && tf.Filter.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_schedule.Tasks[0].SourcePath)))
-                        filters.Add(tf.Filter);
-
-                if (filters.Count == 0)
-                    TargetFolder.Text = m_schedule.Path;
+                foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
+                    if (tf.Key && tf.Value.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_wrapper.SourcePath)))
+                        filters.Add(tf.Value);
 
                 List<string> included = new List<string>();
                 foreach (string s in m_specialFolders)
@@ -234,7 +218,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 if (included.Count == 0)
                 {
                     FolderRadio.Checked = true;
-                    TargetFolder.Text = m_schedule.Path;
+                    TargetFolder.Text = m_wrapper.SourcePath;
                 }
                 else
                 {
@@ -248,7 +232,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     if (!(IncludeDocuments.Checked || IncludeMusic.Checked || IncludeImages.Checked || IncludeDesktop.Checked || IncludeSettings.Checked))
                     {
                         FolderRadio.Checked = true;
-                        TargetFolder.Text = m_schedule.Path;
+                        TargetFolder.Text = m_wrapper.SourcePath;
                     }
                 }
                     

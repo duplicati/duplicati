@@ -70,15 +70,34 @@ namespace Duplicati.Datamodel
         {
             this.Backend.GetOptions(options);
 
-            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
-            foreach (TaskFilter f in this.SortedFilters)
-                filters.Add(new KeyValuePair<bool, string>(f.Include, f.Filter));
-            if (filters.Count > 0)
+            if (this.Filters.Count > 0)
+                options["filter"] = this.EncodedFilter; ;
+        }
+
+        public string EncodedFilter
+        {
+            get
             {
-                string o = Library.Core.FilenameFilter.EncodeAsFilter(filters);
-                if (!o.StartsWith("--filter=")) throw new Exception("What happend here?");
-                o = o.Substring("--filter=".Length);
-                options["filter"] = o;
+                if (this.Filters.Count <= 0)
+                    return "";
+
+                List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
+                foreach (TaskFilter f in this.SortedFilters)
+                    filters.Add(new KeyValuePair<bool, string>(f.Include, f.Filter));
+
+                return Library.Core.FilenameFilter.EncodeAsFilter(filters);
+            }
+            set
+            {
+                List<TaskFilter> filters = new List<TaskFilter>();
+                foreach(KeyValuePair<bool, string> f in Library.Core.FilenameFilter.DecodeFilter(value))
+                {
+                    TaskFilter tf = this.DataParent.Add<TaskFilter>();
+                    tf.Filter = f.Value;
+                    tf.Include = f.Key;
+                }
+
+                this.SortedFilters = filters.ToArray();
             }
         }
 

@@ -28,8 +28,11 @@ namespace Duplicati.CommandLine
         static void Main(string[] args)
         {
             List<string> cargs = new List<string>(args);
+            string filter = Duplicati.Library.Core.FilenameFilter.EncodeAsFilter(Duplicati.Library.Core.FilenameFilter.ParseCommandLine(cargs, true));
 
-            cargs.Add(Duplicati.Library.Core.FilenameFilter.EncodeAsFilter(Duplicati.Library.Core.FilenameFilter.ParseCommandLine(cargs, true)));
+            if (!string.IsNullOrEmpty(filter))
+                cargs.Add(filter);
+            
             Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
 
 #if DEBUG

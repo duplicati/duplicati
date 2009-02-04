@@ -41,6 +41,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.VolumeSizeLimitNumber = new System.Windows.Forms.NumericUpDown();
             this.AsyncEnabled = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.ThreadPriorityEnabled = new System.Windows.Forms.CheckBox();
+            this.ThreadPriority = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.UploadLimitNumber)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.DownloadLimitNumber)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.BackupLimitNumber)).BeginInit();
@@ -50,7 +52,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // UploadLimitNumber
             // 
             this.UploadLimitNumber.Enabled = false;
-            this.UploadLimitNumber.Location = new System.Drawing.Point(184, 24);
+            this.UploadLimitNumber.Location = new System.Drawing.Point(184, 16);
             this.UploadLimitNumber.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -64,7 +66,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // DownloadLimitNumber
             // 
             this.DownloadLimitNumber.Enabled = false;
-            this.DownloadLimitNumber.Location = new System.Drawing.Point(184, 56);
+            this.DownloadLimitNumber.Location = new System.Drawing.Point(184, 48);
             this.DownloadLimitNumber.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -84,7 +86,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             "kb/s",
             "mb/s",
             "gb/s"});
-            this.UploadLimitSuffix.Location = new System.Drawing.Point(280, 24);
+            this.UploadLimitSuffix.Location = new System.Drawing.Point(280, 16);
             this.UploadLimitSuffix.Name = "UploadLimitSuffix";
             this.UploadLimitSuffix.Size = new System.Drawing.Size(72, 21);
             this.UploadLimitSuffix.TabIndex = 5;
@@ -98,7 +100,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             "kb/s",
             "mb/s",
             "gb/s"});
-            this.DownloadLimitSuffix.Location = new System.Drawing.Point(280, 56);
+            this.DownloadLimitSuffix.Location = new System.Drawing.Point(280, 48);
             this.DownloadLimitSuffix.Name = "DownloadLimitSuffix";
             this.DownloadLimitSuffix.Size = new System.Drawing.Size(72, 21);
             this.DownloadLimitSuffix.TabIndex = 6;
@@ -106,7 +108,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // UploadLimitEnabled
             // 
             this.UploadLimitEnabled.AutoSize = true;
-            this.UploadLimitEnabled.Location = new System.Drawing.Point(32, 24);
+            this.UploadLimitEnabled.Location = new System.Drawing.Point(32, 16);
             this.UploadLimitEnabled.Name = "UploadLimitEnabled";
             this.UploadLimitEnabled.Size = new System.Drawing.Size(125, 17);
             this.UploadLimitEnabled.TabIndex = 7;
@@ -117,7 +119,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // DownloadLimitEnabled
             // 
             this.DownloadLimitEnabled.AutoSize = true;
-            this.DownloadLimitEnabled.Location = new System.Drawing.Point(32, 56);
+            this.DownloadLimitEnabled.Location = new System.Drawing.Point(32, 48);
             this.DownloadLimitEnabled.Name = "DownloadLimitEnabled";
             this.DownloadLimitEnabled.Size = new System.Drawing.Size(135, 17);
             this.DownloadLimitEnabled.TabIndex = 8;
@@ -128,7 +130,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // BackupLimitEnabled
             // 
             this.BackupLimitEnabled.AutoSize = true;
-            this.BackupLimitEnabled.Location = new System.Drawing.Point(32, 112);
+            this.BackupLimitEnabled.Location = new System.Drawing.Point(32, 96);
             this.BackupLimitEnabled.Name = "BackupLimitEnabled";
             this.BackupLimitEnabled.Size = new System.Drawing.Size(134, 17);
             this.BackupLimitEnabled.TabIndex = 9;
@@ -145,7 +147,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             "kb",
             "mb",
             "gb"});
-            this.BackupLimitSuffix.Location = new System.Drawing.Point(281, 111);
+            this.BackupLimitSuffix.Location = new System.Drawing.Point(281, 95);
             this.BackupLimitSuffix.Name = "BackupLimitSuffix";
             this.BackupLimitSuffix.Size = new System.Drawing.Size(72, 21);
             this.BackupLimitSuffix.TabIndex = 11;
@@ -153,7 +155,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // BackupLimitNumber
             // 
             this.BackupLimitNumber.Enabled = false;
-            this.BackupLimitNumber.Location = new System.Drawing.Point(185, 111);
+            this.BackupLimitNumber.Location = new System.Drawing.Point(185, 95);
             this.BackupLimitNumber.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -172,14 +174,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             "kb",
             "mb",
             "gb"});
-            this.VolumeSizeLimitSuffix.Location = new System.Drawing.Point(280, 144);
+            this.VolumeSizeLimitSuffix.Location = new System.Drawing.Point(280, 128);
             this.VolumeSizeLimitSuffix.Name = "VolumeSizeLimitSuffix";
             this.VolumeSizeLimitSuffix.Size = new System.Drawing.Size(72, 21);
             this.VolumeSizeLimitSuffix.TabIndex = 14;
             // 
             // VolumeSizeLimitNumber
             // 
-            this.VolumeSizeLimitNumber.Location = new System.Drawing.Point(184, 144);
+            this.VolumeSizeLimitNumber.Location = new System.Drawing.Point(184, 128);
             this.VolumeSizeLimitNumber.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -193,7 +195,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // AsyncEnabled
             // 
             this.AsyncEnabled.AutoSize = true;
-            this.AsyncEnabled.Location = new System.Drawing.Point(32, 192);
+            this.AsyncEnabled.Location = new System.Drawing.Point(32, 168);
             this.AsyncEnabled.Name = "AsyncEnabled";
             this.AsyncEnabled.Size = new System.Drawing.Size(124, 17);
             this.AsyncEnabled.TabIndex = 15;
@@ -203,14 +205,36 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(48, 144);
+            this.label1.Location = new System.Drawing.Point(48, 128);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(103, 13);
             this.label1.TabIndex = 16;
             this.label1.Text = "Size of each volume";
             // 
+            // ThreadPriorityEnabled
+            // 
+            this.ThreadPriorityEnabled.AutoSize = true;
+            this.ThreadPriorityEnabled.Location = new System.Drawing.Point(32, 200);
+            this.ThreadPriorityEnabled.Name = "ThreadPriorityEnabled";
+            this.ThreadPriorityEnabled.Size = new System.Drawing.Size(108, 17);
+            this.ThreadPriorityEnabled.TabIndex = 17;
+            this.ThreadPriorityEnabled.Text = "Set thread priority";
+            this.ThreadPriorityEnabled.UseVisualStyleBackColor = true;
+            this.ThreadPriorityEnabled.CheckedChanged += new System.EventHandler(this.ThreadPriorityEnabled_CheckedChanged);
+            // 
+            // ThreadPriority
+            // 
+            this.ThreadPriority.Enabled = false;
+            this.ThreadPriority.FormattingEnabled = true;
+            this.ThreadPriority.Location = new System.Drawing.Point(184, 192);
+            this.ThreadPriority.Name = "ThreadPriority";
+            this.ThreadPriority.Size = new System.Drawing.Size(168, 21);
+            this.ThreadPriority.TabIndex = 18;
+            // 
             // ThrottleOptions
             // 
+            this.Controls.Add(this.ThreadPriority);
+            this.Controls.Add(this.ThreadPriorityEnabled);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.AsyncEnabled);
             this.Controls.Add(this.VolumeSizeLimitSuffix);
@@ -250,5 +274,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.NumericUpDown VolumeSizeLimitNumber;
         private System.Windows.Forms.CheckBox AsyncEnabled;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.CheckBox ThreadPriorityEnabled;
+        private System.Windows.Forms.ComboBox ThreadPriority;
     }
 }

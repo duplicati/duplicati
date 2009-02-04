@@ -34,8 +34,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     {
         private bool m_warnedFull = false;
         private bool m_warnedClean = false;
-        
-        private Schedule m_schedule;
+
+        private WizardSettingsWrapper m_wrapper;
 
         public IncrementalSettings()
             : base("Select incremental options", "To avoid large backups, Duplicati can back up only files that have changed. Each backup is much smaller, but all files are still avalible.")
@@ -55,8 +55,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void IncrementalSettings_PageLeave(object sender, PageChangedArgs args)
         {
-
-            SaveSettings();
+            m_settings["Incremental:WarnedFull"] = m_warnedFull;
+            m_settings["Incremental:WarnedClean"] = m_warnedClean;
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
@@ -119,49 +119,34 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_warnedClean = true;
             }
 
-            SaveSettings();
+            m_settings["Incremental:WarnedFull"] = m_warnedFull;
+            m_settings["Incremental:WarnedClean"] = m_warnedClean;
+
+            m_wrapper.FullBackupInterval = FullBackups.Checked ? FullDuration.Value : "";
+            m_wrapper.MaxFullBackups = EnableFullBackupClean.Checked ? (int)CleanFullBackupCount.Value : 0;
+            m_wrapper.BackupExpireInterval = EnableCleanupDuration.Checked ? CleanupDuration.Value : "";
 
             if ((bool)m_settings["Advanced:Throttle"])
                 args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
             else if ((bool)m_settings["Advanced:Filters"])
-                args.NextPage = new Wizard_pages.Add_backup.FilterEditor();
+                args.NextPage = new Wizard_pages.Add_backup.EditFilters();
             else
                 args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }
 
-        private void SaveSettings()
-        {
-            if (FullBackups.Checked)
-                m_schedule.FullAfter = FullDuration.Value;
-            else
-                m_schedule.FullAfter = null;
-
-            if (EnableFullBackupClean.Checked)
-                m_schedule.KeepFull = (int)CleanFullBackupCount.Value;
-            else
-                m_schedule.KeepFull = 0;
-
-            if (EnableCleanupDuration.Checked)
-                m_schedule.KeepTime = CleanupDuration.Value;
-            else
-                m_schedule.KeepTime = null;
-
-            m_settings["Incremental:WarnedFull"] = m_warnedFull;
-            m_settings["Incremental:WarnedClean"] = m_warnedClean;
-        }
 
         void IncrementalSettings_PageEnter(object sender, PageChangedArgs args)
         {
-            m_schedule = (Schedule)m_settings["Schedule"];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
 
             if (!m_valuesAutoLoaded)
             {
 
-                FullDuration.Value = m_schedule.FullAfter;
-                FullBackups.Checked = !string.IsNullOrEmpty(m_schedule.FullAfter);
-                if (m_schedule.KeepFull > 0)
+                FullDuration.Value = m_wrapper.FullBackupInterval;
+                FullBackups.Checked = !string.IsNullOrEmpty(m_wrapper.FullBackupInterval);
+                if (m_wrapper.MaxFullBackups > 0)
                 {
-                    CleanFullBackupCount.Value = m_schedule.KeepFull;
+                    CleanFullBackupCount.Value = m_wrapper.MaxFullBackups;
                     EnableFullBackupClean.Checked = true;
                 }
                 else
@@ -170,8 +155,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     EnableFullBackupClean.Checked = false;
                 }
 
-                CleanupDuration.Value = m_schedule.KeepTime;
-                EnableCleanupDuration.Checked = !string.IsNullOrEmpty(m_schedule.KeepTime);
+                CleanupDuration.Value = m_wrapper.BackupExpireInterval;
+                EnableCleanupDuration.Checked = !string.IsNullOrEmpty(m_wrapper.BackupExpireInterval);
             }
 
             if (m_settings.ContainsKey("Incremental:WarnedFull"))

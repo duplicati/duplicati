@@ -30,6 +30,8 @@ namespace Duplicati.GUI.Wizard_pages
 {
     public partial class MainPage : WizardControl
     {
+        WizardSettingsWrapper m_wrapper;
+
         public MainPage()
             : base("Welcome to the Duplicati Wizard", "Please select the action you want to perform below")
         {
@@ -41,6 +43,7 @@ namespace Duplicati.GUI.Wizard_pages
 
         void MainPage_PageEnter(object sender, PageChangedArgs args)
         {
+            m_wrapper = new WizardSettingsWrapper(m_settings);
             UpdateButtonState();
 
             this.Controls.Remove(ShowAdvanced);
@@ -53,38 +56,36 @@ namespace Duplicati.GUI.Wizard_pages
 
         void MainPage_PageLeave(object sender, PageChangedArgs args)
         {
+            if (CreateNew.Checked)
+                m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Add;
+            else if (Edit.Checked)
+                m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Edit;
+            else if (Restore.Checked)
+                m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Restore;
+            else if (Backup.Checked)
+                m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.RunNow;
+            else if (Remove.Checked)
+                m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Remove;
+            else
+            {
+                m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Unknown;
+                args.NextPage = null;
+                args.Cancel = true;
+                return;
+            }
+
             m_owner.ButtonPanel.Controls.Remove(ShowAdvanced);
             this.Controls.Add(ShowAdvanced);
             ShowAdvanced.Visible = false;
 
-            if (CreateNew.Checked)
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
             {
-                args.NextPage = new Wizard_pages.Add_backup.SelectName();
-                m_settings["Main:Action"] = "add";
+                args.NextPage = new Add_backup.SelectName();
+                SetupDefaults();
+                m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Add;
             }
             else
-            {
-                if (Edit.Checked)
-                    m_settings["Main:Action"] = "edit";
-                else if (Restore.Checked)
-                    m_settings["Main:Action"] = "restore";
-                else if (Backup.Checked)
-                    m_settings["Main:Action"] = "backup";
-                else if (Remove.Checked)
-                    m_settings["Main:Action"] = "remove";
-                else
-                {
-                    m_settings.Remove("Main:Action");
-                    args.Cancel = true;
-                    args.NextPage = null;
-                    return;
-                }
-
-                args.NextPage = new Wizard_pages.SelectBackup();
-            }
-
-            if (!m_settings.ContainsKey("Connection"))
-                m_settings["Connection"] = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+                args.NextPage = new SelectBackup();
         }
 
         private void UpdateButtonState()
@@ -104,5 +105,26 @@ namespace Duplicati.GUI.Wizard_pages
             m_owner.Dialog.DialogResult = DialogResult.Cancel;
             m_owner.Dialog.Close();
         }
+
+        /// <summary>
+        /// The purpose of this function is to set the default
+        /// settings on the new backup.
+        /// </summary>
+        private void SetupDefaults()
+        {
+            m_settings.Clear();
+
+            //TODO: These settings should be read from a file, 
+            //so they are customizable by the end user
+            m_wrapper.FullBackupInterval = "1M";
+            m_wrapper.MaxFullBackups = 4;
+            m_wrapper.BackupExpireInterval = "";
+            m_wrapper.RepeatInterval = "1D";
+            m_wrapper.VolumeSize = "5MB";
+
+            //Run each day at 13:00 (1 pm)
+            m_wrapper.BackupTimeOffset = DateTime.Now.Date.AddHours(13);
+        }
+
     }
 }

@@ -32,7 +32,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
     public partial class S3Options : WizardControl
     {
         private const string LOGIN_PAGE = "http://aws.amazon.com/s3";
-        private Duplicati.Datamodel.Backends.S3 m_s3;
+        private S3Settings m_wrapper;
         private bool m_hasTested;
        
         public S3Options()
@@ -46,7 +46,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
 
         void S3Options_PageLeave(object sender, PageChangedArgs args)
         {
-            SaveSettings();
+            m_settings["S3:HasTested"] = m_hasTested;
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
@@ -76,39 +76,35 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
                 }
 
 
-            SaveSettings();
+            m_settings["S3:HasTested"] = m_hasTested;
+
+            m_wrapper.Username = AWS_ID.Text;
+            m_wrapper.Password = AWS_KEY.Text;
+            m_wrapper.Path = BucketName.Text;
+            m_wrapper.UseEuroServer = UseEuroBuckets.Checked;
+            string bucketname = m_wrapper.Path;
+            if (bucketname.IndexOf("/") > 0)
+                bucketname = bucketname.Substring(0, bucketname.IndexOf("/"));
+            m_wrapper.UseSubDomains = bucketname.ToLower() == bucketname;
 
             args.NextPage = new Add_backup.AdvancedOptions();
         }
 
         void S3Options_PageEnter(object sender, PageChangedArgs args)
         {
-            m_s3 = new Duplicati.Datamodel.Backends.S3(((Schedule)m_settings["Schedule"]).Tasks[0]);
+            m_wrapper = new WizardSettingsWrapper(m_settings).S3Settings;
 
             if (!m_valuesAutoLoaded)
             {
-                AWS_ID.Text = m_s3.AccessID;
-                AWS_KEY.Text = m_s3.AccessKey;
-                BucketName.Text = m_s3.BucketName + "/" + m_s3.Prefix;
-                UseEuroBuckets.Checked = m_s3.UseEuroBucket;
+                AWS_ID.Text = m_wrapper.Username;
+                AWS_KEY.Text = m_wrapper.Password;
+                BucketName.Text = m_wrapper.Path;
+                UseEuroBuckets.Checked = m_wrapper.UseEuroServer;
             }
 
-            if (!m_settings.ContainsKey("S3:HasTested"))
-                m_hasTested = false;
-            else
+            if (m_settings.ContainsKey("S3:HasTested"))
                 m_hasTested = (bool)m_settings["S3:HasTested"];
             
-        }
-
-        private void SaveSettings()
-        {
-            m_s3.AccessID = AWS_ID.Text;
-            m_s3.AccessKey = AWS_KEY.Text;
-            m_s3.ServerUrl = null;
-            m_s3.UseEuroBucket = UseEuroBuckets.Checked;
-            m_s3.SetService();
-            m_settings["S3:Path"] = BucketName.Text;
-            m_settings["S3:HasTested"] = m_hasTested;
         }
 
         private bool ValidateForm()
@@ -174,10 +170,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
                 }
             }
 
-            m_s3.BucketName = bucketname;
-            m_s3.Prefix = prefix;
-            m_s3.UseSubdomainStrategy = bucketname.ToLower() == bucketname;
-
             return true;
         }
 
@@ -190,13 +182,29 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
         {
             if (ValidateForm())
             {
-                SaveSettings();
-
                 try
                 {
-                    string target = m_s3.GetDestinationPath();
+                    System.Data.LightDatamodel.IDataFetcherCached con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+                    Datamodel.Backends.S3 s3 = new Duplicati.Datamodel.Backends.S3(con.Add<Task>());
+
+                    s3.BucketName = BucketName.Text;
+                    s3.Prefix = "";
+
+                    if (s3.BucketName.IndexOf("/") > 0)
+                    {
+                        s3.Prefix = s3.BucketName.Substring(s3.BucketName.IndexOf("/") + 1);
+                        s3.BucketName = s3.BucketName.Substring(0, s3.BucketName.IndexOf("/"));
+                    }
+
+                    s3.AccessID = AWS_ID.Text;
+                    s3.AccessKey = AWS_KEY.Text;
+                    s3.ServerUrl = "";
+                    s3.UseEuroBucket = UseEuroBuckets.Checked;
+                    s3.UseSubdomainStrategy = s3.UseEuroBucket || s3.BucketName == s3.BucketName.ToLower();
+
+                    string target = s3.GetDestinationPath();
                     Dictionary<string, string> options = new Dictionary<string, string>();
-                    m_s3.GetOptions(options);
+                    s3.GetOptions(options);
 
                     string[] files = Duplicati.Library.Main.Interface.List(target, options);
 

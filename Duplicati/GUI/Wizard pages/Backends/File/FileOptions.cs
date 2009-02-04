@@ -31,7 +31,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
 {
     public partial class FileOptions : WizardControl
     {
-        private Duplicati.Datamodel.Backends.File m_file;
+        FileSettings m_wrapper;
+
         private bool m_isUpdating = false;
 
         public FileOptions()
@@ -39,16 +40,12 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
         {
             InitializeComponent();
 
-            m_autoFillValues = false;
-
             base.PageEnter += new PageChangeHandler(FileOptions_PageEnter);
             base.PageLeave += new PageChangeHandler(FileOptions_PageLeave);
         }
 
         void FileOptions_PageLeave(object sender, PageChangedArgs args)
         {
-            SaveDialogSettings();
-
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
@@ -117,26 +114,18 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
                 return;
             }
 
-            SaveSettings();
-            args.NextPage = new Add_backup.AdvancedOptions();
-        }
-
-        private void SaveSettings()
-        {
-            m_file.DestinationFolder = TargetFolder.Text;
-
+            m_wrapper.Path = TargetFolder.Text;
             if (UseCredentials.Checked)
             {
-                m_file.Username = Username.Text;
-                m_file.Password = Password.Text;
+                m_wrapper.Username = Username.Text;
+                m_wrapper.Password = Password.Text;
             }
             else
             {
-                m_file.Username = null;
-                m_file.Password = null;
+                m_wrapper.Username = m_wrapper.Password = "";
             }
 
-            m_file.SetService();
+            args.NextPage = new Add_backup.AdvancedOptions();
         }
 
         private void RescanDrives()
@@ -153,36 +142,24 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
 
         void FileOptions_PageEnter(object sender, PageChangedArgs args)
         {
-            m_file = new Duplicati.Datamodel.Backends.File(((Schedule)m_settings["Schedule"]).Tasks[0]);
+            m_wrapper = new WizardSettingsWrapper(m_settings).FileSettings;
 
             RescanDrives();
 
-            try
+            if (!m_valuesAutoLoaded )
             {
-                m_isUpdating = true;
+                UsePath.Checked = true;
+                TargetFolder.Text = m_wrapper.Path;
 
-                if (!LoadDialogSettings())
-                {
-                    UsePath.Checked = true;
-                    TargetFolder.Text = m_file.DestinationFolder;
-
-                    UseCredentials.Checked = !string.IsNullOrEmpty(m_file.Username);
-                    Username.Text = m_file.Username;
-                    Password.Text = m_file.Password;
-                }
-            }
-            finally
-            {
-                m_isUpdating = false;
+                UseCredentials.Checked = !string.IsNullOrEmpty(m_wrapper.Username);
+                Username.Text = m_wrapper.Username;
+                Password.Text = m_wrapper.Password;
             }
         }
 
         private void UseCredentials_CheckedChanged(object sender, EventArgs e)
         {
             Credentials.Enabled = UseCredentials.Checked;
-
-            if (m_isUpdating)
-                return;
         }
 
         private void UsePath_CheckedChanged(object sender, EventArgs e)
@@ -199,9 +176,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
         private void UseDisk_CheckedChanged(object sender, EventArgs e)
         {
             TargetDrive.Enabled = Folder.Enabled = FolderLabel.Enabled = UseDisk.Checked;
-
-            if (m_isUpdating)
-                return;
 
             RescanDrives();
 

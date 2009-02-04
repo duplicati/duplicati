@@ -33,7 +33,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     public partial class SelectWhen : WizardControl
     {
         private bool m_hasWarned;
-        private Schedule m_schedule;
+        private WizardSettingsWrapper m_wrapper;
 
         public SelectWhen()
             : base("Select when the backup should run", "On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.")
@@ -46,12 +46,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void SelectWhen_PageLeave(object sender, PageChangedArgs args)
         {
-            m_schedule.When = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
-            if (EnableRepeat.Checked)
-                m_schedule.Repeat = RepeatInterval.Value;
-            else
-                m_schedule.Repeat = null;
-
             m_settings["When:HasWarned"] = m_hasWarned;
 
             if (args.Direction == PageChangedDirection.Back)
@@ -99,26 +93,32 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             m_settings["When:HasWarned"] = m_hasWarned;
 
+            m_wrapper.BackupTimeOffset = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
+            if (EnableRepeat.Checked)
+                m_wrapper.RepeatInterval = RepeatInterval.Value;
+            else
+                m_wrapper.RepeatInterval = "";
+
             if ((bool)m_settings["Advanced:Incremental"])
                 args.NextPage = new Wizard_pages.Add_backup.IncrementalSettings();
             else if ((bool)m_settings["Advanced:Throttle"])
                 args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
             else if ((bool)m_settings["Advanced:Filters"])
-                args.NextPage = new Wizard_pages.Add_backup.FilterEditor();
+                args.NextPage = new Wizard_pages.Add_backup.EditFilters();
             else
                 args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }
 
         void SelectWhen_PageEnter(object sender, PageChangedArgs args)
         {
-            m_schedule = (Schedule)m_settings["Schedule"];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
 
             if (!m_valuesAutoLoaded)
             {
-                OffsetDate.Value = m_schedule.When;
-                OffsetTime.Value = m_schedule.When;
-                RepeatInterval.Value = m_schedule.Repeat;
-                EnableRepeat.Checked = !string.IsNullOrEmpty(m_schedule.Repeat);
+                OffsetDate.Value = m_wrapper.BackupTimeOffset;
+                OffsetTime.Value = m_wrapper.BackupTimeOffset;
+                RepeatInterval.Value = m_wrapper.RepeatInterval;
+                EnableRepeat.Checked = !string.IsNullOrEmpty(m_wrapper.RepeatInterval);
             }
 
             if (m_settings.ContainsKey("When:HasWarned"))

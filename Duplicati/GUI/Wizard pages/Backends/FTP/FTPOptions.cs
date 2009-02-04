@@ -35,8 +35,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         private bool m_warnedUsername = false;
         private bool m_hasTested;
         private bool m_warnedPath;
-        
-        private Duplicati.Datamodel.Backends.FTP m_ftp;
+
+        FTPSettings m_wrapper;
 
         public FTPOptions()
             : base("Backup storage options", "On this page you can select where to store the backup data.")
@@ -79,12 +79,19 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
                 }
 
             SaveSettings();
+
+            m_wrapper.Server = Servername.Text;
+            m_wrapper.Path = Path.Text;
+            m_wrapper.Username = Username.Text;
+            m_wrapper.Password = Password.Text;
+            m_wrapper.Port = (int)Port.Value;
+
             args.NextPage = new Add_backup.AdvancedOptions();
         }
 
         void FTPOptions_PageEnter(object sender, PageChangedArgs args)
         {
-            m_ftp = new Duplicati.Datamodel.Backends.FTP(((Schedule)m_settings["Schedule"]).Tasks[0]);
+            m_wrapper = new WizardSettingsWrapper(m_settings).FTPSettings;
 
             if (m_settings.ContainsKey("FTP:HasTested"))
                 m_hasTested = (bool)m_settings["FTP:HasTested"];
@@ -100,11 +107,11 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
 
             if (!m_valuesAutoLoaded)
             {
-                Servername.Text = m_ftp.Host;
-                Path.Text = m_ftp.Folder;
-                Username.Text = m_ftp.Username;
-                Password.Text = m_ftp.Password;
-                Port.Value = m_ftp.Port;
+                Servername.Text = m_wrapper.Server;
+                Path.Text = m_wrapper.Path;
+                Username.Text = m_wrapper.Username;
+                Password.Text = m_wrapper.Password;
+                Port.Value = m_wrapper.Port;
             }
         }
 
@@ -147,14 +154,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
 
         private void SaveSettings()
         {
-            m_ftp.Host = Servername.Text;
-            m_ftp.Folder = Path.Text;
-            m_ftp.Username = Username.Text;
-            m_ftp.Password = Password.Text;
-            m_ftp.Port = (int)Port.Value;
-
-            m_ftp.SetService();
-
             m_settings["FTP:HasWarned"] = m_hasTested;
             m_settings["FTP:WarnedPath"] = m_warnedPath;
             m_settings["FTP:WarnedUsername"] = m_warnedUsername;
@@ -165,13 +164,20 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         {
             if (ValidateForm())
             {
-                SaveSettings();
-
                 try
                 {
-                    string hostname = m_ftp.GetDestinationPath();
+                    System.Data.LightDatamodel.IDataFetcherCached con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+                    Datamodel.Backends.FTP ftp = new Duplicati.Datamodel.Backends.FTP(con.Add<Task>());
+
+                    ftp.Host = Servername.Text;
+                    ftp.Username = Username.Text;
+                    ftp.Password = Password.Text;
+                    ftp.Port = (int)Port.Value;
+                    ftp.Folder = Path.Text;
+
+                    string hostname = ftp.GetDestinationPath();
                     Dictionary<string, string> options = new Dictionary<string, string>();
-                    m_ftp.GetOptions(options);
+                    ftp.GetOptions(options);
                     string[] files = Duplicati.Library.Main.Interface.List(hostname, options);
 
                     MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);

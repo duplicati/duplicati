@@ -31,7 +31,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class SelectName : WizardControl
     {
-        private Schedule m_schedule;
+        private WizardSettingsWrapper m_wrapper;
 
         public SelectName()
             : base("Enter a name for the backup", "On this page you can enter a name for the backup, so you can find and modify it later")
@@ -45,8 +45,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void SelectName_PageLeave(object sender, PageChangedArgs args)
         {
-            m_settings["Name:Backup"] = BackupFolder.SelectedFolder;
-
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
@@ -57,44 +55,31 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 return;
             }
 
-            Schedule[] tmp = ((System.Data.LightDatamodel.IDataFetcher)m_settings["Connection"]).GetObjects<Schedule>("Name LIKE ? AND Path Like ?", BackupName.Text, BackupFolder.SelectedFolder);
-            if ((tmp.Length == 1 && tmp[0] != m_schedule) || tmp.Length > 1)
+            Schedule[] tmp = Program.DataConnection.GetObjects<Schedule>("Name LIKE ? AND Path Like ?", BackupName.Text, BackupFolder.SelectedFolder);
+            if ((tmp.Length == 1 && tmp[0].ID != m_wrapper.ScheduleID ) || tmp.Length > 1)
             {
                 MessageBox.Show(this, "There already exists a backup with that name", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
 
-            if (m_schedule == null)
-            {
-                m_schedule = ((System.Data.LightDatamodel.IDataFetcher)m_settings["Connection"]).Add<Schedule>();
-                m_schedule.Tasks.Add(((System.Data.LightDatamodel.IDataFetcher)m_settings["Connection"]).Add<Task>());
-            }
-
-            m_schedule.Name = BackupName.Text;
-            m_schedule.Path = BackupFolder.SelectedFolder;
-
-            m_settings["Schedule"] = m_schedule;
-
-            SetupDefaults();
+            m_wrapper.ScheduleName = BackupName.Text;
+            m_wrapper.SchedulePath = BackupFolder.SelectedFolder;
 
             args.NextPage = new SelectFiles();
         }
 
         void SelectName_PageEnter(object sender, PageChangedArgs args)
         {
-            if (!m_settings.ContainsKey("Schedule"))
-                m_schedule = null;
-            else
-                m_schedule = (Schedule)m_settings["Schedule"];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            if (m_settings.ContainsKey("Name:Path"))
-                BackupFolder.SelectedFolder = (string)m_settings["Name:Path"];
-            else
-                BackupFolder.SelectedFolder = "";
+            BackupFolder.Setup(Program.DataConnection, false, true);
 
-            if (m_schedule != null && m_schedule.ExistsInDb)
-                BackupName.Text = m_schedule.Name;
+            if (!m_valuesAutoLoaded)
+            {
+                BackupName.Text = m_wrapper.ScheduleName;
+                BackupFolder.SelectedFolder = m_wrapper.SchedulePath;
+            }
 
             try { BackupName.Focus(); }
             catch { }
@@ -105,28 +90,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             BackupFolder.SelectedFolder = null;
             //BackupFolder.Focus();
             BackupFolder.AddFolder(null).BeginEdit();
-        }
-
-        /// <summary>
-        /// The purpose of this function is to set the default
-        /// settings on the new backup.
-        /// </summary>
-        private void SetupDefaults()
-        {
-            //TODO: These settings should be read from a file, 
-            //so they are customizable by the end user
-
-            m_schedule.FullAfter = "1M";
-            m_schedule.KeepFull = 4;
-            m_schedule.KeepTime = "";
-            m_schedule.Repeat = "1D";
-            m_schedule.VolumeSize = "5MB";
-            //Run each day at 13:00 (1 pm)
-            m_schedule.When = DateTime.Now.Date.AddHours(13);
-
-            //TODO: Probably not a good idea to hide the fact that the backup needs this key to be restored!
-            //TODO: !!!! Decide how to represent this to the user
-            m_schedule.Tasks[0].Encryptionkey = Duplicati.Library.Core.KeyGenerator.GenerateKey(32, 40);
         }
     }
 }

@@ -31,7 +31,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class FinishedAdd : WizardControl
     {
-        private Schedule m_schedule;
+        WizardSettingsWrapper m_wrapper;
 
         public FinishedAdd()
             : base("Ready to add backup", "You have now entered all the required data, and can now create the backup.")
@@ -39,35 +39,59 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             InitializeComponent();
 
             base.PageEnter += new PageChangeHandler(FinishedAdd_PageEnter);
+            base.PageLeave += new PageChangeHandler(FinishedAdd_PageLeave);
+        }
+
+        void FinishedAdd_PageLeave(object sender, PageChangedArgs args)
+        {
+            if (args.Direction == PageChangedDirection.Back)
+                return;
+
+            m_wrapper.RunImmediately = RunNow.Checked;
         }
 
         void FinishedAdd_PageEnter(object sender, PageChangedArgs args)
         {
-            m_schedule = (Schedule)m_settings["Schedule"];
+            m_wrapper = new WizardSettingsWrapper(m_settings);
 
             List<KeyValuePair<string, string>> strings = new List<KeyValuePair<string, string>>();
-            if (!m_schedule.ExistsInDb)
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
                 strings.Add(new KeyValuePair<string, string>("Action", "Add new backup"));
             else
                 strings.Add(new KeyValuePair<string, string>("Action", "Modify backup"));
 
-            strings.Add(new KeyValuePair<string, string>("Source folder", m_schedule.Tasks[0].SourcePath));
-            strings.Add(new KeyValuePair<string, string>("When", m_schedule.When.ToString()));
-            if (!string.IsNullOrEmpty(m_schedule.Repeat))
-                strings.Add(new KeyValuePair<string, string>("Repeat", m_schedule.Repeat));
-            if (!string.IsNullOrEmpty(m_schedule.FullAfter))
-                strings.Add(new KeyValuePair<string, string>("Full backup each", m_schedule.FullAfter));
-            if (m_schedule.KeepFull > 0)
-                strings.Add(new KeyValuePair<string, string>("Keep full backups", m_schedule.KeepFull.ToString()));
+            strings.Add(new KeyValuePair<string, string>("Source folder", m_wrapper.SourcePath));
+            strings.Add(new KeyValuePair<string, string>("When", m_wrapper.BackupTimeOffset.ToString()));
+            if (!string.IsNullOrEmpty(m_wrapper.RepeatInterval))
+                strings.Add(new KeyValuePair<string, string>("Repeat", m_wrapper.RepeatInterval));
+            if (!string.IsNullOrEmpty(m_wrapper.FullBackupInterval))
+                strings.Add(new KeyValuePair<string, string>("Full backup each", m_wrapper.FullBackupInterval));
+            if (m_wrapper.MaxFullBackups > 0)
+                strings.Add(new KeyValuePair<string, string>("Keep full backups", m_wrapper.MaxFullBackups.ToString()));
 
-            if (m_schedule.Tasks != null && m_schedule.Tasks.Count == 1)
+            strings.Add(new KeyValuePair<string, string>(null, null));
+            strings.Add(new KeyValuePair<string, string>("Destination", m_wrapper.Backend.ToString()));
+
+            switch(m_wrapper.Backend)
             {
-                Duplicati.Datamodel.Backends.IBackend backend = m_schedule.Tasks[0].Backend;
-                strings.Add(new KeyValuePair<string, string>(null, null));
-                strings.Add(new KeyValuePair<string, string>("Destination", backend.FriendlyName));
-                strings.Add(new KeyValuePair<string, string>("Destination path", backend.GetDestinationPath()));
+                case WizardSettingsWrapper.BackendType.File:
+                    FileSettings file = new FileSettings(m_wrapper);
+                    strings.Add(new KeyValuePair<string, string>("Destination path", file.Path));
+                    break;
+                case WizardSettingsWrapper.BackendType.FTP:
+                    FTPSettings ftp = new FTPSettings(m_wrapper);
+                    strings.Add(new KeyValuePair<string, string>("Destination path", ftp.Server + "/" + ftp.Path ));
+                    break;
+                case WizardSettingsWrapper.BackendType.SSH:
+                    SSHSettings ssh = new SSHSettings(m_wrapper);
+                    strings.Add(new KeyValuePair<string, string>("Destination path", ssh.Server + "/" + ssh.Path));
+                    break;
+                case WizardSettingsWrapper.BackendType.S3:
+                    S3Settings s3 = new S3Settings(m_wrapper);
+                    strings.Add(new KeyValuePair<string, string>("Destination path", s3.Path));
+                    break;
             }
-
+            
             int maxlen = 0;
             foreach (KeyValuePair<string, string> i in strings)
                 if (i.Key != null)
@@ -84,15 +108,5 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             args.TreatAsLast = true;
         }
-
-        #region IScheduleBased Members
-
-        public void Setup(Duplicati.Datamodel.Schedule schedule)
-        {
-            m_schedule = schedule;
-        }
-
-        #endregion
-
     }
 }

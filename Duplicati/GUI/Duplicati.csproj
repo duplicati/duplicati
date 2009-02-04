@@ -70,6 +70,12 @@
     <Compile Include="HelperControls\DurationEditor.Designer.cs">
       <DependentUpon>DurationEditor.cs</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\FilterEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\FilterEditor.Designer.cs">
+      <DependentUpon>FilterEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="LogViewer.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -155,17 +161,17 @@
     <Compile Include="Wizard pages\Add backup\AdvancedOptions.Designer.cs">
       <DependentUpon>AdvancedOptions.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Add backup\FilterDialog.cs">
+    <Compile Include="HelperControls\FilterDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Wizard pages\Add backup\FilterDialog.Designer.cs">
+    <Compile Include="HelperControls\FilterDialog.Designer.cs">
       <DependentUpon>FilterDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Add backup\FilterEditor.cs">
+    <Compile Include="Wizard pages\Add backup\EditFilters.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Wizard pages\Add backup\FilterEditor.Designer.cs">
-      <DependentUpon>FilterEditor.cs</DependentUpon>
+    <Compile Include="Wizard pages\Add backup\EditFilters.Designer.cs">
+      <DependentUpon>EditFilters.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Add backup\FinishedAdd.cs">
       <SubType>UserControl</SubType>
@@ -287,6 +293,7 @@
     <Compile Include="Wizard pages\SelectBackup.Designer.cs">
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\WizardSettingsWrapper.cs" />
     <Compile Include="WizardHandler.cs" />
     <Compile Include="WorkerThread.cs" />
   </ItemGroup>
@@ -350,6 +357,10 @@
       <SubType>Designer</SubType>
       <DependentUpon>DurationEditor.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\FilterEditor.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FilterEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="LogViewer.resx">
       <SubType>Designer</SubType>
       <DependentUpon>LogViewer.cs</DependentUpon>
@@ -409,13 +420,13 @@
       <SubType>Designer</SubType>
       <DependentUpon>AdvancedOptions.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Add backup\FilterDialog.resx">
+    <EmbeddedResource Include="HelperControls\FilterDialog.resx">
       <SubType>Designer</SubType>
       <DependentUpon>FilterDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Add backup\FilterEditor.resx">
+    <EmbeddedResource Include="Wizard pages\Add backup\EditFilters.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>FilterEditor.cs</DependentUpon>
+      <DependentUpon>EditFilters.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\FinishedAdd.resx">
       <SubType>Designer</SubType>

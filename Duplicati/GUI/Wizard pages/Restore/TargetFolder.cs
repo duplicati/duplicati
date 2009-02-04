@@ -37,22 +37,14 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             InitializeComponent();
 
             base.PageLeave += new PageChangeHandler(TargetFolder_PageLeave);
-            base.PageEnter += new PageChangeHandler(TargetFolder_PageEnter);
-        }
-
-        void TargetFolder_PageEnter(object sender, PageChangedArgs args)
-        {
-            if (m_settings.ContainsKey("Restore:TargetPath"))
-                TargetPath.Text = (string)m_settings["Restore:TargetPath"];
         }
 
         void TargetFolder_PageLeave(object sender, PageChangedArgs args)
         {
-            string targetpath = TargetPath.Text;
-            m_settings["Restore:TargetPath"] = targetpath;
-
             if (args.Direction == PageChangedDirection.Back)
                 return;
+
+            string targetpath = TargetPath.Text;
 
             try
             {
@@ -105,6 +97,11 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 args.Cancel = true;
                 return;
             }
+
+            WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
+            wrapper.RestorePath = targetpath;
+            //TODO: Enable this
+            wrapper.RestoreFilter = "";
 
         }
 
