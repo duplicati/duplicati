@@ -80,9 +80,12 @@ namespace Duplicati.GUI.Wizard_pages
                 case WizardSettingsWrapper.MainAction.RunNow:
                     args.NextPage = new RunNow.RunNowFinished();
                     break;
+                default:
+                    args.NextPage = null;
+                    args.Cancel = true;
+                    return;
             }
 
-            args.NextPage = new Add_backup.SelectName();
         }
 
         public override string Title

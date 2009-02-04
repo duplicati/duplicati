@@ -31,19 +31,28 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 {
     public partial class FinishedRestore : WizardControl
     {
+        private WizardSettingsWrapper m_wrapper;
+
         public FinishedRestore()
             : base("Ready to restore files", "Duplicati is now ready to restore your files.")
         {
             InitializeComponent();
+
+            base.PageEnter += new PageChangeHandler(FinishedRestore_PageEnter);
         }
 
-        public void Setup(Schedule schedule, DateTime backup, string target)
+        void FinishedRestore_PageEnter(object sender, PageChangedArgs args)
         {
-            Summary.Text = 
+            m_wrapper = new WizardSettingsWrapper(m_settings);
+
+            Summary.Text =
                 "Action: Restore backup\r\n" +
-                "Backup: " + schedule.Name + "\r\n" +
-                "Date:   " + (backup.Ticks == 0 ? "most recent" : backup.ToString()) + "\r\n" +
-                "Folder: " + target + "\r\n";
+                "Backup: " + m_wrapper.ScheduleName + "\r\n" +
+                "Date:   " + (m_wrapper.RestoreTime.Ticks == 0 ? "most recent" : m_wrapper.RestoreTime.ToString()) + "\r\n" +
+                "Folder: " + m_wrapper.RestorePath + "\r\n";
+
+            args.TreatAsLast = true;
         }
+
     }
 }

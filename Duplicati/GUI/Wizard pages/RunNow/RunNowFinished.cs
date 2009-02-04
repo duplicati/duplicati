@@ -57,6 +57,7 @@ namespace Duplicati.GUI.Wizard_pages.RunNow
             Summary.Text =
                 "Action: Run backup now\r\n" +
                 "Name:   " + m_wrapper.ScheduleName;
+            args.TreatAsLast = true;
         }
 
         public bool ForceFullBackup { get { return ForceFull.Checked; } }

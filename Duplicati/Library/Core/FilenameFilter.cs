@@ -197,6 +197,8 @@ namespace Duplicati.Library.Core
         public bool ShouldInclude(string basepath, string filename)
         {
             basepath = Core.Utility.AppendDirSeperator(basepath);
+            if (!filename.StartsWith(basepath))
+                return false;
 
             bool include = true;
             string relpath = filename.Substring(basepath.Length);
