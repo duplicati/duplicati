@@ -157,6 +157,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 CleanupDuration.Value = m_wrapper.BackupExpireInterval;
                 EnableCleanupDuration.Checked = !string.IsNullOrEmpty(m_wrapper.BackupExpireInterval);
+                if (!EnableCleanupDuration.Checked)
+                    CleanupDuration.Value = m_wrapper.FullBackupInterval;
             }
 
             if (m_settings.ContainsKey("Incremental:WarnedFull"))

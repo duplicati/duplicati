@@ -79,7 +79,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!m_valuesAutoLoaded)
             {
-                EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword);
+                EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add;
                 Password.Text = m_wrapper.BackupPassword;
             }
 
@@ -94,7 +94,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void EnablePassword_CheckedChanged(object sender, EventArgs e)
         {
-            Password.Enabled = PasswordHelptext.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
+            Password.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
             m_warnedNoPassword = false;
         }
 

@@ -139,6 +139,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.Controls.Add(this.label1);
             this.Name = "MainPage";
             this.Size = new System.Drawing.Size(506, 242);
+            this.Load += new System.EventHandler(this.MainPage_Load);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);

@@ -39,6 +39,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             this.BackupFolder.Location = new System.Drawing.Point(24, 80);
             this.BackupFolder.Name = "BackupFolder";
+            this.BackupFolder.SelectedBackup = null;
+            this.BackupFolder.SelectedFolder = "";
             this.BackupFolder.Size = new System.Drawing.Size(440, 120);
             this.BackupFolder.TabIndex = 0;
             // 
@@ -88,6 +90,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.BackupFolder);
             this.Name = "SelectName";
             this.Size = new System.Drawing.Size(506, 242);
+            this.Load += new System.EventHandler(this.SelectName_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

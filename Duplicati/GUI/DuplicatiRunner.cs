@@ -70,10 +70,10 @@ namespace Duplicati.GUI
 
             if (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup)
             {
-                if (task.Schedule.KeepFull > 0)
-                    ExecuteTask(new RemoveAllButNFullTask(task.Schedule, (int)task.Schedule.KeepFull));
-                if (!string.IsNullOrEmpty(task.Schedule.KeepTime))
-                    ExecuteTask(new RemoveOlderThanTask(task.Schedule, task.Schedule.KeepTime));
+                if (task.Schedule.Task.KeepFull > 0)
+                    ExecuteTask(new RemoveAllButNFullTask(task.Schedule, (int)task.Schedule.Task.KeepFull));
+                if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
+                    ExecuteTask(new RemoveOlderThanTask(task.Schedule, task.Schedule.Task.KeepTime));
             }
         }
 

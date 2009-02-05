@@ -13,6 +13,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     {
         private WizardSettingsWrapper m_wrapper;
 
+        private readonly string[] THREAD_PRIORITIES = new string[] {
+            System.Threading.ThreadPriority.Highest.ToString(),
+            System.Threading.ThreadPriority.AboveNormal.ToString(),
+            System.Threading.ThreadPriority.Normal.ToString(),
+            System.Threading.ThreadPriority.BelowNormal.ToString(),
+            System.Threading.ThreadPriority.Lowest.ToString()
+        };
+
         public ThrottleOptions()
             : base("Select how to limit the backup", "On this page you may select limits that prevent the backup procedure from using too many resources")
         {
@@ -20,19 +28,31 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             base.PageLeave += new System.Windows.Forms.Wizard.PageChangeHandler(ThrottleOptions_PageLeave);
             base.PageEnter += new System.Windows.Forms.Wizard.PageChangeHandler(ThrottleOptions_PageEnter);
+            base.PageDisplay += new System.Windows.Forms.Wizard.PageChangeHandler(ThrottleOptions_PageDisplay);
+        }
+
+        void ThrottleOptions_PageDisplay(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
+        {
+            //Reload due to annoying bug with the numerics
+            if (m_valuesAutoLoaded)
+                base.LoadDialogSettings();
         }
 
         private void LoadItem(string name, int defaultSuffix, string value)
         {
+            ComboBox combo = (ComboBox)this.Controls[name + "LimitSuffix"];
+            NumericUpDown number = (NumericUpDown)this.Controls[name + "LimitNumber"];
+
             if (this.Controls.ContainsKey(name + "LimitEnabled"))
             {
                 ((CheckBox)this.Controls[name + "LimitEnabled"]).Checked = !string.IsNullOrEmpty(value) && value != "0";
                 if (!((CheckBox)this.Controls[name + "LimitEnabled"]).Checked)
+                {
+                    number.Value = 0;
+                    combo.SelectedIndex = defaultSuffix;
                     return;
+                }
             }
-
-            ComboBox combo = (ComboBox)this.Controls[name + "LimitSuffix"];
-            NumericUpDown number = (NumericUpDown)this.Controls[name + "LimitNumber"];
 
             long size = 0;
 
@@ -69,6 +89,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 LoadItem("Download", 1, m_wrapper.DownloadSpeedLimit);
                 LoadItem("Backup", 2, m_wrapper.BackupSizeLimit);
                 LoadItem("VolumeSize", 2, m_wrapper.VolumeSize);
+
+                AsyncEnabled.Checked = m_wrapper.AsyncTransfer;
+                ThreadPriority.SelectedIndex = Array.IndexOf<string>(THREAD_PRIORITIES, Library.Core.Utility.ParsePriority(m_wrapper.ThreadPriority).ToString());
+                ThreadPriorityEnabled.Checked = !string.IsNullOrEmpty(m_wrapper.ThreadPriority); 
             }
         }
 
@@ -93,6 +117,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                "";
 
             m_wrapper.VolumeSize = VolumeSizeLimitNumber.Value.ToString() + VolumeSizeLimitSuffix.Text;
+            m_wrapper.AsyncTransfer = AsyncEnabled.Checked;
+            m_wrapper.ThreadPriority = ThreadPriorityEnabled.Enabled ? THREAD_PRIORITIES[ThreadPriority.SelectedIndex] : "";
 
             if ((bool)m_settings["Advanced:Filters"])
                 args.NextPage = new Wizard_pages.Add_backup.EditFilters();
@@ -119,6 +145,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private void ThreadPriorityEnabled_CheckedChanged(object sender, EventArgs e)
         {
             ThreadPriority.Enabled = ThreadPriorityEnabled.Checked;
+        }
+
+        private void VolumeSizeLimitNumber_ValueChanged(object sender, EventArgs e)
+        {
+            int a = 0;
         }
     }
 }

@@ -31,20 +31,6 @@ namespace Duplicati.Datamodel
 		private System.String m_Repeat = "";
 		[DatabaseField("Weekdays")]
 		private System.String m_Weekdays = "";
-		[DatabaseField("KeepFull")]
-		private System.Int64 m_KeepFull = long.MinValue;
-		[DatabaseField("KeepTime")]
-		private System.String m_KeepTime = "";
-		[DatabaseField("FullAfter")]
-		private System.String m_FullAfter = "";
-		[Default(""), DatabaseField("DownloadBandwidth")]
-		private System.String m_DownloadBandwidth = "";
-		[Default(""), DatabaseField("UploadBandwidth")]
-		private System.String m_UploadBandwidth = "";
-		[Default(""), DatabaseField("VolumeSize")]
-		private System.String m_VolumeSize = "";
-		[DatabaseField("MaxUploadsize")]
-		private System.String m_MaxUploadsize = "";
 #endregion
 
 #region " properties "
@@ -85,59 +71,15 @@ namespace Duplicati.Datamodel
 			set{object oldvalue = m_Weekdays;OnBeforeDataChange(this, "Weekdays", oldvalue, value);m_Weekdays = value;OnAfterDataChange(this, "Weekdays", oldvalue, value);}
 		}
 
-		public System.Int64 KeepFull
-		{
-			get{return m_KeepFull;}
-			set{object oldvalue = m_KeepFull;OnBeforeDataChange(this, "KeepFull", oldvalue, value);m_KeepFull = value;OnAfterDataChange(this, "KeepFull", oldvalue, value);}
-		}
-
-		public System.String KeepTime
-		{
-			get{return m_KeepTime;}
-			set{object oldvalue = m_KeepTime;OnBeforeDataChange(this, "KeepTime", oldvalue, value);m_KeepTime = value;OnAfterDataChange(this, "KeepTime", oldvalue, value);}
-		}
-
-		public System.String FullAfter
-		{
-			get{return m_FullAfter;}
-			set{object oldvalue = m_FullAfter;OnBeforeDataChange(this, "FullAfter", oldvalue, value);m_FullAfter = value;OnAfterDataChange(this, "FullAfter", oldvalue, value);}
-		}
-
-		public System.String DownloadBandwidth
-		{
-			get{return m_DownloadBandwidth;}
-			set{object oldvalue = m_DownloadBandwidth;OnBeforeDataChange(this, "DownloadBandwidth", oldvalue, value);m_DownloadBandwidth = value;OnAfterDataChange(this, "DownloadBandwidth", oldvalue, value);}
-		}
-
-		public System.String UploadBandwidth
-		{
-			get{return m_UploadBandwidth;}
-			set{object oldvalue = m_UploadBandwidth;OnBeforeDataChange(this, "UploadBandwidth", oldvalue, value);m_UploadBandwidth = value;OnAfterDataChange(this, "UploadBandwidth", oldvalue, value);}
-		}
-
-		public System.String VolumeSize
-		{
-			get{return m_VolumeSize;}
-			set{object oldvalue = m_VolumeSize;OnBeforeDataChange(this, "VolumeSize", oldvalue, value);m_VolumeSize = value;OnAfterDataChange(this, "VolumeSize", oldvalue, value);}
-		}
-
-		public System.String MaxUploadsize
-		{
-			get{return m_MaxUploadsize;}
-			set{object oldvalue = m_MaxUploadsize;OnBeforeDataChange(this, "MaxUploadsize", oldvalue, value);m_MaxUploadsize = value;OnAfterDataChange(this, "MaxUploadsize", oldvalue, value);}
-		}
-
 #endregion
 
 #region " referenced properties "
 
 		[Affects(typeof(Task))]
-		public System.Collections.Generic.IList<Task> Tasks
+		public Task Task
 		{
-			get
-			{
-				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<Task>("TaskSchedule", this);
-			}
+			get{ return ((DataFetcherWithRelations)m_dataparent).GetRelatedObject<Task>("TaskSchedule", this); }
+			set{ ((DataFetcherWithRelations)m_dataparent).SetRelatedObject("TaskSchedule", this, value); }
 		}
 
 #endregion

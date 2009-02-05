@@ -72,6 +72,105 @@
           <IgnoreWithInsert>false</IgnoreWithInsert>
           <Index>false</Index>
         </Column>
+        <Column>
+          <Typename>System.Int64</Typename>
+          <Name>KeepFull</Name>
+          <Fieldname>KeepFull</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>KeepTime</Name>
+          <Fieldname>KeepTime</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>MaxUploadsize</Name>
+          <Fieldname>MaxUploadsize</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>UploadBandwidth</Name>
+          <Fieldname>UploadBandwidth</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>DownloadBandwidth</Name>
+          <Fieldname>DownloadBandwidth</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>VolumeSize</Name>
+          <Fieldname>VolumeSize</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>FullAfter</Name>
+          <Fieldname>FullAfter</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>ThreadPriority</Name>
+          <Fieldname>ThreadPriority</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.Boolean</Typename>
+          <Name>AsyncTransfer</Name>
+          <Fieldname>AsyncTransfer</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
       </Columns>
       <Ignore>false</Ignore>
       <Relations>
@@ -79,10 +178,10 @@
           <Name>TaskSchedule</Name>
           <Databasefield>ScheduleID</Databasefield>
           <Propertyname>Schedule</Propertyname>
-          <Type>OneToMany</Type>
+          <Type>OneToOne</Type>
           <ReverseTablename>Schedule</ReverseTablename>
           <ReverseDatabasefield>ID</ReverseDatabasefield>
-          <ReversePropertyname>Tasks</ReversePropertyname>
+          <ReversePropertyname>Task</ReversePropertyname>
           <Tablename>Task</Tablename>
         </Relation>
       </Relations>
@@ -151,86 +250,6 @@
           <Typename>System.String</Typename>
           <Name>Weekdays</Name>
           <Fieldname>Weekdays</Fieldname>
-          <Autonumber>false</Autonumber>
-          <PrimaryKey>false</PrimaryKey>
-          <IgnoreWithSelect>false</IgnoreWithSelect>
-          <IgnoreWithUpdate>false</IgnoreWithUpdate>
-          <IgnoreWithInsert>false</IgnoreWithInsert>
-          <Index>false</Index>
-        </Column>
-        <Column>
-          <Typename>System.Int64</Typename>
-          <Name>KeepFull</Name>
-          <Fieldname>KeepFull</Fieldname>
-          <Autonumber>false</Autonumber>
-          <PrimaryKey>false</PrimaryKey>
-          <IgnoreWithSelect>false</IgnoreWithSelect>
-          <IgnoreWithUpdate>false</IgnoreWithUpdate>
-          <IgnoreWithInsert>false</IgnoreWithInsert>
-          <Index>false</Index>
-        </Column>
-        <Column>
-          <Typename>System.String</Typename>
-          <Name>KeepTime</Name>
-          <Fieldname>KeepTime</Fieldname>
-          <Autonumber>false</Autonumber>
-          <PrimaryKey>false</PrimaryKey>
-          <IgnoreWithSelect>false</IgnoreWithSelect>
-          <IgnoreWithUpdate>false</IgnoreWithUpdate>
-          <IgnoreWithInsert>false</IgnoreWithInsert>
-          <Index>false</Index>
-        </Column>
-        <Column>
-          <Typename>System.String</Typename>
-          <Name>FullAfter</Name>
-          <Fieldname>FullAfter</Fieldname>
-          <Autonumber>false</Autonumber>
-          <PrimaryKey>false</PrimaryKey>
-          <IgnoreWithSelect>false</IgnoreWithSelect>
-          <IgnoreWithUpdate>false</IgnoreWithUpdate>
-          <IgnoreWithInsert>false</IgnoreWithInsert>
-          <Index>false</Index>
-        </Column>
-        <Column>
-          <Typename>System.String</Typename>
-          <Name>DownloadBandwidth</Name>
-          <Fieldname>DownloadBandwidth</Fieldname>
-          <Autonumber>false</Autonumber>
-          <PrimaryKey>false</PrimaryKey>
-          <Default xsi:type="xsd:string" />
-          <IgnoreWithSelect>false</IgnoreWithSelect>
-          <IgnoreWithUpdate>false</IgnoreWithUpdate>
-          <IgnoreWithInsert>false</IgnoreWithInsert>
-          <Index>false</Index>
-        </Column>
-        <Column>
-          <Typename>System.String</Typename>
-          <Name>UploadBandwidth</Name>
-          <Fieldname>UploadBandwidth</Fieldname>
-          <Autonumber>false</Autonumber>
-          <PrimaryKey>false</PrimaryKey>
-          <Default xsi:type="xsd:string" />
-          <IgnoreWithSelect>false</IgnoreWithSelect>
-          <IgnoreWithUpdate>false</IgnoreWithUpdate>
-          <IgnoreWithInsert>false</IgnoreWithInsert>
-          <Index>false</Index>
-        </Column>
-        <Column>
-          <Typename>System.String</Typename>
-          <Name>VolumeSize</Name>
-          <Fieldname>VolumeSize</Fieldname>
-          <Autonumber>false</Autonumber>
-          <PrimaryKey>false</PrimaryKey>
-          <Default xsi:type="xsd:string" />
-          <IgnoreWithSelect>false</IgnoreWithSelect>
-          <IgnoreWithUpdate>false</IgnoreWithUpdate>
-          <IgnoreWithInsert>false</IgnoreWithInsert>
-          <Index>false</Index>
-        </Column>
-        <Column>
-          <Typename>System.String</Typename>
-          <Name>MaxUploadsize</Name>
-          <Fieldname>MaxUploadsize</Fieldname>
           <Autonumber>false</Autonumber>
           <PrimaryKey>false</PrimaryKey>
           <IgnoreWithSelect>false</IgnoreWithSelect>

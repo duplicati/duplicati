@@ -4,7 +4,16 @@ CREATE TABLE "Task" (
     "Encryptionkey" TEXT NULL,
     "Signaturekey" TEXT NULL,
     "SourcePath" TEXT NULL,
-    "ScheduleID" INTEGER NULL
+    "ScheduleID" INTEGER NULL,
+    "KeepFull" INTEGER NULL,
+    "KeepTime" TEXT NULL,
+    "MaxUploadsize" TEXT NULL,
+    "UploadBandwidth" TEXT NULL,
+    "DownloadBandwidth" TEXT NULL,
+    "VolumeSize" TEXT NULL,
+	"FullAfter" TEXT NULL,
+	"ThreadPriority" TEXT NULL,
+	"AsyncTransfer" BOOLEAN NULL
 );
 
 CREATE TABLE "Schedule" (
@@ -13,14 +22,7 @@ CREATE TABLE "Schedule" (
     "Path" TEXT NULL,
     "When" DATETIME NULL,
     "Repeat" TEXT NULL,
-    "Weekdays" TEXT NULL,
-    "KeepFull" INTEGER NULL,
-    "KeepTime" TEXT NULL,
-    "MaxUploadsize" TEXT NULL,
-    "UploadBandwidth" TEXT NULL,
-    "DownloadBandwidth" TEXT NULL,
-    "VolumeSize" TEXT NULL,
-	"FullAfter" TEXT
+    "Weekdays" TEXT NULL
 );
 
 
@@ -75,4 +77,4 @@ CREATE TABLE "TaskFilter" (
 );
 
 
-INSERT INTO "Version" ("Version") VALUES (2);
+INSERT INTO "Version" ("Version") VALUES (0);

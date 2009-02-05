@@ -96,8 +96,16 @@ namespace Duplicati.GUI
             else if (m_form.CurrentPage is Wizard_pages.Delete_backup.DeleteFinished)
             {
                 Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
-                Program.DataConnection.DeleteObject(schedule);
-                Program.DataConnection.Commit(schedule);
+                List<IDataClass> items = new List<IDataClass>();
+                items.Add(schedule);
+                items.Add(schedule.Task);
+                foreach(TaskSetting ts in schedule.Task.TaskSettings)
+                    items.Add(ts);
+                foreach (TaskFilter tf in schedule.Task.Filters)
+                    items.Add(tf);
+                foreach(IDataClass o in items)
+                    Program.DataConnection.DeleteObject(o);
+                Program.DataConnection.Commit(items.ToArray());
             }
         }
 

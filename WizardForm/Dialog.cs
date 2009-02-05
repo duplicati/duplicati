@@ -130,8 +130,6 @@ namespace System.Windows.Forms.Wizard
             PageChangedArgs args = new PageChangedArgs(this, this.Pages.IndexOf(page) == this.Pages.Count - 1, PageChangedDirection.Next);
 
             page.Enter(this, args);
-            if (page.Control as IControl != null)
-                (page.Control as IControl).Displayed(this);
 
             InfoPanel.Visible = !page.FullSize;
             TitleLabel.Text = page.Title;
@@ -142,7 +140,14 @@ namespace System.Windows.Forms.Wizard
             page.Control.Dock = DockStyle.Fill;
             m_isLastPage = args.TreatAsLast;
 
+            //Not sure this works under Mono...
+            try { this.Icon = System.Drawing.Icon.FromHandle(new System.Drawing.Bitmap(PageIcon.Image).GetHicon()); }
+            catch { }
+
             UpdateButtons();
+
+            page.Display(this, args);
+
         }
 
         private void BackBtn_Click(object sender, EventArgs e)
@@ -206,8 +211,9 @@ namespace System.Windows.Forms.Wizard
             if (CurrentPage != null)
                 m_visited.Push(CurrentPage);
             m_isLastPage = args.TreatAsLast;
-            CurrentPage = args.NextPage;
             UpdateButtons();
+
+            CurrentPage = args.NextPage;
         }
 
         private void CancelBtn_Click(object sender, EventArgs e)

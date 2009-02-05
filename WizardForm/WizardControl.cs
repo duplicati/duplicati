@@ -39,6 +39,7 @@ namespace System.Windows.Forms.Wizard
 
         protected event PageChangeHandler PageEnter;
         protected event PageChangeHandler PageLeave;
+        protected event PageChangeHandler PageDisplay;
 
         //Windows forms designer support
         private WizardControl()
@@ -88,6 +89,12 @@ namespace System.Windows.Forms.Wizard
         public virtual bool FullSize
         {
             get { return m_fullSize; }
+        }
+
+        void IWizardControl.Display(IWizardForm owner, PageChangedArgs args)
+        {
+            if (PageDisplay != null)
+                PageDisplay(owner, args);
         }
 
         void IWizardControl.Enter(IWizardForm owner, PageChangedArgs args)

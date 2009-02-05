@@ -72,6 +72,14 @@ namespace Duplicati.Datamodel
 
             if (this.Filters.Count > 0)
                 options["filter"] = this.EncodedFilter; ;
+            if (!string.IsNullOrEmpty(this.MaxUploadsize))
+                options["totalsize"] = this.MaxUploadsize;
+            if (!string.IsNullOrEmpty(this.VolumeSize))
+                options["volsize"] = this.VolumeSize;
+            if (!string.IsNullOrEmpty(this.DownloadBandwidth))
+                options["max-download-pr-second"] = this.DownloadBandwidth;
+            if (!string.IsNullOrEmpty(this.UploadBandwidth))
+                options["max-upload-pr-second"] = this.UploadBandwidth;
         }
 
         public string EncodedFilter
@@ -95,6 +103,7 @@ namespace Duplicati.Datamodel
                     TaskFilter tf = this.DataParent.Add<TaskFilter>();
                     tf.Filter = f.Value;
                     tf.Include = f.Key;
+                    filters.Add(tf);
                 }
 
                 this.SortedFilters = filters.ToArray();

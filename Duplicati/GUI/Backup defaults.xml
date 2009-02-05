@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<settings>
+  <FullBackupInterval>1M</FullBackupInterval>
+  <MaxFullBackups>4</MaxFullBackups>
+  <BackupExpireInterval></BackupExpireInterval>
+  <RepeatInterval>1D</RepeatInterval>
+  <VolumeSize>5MB</VolumeSize>
+  <BackupTimeOffset>13h</BackupTimeOffset>
+</settings>

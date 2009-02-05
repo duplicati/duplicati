@@ -335,5 +335,36 @@ namespace Duplicati.Library.Core
             else
                 return string.Format("{0} bytes", size);
         }
+
+        public static System.Threading.ThreadPriority ParsePriority(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.Trim().Length == 0)
+                return System.Threading.ThreadPriority.Normal;
+
+            switch (value.ToLower().Trim())
+            {
+                case "+2":
+                case "high":
+                case "highest":
+                    return System.Threading.ThreadPriority.Highest;
+                case "+1":
+                case "abovenormal":
+                case "above normal":
+                    return System.Threading.ThreadPriority.AboveNormal;
+
+                case "-1":
+                case "belownormal":
+                case "below normal":
+                    return System.Threading.ThreadPriority.BelowNormal;
+                case "-2":
+                case "low":
+                case "lowest":
+                case "idle":
+                    return System.Threading.ThreadPriority.Lowest;
+
+                default:
+                    return System.Threading.ThreadPriority.Normal;
+            }
+        }
     }
 }

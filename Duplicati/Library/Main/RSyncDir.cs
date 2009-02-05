@@ -266,6 +266,7 @@ namespace Duplicati.Library.Main.RSync
                     bs.SizeOfAddedFiles = m_addedfilessize;
                     bs.SizeOfExaminedFiles = m_examinedfilesize;
                     bs.UnprocessedFiles = m_unproccesed.Count;
+                    bs.AddedFolders = m_newfolders.Count;
                 }
 
                 m_finalized = true;

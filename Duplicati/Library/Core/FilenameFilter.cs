@@ -201,7 +201,10 @@ namespace Duplicati.Library.Core
                 return false;
 
             bool include = true;
-            string relpath = filename.Substring(basepath.Length);
+            //All paths start with a slash, because this eases filter creation
+            //Eg. filter "\Dir\" would only match folders with the name "Dir", where "Dir\" would also match "\MyDir\"
+            //If the leading slash/backslash is missing, it becomes difficult to prevent partial matches.
+            string relpath = filename.Substring(basepath.Length - 1);
             foreach (KeyValuePair<bool, Regex> filter in m_filters)
                 if (filter.Key != include)
                     if (filter.Value.Match(relpath).Success)

@@ -188,8 +188,8 @@ namespace Duplicati.GUI.HelperControls
             Schedule s;
             lock(Program.MainLock)
                 s = m_connection.Add<Schedule>();
-            s.FullAfter = "6M";
-            s.KeepFull = 4;
+            s.Task.FullAfter = "6M";
+            s.Task.KeepFull = 4;
             s.Path = string.IsNullOrEmpty(name) ? "New backup" : name;
             s.Repeat = "1W";
             s.Weekdays = "sun,mon,tue,wed,thu,fri,sat";

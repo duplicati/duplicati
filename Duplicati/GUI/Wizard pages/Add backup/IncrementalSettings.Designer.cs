@@ -131,6 +131,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // CleanupDuration
             // 
+            this.CleanupDuration.Enabled = false;
             this.CleanupDuration.Location = new System.Drawing.Point(248, 160);
             this.CleanupDuration.Name = "CleanupDuration";
             this.CleanupDuration.Size = new System.Drawing.Size(221, 21);

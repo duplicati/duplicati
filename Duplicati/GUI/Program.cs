@@ -153,6 +153,7 @@ namespace Duplicati.GUI
 
             if (count == 0)
             {
+                //TODO: shows the wrong icon... Should run under Application.Run() ...
                 MessageBox.Show("Since this is the first time Duplicati is being run, the Wizard will now be shown.\r\nIf you wish to access the wizard again at some other time, you can right click the Duplicati icon in your system tray.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 ShowWizard();
             }

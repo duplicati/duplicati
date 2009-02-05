@@ -55,18 +55,13 @@ namespace Duplicati.GUI.Service_controls
             {
                 m_isUpdating = true;
                 m_schedule = schedule;
-                if (m_schedule.Tasks.Count == 0)
+                if (m_schedule.Task == null)
                 {
                     m_task = m_schedule.DataParent.Add<Task>();
-                    m_schedule.Tasks.Add(m_task);
+                    m_schedule.Task =  m_task;
                 }
-                else if (m_schedule.Tasks.Count == 1)
-                    m_task = m_schedule.Tasks[0];
                 else
-                {
-                    MessageBox.Show(this, "This schedule is using a feature that is not supported by the editor. If you save this setup, the schedule may be damaged", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    m_task = m_schedule.Tasks[0];
-                }
+                    m_task = m_schedule.Task;
 
                 if (!m_task.ExistsInDb)
                 {

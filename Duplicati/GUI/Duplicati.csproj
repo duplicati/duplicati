@@ -508,9 +508,8 @@
       <SubType>Designer</SubType>
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </EmbeddedResource>
-    <Content Include="Database schema\1.Throttle options.sql" />
-    <EmbeddedResource Include="Database schema\2.Filter support.sql" />
-    <Content Include="TrayUnknown.ico" />
+    <EmbeddedResource Include="Backup defaults.xml" />
+    <EmbeddedResource Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />

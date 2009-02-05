@@ -31,6 +31,24 @@ namespace Duplicati.Datamodel
 		private System.String m_SourcePath = "";
 		[Relation("TaskSchedule", typeof(Schedule), "ID"), DatabaseField("ScheduleID")]
 		private System.Int64 m_ScheduleID = long.MinValue;
+		[DatabaseField("KeepFull")]
+		private System.Int64 m_KeepFull = long.MinValue;
+		[DatabaseField("KeepTime")]
+		private System.String m_KeepTime = "";
+		[DatabaseField("MaxUploadsize")]
+		private System.String m_MaxUploadsize = "";
+		[DatabaseField("UploadBandwidth")]
+		private System.String m_UploadBandwidth = "";
+		[DatabaseField("DownloadBandwidth")]
+		private System.String m_DownloadBandwidth = "";
+		[DatabaseField("VolumeSize")]
+		private System.String m_VolumeSize = "";
+		[DatabaseField("FullAfter")]
+		private System.String m_FullAfter = "";
+		[DatabaseField("ThreadPriority")]
+		private System.String m_ThreadPriority = "";
+		[DatabaseField("AsyncTransfer")]
+		private System.Boolean m_AsyncTransfer = false;
 #endregion
 
 #region " properties "
@@ -69,6 +87,60 @@ namespace Duplicati.Datamodel
 		{
 			get{return m_ScheduleID;}
 			set{object oldvalue = m_ScheduleID;OnBeforeDataChange(this, "ScheduleID", oldvalue, value);m_ScheduleID = value;OnAfterDataChange(this, "ScheduleID", oldvalue, value);}
+		}
+
+		public System.Int64 KeepFull
+		{
+			get{return m_KeepFull;}
+			set{object oldvalue = m_KeepFull;OnBeforeDataChange(this, "KeepFull", oldvalue, value);m_KeepFull = value;OnAfterDataChange(this, "KeepFull", oldvalue, value);}
+		}
+
+		public System.String KeepTime
+		{
+			get{return m_KeepTime;}
+			set{object oldvalue = m_KeepTime;OnBeforeDataChange(this, "KeepTime", oldvalue, value);m_KeepTime = value;OnAfterDataChange(this, "KeepTime", oldvalue, value);}
+		}
+
+		public System.String MaxUploadsize
+		{
+			get{return m_MaxUploadsize;}
+			set{object oldvalue = m_MaxUploadsize;OnBeforeDataChange(this, "MaxUploadsize", oldvalue, value);m_MaxUploadsize = value;OnAfterDataChange(this, "MaxUploadsize", oldvalue, value);}
+		}
+
+		public System.String UploadBandwidth
+		{
+			get{return m_UploadBandwidth;}
+			set{object oldvalue = m_UploadBandwidth;OnBeforeDataChange(this, "UploadBandwidth", oldvalue, value);m_UploadBandwidth = value;OnAfterDataChange(this, "UploadBandwidth", oldvalue, value);}
+		}
+
+		public System.String DownloadBandwidth
+		{
+			get{return m_DownloadBandwidth;}
+			set{object oldvalue = m_DownloadBandwidth;OnBeforeDataChange(this, "DownloadBandwidth", oldvalue, value);m_DownloadBandwidth = value;OnAfterDataChange(this, "DownloadBandwidth", oldvalue, value);}
+		}
+
+		public System.String VolumeSize
+		{
+			get{return m_VolumeSize;}
+			set{object oldvalue = m_VolumeSize;OnBeforeDataChange(this, "VolumeSize", oldvalue, value);m_VolumeSize = value;OnAfterDataChange(this, "VolumeSize", oldvalue, value);}
+		}
+
+		public System.String FullAfter
+		{
+			get{return m_FullAfter;}
+			set{object oldvalue = m_FullAfter;OnBeforeDataChange(this, "FullAfter", oldvalue, value);m_FullAfter = value;OnAfterDataChange(this, "FullAfter", oldvalue, value);}
+		}
+
+		public System.String ThreadPriority
+		{
+			get{return m_ThreadPriority;}
+			set{object oldvalue = m_ThreadPriority;OnBeforeDataChange(this, "ThreadPriority", oldvalue, value);m_ThreadPriority = value;OnAfterDataChange(this, "ThreadPriority", oldvalue, value);}
+		}
+
+		public System.Boolean AsyncTransfer
+		{
+			get{return m_AsyncTransfer;}
+			set{object oldvalue = m_AsyncTransfer;OnBeforeDataChange(this, "AsyncTransfer", oldvalue, value);m_AsyncTransfer = value;OnAfterDataChange(this, "AsyncTransfer", oldvalue, value);}
 		}
 
 #endregion

@@ -83,19 +83,19 @@ namespace Duplicati.GUI.Service_controls
 
                 UpdateCompositeDays();
 
-                KeepNFullCheckbox.Checked = m_schedule.KeepFull > 0;
-                CleanupFullCount.Value = Math.Max(Math.Min(m_schedule.KeepFull, CleanupFullCount.Maximum), CleanupFullCount.Minimum);
+                KeepNFullCheckbox.Checked = m_schedule.Task.KeepFull > 0;
+                CleanupFullCount.Value = Math.Max(Math.Min(m_schedule.Task.KeepFull, CleanupFullCount.Maximum), CleanupFullCount.Minimum);
 
-                KeepIntervalCheckbox.Checked = !string.IsNullOrEmpty(m_schedule.KeepTime);
-                CleanupDuration.Text = m_schedule.KeepTime;
+                KeepIntervalCheckbox.Checked = !string.IsNullOrEmpty(m_schedule.Task.KeepTime);
+                CleanupDuration.Text = m_schedule.Task.KeepTime;
 
-                ForceFullBackup.Checked = !string.IsNullOrEmpty(m_schedule.FullAfter);
-                ForceFullBackupTimespan.Text = m_schedule.FullAfter;
+                ForceFullBackup.Checked = !string.IsNullOrEmpty(m_schedule.Task.FullAfter);
+                ForceFullBackupTimespan.Text = m_schedule.Task.FullAfter;
 
-                MaxUploaded.Text = m_schedule.MaxUploadsize;
-                VolumeSize.Text = m_schedule.VolumeSize;
-                DownloadBandwidth.Text = m_schedule.DownloadBandwidth;
-                UploadBandwidth.Text =m_schedule.UploadBandwidth;
+                MaxUploaded.Text = m_schedule.Task.MaxUploadsize;
+                VolumeSize.Text = m_schedule.Task.VolumeSize;
+                DownloadBandwidth.Text = m_schedule.Task.DownloadBandwidth;
+                UploadBandwidth.Text =m_schedule.Task.UploadBandwidth;
             }
             finally
             {
@@ -202,7 +202,7 @@ namespace Duplicati.GUI.Service_controls
 
             KeepIntervalCheckbox.Checked = (CleanupDuration.Text.Trim().Length > 0);
             if (Interval_TextChanged(sender, e))
-                m_schedule.KeepTime = CleanupDuration.Text;
+                m_schedule.Task.KeepTime = CleanupDuration.Text;
 
         }
 
@@ -213,7 +213,7 @@ namespace Duplicati.GUI.Service_controls
 
             ForceFullBackup.Checked = (ForceFullBackupTimespan.Text.Trim().Length > 0);
             if (Interval_TextChanged(sender, e))
-                m_schedule.FullAfter = ForceFullBackupTimespan.Text;
+                m_schedule.Task.FullAfter = ForceFullBackupTimespan.Text;
 
         }
 
@@ -222,8 +222,8 @@ namespace Duplicati.GUI.Service_controls
             if (m_isUpdating || m_schedule == null)
                 return;
 
-            m_schedule.KeepFull = Convert.ToInt32(CleanupFullCount.Value);
-            KeepNFullCheckbox.Checked = m_schedule.KeepFull > 0;
+            m_schedule.Task.KeepFull = Convert.ToInt32(CleanupFullCount.Value);
+            KeepNFullCheckbox.Checked = m_schedule.Task.KeepFull > 0;
         }
 
         private void MaxUploaded_TextChanged(object sender, EventArgs e)
@@ -234,7 +234,7 @@ namespace Duplicati.GUI.Service_controls
             try
             {
                 Library.Core.Sizeparser.ParseSize(MaxUploaded.Text);
-                m_schedule.MaxUploadsize = MaxUploaded.Text;
+                m_schedule.Task.MaxUploadsize = MaxUploaded.Text;
                 errorProvider.SetError(MaxUploaded, "");
             }
             catch (Exception ex)
@@ -251,7 +251,7 @@ namespace Duplicati.GUI.Service_controls
             try
             {
                 Library.Core.Sizeparser.ParseSize(VolumeSize.Text);
-                m_schedule.VolumeSize = VolumeSize.Text;
+                m_schedule.Task.VolumeSize = VolumeSize.Text;
                 errorProvider.SetError(VolumeSize, "");
             }
             catch (Exception ex)
@@ -268,7 +268,7 @@ namespace Duplicati.GUI.Service_controls
             try
             {
                 Library.Core.Sizeparser.ParseSize(UploadBandwidth.Text);
-                m_schedule.UploadBandwidth = UploadBandwidth.Text;
+                m_schedule.Task.UploadBandwidth = UploadBandwidth.Text;
                 errorProvider.SetError(UploadBandwidth, "");
             }
             catch (Exception ex)
@@ -286,7 +286,7 @@ namespace Duplicati.GUI.Service_controls
             try
             {
                 Library.Core.Sizeparser.ParseSize(DownloadBandwidth.Text);
-                m_schedule.DownloadBandwidth = DownloadBandwidth.Text;
+                m_schedule.Task.DownloadBandwidth = DownloadBandwidth.Text;
                 errorProvider.SetError(DownloadBandwidth, "");
             }
             catch (Exception ex)

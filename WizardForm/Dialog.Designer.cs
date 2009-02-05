@@ -144,6 +144,7 @@ namespace System.Windows.Forms.Wizard
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "Dialog";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Dialog";
             this.Load += new System.EventHandler(this.Dialog_Load);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Dialog_KeyUp);

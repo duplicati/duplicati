@@ -205,37 +205,49 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!m_valuesAutoLoaded)
             {
-                List<string> filters = new List<string>();
-                foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
-                    if (tf.Key && tf.Value.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_wrapper.SourcePath)))
-                        filters.Add(tf.Value);
-
-                List<string> included = new List<string>();
-                foreach (string s in m_specialFolders)
-                    if (filters.Contains(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*")))
-                        included.Add(s);
-
-                if (included.Count == 0)
+                if (string.IsNullOrEmpty(m_wrapper.SourcePath))
                 {
-                    FolderRadio.Checked = true;
-                    TargetFolder.Text = m_wrapper.SourcePath;
+                    DocumentsRadio.Checked = true;
+                    IncludeDocuments.Checked = true;
+                    IncludeImages.Checked = true;
+                    IncludeMusic.Checked = false;
+                    IncludeDesktop.Checked = true;
+                    IncludeSettings.Checked = false;
                 }
                 else
                 {
-                    DocumentsRadio.Checked = true;
-                    IncludeDocuments.Checked = included.Contains(m_myDocuments.Substring(1));
-                    IncludeImages.Checked = included.Contains(m_myPictures.Substring(1));
-                    IncludeMusic.Checked = included.Contains(m_myMusic.Substring(1));
-                    IncludeDesktop.Checked = included.Contains(m_desktop.Substring(1));
-                    IncludeSettings.Checked = included.Contains(m_appData.Substring(1));
 
-                    if (!(IncludeDocuments.Checked || IncludeMusic.Checked || IncludeImages.Checked || IncludeDesktop.Checked || IncludeSettings.Checked))
+                    List<string> filters = new List<string>();
+                    foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
+                        if (tf.Key && tf.Value.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_wrapper.SourcePath)))
+                            filters.Add(tf.Value);
+
+                    List<string> included = new List<string>();
+                    foreach (string s in m_specialFolders)
+                        if (filters.Contains(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*")))
+                            included.Add(s);
+
+                    if (included.Count == 0)
                     {
                         FolderRadio.Checked = true;
                         TargetFolder.Text = m_wrapper.SourcePath;
                     }
+                    else
+                    {
+                        DocumentsRadio.Checked = true;
+                        IncludeDocuments.Checked = included.Contains(m_myDocuments.Substring(1));
+                        IncludeImages.Checked = included.Contains(m_myPictures.Substring(1));
+                        IncludeMusic.Checked = included.Contains(m_myMusic.Substring(1));
+                        IncludeDesktop.Checked = included.Contains(m_desktop.Substring(1));
+                        IncludeSettings.Checked = included.Contains(m_appData.Substring(1));
+
+                        if (!(IncludeDocuments.Checked || IncludeMusic.Checked || IncludeImages.Checked || IncludeDesktop.Checked || IncludeSettings.Checked))
+                        {
+                            FolderRadio.Checked = true;
+                            TargetFolder.Text = m_wrapper.SourcePath;
+                        }
+                    }
                 }
-                    
             }
 
             if (FolderRadio.Checked)

@@ -60,7 +60,7 @@ namespace Duplicati.GUI
         public abstract DuplicityTaskType TaskType { get; }
         public abstract void GetArguments(List<string> args);
         public Schedule Schedule { get { return m_schedule; } }
-        public Task Task { get { return m_schedule.Tasks[0]; } }
+        public Task Task { get { return m_schedule.Task; } }
         public event TaskCompletedHandler TaskCompleted;
         public virtual DateTime BeginTime 
         {
@@ -181,7 +181,7 @@ namespace Duplicati.GUI
 
         public string FullAfter
         {
-            get { return m_fullAfter == null ? m_schedule.FullAfter : m_fullAfter; }
+            get { return m_fullAfter == null ? m_schedule.Task.FullAfter : m_fullAfter; }
         }
 
         public IncrementalBackupTask(Schedule schedule, string fullAfter)

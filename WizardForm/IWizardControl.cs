@@ -31,7 +31,23 @@ namespace System.Windows.Forms.Wizard
         string HelpText { get; }
         Image Image { get; }
         bool FullSize { get; }
+        /// <summary>
+        /// Called when the page is entering
+        /// </summary>
+        /// <param name="owner">The owner wizard form</param>
+        /// <param name="args">State information</param>
         void Enter(IWizardForm owner, PageChangedArgs args);
+        /// <summary>
+        /// Called when the page has loaded and is being displayed
+        /// </summary>
+        /// <param name="owner">The owner wizard form</param>
+        /// <param name="args">State information</param>
+        void Display(IWizardForm owner, PageChangedArgs args);
+        /// <summary>
+        /// Called when the page is leaving
+        /// </summary>
+        /// <param name="owner">The owner wizard form</param>
+        /// <param name="args">State information</param>
         void Leave(IWizardForm owner, PageChangedArgs args);
     }
 }

@@ -39,6 +39,12 @@ namespace Duplicati.GUI.Wizard_pages
             InitializeComponent();
             base.PageEnter += new PageChangeHandler(SelectBackend_PageEnter);
             base.PageLeave += new PageChangeHandler(SelectBackend_PageLeave);
+            base.PageDisplay += new PageChangeHandler(SelectBackend_PageDisplay);
+        }
+
+        void SelectBackend_PageDisplay(object sender, PageChangedArgs args)
+        {
+            Item_CheckChanged(null, null);
         }
 
         void SelectBackend_PageLeave(object sender, PageChangedArgs args)

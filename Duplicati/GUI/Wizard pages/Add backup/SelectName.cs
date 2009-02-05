@@ -41,6 +41,17 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             base.PageEnter += new PageChangeHandler(SelectName_PageEnter);
             base.PageLeave += new PageChangeHandler(SelectName_PageLeave);
+            base.PageDisplay += new PageChangeHandler(SelectName_PageDisplay);
+        }
+
+        void SelectName_PageDisplay(object sender, PageChangedArgs args)
+        {
+            //Hide the initial page
+            if (Program.DataConnection.GetObjects<Datamodel.Schedule>().Length == 0)
+                m_owner.BackButton.Enabled = false;
+
+            try { BackupName.Focus(); }
+            catch { }
         }
 
         void SelectName_PageLeave(object sender, PageChangedArgs args)
@@ -91,5 +102,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             //BackupFolder.Focus();
             BackupFolder.AddFolder(null).BeginEdit();
         }
+
+        private void SelectName_Load(object sender, EventArgs e)
+        {
+            try { BackupName.Focus(); }
+            catch { }
+        }
+
     }
 }

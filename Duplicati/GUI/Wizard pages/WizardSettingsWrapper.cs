@@ -49,21 +49,21 @@ namespace Duplicati.GUI.Wizard_pages
             this.ScheduleID = schedule.ID;
             this.ScheduleName = schedule.Name;
             this.SchedulePath = schedule.Path;
-            this.SourcePath = schedule.Tasks[0].SourcePath;
-            this.SourceFilter = schedule.Tasks[0].EncodedFilter;
-            this.BackupPassword = schedule.Tasks[0].Encryptionkey;
+            this.SourcePath = schedule.Task.SourcePath;
+            this.EncodedFilters = schedule.Task.EncodedFilter;
+            this.BackupPassword = schedule.Task.Encryptionkey;
 
-            switch (schedule.Tasks[0].Service.ToLower())
+            switch (schedule.Task.Service.ToLower())
             {
                 case "file":
-                    Datamodel.Backends.File file = new Datamodel.Backends.File(schedule.Tasks[0]);
+                    Datamodel.Backends.File file = new Datamodel.Backends.File(schedule.Task);
                     this.FileSettings.Username = file.Username;
                     this.FileSettings.Password = file.Password;
                     this.FileSettings.Path = file.DestinationFolder;
                     this.Backend = BackendType.File;
                     break;
                 case "ftp":
-                    Datamodel.Backends.FTP ftp = new Duplicati.Datamodel.Backends.FTP(schedule.Tasks[0]);
+                    Datamodel.Backends.FTP ftp = new Duplicati.Datamodel.Backends.FTP(schedule.Task);
                     this.FTPSettings.Username = ftp.Username;
                     this.FTPSettings.Password = ftp.Password;
                     this.FTPSettings.Path = ftp.Folder;
@@ -72,7 +72,7 @@ namespace Duplicati.GUI.Wizard_pages
                     this.Backend = BackendType.FTP;
                     break;
                 case "ssh":
-                    Datamodel.Backends.SSH ssh = new Duplicati.Datamodel.Backends.SSH(schedule.Tasks[0]);
+                    Datamodel.Backends.SSH ssh = new Duplicati.Datamodel.Backends.SSH(schedule.Task);
                     this.SSHSettings.Username = ssh.Username;
                     this.SSHSettings.Password = ssh.Password;
                     this.SSHSettings.Path = ssh.Folder;
@@ -82,7 +82,7 @@ namespace Duplicati.GUI.Wizard_pages
                     this.Backend = BackendType.SSH;
                     break;
                 case "s3":
-                    Datamodel.Backends.S3 s3 = new Duplicati.Datamodel.Backends.S3(schedule.Tasks[0]);
+                    Datamodel.Backends.S3 s3 = new Duplicati.Datamodel.Backends.S3(schedule.Task);
                     this.S3Settings.Username = s3.AccessID;
                     this.S3Settings.Password = s3.AccessKey;
                     this.S3Settings.UseEuroServer = s3.UseEuroBucket;
@@ -99,16 +99,16 @@ namespace Duplicati.GUI.Wizard_pages
 
             this.BackupTimeOffset = schedule.When;
             this.RepeatInterval = schedule.Repeat;
-            this.FullBackupInterval = schedule.FullAfter;
-            this.MaxFullBackups = (int)schedule.KeepFull;
-            this.BackupExpireInterval = schedule.KeepTime;
-            this.UploadSpeedLimit = schedule.UploadBandwidth;
-            this.DownloadSpeedLimit = schedule.DownloadBandwidth;
-            this.BackupSizeLimit = schedule.MaxUploadsize;
-            this.VolumeSize = schedule.VolumeSize;
-            //this.ThreadPriority = schedule.ThreadPriority;
-            //this.AsyncTransfer = schedule.AsyncTransfer;
-            this.EncodedFilters = schedule.Tasks[0].EncodedFilter;
+            this.FullBackupInterval = schedule.Task.FullAfter;
+            this.MaxFullBackups = (int)schedule.Task.KeepFull;
+            this.BackupExpireInterval = schedule.Task.KeepTime;
+            this.UploadSpeedLimit = schedule.Task.UploadBandwidth;
+            this.DownloadSpeedLimit = schedule.Task.DownloadBandwidth;
+            this.BackupSizeLimit = schedule.Task.MaxUploadsize;
+            this.VolumeSize = schedule.Task.VolumeSize;
+            this.ThreadPriority = schedule.Task.ThreadPriority;
+            this.AsyncTransfer = schedule.Task.AsyncTransfer;
+            this.EncodedFilters = schedule.Task.EncodedFilter;
             
             this.PrimayAction = action;
         }
@@ -122,37 +122,41 @@ namespace Duplicati.GUI.Wizard_pages
         {
             schedule.Name = this.ScheduleName;
             schedule.Path = this.SchedulePath;
-            schedule.Tasks[0].SourcePath = this.SourcePath;
-            schedule.Tasks[0].EncodedFilter = this.SourceFilter;
-            schedule.Tasks[0].Encryptionkey = this.BackupPassword;
+            schedule.Task = schedule.DataParent.Add<Datamodel.Task>();
+            schedule.Task.SourcePath = this.SourcePath;
+            schedule.Task.EncodedFilter = this.EncodedFilters;
+            schedule.Task.Encryptionkey = this.BackupPassword;
 
             switch (this.Backend)
             {
                 case BackendType.File:
-                    Datamodel.Backends.File file = new Datamodel.Backends.File(schedule.Tasks[0]);
+                    Datamodel.Backends.File file = new Datamodel.Backends.File(schedule.Task);
                     file.Username = this.FileSettings.Username;
                     file.Password = this.FileSettings.Password;
                     file.DestinationFolder = this.FileSettings.Path;
+                    file.SetService();
                     break;
                 case BackendType.FTP:
-                    Datamodel.Backends.FTP ftp = new Duplicati.Datamodel.Backends.FTP(schedule.Tasks[0]);
+                    Datamodel.Backends.FTP ftp = new Duplicati.Datamodel.Backends.FTP(schedule.Task);
                     ftp.Username = this.FTPSettings.Username;
                     ftp.Password = this.FTPSettings.Password;
                     ftp.Folder = this.FTPSettings.Path;
                     ftp.Host = this.FTPSettings.Server;
                     ftp.Port = this.FTPSettings.Port;
+                    ftp.SetService();
                     break;
                 case BackendType.SSH:
-                    Datamodel.Backends.SSH ssh = new Duplicati.Datamodel.Backends.SSH(schedule.Tasks[0]);
+                    Datamodel.Backends.SSH ssh = new Duplicati.Datamodel.Backends.SSH(schedule.Task);
                     ssh.Username = this.SSHSettings.Username;
                     ssh.Password = this.SSHSettings.Password;
                     ssh.Folder = this.SSHSettings.Path;
                     ssh.Host = this.SSHSettings.Server;
                     ssh.Port = this.SSHSettings.Port;
                     ssh.Passwordless = this.SSHSettings.Passwordless;
+                    ssh.SetService();
                     break;
                 case BackendType.S3:
-                    Datamodel.Backends.S3 s3 = new Duplicati.Datamodel.Backends.S3(schedule.Tasks[0]);
+                    Datamodel.Backends.S3 s3 = new Duplicati.Datamodel.Backends.S3(schedule.Task);
                     s3.AccessID = this.S3Settings.Username;
                     s3.AccessKey = this.S3Settings.Password;
                     s3.UseEuroBucket = this.S3Settings.UseEuroServer;
@@ -168,6 +172,7 @@ namespace Duplicati.GUI.Wizard_pages
                         s3.BucketName = this.S3Settings.Path;
                         s3.Prefix = "";
                     }
+                    s3.SetService();
                     break;
                 case BackendType.WebDav:
                     break;
@@ -175,18 +180,18 @@ namespace Duplicati.GUI.Wizard_pages
 
             schedule.When = this.BackupTimeOffset;
             schedule.Repeat = this.RepeatInterval;
-            schedule.FullAfter = this.FullBackupInterval;
-            schedule.KeepFull = this.MaxFullBackups;
+            schedule.Task.FullAfter = this.FullBackupInterval;
+            schedule.Task.KeepFull = this.MaxFullBackups;
             
-            schedule.KeepTime = this.BackupExpireInterval;
-            schedule.UploadBandwidth = this.UploadSpeedLimit;
-            schedule.DownloadBandwidth = this.DownloadSpeedLimit;
-            schedule.MaxUploadsize = this.BackupSizeLimit;
+            schedule.Task.KeepTime = this.BackupExpireInterval;
+            schedule.Task.UploadBandwidth = this.UploadSpeedLimit;
+            schedule.Task.DownloadBandwidth = this.DownloadSpeedLimit;
+            schedule.Task.MaxUploadsize = this.BackupSizeLimit;
 
-            schedule.VolumeSize = this.VolumeSize;
-            //schedule.ThreadPriority = this.ThreadPriority;
-            //schedule.AsyncTransfer = this.AsyncTransfer;
-            schedule.Tasks[0].EncodedFilter = this.EncodedFilters;
+            schedule.Task.VolumeSize = this.VolumeSize;
+            schedule.Task.ThreadPriority = this.ThreadPriority;
+            schedule.Task.AsyncTransfer = this.AsyncTransfer;
+            schedule.Task.EncodedFilter = this.EncodedFilters;
         }
 
         /// <summary>
@@ -249,15 +254,6 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get { return GetItem<string>("SourcePath", ""); }
             set { SetItem("SourcePath", value); }
-        }
-
-        /// <summary>
-        /// The encoded filter string 
-        /// </summary>
-        public string SourceFilter
-        {
-            get { return GetItem<string>("SourceFilter", ""); }
-            set { SetItem("SourceFilter", value); }
         }
 
         /// <summary>
@@ -399,7 +395,7 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
-        /// The size of each volume in the backup set
+        /// The filter applied to files being backed up
         /// </summary>
         public string EncodedFilters
         {

@@ -17,6 +17,7 @@ namespace Duplicati.Library.Main
         private long m_sizeOfAddedFiles;
         private long m_sizeOfExaminedFiles;
         private long m_unprocessedFiles;
+        private long m_addedFolders;
 
         public BackupStatistics()
         {
@@ -94,6 +95,12 @@ namespace Duplicati.Library.Main
             set { m_unprocessedFiles = value; }
         }
 
+        public long AddedFolders
+        {
+            get { return m_addedFolders; }
+            set { m_addedFolders = value; }
+        }
+
 
         public override string ToString()
         {
@@ -105,6 +112,7 @@ namespace Duplicati.Library.Main
             sb.Append("DeletedFolders  : " + this.DeletedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("ModifiedFiles   : " + this.ModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("AddedFiles      : " + this.ModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("AddedFolders    : " + this.AddedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("ExaminedFiles   : " + this.ExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfModified  : " + this.SizeOfModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfAdded     : " + this.SizeOfAddedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");

@@ -33,8 +33,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
     {
         FileSettings m_wrapper;
 
-        private bool m_isUpdating = false;
-
         public FileOptions()
             : base("Backup storage options", "On this page you can select where to store the backup data.")
         {

@@ -70,13 +70,15 @@ namespace System.Windows.Forms.Wizard
 
         void IWizardControl.Enter(IWizardForm owner, PageChangedArgs args)
         {
-            
         }
 
         void IWizardControl.Leave(IWizardForm owner, PageChangedArgs args)
         {
         }
 
+        void IWizardControl.Display(IWizardForm owner, PageChangedArgs args)
+        {
+        }
 
         #endregion
     }

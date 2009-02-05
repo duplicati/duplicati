@@ -191,6 +191,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.VolumeSizeLimitNumber.Size = new System.Drawing.Size(88, 20);
             this.VolumeSizeLimitNumber.TabIndex = 13;
             this.VolumeSizeLimitNumber.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.VolumeSizeLimitNumber.ValueChanged += new System.EventHandler(this.VolumeSizeLimitNumber_ValueChanged);
             // 
             // AsyncEnabled
             // 
@@ -224,9 +225,16 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // ThreadPriority
             // 
+            this.ThreadPriority.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.ThreadPriority.Enabled = false;
             this.ThreadPriority.FormattingEnabled = true;
-            this.ThreadPriority.Location = new System.Drawing.Point(184, 192);
+            this.ThreadPriority.Items.AddRange(new object[] {
+            "High (Not recommended)",
+            "Above normal",
+            "Normal",
+            "Below normal",
+            "Low"});
+            this.ThreadPriority.Location = new System.Drawing.Point(184, 200);
             this.ThreadPriority.Name = "ThreadPriority";
             this.ThreadPriority.Size = new System.Drawing.Size(168, 21);
             this.ThreadPriority.TabIndex = 18;

@@ -37,7 +37,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
             filterEditor1.BasePath = m_wrapper.SourcePath;
-            filterEditor1.Filter = m_wrapper.SourceFilter;
+            filterEditor1.Filter = m_wrapper.EncodedFilters;
         }
     }
 }
