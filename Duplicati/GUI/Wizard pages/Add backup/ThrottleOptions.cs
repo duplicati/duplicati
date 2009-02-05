@@ -26,6 +26,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             InitializeComponent();
 
+            m_autoFillValues = false;
+
             base.PageLeave += new System.Windows.Forms.Wizard.PageChangeHandler(ThrottleOptions_PageLeave);
             base.PageEnter += new System.Windows.Forms.Wizard.PageChangeHandler(ThrottleOptions_PageEnter);
             base.PageDisplay += new System.Windows.Forms.Wizard.PageChangeHandler(ThrottleOptions_PageDisplay);
@@ -113,12 +115,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             m_wrapper.BackupSizeLimit =
                BackupLimitEnabled.Checked ?
-               BackupLimitNumber.Value.ToString() + BackupLimitSuffix.Text.Substring(0, BackupLimitSuffix.Text.Length - 2) :
+               BackupLimitNumber.Value.ToString() + BackupLimitSuffix.Text :
                "";
 
             m_wrapper.VolumeSize = VolumeSizeLimitNumber.Value.ToString() + VolumeSizeLimitSuffix.Text;
             m_wrapper.AsyncTransfer = AsyncEnabled.Checked;
-            m_wrapper.ThreadPriority = ThreadPriorityEnabled.Enabled ? THREAD_PRIORITIES[ThreadPriority.SelectedIndex] : "";
+            m_wrapper.ThreadPriority = ThreadPriorityEnabled.Checked ? THREAD_PRIORITIES[ThreadPriority.SelectedIndex] : "";
 
             if ((bool)m_settings["Advanced:Filters"])
                 args.NextPage = new Wizard_pages.Add_backup.EditFilters();

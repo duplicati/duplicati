@@ -79,6 +79,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // UploadLimitSuffix
             // 
+            this.UploadLimitSuffix.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.UploadLimitSuffix.Enabled = false;
             this.UploadLimitSuffix.FormattingEnabled = true;
             this.UploadLimitSuffix.Items.AddRange(new object[] {
@@ -93,6 +94,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // DownloadLimitSuffix
             // 
+            this.DownloadLimitSuffix.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.DownloadLimitSuffix.Enabled = false;
             this.DownloadLimitSuffix.FormattingEnabled = true;
             this.DownloadLimitSuffix.Items.AddRange(new object[] {
@@ -140,6 +142,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // BackupLimitSuffix
             // 
+            this.BackupLimitSuffix.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.BackupLimitSuffix.Enabled = false;
             this.BackupLimitSuffix.FormattingEnabled = true;
             this.BackupLimitSuffix.Items.AddRange(new object[] {
@@ -168,6 +171,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // VolumeSizeLimitSuffix
             // 
+            this.VolumeSizeLimitSuffix.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.VolumeSizeLimitSuffix.FormattingEnabled = true;
             this.VolumeSizeLimitSuffix.Items.AddRange(new object[] {
             "b",
