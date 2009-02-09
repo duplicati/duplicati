@@ -44,6 +44,7 @@ namespace Duplicati.GUI
                         (task as ListBackupsTask).Backups = res.ToArray();
                         break;
                     case DuplicityTaskType.ListFiles:
+                        (task as ListFilesTask).Files = Interface.ListContent(task.SourcePath, options);
                         return;
 
                     case DuplicityTaskType.RemoveAllButNFull:
@@ -96,6 +97,13 @@ namespace Duplicati.GUI
             ListBackupsTask task = new ListBackupsTask(schedule);
             ExecuteTask(task);
             return task.Backups;
+        }
+
+        public IList<string> ListFiles(Schedule schedule, DateTime when)
+        {
+            ListFilesTask task = new ListFilesTask(schedule, when);
+            ExecuteTask(task);
+            return task.Files;
         }
 
         public void IncrementalBackup(Schedule schedule)

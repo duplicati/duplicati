@@ -78,9 +78,22 @@ namespace Duplicati.Library.Compression
             if (!m_writing)
                 throw new InvalidOperationException("Cannot write to a file while reading it");
 
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = m_zef.MakeFileEntry(filename, true);
-            m_zipfile.PutNextEntry(ze);
 
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze;
+            try
+            {
+                //This call breaks on long filenames...
+                ze = m_zef.MakeFileEntry(filename, true);
+                ze.DateTime = System.IO.File.GetLastWriteTime(filename);
+            }
+            catch(System.IO.PathTooLongException)
+            {
+                ze = new ICSharpCode.SharpZipLib.Zip.ZipEntry(m_zef.NameTransform.TransformFile(filename));
+                //Does not work when the path is too long
+                //ze.DateTime = System.IO.File.GetLastWriteTime(filename);
+            }
+
+            m_zipfile.PutNextEntry(ze);
             return m_zipfile;
         }
 
@@ -171,6 +184,49 @@ namespace Duplicati.Library.Compression
                 }
                 zip.Close();
             }
+        }
+
+        /// <summary>
+        /// Returns the contents of a compressed file
+        /// </summary>
+        /// <param name="file">The compressed file</param>
+        /// <returns>The list of files withing</returns>
+        public static List<string> ListFiles(string file)
+        {
+            List<string> results = new List<string>();
+            using (new Logging.Timer("Listing " + file + " (" + new System.IO.FileInfo(file).Length.ToString() + ")"))
+            {
+                ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(file);
+                foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in zip)
+                {
+                    if (ze.IsDirectory)
+                        results.Add(Core.Utility.AppendDirSeperator(ze.Name));
+                    else
+                        results.Add(ze.Name);
+                }
+                zip.Close();
+            }
+
+            return results;
+        }
+
+        public static List<string> GetAllLines(string file, string path)
+        {
+            List<string> res = new List<string>();
+            using (new Logging.Timer("GetAllLines " + file + ", path " + path + " (" + new System.IO.FileInfo(file).Length.ToString() + ")"))
+            {
+                ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(file);
+                ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zip.GetEntry(path);
+                if (ze != null)
+
+                    using (System.IO.StreamReader sr = new System.IO.StreamReader(zip.GetInputStream(ze)))
+                        while(!sr.EndOfStream)
+                            res.Add(sr.ReadLine());
+
+                zip.Close();
+            }
+
+            return res;
         }
 
         #region IDisposable Members

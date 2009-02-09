@@ -52,6 +52,12 @@
     <Compile Include="DatabaseUpgrader.cs" />
     <Compile Include="DuplicatiRunner.cs" />
     <Compile Include="DuplicatiOutputParser.cs" />
+    <Compile Include="HelperControls\BackupFileList.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\BackupFileList.Designer.cs">
+      <DependentUpon>BackupFileList.cs</DependentUpon>
+    </Compile>
     <Compile Include="HelperControls\BackupItems.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -345,6 +351,10 @@
       <DependentUpon>ApplicationSetup.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Database schema\Schema.sql" />
+    <EmbeddedResource Include="HelperControls\BackupFileList.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>BackupFileList.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="HelperControls\BackupItems.resx">
       <SubType>Designer</SubType>
       <DependentUpon>BackupItems.cs</DependentUpon>

@@ -33,8 +33,8 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             this.label2 = new System.Windows.Forms.Label();
             this.PartialSettings = new System.Windows.Forms.GroupBox();
             this.PartialRestore = new System.Windows.Forms.CheckBox();
-            this.PartialSelection = new System.Windows.Forms.TreeView();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+            this.backupFileList = new Duplicati.GUI.HelperControls.BackupFileList();
             this.PartialSettings.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -66,36 +66,35 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // 
             // PartialSettings
             // 
-            this.PartialSettings.Controls.Add(this.PartialSelection);
+            this.PartialSettings.Controls.Add(this.backupFileList);
             this.PartialSettings.Enabled = false;
             this.PartialSettings.Location = new System.Drawing.Point(16, 64);
             this.PartialSettings.Name = "PartialSettings";
-            this.PartialSettings.Size = new System.Drawing.Size(472, 144);
+            this.PartialSettings.Size = new System.Drawing.Size(472, 160);
             this.PartialSettings.TabIndex = 8;
             this.PartialSettings.TabStop = false;
             // 
             // PartialRestore
             // 
             this.PartialRestore.AutoSize = true;
-            this.PartialRestore.Enabled = false;
             this.PartialRestore.Location = new System.Drawing.Point(24, 64);
             this.PartialRestore.Name = "PartialRestore";
             this.PartialRestore.Size = new System.Drawing.Size(204, 17);
             this.PartialRestore.TabIndex = 9;
             this.PartialRestore.Text = "Restore only the items selected below";
             this.PartialRestore.UseVisualStyleBackColor = true;
-            // 
-            // PartialSelection
-            // 
-            this.PartialSelection.CheckBoxes = true;
-            this.PartialSelection.Location = new System.Drawing.Point(16, 24);
-            this.PartialSelection.Name = "PartialSelection";
-            this.PartialSelection.Size = new System.Drawing.Size(440, 104);
-            this.PartialSelection.TabIndex = 0;
+            this.PartialRestore.CheckedChanged += new System.EventHandler(this.PartialRestore_CheckedChanged);
             // 
             // folderBrowserDialog
             // 
             this.folderBrowserDialog.Description = "Select the folder where the backup will be restored";
+            // 
+            // backupFileList
+            // 
+            this.backupFileList.Location = new System.Drawing.Point(16, 24);
+            this.backupFileList.Name = "backupFileList";
+            this.backupFileList.Size = new System.Drawing.Size(440, 128);
+            this.backupFileList.TabIndex = 0;
             // 
             // TargetFolder
             // 
@@ -121,8 +120,8 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         private System.Windows.Forms.TextBox TargetPath;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.GroupBox PartialSettings;
-        private System.Windows.Forms.TreeView PartialSelection;
         private System.Windows.Forms.CheckBox PartialRestore;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
+        private Duplicati.GUI.HelperControls.BackupFileList backupFileList;
     }
 }

@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main
         public bool IsShortName { get { return m_isShortName; } }
         public string EncryptionMode { get { return m_encryptionMode; } }
         public string CompressionMode { get { return m_compressionMode; } }
-        public List<BackupEntry> Incrementals { get { return m_incrementals; } }
+        public List<BackupEntry> Incrementals { get { return m_incrementals; } set { m_incrementals = value; } }
         public List<BackupEntry> ContentVolumes { get { return m_content; } }
         public List<BackupEntry> SignatureFile { get { return m_signature; } }
         public EntryType Type { get { return m_type; } }

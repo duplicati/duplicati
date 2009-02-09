@@ -448,6 +448,15 @@ namespace Duplicati.GUI.Wizard_pages
             set { SetItem("RestoreFilter", value); }
         }
 
+        /// <summary>
+        /// A cached list of filenames
+        /// </summary>
+        public IList<string> RestoreFileList
+        {
+            get { return GetItem<IList<string>>("RestoreFileList:" + this.RestoreTime.ToString(), null); }
+            set { SetItem("RestoreFileList:" + this.RestoreTime.ToString(), value); }
+        }
+
     }
 
     /// <summary>

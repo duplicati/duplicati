@@ -203,30 +203,7 @@ namespace Duplicati.Library.Main
                         throw new Exception("Unable to find backend for target: " + source);
                     backend = new BackendWrapper(rs, backend, options);
 
-                    if (string.IsNullOrEmpty(specifictime))
-                        specifictime = "now";
-
-                    List<BackupEntry> backups = ParseFileList(backend, options);
-                    if (backups.Count == 0)
-                        throw new Exception("No backups found at remote location");
-
-                    DateTime timelimit = Core.Timeparser.ParseTimeInterval(specifictime, DateTime.Now);
-
-                    BackupEntry bestFit = backups[0];
-                    List<BackupEntry> additions = new List<BackupEntry>();
-                    foreach (BackupEntry be in backups)
-                        if (be.Time < timelimit)
-                        {
-                            bestFit = be;
-                            foreach (BackupEntry bex in be.Incrementals)
-                                if (bex.Time <= timelimit)
-                                    additions.Add(bex);
-
-                        }
-
-                    if (bestFit.SignatureFile.Count == 0 || bestFit.ContentVolumes.Count == 0)
-                        throw new Exception("Unable to parse filenames for the desired volumes");
-
+                    BackupEntry bestFit = FindBestMatch(ParseFileList(backend, options), specifictime);
                     if (bestFit.EncryptionMode != null)
                         backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, options);
 
@@ -262,7 +239,7 @@ namespace Duplicati.Library.Main
                             using (new Logging.Timer("Full restore to " + target))
                                 sync.Restore(target, new List<string>());
 
-                            foreach (BackupEntry p in additions)
+                            foreach (BackupEntry p in bestFit.Incrementals)
                             {
                                 if (p.SignatureFile.Count == 0 || p.ContentVolumes.Count == 0)
                                     throw new Exception("Unable to parse filenames for the volume: " + p.Filename);
@@ -557,11 +534,134 @@ namespace Duplicati.Library.Main
             }
         }
 
+        public static IList<string> ListContent(string source, Dictionary<string, string> options)
+        {
+            SetupCommonOptions(options);
+            RestoreStatistics rs = new RestoreStatistics();
+
+            SortedList<string, string> res = new SortedList<string, string>();
+            Duplicati.Library.Backend.IBackend backend = new Duplicati.Library.Backend.BackendLoader(source, options);
+
+            if (backend == null)
+                throw new Exception("Unable to find backend for target: " + source);
+            backend = new BackendWrapper(rs, backend, options);
+
+            string specifictime = options.ContainsKey("restore-time") ? options["restore-time"] : "now";
+            BackupEntry bestFit = FindBestMatch(ParseFileList(backend, options), specifictime);
+            if (bestFit.EncryptionMode != null)
+                backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, options);
+
+            using (backend)
+            using (Core.TempFolder basefolder = new Duplicati.Library.Core.TempFolder())
+            {
+                foreach (BackupEntry be in bestFit.SignatureFile)
+                    using (Core.TempFile basezip = new Duplicati.Library.Core.TempFile())
+                    {
+                        if (be.CompressionMode != "zip")
+                            throw new Exception("Unexpected compression mode");
+
+                        using (new Logging.Timer("Get " + be.Filename))
+                            backend.Get(be.Filename, basezip);
+
+                        foreach (string s in Compression.Compression.ListFiles(basezip))
+                            if (s.StartsWith(RSync.RSyncDir.SIGNATURE_ROOT))
+                                res[s.Substring(RSync.RSyncDir.SIGNATURE_ROOT.Length + 1)] = null;
+
+                        foreach (string s in Compression.Compression.GetAllLines(basezip, RSync.RSyncDir.ADDED_FOLDERS))
+                            res[NormalizeZipDirName(s)] = null;
+
+                        //No deleted files or folders are possible here
+                    }
+
+                foreach (BackupEntry p in bestFit.Incrementals)
+                {
+                    if (p.SignatureFile.Count == 0)
+                        throw new Exception("Unable to parse filenames for the volume: " + p.Filename);
+
+                    using (Core.TempFolder t = new Duplicati.Library.Core.TempFolder())
+                    {
+                        foreach (BackupEntry be in p.SignatureFile)
+                            using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
+                            {
+                                if (be.CompressionMode != "zip")
+                                    throw new Exception("Unexpected compression mode");
+
+                                using (new Logging.Timer("Get " + be.Filename))
+                                    backend.Get(be.Filename, patchzip);
+
+
+                                foreach (string s in Compression.Compression.GetAllLines(patchzip, RSync.RSyncDir.DELETED_FOLDERS))
+                                    if (res.ContainsKey(NormalizeZipDirName(s)))
+                                        res.Remove(NormalizeZipDirName(s));
+
+                                foreach (string s in Compression.Compression.GetAllLines(patchzip, RSync.RSyncDir.DELETED_FILES))
+                                    if (res.ContainsKey(NormalizeZipFileName(s)))
+                                        res.Remove(NormalizeZipFileName(s));
+
+                                foreach (string s in Compression.Compression.ListFiles(patchzip))
+                                    if (s.StartsWith(RSync.RSyncDir.SIGNATURE_ROOT))
+                                        res[s.Substring(RSync.RSyncDir.SIGNATURE_ROOT.Length + 1)] = null;
+
+                                foreach (string s in Compression.Compression.GetAllLines(patchzip, RSync.RSyncDir.ADDED_FOLDERS))
+                                    res[NormalizeZipDirName(s)] = null;
+                            }
+                    }
+                }
+            }
+
+            return res.Keys;
+        }
+
+        private static string NormalizeZipFileName(string name)
+        {
+            if (System.IO.Path.DirectorySeparatorChar != '/')
+                name = name.Replace(System.IO.Path.DirectorySeparatorChar, '/');
+            return name;
+        }
+
+        private static string NormalizeZipDirName(string name)
+        {
+            name = NormalizeZipFileName(name);
+            if (!name.EndsWith("/"))
+                name += "/";
+            return name;
+        }
+
+        private static BackupEntry FindBestMatch(List<BackupEntry> backups, string specifictime)
+        {
+            if (string.IsNullOrEmpty(specifictime))
+                specifictime = "now";
+
+            if (backups.Count == 0)
+                throw new Exception("No backups found at remote location");
+
+            DateTime timelimit = Core.Timeparser.ParseTimeInterval(specifictime, DateTime.Now);
+
+            BackupEntry bestFit = backups[0];
+            List<BackupEntry> additions = new List<BackupEntry>();
+            foreach (BackupEntry be in backups)
+                if (be.Time < timelimit)
+                {
+                    bestFit = be;
+                    foreach (BackupEntry bex in be.Incrementals)
+                        if (bex.Time <= timelimit)
+                            additions.Add(bex);
+
+                }
+
+            if (bestFit.SignatureFile.Count == 0 || bestFit.ContentVolumes.Count == 0)
+                throw new Exception("Unable to parse filenames for the desired volumes");
+
+            bestFit.Incrementals = additions;
+            return bestFit;
+        }
 
         private static void SetupCommonOptions(Dictionary<string, string> options)
         {
             if (options.ContainsKey("tempdir"))
                 Core.TempFolder.SystemTempPath = options["tempdir"];
+            if (options.ContainsKey("thread-priority"))
+                System.Threading.Thread.CurrentThread.Priority = Core.Utility.ParsePriority(options["thread-priority"]);
         }
     }
 }

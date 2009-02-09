@@ -59,7 +59,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             m_selectedDate = new DateTime();
             try
             {
-                m_selectedDate = Timeparser.ParseDuplicityFileTime(BackupList.SelectedItem);
+                m_selectedDate = DateTime.Parse(BackupList.SelectedItem);
             }
             catch (Exception ex)
             {

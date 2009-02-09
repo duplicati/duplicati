@@ -29,15 +29,15 @@ namespace Duplicati.Library.Main.RSync
     /// </summary>
     public class RSyncDir : IDisposable
     {
-        private static readonly string SIGNATURE_ROOT = "signature";
-        private static readonly string CONTENT_ROOT = "snapshot";
-        private static readonly string DELTA_ROOT = "diff";
+        internal static readonly string SIGNATURE_ROOT = "signature";
+        internal static readonly string CONTENT_ROOT = "snapshot";
+        internal static readonly string DELTA_ROOT = "diff";
         //private static readonly string DACL_ROOT = "dacl";
 
-        private static readonly string DELETED_FILES = "deleted_files.txt";
-        private static readonly string DELETED_FOLDERS = "deleted_folders.txt";
+        internal static readonly string DELETED_FILES = "deleted_files.txt";
+        internal static readonly string DELETED_FOLDERS = "deleted_folders.txt";
 
-        private static readonly string ADDED_FOLDERS = "added_folders.txt";
+        internal static readonly string ADDED_FOLDERS = "added_folders.txt";
 
         /// <summary>
         /// This is the folder being backed up

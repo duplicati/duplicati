@@ -117,5 +117,16 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         }
 
         public string SelectedFolder { get { return TargetPath.Text; } }
+
+        private void PartialRestore_CheckedChanged(object sender, EventArgs e)
+        {
+            PartialSettings.Enabled = PartialRestore.Checked;
+
+            if (PartialRestore.Checked)
+            {
+                WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
+                backupFileList.LoadFileList(Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID), wrapper.RestoreTime, wrapper.RestoreFileList);
+            }
+        }
     }
 }

@@ -80,6 +80,10 @@ namespace Duplicati.Datamodel
                 options["max-download-pr-second"] = this.DownloadBandwidth;
             if (!string.IsNullOrEmpty(this.UploadBandwidth))
                 options["max-upload-pr-second"] = this.UploadBandwidth;
+            if (!string.IsNullOrEmpty(this.ThreadPriority))
+                options["thread-priority"] = this.ThreadPriority;
+            if (this.AsyncTransfer)
+                options["asynchronous-upload"] = "";
         }
 
         public string EncodedFilter

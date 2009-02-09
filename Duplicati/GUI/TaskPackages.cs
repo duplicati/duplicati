@@ -285,6 +285,61 @@ namespace Duplicati.GUI
         }
     }
 
+    public class ListFilesTask : BackupTask
+    {
+        protected IList<string> m_files = null;
+        public override DuplicityTaskType TaskType { get { return DuplicityTaskType.ListFiles; } }
+        public IList<string> Files { get { return m_files; } set { m_files = value; } }
+        protected DateTime m_when;
+
+        public ListFilesTask(Schedule schedule, DateTime when)
+            : base(schedule)
+        {
+            m_when = when;
+        }
+
+        public string When
+        {
+            get
+            {
+                if (m_when.Year < 10)
+                    return null;
+                else
+                    return m_when.ToString("s");
+            }
+        }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+
+            if (!string.IsNullOrEmpty(When))
+                options["restore-time"] = this.When;
+        }
+
+        public override void GetArguments(List<string> args)
+        {
+            if (!string.IsNullOrEmpty(When))
+            {
+                args.Add("-t");
+                args.Add(this.When);
+            }
+
+            args.Add("list-current-files");
+            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
+        }
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+    }
+
     public class RestoreTask : BackupTask
     {
         protected DateTime m_when;
