@@ -32,9 +32,9 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             this.TargetPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.PartialSettings = new System.Windows.Forms.GroupBox();
+            this.backupFileList = new Duplicati.GUI.HelperControls.BackupFileList();
             this.PartialRestore = new System.Windows.Forms.CheckBox();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-            this.backupFileList = new Duplicati.GUI.HelperControls.BackupFileList();
             this.PartialSettings.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -68,16 +68,23 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // 
             this.PartialSettings.Controls.Add(this.backupFileList);
             this.PartialSettings.Enabled = false;
-            this.PartialSettings.Location = new System.Drawing.Point(16, 64);
+            this.PartialSettings.Location = new System.Drawing.Point(16, 48);
             this.PartialSettings.Name = "PartialSettings";
-            this.PartialSettings.Size = new System.Drawing.Size(472, 160);
+            this.PartialSettings.Size = new System.Drawing.Size(472, 176);
             this.PartialSettings.TabIndex = 8;
             this.PartialSettings.TabStop = false;
+            // 
+            // backupFileList
+            // 
+            this.backupFileList.Location = new System.Drawing.Point(16, 24);
+            this.backupFileList.Name = "backupFileList";
+            this.backupFileList.Size = new System.Drawing.Size(440, 144);
+            this.backupFileList.TabIndex = 0;
             // 
             // PartialRestore
             // 
             this.PartialRestore.AutoSize = true;
-            this.PartialRestore.Location = new System.Drawing.Point(24, 64);
+            this.PartialRestore.Location = new System.Drawing.Point(24, 48);
             this.PartialRestore.Name = "PartialRestore";
             this.PartialRestore.Size = new System.Drawing.Size(204, 17);
             this.PartialRestore.TabIndex = 9;
@@ -88,13 +95,6 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // folderBrowserDialog
             // 
             this.folderBrowserDialog.Description = "Select the folder where the backup will be restored";
-            // 
-            // backupFileList
-            // 
-            this.backupFileList.Location = new System.Drawing.Point(16, 24);
-            this.backupFileList.Name = "backupFileList";
-            this.backupFileList.Size = new System.Drawing.Size(440, 128);
-            this.backupFileList.TabIndex = 0;
             // 
             // TargetFolder
             // 

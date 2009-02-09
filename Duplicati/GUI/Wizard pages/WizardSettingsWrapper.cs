@@ -451,9 +451,9 @@ namespace Duplicati.GUI.Wizard_pages
         /// <summary>
         /// A cached list of filenames
         /// </summary>
-        public IList<string> RestoreFileList
+        public List<string> RestoreFileList
         {
-            get { return GetItem<IList<string>>("RestoreFileList:" + this.RestoreTime.ToString(), null); }
+            get { return GetItem<List<string>>("RestoreFileList:" + this.RestoreTime.ToString(), null); }
             set { SetItem("RestoreFileList:" + this.RestoreTime.ToString(), value); }
         }
 

@@ -43,6 +43,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\thirdparty\ShellIcons\ShellIcons.cs">
+      <Link>ShellIcons.cs</Link>
+    </Compile>
     <Compile Include="ApplicationSetup.cs">
       <SubType>Form</SubType>
     </Compile>

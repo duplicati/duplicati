@@ -44,6 +44,9 @@ namespace Duplicati.GUI.HelperControls
             this.treeView.Size = new System.Drawing.Size(449, 214);
             this.treeView.TabIndex = 0;
             this.treeView.Visible = false;
+            this.treeView.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.treeView_AfterCheck);
+            this.treeView.AfterCollapse += new System.Windows.Forms.TreeViewEventHandler(this.treeView_AfterCollapse);
+            this.treeView.AfterExpand += new System.Windows.Forms.TreeViewEventHandler(this.treeView_AfterExpand);
             // 
             // LoadingIndicator
             // 

@@ -98,11 +98,16 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 return;
             }
 
+            if (PartialRestore.Checked && backupFileList.CheckedCount == 0)
+            {
+                MessageBox.Show(this, "You have not selected any files to restore.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                args.Cancel = true;
+                return;
+            }
+
             WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
             wrapper.RestorePath = targetpath;
-            //TODO: Enable this
-            wrapper.RestoreFilter = "";
-
+            wrapper.RestoreFilter = PartialRestore.Checked ? backupFileList.CheckedAsFilter : "";
         }
 
         private void TargetFolder_Load(object sender, EventArgs e)
@@ -125,6 +130,9 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             if (PartialRestore.Checked)
             {
                 WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
+                if (wrapper.RestoreFileList == null)
+                    wrapper.RestoreFileList = new List<string>();
+
                 backupFileList.LoadFileList(Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID), wrapper.RestoreTime, wrapper.RestoreFileList);
             }
         }

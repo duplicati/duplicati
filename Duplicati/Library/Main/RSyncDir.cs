@@ -174,7 +174,7 @@ namespace Duplicati.Library.Main.RSync
 
             m_oldFolders = new Dictionary<string, string>();
             if (System.IO.File.Exists(System.IO.Path.Combine(m_basefolder, ADDED_FOLDERS)))
-                foreach(string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(m_basefolder, ADDED_FOLDERS)))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(m_basefolder, ADDED_FOLDERS))))
                     m_oldFolders.Add(s, s);
 
             
@@ -229,7 +229,7 @@ namespace Duplicati.Library.Main.RSync
                 if (m_deletedfiles.Count > 0)
                 {
                     System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FILES));
-                    foreach (string s in m_deletedfiles)
+                    foreach (string s in FilenamesToPlatformIndependant(m_deletedfiles.ToArray()))
                         sw.WriteLine(s);
 
                     sw.Flush();
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Main.RSync
                 if (m_deletedfolders.Count > 0)
                 {
                     System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FOLDERS));
-                    foreach (string s in m_deletedfolders)
+                    foreach (string s in FilenamesToPlatformIndependant(m_deletedfolders.ToArray()))
                         sw.WriteLine(s);
 
                     sw.Flush();
@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.RSync
                 if (m_newfolders.Count > 0)
                 {
                     System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(ADDED_FOLDERS));
-                    foreach (string s in m_newfolders)
+                    foreach (string s in FilenamesToPlatformIndependant(m_newfolders.ToArray()))
                         sw.WriteLine(s);
 
                     sw.Flush();
@@ -412,7 +412,7 @@ namespace Duplicati.Library.Main.RSync
         {
             string deletedfiles = System.IO.Path.Combine(patch, DELETED_FILES);
             if (System.IO.File.Exists(deletedfiles))
-                foreach (string s in System.IO.File.ReadAllLines(deletedfiles))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(deletedfiles)))
                 {
                     string target = System.IO.Path.Combine(destination, s.Trim());
                     if (System.IO.File.Exists(target))
@@ -438,7 +438,7 @@ namespace Duplicati.Library.Main.RSync
             if (System.IO.File.Exists(deletedfolders))
             {
                 //Make sure subfolders are deleted first
-                string[] folderlist = System.IO.File.ReadAllLines(deletedfolders);
+                string[] folderlist = FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(deletedfolders));
                 Array.Sort(folderlist);
                 Array.Reverse(folderlist);
 
@@ -464,7 +464,7 @@ namespace Duplicati.Library.Main.RSync
             if (System.IO.File.Exists(addedfolders))
             {
                 //Make sure subfolders are deleted first
-                string[] folderlist = System.IO.File.ReadAllLines(addedfolders);
+                string[] folderlist = FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(addedfolders));
                 Array.Sort(folderlist);
                 Array.Reverse(folderlist);
 
@@ -568,25 +568,25 @@ namespace Duplicati.Library.Main.RSync
 
             Dictionary<string, string> deletedfiles = new Dictionary<string, string>();
             if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, DELETED_FILES)))
-                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES)))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES))))
                     deletedfiles.Add(s, s);
 
             if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
-                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FILES))))
                     System.IO.File.Delete(System.IO.Path.Combine(System.IO.Path.Combine(basefolder, SIGNATURE_ROOT), s));
 
             Dictionary<string, string> addedfolders = new Dictionary<string, string>();
             if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, ADDED_FOLDERS)))
-                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS)))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS))))
                     addedfolders.Add(s, s);
 
             Dictionary<string, string> deletedfolders = new Dictionary<string, string>();
             if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, DELETED_FOLDERS)))
-                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS)))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS))))
                     deletedfolders.Add(s,s );
 
             if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
-                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS))))
                 {
                     if (addedfolders.ContainsKey(s))
                         addedfolders.Remove(s);
@@ -594,7 +594,7 @@ namespace Duplicati.Library.Main.RSync
                 }
 
             if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, ADDED_FOLDERS)))
-                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, ADDED_FOLDERS)))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, ADDED_FOLDERS))))
                     addedfolders[s] = s;
 
             List<string> updates = Core.Utility.EnumerateFiles(System.IO.Path.Combine(updatefolder, SIGNATURE_ROOT));
@@ -615,7 +615,7 @@ namespace Duplicati.Library.Main.RSync
 
             List<string> delfiles = new List<string>(deletedfiles.Values);
             if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
-                foreach (string s in System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
+                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FILES))))
                     if (!delfiles.Contains(s))
                         delfiles.Add(s);
 
@@ -626,14 +626,27 @@ namespace Duplicati.Library.Main.RSync
             List<string> dfi = new List<string>(deletedfiles.Values);
             List<string> afo = new List<string>(addedfolders.Values);
 
-            /*dfo.Sort();
-            dfi.Sort();
-            afo.Sort();*/
-
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS), dfo.ToArray());
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES), dfi.ToArray());
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS), afo.ToArray());
+            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS), FilenamesToPlatformIndependant(dfo.ToArray()));
+            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES), FilenamesToPlatformIndependant(dfi.ToArray()));
+            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS), FilenamesToPlatformIndependant(afo.ToArray()));
         }
 
+        private static string[] FilenamesToPlatformIndependant(string[] filenames)
+        {
+            if (System.IO.Path.DirectorySeparatorChar != '/')
+                for (int i = 0; i < filenames.Length; i++)
+                    filenames[i] = filenames[i].Replace(System.IO.Path.DirectorySeparatorChar, '/');
+
+            return filenames;
+        }
+
+        private static string[] FilenamesFromPlatformIndependant(string[] filenames)
+        {
+            if (System.IO.Path.DirectorySeparatorChar != '/')
+                for (int i = 0; i < filenames.Length; i++)
+                    filenames[i] = filenames[i].Replace('/', System.IO.Path.DirectorySeparatorChar);
+
+            return filenames;
+        }
     }
 }
