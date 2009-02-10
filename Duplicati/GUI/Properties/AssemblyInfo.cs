@@ -1,5 +1,5 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2008, Kenneth Skovhede
+#region Disclaimer / License
+// Copyright (C) 2009, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or

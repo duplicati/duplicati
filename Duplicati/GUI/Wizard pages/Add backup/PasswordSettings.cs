@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2008, Kenneth Skovhede
+// Copyright (C) 2009, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -88,6 +88,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     m_warnedNoGPG = true;
                 }
             }
+
+            //TODO: Warn the user if the backup exists, and the settings are modified,
+            //as this will make it impossible to restore the backup.
 
             m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
             m_settings["Password:WarnedNoGPG"] = m_warnedNoGPG;
