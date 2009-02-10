@@ -84,6 +84,11 @@ namespace Duplicati.Datamodel
                 options["thread-priority"] = this.ThreadPriority;
             if (this.AsyncTransfer)
                 options["asynchronous-upload"] = "";
+            if (this.GPGEncryption)
+            {
+                options["gpg-encryption"] = "";
+                options["gpg-program-path"] = new ApplicationSettings(this.DataParent).GPGPath;
+            }
         }
 
         public string EncodedFilter

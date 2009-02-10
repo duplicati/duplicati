@@ -171,6 +171,17 @@
           <IgnoreWithInsert>false</IgnoreWithInsert>
           <Index>false</Index>
         </Column>
+        <Column>
+          <Typename>System.Boolean</Typename>
+          <Name>GPGEncryption</Name>
+          <Fieldname>GPGEncryption</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
       </Columns>
       <Ignore>false</Ignore>
       <Relations>

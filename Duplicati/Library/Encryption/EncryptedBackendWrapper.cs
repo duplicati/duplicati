@@ -45,7 +45,11 @@ namespace Duplicati.Library.Encryption
 
             m_realbackend = backend;
             if (options.ContainsKey("gpg-encryption"))
+            {
+                if (options.ContainsKey("gpg-program-path"))
+                    GPGEncryption.PGP_PROGRAM = options["gpg-program-path"];
                 m_encryptionEngine = new GPGEncryption(passphrase, options.ContainsKey("sign-key") ? options["sign-key"] : null);
+            }
             else
                 m_encryptionEngine = new AESEncryption(passphrase);
         }

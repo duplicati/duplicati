@@ -109,7 +109,8 @@ namespace Duplicati.GUI.Wizard_pages
             this.ThreadPriority = schedule.Task.ThreadPriority;
             this.AsyncTransfer = schedule.Task.AsyncTransfer;
             this.EncodedFilters = schedule.Task.EncodedFilter;
-            
+            this.GPGEncryption = schedule.Task.GPGEncryption;
+
             this.PrimayAction = action;
         }
 
@@ -192,6 +193,7 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.ThreadPriority = this.ThreadPriority;
             schedule.Task.AsyncTransfer = this.AsyncTransfer;
             schedule.Task.EncodedFilter = this.EncodedFilters;
+            schedule.Task.GPGEncryption = this.GPGEncryption;
         }
 
         /// <summary>
@@ -386,7 +388,7 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
-        /// The size of each volume in the backup set
+        /// Allow async transfer of files
         /// </summary>
         public bool AsyncTransfer
         {
@@ -457,6 +459,14 @@ namespace Duplicati.GUI.Wizard_pages
             set { SetItem("RestoreFileList:" + this.RestoreTime.ToString(), value); }
         }
 
+        /// <summary>
+        /// True if the GPG encryption method is enabled
+        /// </summary>
+        public bool GPGEncryption
+        {
+            get { return GetItem<bool>("GPGEncryption", false); }
+            set { SetItem("GPGEncryption", value); }
+        }
     }
 
     /// <summary>

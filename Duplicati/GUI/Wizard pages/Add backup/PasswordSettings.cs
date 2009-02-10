@@ -32,6 +32,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     public partial class PasswordSettings : WizardControl
     {
         private bool m_warnedNoPassword = false;
+        private bool m_warnedNoGPG = false;
         private WizardSettingsWrapper m_wrapper;
 
         public PasswordSettings()
@@ -46,6 +47,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         void PasswordSettings_PageLeave(object sender, PageChangedArgs args)
         {
             m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
+            m_settings["Password:WarnedNoGPG"] = m_warnedNoGPG;
+
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
@@ -67,8 +70,29 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_warnedNoPassword = true;
             }
 
+            if (!m_warnedNoGPG && UseGPG.Checked)
+            {
+                ApplicationSettings apps = new ApplicationSettings(Program.DataConnection);
+                System.IO.FileInfo fi = null;
+                try { fi = new System.IO.FileInfo(System.Environment.ExpandEnvironmentVariables(apps.GPGPath)); }
+                catch { }
+
+                if (fi == null || !fi.Exists)
+                {
+                    if (MessageBox.Show(this, "Duplicati was unable to verify the existence of GNU Privacy Guard.\nGPG may work regardless, if it is located in the system search path.\nIf the encryption fails, no files will be backed up\nDo you want to continue anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                    {
+                        args.Cancel = true;
+                        return;
+                    }
+
+                    m_warnedNoGPG = true;
+                }
+            }
+
             m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
+            m_settings["Password:WarnedNoGPG"] = m_warnedNoGPG;
             m_wrapper.BackupPassword = EnablePassword.Checked ? Password.Text : "";
+            m_wrapper.GPGEncryption = UseGPG.Checked;
 
             args.NextPage = new SelectBackend();
         }
@@ -81,10 +105,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add;
                 Password.Text = m_wrapper.BackupPassword;
+                UseGPG.Checked = m_wrapper.GPGEncryption;
             }
 
             if (m_settings.ContainsKey("Password:WarnedNoPassword"))
                 m_warnedNoPassword = (bool)m_settings["Password:WarnedNoPassword"];
+            if (m_settings.ContainsKey("Password:WarnedNoGPG"))
+                m_warnedNoPassword = (bool)m_settings["Password:WarnedNoGPG"];
         }
 
         private void GeneratePassword_Click(object sender, EventArgs e)
@@ -94,13 +121,19 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void EnablePassword_CheckedChanged(object sender, EventArgs e)
         {
-            Password.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
+            Password.Enabled = UseGPG.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
             m_warnedNoPassword = false;
+            
         }
 
         private void Password_TextChanged(object sender, EventArgs e)
         {
             m_warnedNoPassword = false;
+        }
+
+        private void UseGPG_CheckedChanged(object sender, EventArgs e)
+        {
+            m_warnedNoGPG = false;
         }
 
     }

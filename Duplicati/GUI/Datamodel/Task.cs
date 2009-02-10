@@ -49,6 +49,8 @@ namespace Duplicati.Datamodel
 		private System.String m_ThreadPriority = "";
 		[DatabaseField("AsyncTransfer")]
 		private System.Boolean m_AsyncTransfer = false;
+		[DatabaseField("GPGEncryption")]
+		private System.Boolean m_GPGEncryption = false;
 #endregion
 
 #region " properties "
@@ -141,6 +143,12 @@ namespace Duplicati.Datamodel
 		{
 			get{return m_AsyncTransfer;}
 			set{object oldvalue = m_AsyncTransfer;OnBeforeDataChange(this, "AsyncTransfer", oldvalue, value);m_AsyncTransfer = value;OnAfterDataChange(this, "AsyncTransfer", oldvalue, value);}
+		}
+
+		public System.Boolean GPGEncryption
+		{
+			get{return m_GPGEncryption;}
+			set{object oldvalue = m_GPGEncryption;OnBeforeDataChange(this, "GPGEncryption", oldvalue, value);m_GPGEncryption = value;OnAfterDataChange(this, "GPGEncryption", oldvalue, value);}
 		}
 
 #endregion

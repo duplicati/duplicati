@@ -63,10 +63,18 @@ namespace Duplicati.CommandLine
             Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
 
             string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
-            if (System.IO.Directory.Exists(tempdir))
-                System.IO.Directory.Delete(tempdir, true);
 
-            System.IO.Directory.CreateDirectory(tempdir);
+            try
+            {
+                if (System.IO.Directory.Exists(tempdir))
+                    System.IO.Directory.Delete(tempdir, true);
+
+                System.IO.Directory.CreateDirectory(tempdir);
+            }
+            catch(Exception ex)
+            {
+                Log.WriteMessage("Failed to clean tempdir", LogMessageType.Error, ex);
+            }
 
             Duplicati.Library.Core.TempFolder.SystemTempPath = tempdir;
 
@@ -167,13 +175,19 @@ namespace Duplicati.CommandLine
                 string relpath = s.Substring(f1.Length);
                 string target = System.IO.Path.Combine(f2, relpath);
                 if (!folders2.Contains(target))
+                {
+                    Log.WriteMessage("Missing folder: " + relpath, LogMessageType.Error);
                     Console.WriteLine("Missing folder: " + relpath);
+                }
                 else
                     folders2.Remove(target);
             }
 
-            foreach(string s in folders2)
+            foreach (string s in folders2)
+            {
+                Log.WriteMessage("Extra folder: " + s.Substring(f2.Length), LogMessageType.Error);
                 Console.WriteLine("Extra folder: " + s.Substring(f2.Length));
+            }
 
             List<string> files1 = Utility.EnumerateFiles(f1);
             List<string> files2 = Utility.EnumerateFiles(f2);
@@ -182,17 +196,26 @@ namespace Duplicati.CommandLine
                 string relpath = s.Substring(f1.Length);
                 string target = System.IO.Path.Combine(f2, relpath);
                 if (!files2.Contains(target))
+                {
+                    Log.WriteMessage("Missing file: " + relpath, LogMessageType.Error);
                     Console.WriteLine("Missing file: " + relpath);
+                }
                 else
                 {
                     files2.Remove(target);
                     if (!CompareFiles(s, target, relpath))
+                    {
+                        Log.WriteMessage("File differs: " + relpath, LogMessageType.Error);
                         Console.WriteLine("File differs: " + relpath);
+                    }
                 }
             }
 
             foreach (string s in files2)
+            {
+                Log.WriteMessage("Extra file: " + s.Substring(f2.Length), LogMessageType.Error);
                 Console.WriteLine("Extra file: " + s.Substring(f2.Length));
+            }
         }
 
         /// <summary>
@@ -208,6 +231,7 @@ namespace Duplicati.CommandLine
             using (System.IO.FileStream fs2 = System.IO.File.OpenRead(f2))
                 if (fs1.Length != fs2.Length)
                 {
+                    Log.WriteMessage("Lengths differ: " + display + ", " + fs1.Length.ToString() + " vs. " + fs2.Length.ToString(), LogMessageType.Error);
                     Console.WriteLine("Lengths differ: " + display + ", " + fs1.Length.ToString() + " vs. " + fs2.Length.ToString());
                     return false;
                 }
@@ -215,6 +239,7 @@ namespace Duplicati.CommandLine
                     for (long l = 0; l < fs1.Length; l++)
                         if (fs1.ReadByte() != fs2.ReadByte())
                         {
+                            Log.WriteMessage("Mismatch in byte " + l.ToString() + " in file " + display, LogMessageType.Error);
                             Console.WriteLine("Mismatch in byte " + l.ToString() + " in file " + display);
                             return false;
                         }

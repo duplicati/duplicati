@@ -4,13 +4,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.Library.Core</RootNamespace>
-    <AssemblyName>Duplicati.Library.Core</AssemblyName>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    <RootNamespace>Duplicati.CommandLine.Decrypter</RootNamespace>
+    <AssemblyName>Duplicati.CommandLine.Decrypter</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,21 +33,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FileArchiveDirectory.cs" />
-    <Compile Include="FilenameFilter.cs" />
-    <Compile Include="IFileArchive.cs" />
-    <Compile Include="KeyGenerator.cs" />
-    <Compile Include="OverrideableStream.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Sizeparser.cs" />
-    <Compile Include="TempFile.cs" />
-    <Compile Include="TempFolder.cs" />
-    <Compile Include="ThrottledStream.cs" />
-    <Compile Include="Timeparser.cs" />
-    <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Duplicati.snk" />
+    <ProjectReference Include="..\..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
+      <Name>Duplicati.Library.Encryption</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -30,12 +30,11 @@ namespace Duplicati.Datamodel
 
         private const string RECENT_DURATION = "Recent duration";
         private const string PGP_PATH = "PGP path";
-        private const string PYTHON_PATH = "Python path";
-        private const string DUPLICITY_PATH = "Duplicity path";
-        private const string NCFTP_PATH = "NcFTP Path";
-        private const string PUTTY_PATH = "Putty Path";
+        private const string SFTP_PATH = "SFTP Path";
+        private const string SCP_PATH = "SCP Path";
 
-        public const string APP_PATH_ENV = "%APP_PATH%";
+        //TODO: Deal with this on Linux
+        public const string PROGRAM_FILES = "%PROGRAMFILES%";
 
         public ApplicationSettings(IDataFetcher dataparent)
         {
@@ -54,47 +53,60 @@ namespace Duplicati.Datamodel
         /// <summary>
         /// Gets or sets the path to PGP. May contain environment variables
         /// </summary>
-        public string PGPPath
+        public string GPGPath
         {
-            get { return string.IsNullOrEmpty(m_appset[PGP_PATH]) ? APP_PATH_ENV + "gpg" : m_appset[PGP_PATH]; }
+            get 
+            { 
+                if (string.IsNullOrEmpty(m_appset[PGP_PATH]))
+                {
+                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                        return "gpg";
+                    else
+                        return PROGRAM_FILES + "GNU\\GnuPG\\gpg.exe";
+                }
+
+                return m_appset[PGP_PATH];
+            }
             set { m_appset[PGP_PATH] = value; }
         }
 
         /// <summary>
-        /// Gets or sets the path to NcFTP. May contain environment variables
+        /// Gets or sets the path to SFtp. May contain environment variables
         /// </summary>
-        public string NcFTPPath
+        public string SFtpPath
         {
-            get { return string.IsNullOrEmpty(m_appset[NCFTP_PATH]) ? APP_PATH_ENV + "ncftp" : m_appset[NCFTP_PATH]; }
-            set { m_appset[NCFTP_PATH] = value; }
+            get
+            {
+                if (string.IsNullOrEmpty(m_appset[SFTP_PATH]))
+                {
+                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                        return "sftp";
+                    else
+                        return PROGRAM_FILES + "\\putty\\psftp.exe";
+                }
+                return m_appset[SFTP_PATH];
+            }
+            set { m_appset[SFTP_PATH] = value; }
         }
+
 
         /// <summary>
-        /// Gets or sets the path to Putty. May contain environment variables
+        /// Gets or sets the path to SFtp. May contain environment variables
         /// </summary>
-        public string PuttyPath
+        public string ScpPath
         {
-            get { return string.IsNullOrEmpty(m_appset[PUTTY_PATH]) ? APP_PATH_ENV + "putty" : m_appset[PUTTY_PATH]; }
-            set { m_appset[PUTTY_PATH] = value; }
+            get
+            {
+                if (string.IsNullOrEmpty(m_appset[SCP_PATH]))
+                {
+                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                        return "scp";
+                    else
+                        return PROGRAM_FILES + "\\putty\\pscp.exe";
+                }
+                return m_appset[SCP_PATH];
+            }
+            set { m_appset[SCP_PATH] = value; }
         }
-
-        /// <summary>
-        /// Gets or sets the path to the pyhon executeable. May contain environment variables
-        /// </summary>
-        public string PythonPath
-        {
-            get { return string.IsNullOrEmpty(m_appset[PYTHON_PATH]) ? APP_PATH_ENV + "python25\\python.exe" : m_appset[PYTHON_PATH]; }
-            set { m_appset[PYTHON_PATH] = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the path to the duplicity main script. May contain environment variables
-        /// </summary>
-        public string DuplicityPath
-        {
-            get { return string.IsNullOrEmpty(m_appset[DUPLICITY_PATH]) ? APP_PATH_ENV + "duplicity\\duplicity.py" : m_appset[DUPLICITY_PATH]; }
-            set { m_appset[DUPLICITY_PATH] = value; }
-        }
-
     }
 }

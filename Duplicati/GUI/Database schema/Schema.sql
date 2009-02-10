@@ -13,7 +13,8 @@ CREATE TABLE "Task" (
     "VolumeSize" TEXT NULL,
 	"FullAfter" TEXT NULL,
 	"ThreadPriority" TEXT NULL,
-	"AsyncTransfer" BOOLEAN NULL
+	"AsyncTransfer" BOOLEAN NULL,
+	"GPGEncryption" BOOLEAN NULL
 );
 
 CREATE TABLE "Schedule" (

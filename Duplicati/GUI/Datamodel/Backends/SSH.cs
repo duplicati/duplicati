@@ -110,6 +110,9 @@ namespace Duplicati.Datamodel.Backends
 
             if (this.Port != 22)
                 options["ssh-options"] += "-P " + this.Port;
+
+            options["scp-command"] = new ApplicationSettings(m_owner.DataParent).ScpPath;
+            options["sftp-command"] = new ApplicationSettings(m_owner.DataParent).SFtpPath;
         }
 
         public string FriendlyName { get { return "SSH host"; } }

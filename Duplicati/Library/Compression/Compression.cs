@@ -23,87 +23,8 @@ using System.Text;
 
 namespace Duplicati.Library.Compression
 {
-    public class Compression : IDisposable
+    public class Compression
     {
-        private bool m_writing;
-        private ICSharpCode.SharpZipLib.Zip.ZipOutputStream m_zipfile;
-        private ICSharpCode.SharpZipLib.Zip.ZipEntryFactory m_zef;
-        private System.IO.FileStream m_filestream;
-        private string m_filename;
-        private string m_basename;
-
-        public Compression(string basefolder, string zipfile)
-        {
-            m_basename = basefolder;
-            m_writing = true;
-            m_filename = zipfile;
-            m_filestream = System.IO.File.Create(zipfile);
-            m_zipfile = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(m_filestream);
-            m_zef = new ICSharpCode.SharpZipLib.Zip.ZipEntryFactory();
-            m_zef.NameTransform = new ICSharpCode.SharpZipLib.Zip.ZipNameTransform(m_basename);
-        }
-
-        public void AddFolder(string folder)
-        {
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = m_zef.MakeDirectoryEntry(folder, true);
-            m_zipfile.PutNextEntry(ze);
-        }
-
-        public long AddFile(string file)
-        {
-            if (!m_writing)
-                throw new InvalidOperationException("Cannot write to a file while reading it");
-
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = m_zef.MakeFileEntry(file, true);
-            m_zipfile.PutNextEntry(ze);
-
-            using(System.IO.FileStream fs = System.IO.File.OpenRead(file))
-                Core.Utility.CopyStream(fs, m_zipfile);
-
-            return new System.IO.FileInfo(m_filename).Length;
-        }
-
-        public long Size 
-        {
-            get 
-            {
-                m_zipfile.Flush();
-                return m_zipfile.Length;
-            }
-        }
-
-
-        public System.IO.Stream AddStream(string filename)
-        {
-            if (!m_writing)
-                throw new InvalidOperationException("Cannot write to a file while reading it");
-
-
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze;
-            try
-            {
-                //This call breaks on long filenames...
-                ze = m_zef.MakeFileEntry(filename, true);
-                ze.DateTime = System.IO.File.GetLastWriteTime(filename);
-            }
-            catch(System.IO.PathTooLongException)
-            {
-                ze = new ICSharpCode.SharpZipLib.Zip.ZipEntry(m_zef.NameTransform.TransformFile(filename));
-                //Does not work when the path is too long
-                //ze.DateTime = System.IO.File.GetLastWriteTime(filename);
-            }
-
-            m_zipfile.PutNextEntry(ze);
-            return m_zipfile;
-        }
-
-        public Compression(string zipfile)
-        {
-            m_writing = false;
-            m_filename = zipfile;
-            ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(zipfile);
-        }
-
         /// <summary>
         /// Compresses a list of files into a single archive
         /// </summary>
@@ -209,41 +130,5 @@ namespace Duplicati.Library.Compression
 
             return results;
         }
-
-        public static List<string> GetAllLines(string file, string path)
-        {
-            List<string> res = new List<string>();
-            using (new Logging.Timer("GetAllLines " + file + ", path " + path + " (" + new System.IO.FileInfo(file).Length.ToString() + ")"))
-            {
-                ICSharpCode.SharpZipLib.Zip.ZipFile zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(file);
-                ICSharpCode.SharpZipLib.Zip.ZipEntry ze = zip.GetEntry(path);
-                if (ze != null)
-
-                    using (System.IO.StreamReader sr = new System.IO.StreamReader(zip.GetInputStream(ze)))
-                        while(!sr.EndOfStream)
-                            res.Add(sr.ReadLine());
-
-                zip.Close();
-            }
-
-            return res;
-        }
-
-        #region IDisposable Members
-
-        public void Dispose()
-        {
-            try
-            {
-                if (m_zipfile != null)
-                    m_zipfile.Close();
-                m_zipfile = null;
-            }
-            catch
-            {
-            }
-        }
-
-        #endregion
     }
 }

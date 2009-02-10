@@ -12,12 +12,8 @@ namespace Duplicati.Library.Core
     /// This class throttles the rate data can be read or written to the underlying stream.
     /// This creates a bandwith throttle option for any stream, including a network stream.
     /// </summary>
-    public class ThrottledStream : Stream
+    public class ThrottledStream : OverrideableStream
     {
-        /// <summary>
-        /// The stream being throttled
-        /// </summary>
-        private Stream m_basestream;
         /// <summary>
         /// The max number of bytes pr. second to write
         /// </summary>
@@ -64,10 +60,8 @@ namespace Duplicati.Library.Core
         /// <param name="readspeed">The maximum number of bytes pr. second to read. Specify a number less than 1 to allow unlimited speed.</param>
         /// <param name="writespeed">The maximum number of bytes pr. second to write. Specify a number less than 1 to allow unlimited speed.</param>
         public ThrottledStream(Stream basestream, long readspeed, long writespeed)
+            : base(basestream)
         {
-            if (basestream == null)
-                throw new NullReferenceException("basestream");
-            m_basestream = basestream;
             m_readspeed = readspeed;
             m_writespeed = writespeed;
 
@@ -77,43 +71,6 @@ namespace Duplicati.Library.Core
                 m_datawritten = new List<KeyValuePair<long, long>>();
         }
 
-        public override bool CanRead
-        {
-            get { return m_basestream.CanRead; }
-        }
-
-        public override bool CanSeek
-        {
-            get { return m_basestream.CanSeek; }
-        }
-
-        public override bool CanWrite
-        {
-            get { return m_basestream.CanWrite; }
-        }
-
-        public override void Flush()
-        {
-            m_basestream.Flush();
-        }
-
-        public override long Length
-        {
-            get { return m_basestream.Length; }
-        }
-
-        public override long Position
-        {
-            get
-            {
-                return m_basestream.Position;
-            }
-            set
-            {
-                m_basestream.Position = value;
-            }
-        }
-
         public override int Read(byte[] buffer, int offset, int count)
         {
             int bytesRead = DelayIfRequired(true, buffer, ref offset, ref count);
@@ -121,16 +78,6 @@ namespace Duplicati.Library.Core
                 return bytesRead;
             else
                 return m_basestream.Read(buffer, offset, count) + bytesRead;
-        }
-
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
-        {
-            return m_basestream.Seek(offset, origin);
-        }
-
-        public override void SetLength(long value)
-        {
-            m_basestream.SetLength(value);
         }
 
         public override void Write(byte[] buffer, int offset, int count)

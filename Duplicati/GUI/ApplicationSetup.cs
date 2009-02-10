@@ -44,11 +44,10 @@ namespace Duplicati.GUI
             try
             {
                 m_isUpdating = true;
-                RecentDuration.Text = m_settings.RecentBackupDuration;
-                PGPPath.Text = m_settings.PGPPath;
-                PythonPath.Text = m_settings.PythonPath;
-                DuplicityPath.Text = m_settings.DuplicityPath;
-                NcFTPPath.Text = m_settings.NcFTPPath;
+                RecentDuration.Value = m_settings.RecentBackupDuration;
+                GPGPath.Text = m_settings.GPGPath;
+                SFTPPath.Text = m_settings.SFtpPath;
+                SCPPath.Text = m_settings.ScpPath;
             }
             finally
             {
@@ -74,91 +73,65 @@ namespace Duplicati.GUI
             return true;
         }
 
-        private void BrowsePGP_Click(object sender, EventArgs e)
+        private void BrowseGPG_Click(object sender, EventArgs e)
         {
-            if (PGPBrowser.ShowDialog(this) == DialogResult.OK)
-                if (TestForFiles(PGPBrowser.SelectedPath, "pgp.exe")) 
-                    PGPPath.Text = PGPBrowser.SelectedPath;
-        }
-
-        private void BrowsePython_Click(object sender, EventArgs e)
-        {
-            if (PythonFileDialog.ShowDialog(this) == DialogResult.OK)
-                if (TestForFiles(System.IO.Path.GetDirectoryName(PythonFileDialog.FileName), "python.exe"))
-                    PythonPath.Text = PythonFileDialog.FileName;
-        }
-
-        private void BrowseDuplicity_Click(object sender, EventArgs e)
-        {
-            if (DuplicityFileDialog.ShowDialog(this) == DialogResult.OK)
-                if (TestForFiles(System.IO.Path.GetDirectoryName(DuplicityFileDialog.FileName), "duplicity.py"))
-                    DuplicityPath.Text = DuplicityFileDialog.FileName;
+            if (BrowseGPGDialog.ShowDialog(this) == DialogResult.OK)
+                GPGPath.Text = BrowseGPGDialog.FileName;
         }
 
         private void RecentDuration_TextChanged(object sender, EventArgs e)
         {
             if (m_isUpdating)
                 return;
-            m_settings.RecentBackupDuration = RecentDuration.Text;
+            m_settings.RecentBackupDuration = RecentDuration.Value;
         }
 
-        private void PGPPath_TextChanged(object sender, EventArgs e)
+        private void GPGPath_TextChanged(object sender, EventArgs e)
         {
             if (m_isUpdating)
                 return;
-            m_settings.PGPPath = PGPPath.Text;
-        }
-
-        private void PythonPath_TextChanged(object sender, EventArgs e)
-        {
-            if (m_isUpdating)
-                return;
-            m_settings.PythonPath = PythonPath.Text;
-        }
-
-        private void DuplicityPath_TextChanged(object sender, EventArgs e)
-        {
-            if (m_isUpdating)
-                return;
-            m_settings.DuplicityPath = DuplicityPath.Text;
+            m_settings.GPGPath = GPGPath.Text;
         }
 
         private void OKBtn_Click(object sender, EventArgs e)
         {
-            //TODO: Fix once CommitRecursive is done
-            m_connection.CommitAll();
-            Program.DataConnection.CommitAll();
+            m_connection.CommitRecursive(m_connection.GetObjects<ApplicationSetting>());
 
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
 
-        private void BrowseNcFTP_Click(object sender, EventArgs e)
+        private void BrowseSFTP_Click(object sender, EventArgs e)
         {
-            if (NcFTPBrowser.ShowDialog(this) == DialogResult.OK)
-                if (TestForFiles(NcFTPBrowser.SelectedPath, "ncftp.exe", "ncftpbatch.exe", "ncftpget.exe", "ncftpls.exe", "ncftpput.exe"))
-                    NcFTPPath.Text = NcFTPBrowser.SelectedPath;
-       }
+            if (BrowseSFTPDialog.ShowDialog(this) == DialogResult.OK)
+                SFTPPath.Text = BrowseSFTPDialog.FileName;
+        }
 
-        private void NcFTPPath_TextChanged(object sender, EventArgs e)
+        private void SFTPPath_TextChanged(object sender, EventArgs e)
         {
             if (m_isUpdating)
                 return;
-            m_settings.NcFTPPath  = NcFTPPath.Text;
+            m_settings.SFtpPath = SFTPPath.Text;
         }
 
-        private void BrowsePutty_Click(object sender, EventArgs e)
-        {
-            if (PuttyBrowser.ShowDialog(this) == DialogResult.OK)
-                if (TestForFiles(PuttyBrowser.SelectedPath, "pscp.exe", "psftp.exe"))
-                    PuttyPath.Text = PuttyBrowser.SelectedPath;
-        }
-
-        private void PuttyPath_TextChanged(object sender, EventArgs e)
+        private void SCPPath_TextChanged(object sender, EventArgs e)
         {
             if (m_isUpdating)
                 return;
-            m_settings.PuttyPath = PuttyPath.Text;
+            m_settings.ScpPath = SCPPath.Text;
+
         }
+
+        private void BrowseSCP_Click(object sender, EventArgs e)
+        {
+            if (BrowseSCPDialog.ShowDialog(this) == DialogResult.OK)
+                SCPPath.Text = BrowseSCPDialog.FileName;
+        }
+
+        private void RecentDuration_ValueChanged(object sender, EventArgs e)
+        {
+            RecentDuration_TextChanged(sender, e);
+        }
+
     }
 }

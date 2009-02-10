@@ -40,6 +40,12 @@ namespace Duplicati.Library.Main
                     Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(options);
                     bool full = options.ContainsKey("full");
 
+                    int volumesize = (int)Core.Sizeparser.ParseSize(options.ContainsKey("volsize") ? options["volsize"] : "5", "mb");
+                    volumesize = Math.Max(1024 * 1024, volumesize);
+
+                    long totalmax = options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(options["totalsize"], "mb") : long.MaxValue;
+                    totalmax = Math.Max(volumesize, totalmax);
+
                     backend = Backend.BackendLoader.GetBackend(target, options);
                     if (backend == null)
                         throw new Exception("Unable to find backend for target: " + target);
@@ -54,49 +60,33 @@ namespace Duplicati.Library.Main
                     if (!full && options.ContainsKey("full-if-older-than"))
                         full = DateTime.Now > Core.Timeparser.ParseTimeInterval(options["full-if-older-than"], prev[prev.Count - 1].Time);
 
-                    //TODO: Empty folder creation takes up too much of the processing time
-                    using (Core.TempFolder basefolder = new Duplicati.Library.Core.TempFolder())
+                    using (Core.TempFolder tempfolder = new Duplicati.Library.Core.TempFolder())
                     {
+                        List<Core.IFileArchive> patches = new List<Core.IFileArchive>();
                         if (!full)
                         {
                             using (new Logging.Timer("Reading incremental data"))
                             {
-                                foreach (BackupEntry be in prev[prev.Count - 1].SignatureFile)
-                                    using (Core.TempFile t = new Duplicati.Library.Core.TempFile())
-                                    {
-                                        using (new Logging.Timer("Get " + be.Filename))
-                                            backend.Get(be.Filename, t);
-                                        Compression.Compression.Decompress(t, basefolder);
-                                    }
+                                List<BackupEntry> entries = new List<BackupEntry>();
+                                entries.Add(prev[prev.Count - 1]);
+                                entries.AddRange(prev[prev.Count - 1].Incrementals);
 
-                                foreach (BackupEntry be in prev[prev.Count - 1].Incrementals)
+                                foreach (BackupEntry be in entries)
                                     foreach (BackupEntry bes in be.SignatureFile)
-                                        using (Core.TempFile t = new Duplicati.Library.Core.TempFile())
-                                        {
-                                            using (new Logging.Timer("Get " + bes.Filename))
-                                                backend.Get(bes.Filename, t);
-
-                                            using (Core.TempFolder tf = new Duplicati.Library.Core.TempFolder())
-                                            {
-                                                Compression.Compression.Decompress(t, tf);
-                                                using (new Logging.Timer("Full signature merge"))
-                                                    Main.RSync.RSyncDir.MergeSignatures(basefolder, tf);
-                                            }
-                                        }
+                                    {
+                                        string filename = System.IO.Path.Combine(tempfolder, "patch-" + patches.Count.ToString() + ".zip");
+                                        using (new Logging.Timer("Get " + bes.Filename))
+                                            backend.Get(bes.Filename, filename);
+                                        patches.Add(new Compression.FileArchiveZip(filename));
+                                    }
                             }
                         }
                         DateTime backuptime = DateTime.Now;
 
-                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, basefolder, bs))
+                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, bs, patches))
                         {
                             using (new Logging.Timer("Initiating multipass"))
                                 dir.InitiateMultiPassDiff(full, filter);
-
-                            int volumesize = (int)Core.Sizeparser.ParseSize(options.ContainsKey("volsize") ? options["volsize"] : "5", "mb");
-                            volumesize = Math.Max(1024 * 1024, volumesize);
-
-                            long totalmax = options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(options["totalsize"], "mb") : long.MaxValue;
-                            totalmax = Math.Max(volumesize, totalmax);
 
                             int vol = 0;
                             long totalsize = 0;
@@ -109,65 +99,61 @@ namespace Duplicati.Library.Main
                             {
                                 using (new Logging.Timer("Multipass " + (vol + 1).ToString()))
                                 {
-                                    using (Core.TempFile sigzip = new Duplicati.Library.Core.TempFile())
+                                    //The backendwrapper will remove these
+                                    Core.TempFile signaturefile = new Duplicati.Library.Core.TempFile();
+                                    Core.TempFile contentfile = new Duplicati.Library.Core.TempFile();
+
+                                    signaturefile.Protected = true;
+                                    contentfile.Protected = true;
+
+                                    using (Compression.FileArchiveZip signaturearchive = Duplicati.Library.Compression.FileArchiveZip.CreateArchive(signaturefile))
+                                    using (Compression.FileArchiveZip contentarchive = Duplicati.Library.Compression.FileArchiveZip.CreateArchive(contentfile))
                                     {
-                                        using (Compression.Compression signature = new Duplicati.Library.Compression.Compression(dir.m_targetfolder, sigzip))
-                                        {
-                                            using (Core.TempFile zf = new Duplicati.Library.Core.TempFile())
-                                            {
-                                                done = dir.MakeMultiPassDiff(signature, zf, volumesize);
-                                                totalsize += new System.IO.FileInfo(zf).Length;
-                                                contenthashes.Add(Core.Utility.CalculateHash(zf));
-                                                using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
-                                                    backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", zf);
-                                                
-                                                //The backendwrapper will remove it
-                                                zf.Protected = true;
-                                            }
+                                        done = dir.MakeMultiPassDiff(signaturearchive, contentarchive, Math.Min(volumesize, totalmax - totalsize));
+                                        totalsize += new System.IO.FileInfo(contentfile).Length;
 
-                                            totalsize += signature.Size;
+                                        totalsize += signaturearchive.Size;
 
-                                            if (totalsize >= totalmax)
-                                                dir.FinalizeMultiPass(signature);
-                                        }
-
-                                        signaturehashes.Add(Core.Utility.CalculateHash(sigzip));
-
-
-                                        using (new Logging.Timer("Writing remote signatures"))
-                                            backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", sigzip);
-                                        
-                                        //The backendwrapper will remove it
-                                        sigzip.Protected = true;
+                                        if (totalsize >= totalmax)
+                                            dir.FinalizeMultiPass(signaturearchive, contentarchive);
                                     }
+                                    
 
-                                    using (Core.TempFile mf = new Duplicati.Library.Core.TempFile())
-                                    using (new Logging.Timer("Writing manifest"))
-                                    {
-                                        System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-                                        System.Xml.XmlNode root = doc.AppendChild(doc.CreateElement("Manifest"));
-                                        root.Attributes.Append(doc.CreateAttribute("version")).Value = "1";
-                                        root.AppendChild(doc.CreateElement("VolumeCount")).InnerText = (vol + 1).ToString();
-                                        System.Xml.XmlNode contentroot = root.AppendChild(doc.CreateElement("ContentFiles"));
-                                        System.Xml.XmlNode signatureroot = root.AppendChild(doc.CreateElement("SignatureFiles"));
+                                    contenthashes.Add(Core.Utility.CalculateHash(contentfile));
+                                    using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
+                                        backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Content, full, backuptime, vol + 1) + ".zip", contentfile);
 
-                                        foreach (string s in contenthashes)
-                                            contentroot.AppendChild(doc.CreateElement("Hash")).InnerText = s;
-                                        foreach (string s in signaturehashes)
-                                            signatureroot.AppendChild(doc.CreateElement("Hash")).InnerText = s;
-
-                                        //TODO: Actually read the manifest on restore
-                                        doc.Save(mf);
-
-                                        backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
-                                        
-                                        //The backendwrapper will remove it
-                                        mf.Protected = true;
-                                    }
-
-                                    vol++;
-
+                                    signaturehashes.Add(Core.Utility.CalculateHash(signaturefile));
+                                    using (new Logging.Timer("Writing remote signatures"))
+                                        backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", signaturefile);
                                 }
+
+                                //The backend wrapper will remove this
+                                Core.TempFile mf = new Duplicati.Library.Core.TempFile();
+                                mf.Protected = true;
+
+                                using (new Logging.Timer("Writing manifest"))
+                                {
+                                    System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                                    System.Xml.XmlNode root = doc.AppendChild(doc.CreateElement("Manifest"));
+                                    root.Attributes.Append(doc.CreateAttribute("version")).Value = "1";
+                                    root.AppendChild(doc.CreateElement("VolumeCount")).InnerText = (vol + 1).ToString();
+                                    System.Xml.XmlNode contentroot = root.AppendChild(doc.CreateElement("ContentFiles"));
+                                    System.Xml.XmlNode signatureroot = root.AppendChild(doc.CreateElement("SignatureFiles"));
+
+                                    foreach (string s in contenthashes)
+                                        contentroot.AppendChild(doc.CreateElement("Hash")).InnerText = s;
+                                    foreach (string s in signaturehashes)
+                                        signatureroot.AppendChild(doc.CreateElement("Hash")).InnerText = s;
+
+                                    //TODO: Actually read the manifest on restore
+                                    doc.Save(mf);
+
+                                    backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Manifest, full, backuptime) + ".manifest", mf);
+                                }
+
+                                vol++;
+
                             }
                         }
                     }
@@ -207,76 +193,33 @@ namespace Duplicati.Library.Main
                     if (bestFit.EncryptionMode != null)
                         backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, options);
 
-                    using (Core.TempFolder basefolder = new Duplicati.Library.Core.TempFolder())
+                    List<BackupEntry> entries = new List<BackupEntry>();
+                    entries.Add(bestFit);
+                    entries.AddRange(bestFit.Incrementals);
+                    int patchno = 0;
+
+                    using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs))
                     {
-                        foreach (BackupEntry be in bestFit.SignatureFile)
-                            using (Core.TempFile basezip = new Duplicati.Library.Core.TempFile())
-                            {
-                                if (be.CompressionMode != "zip")
-                                    throw new Exception("Unexpected compression mode");
-
-                                using (new Logging.Timer("Get " + be.Filename))
-                                    backend.Get(be.Filename, basezip);
-
-                                Compression.Compression.Decompress(basezip, basefolder);
-                            }
-
-                        foreach (BackupEntry vol in bestFit.ContentVolumes)
-                            using (Core.TempFile basezip = new Duplicati.Library.Core.TempFile())
+                        foreach (BackupEntry be in entries)
+                        {
+                            //Patch with last volume first, as that has the file/folder lists
+                            be.ContentVolumes.Reverse();
+                            foreach (BackupEntry vol in be.ContentVolumes)
                             {
                                 if (vol.CompressionMode != "zip")
                                     throw new Exception("Unexpected compression mode");
 
-                                using (new Logging.Timer("Get " + vol.Filename))
-                                    backend.Get(vol.Filename, basezip);
-
-                                Compression.Compression.Decompress(basezip, basefolder);
-                            }
-
-                        using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, basefolder, rs))
-                        {
-
-                            using (new Logging.Timer("Full restore to " + target))
-                                sync.Restore(target, new List<string>());
-
-                            foreach (BackupEntry p in bestFit.Incrementals)
-                            {
-                                if (p.SignatureFile.Count == 0 || p.ContentVolumes.Count == 0)
-                                    throw new Exception("Unable to parse filenames for the volume: " + p.Filename);
-
-                                using (Core.TempFolder t = new Duplicati.Library.Core.TempFolder())
+                                using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
                                 {
-                                    foreach (BackupEntry be in p.SignatureFile)
-                                        using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
-                                        {
-                                            if (be.CompressionMode != "zip")
-                                                throw new Exception("Unexpected compression mode");
+                                    using (new Logging.Timer("Get " + vol.Filename))
+                                        backend.Get(vol.Filename, patchzip);
 
-                                            using (new Logging.Timer("Get " + be.Filename))
-                                                backend.Get(be.Filename, patchzip);
-
-                                            Compression.Compression.Decompress(patchzip, t);
-                                        }
-
-                                    foreach (BackupEntry vol in p.ContentVolumes)
-                                        using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
-                                        {
-                                            if (vol.CompressionMode != "zip")
-                                                throw new Exception("Unexpected compression mode");
-
-                                            using (new Logging.Timer("Get " + vol.Filename))
-                                                backend.Get(vol.Filename, patchzip);
-
-                                            Compression.Compression.Decompress(patchzip, t);
-                                        }
-
-                                    using (new Logging.Timer("Incremental patch " + p.Time.ToString()))
-                                        sync.Patch(target, t);
-
+                                    using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + target))
+                                        sync.Patch(target, new Compression.FileArchiveZip(patchzip));
                                 }
+                                patchno++;
                             }
                         }
-
                     }
                 }
                 finally
@@ -554,26 +497,11 @@ namespace Duplicati.Library.Main
             using (backend)
             using (Core.TempFolder basefolder = new Duplicati.Library.Core.TempFolder())
             {
-                foreach (BackupEntry be in bestFit.SignatureFile)
-                    using (Core.TempFile basezip = new Duplicati.Library.Core.TempFile())
-                    {
-                        if (be.CompressionMode != "zip")
-                            throw new Exception("Unexpected compression mode");
+                List<BackupEntry> entries = new List<BackupEntry>();
+                entries.Add(bestFit);
+                entries.AddRange(bestFit.Incrementals);
 
-                        using (new Logging.Timer("Get " + be.Filename))
-                            backend.Get(be.Filename, basezip);
-
-                        foreach (string s in Compression.Compression.ListFiles(basezip))
-                            if (s.StartsWith(RSync.RSyncDir.SIGNATURE_ROOT))
-                                res[s.Substring(RSync.RSyncDir.SIGNATURE_ROOT.Length + 1)] = null;
-
-                        foreach (string s in Compression.Compression.GetAllLines(basezip, RSync.RSyncDir.ADDED_FOLDERS))
-                            res[NormalizeZipDirName(s)] = null;
-
-                        //No deleted files or folders are possible here
-                    }
-
-                foreach (BackupEntry p in bestFit.Incrementals)
+                foreach (BackupEntry p in entries)
                 {
                     if (p.SignatureFile.Count == 0)
                         throw new Exception("Unable to parse filenames for the volume: " + p.Filename);
@@ -589,21 +517,24 @@ namespace Duplicati.Library.Main
                                 using (new Logging.Timer("Get " + be.Filename))
                                     backend.Get(be.Filename, patchzip);
 
+                                Core.IFileArchive archive = new Compression.FileArchiveZip(patchzip);
 
-                                foreach (string s in Compression.Compression.GetAllLines(patchzip, RSync.RSyncDir.DELETED_FOLDERS))
-                                    if (res.ContainsKey(NormalizeZipDirName(s)))
-                                        res.Remove(NormalizeZipDirName(s));
+                                if (archive.FileExists(RSync.RSyncDir.DELETED_FOLDERS))
+                                    foreach (string s in archive.ReadAllLines(RSync.RSyncDir.DELETED_FOLDERS))
+                                        if (res.ContainsKey(NormalizeZipDirName(s)))
+                                            res.Remove(NormalizeZipDirName(s));
 
-                                foreach (string s in Compression.Compression.GetAllLines(patchzip, RSync.RSyncDir.DELETED_FILES))
-                                    if (res.ContainsKey(NormalizeZipFileName(s)))
-                                        res.Remove(NormalizeZipFileName(s));
+                                if (archive.FileExists(RSync.RSyncDir.DELETED_FILES))
+                                    foreach (string s in archive.ReadAllLines(RSync.RSyncDir.DELETED_FILES))
+                                        if (res.ContainsKey(NormalizeZipFileName(s)))
+                                            res.Remove(NormalizeZipFileName(s));
 
-                                foreach (string s in Compression.Compression.ListFiles(patchzip))
-                                    if (s.StartsWith(RSync.RSyncDir.SIGNATURE_ROOT))
-                                        res[s.Substring(RSync.RSyncDir.SIGNATURE_ROOT.Length + 1)] = null;
+                                foreach (string s in archive.ListFiles(RSync.RSyncDir.SIGNATURE_ROOT))
+                                    res[s.Substring(RSync.RSyncDir.SIGNATURE_ROOT.Length + 1)] = null;
 
-                                foreach (string s in Compression.Compression.GetAllLines(patchzip, RSync.RSyncDir.ADDED_FOLDERS))
-                                    res[NormalizeZipDirName(s)] = null;
+                                if (archive.FileExists(RSync.RSyncDir.ADDED_FOLDERS))
+                                    foreach (string s in archive.ReadAllLines(RSync.RSyncDir.ADDED_FOLDERS))
+                                        res[NormalizeZipDirName(s)] = null;
                             }
                     }
                 }

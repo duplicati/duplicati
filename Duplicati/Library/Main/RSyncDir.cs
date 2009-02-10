@@ -43,21 +43,13 @@ namespace Duplicati.Library.Main.RSync
         /// This is the folder being backed up
         /// </summary>
         public string m_sourcefolder;
-        /// <summary>
-        /// This is the folder containing signatures for the previous backup
-        /// </summary>
-        public string m_basefolder;
-        /// <summary>
-        /// This is the folder that gets filled with the next backup
-        /// </summary>
-        public Core.TempFolder m_targetfolder;
 
         /// <summary>
         /// This is a list of existing file signatures.
         /// Key is path to the file. 
         /// value is path to the signature file.
         /// </summary>
-        private Dictionary<string, string> m_oldSignatures;
+        private Dictionary<string, Core.IFileArchive> m_oldSignatures;
         /// <summary>
         /// This is a list of existing folders.
         /// </summary>
@@ -126,58 +118,52 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private bool m_finalized = false;
 
-
-
-
         /// <summary>
         /// This is a list of unprocessed files, used in multipass runs
         /// </summary>
         private List<string> m_unproccesed;
 
-        public RSyncDir(string sourcefolder, string basefolder, CommunicationStatistics stat)
+        public RSyncDir(string sourcefolder, CommunicationStatistics stat, List<Core.IFileArchive> patches)
+            : this(sourcefolder, stat)
+        {
+            string prefix = Core.Utility.AppendDirSeperator(SIGNATURE_ROOT);
+
+            foreach (Core.IFileArchive z in patches)
+            {
+                if (z.FileExists(DELETED_FILES))
+                    foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(DELETED_FILES)))
+                        if (m_oldSignatures.ContainsKey(s))
+                            m_oldSignatures.Remove(s);
+
+                foreach (string f in FilenamesFromPlatformIndependant(z.ListFiles(prefix)))
+                    m_oldSignatures[f.Substring(prefix.Length)] = z;
+
+                if (z.FileExists(DELETED_FOLDERS))
+                    foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(DELETED_FOLDERS)))
+                        if (m_oldFolders.ContainsKey(s))
+                            m_oldFolders.Remove(s);
+
+                if (z.FileExists(ADDED_FOLDERS))
+                    foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(ADDED_FOLDERS)))
+                        m_oldFolders.Add(s, s);
+            }
+        }
+
+        public RSyncDir(string sourcefolder, CommunicationStatistics stat)
         {
             if (!System.IO.Path.IsPathRooted(sourcefolder))
                 sourcefolder = System.IO.Path.GetFullPath(sourcefolder);
-            if (!System.IO.Path.IsPathRooted(basefolder))
-                sourcefolder = System.IO.Path.GetFullPath(basefolder);
-            m_sourcefolder = Core.Utility.AppendDirSeperator(sourcefolder);
-            m_basefolder = Core.Utility.AppendDirSeperator(basefolder);
-            m_targetfolder = new Duplicati.Library.Core.TempFolder();
-            m_stat = stat;
-
-            PrepareTargetFolder();
-            BuildIndex();
-        }
-
-        private void PrepareTargetFolder()
-        {
-            System.IO.Directory.CreateDirectory(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT));
-            System.IO.Directory.CreateDirectory(System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT));
-            System.IO.Directory.CreateDirectory(System.IO.Path.Combine(m_targetfolder, DELTA_ROOT));
-        }
-
-        private void BuildIndex()
-        {
-            if (m_basefolder == null || !System.IO.Directory.Exists(m_basefolder))
-            {
-                m_oldSignatures = new Dictionary<string, string>();
-                m_oldFolders = new Dictionary<string, string>();
-                return;
-            }
-            m_basefolder = Core.Utility.AppendDirSeperator(m_basefolder);
-
-            m_oldSignatures = new Dictionary<string,string>();
-            string sigfolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(m_basefolder, SIGNATURE_ROOT));
-
-            foreach (string s in Core.Utility.EnumerateFiles(sigfolder))
-                m_oldSignatures.Add(s.Substring(sigfolder.Length), s);
-
+            m_oldSignatures = new Dictionary<string, Duplicati.Library.Core.IFileArchive>();
             m_oldFolders = new Dictionary<string, string>();
-            if (System.IO.File.Exists(System.IO.Path.Combine(m_basefolder, ADDED_FOLDERS)))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(m_basefolder, ADDED_FOLDERS))))
-                    m_oldFolders.Add(s, s);
+            m_sourcefolder = Core.Utility.AppendDirSeperator(sourcefolder);
+            m_stat = stat;
+        }
 
-            
+        public void CreatePatch(Core.IFileArchive signatures, Core.IFileArchive content)
+        {
+            InitiateMultiPassDiff(false, null);
+            MakeMultiPassDiff(signatures, content, long.MaxValue);
+            FinalizeMultiPass(signatures, content);
         }
 
         public void InitiateMultiPassDiff(bool full, Core.FilenameFilter filter)
@@ -185,7 +171,7 @@ namespace Duplicati.Library.Main.RSync
             if (full)
             {
                 m_oldFolders = new Dictionary<string, string>();
-                m_oldSignatures = new Dictionary<string, string>();
+                m_oldSignatures = new Dictionary<string, Core.IFileArchive>();
             }
 
             m_newfiles = new Dictionary<string, string>();
@@ -195,9 +181,12 @@ namespace Duplicati.Library.Main.RSync
             m_deletedfolders = new List<string>();
 
             //TODO: Figure out how to make this faster, but still random
+            //Perhaps use itterative callbacks, with random recurse or itterate on each folder
             m_unproccesed = Core.Utility.EnumerateFileSystemEntries(m_sourcefolder, filter);
             m_totalfiles = m_unproccesed.Count;
 
+            
+            //Build folder diffs
             string dirmarker = System.IO.Path.DirectorySeparatorChar.ToString();
             for(int i = 0; i < m_unproccesed.Count; i++)
             {
@@ -213,44 +202,35 @@ namespace Duplicati.Library.Main.RSync
                     m_unproccesed.RemoveAt(i);
                     i--;
                 }
-
             }
 
             m_deletedfolders = new List<string>();
             m_deletedfolders.AddRange(m_oldFolders.Keys);
         }
 
-        public void FinalizeMultiPass(Compression.Compression sigfile)
+        public void FinalizeMultiPass(Core.IFileArchive signaturefile, Core.IFileArchive contentfile)
         {
             if (!m_finalized)
             {
                 if (m_unproccesed.Count == 0)
                     m_deletedfiles.AddRange(m_oldSignatures.Keys);
+
                 if (m_deletedfiles.Count > 0)
                 {
-                    System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FILES));
-                    foreach (string s in FilenamesToPlatformIndependant(m_deletedfiles.ToArray()))
-                        sw.WriteLine(s);
-
-                    sw.Flush();
+                    signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
+                    contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
                 }
 
                 if (m_deletedfolders.Count > 0)
                 {
-                    System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(DELETED_FOLDERS));
-                    foreach (string s in FilenamesToPlatformIndependant(m_deletedfolders.ToArray()))
-                        sw.WriteLine(s);
-
-                    sw.Flush();
+                    signaturefile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
+                    contentfile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
                 }
 
                 if (m_newfolders.Count > 0)
                 {
-                    System.IO.StreamWriter sw = new StreamWriter(sigfile.AddStream(ADDED_FOLDERS));
-                    foreach (string s in FilenamesToPlatformIndependant(m_newfolders.ToArray()))
-                        sw.WriteLine(s);
-
-                    sw.Flush();
+                    signaturefile.WriteAllLines(ADDED_FOLDERS, m_newfolders.ToArray());
+                    contentfile.WriteAllLines(ADDED_FOLDERS, m_newfolders.ToArray());
                 }
 
                 if (m_stat is BackupStatistics)
@@ -273,7 +253,7 @@ namespace Duplicati.Library.Main.RSync
             }
         }
 
-        public bool MakeMultiPassDiff(Compression.Compression sigfile, string zipfile, long volumesize)
+        public bool MakeMultiPassDiff(Core.IFileArchive signaturefile, Core.IFileArchive contentfile, long volumesize)
         {
             if (m_unproccesed == null)
                 throw new Exception("Multi pass is not initialized");
@@ -281,39 +261,37 @@ namespace Duplicati.Library.Main.RSync
             Random r = new Random();
             long totalSize = 0;
 
-            using (Compression.Compression c = new Duplicati.Library.Compression.Compression(m_targetfolder, zipfile))
+            while (m_unproccesed.Count > 0 && totalSize < volumesize)
             {
-                while (m_unproccesed.Count > 0 && totalSize < volumesize)
+                int next = r.Next(0, m_unproccesed.Count);
+                string s = m_unproccesed[next];
+                m_unproccesed.RemoveAt(next);
+
+                try
                 {
-                    int next = r.Next(0, m_unproccesed.Count);
-                    string s = m_unproccesed[next];
-                    m_unproccesed.RemoveAt(next);
-
-                    try
-                    {
-                        using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
-                            if (ProccessDiff(fs, s, sigfile))
-                                totalSize = AddFileToCompression(fs, s, c);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (m_stat != null)
-                            m_stat.LogError("Failed to process file: \"" + s + "\", Error message: " + ex.Message);
-                        Logging.Log.WriteMessage("Failed to process file: \"" + s + "\"", Duplicati.Library.Logging.LogMessageType.Error, ex);                        
-                    }
+                    using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        if (ProccessDiff(fs, s, signaturefile))
+                            totalSize = AddFileToCompression(fs, s, contentfile);
                 }
-
-                if (m_unproccesed.Count == 0)
-                    FinalizeMultiPass(sigfile);
+                catch (Exception ex)
+                {
+                    if (m_stat != null)
+                        m_stat.LogError("Failed to process file: \"" + s + "\", Error message: " + ex.Message);
+                    Logging.Log.WriteMessage("Failed to process file: \"" + s + "\"", Duplicati.Library.Logging.LogMessageType.Error, ex);
+                }
             }
+
+            if (m_unproccesed.Count == 0)
+                FinalizeMultiPass(signaturefile, contentfile);
+
 
             return m_unproccesed.Count == 0;
         }
 
-        private bool ProccessDiff(System.IO.FileStream fs, string s, Compression.Compression sigfile)
+        private bool ProccessDiff(System.IO.FileStream fs, string s, Core.IFileArchive signaturefile)
         {
             string relpath = s.Substring(m_sourcefolder.Length);
-            string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), relpath);
+            string target = System.IO.Path.Combine(SIGNATURE_ROOT, relpath);
 
             using (System.IO.MemoryStream ms = new MemoryStream())
             {
@@ -323,7 +301,8 @@ namespace Duplicati.Library.Main.RSync
 
                 if (!m_oldSignatures.ContainsKey(relpath))
                 {
-                    Core.Utility.CopyStream(ms, sigfile.AddStream(target), true);
+                    using(System.IO.Stream s2 = signaturefile.CreateFile(target))
+                        Core.Utility.CopyStream(ms, s2, true);
                     m_newfiles.Add(s, null);
                     return true;
                 }
@@ -332,14 +311,17 @@ namespace Duplicati.Library.Main.RSync
                     ms.Position = 0;
                     bool equals;
 
-                    using (System.IO.FileStream fs2 = System.IO.File.OpenRead(m_oldSignatures[relpath]))
-                        equals = Core.Utility.CompareStreams(fs2, ms, true);
+                    
+                    //File in archive
+                    using (System.IO.Stream s2 = m_oldSignatures[relpath].OpenRead(target))
+                        equals = Core.Utility.CompareStreams(s2, ms, false);
 
                     if (!equals)
                     {
-                        Core.Utility.CopyStream(ms, sigfile.AddStream(target), true);
+                        //TODO: It's really bad if the signature is present, but not the content
+                        using(System.IO.Stream s3 = signaturefile.CreateFile(target))
+                            Core.Utility.CopyStream(ms, s3, true);
                         m_modifiedFiles.Add(s, null);
-                        m_oldSignatures.Remove(relpath);
                         return true;
                     }
                     else
@@ -352,73 +334,78 @@ namespace Duplicati.Library.Main.RSync
         }
 
 
-        private long AddFileToCompression(System.IO.FileStream fs, string s, Compression.Compression c)
+        private long AddFileToCompression(System.IO.FileStream fs, string s, Core.IFileArchive contentfile)
         {
             fs.Position = 0;
 
             if (m_modifiedFiles.ContainsKey(s))
             {
                 string relpath = s.Substring(m_sourcefolder.Length);
-                string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, DELTA_ROOT), relpath);
-                string signature = System.IO.Path.Combine(System.IO.Path.Combine(m_basefolder, SIGNATURE_ROOT), relpath);
+                string target = System.IO.Path.Combine(DELTA_ROOT, relpath);
+                string signature = System.IO.Path.Combine(SIGNATURE_ROOT, relpath);
 
-                using (System.IO.FileStream sigfs = System.IO.File.OpenRead(signature))
+                using (System.IO.Stream sigfs = m_oldSignatures[relpath].OpenRead(signature))
                 {
-                    System.IO.Stream s3 = c.AddStream(target);
-                    SharpRSync.Interface.GenerateDelta(sigfs, fs, s3);
-                    //TODO: s3.Length the size of the archive
+                    using(System.IO.Stream s3 = contentfile.CreateFile(target))
+                        SharpRSync.Interface.GenerateDelta(sigfs, fs, s3);
+
+                    //TODO: s3.Length is the size of the archive
                     //m_diffsize += s3.Length;
                     m_diffedfilessize += fs.Length;
                     m_diffedfiles++;
                 }
 
                 m_modifiedFiles.Remove(s);
+                m_oldSignatures.Remove(relpath);
             }
             else
             {
                 string relpath = s.Substring(m_sourcefolder.Length);
-                string target = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, CONTENT_ROOT), relpath);
+                string target = System.IO.Path.Combine(CONTENT_ROOT, relpath);
 
-                Core.Utility.CopyStream(fs, c.AddStream(target));
+                using(System.IO.Stream s3 = contentfile.CreateFile(target))
+                    Core.Utility.CopyStream(fs, s3);
+                
                 m_addedfiles++;
                 m_addedfilessize += fs.Length;
 
                 m_newfiles.Remove(s);
             }
-            return c.Size;
+
+            return contentfile.Size;
         }
 
         public bool HasChanges { get { return m_newfiles.Count > 0 || m_modifiedFiles.Count > 0; } }
 
-        public List<string> EnumerateSourceFolders()
+        /*public List<string> EnumerateSourceFolders()
         {
             List<string> folders = Core.Utility.EnumerateFolders(m_sourcefolder);
             for (int i = 0; i < folders.Count; i++)
                 folders[i] = System.IO.Path.Combine(System.IO.Path.Combine(m_targetfolder, SIGNATURE_ROOT), folders[i].Substring(m_sourcefolder.Length));
             
             return folders;
-        }
+        }*/
 
-        public void Restore(string destination, List<string> patchfolders)
+        public void Restore(string destination, List<Core.IFileArchive> patches)
         {
-            Patch(destination, m_basefolder);
-            
-            if (patchfolders != null)
-                foreach (string s in patchfolders)
+            if (patches != null)
+                foreach (Core.IFileArchive s in patches)
                     Patch(destination, s);
         }
 
-        public void Patch(string destination, string patch)
+        public void Patch(string destination, Core.IFileArchive patch)
         {
-            string deletedfiles = System.IO.Path.Combine(patch, DELETED_FILES);
-            if (System.IO.File.Exists(deletedfiles))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(deletedfiles)))
+            destination = Core.Utility.AppendDirSeperator(destination);
+
+            if (patch.FileExists(DELETED_FILES))
+                foreach (string s in FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES)))
                 {
                     string target = System.IO.Path.Combine(destination, s.Trim());
                     if (System.IO.File.Exists(target))
                     {
                         try
                         {
+                            //TODO: Perhaps read ahead in patches to prevent creation
                             System.IO.File.Delete(target);
                         }
                         catch (Exception ex)
@@ -434,20 +421,20 @@ namespace Duplicati.Library.Main.RSync
                     }
                 }
 
-            string deletedfolders = System.IO.Path.Combine(patch, DELETED_FOLDERS);
-            if (System.IO.File.Exists(deletedfolders))
+            if (patch.FileExists(DELETED_FOLDERS))
             {
+                string[] deletedfolders = FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FOLDERS));
                 //Make sure subfolders are deleted first
-                string[] folderlist = FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(deletedfolders));
-                Array.Sort(folderlist);
-                Array.Reverse(folderlist);
+                Array.Sort(deletedfolders);
+                Array.Reverse(deletedfolders);
 
-                foreach (string s in folderlist)
+                foreach (string s in deletedfolders)
                 {
                     string target = System.IO.Path.Combine(destination, s.Trim());
                     if (System.IO.Directory.Exists(target))
                         try
                         {
+                            //TODO: Perhaps read ahead in patches to prevent creation
                             System.IO.Directory.Delete(target, false);
                         }
                         catch (Exception ex)
@@ -456,19 +443,18 @@ namespace Duplicati.Library.Main.RSync
                                 m_stat.LogError("Failed to remove folder: \"" + target + "\", Error message: " + ex.Message);
                             Logging.Log.WriteMessage("Failed to remove folder: " + target, Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
-
                 }
             }
 
-            string addedfolders = System.IO.Path.Combine(patch, ADDED_FOLDERS);
-            if (System.IO.File.Exists(addedfolders))
-            {
-                //Make sure subfolders are deleted first
-                string[] folderlist = FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(addedfolders));
-                Array.Sort(folderlist);
-                Array.Reverse(folderlist);
 
-                foreach (string s in folderlist)
+            if (patch.FileExists(ADDED_FOLDERS))
+            {
+                string[] addedfolders = FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS));
+
+                //Make sure topfolders are created first
+                Array.Sort(addedfolders);
+
+                foreach (string s in addedfolders)
                 {
                     string target = System.IO.Path.Combine(destination, s.Trim());
                     if (!System.IO.Directory.Exists(target))
@@ -485,50 +471,63 @@ namespace Duplicati.Library.Main.RSync
                 }
             }
 
+            string prefix = Core.Utility.AppendDirSeperator(CONTENT_ROOT);
 
-            string sourcefolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, CONTENT_ROOT));
-            destination = Core.Utility.AppendDirSeperator(destination);
-
-            //TODO: Handle file access exceptions
-            foreach (string s in Core.Utility.EnumerateFiles(sourcefolder))
+            foreach (string s in patch.ListFiles(prefix))
             {
-                string relpath = s.Substring(sourcefolder.Length);
-                string target = System.IO.Path.Combine(destination, relpath);
+                string target = System.IO.Path.Combine(destination, s.Substring(prefix.Length));
                 try
                 {
-                    System.IO.File.Copy(s, target);
+                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                    {
+                        Logging.Log.WriteMessage("Folder did not exist on restore " + target, Duplicati.Library.Logging.LogMessageType.Warning);
+                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                    }
+
+                    using (System.IO.Stream s1 = patch.OpenRead(s))
+                    using (System.IO.FileStream s2 = System.IO.File.Create(target))
+                        Core.Utility.CopyStream(s1, s2);
                 }
                 catch (Exception ex)
                 {
-                        if (m_stat != null)
-                            m_stat.LogError("Failed to restore file: \"" + relpath + "\", Error message: " + ex.Message);
-                    Logging.Log.WriteMessage("Failed to restore file " + relpath, Duplicati.Library.Logging.LogMessageType.Error, ex);
+                    if (m_stat != null)
+                        m_stat.LogError("Failed to restore file: \"" + s + "\", Error message: " + ex.Message);
+                    Logging.Log.WriteMessage("Failed to restore file " + s, Duplicati.Library.Logging.LogMessageType.Error, ex);
                 }
 
             }
 
-            sourcefolder = Core.Utility.AppendDirSeperator(System.IO.Path.Combine(patch, DELTA_ROOT));
-
-            foreach (string s in Core.Utility.EnumerateFiles(sourcefolder))
+            prefix = Core.Utility.AppendDirSeperator(DELTA_ROOT);
+            foreach (string s in patch.ListFiles(prefix))
             {
-                string relpath = s.Substring(sourcefolder.Length);
-                string target = System.IO.Path.Combine(destination, relpath);
-                //string source = System.IO.Path.Combine(sourcefolder, relpath)
-
-                string tempfile = System.IO.Path.GetTempFileName();
+                string target = System.IO.Path.Combine(destination, s.Substring(prefix.Length));
                 try
                 {
-                    SharpRSync.Interface.PatchFile(target, s, tempfile);
-                    System.IO.File.Delete(target);
-                    System.IO.File.Move(tempfile, target);
+                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                    {
+                        Logging.Log.WriteMessage("Folder did not exist on restore by delta " + target, Duplicati.Library.Logging.LogMessageType.Warning);
+                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                    }
+
+                    using (Core.TempFile tempfile = new Core.TempFile())
+                    {
+                        using (System.IO.FileStream s1 = System.IO.File.OpenRead(target))
+                        using (System.IO.Stream s2 = patch.OpenRead(s))
+                        using (System.IO.FileStream s3 = System.IO.File.Create(tempfile))
+                            SharpRSync.Interface.PatchFile(s1, s2, s3);
+
+                        System.IO.File.Delete(target);
+                        System.IO.File.Move(tempfile, target);
+                    }
                 }
                 catch (Exception ex)
                 {
-                        if (m_stat != null)
-                            m_stat.LogError("Failed to restore file: \"" + relpath + "\", Error message: " + ex.Message);
-                    Logging.Log.WriteMessage("Failed to restore file " + relpath, Duplicati.Library.Logging.LogMessageType.Error, ex);
-                    System.IO.File.Delete(target);
-                    System.IO.File.Delete(tempfile);
+                    if (m_stat != null)
+                        m_stat.LogError("Failed to restore file: \"" + s + "\", Error message: " + ex.Message);
+                    Logging.Log.WriteMessage("Failed to restore file " + s, Duplicati.Library.Logging.LogMessageType.Error, ex);
+
+                    try { System.IO.File.Delete(target); }
+                    catch { }
                 }
 
             }
@@ -539,11 +538,6 @@ namespace Duplicati.Library.Main.RSync
 
         public void Dispose()
         {
-            if (m_targetfolder != null)
-            {
-                m_targetfolder.Dispose();
-                m_targetfolder = null;
-            }
         }
 
         #endregion
