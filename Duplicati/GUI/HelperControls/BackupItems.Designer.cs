@@ -45,6 +45,7 @@ namespace Duplicati.GUI.HelperControls
             this.listView.UseCompatibleStateImageBehavior = false;
             this.listView.View = System.Windows.Forms.View.List;
             this.listView.Visible = false;
+            this.listView.DoubleClick += new System.EventHandler(this.listView_DoubleClick);
             // 
             // statusLabel
             // 

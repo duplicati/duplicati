@@ -51,6 +51,8 @@ namespace Duplicati.GUI.Wizard_pages
 
             if (m_wrapper.ScheduleID > 0)
                 BackupList.SelectedBackup = Program.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
+
+            topLabel.Text = this.Title;
         }
 
         void SelectBackup_PageLeave(object sender, PageChangedArgs args)
@@ -129,6 +131,11 @@ namespace Duplicati.GUI.Wizard_pages
                         return "Unknown action";
                 }
             }
+        }
+
+        private void BackupList_TreeDoubleClicked(object sender, EventArgs e)
+        {
+            m_owner.NextButton.PerformClick();
         }
     }
 }

@@ -83,10 +83,10 @@ namespace Duplicati.Library.Main
                         }
                         DateTime backuptime = DateTime.Now;
 
-                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, bs, patches))
+                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, bs, filter, patches))
                         {
                             using (new Logging.Timer("Initiating multipass"))
-                                dir.InitiateMultiPassDiff(full, filter);
+                                dir.InitiateMultiPassDiff(full);
 
                             int vol = 0;
                             long totalsize = 0;
@@ -184,6 +184,18 @@ namespace Duplicati.Library.Main
                 {
                     string specificfile = options.ContainsKey("file-to-restore") ? options["file-to-restore"] : "";
                     string specifictime = options.ContainsKey("restore-time") ? options["restore-time"] : "now";
+                    Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(options);
+
+                    //Filter is prefered, if both file and filter is specified
+                    if (!options.ContainsKey("filter") && !string.IsNullOrEmpty(specificfile))
+                    {
+                        List<Core.IFilenameFilter> list = new List<Duplicati.Library.Core.IFilenameFilter>();
+                        list.Add(new Core.FilelistFilter(true, specificfile.Split(System.IO.Path.PathSeparator)));
+                        list.Add(new Core.RegularExpressionFilter(false, ".*"));
+
+                        filter = new Duplicati.Library.Core.FilenameFilter(list);
+                    }
+
                     backend = Backend.BackendLoader.GetBackend(source, options);
                     if (backend == null)
                         throw new Exception("Unable to find backend for target: " + source);
@@ -198,10 +210,11 @@ namespace Duplicati.Library.Main
                     entries.AddRange(bestFit.Incrementals);
                     int patchno = 0;
 
-                    using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs))
+                    using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs, filter))
                     {
                         foreach (BackupEntry be in entries)
                         {
+                            //TODO: Rethink this if we support fragments inside the archives
                             //Patch with last volume first, as that has the file/folder lists
                             be.ContentVolumes.Reverse();
                             foreach (BackupEntry vol in be.ContentVolumes)
@@ -520,21 +533,21 @@ namespace Duplicati.Library.Main
                                 Core.IFileArchive archive = new Compression.FileArchiveZip(patchzip);
 
                                 if (archive.FileExists(RSync.RSyncDir.DELETED_FOLDERS))
-                                    foreach (string s in archive.ReadAllLines(RSync.RSyncDir.DELETED_FOLDERS))
-                                        if (res.ContainsKey(NormalizeZipDirName(s)))
-                                            res.Remove(NormalizeZipDirName(s));
+                                    foreach (string s in RSync.RSyncDir.FilenamesFromPlatformIndependant(archive.ReadAllLines(RSync.RSyncDir.DELETED_FOLDERS)))
+                                        if (res.ContainsKey(s))
+                                            res.Remove(s);
 
                                 if (archive.FileExists(RSync.RSyncDir.DELETED_FILES))
-                                    foreach (string s in archive.ReadAllLines(RSync.RSyncDir.DELETED_FILES))
-                                        if (res.ContainsKey(NormalizeZipFileName(s)))
-                                            res.Remove(NormalizeZipFileName(s));
+                                    foreach (string s in RSync.RSyncDir.FilenamesFromPlatformIndependant(archive.ReadAllLines(RSync.RSyncDir.DELETED_FILES)))
+                                        if (res.ContainsKey(s))
+                                            res.Remove(s);
 
                                 foreach (string s in archive.ListFiles(RSync.RSyncDir.SIGNATURE_ROOT))
                                     res[s.Substring(RSync.RSyncDir.SIGNATURE_ROOT.Length + 1)] = null;
 
                                 if (archive.FileExists(RSync.RSyncDir.ADDED_FOLDERS))
-                                    foreach (string s in archive.ReadAllLines(RSync.RSyncDir.ADDED_FOLDERS))
-                                        res[NormalizeZipDirName(s)] = null;
+                                    foreach (string s in RSync.RSyncDir.FilenamesFromPlatformIndependant(archive.ReadAllLines(RSync.RSyncDir.ADDED_FOLDERS)))
+                                        res[s] = null;
                             }
                     }
                 }

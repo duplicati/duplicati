@@ -38,6 +38,7 @@ namespace Duplicati.GUI.HelperControls
 
         public event EventHandler ListLoaded;
         public event EventHandler LoadError;
+        public event EventHandler ItemDoubleClicked;
 
         public BackupItems()
         {
@@ -116,6 +117,12 @@ namespace Duplicati.GUI.HelperControls
             }
 
             Loaded(null, null);
+        }
+
+        private void listView_DoubleClick(object sender, EventArgs e)
+        {
+            if (this.SelectedItem != null && this.ItemDoubleClicked != null)
+                ItemDoubleClicked(this, e);
         }
 
     }

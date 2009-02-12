@@ -80,5 +80,10 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             m_wrapper = new WizardSettingsWrapper(m_settings);
             BackupList.Setup(Program.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID));
         }
+
+        private void BackupList_ItemDoubleClicked(object sender, EventArgs e)
+        {
+            m_owner.NextButton.PerformClick();
+        }
     }
 }

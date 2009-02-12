@@ -112,7 +112,7 @@ namespace Duplicati.GUI.HelperControls
                 foreach (string s in m_files)
                 {
                     TreeNodeCollection c = treeView.Nodes;
-                    string[] parts = s.Split('/');
+                    string[] parts = s.Split(System.IO.Path.DirectorySeparatorChar);
                     for(int i = 0; i < parts.Length; i++)
                     {
                         if (parts[i] != "")
@@ -240,6 +240,36 @@ namespace Duplicati.GUI.HelperControls
                 e.Node.ImageIndex = e.Node.SelectedImageIndex = OSGeo.MapGuide.Maestro.ResourceEditors.ShellIcons.GetFolderIcon(true);
         }
 
+        public string CheckedFiles
+        {
+            get
+            {
+                List<string> files = new List<string>();
+                Queue<TreeNode> items = new Queue<TreeNode>();
+                foreach (TreeNode t in treeView.Nodes)
+                    if (t.Checked)
+                        items.Enqueue(t);
+
+                treeView.PathSeparator = System.IO.Path.DirectorySeparatorChar.ToString();
+                
+                while (items.Count > 0)
+                {
+                    TreeNode t = items.Dequeue();
+
+                    foreach (TreeNode tn in t.Nodes)
+                        if (tn.Checked)
+                            items.Enqueue(tn);
+
+                    if (t.Tag != null && (bool)t.Tag == true)
+                        files.Add(Library.Core.Utility.AppendDirSeperator(t.FullPath));
+                    else
+                        files.Add(t.FullPath);
+                }
+                //TODO: This creates very large filter lists
+                return string.Join(System.IO.Path.PathSeparator.ToString(), files.ToArray());
+            }
+        }
+
         public string CheckedAsFilter
         {
             get
@@ -262,8 +292,7 @@ namespace Duplicati.GUI.HelperControls
                         if (tn.Checked)
                             items.Enqueue(tn);
 
-                    if (t.Tag == null)
-                        filter.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(treeView.PathSeparator + t.FullPath)));
+                    filter.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(treeView.PathSeparator + t.FullPath)));
                 }
 
                 return Library.Core.FilenameFilter.EncodeAsFilter(filter);
@@ -280,8 +309,7 @@ namespace Duplicati.GUI.HelperControls
                     if (t.Checked)
                     {
                         items.Enqueue(t);
-                        if (t.Tag == null)
-                            count++;
+                        count++;
                     }
 
                 while (items.Count > 0)
@@ -292,8 +320,7 @@ namespace Duplicati.GUI.HelperControls
                         if (tn.Checked)
                         {
                             items.Enqueue(tn);
-                            if (tn.Tag == null)
-                                count++;
+                            count++;
                         }
                 }
 

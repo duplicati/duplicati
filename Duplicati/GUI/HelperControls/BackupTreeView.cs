@@ -33,6 +33,7 @@ namespace Duplicati.GUI.HelperControls
     {
         private IDataFetcher m_connection;
         private bool m_allowEdit;
+        public event EventHandler TreeDoubleClicked;
 
         public BackupTreeView()
         {
@@ -361,6 +362,14 @@ namespace Duplicati.GUI.HelperControls
 
             if (e.Item as TreeNode != null && (e.Item as TreeNode).TreeView == sender)
                 treeView.DoDragDrop(e.Item, DragDropEffects.Move); 
+        }
+
+        private void treeView_DoubleClick(object sender, EventArgs e)
+        {
+            if (this.SelectedBackup != null || this.SelectedFolder != null)
+                if (TreeDoubleClicked != null)
+                    TreeDoubleClicked(this, e);
+
         }
 
     }

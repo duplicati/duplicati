@@ -38,6 +38,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             this.BackupList.Name = "BackupList";
             this.BackupList.Size = new System.Drawing.Size(480, 184);
             this.BackupList.TabIndex = 0;
+            this.BackupList.ItemDoubleClicked += new System.EventHandler(this.BackupList_ItemDoubleClicked);
             // 
             // label1
             // 

@@ -142,7 +142,8 @@ namespace Duplicati.GUI.Wizard_pages
         {
             schedule.Name = this.ScheduleName;
             schedule.Path = this.SchedulePath;
-            schedule.Task = schedule.DataParent.Add<Datamodel.Task>();
+            if (schedule.Task == null)
+                schedule.Task = schedule.DataParent.Add<Datamodel.Task>();
             schedule.Task.SourcePath = this.SourcePath;
             schedule.Task.EncodedFilter = this.EncodedFilters;
             schedule.Task.Encryptionkey = this.BackupPassword;

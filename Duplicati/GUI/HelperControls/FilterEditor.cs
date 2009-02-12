@@ -190,5 +190,11 @@ namespace Duplicati.GUI.HelperControls
             if (listView.Items.Count != 0)
                 listView.Items[0].Selected = true;
         }
+
+        private void listView_DoubleClick(object sender, EventArgs e)
+        {
+            if (EditFilterButton.Enabled)
+                EditFilterButton.PerformClick();
+        }
     }
 }

@@ -110,6 +110,11 @@ namespace Duplicati.Library.Main.RSync
         private long m_addedfilessize;
 
         /// <summary>
+        /// The filter applied to restore or backup
+        /// </summary>
+        private Core.FilenameFilter m_filter;
+
+        /// <summary>
         /// Statistics reporting
         /// </summary>
         private CommunicationStatistics m_stat;
@@ -123,8 +128,8 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private List<string> m_unproccesed;
 
-        public RSyncDir(string sourcefolder, CommunicationStatistics stat, List<Core.IFileArchive> patches)
-            : this(sourcefolder, stat)
+        public RSyncDir(string sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter, List<Core.IFileArchive> patches)
+            : this(sourcefolder, stat, filter)
         {
             string prefix = Core.Utility.AppendDirSeperator(SIGNATURE_ROOT);
 
@@ -149,24 +154,28 @@ namespace Duplicati.Library.Main.RSync
             }
         }
 
-        public RSyncDir(string sourcefolder, CommunicationStatistics stat)
+        public RSyncDir(string sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter)
         {
             if (!System.IO.Path.IsPathRooted(sourcefolder))
                 sourcefolder = System.IO.Path.GetFullPath(sourcefolder);
+            m_filter = filter;
             m_oldSignatures = new Dictionary<string, Duplicati.Library.Core.IFileArchive>();
             m_oldFolders = new Dictionary<string, string>();
             m_sourcefolder = Core.Utility.AppendDirSeperator(sourcefolder);
             m_stat = stat;
+
+            if (m_filter == null)
+                m_filter = new Duplicati.Library.Core.FilenameFilter(new List<KeyValuePair<bool, string>>());
         }
 
         public void CreatePatch(Core.IFileArchive signatures, Core.IFileArchive content)
         {
-            InitiateMultiPassDiff(false, null);
+            InitiateMultiPassDiff(false);
             MakeMultiPassDiff(signatures, content, long.MaxValue);
             FinalizeMultiPass(signatures, content);
         }
 
-        public void InitiateMultiPassDiff(bool full, Core.FilenameFilter filter)
+        public void InitiateMultiPassDiff(bool full)
         {
             if (full)
             {
@@ -182,7 +191,7 @@ namespace Duplicati.Library.Main.RSync
 
             //TODO: Figure out how to make this faster, but still random
             //Perhaps use itterative callbacks, with random recurse or itterate on each folder
-            m_unproccesed = Core.Utility.EnumerateFileSystemEntries(m_sourcefolder, filter);
+            m_unproccesed = Core.Utility.EnumerateFileSystemEntries(m_sourcefolder, m_filter);
             m_totalfiles = m_unproccesed.Count;
 
             
@@ -398,7 +407,7 @@ namespace Duplicati.Library.Main.RSync
             destination = Core.Utility.AppendDirSeperator(destination);
 
             if (patch.FileExists(DELETED_FILES))
-                foreach (string s in FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES)))
+                foreach (string s in m_filter.FilterList("", FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES))))
                 {
                     string target = System.IO.Path.Combine(destination, s.Trim());
                     if (System.IO.File.Exists(target))
@@ -423,10 +432,10 @@ namespace Duplicati.Library.Main.RSync
 
             if (patch.FileExists(DELETED_FOLDERS))
             {
-                string[] deletedfolders = FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FOLDERS));
+                List<string> deletedfolders = m_filter.FilterList("", FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FOLDERS)));
                 //Make sure subfolders are deleted first
-                Array.Sort(deletedfolders);
-                Array.Reverse(deletedfolders);
+                deletedfolders.Sort();
+                deletedfolders.Reverse();
 
                 foreach (string s in deletedfolders)
                 {
@@ -449,10 +458,10 @@ namespace Duplicati.Library.Main.RSync
 
             if (patch.FileExists(ADDED_FOLDERS))
             {
-                string[] addedfolders = FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS));
+                List<string> addedfolders = m_filter.FilterList("", FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS)));
 
                 //Make sure topfolders are created first
-                Array.Sort(addedfolders);
+                addedfolders.Sort();
 
                 foreach (string s in addedfolders)
                 {
@@ -473,7 +482,7 @@ namespace Duplicati.Library.Main.RSync
 
             string prefix = Core.Utility.AppendDirSeperator(CONTENT_ROOT);
 
-            foreach (string s in patch.ListFiles(prefix))
+            foreach (string s in m_filter.FilterList(prefix, patch.ListFiles(prefix)))
             {
                 string target = System.IO.Path.Combine(destination, s.Substring(prefix.Length));
                 try
@@ -498,7 +507,7 @@ namespace Duplicati.Library.Main.RSync
             }
 
             prefix = Core.Utility.AppendDirSeperator(DELTA_ROOT);
-            foreach (string s in patch.ListFiles(prefix))
+            foreach (string s in m_filter.FilterList(prefix, patch.ListFiles(prefix)))
             {
                 string target = System.IO.Path.Combine(destination, s.Substring(prefix.Length));
                 try
@@ -625,7 +634,7 @@ namespace Duplicati.Library.Main.RSync
             System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS), FilenamesToPlatformIndependant(afo.ToArray()));
         }
 
-        private static string[] FilenamesToPlatformIndependant(string[] filenames)
+        public static string[] FilenamesToPlatformIndependant(string[] filenames)
         {
             if (System.IO.Path.DirectorySeparatorChar != '/')
                 for (int i = 0; i < filenames.Length; i++)
@@ -634,7 +643,7 @@ namespace Duplicati.Library.Main.RSync
             return filenames;
         }
 
-        private static string[] FilenamesFromPlatformIndependant(string[] filenames)
+        public static string[] FilenamesFromPlatformIndependant(string[] filenames)
         {
             if (System.IO.Path.DirectorySeparatorChar != '/')
                 for (int i = 0; i < filenames.Length; i++)

@@ -29,7 +29,7 @@ namespace Duplicati.Library.Core
     /// </summary>
     public class FilenameFilter
     {
-        private List<KeyValuePair<bool, Regex>> m_filters;
+        private List<IFilenameFilter> m_filters;
 
         //We cannot use the regular command line parser, because we must preserve the order of the expressions
         /// <summary>
@@ -85,9 +85,11 @@ namespace Duplicati.Library.Core
             foreach(KeyValuePair<bool, string> x in items)
             {
                 if (sb.Length != 0)
-                    sb.Append(";");
+                    sb.Append(System.IO.Path.PathSeparator.ToString());
                 sb.Append(x.Key ? "i:" : "e:");
-                sb.Append(x.Value.Replace(";", "\\;"));
+                if (x.Value.Contains(System.IO.Path.PathSeparator.ToString()))
+                    throw new Exception("Filter contains " + System.IO.Path.PathSeparator);
+                sb.Append(x.Value);
             }
             return sb.ToString();
         }
@@ -107,8 +109,8 @@ namespace Duplicati.Library.Core
             int x = 0;
             do
             {
-                x = filter.IndexOf(";", x);
-                if (x > 0 && filter[x - 1] != '\\')
+                x = filter.IndexOf(System.IO.Path.PathSeparator, x);
+                if (x > 0)
                 {
                     string fx = filter.Substring(0, x);
                     filters.Add(new KeyValuePair<bool, string>(fx.StartsWith("i:"), fx.Substring(2)));
@@ -122,6 +124,7 @@ namespace Duplicati.Library.Core
 
             return filters;
         }
+
 
         /// <summary>
         /// When all filters are encoded into a single filter option, it must be decoded.
@@ -181,17 +184,53 @@ namespace Duplicati.Library.Core
         {
         }
 
-        public FilenameFilter(List<KeyValuePair<bool, string>> filters)
+        private static Regex CreateRegEx(string filter)
         {
             RegexOptions opts = RegexOptions.Compiled;
             //TODO: This should probably be determined by filesystem rather than OS
             //In case MS decides to support case sensitive filesystems (yeah right :))
-            if (Environment.OSVersion.Platform != PlatformID.Unix)
+            if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
                 opts |= RegexOptions.IgnoreCase;
 
-            m_filters = new List<KeyValuePair<bool, Regex>>();
+            return new Regex(filter, opts);
+        }
+
+        public FilenameFilter(List<IFilenameFilter> filters)
+        {
+            m_filters = filters;
+        }
+
+        public FilenameFilter(List<KeyValuePair<bool, string>> filters)
+        {
+            m_filters = new List<IFilenameFilter>();
+            foreach (KeyValuePair<bool, string> filter in InlineCompact(filters))
+                m_filters.Add(new RegularExpressionFilter(filter.Key, filter.Value));
+        }
+
+        /// <summary>
+        /// Combines multiple expressions into a single expression where possible
+        /// </summary>
+        /// <param name="filters">The list of expressions to compact</param>
+        /// <returns>The compacted expressions</returns>
+        private List<KeyValuePair<bool, string>> InlineCompact(List<KeyValuePair<bool, string>> filters)
+        {
+            if (filters.Count == 0)
+                return filters;
+
+            List<KeyValuePair<bool, string>> res = new List<KeyValuePair<bool, string>>();
+            bool include = !filters[0].Key;
             foreach (KeyValuePair<bool, string> filter in filters)
-                m_filters.Add(new KeyValuePair<bool,Regex>(filter.Key, new Regex(filter.Value, opts)));
+            {
+                if (filter.Key != include)
+                {
+                    res.Add(new KeyValuePair<bool, string>(filter.Key, "(" + filter.Value + ")"));
+                    include = filter.Key;
+                }
+                else
+                    res[res.Count - 1] = new KeyValuePair<bool, string>(filter.Key, res[res.Count - 1].Value + "|(" + filter.Value + ")");
+            }
+
+            return res;
         }
 
         public bool ShouldInclude(string basepath, string filename)
@@ -200,20 +239,20 @@ namespace Duplicati.Library.Core
             if (!filename.StartsWith(basepath))
                 return false;
 
-            bool include = true;
             //All paths start with a slash, because this eases filter creation
             //Eg. filter "\Dir\" would only match folders with the name "Dir", where "Dir\" would also match "\MyDir\"
             //If the leading slash/backslash is missing, it becomes difficult to prevent partial matches.
             string relpath = filename.Substring(basepath.Length - 1);
-            foreach (KeyValuePair<bool, Regex> filter in m_filters)
-                if (filter.Key != include)
-                    if (filter.Value.Match(relpath).Success)
-                        include = !include;
 
-            return include;
+            //Run through each filter
+            foreach (IFilenameFilter filter in m_filters)
+                if (filter.Match(relpath))
+                    return filter.Include;
+
+            return true;
         }
 
-        public List<string> FilterList(string basepath, List<string> filenames)
+        public List<string> FilterList(string basepath, IEnumerable<string> filenames)
         {
             basepath = Core.Utility.AppendDirSeperator(basepath);
 

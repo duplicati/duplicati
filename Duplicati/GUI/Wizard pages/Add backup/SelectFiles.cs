@@ -147,33 +147,35 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
 
-                //Exclude everything if they have a non-included parent
-                if (hasCommonParent)
-                    filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(basefolder + "*")));
+                List<KeyValuePair<bool, string>> extras = new List<KeyValuePair<bool, string>>();
+                foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
+                    if (!tf.Value.StartsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                        extras.Add(tf);
+
+                folders.Sort();
+                folders.Reverse();
 
                 //Include selected folders
                 foreach (string f in folders)
                 {
-                    filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f + "*")));
-
                     //Exclude subfolders
                     foreach (string s in exfolders)
                         if (s.StartsWith(f) && (basefolder == s || s.StartsWith(basefolder)))
-                            filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*")));
+                            filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(basefolder.Length - 1) + "*")));
+
+                    filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f.Substring(basefolder.Length - 1) + "*")));
                 }
 
-                List<KeyValuePair<bool, string>> extras = new List<KeyValuePair<bool, string>>();
-                string key = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_wrapper.SourcePath);
-                foreach(KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
-                    if (!tf.Value.StartsWith(key))
-                        extras.Add(tf);
+                //Exclude everything else if they have a non-included parent
+                if (hasCommonParent)
+                    filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp("*")));
 
                 if (filters.Count <= 1)
                     m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(extras);
                 else
                 {
-                    filters.AddRange(extras);
-                    m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(filters);
+                    extras.AddRange(filters);
+                    m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(extras);
                 }
 
                 m_wrapper.SourcePath = basefolder;
@@ -216,15 +218,16 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 }
                 else
                 {
-
                     List<string> filters = new List<string>();
                     foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
-                        if (tf.Key && tf.Value.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_wrapper.SourcePath)))
+                        if (tf.Key && tf.Value.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString())))
                             filters.Add(tf.Value);
+
+                    string p = Library.Core.Utility.AppendDirSeperator(m_wrapper.SourcePath);
 
                     List<string> included = new List<string>();
                     foreach (string s in m_specialFolders)
-                        if (filters.Contains(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*")))
+                        if (s.StartsWith(p) && filters.Contains(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(p.Length - 1) + "*")))
                             included.Add(s);
 
                     if (included.Count == 0)

@@ -35,11 +35,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\..\thirdparty\MD4\MD4.cs">
+      <Link>MD4.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\thirdparty\MD4\MD4Managed.cs">
+      <Link>MD4Managed.cs</Link>
+    </Compile>
     <Compile Include="Adler32Checksum.cs" />
     <Compile Include="ChecksumFile.cs" />
     <Compile Include="DeltaFile.cs" />
-    <Compile Include="MD4.cs" />
-    <Compile Include="MD4Managed.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RDiffBinary.cs" />
     <Compile Include="RollingBuffer.cs" />

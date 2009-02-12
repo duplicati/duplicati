@@ -33,6 +33,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     {
         private bool m_warnedNoPassword = false;
         private bool m_warnedNoGPG = false;
+        private bool m_warnedChanged = false;
+        private bool m_settingsChanged = false;
         private WizardSettingsWrapper m_wrapper;
 
         public PasswordSettings()
@@ -48,6 +50,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
             m_settings["Password:WarnedNoGPG"] = m_warnedNoGPG;
+            m_settings["Password:WarnedChanged"] = m_warnedChanged;
+            m_settings["Password:SettingsChanged"] = m_settingsChanged;
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
@@ -89,11 +93,19 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 }
             }
 
-            //TODO: Warn the user if the backup exists, and the settings are modified,
-            //as this will make it impossible to restore the backup.
+            if (!m_warnedChanged && m_settingsChanged && m_wrapper.ScheduleID > 0)
+            {
+                if (MessageBox.Show(this, "****************** WARNING ***********************\nYou are modifying the password settings for an existing backup.\nIf you save these changes, you will no longer be able to recover previously backed up files.\nAre you absolutely sure you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                {
+                    args.Cancel = true;
+                    return;
+                }
+            }
 
+            m_settings["Password:SettingsChanged"] = m_settingsChanged;
             m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
             m_settings["Password:WarnedNoGPG"] = m_warnedNoGPG;
+            m_settings["Password:WarnedChanged"] = m_warnedChanged;
             m_wrapper.BackupPassword = EnablePassword.Checked ? Password.Text : "";
             m_wrapper.GPGEncryption = UseGPG.Checked;
 
@@ -109,12 +121,17 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add;
                 Password.Text = m_wrapper.BackupPassword;
                 UseGPG.Checked = m_wrapper.GPGEncryption;
+                m_settingsChanged = false;
             }
 
             if (m_settings.ContainsKey("Password:WarnedNoPassword"))
                 m_warnedNoPassword = (bool)m_settings["Password:WarnedNoPassword"];
             if (m_settings.ContainsKey("Password:WarnedNoGPG"))
                 m_warnedNoPassword = (bool)m_settings["Password:WarnedNoGPG"];
+            if (m_settings.ContainsKey("Password:WarnedChanged"))
+                m_warnedChanged = (bool)m_settings["Password:WarnedChanged"];
+            if (m_settings.ContainsKey("Password:SettingsChanged"))
+                m_settingsChanged = (bool)m_settings["Password:SettingsChanged"];
         }
 
         private void GeneratePassword_Click(object sender, EventArgs e)
@@ -126,16 +143,18 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             Password.Enabled = UseGPG.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
             m_warnedNoPassword = false;
-            
+            m_settingsChanged = true;
         }
 
         private void Password_TextChanged(object sender, EventArgs e)
         {
+            m_settingsChanged = true;
             m_warnedNoPassword = false;
         }
 
         private void UseGPG_CheckedChanged(object sender, EventArgs e)
         {
+            m_settingsChanged = true;
             m_warnedNoGPG = false;
         }
 

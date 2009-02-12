@@ -45,6 +45,7 @@ namespace Duplicati.GUI.HelperControls
             this.treeView.SelectedImageIndex = 0;
             this.treeView.Size = new System.Drawing.Size(150, 150);
             this.treeView.TabIndex = 0;
+            this.treeView.DoubleClick += new System.EventHandler(this.treeView_DoubleClick);
             this.treeView.DragDrop += new System.Windows.Forms.DragEventHandler(this.treeView_DragDrop);
             this.treeView.KeyUp += new System.Windows.Forms.KeyEventHandler(this.treeView_KeyUp);
             this.treeView.ItemDrag += new System.Windows.Forms.ItemDragEventHandler(this.treeView_ItemDrag);

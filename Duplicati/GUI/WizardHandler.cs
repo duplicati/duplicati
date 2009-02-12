@@ -81,9 +81,9 @@ namespace Duplicati.GUI
                 string restoreFilter = wrapper.RestoreFilter;
 
                 if (when.Ticks == 0)
-                    Program.WorkThread.AddTask(new RestoreTask(schedule, target));
+                    Program.WorkThread.AddTask(new RestoreTask(schedule, target, restoreFilter));
                 else
-                    Program.WorkThread.AddTask(new RestoreTask(schedule, target, when));
+                    Program.WorkThread.AddTask(new RestoreTask(schedule, target, restoreFilter, when));
             }
             else if (m_form.CurrentPage is Wizard_pages.RunNow.RunNowFinished)
             {

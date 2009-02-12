@@ -107,7 +107,8 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
             WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
             wrapper.RestorePath = targetpath;
-            wrapper.RestoreFilter = PartialRestore.Checked ? backupFileList.CheckedAsFilter : "";
+            wrapper.RestoreFilter = PartialRestore.Checked ? backupFileList.CheckedFiles : "";
+            args.NextPage = new FinishedRestore();
         }
 
         private void TargetFolder_Load(object sender, EventArgs e)

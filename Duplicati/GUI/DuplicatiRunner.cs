@@ -73,6 +73,9 @@ namespace Duplicati.GUI
                         results = Interface.RemoveOlderThan(task.SourcePath, options);
                         return;
                     case DuplicityTaskType.Restore:
+                        options["file-to-restore"] = ((RestoreTask)task).SourceFiles;
+                        if (options.ContainsKey("filter"))
+                            options.Remove("filter");
                         results = Interface.Restore(task.SourcePath, task.TargetPath, options);
                         return;
                     default:
