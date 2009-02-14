@@ -70,6 +70,11 @@ namespace Duplicati.GUI
         public static WorkerThread<IDuplicityTask> WorkThread;
 
         /// <summary>
+        /// The path to the file that contains the current database
+        /// </summary>
+        public static string DatabasePath;
+
+        /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
@@ -79,19 +84,19 @@ namespace Duplicati.GUI
             Application.SetCompatibleTextRenderingDefault(false);
 
 #if DEBUG
-            string dbpath = System.IO.Path.Combine(Application.StartupPath, "Duplicati.sqlite");
+            DatabasePath = System.IO.Path.Combine(Application.StartupPath, "Duplicati.sqlite");
 #else
-            string dbpath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName), "Duplicati.sqlite");
+            DatabasePath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName), "Duplicati.sqlite");
 #endif
             System.Data.SQLite.SQLiteConnection con = new System.Data.SQLite.SQLiteConnection();
 
             try
             {
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(dbpath)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dbpath));
+                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
 
                 //This also opens the db for us :)
-                DatabaseUpgrader.UpgradeDatebase(con, dbpath);
+                DatabaseUpgrader.UpgradeDatebase(con, DatabasePath);
             }
             catch (Exception ex)
             {
@@ -154,7 +159,6 @@ namespace Duplicati.GUI
             if (count == 0)
             {
                 //TODO: shows the wrong icon... Should run under Application.Run() ...
-                MessageBox.Show("Since this is the first time Duplicati is being run, the Wizard will now be shown.\r\nIf you wish to access the wizard again at some other time, you can right click the Duplicati icon in your system tray.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 ShowWizard();
             }
 

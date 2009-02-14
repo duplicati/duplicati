@@ -14,7 +14,8 @@ CREATE TABLE "Task" (
 	"FullAfter" TEXT NULL,
 	"ThreadPriority" TEXT NULL,
 	"AsyncTransfer" BOOLEAN NULL,
-	"GPGEncryption" BOOLEAN NULL
+	"GPGEncryption" BOOLEAN NULL,
+	"IncludeSetup" BOOLEAN NULL
 );
 
 CREATE TABLE "Schedule" (

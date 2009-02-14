@@ -124,6 +124,11 @@ namespace Duplicati.Library.Main.RSync
         private bool m_finalized = false;
 
         /// <summary>
+        /// A flag indicating if this entry is the first multipass
+        /// </summary>
+        private bool m_isfirstmultipass = false;
+
+        /// <summary>
         /// This is a list of unprocessed files, used in multipass runs
         /// </summary>
         private List<string> m_unproccesed;
@@ -194,6 +199,7 @@ namespace Duplicati.Library.Main.RSync
             m_unproccesed = Core.Utility.EnumerateFileSystemEntries(m_sourcefolder, m_filter);
             m_totalfiles = m_unproccesed.Count;
 
+            m_isfirstmultipass = true;
             
             //Build folder diffs
             string dirmarker = System.IO.Path.DirectorySeparatorChar.ToString();
@@ -224,23 +230,6 @@ namespace Duplicati.Library.Main.RSync
                 if (m_unproccesed.Count == 0)
                     m_deletedfiles.AddRange(m_oldSignatures.Keys);
 
-                if (m_deletedfiles.Count > 0)
-                {
-                    signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
-                    contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
-                }
-
-                if (m_deletedfolders.Count > 0)
-                {
-                    signaturefile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
-                    contentfile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
-                }
-
-                if (m_newfolders.Count > 0)
-                {
-                    signaturefile.WriteAllLines(ADDED_FOLDERS, m_newfolders.ToArray());
-                    contentfile.WriteAllLines(ADDED_FOLDERS, m_newfolders.ToArray());
-                }
 
                 if (m_stat is BackupStatistics)
                 {
@@ -270,6 +259,31 @@ namespace Duplicati.Library.Main.RSync
             Random r = new Random();
             long totalSize = 0;
 
+            if (m_isfirstmultipass)
+            {
+                //We write these files to the very first volume
+                if (m_deletedfiles.Count > 0)
+                {
+                    signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
+                    contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
+                }
+
+                if (m_deletedfolders.Count > 0)
+                {
+                    signaturefile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
+                    contentfile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
+                }
+
+                if (m_newfolders.Count > 0)
+                {
+                    signaturefile.WriteAllLines(ADDED_FOLDERS, m_newfolders.ToArray());
+                    contentfile.WriteAllLines(ADDED_FOLDERS, m_newfolders.ToArray());
+                }
+
+                m_isfirstmultipass = false;
+            }
+
+
             while (m_unproccesed.Count > 0 && totalSize < volumesize)
             {
                 int next = r.Next(0, m_unproccesed.Count);
@@ -279,8 +293,11 @@ namespace Duplicati.Library.Main.RSync
                 try
                 {
                     using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        if (ProccessDiff(fs, s, signaturefile))
-                            totalSize = AddFileToCompression(fs, s, contentfile);
+                    {
+                        System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
+                        if (signature != null)
+                            totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -297,69 +314,68 @@ namespace Duplicati.Library.Main.RSync
             return m_unproccesed.Count == 0;
         }
 
-        private bool ProccessDiff(System.IO.FileStream fs, string s, Core.IFileArchive signaturefile)
+        private System.IO.Stream ProccessDiff(System.IO.FileStream fs, string s, Core.IFileArchive signaturefile)
         {
             string relpath = s.Substring(m_sourcefolder.Length);
             string target = System.IO.Path.Combine(SIGNATURE_ROOT, relpath);
 
-            using (System.IO.MemoryStream ms = new MemoryStream())
-            {
-                m_examinedfilesize += fs.Length;
-                m_examinedfiles++;
-                SharpRSync.Interface.GenerateSignature(fs, ms);
+            System.IO.MemoryStream ms = new MemoryStream();
+            m_examinedfilesize += fs.Length;
+            m_examinedfiles++;
+            SharpRSync.Interface.GenerateSignature(fs, ms);
+            ms.Position = 0;
 
-                if (!m_oldSignatures.ContainsKey(relpath))
+            if (!m_oldSignatures.ContainsKey(relpath))
+            {
+                m_newfiles.Add(s, null);
+                return ms;
+            }
+            else
+            {
+                bool equals;
+                //File in archive
+                using (System.IO.Stream s2 = m_oldSignatures[relpath].OpenRead(target))
+                    equals = Core.Utility.CompareStreams(s2, ms, false);
+
+                ms.Position = 0;
+
+                if (!equals)
                 {
-                    using(System.IO.Stream s2 = signaturefile.CreateFile(target))
-                        Core.Utility.CopyStream(ms, s2, true);
-                    m_newfiles.Add(s, null);
-                    return true;
+                    m_modifiedFiles.Add(s, null);
+                    return ms;
                 }
                 else
                 {
-                    ms.Position = 0;
-                    bool equals;
-
-                    
-                    //File in archive
-                    using (System.IO.Stream s2 = m_oldSignatures[relpath].OpenRead(target))
-                        equals = Core.Utility.CompareStreams(s2, ms, false);
-
-                    if (!equals)
-                    {
-                        //TODO: It's really bad if the signature is present, but not the content
-                        using(System.IO.Stream s3 = signaturefile.CreateFile(target))
-                            Core.Utility.CopyStream(ms, s3, true);
-                        m_modifiedFiles.Add(s, null);
-                        return true;
-                    }
-                    else
-                    {
-                        m_oldSignatures.Remove(relpath);
-                        return false;
-                    }
+                    ms.Close();
+                    ms.Dispose();
+                    m_oldSignatures.Remove(relpath);
+                    return null;
                 }
             }
         }
 
 
-        private long AddFileToCompression(System.IO.FileStream fs, string s, Core.IFileArchive contentfile)
+        private long AddFileToCompression(System.IO.FileStream fs, string s, System.IO.Stream signature, Core.IFileArchive contentfile, Core.IFileArchive signaturefile)
         {
             fs.Position = 0;
+            signature.Position = 0;
+            string relpath = s.Substring(m_sourcefolder.Length);
+            string signaturepath = System.IO.Path.Combine(SIGNATURE_ROOT, relpath);
 
+            //TODO: If chunked writes are supported, this method must write chunks.
             if (m_modifiedFiles.ContainsKey(s))
             {
-                string relpath = s.Substring(m_sourcefolder.Length);
                 string target = System.IO.Path.Combine(DELTA_ROOT, relpath);
-                string signature = System.IO.Path.Combine(SIGNATURE_ROOT, relpath);
 
-                using (System.IO.Stream sigfs = m_oldSignatures[relpath].OpenRead(signature))
+                using (System.IO.Stream sigfs = m_oldSignatures[relpath].OpenRead(signaturepath))
                 {
-                    using(System.IO.Stream s3 = contentfile.CreateFile(target))
+                    using (System.IO.Stream s3 = contentfile.CreateFile(target))
+                    {
+                        long lbefore = s3.Length;
                         SharpRSync.Interface.GenerateDelta(sigfs, fs, s3);
+                        m_diffsize += s3.Length - lbefore;
+                    }
 
-                    //TODO: s3.Length is the size of the archive
-                    //m_diffsize += s3.Length;
                     m_diffedfilessize += fs.Length;
                     m_diffedfiles++;
                 }
@@ -369,7 +385,6 @@ namespace Duplicati.Library.Main.RSync
             }
             else
             {
-                string relpath = s.Substring(m_sourcefolder.Length);
                 string target = System.IO.Path.Combine(CONTENT_ROOT, relpath);
 
                 using(System.IO.Stream s3 = contentfile.CreateFile(target))
@@ -380,6 +395,14 @@ namespace Duplicati.Library.Main.RSync
 
                 m_newfiles.Remove(s);
             }
+
+            //Add signature AFTER content.
+            //If content is present, it is restoreable, if signature is missing, file will be backed up on next run
+            //If signature is present, but not content, the entire differential sequence will be unable to recover the file
+            using (signature)
+            using (System.IO.Stream s3 = signaturefile.CreateFile(signaturepath))
+                Core.Utility.CopyStream(signature, s3, true);
+
 
             return contentfile.Size;
         }

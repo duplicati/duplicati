@@ -60,6 +60,10 @@ namespace Duplicati.Library.Main
                     if (!full && options.ContainsKey("full-if-older-than"))
                         full = DateTime.Now > Core.Timeparser.ParseTimeInterval(options["full-if-older-than"], prev[prev.Count - 1].Time);
 
+                    List<string> controlfiles = new List<string>();
+                    if (options.ContainsKey("signature-control-files"))
+                        controlfiles.AddRange(options["signature-control-files"].Split(System.IO.Path.PathSeparator));
+
                     using (Core.TempFolder tempfolder = new Duplicati.Library.Core.TempFolder())
                     {
                         List<Core.IFileArchive> patches = new List<Core.IFileArchive>();
@@ -109,6 +113,16 @@ namespace Duplicati.Library.Main
                                     using (Compression.FileArchiveZip signaturearchive = Duplicati.Library.Compression.FileArchiveZip.CreateArchive(signaturefile))
                                     using (Compression.FileArchiveZip contentarchive = Duplicati.Library.Compression.FileArchiveZip.CreateArchive(contentfile))
                                     {
+                                        //Add signature files to archive
+                                        foreach (string s in controlfiles)
+                                            if (!string.IsNullOrEmpty(s))
+                                                using (System.IO.Stream cs = signaturearchive.CreateFile(System.IO.Path.GetFileName(s)))
+                                                using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
+                                                    Core.Utility.CopyStream(fs, cs);
+
+                                        //Only add control files to the very first volume
+                                        controlfiles.Clear();
+
                                         done = dir.MakeMultiPassDiff(signaturearchive, contentarchive, Math.Min(volumesize, totalmax - totalsize));
                                         totalsize += new System.IO.FileInfo(contentfile).Length;
 
@@ -213,10 +227,6 @@ namespace Duplicati.Library.Main
                     using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs, filter))
                     {
                         foreach (BackupEntry be in entries)
-                        {
-                            //TODO: Rethink this if we support fragments inside the archives
-                            //Patch with last volume first, as that has the file/folder lists
-                            be.ContentVolumes.Reverse();
                             foreach (BackupEntry vol in be.ContentVolumes)
                             {
                                 if (vol.CompressionMode != "zip")
@@ -232,7 +242,6 @@ namespace Duplicati.Library.Main
                                 }
                                 patchno++;
                             }
-                        }
                     }
                 }
                 finally
@@ -241,6 +250,117 @@ namespace Duplicati.Library.Main
                         backend.Dispose();
                 }
             } 
+
+            rs.EndTime = DateTime.Now;
+
+            //TODO: The RS should have the number of restored files, and the size of those
+            //but that is a little difficult, because some may be restored, and then removed
+
+            return rs.ToString();
+        }
+
+        /// <summary>
+        /// Restores control files added to a backup.
+        /// </summary>
+        /// <param name="source">The backend to retrieve the control files from</param>
+        /// <param name="target">The folder into which to restore the files</param>
+        /// <param name="options">Options that affect how the call is performed</param>
+        /// <returns>A restore report</returns>
+        public static string RestoreControlFiles(string source, string target, Dictionary<string, string> options)
+        {
+            SetupCommonOptions(options);
+            RestoreStatistics rs = new RestoreStatistics();
+
+            Backend.IBackend backend = null;
+
+            using (new Logging.Timer("Restore control files from " + source + " to " + target))
+            {
+                try
+                {
+                    backend = Backend.BackendLoader.GetBackend(source, options);
+                    if (backend == null)
+                        throw new Exception("Unable to find backend for target: " + source);
+                    backend = new BackendWrapper(rs, backend, options);
+
+                    List<BackupEntry> attempts = ParseFileList(backend, options);
+
+                    Core.FilenameFilter filter;
+
+                    if (!options.ContainsKey("file-to-restore"))
+                    {
+                        filter = new Duplicati.Library.Core.FilenameFilter(
+                            new List<Core.IFilenameFilter>(new Core.IFilenameFilter[] {
+                                //Exclude everything with a path
+                                new Duplicati.Library.Core.RegularExpressionFilter(false, "*." + System.IO.Path.DirectorySeparatorChar.ToString() + "*."),
+                                //Exclude known files
+                                new Duplicati.Library.Core.FilelistFilter(false, new string[] {
+                                    RSync.RSyncDir.ADDED_FOLDERS,
+                                    RSync.RSyncDir.DELETED_FILES,
+                                    RSync.RSyncDir.DELETED_FOLDERS
+                                })
+                            })
+                        );
+                    }
+                    else
+                    {
+                        filter = new Duplicati.Library.Core.FilenameFilter(
+                            new List<Core.IFilenameFilter>(new Core.IFilenameFilter[] {
+                                //Include requested items
+                                new Duplicati.Library.Core.FilelistFilter(true, options["file-to-restore"].Split(System.IO.Path.PathSeparator)),
+                                //Exclude everything else
+                                new Duplicati.Library.Core.RegularExpressionFilter(false, "*.")
+                            })
+                        );
+                    }
+
+
+
+                    List<BackupEntry> flatlist = new List<BackupEntry>();
+                    foreach (BackupEntry be in attempts)
+                    {
+                        flatlist.Add(be);
+                        flatlist.AddRange(be.Incrementals);
+                    }
+
+                    flatlist.Reverse();
+                    foreach (BackupEntry be in flatlist)
+                    {
+                        Backend.IBackend realbackend = backend;
+                        if (be.EncryptionMode != null)
+                            realbackend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, be.EncryptionMode, options);
+
+                        if (be.SignatureFile.Count > 0)
+                            using(Core.TempFile z = new Duplicati.Library.Core.TempFile())
+                            {
+                                using (new Logging.Timer("Get " + be.SignatureFile[0].Filename))
+                                    realbackend.Get(be.SignatureFile[0].Filename, z);
+                                
+                                using(Compression.FileArchiveZip fz = new Duplicati.Library.Compression.FileArchiveZip(z))
+                                {
+                                    bool any = false;
+                                    foreach (string f in filter.FilterList("", fz.ListFiles(null)))
+                                    {
+                                        any = true;
+                                        using (System.IO.Stream s1 = fz.OpenRead(f))
+                                        using (System.IO.Stream s2 = System.IO.File.Create(System.IO.Path.Combine(target, f)))
+                                            Core.Utility.CopyStream(s1, s2);
+                                    }
+
+                                    if (any)
+                                        break;
+
+                                    rs.LogError("Failed to find control files in: " + be.SignatureFile[0].Filename);
+                                }
+                            }
+                    }
+
+                }
+                finally
+                {
+                    if (backend != null)
+                        backend.Dispose();
+                }
+            }
 
             rs.EndTime = DateTime.Now;
 

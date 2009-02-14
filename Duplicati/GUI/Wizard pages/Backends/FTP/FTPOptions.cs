@@ -86,7 +86,10 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             m_wrapper.Password = Password.Text;
             m_wrapper.Port = (int)Port.Value;
 
-            args.NextPage = new Add_backup.AdvancedOptions();
+            if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+                args.NextPage = new RestoreSetup.RestoreSetupFinished();
+            else
+                args.NextPage = new Add_backup.AdvancedOptions();
         }
 
         void FTPOptions_PageEnter(object sender, PageChangedArgs args)

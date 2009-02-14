@@ -260,6 +260,12 @@
     <Compile Include="Wizard pages\Delete backup\DeleteFinished.Designer.cs">
       <DependentUpon>DeleteFinished.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\FirstLaunch.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\FirstLaunch.Designer.cs">
+      <DependentUpon>FirstLaunch.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\MainPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -493,6 +499,10 @@
       <SubType>Designer</SubType>
       <DependentUpon>DeleteFinished.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\FirstLaunch.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>FirstLaunch.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\MainPage.resx">
       <SubType>Designer</SubType>
       <DependentUpon>MainPage.cs</DependentUpon>
@@ -526,6 +536,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />
+    <Folder Include="Wizard pages\RestoreSetup\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

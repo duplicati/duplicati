@@ -136,15 +136,15 @@ namespace Duplicati.GUI
                     if (nextrun.TotalMilliseconds < 0)
                         continue;
 
-                    lock (m_datalock)
-                        m_connection.CommitAll();
+                    /*lock (m_datalock)
+                        m_connection.CommitAll();*/
 
                     waittime = (int)Math.Min(nextrun.TotalMilliseconds, 60 * 1000 * 5);
                 }
                 else
                 {
                     //No tasks, check back later
-                    waittime = 30 * 1000;
+                    waittime = 60 * 1000;
                 }
 
                 //Waiting on the event, enables a wakeup call from termination

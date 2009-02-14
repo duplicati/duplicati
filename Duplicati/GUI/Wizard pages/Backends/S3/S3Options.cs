@@ -87,7 +87,10 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
                 bucketname = bucketname.Substring(0, bucketname.IndexOf("/"));
             m_wrapper.UseSubDomains = bucketname.ToLower() == bucketname;
 
-            args.NextPage = new Add_backup.AdvancedOptions();
+            if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+                args.NextPage = new RestoreSetup.RestoreSetupFinished();
+            else
+                args.NextPage = new Add_backup.AdvancedOptions();
         }
 
         void S3Options_PageEnter(object sender, PageChangedArgs args)

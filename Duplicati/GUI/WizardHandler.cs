@@ -44,7 +44,14 @@ namespace Duplicati.GUI
             m_form.Title = "Duplicati Setup Wizard";
 
             m_form.Pages.Clear();
-            m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.MainPage() });
+            long count = 0;
+            lock (Program.MainLock)
+                count = Program.DataConnection.GetObjects<Schedule>().Length;
+
+            if (count == 0)
+                m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.FirstLaunch() });
+            else
+                m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.MainPage() });
 
             m_form.DefaultImage = Program.NeutralIcon.ToBitmap();
             m_form.Finished += new System.ComponentModel.CancelEventHandler(m_form_Finished);

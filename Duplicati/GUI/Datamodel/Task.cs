@@ -70,6 +70,8 @@ namespace Duplicati.Datamodel
 		private System.Boolean m_AsyncTransfer = false;
 		[DatabaseField("GPGEncryption")]
 		private System.Boolean m_GPGEncryption = false;
+		[DatabaseField("IncludeSetup")]
+		private System.Boolean m_IncludeSetup = false;
 #endregion
 
 #region " properties "
@@ -168,6 +170,12 @@ namespace Duplicati.Datamodel
 		{
 			get{return m_GPGEncryption;}
 			set{object oldvalue = m_GPGEncryption;OnBeforeDataChange(this, "GPGEncryption", oldvalue, value);m_GPGEncryption = value;OnAfterDataChange(this, "GPGEncryption", oldvalue, value);}
+		}
+
+		public System.Boolean IncludeSetup
+		{
+			get{return m_IncludeSetup;}
+			set{object oldvalue = m_IncludeSetup;OnBeforeDataChange(this, "IncludeSetup", oldvalue, value);m_IncludeSetup = value;OnAfterDataChange(this, "IncludeSetup", oldvalue, value);}
 		}
 
 #endregion

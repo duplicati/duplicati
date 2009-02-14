@@ -32,6 +32,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.SelectIncremental = new System.Windows.Forms.CheckBox();
             this.ThrottleOptions = new System.Windows.Forms.CheckBox();
             this.EditFilters = new System.Windows.Forms.CheckBox();
+            this.IncludeDuplicatiSetup = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // SelectWhen
@@ -75,10 +76,23 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.EditFilters.Text = "Modify filters that control what files are included in the backup";
             this.EditFilters.UseVisualStyleBackColor = true;
             // 
+            // IncludeDuplicatiSetup
+            // 
+            this.IncludeDuplicatiSetup.AutoSize = true;
+            this.IncludeDuplicatiSetup.Checked = true;
+            this.IncludeDuplicatiSetup.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.IncludeDuplicatiSetup.Location = new System.Drawing.Point(32, 160);
+            this.IncludeDuplicatiSetup.Name = "IncludeDuplicatiSetup";
+            this.IncludeDuplicatiSetup.Size = new System.Drawing.Size(256, 17);
+            this.IncludeDuplicatiSetup.TabIndex = 5;
+            this.IncludeDuplicatiSetup.Text = "Include the current Duplicati setup in the backup";
+            this.IncludeDuplicatiSetup.UseVisualStyleBackColor = true;
+            // 
             // AdvancedOptions
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.IncludeDuplicatiSetup);
             this.Controls.Add(this.EditFilters);
             this.Controls.Add(this.ThrottleOptions);
             this.Controls.Add(this.SelectIncremental);
@@ -96,5 +110,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.CheckBox SelectIncremental;
         private System.Windows.Forms.CheckBox ThrottleOptions;
         private System.Windows.Forms.CheckBox EditFilters;
+        private System.Windows.Forms.CheckBox IncludeDuplicatiSetup;
     }
 }

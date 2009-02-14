@@ -38,7 +38,8 @@ namespace Duplicati.GUI.Wizard_pages
             Edit,
             Restore,
             Remove,
-            RunNow
+            RunNow,
+            RestoreSetup
         };
 
         public enum BackendType
@@ -129,6 +130,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.AsyncTransfer = schedule.Task.AsyncTransfer;
             this.EncodedFilters = schedule.Task.EncodedFilter;
             this.GPGEncryption = schedule.Task.GPGEncryption;
+            this.IncludeSetup = schedule.Task.IncludeSetup;
 
             this.PrimayAction = action;
         }
@@ -214,6 +216,7 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.AsyncTransfer = this.AsyncTransfer;
             schedule.Task.EncodedFilter = this.EncodedFilters;
             schedule.Task.GPGEncryption = this.GPGEncryption;
+            schedule.Task.IncludeSetup = this.IncludeSetup;
         }
 
         /// <summary>
@@ -486,6 +489,15 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get { return GetItem<bool>("GPGEncryption", false); }
             set { SetItem("GPGEncryption", value); }
+        }
+
+        /// <summary>
+        /// True if the Duplicati setup database should be included
+        /// </summary>
+        public bool IncludeSetup
+        {
+            get { return GetItem<bool>("IncludeSetup", false); }
+            set { SetItem("IncludeSetup", value); }
         }
     }
 

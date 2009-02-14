@@ -123,7 +123,10 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
                 m_wrapper.Username = m_wrapper.Password = "";
             }
 
-            args.NextPage = new Add_backup.AdvancedOptions();
+            if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+                args.NextPage = new RestoreSetup.RestoreSetupFinished();
+            else
+                args.NextPage = new Add_backup.AdvancedOptions();
         }
 
         private void RescanDrives()

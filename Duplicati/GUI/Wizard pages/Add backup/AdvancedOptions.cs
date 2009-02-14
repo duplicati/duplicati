@@ -30,12 +30,22 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class AdvancedOptions : WizardControl
     {
+        private WizardSettingsWrapper m_wrapper;
+
         public AdvancedOptions()
             : base("Advanced settings", "On this page you can select more advanced settings for your backup. If you prefer, you can ignore those settings, and use the duplicati defaults.")
         {
             InitializeComponent();
 
             base.PageLeave += new PageChangeHandler(AdvancedOptions_PageLeave);
+            base.PageEnter += new PageChangeHandler(AdvancedOptions_PageEnter);
+        }
+
+        void AdvancedOptions_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_wrapper = new WizardSettingsWrapper(m_settings);
+            if (!m_valuesAutoLoaded)
+                IncludeDuplicatiSetup.Checked = m_wrapper.IncludeSetup;
         }
 
         void AdvancedOptions_PageLeave(object sender, PageChangedArgs args)
@@ -47,6 +57,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
+
+            m_wrapper.IncludeSetup = IncludeDuplicatiSetup.Checked;
 
             if (SelectWhen.Checked)
                 args.NextPage = new Wizard_pages.Add_backup.SelectWhen();

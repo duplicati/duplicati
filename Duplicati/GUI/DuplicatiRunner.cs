@@ -47,9 +47,48 @@ namespace Duplicati.GUI
                 {
                     case DuplicityTaskType.FullBackup:
                     case DuplicityTaskType.IncrementalBackup:
-                        results = Interface.Backup(task.SourcePath, task.TargetPath, options);
-                        break;
+                        {
+                            Library.Core.TempFolder tf = null;
+                            try
+                            {
+                                if (task.Task.IncludeSetup)
+                                {
+                                    //Make a copy of the current database
+                                    tf = new Duplicati.Library.Core.TempFolder();
+                                    string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
 
+                                    System.IO.File.Copy(Program.DatabasePath, filename, true);
+                                    using (System.Data.IDbConnection con = new System.Data.SQLite.SQLiteConnection())
+                                    {
+                                        con.ConnectionString = "Data Source=" + filename;
+                                        con.Open();
+
+                                        using (System.Data.IDbCommand cmd = con.CreateCommand())
+                                        {
+                                            //Remove all log data to minimize the size of the database
+                                            cmd.CommandText = "DELETE FROM CommandQueue;";
+                                            cmd.ExecuteNonQuery();
+                                            cmd.CommandText = "DELETE FROM Log;";
+                                            cmd.ExecuteNonQuery();
+                                            cmd.CommandText = "DELETE FROM LogBlob;";
+                                            cmd.ExecuteNonQuery();
+
+                                            //Free up unused space
+                                            cmd.CommandText = "VACUUM;";
+                                        }
+                                    }
+
+                                    options["signature-control-files"] = filename;
+                                }
+                                results = Interface.Backup(task.SourcePath, task.TargetPath, options);
+                            }
+                            finally
+                            {
+                                if (tf != null)
+                                    tf.Dispose();
+                            }
+                            break;
+                        }
                     case DuplicityTaskType.ListBackups:
 
                         List<string> res = new List<string>();
@@ -87,9 +126,13 @@ namespace Duplicati.GUI
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
                 results = "Error: " + ex.Message;
+
             }
 
             task.RaiseTaskCompleted(results);
+
+            if (task.Schedule != null)
+                ((System.Data.LightDatamodel.IDataFetcherCached)task.Schedule.DataParent).CommitRecursive();
 
             if (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup)
             {
