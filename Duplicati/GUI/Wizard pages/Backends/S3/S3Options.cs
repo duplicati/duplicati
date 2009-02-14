@@ -88,7 +88,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             m_wrapper.UseSubDomains = bucketname.ToLower() == bucketname;
 
             if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
-                args.NextPage = new RestoreSetup.RestoreSetupFinished();
+                args.NextPage = new RestoreSetup.FinishedRestoreSetup();
             else
                 args.NextPage = new Add_backup.AdvancedOptions();
         }

@@ -188,6 +188,12 @@
     <Compile Include="Wizard pages\Add backup\FinishedAdd.Designer.cs">
       <DependentUpon>FinishedAdd.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\RestoreSetup\FinishedRestoreSetup.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\RestoreSetup\FinishedRestoreSetup.Designer.cs">
+      <DependentUpon>FinishedRestoreSetup.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Add backup\IncrementalSettings.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -507,6 +513,10 @@
       <SubType>Designer</SubType>
       <DependentUpon>MainPage.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\RestoreSetup\FinishedRestoreSetup.resx">
+      <DependentUpon>FinishedRestoreSetup.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Restore\FinishedRestore.resx">
       <SubType>Designer</SubType>
       <DependentUpon>FinishedRestore.cs</DependentUpon>
@@ -536,7 +546,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />
-    <Folder Include="Wizard pages\RestoreSetup\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

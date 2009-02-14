@@ -35,6 +35,12 @@ namespace Duplicati.GUI.Wizard_pages
             InitializeComponent();
             base.PageDisplay += new System.Windows.Forms.Wizard.PageChangeHandler(FirstLaunch_PageDisplay);
             base.PageLeave += new System.Windows.Forms.Wizard.PageChangeHandler(FirstLaunch_PageLeave);
+            base.PageEnter += new System.Windows.Forms.Wizard.PageChangeHandler(FirstLaunch_PageEnter);
+        }
+
+        void FirstLaunch_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
+        {
+            args.TreatAsLast = false;
         }
 
         void FirstLaunch_PageLeave(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
@@ -42,7 +48,7 @@ namespace Duplicati.GUI.Wizard_pages
             if (!CreateNew.Checked && !Restore.Checked)
             {
                 MessageBox.Show(this, "You must select an action", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                args.Cancel;
+                args.Cancel = true;
                 args.NextPage = null;
                 return;
             }

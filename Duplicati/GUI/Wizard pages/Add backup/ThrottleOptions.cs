@@ -167,11 +167,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             ThreadPriority.Enabled = ThreadPriorityEnabled.Checked;
         }
-
-        private void VolumeSizeLimitNumber_ValueChanged(object sender, EventArgs e)
-        {
-            int a = 0;
-        }
     }
 }
 

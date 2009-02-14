@@ -84,7 +84,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             m_wrapper.Username = Username.Text;
 
             if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
-                args.NextPage = new RestoreSetup.RestoreSetupFinished();
+                args.NextPage = new RestoreSetup.FinishedRestoreSetup();
             else
                 args.NextPage = new Add_backup.AdvancedOptions();
         }

@@ -30,7 +30,6 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
         {
             this.label1 = new System.Windows.Forms.Label();
             this.Summary = new System.Windows.Forms.TextBox();
-            this.RunNow = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -53,24 +52,13 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             this.Summary.Size = new System.Drawing.Size(456, 152);
             this.Summary.TabIndex = 1;
             // 
-            // RunNow
-            // 
-            this.RunNow.AutoSize = true;
-            this.RunNow.Location = new System.Drawing.Point(24, 200);
-            this.RunNow.Name = "RunNow";
-            this.RunNow.Size = new System.Drawing.Size(108, 17);
-            this.RunNow.TabIndex = 2;
-            this.RunNow.Text = "Run backup now";
-            this.RunNow.UseVisualStyleBackColor = true;
-            // 
-            // FinishedAdd
+            // FinishedRestoreSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.RunNow);
             this.Controls.Add(this.Summary);
             this.Controls.Add(this.label1);
-            this.Name = "FinishedAdd";
+            this.Name = "FinishedRestoreSetup";
             this.Size = new System.Drawing.Size(506, 242);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -81,6 +69,5 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
 
         private System.Windows.Forms.Label label1;
         public System.Windows.Forms.TextBox Summary;
-        public System.Windows.Forms.CheckBox RunNow;
     }
 }

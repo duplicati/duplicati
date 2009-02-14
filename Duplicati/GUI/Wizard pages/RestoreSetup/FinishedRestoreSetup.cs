@@ -29,12 +29,12 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages.RestoreSetup
 {
-    public partial class FinishedAdd : WizardControl
+    public partial class FinishedRestoreSetup : WizardControl
     {
         WizardSettingsWrapper m_wrapper;
 
         public FinishedRestoreSetup()
-            : base("Ready to add backup", "You have now entered all the required data, and can now create the backup.")
+            : base("Ready to restore settings", "You have now entered all the required data, and can now restore the setup.")
         {
             InitializeComponent();
 
@@ -47,7 +47,7 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            m_wrapper.RunImmediately = RunNow.Checked;
+            //TODO: Perform the restore
         }
 
         void FinishedRestoreSetup_PageEnter(object sender, PageChangedArgs args)
@@ -55,40 +55,28 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
             List<KeyValuePair<string, string>> strings = new List<KeyValuePair<string, string>>();
-            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
-                strings.Add(new KeyValuePair<string, string>("Action", "Add new backup"));
-            else
-                strings.Add(new KeyValuePair<string, string>("Action", "Modify backup"));
-
-            strings.Add(new KeyValuePair<string, string>("Source folder", m_wrapper.SourcePath));
-            strings.Add(new KeyValuePair<string, string>("When", m_wrapper.BackupTimeOffset.ToString()));
-            if (!string.IsNullOrEmpty(m_wrapper.RepeatInterval))
-                strings.Add(new KeyValuePair<string, string>("Repeat", m_wrapper.RepeatInterval));
-            if (!string.IsNullOrEmpty(m_wrapper.FullBackupInterval))
-                strings.Add(new KeyValuePair<string, string>("Full backup each", m_wrapper.FullBackupInterval));
-            if (m_wrapper.MaxFullBackups > 0)
-                strings.Add(new KeyValuePair<string, string>("Keep full backups", m_wrapper.MaxFullBackups.ToString()));
+            strings.Add(new KeyValuePair<string, string>("Action", "Restore backup"));
 
             strings.Add(new KeyValuePair<string, string>(null, null));
-            strings.Add(new KeyValuePair<string, string>("Destination", m_wrapper.Backend.ToString()));
+            strings.Add(new KeyValuePair<string, string>("Source", m_wrapper.Backend.ToString()));
 
             switch(m_wrapper.Backend)
             {
                 case WizardSettingsWrapper.BackendType.File:
                     FileSettings file = new FileSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Destination path", file.Path));
+                    strings.Add(new KeyValuePair<string, string>("Source path", file.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.FTP:
                     FTPSettings ftp = new FTPSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Destination path", ftp.Server + "/" + ftp.Path ));
+                    strings.Add(new KeyValuePair<string, string>("Source path", ftp.Server + "/" + ftp.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.SSH:
                     SSHSettings ssh = new SSHSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Destination path", ssh.Server + "/" + ssh.Path));
+                    strings.Add(new KeyValuePair<string, string>("Source path", ssh.Server + "/" + ssh.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.S3:
                     S3Settings s3 = new S3Settings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Destination path", s3.Path));
+                    strings.Add(new KeyValuePair<string, string>("Source path", s3.Path));
                     break;
             }
             

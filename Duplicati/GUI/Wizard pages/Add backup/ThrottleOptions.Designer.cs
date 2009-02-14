@@ -195,7 +195,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.VolumeSizeLimitNumber.Size = new System.Drawing.Size(88, 20);
             this.VolumeSizeLimitNumber.TabIndex = 13;
             this.VolumeSizeLimitNumber.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.VolumeSizeLimitNumber.ValueChanged += new System.EventHandler(this.VolumeSizeLimitNumber_ValueChanged);
             // 
             // AsyncEnabled
             // 
