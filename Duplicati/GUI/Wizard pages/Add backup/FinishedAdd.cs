@@ -108,5 +108,27 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             args.TreatAsLast = true;
         }
+
+        public override string HelpText
+        {
+            get
+            {
+                if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
+                    return base.HelpText;
+                else
+                    return "The backup modifications are now ready to be saved.";
+            }
+        }
+
+        public override string Title
+        {
+            get
+            {
+                if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
+                    return base.Title;
+                else
+                    return "Ready to save modifications";
+            }
+        }
     }
 }

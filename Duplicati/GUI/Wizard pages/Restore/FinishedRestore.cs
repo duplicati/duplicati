@@ -32,6 +32,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
     public partial class FinishedRestore : WizardControl
     {
         private WizardSettingsWrapper m_wrapper;
+        private HelperControls.WaitForOperation m_waitdlg;
 
         public FinishedRestore()
             : base("Ready to restore files", "Duplicati is now ready to restore your files.")
@@ -39,6 +40,24 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             InitializeComponent();
 
             base.PageEnter += new PageChangeHandler(FinishedRestore_PageEnter);
+            base.PageLeave += new PageChangeHandler(FinishedRestore_PageLeave);
+        }
+
+        void FinishedRestore_PageLeave(object sender, PageChangedArgs args)
+        {
+            if (args.Direction == PageChangedDirection.Back)
+                return;
+
+            if (!RunInBackground.Checked)
+            {
+                m_waitdlg = new Duplicati.GUI.HelperControls.WaitForOperation();
+                m_waitdlg.Setup(new DoWorkEventHandler(Restore), "Restoring files, please wait...");
+                m_waitdlg.ShowDialog();
+                m_owner.CancelButton.PerformClick();
+                m_waitdlg = null;
+                args.Cancel = true;
+                return;
+            }
         }
 
         void FinishedRestore_PageEnter(object sender, PageChangedArgs args)
@@ -53,6 +72,31 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
             args.TreatAsLast = true;
         }
+
+        private void Restore(object sender, DoWorkEventArgs args)
+        {
+            Schedule s = Program.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
+
+            RestoreTask task = new RestoreTask(s, m_wrapper.RestorePath, m_wrapper.RestoreFilter, m_wrapper.RestoreTime);
+            Dictionary<string, string> options = new Dictionary<string, string>();
+            task.GetOptions(options);
+            if (options.ContainsKey("filter"))
+                options.Remove("filter");
+            using (Library.Main.Interface i = new Duplicati.Library.Main.Interface(task.SourcePath, options))
+            {
+                i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress);
+                i.Restore(task.TargetPath);
+            }
+        }
+
+        void i_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, int progress, string message)
+        {
+            if (m_waitdlg.InvokeRequired)
+                m_waitdlg.Invoke(new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress), caller, operation, progress, message);
+            else
+                m_waitdlg.Text = message;
+        }
+
 
     }
 }

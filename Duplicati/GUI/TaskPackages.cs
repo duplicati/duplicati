@@ -33,6 +33,7 @@ namespace Duplicati.GUI
         Restore,
         ListBackups,
         ListFiles,
+        RestoreSetup
     }
 
     public delegate void TaskCompletedHandler(IDuplicityTask owner, string output);
@@ -337,6 +338,46 @@ namespace Duplicati.GUI
         public override string TargetPath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+    }
+
+    public class RestoreSetupTask : BackupTask
+    {
+        protected string m_targetdir = null;
+
+        public RestoreSetupTask(Schedule schedule, string targetdir)
+            : base(schedule)
+        {
+            m_targetdir = targetdir;
+        }
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.TargetDir); }
+        }
+
+        public string TargetDir { get { return m_targetdir; } }
+
+        public override void GetArguments(List<string> args)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+            if (options.ContainsKey("filter"))
+                options.Remove("filter");
+        }
+
+        public override DuplicityTaskType TaskType
+        {
+            get { return DuplicityTaskType.RestoreSetup; }
         }
     }
 

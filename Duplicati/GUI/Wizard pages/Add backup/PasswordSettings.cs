@@ -63,7 +63,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 return;
             }
 
-            if (!m_warnedNoPassword && !EnablePassword.Checked)
+            if (!m_warnedNoPassword && !EnablePassword.Checked && m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.RestoreSetup)
             {
                 if (MessageBox.Show(this, "If the backup is stored on machine or device that is not under your direct control,\nit is possible that others may view the files you have stored in the backups.\nIt is highly recomended that you enable encryption.\nDo you want to continue without encryption?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
@@ -118,7 +118,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!m_valuesAutoLoaded)
             {
-                EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add;
+                EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup);
                 Password.Text = m_wrapper.BackupPassword;
                 UseGPG.Checked = m_wrapper.GPGEncryption;
                 m_settingsChanged = false;
@@ -132,6 +132,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_warnedChanged = (bool)m_settings["Password:WarnedChanged"];
             if (m_settings.ContainsKey("Password:SettingsChanged"))
                 m_settingsChanged = (bool)m_settings["Password:SettingsChanged"];
+
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+            {
+                PasswordHelptext.Visible =
+                PasswordGeneratorSettings.Visible = false;
+
+                EnablePassword.Text = "Backup is protected with password";
+            }
         }
 
         private void GeneratePassword_Click(object sender, EventArgs e)
@@ -156,6 +164,17 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             m_settingsChanged = true;
             m_warnedNoGPG = false;
+        }
+
+        public override string HelpText
+        {
+            get
+            {
+                if (m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.RestoreSetup)
+                    return base.HelpText;
+                else
+                    return "Enter the encryption settings that were used to create the backup originally";
+            }
         }
 
     }

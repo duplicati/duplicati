@@ -32,6 +32,7 @@ namespace Duplicati.Datamodel
         private const string PGP_PATH = "PGP path";
         private const string SFTP_PATH = "SFTP Path";
         private const string SCP_PATH = "SCP Path";
+        private const string TEMP_PATH = "Temp Path";
 
         //TODO: Deal with this on Linux
         public const string PROGRAM_FILES = "%PROGRAMFILES%";
@@ -108,5 +109,25 @@ namespace Duplicati.Datamodel
             }
             set { m_appset[SCP_PATH] = value; }
         }
+
+        /// <summary>
+        /// Gets or sets the path to store temporary files. May contain environment variables
+        /// </summary>
+        public string TempPath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_appset[TEMP_PATH]))
+                {
+                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                        return "";
+                    else
+                        return "%temp%";
+                }
+                return m_appset[TEMP_PATH];
+            }
+            set { m_appset[TEMP_PATH] = value; }
+        }
+
     }
 }

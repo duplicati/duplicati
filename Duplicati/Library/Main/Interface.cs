@@ -23,46 +23,73 @@ using System.Text;
 
 namespace Duplicati.Library.Main
 {
-    public static class Interface
+    public enum DuplicatiOperation
     {
-        public static string Backup(string source, string target, Dictionary<string, string> options)
+        Backup,
+        Restore,
+        List,
+        Remove
+    };
+
+    public delegate void OperationProgressEvent(Interface caller, DuplicatiOperation operation, int progress, string message);
+
+    public class Interface : IDisposable
+    {
+        private string m_backend;
+        private Dictionary<string, string> m_options;
+
+        public event OperationProgressEvent OperationStarted;
+        public event OperationProgressEvent OperationCompleted;
+        public event OperationProgressEvent OperationProgress;
+        public event OperationProgressEvent OperationError;
+
+        public Interface(string backend, Dictionary<string, string> options)
+        {
+            m_backend = backend;
+            m_options = options;
+        }
+
+        public string Backup(string source)
         {
             BackupStatistics bs = new BackupStatistics();
 
-            SetupCommonOptions(options);
+            SetupCommonOptions(m_options);
             Backend.IBackend backend = null;
 
-            using (new Logging.Timer("Backup from " + source + " to " + target))
+            using (new Logging.Timer("Backup from " + source + " to " + m_backend))
             {
                 try
                 {
-                    FilenameStrategy fns = new FilenameStrategy(options);
-                    Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(options);
-                    bool full = options.ContainsKey("full");
+                    if (OperationStarted != null)
+                        OperationStarted(this, DuplicatiOperation.Backup, 0, "Started");
 
-                    int volumesize = (int)Core.Sizeparser.ParseSize(options.ContainsKey("volsize") ? options["volsize"] : "5", "mb");
+                    FilenameStrategy fns = new FilenameStrategy(m_options);
+                    Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(m_options);
+                    bool full = m_options.ContainsKey("full");
+
+                    int volumesize = (int)Core.Sizeparser.ParseSize(m_options.ContainsKey("volsize") ? m_options["volsize"] : "5", "mb");
                     volumesize = Math.Max(1024 * 1024, volumesize);
 
-                    long totalmax = options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(options["totalsize"], "mb") : long.MaxValue;
+                    long totalmax = m_options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(m_options["totalsize"], "mb") : long.MaxValue;
                     totalmax = Math.Max(volumesize, totalmax);
 
-                    backend = Backend.BackendLoader.GetBackend(target, options);
+                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
                     if (backend == null)
-                        throw new Exception("Unable to find backend for target: " + target);
-                    backend = new BackendWrapper(bs, backend, options);
-                    backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, options);
+                        throw new Exception("Unable to find backend for m_backend: " + m_backend);
+                    backend = new BackendWrapper(bs, backend, m_options);
+                    backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, m_options);
 
-                    List<BackupEntry> prev = ParseFileList(backend, options);
+                    List<BackupEntry> prev = ParseFileList(backend);
 
                     if (prev.Count == 0)
                         full = true;
 
-                    if (!full && options.ContainsKey("full-if-older-than"))
-                        full = DateTime.Now > Core.Timeparser.ParseTimeInterval(options["full-if-older-than"], prev[prev.Count - 1].Time);
+                    if (!full && m_options.ContainsKey("full-if-older-than"))
+                        full = DateTime.Now > Core.Timeparser.ParseTimeInterval(m_options["full-if-older-than"], prev[prev.Count - 1].Time);
 
                     List<string> controlfiles = new List<string>();
-                    if (options.ContainsKey("signature-control-files"))
-                        controlfiles.AddRange(options["signature-control-files"].Split(System.IO.Path.PathSeparator));
+                    if (m_options.ContainsKey("signature-control-files"))
+                        controlfiles.AddRange(m_options["signature-control-files"].Split(System.IO.Path.PathSeparator));
 
                     using (Core.TempFolder tempfolder = new Duplicati.Library.Core.TempFolder())
                     {
@@ -71,6 +98,9 @@ namespace Duplicati.Library.Main
                         {
                             using (new Logging.Timer("Reading incremental data"))
                             {
+                                if (OperationProgress != null)
+                                    OperationProgress(this, DuplicatiOperation.Backup, 0, "Reading incremental data");
+
                                 List<BackupEntry> entries = new List<BackupEntry>();
                                 entries.Add(prev[prev.Count - 1]);
                                 entries.AddRange(prev[prev.Count - 1].Incrementals);
@@ -78,6 +108,9 @@ namespace Duplicati.Library.Main
                                 foreach (BackupEntry be in entries)
                                     foreach (BackupEntry bes in be.SignatureFile)
                                     {
+                                        if (OperationProgress != null)
+                                            OperationProgress(this, DuplicatiOperation.Backup, 0, "Reading incremental file: " + bes.Filename);
+
                                         string filename = System.IO.Path.Combine(tempfolder, "patch-" + patches.Count.ToString() + ".zip");
                                         using (new Logging.Timer("Get " + bes.Filename))
                                             backend.Get(bes.Filename, filename);
@@ -103,6 +136,9 @@ namespace Duplicati.Library.Main
                             {
                                 using (new Logging.Timer("Multipass " + (vol + 1).ToString()))
                                 {
+                                    if (OperationProgress != null)
+                                        OperationProgress(this, DuplicatiOperation.Backup, 0, "Creating volume " + (vol + 1).ToString());
+
                                     //The backendwrapper will remove these
                                     Core.TempFile signaturefile = new Duplicati.Library.Core.TempFile();
                                     Core.TempFile contentfile = new Duplicati.Library.Core.TempFile();
@@ -116,7 +152,7 @@ namespace Duplicati.Library.Main
                                         //Add signature files to archive
                                         foreach (string s in controlfiles)
                                             if (!string.IsNullOrEmpty(s))
-                                                using (System.IO.Stream cs = signaturearchive.CreateFile(System.IO.Path.GetFileName(s)))
+                                                using (System.IO.Stream cs = signaturearchive.CreateFile(System.IO.Path.Combine(RSync.RSyncDir.CONTROL_ROOT, System.IO.Path.GetFileName(s))))
                                                 using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
                                                     Core.Utility.CopyStream(fs, cs);
 
@@ -178,6 +214,9 @@ namespace Duplicati.Library.Main
                 {
                     if (backend != null)
                         backend.Dispose();
+
+                    if (OperationCompleted != null)
+                        OperationCompleted(this, DuplicatiOperation.Backup, 100, "Completed");
                 }
             }
 
@@ -185,23 +224,26 @@ namespace Duplicati.Library.Main
             return bs.ToString();
         }
 
-        public static string Restore(string source, string target, Dictionary<string, string> options)
+        public string Restore(string target)
         {
-            SetupCommonOptions(options);
+            SetupCommonOptions(m_options);
             RestoreStatistics rs = new RestoreStatistics();
 
             Backend.IBackend backend = null;
 
-            using (new Logging.Timer("Restore from " + source + " to " + target))
+            using (new Logging.Timer("Restore from " + m_backend + " to " + target))
             {
                 try
                 {
-                    string specificfile = options.ContainsKey("file-to-restore") ? options["file-to-restore"] : "";
-                    string specifictime = options.ContainsKey("restore-time") ? options["restore-time"] : "now";
-                    Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(options);
+                    if (OperationStarted != null)
+                        OperationStarted(this, DuplicatiOperation.Restore, 0, "Started");
+
+                    string specificfile = m_options.ContainsKey("file-to-restore") ? m_options["file-to-restore"] : "";
+                    string specifictime = m_options.ContainsKey("restore-time") ? m_options["restore-time"] : "now";
+                    Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(m_options);
 
                     //Filter is prefered, if both file and filter is specified
-                    if (!options.ContainsKey("filter") && !string.IsNullOrEmpty(specificfile))
+                    if (!m_options.ContainsKey("filter") && !string.IsNullOrEmpty(specificfile))
                     {
                         List<Core.IFilenameFilter> list = new List<Duplicati.Library.Core.IFilenameFilter>();
                         list.Add(new Core.FilelistFilter(true, specificfile.Split(System.IO.Path.PathSeparator)));
@@ -210,14 +252,14 @@ namespace Duplicati.Library.Main
                         filter = new Duplicati.Library.Core.FilenameFilter(list);
                     }
 
-                    backend = Backend.BackendLoader.GetBackend(source, options);
+                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
                     if (backend == null)
-                        throw new Exception("Unable to find backend for target: " + source);
-                    backend = new BackendWrapper(rs, backend, options);
+                        throw new Exception("Unable to find backend for target: " + m_backend);
+                    backend = new BackendWrapper(rs, backend, m_options);
 
-                    BackupEntry bestFit = FindBestMatch(ParseFileList(backend, options), specifictime);
+                    BackupEntry bestFit = FindBestMatch(ParseFileList(backend), specifictime);
                     if (bestFit.EncryptionMode != null)
-                        backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, options);
+                        backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options);
 
                     List<BackupEntry> entries = new List<BackupEntry>();
                     entries.Add(bestFit);
@@ -234,6 +276,10 @@ namespace Duplicati.Library.Main
 
                                 using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
                                 {
+                                    //TODO: Set better text messages
+                                    if (OperationProgress != null)
+                                        OperationProgress(this, DuplicatiOperation.Backup, 0, "Patching restore with #" + (patchno + 1).ToString());
+
                                     using (new Logging.Timer("Get " + vol.Filename))
                                         backend.Get(vol.Filename, patchzip);
 
@@ -248,6 +294,9 @@ namespace Duplicati.Library.Main
                 {
                     if (backend != null)
                         backend.Dispose();
+
+                    if (OperationCompleted != null)
+                        OperationCompleted(this, DuplicatiOperation.Restore, 100, "Completed");
                 }
             } 
 
@@ -262,58 +311,28 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Restores control files added to a backup.
         /// </summary>
-        /// <param name="source">The backend to retrieve the control files from</param>
         /// <param name="target">The folder into which to restore the files</param>
-        /// <param name="options">Options that affect how the call is performed</param>
         /// <returns>A restore report</returns>
-        public static string RestoreControlFiles(string source, string target, Dictionary<string, string> options)
+        public string RestoreControlFiles(string target)
         {
-            SetupCommonOptions(options);
+            SetupCommonOptions(m_options);
             RestoreStatistics rs = new RestoreStatistics();
 
             Backend.IBackend backend = null;
 
-            using (new Logging.Timer("Restore control files from " + source + " to " + target))
+            using (new Logging.Timer("Restore control files from " + m_backend + " to " + target))
             {
                 try
                 {
-                    backend = Backend.BackendLoader.GetBackend(source, options);
+                    if (OperationStarted != null)
+                        OperationStarted(this, DuplicatiOperation.Restore, 0, "Started");
+
+                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
                     if (backend == null)
-                        throw new Exception("Unable to find backend for target: " + source);
-                    backend = new BackendWrapper(rs, backend, options);
+                        throw new Exception("Unable to find backend for target: " + m_backend);
+                    backend = new BackendWrapper(rs, backend, m_options);
 
-                    List<BackupEntry> attempts = ParseFileList(backend, options);
-
-                    Core.FilenameFilter filter;
-
-                    if (!options.ContainsKey("file-to-restore"))
-                    {
-                        filter = new Duplicati.Library.Core.FilenameFilter(
-                            new List<Core.IFilenameFilter>(new Core.IFilenameFilter[] {
-                                //Exclude everything with a path
-                                new Duplicati.Library.Core.RegularExpressionFilter(false, "*." + System.IO.Path.DirectorySeparatorChar.ToString() + "*."),
-                                //Exclude known files
-                                new Duplicati.Library.Core.FilelistFilter(false, new string[] {
-                                    RSync.RSyncDir.ADDED_FOLDERS,
-                                    RSync.RSyncDir.DELETED_FILES,
-                                    RSync.RSyncDir.DELETED_FOLDERS
-                                })
-                            })
-                        );
-                    }
-                    else
-                    {
-                        filter = new Duplicati.Library.Core.FilenameFilter(
-                            new List<Core.IFilenameFilter>(new Core.IFilenameFilter[] {
-                                //Include requested items
-                                new Duplicati.Library.Core.FilelistFilter(true, options["file-to-restore"].Split(System.IO.Path.PathSeparator)),
-                                //Exclude everything else
-                                new Duplicati.Library.Core.RegularExpressionFilter(false, "*.")
-                            })
-                        );
-                    }
-
-
+                    List<BackupEntry> attempts = ParseFileList(backend);
 
                     List<BackupEntry> flatlist = new List<BackupEntry>();
                     foreach (BackupEntry be in attempts)
@@ -323,26 +342,32 @@ namespace Duplicati.Library.Main
                     }
 
                     flatlist.Reverse();
+
+                    string prefix = Core.Utility.AppendDirSeperator(RSync.RSyncDir.CONTROL_ROOT);
+
                     foreach (BackupEntry be in flatlist)
                     {
                         Backend.IBackend realbackend = backend;
                         if (be.EncryptionMode != null)
-                            realbackend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, be.EncryptionMode, options);
+                            realbackend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, be.EncryptionMode, m_options);
 
                         if (be.SignatureFile.Count > 0)
                             using(Core.TempFile z = new Duplicati.Library.Core.TempFile())
                             {
+                                if (OperationProgress != null)
+                                    OperationProgress(this, DuplicatiOperation.Backup, 0, "Reading incremental data from " + be.SignatureFile[0].Filename);
+
                                 using (new Logging.Timer("Get " + be.SignatureFile[0].Filename))
                                     realbackend.Get(be.SignatureFile[0].Filename, z);
                                 
                                 using(Compression.FileArchiveZip fz = new Duplicati.Library.Compression.FileArchiveZip(z))
                                 {
                                     bool any = false;
-                                    foreach (string f in filter.FilterList("", fz.ListFiles(null)))
+                                    foreach (string f in fz.ListFiles(prefix))
                                     {
                                         any = true;
                                         using (System.IO.Stream s1 = fz.OpenRead(f))
-                                        using (System.IO.Stream s2 = System.IO.File.Create(System.IO.Path.Combine(target, f)))
+                                        using (System.IO.Stream s2 = System.IO.File.Create(System.IO.Path.Combine(target, f.Substring(prefix.Length))))
                                             Core.Utility.CopyStream(s1, s2);
                                     }
 
@@ -359,6 +384,9 @@ namespace Duplicati.Library.Main
                 {
                     if (backend != null)
                         backend.Dispose();
+
+                    if (OperationCompleted != null)
+                        OperationCompleted(this, DuplicatiOperation.Restore, 100, "Completed");
                 }
             }
 
@@ -370,21 +398,24 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
-        public static string RemoveAllButNFull(string source, Dictionary<string, string> options)
+        public string RemoveAllButNFull()
         {
-            if (!options.ContainsKey("remove-all-but-n-full"))
+            if (!m_options.ContainsKey("remove-all-but-n-full"))
                 throw new Exception("No count given for \"Remove All But N Full\"");
 
-            int x = int.Parse(options["remove-all-but-n-full"]);
+            int x = int.Parse(m_options["remove-all-but-n-full"]);
             if (x < 0)
                 throw new Exception("Invalid count for remove-all-but-n-full");
-            Backend.IBackend backend = Backend.BackendLoader.GetBackend(source, options);
+            Backend.IBackend backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
             if (backend == null)
-                throw new Exception("Unable to find backend for target: " + source);
+                throw new Exception("Unable to find backend for target: " + m_backend);
 
             try
             {
-                List<BackupEntry> entries = ParseFileList(backend, options);
+                if (OperationStarted != null)
+                    OperationStarted(this, DuplicatiOperation.Remove, 0, "Started");
+
+                List<BackupEntry> entries = ParseFileList(backend);
 
 
                 List<BackupEntry> toremove = new List<BackupEntry>();
@@ -399,30 +430,35 @@ namespace Duplicati.Library.Main
                     toremove.Add(be);
                 }
 
-                return RemoveBackupSets(backend, options, toremove);
+                return RemoveBackupSets(backend, toremove);
             }
             finally
             {
                 if (backend != null)
                     backend.Dispose();
+                if (OperationCompleted != null)
+                    OperationCompleted(this, DuplicatiOperation.Remove, 100, "Completed");
             }
         }
 
-        public static string RemoveOlderThan(string source, Dictionary<string, string> options)
+        public string RemoveOlderThan()
         {
             StringBuilder sb = new StringBuilder();
 
-            if (!options.ContainsKey("remove-older-than"))
+            if (!m_options.ContainsKey("remove-older-than"))
                 throw new Exception("No count given for \"Remove Older Than\"");
 
-            Backend.IBackend backend = Backend.BackendLoader.GetBackend(source, options);
+            Backend.IBackend backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
             if (backend == null)
-                throw new Exception("Unable to find backend for target: " + source);
+                throw new Exception("Unable to find backend for target: " + m_backend);
 
             try
             {
-                string duration = options["remove-older-than"];
-                List<BackupEntry> entries = ParseFileList(backend, options);
+                if (OperationStarted != null)
+                    OperationStarted(this, DuplicatiOperation.Remove, 0, "Started");
+
+                string duration = m_options["remove-older-than"];
+                List<BackupEntry> entries = ParseFileList(backend);
 
                 DateTime expires = Core.Timeparser.ParseTimeInterval(duration, DateTime.Now, true);
 
@@ -461,18 +497,20 @@ namespace Duplicati.Library.Main
                 }
 
 
-                sb.Append(RemoveBackupSets(backend, options, toremove));
+                sb.Append(RemoveBackupSets(backend, toremove));
             }
             finally
             {
                 if (backend != null)
                     backend.Dispose();
+                if (OperationCompleted != null)
+                    OperationCompleted(this, DuplicatiOperation.Remove, 100, "Completed");
             }
 
             return sb.ToString();
         }
 
-        private static string RemoveBackupSets(Backend.IBackend backend, Dictionary<string, string> options, List<BackupEntry> entries)
+        private string RemoveBackupSets(Backend.IBackend backend, List<BackupEntry> entries)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -480,7 +518,7 @@ namespace Duplicati.Library.Main
             {
                 sb.AppendLine("Deleting backup at " + be.Time.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-                if (options.ContainsKey("force"))
+                if (m_options.ContainsKey("force"))
                 {
                     //Delete manifest
                     backend.Delete(be.Filename);
@@ -493,46 +531,62 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            if (!options.ContainsKey("force") && entries.Count > 0)
+            if (!m_options.ContainsKey("force") && entries.Count > 0)
                 sb.AppendLine("Files are not deleted, use the --force command to actually remove files");
 
             return sb.ToString();
         }
 
 
-        public static string[] List(string source, Dictionary<string, string> options)
+        public string[] List()
         {
-            SetupCommonOptions(options);
+            SetupCommonOptions(m_options);
 
             List<string> res = new List<string>();
-            Duplicati.Library.Backend.IBackend i = new Duplicati.Library.Backend.BackendLoader(source, options);
+            Duplicati.Library.Backend.IBackend i = new Duplicati.Library.Backend.BackendLoader(m_backend, m_options);
 
             if (i == null)
-                throw new Exception("Unable to find backend for target: " + source);
+                throw new Exception("Unable to find backend for target: " + m_backend);
+
+            if (OperationStarted != null)
+                OperationStarted(this, DuplicatiOperation.List, 0, "Started");
 
             using(i)
                 foreach (Duplicati.Library.Backend.FileEntry fe in i.List())
                     res.Add(fe.Name);
 
+            if (OperationCompleted != null)
+                OperationCompleted(this, DuplicatiOperation.List, 100, "Completed");
+
             return res.ToArray();
         }
 
-        public static List<BackupEntry> ParseFileList(string backend, Dictionary<string, string> options)
+        public List<BackupEntry> ParseFileList()
         {
-            Backend.IBackend obackend = Backend.BackendLoader.GetBackend(backend, options);
+            if (OperationStarted != null)
+                OperationStarted(this, DuplicatiOperation.List, 0, "Started");
+
+            Backend.IBackend obackend = Backend.BackendLoader.GetBackend(m_backend, m_options);
             if (obackend == null)
-                throw new Exception("Unable to find backend for target: " + backend);
-            using(obackend)
-                return ParseFileList(obackend, options);
+                throw new Exception("Unable to find backend for target: " + m_backend);
+            using (obackend)
+            {
+                List<BackupEntry> data = ParseFileList(obackend);
+
+                if (OperationCompleted != null)
+                    OperationCompleted(this, DuplicatiOperation.List, 100, "Completed");
+
+                return data;
+            }
         }
 
-        public static List<BackupEntry> ParseFileList(Duplicati.Library.Backend.IBackend backend, Dictionary<string, string> options)
+        private List<BackupEntry> ParseFileList(Duplicati.Library.Backend.IBackend backend)
         {
-            SetupCommonOptions(options);
+            SetupCommonOptions(m_options);
 
             using (new Logging.Timer("Getting and sorting filelist from " + backend.DisplayName))
             {
-                FilenameStrategy fns = new FilenameStrategy(options);
+                FilenameStrategy fns = new FilenameStrategy(m_options);
 
                 List<BackupEntry> incrementals = new List<BackupEntry>();
                 List<BackupEntry> fulls = new List<BackupEntry>();
@@ -610,22 +664,25 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public static IList<string> ListContent(string source, Dictionary<string, string> options)
+        public IList<string> ListContent()
         {
-            SetupCommonOptions(options);
+            SetupCommonOptions(m_options);
             RestoreStatistics rs = new RestoreStatistics();
 
             SortedList<string, string> res = new SortedList<string, string>();
-            Duplicati.Library.Backend.IBackend backend = new Duplicati.Library.Backend.BackendLoader(source, options);
+            Duplicati.Library.Backend.IBackend backend = new Duplicati.Library.Backend.BackendLoader(m_backend, m_options);
 
             if (backend == null)
-                throw new Exception("Unable to find backend for target: " + source);
-            backend = new BackendWrapper(rs, backend, options);
+                throw new Exception("Unable to find backend for target: " + m_backend);
+            backend = new BackendWrapper(rs, backend, m_options);
 
-            string specifictime = options.ContainsKey("restore-time") ? options["restore-time"] : "now";
-            BackupEntry bestFit = FindBestMatch(ParseFileList(backend, options), specifictime);
+            if (OperationStarted != null)
+                OperationStarted(this, DuplicatiOperation.List, 0, "Started");
+
+            string specifictime = m_options.ContainsKey("restore-time") ? m_options["restore-time"] : "now";
+            BackupEntry bestFit = FindBestMatch(ParseFileList(backend), specifictime);
             if (bestFit.EncryptionMode != null)
-                backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, options);
+                backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options);
 
             using (backend)
             using (Core.TempFolder basefolder = new Duplicati.Library.Core.TempFolder())
@@ -646,6 +703,9 @@ namespace Duplicati.Library.Main
                             {
                                 if (be.CompressionMode != "zip")
                                     throw new Exception("Unexpected compression mode");
+
+                                if (OperationProgress != null)
+                                    OperationProgress(this, DuplicatiOperation.Backup, 0, "Reading incremental data: " + be.Filename);
 
                                 using (new Logging.Timer("Get " + be.Filename))
                                     backend.Get(be.Filename, patchzip);
@@ -673,25 +733,13 @@ namespace Duplicati.Library.Main
                 }
             }
 
+            if (OperationCompleted != null)
+                OperationCompleted(this, DuplicatiOperation.List, 100, "Completed");
+
             return res.Keys;
         }
 
-        private static string NormalizeZipFileName(string name)
-        {
-            if (System.IO.Path.DirectorySeparatorChar != '/')
-                name = name.Replace(System.IO.Path.DirectorySeparatorChar, '/');
-            return name;
-        }
-
-        private static string NormalizeZipDirName(string name)
-        {
-            name = NormalizeZipFileName(name);
-            if (!name.EndsWith("/"))
-                name += "/";
-            return name;
-        }
-
-        private static BackupEntry FindBestMatch(List<BackupEntry> backups, string specifictime)
+        private BackupEntry FindBestMatch(List<BackupEntry> backups, string specifictime)
         {
             if (string.IsNullOrEmpty(specifictime))
                 specifictime = "now";
@@ -720,12 +768,71 @@ namespace Duplicati.Library.Main
             return bestFit;
         }
 
-        private static void SetupCommonOptions(Dictionary<string, string> options)
+        private void SetupCommonOptions(Dictionary<string, string> options)
         {
             if (options.ContainsKey("tempdir"))
                 Core.TempFolder.SystemTempPath = options["tempdir"];
             if (options.ContainsKey("thread-priority"))
                 System.Threading.Thread.CurrentThread.Priority = Core.Utility.ParsePriority(options["thread-priority"]);
         }
+
+        //Static helpers
+
+        public static string[] List(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.List();
+        }
+
+        public static string Backup(string source, string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.Backup(source);
+        }
+
+        public static string Restore(string source, string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(source, options))
+                return i.Restore(target);
+        }
+
+        public static List<BackupEntry> ParseFileList(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.ParseFileList();
+        }
+
+        public static IList<string> ListContent(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.ListContent();
+        }
+
+        public static string RemoveAllButNFull(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.RemoveAllButNFull();
+        }
+
+        public static string RemoveOlderThan(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.RemoveOlderThan();
+        }
+
+        public static string RestoreControlFiles(string source, string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(source, options))
+                return i.RestoreControlFiles(target);
+        }
+
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+        }
+
+        #endregion
     }
 }

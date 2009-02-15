@@ -84,7 +84,6 @@ namespace Duplicati.GUI
                 Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
                 DateTime when = wrapper.RestoreTime;
                 string target = wrapper.RestorePath;
-                //TODO: Use this
                 string restoreFilter = wrapper.RestoreFilter;
 
                 if (when.Ticks == 0)
@@ -113,6 +112,10 @@ namespace Duplicati.GUI
                 foreach(IDataClass o in items)
                     Program.DataConnection.DeleteObject(o);
                 Program.DataConnection.Commit(items.ToArray());
+            }
+            else if (m_form.CurrentPage is Wizard_pages.RestoreSetup.FinishedRestoreSetup)
+            {
+                MessageBox.Show(m_form as Form, "The previous Duplicati setup is now restored!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 

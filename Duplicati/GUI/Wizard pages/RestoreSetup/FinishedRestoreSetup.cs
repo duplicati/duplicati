@@ -47,7 +47,16 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            //TODO: Perform the restore
+            HelperControls.WaitForOperation dlg = new Duplicati.GUI.HelperControls.WaitForOperation();
+            dlg.Setup(new DoWorkEventHandler(Restore), "Restoring setup, please wait...");
+            if (dlg.ShowDialog() != DialogResult.OK)
+            {
+                if (dlg.Error != null)
+                    MessageBox.Show(this, "Failed to restore setup files, the error message was:\n" + dlg.Error.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                args.Cancel = true;
+                return;
+            }
         }
 
         void FinishedRestoreSetup_PageEnter(object sender, PageChangedArgs args)
@@ -95,6 +104,31 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             Summary.Text = sb.ToString();
 
             args.TreatAsLast = true;
+        }
+
+        private void Restore(object sender, DoWorkEventArgs args)
+        {
+            System.Data.LightDatamodel.DataFetcherNested con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+            Schedule s = con.Add<Schedule>();
+            s.Task = con.Add<Task>();
+            m_wrapper.UpdateSchedule(s);
+
+            using (Library.Core.TempFolder tf = new Duplicati.Library.Core.TempFolder())
+            {
+                RestoreSetupTask task = new RestoreSetupTask(s, tf);
+                Dictionary<string, string> options = new Dictionary<string, string>();
+                task.GetOptions(options);
+                Library.Main.Interface.RestoreControlFiles(task.SourcePath, task.TargetPath, options);
+
+                string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
+                if (System.IO.File.Exists(filename))
+                    System.IO.File.Copy(filename, Program.DatabasePath, true);
+                else
+                    throw new Exception("Unable to restore setup file from backup");
+
+                Program.DataConnection.ClearCache();
+                Program.Scheduler.Reschedule();
+            }
         }
     }
 }

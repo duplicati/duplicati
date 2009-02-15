@@ -23,7 +23,7 @@ using System.Text;
 
 namespace Duplicati.Library.Main
 {
-    public class BackupStatistics : CommunicationStatistics
+    internal class BackupStatistics : CommunicationStatistics
     {
         private DateTime m_beginTime;
         private DateTime m_endTime;

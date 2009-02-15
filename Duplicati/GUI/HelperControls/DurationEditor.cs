@@ -46,8 +46,8 @@ namespace Duplicati.GUI.HelperControls
         {
             EasyDuration.Items.Clear();
 
-            if (values[values.Count - 1].Key != "")
-                values.Add(new KeyValuePair<string, string>("", ""));
+            if (values[values.Count - 1].Value != "")
+                values.Add(new KeyValuePair<string, string>("Custom...", ""));
 
             m_values = new string[values.Count];
             for (int i = 0; i < values.Count; i++)

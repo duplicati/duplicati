@@ -89,6 +89,16 @@ namespace Duplicati.Datamodel
                 options["gpg-encryption"] = "";
                 options["gpg-program-path"] = new ApplicationSettings(this.DataParent).GPGPath;
             }
+
+            if (string.IsNullOrEmpty(this.Encryptionkey))
+                options.Add("no-encryption", "");
+            else
+                options.Add("passphrase", this.Encryptionkey);
+
+            ApplicationSettings set = new ApplicationSettings(this.DataParent);
+            if (!string.IsNullOrEmpty(set.TempPath))
+                options["tempdir"] = System.Environment.ExpandEnvironmentVariables(set.TempPath);
+
         }
 
         public string EncodedFilter

@@ -33,6 +33,7 @@ namespace Duplicati.Library.Main.RSync
         internal static readonly string CONTENT_ROOT = "snapshot";
         internal static readonly string DELTA_ROOT = "diff";
         //private static readonly string DACL_ROOT = "dacl";
+        internal static readonly string CONTROL_ROOT = "controlfiles";
 
         internal static readonly string DELETED_FILES = "deleted_files.txt";
         internal static readonly string DELETED_FOLDERS = "deleted_folders.txt";

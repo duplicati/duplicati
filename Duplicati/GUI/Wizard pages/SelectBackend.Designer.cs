@@ -33,7 +33,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.SSH = new System.Windows.Forms.RadioButton();
             this.WebDAV = new System.Windows.Forms.RadioButton();
             this.S3 = new System.Windows.Forms.RadioButton();
-            this.label1 = new System.Windows.Forms.Label();
+            this.Question = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // File
@@ -96,20 +96,20 @@ namespace Duplicati.GUI.Wizard_pages
             this.S3.UseVisualStyleBackColor = true;
             this.S3.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
-            // label1
+            // Question
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(40, 16);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(206, 13);
-            this.label1.TabIndex = 5;
-            this.label1.Text = "Where do you want to store the backups?";
+            this.Question.AutoSize = true;
+            this.Question.Location = new System.Drawing.Point(40, 16);
+            this.Question.Name = "Question";
+            this.Question.Size = new System.Drawing.Size(206, 13);
+            this.Question.TabIndex = 5;
+            this.Question.Text = "Where do you want to store the backups?";
             // 
             // SelectBackend
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.Question);
             this.Controls.Add(this.S3);
             this.Controls.Add(this.WebDAV);
             this.Controls.Add(this.SSH);
@@ -129,6 +129,6 @@ namespace Duplicati.GUI.Wizard_pages
         private System.Windows.Forms.RadioButton SSH;
         private System.Windows.Forms.RadioButton WebDAV;
         private System.Windows.Forms.RadioButton S3;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label Question;
     }
 }

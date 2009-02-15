@@ -47,6 +47,10 @@ namespace Duplicati.GUI
             this.BrowseGPGDialog = new System.Windows.Forms.OpenFileDialog();
             this.BrowseSFTPDialog = new System.Windows.Forms.OpenFileDialog();
             this.BrowseSCPDialog = new System.Windows.Forms.OpenFileDialog();
+            this.TempPathBrowse = new System.Windows.Forms.Button();
+            this.TempPath = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.BrowseTempPath = new System.Windows.Forms.FolderBrowserDialog();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -105,6 +109,9 @@ namespace Duplicati.GUI
             // 
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox2.Controls.Add(this.TempPathBrowse);
+            this.groupBox2.Controls.Add(this.TempPath);
+            this.groupBox2.Controls.Add(this.label4);
             this.groupBox2.Controls.Add(this.BrowseSCP);
             this.groupBox2.Controls.Add(this.SCPPath);
             this.groupBox2.Controls.Add(this.label3);
@@ -116,7 +123,7 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Location = new System.Drawing.Point(8, 72);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(437, 104);
+            this.groupBox2.Size = new System.Drawing.Size(437, 128);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Path settings (Advanced)";
@@ -195,7 +202,7 @@ namespace Duplicati.GUI
             // OKBtn
             // 
             this.OKBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.OKBtn.Location = new System.Drawing.Point(135, 186);
+            this.OKBtn.Location = new System.Drawing.Point(135, 207);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(80, 24);
             this.OKBtn.TabIndex = 6;
@@ -207,7 +214,7 @@ namespace Duplicati.GUI
             // 
             this.CancelBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(231, 186);
+            this.CancelBtn.Location = new System.Drawing.Point(231, 207);
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.Size = new System.Drawing.Size(72, 24);
             this.CancelBtn.TabIndex = 7;
@@ -235,12 +242,42 @@ namespace Duplicati.GUI
             this.BrowseSCPDialog.Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*";
             this.BrowseSCPDialog.Title = "Select the SCP executable";
             // 
+            // TempPathBrowse
+            // 
+            this.TempPathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.TempPathBrowse.Location = new System.Drawing.Point(400, 96);
+            this.TempPathBrowse.Name = "TempPathBrowse";
+            this.TempPathBrowse.Size = new System.Drawing.Size(24, 20);
+            this.TempPathBrowse.TabIndex = 22;
+            this.TempPathBrowse.Text = "...";
+            this.TempPathBrowse.UseVisualStyleBackColor = true;
+            this.TempPathBrowse.Click += new System.EventHandler(this.TempPathBrowse_Click);
+            // 
+            // TempPath
+            // 
+            this.TempPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.TempPath.Location = new System.Drawing.Point(128, 96);
+            this.TempPath.Name = "TempPath";
+            this.TempPath.Size = new System.Drawing.Size(272, 20);
+            this.TempPath.TabIndex = 21;
+            this.TempPath.TextChanged += new System.EventHandler(this.TempPath_TextChanged);
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(8, 96);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(86, 13);
+            this.label4.TabIndex = 20;
+            this.label4.Text = "Temporary folder";
+            // 
             // ApplicationSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(453, 224);
+            this.ClientSize = new System.Drawing.Size(453, 245);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.groupBox2);
@@ -252,6 +289,7 @@ namespace Duplicati.GUI
             this.Name = "ApplicationSetup";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Duplicati setup";
+            this.Load += new System.EventHandler(this.ApplicationSetup_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -280,5 +318,9 @@ namespace Duplicati.GUI
         private System.Windows.Forms.OpenFileDialog BrowseGPGDialog;
         private System.Windows.Forms.OpenFileDialog BrowseSFTPDialog;
         private System.Windows.Forms.OpenFileDialog BrowseSCPDialog;
+        private System.Windows.Forms.Button TempPathBrowse;
+        private System.Windows.Forms.TextBox TempPath;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.FolderBrowserDialog BrowseTempPath;
     }
 }

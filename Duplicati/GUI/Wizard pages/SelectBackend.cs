@@ -130,6 +130,9 @@ namespace Duplicati.GUI.Wizard_pages
             Item_CheckChanged(null, null);
 
 
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+                Question.Text = "Where is the backup stored?";
+
         }
 
         private void Item_CheckChanged(object sender, EventArgs e)

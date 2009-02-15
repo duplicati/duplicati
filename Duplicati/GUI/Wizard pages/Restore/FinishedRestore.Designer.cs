@@ -30,6 +30,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         {
             this.Summary = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.RunInBackground = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // Summary
@@ -40,7 +41,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             this.Summary.Name = "Summary";
             this.Summary.ReadOnly = true;
             this.Summary.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.Summary.Size = new System.Drawing.Size(456, 152);
+            this.Summary.Size = new System.Drawing.Size(456, 144);
             this.Summary.TabIndex = 3;
             // 
             // label1
@@ -52,10 +53,21 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             this.label1.TabIndex = 2;
             this.label1.Text = "Summary";
             // 
+            // RunInBackground
+            // 
+            this.RunInBackground.AutoSize = true;
+            this.RunInBackground.Location = new System.Drawing.Point(24, 200);
+            this.RunInBackground.Name = "RunInBackground";
+            this.RunInBackground.Size = new System.Drawing.Size(228, 17);
+            this.RunInBackground.TabIndex = 4;
+            this.RunInBackground.Text = "Run restore operation as a background job";
+            this.RunInBackground.UseVisualStyleBackColor = true;
+            // 
             // FinishedRestore
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.RunInBackground);
             this.Controls.Add(this.Summary);
             this.Controls.Add(this.label1);
             this.Name = "FinishedRestore";
@@ -69,5 +81,6 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
         public System.Windows.Forms.TextBox Summary;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.CheckBox RunInBackground;
     }
 }

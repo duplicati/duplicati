@@ -85,6 +85,12 @@
     <Compile Include="HelperControls\FilterEditor.Designer.cs">
       <DependentUpon>FilterEditor.cs</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\WaitForOperation.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="HelperControls\WaitForOperation.Designer.cs">
+      <DependentUpon>WaitForOperation.cs</DependentUpon>
+    </Compile>
     <Compile Include="LogViewer.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -385,6 +391,10 @@
     <EmbeddedResource Include="HelperControls\FilterEditor.resx">
       <SubType>Designer</SubType>
       <DependentUpon>FilterEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\WaitForOperation.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>WaitForOperation.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="LogViewer.resx">
       <SubType>Designer</SubType>

@@ -41,6 +41,15 @@ namespace Duplicati.GUI
             m_connection = new DataFetcherNested(Program.DataConnection);
             m_settings = new ApplicationSettings(m_connection);
 
+            RecentDuration.SetIntervals(new List<KeyValuePair<string, string>>(
+                new KeyValuePair<string, string>[]
+                {
+                    new KeyValuePair<string, string>("One week", "1W"),
+                    new KeyValuePair<string, string>("Two weeks", "2W"),
+                    new KeyValuePair<string, string>("One month", "1M"),
+                    new KeyValuePair<string, string>("Three months", "3M"),
+                }));
+
             try
             {
                 m_isUpdating = true;
@@ -48,6 +57,7 @@ namespace Duplicati.GUI
                 GPGPath.Text = m_settings.GPGPath;
                 SFTPPath.Text = m_settings.SFtpPath;
                 SCPPath.Text = m_settings.ScpPath;
+                TempPath.Text = m_settings.TempPath;
             }
             finally
             {
@@ -131,6 +141,24 @@ namespace Duplicati.GUI
         private void RecentDuration_ValueChanged(object sender, EventArgs e)
         {
             RecentDuration_TextChanged(sender, e);
+        }
+
+        private void TempPathBrowse_Click(object sender, EventArgs e)
+        {
+            if (BrowseTempPath.ShowDialog(this) == DialogResult.OK)
+                TempPath.Text = BrowseTempPath.SelectedPath;
+        }
+
+        private void TempPath_TextChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+            m_settings.TempPath = TempPath.Text;
+        }
+
+        private void ApplicationSetup_Load(object sender, EventArgs e)
+        {
+
         }
 
     }

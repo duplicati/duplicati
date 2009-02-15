@@ -33,11 +33,6 @@ namespace Duplicati.GUI
         public void ExecuteTask(IDuplicityTask task)
         {
             Dictionary<string, string> options = new Dictionary<string,string>();
-            if (string.IsNullOrEmpty(task.Task.Encryptionkey))
-                options.Add("no-encryption", "");
-            else
-                options.Add("passphrase", task.Task.Encryptionkey);
-
             task.GetOptions(options);
             string results = "";
 
@@ -103,20 +98,24 @@ namespace Duplicati.GUI
                         break;
                     case DuplicityTaskType.ListFiles:
                         (task as ListFilesTask).Files = Interface.ListContent(task.SourcePath, options);
-                        return;
+                        break;
 
                     case DuplicityTaskType.RemoveAllButNFull:
                         results = Interface.RemoveAllButNFull(task.SourcePath, options);
-                        return;
+                        break;
                     case DuplicityTaskType.RemoveOlderThan:
                         results = Interface.RemoveOlderThan(task.SourcePath, options);
-                        return;
+                        break;
                     case DuplicityTaskType.Restore:
                         options["file-to-restore"] = ((RestoreTask)task).SourceFiles;
                         if (options.ContainsKey("filter"))
                             options.Remove("filter");
                         results = Interface.Restore(task.SourcePath, task.TargetPath, options);
-                        return;
+                        break;
+
+                    case DuplicityTaskType.RestoreSetup:
+                        Interface.RestoreControlFiles(task.SourcePath, task.TargetPath, options);
+                        break;
                     default:
                         return;
                 }
