@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="d5867b1e-71af-450f-9204-e33f29eafc94" Name="Duplicati" Language="1033" Version="1.0.0.0" Manufacturer="HexaD" UpgradeCode="bab49745-b447-45cf-8b10-012006895593">
+		<Package InstallerVersion="200" Compressed="yes" />
+
+		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+
+    <PropertyRef Id="NETFRAMEWORK20"/>
+    <Condition Message="The .NET Framework 2.0 must be installed ([NETFRAMEWORK20])">
+      Installed OR NETFRAMEWORK20
+    </Condition>
+
+    <Property Id="ALLUSERS">1</Property>
+
+    <WixVariable Id="WixUILicenseRtf" Value="Resources/LGPL21.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="Resources/InstallerSmall.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="Resources/InstallerLarge.bmp" />
+
+    <UI>
+      <!-- <UIRef Id="WixUI_Mondo"/> -->
+      <!-- <UIRef Id="WixUI_InstallDir"/> -->
+      <UIRef Id="WixUI_FeatureTree"/>
+      <!-- <UIRef Id="WixUI_Advanced"/> -->
+
+      <!-- <Dialog Id="ExtraOptionsDialog" Width="370" Height="270" Title="Duplicati options">
+        <Control Id="StartWithWindows"
+                 Type="CheckBox"
+                 X="10" Y="10" Width="100" Height="17"
+                 Text="Start Duplicati when Windows starts" Property="STARTWITHWINDOWS"/>
+        <Control Id="DesktopShortcut"
+                 Type="CheckBox"
+                 X="10" Y="40" Width="100" Height="17"
+                 Text="Start Duplicati when Windows starts" Property="INSTALLDESKTOPSHORTCUT" />
+        <Control Id="QuickLauncShortcut"
+                 Type="CheckBox"
+                 X="10" Y="70" Width="100" Height="17"
+                 Text="Start Duplicati when Windows starts"  Property="INSTALLQUICKLAUNCHSHORTCUT"/>
+      </Dialog> -->
+      
+      <Publish Dialog="ExitDialog"
+        Control="Finish"
+        Event="DoAction"
+        Value="LaunchApplication">EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramMenuFolder" Name="Programs"/>
+      <Directory Id="DesktopFolder" Name="Desktop"/>
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLLOCATION" Name="Duplicati">
+          <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
+          <!-- <Component Id="ProductComponent" Guid="931b7759-4503-43c0-b4cf-9cdafc349147"> -->
+          <!-- TODO: Insert files, registry keys, and other resources here. -->
+          <!-- </Component> -->
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
+
+    <!-- TODO: Make expanded -->
+    <Feature Id="ProductFeature" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+      <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="1" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
+        <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
+      </Feature>
+
+      <Feature Id="DuplicatiProgramFilesShortCutFeature" Title="Program Files Shortcut" Level="1" Description ="Installs a shortcut to Duplicati in the Program Files menu" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
+        <ComponentRef Id="DuplicatiProgramMenuShortcutComponent"/>
+      </Feature>
+      <ComponentGroupRef Id="group_DUPLICATIBIN" />
+    </Feature>
+    <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
+      <ComponentRef Id="StartupMenuItem"/>
+    </Feature>
+
+    <!-- Launch duplicati setup -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[#comp_DUPLICATIBIN_5]" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+    <!-- Set the Add/Remove icon -->
+    <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
+    
+  </Product>
+</Wix>
