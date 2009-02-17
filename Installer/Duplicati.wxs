@@ -21,7 +21,8 @@
       <!-- <UIRef Id="WixUI_InstallDir"/> -->
       <UIRef Id="WixUI_FeatureTree"/>
       <!-- <UIRef Id="WixUI_Advanced"/> -->
-
+      <!-- <UIRef Id="WixUI_Minimal"/> -->
+      
       <!-- <Dialog Id="ExtraOptionsDialog" Width="370" Height="270" Title="Duplicati options">
         <Control Id="StartWithWindows"
                  Type="CheckBox"
@@ -40,7 +41,7 @@
       <Publish Dialog="ExitDialog"
         Control="Finish"
         Event="DoAction"
-        Value="LaunchApplication">EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+        Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX and NOT Installed</Publish>
     </UI>
 
 
@@ -77,11 +78,16 @@
     <!-- Launch duplicati setup -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <CustomAction Id="LaunchApplication" FileKey="file_DUPLICATIBIN_5" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
+    
+    <!-- TODO: Figure out why this does not work...
     <Property Id="WixShellExecTarget" Value="[#comp_DUPLICATIBIN_5]" />
-    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" /> 
+    -->
 
     <!-- Set the Add/Remove icon -->
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
+    
     
   </Product>
 </Wix>
