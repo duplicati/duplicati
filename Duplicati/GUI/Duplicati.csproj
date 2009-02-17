@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.GUI</RootNamespace>
     <AssemblyName>Duplicati</AssemblyName>
-    <ApplicationIcon>TrayUnknown.ico</ApplicationIcon>
+    <ApplicationIcon>Icons\TrayOK.ico</ApplicationIcon>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>

@@ -9,6 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.CommandLine.Decrypter</RootNamespace>
     <AssemblyName>Duplicati.CommandLine.Decrypter</AssemblyName>
+    <ApplicationIcon>TrayUnknown.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -41,6 +42,9 @@
       <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
       <Name>Duplicati.Library.Encryption</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TrayUnknown.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

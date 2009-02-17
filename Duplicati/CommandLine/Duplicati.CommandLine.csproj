@@ -11,6 +11,7 @@
     <AssemblyName>Duplicati.CommandLine</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -84,6 +85,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TrayWarning.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

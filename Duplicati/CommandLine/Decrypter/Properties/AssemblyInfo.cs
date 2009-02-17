@@ -27,9 +27,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Duplicati.CommandLine.Decrypter")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("GEOGRAF A/S")]
+[assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati.CommandLine.Decrypter")]
-[assembly: AssemblyCopyright("Copyright © GEOGRAF A/S 2009")]
+[assembly: AssemblyCopyright("Copyright © HexaD A/S 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
