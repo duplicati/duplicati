@@ -35,6 +35,9 @@ namespace Duplicati.GUI
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.TempPathBrowse = new System.Windows.Forms.Button();
+            this.TempPath = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.BrowseSCP = new System.Windows.Forms.Button();
             this.SCPPath = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
@@ -47,12 +50,17 @@ namespace Duplicati.GUI
             this.BrowseGPGDialog = new System.Windows.Forms.OpenFileDialog();
             this.BrowseSFTPDialog = new System.Windows.Forms.OpenFileDialog();
             this.BrowseSCPDialog = new System.Windows.Forms.OpenFileDialog();
-            this.TempPathBrowse = new System.Windows.Forms.Button();
-            this.TempPath = new System.Windows.Forms.TextBox();
-            this.label4 = new System.Windows.Forms.Label();
             this.BrowseTempPath = new System.Windows.Forms.FolderBrowserDialog();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.UseCommonPassword = new System.Windows.Forms.CheckBox();
+            this.CommonPassword = new System.Windows.Forms.TextBox();
+            this.CommonPasswordUseGPG = new System.Windows.Forms.CheckBox();
+            this.PasswordPanel = new System.Windows.Forms.Panel();
+            this.label5 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
+            this.groupBox3.SuspendLayout();
+            this.PasswordPanel.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -121,12 +129,42 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.BrowsePGP);
             this.groupBox2.Controls.Add(this.GPGPath);
             this.groupBox2.Controls.Add(this.label2);
-            this.groupBox2.Location = new System.Drawing.Point(8, 72);
+            this.groupBox2.Location = new System.Drawing.Point(8, 176);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(437, 128);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Path settings (Advanced)";
+            // 
+            // TempPathBrowse
+            // 
+            this.TempPathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.TempPathBrowse.Location = new System.Drawing.Point(400, 96);
+            this.TempPathBrowse.Name = "TempPathBrowse";
+            this.TempPathBrowse.Size = new System.Drawing.Size(24, 20);
+            this.TempPathBrowse.TabIndex = 22;
+            this.TempPathBrowse.Text = "...";
+            this.TempPathBrowse.UseVisualStyleBackColor = true;
+            this.TempPathBrowse.Click += new System.EventHandler(this.TempPathBrowse_Click);
+            // 
+            // TempPath
+            // 
+            this.TempPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.TempPath.Location = new System.Drawing.Point(128, 96);
+            this.TempPath.Name = "TempPath";
+            this.TempPath.Size = new System.Drawing.Size(272, 20);
+            this.TempPath.TabIndex = 21;
+            this.TempPath.TextChanged += new System.EventHandler(this.TempPath_TextChanged);
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(8, 96);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(86, 13);
+            this.label4.TabIndex = 20;
+            this.label4.Text = "Temporary folder";
             // 
             // BrowseSCP
             // 
@@ -202,7 +240,7 @@ namespace Duplicati.GUI
             // OKBtn
             // 
             this.OKBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.OKBtn.Location = new System.Drawing.Point(135, 207);
+            this.OKBtn.Location = new System.Drawing.Point(135, 316);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(80, 24);
             this.OKBtn.TabIndex = 6;
@@ -214,7 +252,7 @@ namespace Duplicati.GUI
             // 
             this.CancelBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(231, 207);
+            this.CancelBtn.Location = new System.Drawing.Point(231, 316);
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.Size = new System.Drawing.Size(72, 24);
             this.CancelBtn.TabIndex = 7;
@@ -242,42 +280,75 @@ namespace Duplicati.GUI
             this.BrowseSCPDialog.Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*";
             this.BrowseSCPDialog.Title = "Select the SCP executable";
             // 
-            // TempPathBrowse
+            // groupBox3
             // 
-            this.TempPathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.TempPathBrowse.Location = new System.Drawing.Point(400, 96);
-            this.TempPathBrowse.Name = "TempPathBrowse";
-            this.TempPathBrowse.Size = new System.Drawing.Size(24, 20);
-            this.TempPathBrowse.TabIndex = 22;
-            this.TempPathBrowse.Text = "...";
-            this.TempPathBrowse.UseVisualStyleBackColor = true;
-            this.TempPathBrowse.Click += new System.EventHandler(this.TempPathBrowse_Click);
-            // 
-            // TempPath
-            // 
-            this.TempPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.TempPath.Location = new System.Drawing.Point(128, 96);
-            this.TempPath.Name = "TempPath";
-            this.TempPath.Size = new System.Drawing.Size(272, 20);
-            this.TempPath.TabIndex = 21;
-            this.TempPath.TextChanged += new System.EventHandler(this.TempPath_TextChanged);
+            this.groupBox3.Controls.Add(this.PasswordPanel);
+            this.groupBox3.Controls.Add(this.UseCommonPassword);
+            this.groupBox3.Location = new System.Drawing.Point(8, 72);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(437, 100);
+            this.groupBox3.TabIndex = 8;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "Password settings applied to new backups";
             // 
-            // label4
+            // UseCommonPassword
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(8, 96);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(86, 13);
-            this.label4.TabIndex = 20;
-            this.label4.Text = "Temporary folder";
+            this.UseCommonPassword.AutoSize = true;
+            this.UseCommonPassword.Location = new System.Drawing.Point(16, 24);
+            this.UseCommonPassword.Name = "UseCommonPassword";
+            this.UseCommonPassword.Size = new System.Drawing.Size(194, 17);
+            this.UseCommonPassword.TabIndex = 0;
+            this.UseCommonPassword.Text = "Use a password to protect backups";
+            this.UseCommonPassword.UseVisualStyleBackColor = true;
+            this.UseCommonPassword.CheckedChanged += new System.EventHandler(this.UseCommonPassword_CheckedChanged);
+            // 
+            // CommonPassword
+            // 
+            this.CommonPassword.Location = new System.Drawing.Point(120, 8);
+            this.CommonPassword.Name = "CommonPassword";
+            this.CommonPassword.Size = new System.Drawing.Size(296, 20);
+            this.CommonPassword.TabIndex = 1;
+            this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
+            // 
+            // CommonPasswordUseGPG
+            // 
+            this.CommonPasswordUseGPG.AutoSize = true;
+            this.CommonPasswordUseGPG.Location = new System.Drawing.Point(24, 32);
+            this.CommonPasswordUseGPG.Name = "CommonPasswordUseGPG";
+            this.CommonPasswordUseGPG.Size = new System.Drawing.Size(210, 17);
+            this.CommonPasswordUseGPG.TabIndex = 2;
+            this.CommonPasswordUseGPG.Text = "Use the GNU Privacy Guard to encrypt";
+            this.CommonPasswordUseGPG.UseVisualStyleBackColor = true;
+            this.CommonPasswordUseGPG.CheckedChanged += new System.EventHandler(this.CommonPasswordUseGPG_CheckedChanged);
+            // 
+            // PasswordPanel
+            // 
+            this.PasswordPanel.Controls.Add(this.label5);
+            this.PasswordPanel.Controls.Add(this.CommonPasswordUseGPG);
+            this.PasswordPanel.Controls.Add(this.CommonPassword);
+            this.PasswordPanel.Location = new System.Drawing.Point(8, 40);
+            this.PasswordPanel.Name = "PasswordPanel";
+            this.PasswordPanel.Size = new System.Drawing.Size(424, 56);
+            this.PasswordPanel.TabIndex = 3;
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(24, 8);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(53, 13);
+            this.label5.TabIndex = 0;
+            this.label5.Text = "Password";
             // 
             // ApplicationSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(453, 245);
+            this.ClientSize = new System.Drawing.Size(453, 354);
+            this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.groupBox2);
@@ -294,6 +365,10 @@ namespace Duplicati.GUI
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
+            this.PasswordPanel.ResumeLayout(false);
+            this.PasswordPanel.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -322,5 +397,11 @@ namespace Duplicati.GUI
         private System.Windows.Forms.TextBox TempPath;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.FolderBrowserDialog BrowseTempPath;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.CheckBox CommonPasswordUseGPG;
+        private System.Windows.Forms.TextBox CommonPassword;
+        private System.Windows.Forms.CheckBox UseCommonPassword;
+        private System.Windows.Forms.Panel PasswordPanel;
+        private System.Windows.Forms.Label label5;
     }
 }

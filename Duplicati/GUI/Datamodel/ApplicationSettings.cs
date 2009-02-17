@@ -34,6 +34,10 @@ namespace Duplicati.Datamodel
         private const string SCP_PATH = "SCP Path";
         private const string TEMP_PATH = "Temp Path";
 
+        private const string USE_COMMON_PASSWORD = "Use common password";
+        private const string COMMON_PASSWORD_USE_GPG = "Use PGP with common password";
+        private const string COMMON_PASSWORD = "Common password";
+
         //TODO: Deal with this on Linux
         public const string PROGRAM_FILES = "%PROGRAMFILES%";
 
@@ -128,6 +132,54 @@ namespace Duplicati.Datamodel
             }
             set { m_appset[TEMP_PATH] = value; }
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating if Duplicati should apply a common password to backups
+        /// </summary>
+        public bool UseCommonPassword
+        {
+            get
+            {
+                bool res;
+                if (bool.TryParse(m_appset[USE_COMMON_PASSWORD], out res))
+                    return res;
+                else
+                    return false;
+            }
+            set { m_appset[USE_COMMON_PASSWORD] = value.ToString(); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating if GPG should be used to encrypt passwords
+        /// </summary>
+        public bool CommonPasswordUseGPG
+        {
+            get
+            {
+                bool res;
+                if (bool.TryParse(m_appset[COMMON_PASSWORD_USE_GPG], out res))
+                    return res;
+                else
+                    return false;
+            }
+            set { m_appset[COMMON_PASSWORD_USE_GPG] = value.ToString(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the common password applied to encrypt files.
+        /// </summary>
+        public string CommonPassword
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_appset[COMMON_PASSWORD]))
+                    return "";
+                else
+                    return m_appset[COMMON_PASSWORD];
+            }
+            set { m_appset[COMMON_PASSWORD] = value; }
+        }
+
 
     }
 }

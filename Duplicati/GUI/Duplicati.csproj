@@ -333,6 +333,14 @@
       <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
       <Name>WizardForm</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CommandLine\Decrypter\Duplicati.CommandLine.Decrypter.csproj">
+      <Project>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</Project>
+      <Name>Duplicati.CommandLine.Decrypter</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\Duplicati.CommandLine.csproj">
+      <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
+      <Name>Duplicati.CommandLine</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
       <Name>Duplicati.Library.Backend.BackendInterface</Name>

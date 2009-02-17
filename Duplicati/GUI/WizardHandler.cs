@@ -76,6 +76,15 @@ namespace Duplicati.GUI
 
                 con.CommitRecursiveWithRelations(schedule);
 
+                if (wrapper.UseEncryptionAsDefault)
+                {
+                    ApplicationSettings appset = new ApplicationSettings(Program.DataConnection);
+                    appset.UseCommonPassword = true;
+                    appset.CommonPassword = wrapper.BackupPassword;
+                    appset.CommonPasswordUseGPG = wrapper.GPGEncryption;
+                    Program.DataConnection.Commit(Program.DataConnection.GetObjects<ApplicationSetting>());
+                }
+
                 if (wrapper.RunImmediately)
                     Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));
             }

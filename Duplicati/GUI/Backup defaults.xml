@@ -4,6 +4,8 @@
   <MaxFullBackups>4</MaxFullBackups>
   <BackupExpireInterval></BackupExpireInterval>
   <RepeatInterval>1D</RepeatInterval>
-  <VolumeSize>5MB</VolumeSize>
+  <VolumeSize>10MB</VolumeSize>
   <BackupTimeOffset>13h</BackupTimeOffset>
+  <EncodedFilters>e:.*\\Thumbs.db</EncodedFilters>
+  <IncludeSetup>true</IncludeSetup>
 </settings>

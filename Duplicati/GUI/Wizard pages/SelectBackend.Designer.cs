@@ -75,19 +75,20 @@ namespace Duplicati.GUI.Wizard_pages
             // WebDAV
             // 
             this.WebDAV.AutoSize = true;
-            this.WebDAV.Location = new System.Drawing.Point(40, 144);
+            this.WebDAV.Location = new System.Drawing.Point(40, 176);
             this.WebDAV.Name = "WebDAV";
             this.WebDAV.Size = new System.Drawing.Size(158, 17);
             this.WebDAV.TabIndex = 3;
             this.WebDAV.TabStop = true;
             this.WebDAV.Text = "WebDAV to a remote server";
             this.WebDAV.UseVisualStyleBackColor = true;
+            this.WebDAV.Visible = false;
             this.WebDAV.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // S3
             // 
             this.S3.AutoSize = true;
-            this.S3.Location = new System.Drawing.Point(40, 176);
+            this.S3.Location = new System.Drawing.Point(40, 144);
             this.S3.Name = "S3";
             this.S3.Size = new System.Drawing.Size(117, 17);
             this.S3.TabIndex = 4;

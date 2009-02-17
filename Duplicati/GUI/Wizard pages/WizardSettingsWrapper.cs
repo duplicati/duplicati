@@ -499,6 +499,16 @@ namespace Duplicati.GUI.Wizard_pages
             get { return GetItem<bool>("IncludeSetup", false); }
             set { SetItem("IncludeSetup", value); }
         }
+
+        /// <summary>
+        /// True if the Duplicati setup database should be included
+        /// </summary>
+        public bool UseEncryptionAsDefault
+        {
+            get { return GetItem<bool>("UseEncryptionAsDefault", false); }
+            set { SetItem("UseEncryptionAsDefault", value); }
+        }
+
     }
 
     /// <summary>

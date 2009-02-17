@@ -108,6 +108,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_settings["Password:WarnedChanged"] = m_warnedChanged;
             m_wrapper.BackupPassword = EnablePassword.Checked ? Password.Text : "";
             m_wrapper.GPGEncryption = UseGPG.Checked;
+            m_wrapper.UseEncryptionAsDefault = UseSettingsAsDefault.Checked;
 
             args.NextPage = new SelectBackend();
         }
@@ -122,6 +123,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 Password.Text = m_wrapper.BackupPassword;
                 UseGPG.Checked = m_wrapper.GPGEncryption;
                 m_settingsChanged = false;
+
+                if (Program.DataConnection.GetObjects<Schedule>().Length == 0)
+                    UseSettingsAsDefault.Checked = true;
             }
 
             if (m_settings.ContainsKey("Password:WarnedNoPassword"))
@@ -136,7 +140,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
             {
                 PasswordHelptext.Visible =
-                PasswordGeneratorSettings.Visible = false;
+                PasswordGeneratorSettings.Visible = 
+                UseSettingsAsDefault.Visible = false;
 
                 EnablePassword.Text = "Backup is protected with password";
             }

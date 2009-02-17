@@ -25,6 +25,7 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
+using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages
 {
@@ -125,6 +126,13 @@ namespace Duplicati.GUI.Wizard_pages
         private void SetupDefaults()
         {
             m_settings.Clear();
+
+            ApplicationSettings appset = new ApplicationSettings(Program.DataConnection);
+            if (appset.UseCommonPassword)
+            {
+                m_wrapper.BackupPassword = appset.CommonPassword;
+                m_wrapper.GPGEncryption = appset.CommonPasswordUseGPG;
+            }
 
             System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
             doc.Load(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(Program), "Backup defaults.xml"));

@@ -58,6 +58,10 @@ namespace Duplicati.GUI
                 SFTPPath.Text = m_settings.SFtpPath;
                 SCPPath.Text = m_settings.ScpPath;
                 TempPath.Text = m_settings.TempPath;
+
+                UseCommonPassword.Checked = m_settings.UseCommonPassword;
+                CommonPassword.Text = m_settings.CommonPassword;
+                CommonPasswordUseGPG.Checked = m_settings.CommonPasswordUseGPG;
             }
             finally
             {
@@ -159,6 +163,37 @@ namespace Duplicati.GUI
         private void ApplicationSetup_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void UseCommonPassword_CheckedChanged(object sender, EventArgs e)
+        {
+            PasswordPanel.Enabled = UseCommonPassword.Checked;
+
+            if (m_isUpdating)
+                return;
+
+            m_settings.UseCommonPassword = UseCommonPassword.Checked;
+
+            if (m_settings.UseCommonPassword)
+                m_settings.CommonPassword = CommonPassword.Text;
+            else
+                m_settings.CommonPassword = ""; //Clear it from DB
+        }
+
+        private void CommonPassword_TextChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            m_settings.CommonPassword = CommonPassword.Text;
+        }
+
+        private void CommonPasswordUseGPG_CheckedChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            m_settings.CommonPasswordUseGPG = CommonPasswordUseGPG.Checked;
         }
 
     }

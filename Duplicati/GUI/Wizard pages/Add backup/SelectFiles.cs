@@ -163,20 +163,16 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                         if (s.StartsWith(f) && (basefolder == s || s.StartsWith(basefolder)))
                             filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(basefolder.Length - 1) + "*")));
 
-                    filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f.Substring(basefolder.Length - 1) + "*")));
+                    if (hasCommonParent)
+                        filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f.Substring(basefolder.Length - 1) + "*")));
                 }
 
                 //Exclude everything else if they have a non-included parent
                 if (hasCommonParent)
                     filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp("*")));
 
-                if (filters.Count <= 1)
-                    m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(extras);
-                else
-                {
-                    extras.AddRange(filters);
-                    m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(extras);
-                }
+                extras.AddRange(filters);
+                m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(extras);
 
                 m_wrapper.SourcePath = basefolder;
             }
@@ -195,7 +191,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (m_calculator != null)
                 m_calculator.ClearQueue(true);
 
-            args.NextPage = new PasswordSettings();
+             args.NextPage = new PasswordSettings();
         }
 
         void SelectFiles_PageEnter(object sender, PageChangedArgs args)
@@ -218,16 +214,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 }
                 else
                 {
-                    List<string> filters = new List<string>();
-                    foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
-                        if (tf.Key && tf.Value.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString())))
-                            filters.Add(tf.Value);
-
                     string p = Library.Core.Utility.AppendDirSeperator(m_wrapper.SourcePath);
+                    Library.Core.FilenameFilter fnf = new Duplicati.Library.Core.FilenameFilter(Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters));
 
                     List<string> included = new List<string>();
                     foreach (string s in m_specialFolders)
-                        if (s.StartsWith(p) && filters.Contains(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(p.Length - 1) + "*")))
+                        if (fnf.ShouldInclude(p, s))
                             included.Add(s);
 
                     if (included.Count == 0)

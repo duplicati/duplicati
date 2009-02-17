@@ -39,6 +39,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.PassphraseLength = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
             this.UseGPG = new System.Windows.Forms.CheckBox();
+            this.UseSettingsAsDefault = new System.Windows.Forms.CheckBox();
             this.PasswordGeneratorSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PassphraseLength)).BeginInit();
             this.SuspendLayout();
@@ -159,7 +160,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // UseGPG
             // 
             this.UseGPG.AutoSize = true;
-            this.UseGPG.Location = new System.Drawing.Point(24, 176);
+            this.UseGPG.Location = new System.Drawing.Point(24, 152);
             this.UseGPG.Name = "UseGPG";
             this.UseGPG.Size = new System.Drawing.Size(365, 17);
             this.UseGPG.TabIndex = 5;
@@ -167,10 +168,21 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.UseGPG.UseVisualStyleBackColor = true;
             this.UseGPG.CheckedChanged += new System.EventHandler(this.UseGPG_CheckedChanged);
             // 
+            // UseSettingsAsDefault
+            // 
+            this.UseSettingsAsDefault.AutoSize = true;
+            this.UseSettingsAsDefault.Location = new System.Drawing.Point(24, 192);
+            this.UseSettingsAsDefault.Name = "UseSettingsAsDefault";
+            this.UseSettingsAsDefault.Size = new System.Drawing.Size(195, 17);
+            this.UseSettingsAsDefault.TabIndex = 6;
+            this.UseSettingsAsDefault.Text = "Use these settings on new backups";
+            this.UseSettingsAsDefault.UseVisualStyleBackColor = true;
+            // 
             // PasswordSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.UseSettingsAsDefault);
             this.Controls.Add(this.UseGPG);
             this.Controls.Add(this.PasswordGeneratorSettings);
             this.Controls.Add(this.PasswordHelptext);
@@ -198,5 +210,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.ComboBox PasswordCharacterSet;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox UseGPG;
+        private System.Windows.Forms.CheckBox UseSettingsAsDefault;
     }
 }
