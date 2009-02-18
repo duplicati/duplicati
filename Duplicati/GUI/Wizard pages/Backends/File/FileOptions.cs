@@ -112,7 +112,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
                 return;
             }
 
-            m_wrapper.Path = TargetFolder.Text;
+            m_wrapper.Path = targetpath;
             if (UseCredentials.Checked)
             {
                 m_wrapper.Username = Username.Text;

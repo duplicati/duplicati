@@ -63,7 +63,7 @@ namespace Duplicati.GUI.Wizard_pages
             m_owner.ButtonPanel.Controls.Add(ShowAdvanced);
             ShowAdvanced.Top = m_owner.CancelButton.Top;
             ShowAdvanced.Left = m_owner.ButtonPanel.Width - m_owner.CancelButton.Right;
-            ShowAdvanced.Visible = true;
+            ShowAdvanced.Visible = false; //true;
             args.TreatAsLast = false;
         }
 

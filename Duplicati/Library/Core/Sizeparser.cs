@@ -27,6 +27,11 @@ namespace Duplicati.Library.Core
     {
         public static long ParseSize(string size, string defaultSuffix)
         {
+            if (string.IsNullOrEmpty(size))
+                return 0;
+
+            size = size.ToLower().Trim();
+
             if (size.EndsWith("gb") || size.EndsWith("mb") || size.EndsWith("kb") || size.EndsWith("b"))
                 return ParseSize(size);
             else
@@ -35,8 +40,9 @@ namespace Duplicati.Library.Core
 
         public static long ParseSize(string size)
         {
-            if (size == null)
+            if (string.IsNullOrEmpty(size))
                 return 0;
+
             string origsize = size;
 
             size = size.Trim().ToLower();
