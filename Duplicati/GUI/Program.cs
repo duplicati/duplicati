@@ -171,7 +171,8 @@ namespace Duplicati.GUI
 
         static void DataConnection_AfterDataConnection(object sender, DataActions action)
         {
-            Scheduler.Reschedule();
+            if (action == DataActions.Insert || action == DataActions.Update)
+                Scheduler.Reschedule();
         }
 
         static void WorkThread_StartingWork(object sender, EventArgs e)

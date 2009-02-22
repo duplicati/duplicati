@@ -120,7 +120,7 @@ namespace Duplicati.GUI
                     }
                 }
 
-                System.Data.LightDatamodel.QueryModel.Operation op = System.Data.LightDatamodel.QueryModel.Parser.ParseQuery("ORDER BY When ASC");
+                System.Data.LightDatamodel.QueryModel.OperationOrParameter op = System.Data.LightDatamodel.QueryModel.Parser.ParseQuery("ORDER BY When ASC");
 
                 lock(m_lock)
                     m_schedule = op.EvaluateList<Schedule>(reps).ToArray();

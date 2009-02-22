@@ -47,7 +47,6 @@
       <ComponentRef Id="comp_DUPLICATIBIN_23" />
     </ComponentGroup>
     <DirectoryRef Id="INSTALLLOCATION">
-      <Directory Id="dir_Release_0" Name="Release">
         <Component Id="comp_DUPLICATIBIN_0" DiskId="1" KeyPath="yes" Guid="97B70379-61E7-415D-BE37-EB0F7CC15988">
           <File Id="file_DUPLICATIBIN_0" Name="Affirma.ThreeSharp.dll" Source="..\Duplicati\GUI\bin\Release\Affirma.ThreeSharp.dll" />
         </Component>
@@ -120,7 +119,6 @@
         <Component Id="comp_DUPLICATIBIN_23" DiskId="1" KeyPath="yes" Guid="FA300844-B5AE-4CEE-B55D-1901D6C135DD">
           <File Id="file_DUPLICATIBIN_23" Name="System.Windows.Forms.Wizard.dll" Source="..\Duplicati\GUI\bin\Release\System.Windows.Forms.Wizard.dll" />
         </Component>
-      </Directory>
     </DirectoryRef>
   </Fragment>
 </Wix>

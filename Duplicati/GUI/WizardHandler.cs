@@ -74,7 +74,11 @@ namespace Duplicati.GUI
 
                 wrapper.UpdateSchedule(schedule);
 
-                con.CommitRecursiveWithRelations(schedule);
+                bool scheduleRun = wrapper.RunImmediately && wrapper.BackupTimeOffset > DateTime.Now;
+
+                lock(Program.MainLock)
+                    con.CommitRecursiveWithRelations(schedule);
+                schedule = Program.DataConnection.GetObjectById<Schedule>(schedule.ID);
 
                 if (wrapper.UseEncryptionAsDefault)
                 {
@@ -85,7 +89,7 @@ namespace Duplicati.GUI
                     Program.DataConnection.Commit(Program.DataConnection.GetObjects<ApplicationSetting>());
                 }
 
-                if (wrapper.RunImmediately)
+                if (scheduleRun)
                     Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));
             }
             else if (m_form.CurrentPage is Wizard_pages.Restore.FinishedRestore)
