@@ -35,7 +35,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Data.SQLite, Version=1.0.46.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>Datamodel\System.Data.SQLite.DLL</HintPath>
+      <HintPath>..\..\thirdparty\SQLite\Dll for .Net\System.Data.SQLite.DLL</HintPath>
     </Reference>
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
