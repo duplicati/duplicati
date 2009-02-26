@@ -233,6 +233,7 @@ namespace Duplicati.Library.Compression
 
             return new StreamWrapper(new Duplicati.Library.Core.TempFile(), PathFromFilesystem(file), m_zip);
 #else
+            //This automatically sets DateTime to now
             m_stream.PutNextEntry(new ICSharpCode.SharpZipLib.Zip.ZipEntry(PathFromFilesystem(file)));
             return new StreamWrapper2(m_stream);
 #endif
@@ -291,6 +292,19 @@ namespace Duplicati.Library.Compression
             }
         }
 
+
+        public DateTime GetLastWriteTime(string file)
+        {
+#if !SHARPZIPLIBWORKS
+            if (m_zip == null)
+                throw new Exception("Cannot read data while writing");
+#endif
+            if (GetEntry(file) != null)
+                return GetEntry(file).DateTime;
+            else 
+                throw new Exception("File not found: " + file);
+        }
+        
         #endregion
 
         #region IDisposable Members

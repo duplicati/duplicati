@@ -85,6 +85,9 @@ namespace Duplicati.CommandLine
             if (!options.ContainsKey("backup-prefix"))
                 options["backup-prefix"] = "duplicati_unittest";
 
+            //This would break the test, because the data is not modified the normal way
+            options["disable-filetime-check"] = null;
+
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {

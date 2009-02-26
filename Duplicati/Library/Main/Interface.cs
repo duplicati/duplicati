@@ -122,8 +122,9 @@ namespace Duplicati.Library.Main
 
                         using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, bs, filter, patches))
                         {
+                            dir.DisableFiletimeCheck = m_options.ContainsKey("disable-filetime-check");
                             using (new Logging.Timer("Initiating multipass"))
-                                dir.InitiateMultiPassDiff(full);
+                                dir.InitiateMultiPassDiff(full); //lastBackupTime is set to 0 if full, or disabled
 
                             int vol = 0;
                             long totalsize = 0;

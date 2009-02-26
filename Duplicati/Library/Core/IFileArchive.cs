@@ -34,12 +34,14 @@ namespace Duplicati.Library.Core
         /// <param name="prefix">An optional prefix for limiting the files returned</param>
         /// <returns>All files in the archive, matching the prefix, if any</returns>
         string[] ListFiles(string prefix);
+        
         /// <summary>
         /// Returns all directories in the archive, matching the prefix, if any.
         /// </summary>
         /// <param name="prefix">An optional prefix for limiting the directories returned</param>
         /// <returns>All directories in the archive, matching the prefix, if any</returns>
         string[] ListDirectories(string prefix);
+        
         /// <summary>
         /// Returns all files and directories in the archive, matching the prefix, if any.
         /// </summary>
@@ -53,12 +55,14 @@ namespace Duplicati.Library.Core
         /// <param name="file">The file to read data from</param>
         /// <returns>All bytes from the given file</returns>
         byte[] ReadAllBytes(string file);
+        
         /// <summary>
         /// Returns all lines in the given file
         /// </summary>
         /// <param name="file">The file to read the data from</param>
         /// <returns>All lines in the given file</returns>
         string[] ReadAllLines(string file);
+        
         /// <summary>
         /// Returns a stream with data from the given file
         /// </summary>
@@ -79,6 +83,7 @@ namespace Duplicati.Library.Core
         /// <param name="file">The file to write to</param>
         /// <param name="data">The data to write</param>
         void WriteAllBytes(string file, byte[] data);
+        
         /// <summary>
         /// Writes the given lines to the files
         /// </summary>
@@ -91,6 +96,7 @@ namespace Duplicati.Library.Core
         /// </summary>
         /// <param name="file">The file to remove</param>
         void DeleteFile(string file);
+        
         /// <summary>
         /// Creates a file in the archive
         /// </summary>
@@ -128,5 +134,12 @@ namespace Duplicati.Library.Core
         /// The total size of the archive
         /// </summary>
         long Size { get; }
+
+        /// <summary>
+        /// Returns the last modification time for the file
+        /// </summary>
+        /// <param name="file">The name of the file to examine</param>
+        /// <returns>The timestamp on the file</returns>
+        DateTime GetLastWriteTime(string file);
     }
 }

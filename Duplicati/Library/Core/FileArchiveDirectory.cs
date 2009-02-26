@@ -125,6 +125,11 @@ namespace Duplicati.Library.Core
             }
         }
 
+        public DateTime GetLastWriteTime(string file)
+        {
+            return System.IO.File.GetLastWriteTime(System.IO.Path.Combine(m_folder, file));
+        }
+
         #endregion
 
         #region IDisposable Members

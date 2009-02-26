@@ -130,6 +130,11 @@ namespace Duplicati.Library.Main.RSync
         private bool m_isfirstmultipass = false;
 
         /// <summary>
+        /// A variable that controls if the filetime check is disabled
+        /// </summary>
+        private bool m_disableFiletimeCheck = false;
+
+        /// <summary>
         /// This is a list of unprocessed files, used in multipass runs
         /// </summary>
         private List<string> m_unproccesed;
@@ -198,6 +203,7 @@ namespace Duplicati.Library.Main.RSync
             //TODO: Figure out how to make this faster, but still random
             //Perhaps use itterative callbacks, with random recurse or itterate on each folder
             m_unproccesed = Core.Utility.EnumerateFileSystemEntries(m_sourcefolder, m_filter);
+
             m_totalfiles = m_unproccesed.Count;
 
             m_isfirstmultipass = true;
@@ -293,6 +299,21 @@ namespace Duplicati.Library.Main.RSync
 
                 try
                 {
+                    if (!m_disableFiletimeCheck)
+                    {
+                        string relpath = s.Substring(m_sourcefolder.Length);
+                        if (m_oldSignatures.ContainsKey(relpath))
+                        {
+                            string target = System.IO.Path.Combine(SIGNATURE_ROOT, relpath);
+                            DateTime prevTime = m_oldSignatures[relpath].GetLastWriteTime(target);
+                            if (System.IO.File.GetLastWriteTime(s) < prevTime)
+                            {
+                                m_examinedfiles++;
+                                continue;
+                            }
+                        }
+                    }
+
                     using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
                         System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
@@ -674,6 +695,12 @@ namespace Duplicati.Library.Main.RSync
                     filenames[i] = filenames[i].Replace('/', System.IO.Path.DirectorySeparatorChar);
 
             return filenames;
+        }
+
+        public bool DisableFiletimeCheck
+        {
+            get { return m_disableFiletimeCheck; }
+            set { m_disableFiletimeCheck = value; }
         }
     }
 }
