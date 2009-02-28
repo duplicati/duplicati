@@ -72,6 +72,8 @@ namespace Duplicati.Datamodel
 		private System.Boolean m_GPGEncryption = false;
 		[DatabaseField("IncludeSetup")]
 		private System.Boolean m_IncludeSetup = false;
+		[DatabaseField("IgnoreTimestamps")]
+		private System.Boolean m_IgnoreTimestamps = false;
 #endregion
 
 #region " properties "
@@ -176,6 +178,12 @@ namespace Duplicati.Datamodel
 		{
 			get{return m_IncludeSetup;}
 			set{object oldvalue = m_IncludeSetup;OnBeforeDataChange(this, "IncludeSetup", oldvalue, value);m_IncludeSetup = value;OnAfterDataChange(this, "IncludeSetup", oldvalue, value);}
+		}
+
+		public System.Boolean IgnoreTimestamps
+		{
+			get{return m_IgnoreTimestamps;}
+			set{object oldvalue = m_IgnoreTimestamps;OnBeforeDataChange(this, "IgnoreTimestamps", oldvalue, value);m_IgnoreTimestamps = value;OnAfterDataChange(this, "IgnoreTimestamps", oldvalue, value);}
 		}
 
 #endregion

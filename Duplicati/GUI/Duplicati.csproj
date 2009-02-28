@@ -563,6 +563,9 @@
     <EmbeddedResource Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Database schema\1. Support timestamp flag.sql" />
+  </ItemGroup>
+  <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

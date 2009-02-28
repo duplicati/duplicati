@@ -15,7 +15,8 @@ CREATE TABLE "Task" (
 	"ThreadPriority" TEXT NULL,
 	"AsyncTransfer" BOOLEAN NULL,
 	"GPGEncryption" BOOLEAN NULL,
-	"IncludeSetup" BOOLEAN NULL
+	"IncludeSetup" BOOLEAN NULL,
+	"IgnoreTimestamps" BOOLEAN NULL
 );
 
 CREATE TABLE "Schedule" (
@@ -79,4 +80,4 @@ CREATE TABLE "TaskFilter" (
 );
 
 
-INSERT INTO "Version" ("Version") VALUES (0);
+INSERT INTO "Version" ("Version") VALUES (1);

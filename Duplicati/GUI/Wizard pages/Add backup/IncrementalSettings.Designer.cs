@@ -37,6 +37,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.CleanFullBackupHelptext = new System.Windows.Forms.Label();
             this.EnableCleanupDuration = new System.Windows.Forms.CheckBox();
             this.CleanupDuration = new Duplicati.GUI.HelperControls.DurationEditor();
+            this.IgnoreTimestamps = new System.Windows.Forms.CheckBox();
             this.FullSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.CleanFullBackupCount)).BeginInit();
             this.SuspendLayout();
@@ -87,7 +88,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.EnableFullBackupClean.AutoSize = true;
             this.EnableFullBackupClean.Checked = true;
             this.EnableFullBackupClean.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.EnableFullBackupClean.Location = new System.Drawing.Point(32, 80);
+            this.EnableFullBackupClean.Location = new System.Drawing.Point(32, 88);
             this.EnableFullBackupClean.Name = "EnableFullBackupClean";
             this.EnableFullBackupClean.Size = new System.Drawing.Size(239, 17);
             this.EnableFullBackupClean.TabIndex = 4;
@@ -97,7 +98,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // CleanFullBackupCount
             // 
-            this.CleanFullBackupCount.Location = new System.Drawing.Point(288, 80);
+            this.CleanFullBackupCount.Location = new System.Drawing.Point(288, 88);
             this.CleanFullBackupCount.Name = "CleanFullBackupCount";
             this.CleanFullBackupCount.Size = new System.Drawing.Size(56, 20);
             this.CleanFullBackupCount.TabIndex = 5;
@@ -111,7 +112,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // CleanFullBackupHelptext
             // 
             this.CleanFullBackupHelptext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.CleanFullBackupHelptext.Location = new System.Drawing.Point(32, 104);
+            this.CleanFullBackupHelptext.Location = new System.Drawing.Point(32, 112);
             this.CleanFullBackupHelptext.Name = "CleanFullBackupHelptext";
             this.CleanFullBackupHelptext.Size = new System.Drawing.Size(440, 16);
             this.CleanFullBackupHelptext.TabIndex = 3;
@@ -121,7 +122,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // EnableCleanupDuration
             // 
             this.EnableCleanupDuration.AutoSize = true;
-            this.EnableCleanupDuration.Location = new System.Drawing.Point(32, 160);
+            this.EnableCleanupDuration.Location = new System.Drawing.Point(32, 152);
             this.EnableCleanupDuration.Name = "EnableCleanupDuration";
             this.EnableCleanupDuration.Size = new System.Drawing.Size(195, 17);
             this.EnableCleanupDuration.TabIndex = 6;
@@ -132,17 +133,28 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // CleanupDuration
             // 
             this.CleanupDuration.Enabled = false;
-            this.CleanupDuration.Location = new System.Drawing.Point(248, 160);
+            this.CleanupDuration.Location = new System.Drawing.Point(248, 152);
             this.CleanupDuration.Name = "CleanupDuration";
             this.CleanupDuration.Size = new System.Drawing.Size(221, 21);
             this.CleanupDuration.TabIndex = 7;
             this.CleanupDuration.Value = "";
             this.CleanupDuration.ValueChanged += new System.EventHandler(this.CleanupDuration_ValueChanged);
             // 
+            // IgnoreTimestamps
+            // 
+            this.IgnoreTimestamps.AutoSize = true;
+            this.IgnoreTimestamps.Location = new System.Drawing.Point(32, 192);
+            this.IgnoreTimestamps.Name = "IgnoreTimestamps";
+            this.IgnoreTimestamps.Size = new System.Drawing.Size(348, 17);
+            this.IgnoreTimestamps.TabIndex = 8;
+            this.IgnoreTimestamps.Text = "Ignore file modification timestamp when making incremental backups";
+            this.IgnoreTimestamps.UseVisualStyleBackColor = true;
+            // 
             // IncrementalSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.IgnoreTimestamps);
             this.Controls.Add(this.CleanupDuration);
             this.Controls.Add(this.EnableCleanupDuration);
             this.Controls.Add(this.CleanFullBackupHelptext);
@@ -152,6 +164,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.FullSettings);
             this.Name = "IncrementalSettings";
             this.Size = new System.Drawing.Size(506, 242);
+            this.Load += new System.EventHandler(this.IncrementalSettings_Load);
             this.FullSettings.ResumeLayout(false);
             this.FullSettings.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.CleanFullBackupCount)).EndInit();
@@ -171,5 +184,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.Label CleanFullBackupHelptext;
         private System.Windows.Forms.CheckBox EnableCleanupDuration;
         private Duplicati.GUI.HelperControls.DurationEditor CleanupDuration;
+        private System.Windows.Forms.CheckBox IgnoreTimestamps;
     }
 }

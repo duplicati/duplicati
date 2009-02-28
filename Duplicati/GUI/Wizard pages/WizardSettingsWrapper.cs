@@ -131,6 +131,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.EncodedFilters = schedule.Task.EncodedFilter;
             this.GPGEncryption = schedule.Task.GPGEncryption;
             this.IncludeSetup = schedule.Task.IncludeSetup;
+            this.IgnoreFileTimestamps = schedule.Task.IgnoreTimestamps;
 
             this.PrimayAction = action;
         }
@@ -217,6 +218,7 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.EncodedFilter = this.EncodedFilters;
             schedule.Task.GPGEncryption = this.GPGEncryption;
             schedule.Task.IncludeSetup = this.IncludeSetup;
+            schedule.Task.IgnoreTimestamps = this.IgnoreFileTimestamps;
         }
 
         /// <summary>
@@ -507,6 +509,15 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get { return GetItem<bool>("UseEncryptionAsDefault", false); }
             set { SetItem("UseEncryptionAsDefault", value); }
+        }
+
+        /// <summary>
+        /// True if the File Timestamps should be ignored
+        /// </summary>
+        public bool IgnoreFileTimestamps
+        {
+            get { return GetItem<bool>("IgnoreFileTimestamps", false); }
+            set { SetItem("IgnoreFileTimestamps", value); }
         }
 
     }

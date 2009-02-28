@@ -125,6 +125,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_wrapper.FullBackupInterval = FullBackups.Checked ? FullDuration.Value : "";
             m_wrapper.MaxFullBackups = EnableFullBackupClean.Checked ? (int)CleanFullBackupCount.Value : 0;
             m_wrapper.BackupExpireInterval = EnableCleanupDuration.Checked ? CleanupDuration.Value : "";
+            m_wrapper.IgnoreFileTimestamps = IgnoreTimestamps.Checked;
 
             if ((bool)m_settings["Advanced:Throttle"])
                 args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
@@ -159,6 +160,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 EnableCleanupDuration.Checked = !string.IsNullOrEmpty(m_wrapper.BackupExpireInterval);
                 if (!EnableCleanupDuration.Checked)
                     CleanupDuration.Value = m_wrapper.FullBackupInterval;
+
+                IgnoreTimestamps.Checked = m_wrapper.IgnoreFileTimestamps;
             }
 
             if (m_settings.ContainsKey("Incremental:WarnedFull"))
@@ -198,6 +201,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private void FullDuration_ValueChanged(object sender, EventArgs e)
         {
             m_warnedFull = false;
+        }
+
+        private void IncrementalSettings_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

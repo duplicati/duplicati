@@ -99,6 +99,8 @@ namespace Duplicati.Datamodel
             if (!string.IsNullOrEmpty(set.TempPath))
                 options["tempdir"] = System.Environment.ExpandEnvironmentVariables(set.TempPath);
 
+            if (this.IgnoreTimestamps)
+                options["disable-filetime-check"] = "";
         }
 
         public string EncodedFilter
