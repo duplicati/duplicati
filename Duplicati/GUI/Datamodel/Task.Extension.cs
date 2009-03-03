@@ -118,6 +118,9 @@ namespace Duplicati.Datamodel
             }
             set
             {
+                //Delete previous ones
+                this.SortedFilters = new TaskFilter[0];
+
                 List<TaskFilter> filters = new List<TaskFilter>();
                 foreach(KeyValuePair<bool, string> f in Library.Core.FilenameFilter.DecodeFilter(value))
                 {

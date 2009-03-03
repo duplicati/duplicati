@@ -222,13 +222,15 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                         if (fnf.ShouldInclude(p, s))
                             included.Add(s);
 
+                    TargetFolder.Text = m_wrapper.SourcePath;
+
                     if (included.Count == 0)
                     {
                         FolderRadio.Checked = true;
-                        TargetFolder.Text = m_wrapper.SourcePath;
                     }
                     else
                     {
+                        //TODO: If there are extras here, revert to the Folder type
                         DocumentsRadio.Checked = true;
                         IncludeDocuments.Checked = included.Contains(m_myDocuments.Substring(1));
                         IncludeImages.Checked = included.Contains(m_myPictures.Substring(1));
