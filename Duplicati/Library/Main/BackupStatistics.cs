@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main
             sb.Append("DeletedFiles    : " + this.DeletedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("DeletedFolders  : " + this.DeletedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("ModifiedFiles   : " + this.ModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-            sb.Append("AddedFiles      : " + this.ModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("AddedFiles      : " + this.AddedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("AddedFolders    : " + this.AddedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("ExaminedFiles   : " + this.ExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfModified  : " + this.SizeOfModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");

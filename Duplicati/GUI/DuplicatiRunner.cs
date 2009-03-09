@@ -34,6 +34,7 @@ namespace Duplicati.GUI
         {
             Dictionary<string, string> options = new Dictionary<string,string>();
             task.GetOptions(options);
+
             string results = "";
 
             try
@@ -43,6 +44,10 @@ namespace Duplicati.GUI
                     case DuplicityTaskType.FullBackup:
                     case DuplicityTaskType.IncrementalBackup:
                         {
+                            ApplicationSettings appSet = new ApplicationSettings(task.Schedule.DataParent);
+                            if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
+                                options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), task.Schedule.ID.ToString());
+
                             Library.Core.TempFolder tf = null;
                             try
                             {

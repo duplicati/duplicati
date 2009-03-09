@@ -64,6 +64,8 @@ namespace Duplicati.Library.Main
                         OperationStarted(this, DuplicatiOperation.Backup, 0, "Started");
 
                     FilenameStrategy fns = new FilenameStrategy(m_options);
+                    FilenameStrategy cacheFilenameStrategy = new FilenameStrategy("dpl", "_", true);
+                    
                     Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(m_options);
                     bool full = m_options.ContainsKey("full");
 
@@ -91,6 +93,9 @@ namespace Duplicati.Library.Main
                     if (m_options.ContainsKey("signature-control-files"))
                         controlfiles.AddRange(m_options["signature-control-files"].Split(System.IO.Path.PathSeparator));
 
+                    if (m_options.ContainsKey("signature-cache-path") && !System.IO.Directory.Exists(m_options["signature-cache-path"]))
+                        System.IO.Directory.CreateDirectory(m_options["signature-cache-path"]);
+
                     using (Core.TempFolder tempfolder = new Duplicati.Library.Core.TempFolder())
                     {
                         List<Core.IFileArchive> patches = new List<Core.IFileArchive>();
@@ -106,16 +111,62 @@ namespace Duplicati.Library.Main
                                 entries.AddRange(prev[prev.Count - 1].Incrementals);
 
                                 foreach (BackupEntry be in entries)
+                                {
+                                    List<string> signatureHashes = null;
+                                    if (!m_options.ContainsKey("skip-file-hash-checks"))
+                                    {
+                                        if (OperationProgress != null)
+                                            OperationProgress(this, DuplicatiOperation.Backup, 0, "Reading manifest file: " + be.Filename);
+
+                                        signatureHashes = new List<string>();
+
+                                        using (new Logging.Timer("Get " + be.Filename))
+                                        using (Core.TempFile tf = new Duplicati.Library.Core.TempFile())
+                                        {
+                                            backend.Get(be.Filename, tf);
+                                            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                                            doc.Load(tf);
+                                            foreach (System.Xml.XmlNode n in doc.SelectNodes("Manifest/SignatureFiles/Hash"))
+                                                signatureHashes.Add(n.InnerText);
+                                        }
+                                    }
+
+
                                     foreach (BackupEntry bes in be.SignatureFile)
                                     {
                                         if (OperationProgress != null)
                                             OperationProgress(this, DuplicatiOperation.Backup, 0, "Reading incremental file: " + bes.Filename);
 
                                         string filename = System.IO.Path.Combine(tempfolder, "patch-" + patches.Count.ToString() + ".zip");
-                                        using (new Logging.Timer("Get " + bes.Filename))
-                                            backend.Get(bes.Filename, filename);
+
+                                        if (System.IO.File.Exists(filename))
+                                            System.IO.File.Delete(filename);
+
+                                        string cachefilename = null;
+
+                                        if (m_options.ContainsKey("signature-cache-path"))
+                                            cachefilename = System.IO.Path.Combine(m_options["signature-cache-path"], cacheFilenameStrategy.GenerateFilename(bes.Type, bes.IsFull, bes.Time, bes.VolumeNumber));
+
+                                        if (cachefilename != null && System.IO.File.Exists(cachefilename))
+                                            if (signatureHashes != null && Core.Utility.CalculateHash(cachefilename) == signatureHashes[bes.VolumeNumber - 1])
+                                                System.IO.File.Copy(cachefilename, filename); //TODO: Warn on hash mismatch?
+
+                                        if (!System.IO.File.Exists(filename))
+                                            using (new Logging.Timer("Get " + bes.Filename))
+                                            {
+                                                backend.Get(bes.Filename, filename);
+                                                string hash = Core.Utility.CalculateHash(filename);
+                                                if (signatureHashes != null && hash != signatureHashes[bes.VolumeNumber - 1])
+                                                    throw new Exception("Hash mismatch on file " + bes.Filename + " recorded hash: " + signatureHashes[patches.Count] + ", actual hash: " + hash);
+
+                                                //In case the cache was erased, or corrupt, keep the fresh copy
+                                                if (cachefilename != null)
+                                                    System.IO.File.Copy(filename, cachefilename);
+                                            }
+
                                         patches.Add(new Compression.FileArchiveZip(filename));
                                     }
+                                }
                             }
                         }
                         DateTime backuptime = DateTime.Now;
@@ -176,7 +227,12 @@ namespace Duplicati.Library.Main
 
                                     signaturehashes.Add(Core.Utility.CalculateHash(signaturefile));
                                     using (new Logging.Timer("Writing remote signatures"))
+                                    {
+                                        if (m_options.ContainsKey("signature-cache-path"))
+                                            System.IO.File.Copy(signaturefile, System.IO.Path.Combine(m_options["signature-cache-path"], cacheFilenameStrategy.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1)));
+
                                         backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", signaturefile);
+                                    }
                                 }
 
                                 //The backend wrapper will remove this
@@ -270,6 +326,26 @@ namespace Duplicati.Library.Main
                     using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs, filter))
                     {
                         foreach (BackupEntry be in entries)
+                        {
+                            List<string> contentHashes = null;
+                            if (!m_options.ContainsKey("skip-file-hash-checks"))
+                            {
+                                if (OperationProgress != null)
+                                    OperationProgress(this, DuplicatiOperation.Backup, 0, "Reading manifest file: " + be.Filename);
+
+                                contentHashes = new List<string>();
+
+                                using (new Logging.Timer("Get " + be.Filename))
+                                using (Core.TempFile tf = new Duplicati.Library.Core.TempFile())
+                                {
+                                    backend.Get(be.Filename, tf);
+                                    System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                                    doc.Load(tf);
+                                    foreach (System.Xml.XmlNode n in doc.SelectNodes("Manifest/ContentFiles/Hash"))
+                                        contentHashes.Add(n.InnerText);
+                                }
+                            }
+
                             foreach (BackupEntry vol in be.ContentVolumes)
                             {
                                 if (vol.CompressionMode != "zip")
@@ -284,11 +360,19 @@ namespace Duplicati.Library.Main
                                     using (new Logging.Timer("Get " + vol.Filename))
                                         backend.Get(vol.Filename, patchzip);
 
+                                    if (contentHashes != null)
+                                    {
+                                        string hash = Core.Utility.CalculateHash(patchzip);
+                                        if (hash != contentHashes[vol.VolumeNumber - 1])
+                                            throw new Exception("Hash mismatch on file " + vol.Filename + " recorded hash: " + contentHashes[vol.VolumeNumber] + ", actual hash: " + hash);
+                                    }
+
                                     using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + target))
                                         sync.Patch(target, new Compression.FileArchiveZip(patchzip));
                                 }
                                 patchno++;
                             }
+                        }
                     }
                 }
                 finally

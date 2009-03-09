@@ -52,11 +52,15 @@ namespace Duplicati.GUI
             this.BrowseSCPDialog = new System.Windows.Forms.OpenFileDialog();
             this.BrowseTempPath = new System.Windows.Forms.FolderBrowserDialog();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.UseCommonPassword = new System.Windows.Forms.CheckBox();
-            this.CommonPassword = new System.Windows.Forms.TextBox();
-            this.CommonPasswordUseGPG = new System.Windows.Forms.CheckBox();
             this.PasswordPanel = new System.Windows.Forms.Panel();
             this.label5 = new System.Windows.Forms.Label();
+            this.CommonPasswordUseGPG = new System.Windows.Forms.CheckBox();
+            this.CommonPassword = new System.Windows.Forms.TextBox();
+            this.UseCommonPassword = new System.Windows.Forms.CheckBox();
+            this.SignatureCachePathBrowse = new System.Windows.Forms.Button();
+            this.SignatureCachePath = new System.Windows.Forms.TextBox();
+            this.SignatureCacheEnabled = new System.Windows.Forms.CheckBox();
+            this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -117,6 +121,9 @@ namespace Duplicati.GUI
             // 
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox2.Controls.Add(this.SignatureCacheEnabled);
+            this.groupBox2.Controls.Add(this.SignatureCachePathBrowse);
+            this.groupBox2.Controls.Add(this.SignatureCachePath);
             this.groupBox2.Controls.Add(this.TempPathBrowse);
             this.groupBox2.Controls.Add(this.TempPath);
             this.groupBox2.Controls.Add(this.label4);
@@ -131,7 +138,7 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Location = new System.Drawing.Point(8, 176);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(437, 128);
+            this.groupBox2.Size = new System.Drawing.Size(437, 152);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Path settings (Advanced)";
@@ -240,7 +247,7 @@ namespace Duplicati.GUI
             // OKBtn
             // 
             this.OKBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.OKBtn.Location = new System.Drawing.Point(135, 316);
+            this.OKBtn.Location = new System.Drawing.Point(135, 341);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(80, 24);
             this.OKBtn.TabIndex = 6;
@@ -252,7 +259,7 @@ namespace Duplicati.GUI
             // 
             this.CancelBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(231, 316);
+            this.CancelBtn.Location = new System.Drawing.Point(231, 341);
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.Size = new System.Drawing.Size(72, 24);
             this.CancelBtn.TabIndex = 7;
@@ -293,36 +300,6 @@ namespace Duplicati.GUI
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Password settings applied to new backups";
             // 
-            // UseCommonPassword
-            // 
-            this.UseCommonPassword.AutoSize = true;
-            this.UseCommonPassword.Location = new System.Drawing.Point(16, 24);
-            this.UseCommonPassword.Name = "UseCommonPassword";
-            this.UseCommonPassword.Size = new System.Drawing.Size(194, 17);
-            this.UseCommonPassword.TabIndex = 0;
-            this.UseCommonPassword.Text = "Use a password to protect backups";
-            this.UseCommonPassword.UseVisualStyleBackColor = true;
-            this.UseCommonPassword.CheckedChanged += new System.EventHandler(this.UseCommonPassword_CheckedChanged);
-            // 
-            // CommonPassword
-            // 
-            this.CommonPassword.Location = new System.Drawing.Point(120, 8);
-            this.CommonPassword.Name = "CommonPassword";
-            this.CommonPassword.Size = new System.Drawing.Size(296, 20);
-            this.CommonPassword.TabIndex = 1;
-            this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
-            // 
-            // CommonPasswordUseGPG
-            // 
-            this.CommonPasswordUseGPG.AutoSize = true;
-            this.CommonPasswordUseGPG.Location = new System.Drawing.Point(24, 32);
-            this.CommonPasswordUseGPG.Name = "CommonPasswordUseGPG";
-            this.CommonPasswordUseGPG.Size = new System.Drawing.Size(210, 17);
-            this.CommonPasswordUseGPG.TabIndex = 2;
-            this.CommonPasswordUseGPG.Text = "Use the GNU Privacy Guard to encrypt";
-            this.CommonPasswordUseGPG.UseVisualStyleBackColor = true;
-            this.CommonPasswordUseGPG.CheckedChanged += new System.EventHandler(this.CommonPasswordUseGPG_CheckedChanged);
-            // 
             // PasswordPanel
             // 
             this.PasswordPanel.Controls.Add(this.label5);
@@ -342,12 +319,74 @@ namespace Duplicati.GUI
             this.label5.TabIndex = 0;
             this.label5.Text = "Password";
             // 
+            // CommonPasswordUseGPG
+            // 
+            this.CommonPasswordUseGPG.AutoSize = true;
+            this.CommonPasswordUseGPG.Location = new System.Drawing.Point(24, 32);
+            this.CommonPasswordUseGPG.Name = "CommonPasswordUseGPG";
+            this.CommonPasswordUseGPG.Size = new System.Drawing.Size(210, 17);
+            this.CommonPasswordUseGPG.TabIndex = 2;
+            this.CommonPasswordUseGPG.Text = "Use the GNU Privacy Guard to encrypt";
+            this.CommonPasswordUseGPG.UseVisualStyleBackColor = true;
+            this.CommonPasswordUseGPG.CheckedChanged += new System.EventHandler(this.CommonPasswordUseGPG_CheckedChanged);
+            // 
+            // CommonPassword
+            // 
+            this.CommonPassword.Location = new System.Drawing.Point(120, 8);
+            this.CommonPassword.Name = "CommonPassword";
+            this.CommonPassword.Size = new System.Drawing.Size(296, 20);
+            this.CommonPassword.TabIndex = 1;
+            this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
+            // 
+            // UseCommonPassword
+            // 
+            this.UseCommonPassword.AutoSize = true;
+            this.UseCommonPassword.Location = new System.Drawing.Point(16, 24);
+            this.UseCommonPassword.Name = "UseCommonPassword";
+            this.UseCommonPassword.Size = new System.Drawing.Size(194, 17);
+            this.UseCommonPassword.TabIndex = 0;
+            this.UseCommonPassword.Text = "Use a password to protect backups";
+            this.UseCommonPassword.UseVisualStyleBackColor = true;
+            this.UseCommonPassword.CheckedChanged += new System.EventHandler(this.UseCommonPassword_CheckedChanged);
+            // 
+            // SignatureCachePathBrowse
+            // 
+            this.SignatureCachePathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.SignatureCachePathBrowse.Location = new System.Drawing.Point(400, 120);
+            this.SignatureCachePathBrowse.Name = "SignatureCachePathBrowse";
+            this.SignatureCachePathBrowse.Size = new System.Drawing.Size(24, 20);
+            this.SignatureCachePathBrowse.TabIndex = 25;
+            this.SignatureCachePathBrowse.Text = "...";
+            this.SignatureCachePathBrowse.UseVisualStyleBackColor = true;
+            this.SignatureCachePathBrowse.Click += new System.EventHandler(this.SignatureCachePathBrowse_Click);
+            // 
+            // SignatureCachePath
+            // 
+            this.SignatureCachePath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.SignatureCachePath.Location = new System.Drawing.Point(128, 120);
+            this.SignatureCachePath.Name = "SignatureCachePath";
+            this.SignatureCachePath.Size = new System.Drawing.Size(272, 20);
+            this.SignatureCachePath.TabIndex = 24;
+            this.SignatureCachePath.TextChanged += new System.EventHandler(this.SignatureCachePath_TextChanged);
+            // 
+            // SignatureCacheEnabled
+            // 
+            this.SignatureCacheEnabled.AutoSize = true;
+            this.SignatureCacheEnabled.Location = new System.Drawing.Point(8, 120);
+            this.SignatureCacheEnabled.Name = "SignatureCacheEnabled";
+            this.SignatureCacheEnabled.Size = new System.Drawing.Size(104, 17);
+            this.SignatureCacheEnabled.TabIndex = 26;
+            this.SignatureCacheEnabled.Text = "Signature cache";
+            this.SignatureCacheEnabled.UseVisualStyleBackColor = true;
+            this.SignatureCacheEnabled.CheckedChanged += new System.EventHandler(this.SignatureCacheEnabled_CheckedChanged);
+            // 
             // ApplicationSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(453, 354);
+            this.ClientSize = new System.Drawing.Size(453, 379);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
@@ -403,5 +442,9 @@ namespace Duplicati.GUI
         private System.Windows.Forms.CheckBox UseCommonPassword;
         private System.Windows.Forms.Panel PasswordPanel;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.CheckBox SignatureCacheEnabled;
+        private System.Windows.Forms.Button SignatureCachePathBrowse;
+        private System.Windows.Forms.TextBox SignatureCachePath;
+        private System.Windows.Forms.FolderBrowserDialog BrowseSignatureCachePath;
     }
 }

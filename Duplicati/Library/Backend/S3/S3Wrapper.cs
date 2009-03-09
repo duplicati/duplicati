@@ -33,6 +33,7 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class S3Wrapper : Affirma.ThreeSharp.Wrapper.ThreeSharpWrapper
     {
+        private static Dictionary<string, KeyValuePair<DateTime, string>> RedirectCache = new Dictionary<string, KeyValuePair<DateTime, string>>();
 
         protected const string EU_LOCATION_CONSTRAINT = "<CreateBucketConfiguration><LocationConstraint>EU</LocationConstraint></CreateBucketConfiguration>";
         protected bool m_euBucket;
@@ -55,6 +56,8 @@ namespace Duplicati.Library.Backend
 
         public override void AddBucket(string bucketName)
         {
+            //Due to a resource leak in the S3 code, we flush it here
+            GC.Collect();
             using (BucketAddRequest request = new BucketAddRequest(bucketName))
             {
                 if (m_euBucket)
@@ -67,6 +70,8 @@ namespace Duplicati.Library.Backend
 
         public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
         {
+            //Due to a resource leak in the S3 code, we flush it here
+            GC.Collect();
             using (ObjectGetRequest objectGetRequest = new ObjectGetRequest(bucketName, keyName))
             {
                 objectGetRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
@@ -77,18 +82,24 @@ namespace Duplicati.Library.Backend
 
         public override void GetFileObject(string bucketName, string keyName, string localfile)
         {
+            //Due to a resource leak in the S3 code, we flush it here
+            GC.Collect();
             using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                 GetFileStream(bucketName, keyName, fs);
         }
 
         public override void AddFileObject(string bucketName, string keyName, string localfile)
         {
+            //Due to a resource leak in the S3 code, we flush it here
+            GC.Collect();
             using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 AddFileStream(bucketName, keyName, fs);
         }
 
         public virtual void AddFileStream(string bucketName, string keyName, System.IO.Stream source)
         {
+            //Due to a resource leak in the S3 code, we flush it here
+            GC.Collect();
             using (ObjectAddRequest objectAddRequest = new ObjectAddRequest(bucketName, keyName))
             {
                 objectAddRequest.DataStream = source;
@@ -106,6 +117,8 @@ namespace Duplicati.Library.Backend
 
         public override void DeleteObject(string bucketName, string keyName)
         {
+            //Due to a resource leak in the S3 code, we flush it here
+            GC.Collect();
             using (ObjectDeleteRequest objectDeleteRequest = new ObjectDeleteRequest(bucketName, keyName))
             {
                 objectDeleteRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
@@ -127,6 +140,8 @@ namespace Duplicati.Library.Backend
             //We truncate after 1000 elements, and then repeat
             while (isTruncated)
             {
+                //Due to a resource leak in the S3 code, we flush it here
+                GC.Collect();
                 using (BucketListRequest listRequest = new BucketListRequest(bucketName))
                 {
                     listRequest.RedirectUrl = redirUrl;
@@ -160,18 +175,27 @@ namespace Duplicati.Library.Backend
 
         protected string GetRedirectUrl(string bucketName, string filename)
         {
-            //TODO: Cache this info
-
-            string redirectUrl = null;
-            using (BucketListRequest testRequest = new BucketListRequest(bucketName))
+            if (!RedirectCache.ContainsKey(bucketName) || RedirectCache[bucketName].Key < DateTime.Now)
             {
-                testRequest.Method = "HEAD";
-                using (BucketListResponse testResponse = service.BucketList(testRequest))
-                    if (testResponse.StatusCode == System.Net.HttpStatusCode.TemporaryRedirect)
-                        redirectUrl = testResponse.Headers["Location"].ToString() + (filename == null ? "" : filename);
+                //Due to a resource leak in the S3 code, we flush it here
+                GC.Collect();
+                using (BucketListRequest testRequest = new BucketListRequest(bucketName))
+                {
+                    testRequest.Method = "HEAD";
+                    using (BucketListResponse testResponse = service.BucketList(testRequest))
+                        if (testResponse.StatusCode == System.Net.HttpStatusCode.TemporaryRedirect)
+                            RedirectCache[bucketName] = new KeyValuePair<DateTime,string>(DateTime.Now.AddMinutes(5), testResponse.Headers["Location"].ToString());
+                        else
+                            RedirectCache[bucketName] = new KeyValuePair<DateTime,string>(DateTime.Now.AddHours(1), null);
+                            //If there are no temp redirects, the DNS system is updated, and will likely never require temporary redirects
+                }
             }
 
-            return redirectUrl;
+            string tempurl = RedirectCache[bucketName].Value;
+            if (tempurl == null)
+                return null;
+            else
+                return RedirectCache[bucketName].Value + (filename == null ? "" : filename);
         }
 
     }

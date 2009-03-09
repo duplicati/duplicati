@@ -38,6 +38,9 @@ namespace Duplicati.Datamodel
         private const string COMMON_PASSWORD_USE_GPG = "Use PGP with common password";
         private const string COMMON_PASSWORD = "Common password";
 
+        private const string SIGNATURE_CACHE_PATH = "Signature Cache Path";
+        private const string SIGNATURE_CACHE_ENABLED = "Signature Cache Enabled";
+
         //TODO: Deal with this on Linux
         public const string PROGRAM_FILES = "%PROGRAMFILES%";
 
@@ -180,6 +183,40 @@ namespace Duplicati.Datamodel
             set { m_appset[COMMON_PASSWORD] = value; }
         }
 
+        /// <summary>
+        /// Gets or sets the path to store signature cache files. May contain environment variables
+        /// </summary>
+        public string SignatureCachePath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_appset[SIGNATURE_CACHE_PATH]))
+                {
+                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                        return "";
+                    else
+                        return System.IO.Path.Combine("%temp%", "Duplicati Signature Cache");
+                }
+                return m_appset[SIGNATURE_CACHE_PATH];
+            }
+            set { m_appset[SIGNATURE_CACHE_PATH] = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating if the signature cache should be used.
+        /// </summary>
+        public bool SignatureCacheEnabled
+        {
+            get
+            {
+                bool res;
+                if (bool.TryParse(m_appset[SIGNATURE_CACHE_ENABLED], out res))
+                    return res;
+                else
+                    return true;
+            }
+            set { m_appset[SIGNATURE_CACHE_ENABLED] = value.ToString(); }
+        }
 
     }
 }

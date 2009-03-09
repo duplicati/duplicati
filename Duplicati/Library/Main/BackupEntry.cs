@@ -41,6 +41,7 @@ namespace Duplicati.Library.Main
         private bool m_isShortName;
         private string m_encryptionMode;
         private string m_compressionMode;
+        private int m_volNumber;
         private List<BackupEntry> m_content;
 
         public string Filename { get { return m_fileentry.Name; } }
@@ -54,8 +55,9 @@ namespace Duplicati.Library.Main
         public List<BackupEntry> ContentVolumes { get { return m_content; } }
         public List<BackupEntry> SignatureFile { get { return m_signature; } }
         public EntryType Type { get { return m_type; } }
+        public int VolumeNumber { get { return m_volNumber; } }
 
-        public BackupEntry(Backend.FileEntry fe, DateTime time, EntryType type, bool isFull, bool isShortName, string compressionMode, string encryptionMode)
+        public BackupEntry(Backend.FileEntry fe, DateTime time, EntryType type, bool isFull, bool isShortName, int volNumber, string compressionMode, string encryptionMode)
         {
             m_fileentry = fe;
             m_time = time;
@@ -64,6 +66,7 @@ namespace Duplicati.Library.Main
             m_isShortName = isShortName;
             m_compressionMode = compressionMode;
             m_encryptionMode = encryptionMode;
+            m_volNumber = volNumber;
             m_signature = new List<BackupEntry>();
             m_content = new List<BackupEntry>();
             m_incrementals = new List<BackupEntry>();

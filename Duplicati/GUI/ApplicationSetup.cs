@@ -62,6 +62,9 @@ namespace Duplicati.GUI
                 UseCommonPassword.Checked = m_settings.UseCommonPassword;
                 CommonPassword.Text = m_settings.CommonPassword;
                 CommonPasswordUseGPG.Checked = m_settings.CommonPasswordUseGPG;
+
+                SignatureCacheEnabled.Checked = m_settings.SignatureCacheEnabled;
+                SignatureCachePath.Text = m_settings.SignatureCachePath;
             }
             finally
             {
@@ -194,6 +197,32 @@ namespace Duplicati.GUI
                 return;
 
             m_settings.CommonPasswordUseGPG = CommonPasswordUseGPG.Checked;
+        }
+
+        private void SignatureCachePathBrowse_Click(object sender, EventArgs e)
+        {
+            if (BrowseSignatureCachePath.ShowDialog(this) == DialogResult.OK)
+                SignatureCachePath.Text = BrowseSignatureCachePath.SelectedPath;
+
+        }
+
+        private void SignatureCachePath_TextChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            m_settings.SignatureCachePath = SignatureCachePath.Text;
+        }
+
+        private void SignatureCacheEnabled_CheckedChanged(object sender, EventArgs e)
+        {
+            SignatureCachePath.Enabled = SignatureCachePathBrowse.Enabled = SignatureCacheEnabled.Checked;
+
+            if (m_isUpdating)
+                return;
+
+            m_settings.SignatureCacheEnabled = SignatureCacheEnabled.Checked;
+
         }
 
     }
