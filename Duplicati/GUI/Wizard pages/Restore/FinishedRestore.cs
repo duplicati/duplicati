@@ -89,10 +89,10 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             }
         }
 
-        void i_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, int progress, string message)
+        void i_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, int progress, int subprogress, string message)
         {
             if (m_waitdlg.InvokeRequired)
-                m_waitdlg.Invoke(new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress), caller, operation, progress, message);
+                m_waitdlg.Invoke(new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress), caller, operation, progress, subprogress, message);
             else
                 m_waitdlg.Text = message;
         }

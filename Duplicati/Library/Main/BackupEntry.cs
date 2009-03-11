@@ -79,7 +79,10 @@ namespace Duplicati.Library.Main
 
         public int Compare(BackupEntry x, BackupEntry y)
         {
-            return x.Time.CompareTo(y.Time);
+            if (!x.Time.Equals(y.Time))
+                return x.VolumeNumber.CompareTo(y.VolumeNumber);
+            else
+                return x.Time.CompareTo(y.Time);
         }
 
         #endregion

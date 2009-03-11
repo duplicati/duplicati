@@ -39,6 +39,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             this.Password = new System.Windows.Forms.TextBox();
             this.Port = new System.Windows.Forms.NumericUpDown();
             this.TestConnection = new System.Windows.Forms.Button();
+            this.PassiveConnection = new System.Windows.Forms.CheckBox();
+            this.CreateFolderButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
             this.SuspendLayout();
             // 
@@ -153,10 +155,33 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             this.TestConnection.UseVisualStyleBackColor = true;
             this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
+            // PassiveConnection
+            // 
+            this.PassiveConnection.AutoSize = true;
+            this.PassiveConnection.Location = new System.Drawing.Point(16, 136);
+            this.PassiveConnection.Name = "PassiveConnection";
+            this.PassiveConnection.Size = new System.Drawing.Size(140, 17);
+            this.PassiveConnection.TabIndex = 11;
+            this.PassiveConnection.Text = "Use passive connection";
+            this.PassiveConnection.UseVisualStyleBackColor = true;
+            this.PassiveConnection.CheckedChanged += new System.EventHandler(this.PassiveConnection_CheckedChanged);
+            // 
+            // CreateFolderButton
+            // 
+            this.CreateFolderButton.Location = new System.Drawing.Point(392, 40);
+            this.CreateFolderButton.Name = "CreateFolderButton";
+            this.CreateFolderButton.Size = new System.Drawing.Size(88, 23);
+            this.CreateFolderButton.TabIndex = 12;
+            this.CreateFolderButton.Text = "Create folder";
+            this.CreateFolderButton.UseVisualStyleBackColor = true;
+            this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
+            // 
             // FTPOptions
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.CreateFolderButton);
+            this.Controls.Add(this.PassiveConnection);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.Port);
             this.Controls.Add(this.Password);
@@ -189,5 +214,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         private System.Windows.Forms.TextBox Password;
         private System.Windows.Forms.NumericUpDown Port;
         private System.Windows.Forms.Button TestConnection;
+        private System.Windows.Forms.CheckBox PassiveConnection;
+        private System.Windows.Forms.Button CreateFolderButton;
     }
 }

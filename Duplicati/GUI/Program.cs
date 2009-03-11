@@ -75,6 +75,11 @@ namespace Duplicati.GUI
         public static string DatabasePath;
 
         /// <summary>
+        /// The actual runner, do not call directly. Only used for events.
+        /// </summary>
+        public static DuplicatiRunner Runner;
+
+        /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
@@ -136,9 +141,9 @@ namespace Duplicati.GUI
             TrayIcon.ContextMenuStrip.Items[0].Font = new Font(TrayIcon.ContextMenuStrip.Items[0].Font, FontStyle.Bold);
 
             ApplicationSettings = new ApplicationSettings(DataConnection);
-            DuplicatiRunner runner = new DuplicatiRunner();
+            Runner = new DuplicatiRunner();
 
-            WorkThread = new WorkerThread<IDuplicityTask>(new WorkerThread<IDuplicityTask>.ProcessItemDelegate(runner.ExecuteTask));
+            WorkThread = new WorkerThread<IDuplicityTask>(new WorkerThread<IDuplicityTask>.ProcessItemDelegate(Runner.ExecuteTask));
 
             Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
 

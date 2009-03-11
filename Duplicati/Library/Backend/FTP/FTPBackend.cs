@@ -205,6 +205,7 @@ namespace Duplicati.Library.Backend
         {
             System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(m_url + remotename);
             req.Credentials = m_userInfo;
+            req.KeepAlive = false;
 
             if (m_options.ContainsKey("ftp-passive"))
                 req.UsePassive = true;

@@ -42,6 +42,7 @@
     <Compile Include="IFilenameFilter.cs" />
     <Compile Include="KeyGenerator.cs" />
     <Compile Include="OverrideableStream.cs" />
+    <Compile Include="ProgressReportingStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegularExpressionFilter.cs" />
     <Compile Include="Sizeparser.cs" />

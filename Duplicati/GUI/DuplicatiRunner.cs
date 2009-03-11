@@ -30,6 +30,22 @@ namespace Duplicati.GUI
     /// </summary>
     public class DuplicatiRunner
     {
+        public enum RunnerState
+        {
+            Started,
+            Suspended,
+            Running,
+            Stopped,
+        }
+
+        public delegate void DuplicatiRunnerProgress(DuplicatiOperation operation, RunnerState state, string message, int progress, int subprogress);
+        public event DuplicatiRunnerProgress DuplicatiProgress;
+
+        private DuplicatiOperation m_lastPGOperation;
+        private int m_lastPGProgress;
+        private int m_lastPGSubprogress;
+        private string m_lastPGmessage;
+
         public void ExecuteTask(IDuplicityTask task)
         {
             Dictionary<string, string> options = new Dictionary<string,string>();
@@ -44,6 +60,7 @@ namespace Duplicati.GUI
                     case DuplicityTaskType.FullBackup:
                     case DuplicityTaskType.IncrementalBackup:
                         {
+
                             ApplicationSettings appSet = new ApplicationSettings(task.Schedule.DataParent);
                             if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
                                 options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), task.Schedule.ID.ToString());
@@ -51,6 +68,9 @@ namespace Duplicati.GUI
                             Library.Core.TempFolder tf = null;
                             try
                             {
+                                if (DuplicatiProgress != null)
+                                    DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Started, task.Schedule.Name, 0, -1);
+
                                 if (task.Task.IncludeSetup)
                                 {
                                     //Make a copy of the current database
@@ -80,12 +100,20 @@ namespace Duplicati.GUI
 
                                     options["signature-control-files"] = filename;
                                 }
-                                results = Interface.Backup(task.SourcePath, task.TargetPath, options);
+
+                                using (Interface i = new Interface(task.TargetPath, options))
+                                {
+                                    i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
+                                    results = i.Backup(task.SourcePath);
+                                }
                             }
                             finally
                             {
                                 if (tf != null)
                                     tf.Dispose();
+
+                                if (DuplicatiProgress != null)
+                                    DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, 100, -1);
                             }
                             break;
                         }
@@ -115,7 +143,22 @@ namespace Duplicati.GUI
                         options["file-to-restore"] = ((RestoreTask)task).SourceFiles;
                         if (options.ContainsKey("filter"))
                             options.Remove("filter");
-                        results = Interface.Restore(task.SourcePath, task.TargetPath, options);
+
+                        using (Interface i = new Interface(task.SourcePath, options))
+                        {
+                            try
+                            {
+                                if (DuplicatiProgress != null)
+                                    DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, 0, -1);
+                                i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
+                                results = i.Restore(task.TargetPath);
+                            }
+                            finally
+                            {
+                                if (DuplicatiProgress != null)
+                                    DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Stopped, task.Schedule.Name, 100, -1);
+                            }
+                        }
                         break;
 
                     case DuplicityTaskType.RestoreSetup:
@@ -145,6 +188,23 @@ namespace Duplicati.GUI
                 if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
                     ExecuteTask(new RemoveOlderThanTask(task.Schedule, task.Schedule.Task.KeepTime));
             }
+        }
+
+        void Duplicati_OperationProgress(Interface caller, DuplicatiOperation operation, int progress, int subprogress, string message)
+        {
+            m_lastPGOperation = operation;
+            m_lastPGProgress = progress;
+            m_lastPGSubprogress = subprogress;
+            m_lastPGmessage = message;
+
+            if (DuplicatiProgress != null)
+                try { DuplicatiProgress(operation, RunnerState.Running, message, progress, subprogress); }
+                catch { }
+        }
+
+        public void ReinvokeLastProgressEvent()
+        {
+            Duplicati_OperationProgress(null, m_lastPGOperation, m_lastPGProgress, m_lastPGSubprogress, m_lastPGmessage);
         }
 
 

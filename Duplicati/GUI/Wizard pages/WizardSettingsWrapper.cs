@@ -89,6 +89,7 @@ namespace Duplicati.GUI.Wizard_pages
                     this.FTPSettings.Path = ftp.Folder;
                     this.FTPSettings.Server = ftp.Host;
                     this.FTPSettings.Port = ftp.Port;
+                    this.FTPSettings.Passive = ftp.Passive;
                     this.Backend = BackendType.FTP;
                     break;
                 case "ssh":
@@ -167,6 +168,7 @@ namespace Duplicati.GUI.Wizard_pages
                     ftp.Folder = this.FTPSettings.Path;
                     ftp.Host = this.FTPSettings.Server;
                     ftp.Port = this.FTPSettings.Port;
+                    ftp.Passive = this.FTPSettings.Passive;
                     ftp.SetService();
                     break;
                 case BackendType.SSH:
@@ -619,6 +621,14 @@ namespace Duplicati.GUI.Wizard_pages
             m_defaultPort = 21;
         }
 
+        /// <summary>
+        /// A value indicating if the connection should be passive
+        /// </summary>
+        public bool Passive
+        {
+            get { return m_parent.GetItem<bool>("FTP:Passive", true); }
+            set { m_parent.SetItem("FTP:Passive", value); }
+        }
     }
 
     /// <summary>

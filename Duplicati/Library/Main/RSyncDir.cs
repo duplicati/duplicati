@@ -40,6 +40,9 @@ namespace Duplicati.Library.Main.RSync
 
         internal static readonly string ADDED_FOLDERS = "added_folders.txt";
 
+        public delegate void ProgressEventDelegate(int progress, string filename);
+        public event ProgressEventDelegate ProgressEvent;
+
         /// <summary>
         /// This is the folder being backed up
         /// </summary>
@@ -161,7 +164,7 @@ namespace Duplicati.Library.Main.RSync
 
                 if (z.FileExists(ADDED_FOLDERS))
                     foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(ADDED_FOLDERS)))
-                        m_oldFolders.Add(s, s);
+                        m_oldFolders[s] = s;
             }
         }
 
@@ -290,12 +293,24 @@ namespace Duplicati.Library.Main.RSync
                 m_isfirstmultipass = false;
             }
 
+            int lastPg = -1;
 
             while (m_unproccesed.Count > 0 && totalSize < volumesize)
             {
+
                 int next = r.Next(0, m_unproccesed.Count);
                 string s = m_unproccesed[next];
                 m_unproccesed.RemoveAt(next);
+
+                if (ProgressEvent != null)
+                {
+                    int pg = 100 - ((int)((m_unproccesed.Count / (double)m_totalfiles) * 100));
+                    if (lastPg != pg)
+                    {
+                        ProgressEvent(pg, s);
+                        lastPg = pg;
+                    }
+                }
 
                 try
                 {

@@ -85,6 +85,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             m_wrapper.Username = Username.Text;
             m_wrapper.Password = Password.Text;
             m_wrapper.Port = (int)Port.Value;
+            m_wrapper.Passive = PassiveConnection.Checked;
 
             if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
                 args.NextPage = new RestoreSetup.FinishedRestoreSetup();
@@ -115,6 +116,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
                 Username.Text = m_wrapper.Username;
                 Password.Text = m_wrapper.Password;
                 Port.Value = m_wrapper.Port;
+                PassiveConnection.Checked = m_wrapper.Passive;
             }
         }
 
@@ -177,6 +179,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
                     ftp.Password = Password.Text;
                     ftp.Port = (int)Port.Value;
                     ftp.Folder = Path.Text;
+                    ftp.Passive = PassiveConnection.Checked;
 
                     string hostname = ftp.GetDestinationPath();
                     Dictionary<string, string> options = new Dictionary<string, string>();
@@ -189,7 +192,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-
                 }
             }
         }
@@ -220,6 +222,36 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         private void Servername_TextChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
+        }
+
+        private void PassiveConnection_CheckedChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+        }
+
+        private void CreateFolderButton_Click(object sender, EventArgs e)
+        {
+            if (ValidateForm())
+            {
+                try
+                {
+                    string p = Path.Text;
+                    string url = "ftp://" + Servername.Text + ":" + Port.Value.ToString() + "/" + Path.Text;
+                    System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(url);
+                    req.Credentials = new System.Net.NetworkCredential(Username.Text, Password.Text);
+                    req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
+                    req.KeepAlive = false;
+                    using (req.GetResponse())
+                    { }
+
+                    MessageBox.Show(this, "Folder created!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
     }
 }

@@ -43,6 +43,11 @@ namespace Duplicati.Library.Main
         private System.Threading.ManualResetEvent m_asyncWait;
         private object m_queuelock;
 
+        //Temporary variable for progress reporting
+        private string m_statusmessage;
+
+        public event RSync.RSyncDir.ProgressEventDelegate ProgressEvent;
+
         public BackendWrapper(CommunicationStatistics statistics, Backend.IBackend backend, Dictionary<string, string> options)
         {
             m_statistics = statistics;
@@ -247,6 +252,7 @@ namespace Duplicati.Library.Main
         {
             int retries = m_retries;
             Exception lastEx = null;
+            m_statusmessage = "Downloading: " + remotename;
 
             do
             {
@@ -254,10 +260,19 @@ namespace Duplicati.Library.Main
                 {
                     m_statistics.NumberOfRemoteCalls++;
                     if (!this.SupportsStreaming)
+                    {
+                        if (!m_asyncOperation && ProgressEvent != null)
+                            ProgressEvent(50, m_statusmessage);
                         m_backend.Get(remotename, filename);
+                        if (!m_asyncOperation && ProgressEvent != null)
+                            ProgressEvent(100, m_statusmessage);
+                    }
                     else
+                    {
+                        //TODO: How can we guess the remote file size for progress reporting?
                         using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                             ((Backend.IStreamingBackend)m_backend).Get(remotename, ThrottleStream(fs, m_options));
+                    }
 
                     lastEx = null;
                 }
@@ -280,6 +295,7 @@ namespace Duplicati.Library.Main
 
         private void PutInternal(string remotename, string filename)
         {
+            m_statusmessage = "Uploading: " + remotename + " (" + Core.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length) + ")";
 
             try
             {
@@ -292,24 +308,38 @@ namespace Duplicati.Library.Main
                     {
                         m_statistics.NumberOfRemoteCalls++;
                         if (!this.SupportsStreaming)
+                        {
+                            if (!m_asyncOperation && ProgressEvent != null)
+                                ProgressEvent(50, m_statusmessage);
                             m_backend.Put(remotename, filename);
+                            if (!m_asyncOperation && ProgressEvent != null)
+                                ProgressEvent(50, m_statusmessage);
+                        }
                         else
                         {
 #if DEBUG
                             DateTime begin = DateTime.Now;
                             long l;
                             using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                            using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, fs.Length))
                             {
-                                l = fs.Length;
-                                ((Backend.IStreamingBackend)m_backend).Put(remotename, ThrottleStream(fs, m_options));
+                                l = pgs.Length;
+                                if (!m_asyncOperation)
+                                    pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
+                                ((Backend.IStreamingBackend)m_backend).Put(remotename, ThrottleStream(pgs, m_options));
                             }
-                            
+
                             TimeSpan duration = DateTime.Now - begin;
 
                             Console.WriteLine("Transferred " + l.ToString() + " bytes in " + duration.TotalSeconds.ToString() + ", yielding : " + (l / (double)1024 / duration.TotalSeconds) + " kb/s");
 #else
                             using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                                ((Backend.IStreamingBackend)m_backend).Put(remotename, ThrottleStream(fs, m_options));
+                            using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, fs.Length))
+                            {
+                                if (!m_asyncOperation)
+                                    pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
+                                ((Backend.IStreamingBackend)m_backend).Put(remotename, ThrottleStream(pgs, m_options));
+                            }
 #endif
                         }
 
@@ -342,6 +372,12 @@ namespace Duplicati.Library.Main
                 catch { }
             }
 
+        }
+
+        private void pgs_Progress(int progress)
+        {
+            if (ProgressEvent != null)
+                ProgressEvent(progress, m_statusmessage);
         }
 
         /// <summary>

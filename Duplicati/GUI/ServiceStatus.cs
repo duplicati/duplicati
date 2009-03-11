@@ -43,6 +43,7 @@ namespace Duplicati.GUI
             Program.WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
             Program.WorkThread.AddedWork += new EventHandler(WorkThread_AddedWork);
             Program.Scheduler.NewSchedule += new EventHandler(Scheduler_NewSchedule);
+            Program.Runner.DuplicatiProgress += new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
 
             if (Program.WorkThread.CurrentTask == null)
                 WorkThread_CompletedWork(null, null);
@@ -53,6 +54,33 @@ namespace Duplicati.GUI
             Scheduler_NewSchedule(null, null);
             BuildRecent();
             PlaceAtBottom();
+
+            if (Program.WorkThread.CurrentTask != null)
+                Program.Runner.ReinvokeLastProgressEvent();
+        }
+
+        void Runner_DuplicatiProgress(Duplicati.Library.Main.DuplicatiOperation operation, DuplicatiRunner.RunnerState state, string message, int progress, int subprogress)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress), operation, state, message, progress, subprogress);
+            else
+            {
+                WorkProgressbar.Visible = ProgressMessage.Visible = state != DuplicatiRunner.RunnerState.Stopped;
+                WorkProgressbar.Style = progress < 0 ? ProgressBarStyle.Marquee : ProgressBarStyle.Blocks;
+                WorkProgressbar.Value = Math.Max(Math.Min(WorkProgressbar.Maximum, progress), WorkProgressbar.Minimum);
+                if (subprogress < 0)
+                    ProgressMessage.Text = message;
+                else
+                    toolTip1.SetToolTip(SubProgressBar, message);
+
+                SubProgressBar.Value = Math.Max(Math.Min(SubProgressBar.Maximum, subprogress), SubProgressBar.Minimum);
+                if (!SubProgressBar.Visible && subprogress >= 0)
+                    ProgressMessage_TextChanged(null, null);
+                SubProgressBar.Visible = subprogress >= 0;
+
+                toolTip1.SetToolTip(ProgressMessage, ProgressMessage.Text);
+                toolTip1.SetToolTip(WorkProgressbar, ProgressMessage.Text);
+            }
         }
 
         void Scheduler_NewSchedule(object sender, EventArgs e)
@@ -74,6 +102,7 @@ namespace Duplicati.GUI
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
             Program.WorkThread.AddedWork -= new EventHandler(WorkThread_AddedWork);
             Program.Scheduler.NewSchedule -= new EventHandler(Scheduler_NewSchedule);
+            Program.Runner.DuplicatiProgress -= new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
         }
 
         void WorkThread_CompletedWork(object sender, EventArgs e)
@@ -192,6 +221,13 @@ namespace Duplicati.GUI
                 this.Close();
                 e.Handled = true;
             }
+        }
+
+        private void ProgressMessage_TextChanged(object sender, EventArgs e)
+        {
+            int gap = ProgressMessage.Left - statusImage.Right;
+            SubProgressBar.Width = Math.Max(0, (simplePanel.Width - ProgressMessage.Right) - (gap * 2));
+            SubProgressBar.Left = simplePanel.Width - SubProgressBar.Width;
         }
 
     }

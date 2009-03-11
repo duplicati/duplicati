@@ -31,6 +31,7 @@ namespace Duplicati.Datamodel.Backends
         private const string FOLDER = "Folder";
         private const string PASWORDLESS = "Passwordless";
         private const string PORT = "Port";
+        private const string PASSIVE = "Passive";
 
         private Task m_owner;
 
@@ -61,10 +62,8 @@ namespace Duplicati.Datamodel.Backends
         {
             get
             {
-                string port = m_owner.Settings[PORT];
-                int portn;
-                if (!int.TryParse(port, out portn))
-                    portn = 21;
+                int portn = 21;
+                int.TryParse(m_owner.Settings[PORT], out portn);
                 return portn;
             }
             set { m_owner.Settings[PORT] = value.ToString(); }
@@ -74,6 +73,19 @@ namespace Duplicati.Datamodel.Backends
         {
             get { return m_owner.Settings[FOLDER]; }
             set { m_owner.Settings[FOLDER] = value; }
+        }
+
+        public bool Passive
+        {
+            get 
+            {
+                bool res = false;
+                if (!bool.TryParse(m_owner.Settings[PASSIVE], out res))
+                    return true;
+                else
+                    return res;
+            }
+            set { m_owner.Settings[PASSIVE] = value.ToString(); }
         }
 
         #region IBackend Members
@@ -86,6 +98,10 @@ namespace Duplicati.Datamodel.Backends
         public void GetOptions(Dictionary<string, string> options)
         {
             options["ftp_password"] = this.Password;
+            if (this.Passive)
+                options["ftp-passive"] = "";
+            else
+                options["ftp-regular"] = "";
         }
 
         public string FriendlyName { get { return "FTP host"; } }

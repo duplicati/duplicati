@@ -55,6 +55,8 @@ namespace Duplicati.GUI
             this.label5 = new System.Windows.Forms.Label();
             this.advancedPanel = new System.Windows.Forms.Panel();
             this.simplePanel = new System.Windows.Forms.Panel();
+            this.WorkProgressbar = new System.Windows.Forms.ProgressBar();
+            this.ProgressMessage = new System.Windows.Forms.Label();
             this.recentBackups = new System.Windows.Forms.ListView();
             this.columnHeader1 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader2 = new System.Windows.Forms.ColumnHeader();
@@ -64,6 +66,8 @@ namespace Duplicati.GUI
             this.ShowAdvanced = new System.Windows.Forms.Button();
             this.CurrentStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.SubProgressBar = new System.Windows.Forms.ProgressBar();
             this.advancedPanel.SuspendLayout();
             this.simplePanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).BeginInit();
@@ -117,6 +121,9 @@ namespace Duplicati.GUI
             // 
             // simplePanel
             // 
+            this.simplePanel.Controls.Add(this.SubProgressBar);
+            this.simplePanel.Controls.Add(this.WorkProgressbar);
+            this.simplePanel.Controls.Add(this.ProgressMessage);
             this.simplePanel.Controls.Add(this.recentBackups);
             this.simplePanel.Controls.Add(this.statusImage);
             this.simplePanel.Controls.Add(this.ShowAdvanced);
@@ -127,6 +134,27 @@ namespace Duplicati.GUI
             this.simplePanel.Size = new System.Drawing.Size(328, 160);
             this.simplePanel.TabIndex = 11;
             // 
+            // WorkProgressbar
+            // 
+            this.WorkProgressbar.Location = new System.Drawing.Point(40, 32);
+            this.WorkProgressbar.Name = "WorkProgressbar";
+            this.WorkProgressbar.Size = new System.Drawing.Size(288, 16);
+            this.WorkProgressbar.TabIndex = 17;
+            this.WorkProgressbar.Visible = false;
+            // 
+            // ProgressMessage
+            // 
+            this.ProgressMessage.AutoEllipsis = true;
+            this.ProgressMessage.AutoSize = true;
+            this.ProgressMessage.Location = new System.Drawing.Point(40, 16);
+            this.ProgressMessage.MaximumSize = new System.Drawing.Size(288, 13);
+            this.ProgressMessage.Name = "ProgressMessage";
+            this.ProgressMessage.Size = new System.Drawing.Size(35, 13);
+            this.ProgressMessage.TabIndex = 16;
+            this.ProgressMessage.Text = "label2";
+            this.ProgressMessage.Visible = false;
+            this.ProgressMessage.TextChanged += new System.EventHandler(this.ProgressMessage_TextChanged);
+            // 
             // recentBackups
             // 
             this.recentBackups.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
@@ -134,10 +162,10 @@ namespace Duplicati.GUI
             this.columnHeader2,
             this.columnHeader3});
             this.recentBackups.FullRowSelect = true;
-            this.recentBackups.Location = new System.Drawing.Point(0, 72);
+            this.recentBackups.Location = new System.Drawing.Point(0, 80);
             this.recentBackups.MultiSelect = false;
             this.recentBackups.Name = "recentBackups";
-            this.recentBackups.Size = new System.Drawing.Size(320, 80);
+            this.recentBackups.Size = new System.Drawing.Size(328, 80);
             this.recentBackups.SmallImageList = this.imageList;
             this.recentBackups.TabIndex = 15;
             this.recentBackups.UseCompatibleStateImageBehavior = false;
@@ -177,7 +205,7 @@ namespace Duplicati.GUI
             // 
             // ShowAdvanced
             // 
-            this.ShowAdvanced.Location = new System.Drawing.Point(224, 48);
+            this.ShowAdvanced.Location = new System.Drawing.Point(232, 56);
             this.ShowAdvanced.Name = "ShowAdvanced";
             this.ShowAdvanced.Size = new System.Drawing.Size(96, 24);
             this.ShowAdvanced.TabIndex = 13;
@@ -190,7 +218,7 @@ namespace Duplicati.GUI
             this.CurrentStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.CurrentStatus.Location = new System.Drawing.Point(40, 0);
             this.CurrentStatus.Name = "CurrentStatus";
-            this.CurrentStatus.Size = new System.Drawing.Size(280, 32);
+            this.CurrentStatus.Size = new System.Drawing.Size(288, 16);
             this.CurrentStatus.TabIndex = 12;
             this.CurrentStatus.Text = "Waiting for next backup";
             this.CurrentStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -198,17 +226,25 @@ namespace Duplicati.GUI
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(0, 56);
+            this.label1.Location = new System.Drawing.Point(0, 64);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(145, 13);
             this.label1.TabIndex = 10;
             this.label1.Text = "Recently completed backups";
             // 
+            // SubProgressBar
+            // 
+            this.SubProgressBar.Location = new System.Drawing.Point(80, 16);
+            this.SubProgressBar.Name = "SubProgressBar";
+            this.SubProgressBar.Size = new System.Drawing.Size(248, 16);
+            this.SubProgressBar.TabIndex = 18;
+            this.SubProgressBar.Visible = false;
+            // 
             // ServiceStatus
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(342, 172);
+            this.ClientSize = new System.Drawing.Size(345, 175);
             this.Controls.Add(this.simplePanel);
             this.Controls.Add(this.advancedPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -246,5 +282,9 @@ namespace Duplicati.GUI
         private System.Windows.Forms.ColumnHeader columnHeader2;
         private System.Windows.Forms.ColumnHeader columnHeader3;
         private System.Windows.Forms.ImageList imageList;
+        private System.Windows.Forms.ProgressBar WorkProgressbar;
+        private System.Windows.Forms.Label ProgressMessage;
+        private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.ProgressBar SubProgressBar;
     }
 }
