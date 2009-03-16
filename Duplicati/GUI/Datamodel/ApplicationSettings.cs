@@ -70,7 +70,7 @@ namespace Duplicati.Datamodel
                     if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
                         return "gpg";
                     else
-                        return PROGRAM_FILES + "GNU\\GnuPG\\gpg.exe";
+                        return System.IO.Path.Combine(PROGRAM_FILES, "GNU\\GnuPG\\gpg.exe");
                 }
 
                 return m_appset[PGP_PATH];
@@ -90,7 +90,7 @@ namespace Duplicati.Datamodel
                     if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
                         return "sftp";
                     else
-                        return PROGRAM_FILES + "\\putty\\psftp.exe";
+                        return System.IO.Path.Combine(PROGRAM_FILES, "putty\\psftp.exe");
                 }
                 return m_appset[SFTP_PATH];
             }
@@ -110,7 +110,7 @@ namespace Duplicati.Datamodel
                     if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
                         return "scp";
                     else
-                        return PROGRAM_FILES + "\\putty\\pscp.exe";
+                        return System.IO.Path.Combine(PROGRAM_FILES, "putty\\pscp.exe");
                 }
                 return m_appset[SCP_PATH];
             }

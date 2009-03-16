@@ -53,7 +53,7 @@ namespace Duplicati.GUI
             else
                 m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.MainPage() });
 
-            m_form.DefaultImage = Program.NeutralIcon.ToBitmap();
+            m_form.DefaultImage = Properties.Resources.SmallLogo; ;
             m_form.Finished += new System.ComponentModel.CancelEventHandler(m_form_Finished);
         }
 

@@ -84,7 +84,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            BackupFolder.Setup(Program.DataConnection, false, true);
+            BackupFolder.Setup(Program.DataConnection, true, true);
 
             if (!m_valuesAutoLoaded)
             {

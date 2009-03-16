@@ -34,6 +34,11 @@ namespace Duplicati.GUI
         public ServiceStatus()
         {
             InitializeComponent();
+
+            imageList.Images.Clear();
+            imageList.Images.Add("OK", Properties.Resources.OKStatusIcon);
+            imageList.Images.Add("Warning", Properties.Resources.WarningStatusIcon);
+            imageList.Images.Add("Error", Properties.Resources.ErrorStatusIcon);
         }
 
         private void ServiceStatus_Load(object sender, EventArgs e)
@@ -112,7 +117,7 @@ namespace Duplicati.GUI
             else
             {
                 CurrentStatus.Text = "Waiting for next backup";
-                statusImage.Image = Program.NormalImage;
+                statusImage.Image = Properties.Resources.Status_OK;
                 BuildRecent();
             }
         }
@@ -127,7 +132,7 @@ namespace Duplicati.GUI
                 string prefix = Program.WorkThread.CurrentTask.TaskType == DuplicityTaskType.Restore ? "Restore: " : "Backup: ";
 
                 CurrentStatus.Text = c == null ? "Waiting for next backup" : prefix + c.Name;
-                statusImage.Image = Program.WorkingImage;
+                statusImage.Image = Properties.Resources.Status_Working;
                 WorkThread_AddedWork(sender, e);
             }
         }

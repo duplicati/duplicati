@@ -55,6 +55,7 @@ namespace Duplicati.GUI
             this.label5 = new System.Windows.Forms.Label();
             this.advancedPanel = new System.Windows.Forms.Panel();
             this.simplePanel = new System.Windows.Forms.Panel();
+            this.SubProgressBar = new System.Windows.Forms.ProgressBar();
             this.WorkProgressbar = new System.Windows.Forms.ProgressBar();
             this.ProgressMessage = new System.Windows.Forms.Label();
             this.recentBackups = new System.Windows.Forms.ListView();
@@ -67,7 +68,6 @@ namespace Duplicati.GUI
             this.CurrentStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.SubProgressBar = new System.Windows.Forms.ProgressBar();
             this.advancedPanel.SuspendLayout();
             this.simplePanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).BeginInit();
@@ -134,6 +134,14 @@ namespace Duplicati.GUI
             this.simplePanel.Size = new System.Drawing.Size(328, 160);
             this.simplePanel.TabIndex = 11;
             // 
+            // SubProgressBar
+            // 
+            this.SubProgressBar.Location = new System.Drawing.Point(80, 16);
+            this.SubProgressBar.Name = "SubProgressBar";
+            this.SubProgressBar.Size = new System.Drawing.Size(248, 16);
+            this.SubProgressBar.TabIndex = 18;
+            this.SubProgressBar.Visible = false;
+            // 
             // WorkProgressbar
             // 
             this.WorkProgressbar.Location = new System.Drawing.Point(40, 32);
@@ -189,11 +197,9 @@ namespace Duplicati.GUI
             // 
             // imageList
             // 
-            this.imageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList.ImageStream")));
+            this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
+            this.imageList.ImageSize = new System.Drawing.Size(16, 16);
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageList.Images.SetKeyName(0, "OK");
-            this.imageList.Images.SetKeyName(1, "Warning");
-            this.imageList.Images.SetKeyName(2, "Error");
             // 
             // statusImage
             // 
@@ -231,14 +237,6 @@ namespace Duplicati.GUI
             this.label1.Size = new System.Drawing.Size(145, 13);
             this.label1.TabIndex = 10;
             this.label1.Text = "Recently completed backups";
-            // 
-            // SubProgressBar
-            // 
-            this.SubProgressBar.Location = new System.Drawing.Point(80, 16);
-            this.SubProgressBar.Name = "SubProgressBar";
-            this.SubProgressBar.Size = new System.Drawing.Size(248, 16);
-            this.SubProgressBar.TabIndex = 18;
-            this.SubProgressBar.Visible = false;
             // 
             // ServiceStatus
             // 

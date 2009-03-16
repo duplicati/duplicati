@@ -123,12 +123,28 @@ namespace Duplicati.Library.Main
                                 entries.Add(prev[prev.Count - 1]);
                                 entries.AddRange(prev[prev.Count - 1].Incrementals);
 
+
                                 int incCount = 0;
                                 foreach (BackupEntry be in entries)
                                 {
+#if DEBUG
+                                    int volNo = 0;
+                                    //Prevent order based bugs
+                                    if (entries.IndexOf(be) > 0)
+                                        if (entries[entries.IndexOf(be) - 1].Time >= be.Time)
+                                            throw new Exception("Bad sorting of backup times detected");
+#endif
                                     incCount++;
                                     foreach (BackupEntry bes in be.SignatureFile)
+                                    {
                                         incCount++;
+#if DEBUG
+                                        if (volNo + 1 != bes.VolumeNumber)
+                                            throw new Exception("Bad sort order on volumes detected");
+                                        
+                                        volNo++;
+#endif
+                                    }
                                 }
 
                                 //The incremental part accounts for 15%, so each file has a fixed cost

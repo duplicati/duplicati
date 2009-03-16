@@ -43,16 +43,6 @@ namespace Duplicati.GUI
         /// </summary>
         public static object MainLock = new object();
 
-        public static Icon NeutralIcon;
-        public static Icon ErrorIcon;
-        public static Icon WarningIcon;
-        public static Icon RunningIcon;
-
-        public static Bitmap NormalImage;
-        public static Bitmap WorkingImage;
-        public static Bitmap ErrorImage;
-        public static Bitmap WarningImage;
-
         public static ServiceStatus StatusDialog;
         public static ServiceSetup SetupDialog;
         public static WizardHandler Wizard;
@@ -110,34 +100,18 @@ namespace Duplicati.GUI
             }
             DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
 
-            System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly();
-
-            NeutralIcon = new Icon(asm.GetManifestResourceStream(typeof(Program), "Icons.TrayOK.ico"));
-            ErrorIcon = new Icon(asm.GetManifestResourceStream(typeof(Program), "Icons.TrayError.ico"));
-            RunningIcon = new Icon(asm.GetManifestResourceStream(typeof(Program), "Icons.TrayWorking.ico"));
-            WarningIcon = new Icon(asm.GetManifestResourceStream(typeof(Program), "Icons.TrayWarning.ico"));
-
-            NormalImage = new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Status OK.png"));
-            WorkingImage = new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Status Working2.png"));
-            ErrorImage = new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Status Error.png")); 
-            WarningImage = new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Status Warning.png"));
-
             TrayIcon = new NotifyIcon();
             TrayIcon.ContextMenuStrip = new ContextMenuStrip();
-            TrayIcon.Icon = NeutralIcon;
+            TrayIcon.Icon = Properties.Resources.TrayNormal;
 
-            TrayIcon.ContextMenuStrip.Items.Add("Status", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Status.ico")), new EventHandler(Status_Clicked));
-
-            TrayIcon.ContextMenuStrip.Items.Add("Setup", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Time.ico")), new EventHandler(Setup_Clicked));
-
+            TrayIcon.ContextMenuStrip.Items.Add("Status", Properties.Resources.StatusMenuIcon, new EventHandler(Status_Clicked));
+            TrayIcon.ContextMenuStrip.Items.Add("Setup", Properties.Resources.SetupMenuIcon, new EventHandler(Setup_Clicked));
             TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
 
-            TrayIcon.ContextMenuStrip.Items.Add("Settings", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Settings.ico")), new EventHandler(Settings_Clicked));
-
+            TrayIcon.ContextMenuStrip.Items.Add("Settings", Properties.Resources.SettingsMenuIcon, new EventHandler(Settings_Clicked));
             TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
 
-            TrayIcon.ContextMenuStrip.Items.Add("Quit", new Bitmap(asm.GetManifestResourceStream(typeof(Program), "Icons.Close.ico")), new EventHandler(Quit_Clicked));
-
+            TrayIcon.ContextMenuStrip.Items.Add("Quit", Properties.Resources.CloseMenuIcon, new EventHandler(Quit_Clicked));
             TrayIcon.ContextMenuStrip.Items[0].Font = new Font(TrayIcon.ContextMenuStrip.Items[0].Font, FontStyle.Bold);
 
             ApplicationSettings = new ApplicationSettings(DataConnection);
@@ -182,13 +156,13 @@ namespace Duplicati.GUI
 
         static void WorkThread_StartingWork(object sender, EventArgs e)
         {
-            TrayIcon.Icon = RunningIcon;
+            TrayIcon.Icon = Properties.Resources.TrayWorking;
             TrayIcon.Text = "Duplicati running " + (WorkThread.CurrentTask == null ? "" : WorkThread.CurrentTask.Schedule.Name);
         }
 
         static void WorkThread_CompletedWork(object sender, EventArgs e)
         {
-            TrayIcon.Icon = NeutralIcon;
+            TrayIcon.Icon = Properties.Resources.TrayNormal;
             TrayIcon.Text = "Duplicati ready";
         }
 

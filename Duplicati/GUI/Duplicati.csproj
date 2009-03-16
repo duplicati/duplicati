@@ -9,7 +9,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.GUI</RootNamespace>
     <AssemblyName>Duplicati</AssemblyName>
-    <ApplicationIcon>Icons\TrayOK.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -440,25 +441,6 @@
       <SubType>Designer</SubType>
       <DependentUpon>ServiceStatus.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Icons\Error.ico" />
-    <EmbeddedResource Include="Icons\OK.ico" />
-    <EmbeddedResource Include="Icons\Status Error.png" />
-    <EmbeddedResource Include="Icons\Status Warning.png" />
-    <EmbeddedResource Include="Icons\Status Working.png" />
-    <EmbeddedResource Include="Icons\TrayError.ico" />
-    <EmbeddedResource Include="Icons\TrayOK.ico" />
-    <EmbeddedResource Include="Icons\TrayUnknown.ico" />
-    <EmbeddedResource Include="Icons\TrayWarning.ico" />
-    <EmbeddedResource Include="Icons\Warning.ico" />
-    <EmbeddedResource Include="Icons\Working.ico" />
-    <EmbeddedResource Include="Icons\Working2.ico" />
-    <EmbeddedResource Include="Icons\TrayWorking.ico" />
-    <EmbeddedResource Include="Icons\Status OK.png" />
-    <EmbeddedResource Include="Icons\Status Working2.png" />
-    <EmbeddedResource Include="Icons\Close.ico" />
-    <EmbeddedResource Include="Icons\Status.ico" />
-    <EmbeddedResource Include="Icons\Settings.ico" />
-    <EmbeddedResource Include="Icons\Time.ico" />
     <EmbeddedResource Include="Wizard pages\Add backup\AdvancedOptions.resx">
       <SubType>Designer</SubType>
       <DependentUpon>AdvancedOptions.cs</DependentUpon>
@@ -564,6 +546,45 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Database schema\1. Support timestamp flag.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\TrayWorking.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\TrayNormal.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Duplicati.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SmallLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Status Working.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Status OK.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\WarningStatusIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ErrorStatusIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\OKStatusIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SettingsMenuIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CloseMenuIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SetupMenuIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\StatusMenuIcon.png" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />

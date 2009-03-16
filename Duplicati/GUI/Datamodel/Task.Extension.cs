@@ -87,7 +87,7 @@ namespace Duplicati.Datamodel
             if (this.GPGEncryption)
             {
                 options["gpg-encryption"] = "";
-                options["gpg-program-path"] = new ApplicationSettings(this.DataParent).GPGPath;
+                options["gpg-program-path"] = System.Environment.ExpandEnvironmentVariables(new ApplicationSettings(this.DataParent).GPGPath);
             }
 
             if (string.IsNullOrEmpty(this.Encryptionkey))
