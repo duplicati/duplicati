@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("S3")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2008")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

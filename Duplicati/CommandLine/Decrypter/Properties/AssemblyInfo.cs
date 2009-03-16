@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati.CommandLine.Decrypter")]
-[assembly: AssemblyCopyright("Copyright © HexaD A/S 2009")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -25,11 +25,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Duplicati.SharpRSync")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("An LGPL RSync library in C#")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati.SharpRSync")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2008")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

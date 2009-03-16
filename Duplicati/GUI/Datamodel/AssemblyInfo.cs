@@ -19,18 +19,19 @@
 #endregion
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 //
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly: AssemblyTitle("assemblyname")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Dulicati.Datamodel")]
+[assembly: AssemblyDescription("The datamodel for Duplicati")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("")]
+[assembly: AssemblyCompany("HexaD")]
+[assembly: AssemblyProduct("Duplicati")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]		
 
@@ -73,3 +74,4 @@ using System.Runtime.CompilerServices;
 //       documentation for more information on this.
 //
 [assembly: AssemblyDelaySign(false)]
+[assembly: ComVisibleAttribute(false)]
