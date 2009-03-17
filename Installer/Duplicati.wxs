@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?include UpgradeData.wxi ?>
+
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="d5867b1e-71af-450f-9204-e33f29eafc94" Name="Duplicati" Language="1033" Version="1.0.0.0" Manufacturer="HexaD" UpgradeCode="bab49745-b447-45cf-8b10-012006895593">
-		<Package InstallerVersion="200" Compressed="yes" />
+	<Product Id="$(var.ProductCode)" Name="Duplicati" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+		<Package InstallerVersion="200" Compressed="yes" Id="$(var.PackageCode)" />
 
 		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
@@ -11,6 +14,8 @@
     </Condition>
 
     <Property Id="ALLUSERS">1</Property>
+    
+    
 
     <WixVariable Id="WixUILicenseRtf" Value="Resources/LGPL21.rtf" />
     <WixVariable Id="WixUIBannerBmp" Value="Resources/InstallerSmall.bmp" />
@@ -87,7 +92,16 @@
 
     <!-- Set the Add/Remove icon -->
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
-    
+
+    <!-- Remove old versions -->
+    <InstallExecuteSequence>
+      <RemoveExistingProducts Before='InstallInitialize' />
+    </InstallExecuteSequence>
+
+    <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
+    <Upgrade Id="$(var.UpgradeCode)">
+      <UpgradeVersion Minimum="1.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
+    </Upgrade>
     
   </Product>
 </Wix>
