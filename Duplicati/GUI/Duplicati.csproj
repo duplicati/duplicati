@@ -9,8 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.GUI</RootNamespace>
     <AssemblyName>Duplicati</AssemblyName>
-    <ApplicationIcon>
-    </ApplicationIcon>
+    <ApplicationIcon>Duplicati.ico</ApplicationIcon>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -585,6 +584,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\StatusMenuIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TrayNormal.ico" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />

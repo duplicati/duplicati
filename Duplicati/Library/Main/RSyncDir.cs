@@ -238,7 +238,15 @@ namespace Duplicati.Library.Main.RSync
             if (!m_finalized)
             {
                 if (m_unproccesed.Count == 0)
+                {
                     m_deletedfiles.AddRange(m_oldSignatures.Keys);
+
+                    if (m_deletedfiles.Count > 0)
+                    {
+                        signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
+                        contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
+                    }
+                }
 
 
                 if (m_stat is BackupStatistics)
@@ -272,12 +280,6 @@ namespace Duplicati.Library.Main.RSync
             if (m_isfirstmultipass)
             {
                 //We write these files to the very first volume
-                if (m_deletedfiles.Count > 0)
-                {
-                    signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
-                    contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
-                }
-
                 if (m_deletedfolders.Count > 0)
                 {
                     signaturefile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
@@ -467,50 +469,48 @@ namespace Duplicati.Library.Main.RSync
             destination = Core.Utility.AppendDirSeperator(destination);
 
             if (patch.FileExists(DELETED_FILES))
-                foreach (string s in m_filter.FilterList("", FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES))))
+                foreach (string s in m_filter.FilterList(destination, FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES), destination)))
                 {
-                    string target = System.IO.Path.Combine(destination, s.Trim());
-                    if (System.IO.File.Exists(target))
+                    if (System.IO.File.Exists(s))
                     {
                         try
                         {
                             //TODO: Perhaps read ahead in patches to prevent creation
-                            System.IO.File.Delete(target);
+                            System.IO.File.Delete(s);
                         }
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError("Failed to delete file: \"" + target + "\", Error message: " + ex.Message);
-                            Logging.Log.WriteMessage("Failed to delete file: " + target, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                                m_stat.LogError("Failed to delete file: \"" + s + "\", Error message: " + ex.Message);
+                            Logging.Log.WriteMessage("Failed to delete file: " + s, Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                     }
                     else
                     {
-                        Logging.Log.WriteMessage("Filed marked for deletion did not exist: " + target, Duplicati.Library.Logging.LogMessageType.Warning);
+                        Logging.Log.WriteMessage("Filed marked for deletion did not exist: " + s, Duplicati.Library.Logging.LogMessageType.Warning);
                     }
                 }
 
             if (patch.FileExists(DELETED_FOLDERS))
             {
-                List<string> deletedfolders = m_filter.FilterList("", FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FOLDERS)));
+                List<string> deletedfolders = m_filter.FilterList(destination, FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FOLDERS), destination));
                 //Make sure subfolders are deleted first
                 deletedfolders.Sort();
                 deletedfolders.Reverse();
 
                 foreach (string s in deletedfolders)
                 {
-                    string target = System.IO.Path.Combine(destination, s.Trim());
-                    if (System.IO.Directory.Exists(target))
+                    if (System.IO.Directory.Exists(s))
                         try
                         {
                             //TODO: Perhaps read ahead in patches to prevent creation
-                            System.IO.Directory.Delete(target, false);
+                            System.IO.Directory.Delete(s, false);
                         }
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError("Failed to remove folder: \"" + target + "\", Error message: " + ex.Message);
-                            Logging.Log.WriteMessage("Failed to remove folder: " + target, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                                m_stat.LogError("Failed to remove folder: \"" + s + "\", Error message: " + ex.Message);
+                            Logging.Log.WriteMessage("Failed to remove folder: " + s, Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                 }
             }
@@ -518,24 +518,23 @@ namespace Duplicati.Library.Main.RSync
 
             if (patch.FileExists(ADDED_FOLDERS))
             {
-                List<string> addedfolders = m_filter.FilterList("", FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS)));
+                List<string> addedfolders = m_filter.FilterList(destination, FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS), destination));
 
                 //Make sure topfolders are created first
                 addedfolders.Sort();
 
                 foreach (string s in addedfolders)
                 {
-                    string target = System.IO.Path.Combine(destination, s.Trim());
-                    if (!System.IO.Directory.Exists(target))
+                    if (!System.IO.Directory.Exists(s))
                         try
                         {
-                            System.IO.Directory.CreateDirectory(target);
+                            System.IO.Directory.CreateDirectory(s);
                         }
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError("Failed to create folder: \"" + target + "\", Error message: " + ex.Message);
-                            Logging.Log.WriteMessage("Failed to create folder: " + target, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                                m_stat.LogError("Failed to create folder: \"" + s + "\", Error message: " + ex.Message);
+                            Logging.Log.WriteMessage("Failed to create folder: " + s, Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                 }
             }
@@ -703,13 +702,21 @@ namespace Duplicati.Library.Main.RSync
             return filenames;
         }
 
-        public static string[] FilenamesFromPlatformIndependant(string[] filenames)
+        public static string[] FilenamesFromPlatformIndependant(string[] filenames, string prefix)
         {
+            if (prefix == null)
+                prefix = "";
+
             if (System.IO.Path.DirectorySeparatorChar != '/')
                 for (int i = 0; i < filenames.Length; i++)
-                    filenames[i] = filenames[i].Replace('/', System.IO.Path.DirectorySeparatorChar);
+                    filenames[i] = prefix + filenames[i].Replace('/', System.IO.Path.DirectorySeparatorChar);
 
             return filenames;
+        }
+
+        public static string[] FilenamesFromPlatformIndependant(string[] filenames)
+        {
+            return FilenamesFromPlatformIndependant(filenames, "");
         }
 
         public bool DisableFiletimeCheck

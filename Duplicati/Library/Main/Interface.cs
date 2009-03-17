@@ -835,6 +835,18 @@ namespace Duplicati.Library.Main
                     }
                 }
 
+                foreach (BackupEntry be in fulls)
+                {
+                    be.ContentVolumes.Sort(new Sorter());
+                    be.SignatureFile.Sort(new Sorter());
+                }
+
+                foreach (BackupEntry be in incrementals)
+                {
+                    be.ContentVolumes.Sort(new Sorter());
+                    be.SignatureFile.Sort(new Sorter());
+                }
+
                 return fulls;
             }
         }
