@@ -77,75 +77,100 @@ namespace Duplicati.GUI
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
-#if DEBUG
-            DatabasePath = System.IO.Path.Combine(Application.StartupPath, "Duplicati.sqlite");
-#else
-            DatabasePath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName), "Duplicati.sqlite");
-#endif
-            System.Data.SQLite.SQLiteConnection con = new System.Data.SQLite.SQLiteConnection();
+            SingleInstance singleInstance = null;
 
             try
             {
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
+                singleInstance = new SingleInstance(Application.ProductName);
+                if (!singleInstance.IsFirstInstance)
+                    return;
 
-                //This also opens the db for us :)
-                DatabaseUpgrader.UpgradeDatebase(con, DatabasePath);
+                singleInstance.SecondInstanceDetected += new SingleInstance.SecondInstanceDelegate(singleInstance_SecondInstanceDetected);
+
+#if DEBUG
+                DatabasePath = System.IO.Path.Combine(Application.StartupPath, "Duplicati.sqlite");
+#else
+                DatabasePath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName), "Duplicati.sqlite");
+#endif
+                System.Data.SQLite.SQLiteConnection con = new System.Data.SQLite.SQLiteConnection();
+
+                try
+                {
+                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
+                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
+
+                    //This also opens the db for us :)
+                    DatabaseUpgrader.UpgradeDatebase(con, DatabasePath);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to create, open or upgrade the database.\r\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
+
+                TrayIcon = new NotifyIcon();
+                TrayIcon.ContextMenuStrip = new ContextMenuStrip();
+                TrayIcon.Icon = Properties.Resources.TrayNormal;
+
+                TrayIcon.ContextMenuStrip.Items.Add("Status", Properties.Resources.StatusMenuIcon, new EventHandler(Status_Clicked));
+                TrayIcon.ContextMenuStrip.Items.Add("Setup", Properties.Resources.SetupMenuIcon, new EventHandler(Setup_Clicked));
+                TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
+
+                TrayIcon.ContextMenuStrip.Items.Add("Settings", Properties.Resources.SettingsMenuIcon, new EventHandler(Settings_Clicked));
+                TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
+
+                TrayIcon.ContextMenuStrip.Items.Add("Quit", Properties.Resources.CloseMenuIcon, new EventHandler(Quit_Clicked));
+                TrayIcon.ContextMenuStrip.Items[0].Font = new Font(TrayIcon.ContextMenuStrip.Items[0].Font, FontStyle.Bold);
+
+                ApplicationSettings = new ApplicationSettings(DataConnection);
+                Runner = new DuplicatiRunner();
+
+                WorkThread = new WorkerThread<IDuplicityTask>(new WorkerThread<IDuplicityTask>.ProcessItemDelegate(Runner.ExecuteTask));
+
+                Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
+
+                WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
+                WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
+
+                DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
+
+                TrayIcon.Text = "Duplicati ready";
+
+                TrayIcon.DoubleClick += new EventHandler(TrayIcon_DoubleClick);
+                TrayIcon.Visible = true;
+
+                long count = 0;
+                lock (MainLock)
+                    count = Program.DataConnection.GetObjects<Schedule>().Length;
+
+                if (count == 0)
+                {
+                    //TODO: shows the wrong icon... Should run under Application.Run() ...
+                    ShowWizard();
+                }
+
+                Application.Run();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to create, open or upgrade the database.\r\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
-
-            TrayIcon = new NotifyIcon();
-            TrayIcon.ContextMenuStrip = new ContextMenuStrip();
-            TrayIcon.Icon = Properties.Resources.TrayNormal;
-
-            TrayIcon.ContextMenuStrip.Items.Add("Status", Properties.Resources.StatusMenuIcon, new EventHandler(Status_Clicked));
-            TrayIcon.ContextMenuStrip.Items.Add("Setup", Properties.Resources.SetupMenuIcon, new EventHandler(Setup_Clicked));
-            TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
-
-            TrayIcon.ContextMenuStrip.Items.Add("Settings", Properties.Resources.SettingsMenuIcon, new EventHandler(Settings_Clicked));
-            TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
-
-            TrayIcon.ContextMenuStrip.Items.Add("Quit", Properties.Resources.CloseMenuIcon, new EventHandler(Quit_Clicked));
-            TrayIcon.ContextMenuStrip.Items[0].Font = new Font(TrayIcon.ContextMenuStrip.Items[0].Font, FontStyle.Bold);
-
-            ApplicationSettings = new ApplicationSettings(DataConnection);
-            Runner = new DuplicatiRunner();
-
-            WorkThread = new WorkerThread<IDuplicityTask>(new WorkerThread<IDuplicityTask>.ProcessItemDelegate(Runner.ExecuteTask));
-
-            Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
-
-            WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
-            WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
-
-            DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
-
-            TrayIcon.Text = "Duplicati ready";
-
-            TrayIcon.DoubleClick += new EventHandler(TrayIcon_DoubleClick);
-            TrayIcon.Visible = true;
-
-            long count = 0;
-            lock (MainLock)
-                count = Program.DataConnection.GetObjects<Schedule>().Length;
-
-            if (count == 0)
-            {
-                //TODO: shows the wrong icon... Should run under Application.Run() ...
-                ShowWizard();
+                MessageBox.Show("A serious error occured in Duplicati: " + ex.ToString(), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
-            Application.Run();
+            if (Scheduler != null)
+                Scheduler.Terminate(true);
+            if (WorkThread != null)
+                WorkThread.Terminate(true);
+            if(TrayIcon != null)
+                TrayIcon.Visible = false;
+            if (singleInstance != null)
+                singleInstance.Dispose();
+        }
 
-            Scheduler.Terminate(true);
-            WorkThread.Terminate(true);
-            TrayIcon.Visible = false;
+        static void singleInstance_SecondInstanceDetected(string[] commandlineargs)
+        {
+            //TODO: This actually blocks the app thread, and thus may pile up remote invocations
+            ShowWizard();
         }
 
         static void DataConnection_AfterDataConnection(object sender, DataActions action)

@@ -168,6 +168,7 @@
     <Compile Include="ServiceStatus.Designer.cs">
       <DependentUpon>ServiceStatus.cs</DependentUpon>
     </Compile>
+    <Compile Include="SingleInstance.cs" />
     <Compile Include="TaskPackages.cs" />
     <Compile Include="UrlUtillity.cs" />
     <Compile Include="Wizard pages\Add backup\AdvancedOptions.cs">
