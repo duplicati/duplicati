@@ -121,6 +121,17 @@ namespace Duplicati.GUI
             }
             else
             {
+                //Wait for the initial process to signal that the filewatcher is activated
+                int retrycount = 5;
+                while (retrycount > 0 && new System.IO.FileInfo(lockfile).Length == 0)
+                {
+                    System.Threading.Thread.Sleep(500);
+                    retrycount--;
+                }
+
+                if (new System.IO.FileInfo(lockfile).Length == 0)
+                    throw new Exception("The file was locked, but had no data");
+
                 //Notify the other process that we have started
                 string filename = System.IO.Path.Combine(m_controldir, COMM_FILE_PREFIX + Guid.NewGuid().ToString());
 
@@ -131,7 +142,7 @@ namespace Duplicati.GUI
                         sw.WriteLine(s);
 
                 //Wait for the other process to delete the file, indicating that it is processed
-                int retrycount = 5;
+                retrycount = 5;
                 while (retrycount > 0 && System.IO.File.Exists(filename))
                 {
                     System.Threading.Thread.Sleep(500);
@@ -140,7 +151,13 @@ namespace Duplicati.GUI
 
                 //This may happen if the other process is closing as we write the command
                 if (System.IO.File.Exists(filename))
+                {
+                    //Try to clean up, so the other process does not spuriously show this
+                    try { System.IO.File.Delete(filename); }
+                    catch { }
+
                     throw new Exception("The lock file was locked, but the locking process did not respond to the start command");
+                }
             }
         }
 
@@ -160,6 +177,10 @@ namespace Duplicati.GUI
             {
                 try
                 {
+                    //If the other process deleted the file, just quit
+                    if (!System.IO.File.Exists(e.FullPath))
+                        return;
+
                     List<string> args = new List<string>();
                     using (System.IO.FileStream fs = new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
                     using (System.IO.StreamReader sr = new System.IO.StreamReader(fs))

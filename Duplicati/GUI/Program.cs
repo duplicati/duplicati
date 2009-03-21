@@ -81,7 +81,16 @@ namespace Duplicati.GUI
 
             try
             {
-                singleInstance = new SingleInstance(Application.ProductName);
+                try
+                {
+                    singleInstance = new SingleInstance(Application.ProductName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Unable to start up, perhaps another process is already running?\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
                 if (!singleInstance.IsFirstInstance)
                     return;
 
