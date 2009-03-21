@@ -97,7 +97,7 @@ namespace Duplicati.Datamodel.Backends
 
         public void GetOptions(Dictionary<string, string> options)
         {
-            options["ftp_password"] = this.Password;
+            options["ftp-password"] = this.Password;
             if (this.Passive)
                 options["ftp-passive"] = "";
             else

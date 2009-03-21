@@ -65,5 +65,14 @@ namespace Duplicati.Library.Backend
         /// <param name="remotename">The remote filename, relative to the URL</param>
         void Delete(string remotename);
 
+        /// <summary>
+        /// Gets a list of supported commandline arguments
+        /// </summary>
+        IList<ICommandLineArgument> SupportedCommands { get; }
+
+        /// <summary>
+        /// A description of the backend, for display in the usage information
+        /// </summary>
+        string Description { get; }
     }
 }

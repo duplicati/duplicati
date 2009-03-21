@@ -62,6 +62,10 @@
       <Project>{6BA21DCB-1701-4936-B177-3B6D4DE3474E}</Project>
       <Name>Duplicati.Library.Backend.SSH</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
+      <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
+      <Name>Duplicati.Library.Backend.WEBDAV</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
       <Name>Duplicati.Library.Compression</Name>

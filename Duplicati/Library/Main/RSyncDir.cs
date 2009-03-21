@@ -325,6 +325,7 @@ namespace Duplicati.Library.Main.RSync
                             DateTime prevTime = m_oldSignatures[relpath].GetLastWriteTime(target);
                             if (System.IO.File.GetLastWriteTime(s) < prevTime)
                             {
+                                m_oldSignatures.Remove(relpath);
                                 m_examinedfiles++;
                                 continue;
                             }
@@ -723,6 +724,14 @@ namespace Duplicati.Library.Main.RSync
         {
             get { return m_disableFiletimeCheck; }
             set { m_disableFiletimeCheck = value; }
+        }
+
+        public List<string> UnmatchedFiles()
+        {
+            List<string> lst = new List<string>();
+            lst.AddRange(m_oldFolders.Keys);
+            lst.AddRange(m_oldSignatures.Keys);
+            return lst;
         }
     }
 }

@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Du
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Decrypter", "Duplicati\CommandLine\Decrypter\Duplicati.CommandLine.Decrypter.csproj", "{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.WEBDAV", "Duplicati\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj", "{BAE27510-8B5D-44B2-B33E-372A98908041}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -324,6 +326,21 @@ Global
 		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Test|Mixed Platforms.Build.0 = Release|Any CPU
 		{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}.Test|x86.ActiveCfg = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Release|x86.ActiveCfg = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Test|Any CPU.ActiveCfg = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Test|Any CPU.Build.0 = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Test|Mixed Platforms.Build.0 = Release|Any CPU
+		{BAE27510-8B5D-44B2-B33E-372A98908041}.Test|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

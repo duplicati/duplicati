@@ -57,8 +57,8 @@ namespace Duplicati.Library.Backend
                     m_awsID = u.UserInfo;
                     if (options.ContainsKey("aws_secret_access_key"))
                         m_awsKey = options["aws_secret_access_key"];
-                    else if (options.ContainsKey("ftp_password"))
-                        m_awsKey = options["ftp_password"];
+                    else if (options.ContainsKey("ftp-password"))
+                        m_awsKey = options["ftp-password"];
                 }
             }
             else
@@ -225,6 +225,29 @@ namespace Duplicati.Library.Backend
             con.DeleteObject(m_bucket, GetFullKey(remotename));
         }
 
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Path, "The AWS \"Secret Access Key\"", "The AWS \"Secret Access Key\" can be obtained after logging into your AWS account, this can also be supplied through the \"ftp-password\" property", null, new string[] {"ftp-password"}, null),
+                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.Path, "The AWS \"Access Key ID\"", "The AWS \"Access Key ID\" can be obtained after logging into your AWS account."),
+                    new CommandLineArgument("s3-use-new-style", CommandLineArgument.ArgumentType.Boolean, "Use subdomain calling style", "Specify this argument to make the S3 backend use subdomains rather than the previous url prefix method. See the Amazon S3 documentation for more details.", "true"),
+                    new CommandLineArgument("s3-european-buckets", CommandLineArgument.ArgumentType.Boolean, "Use a European server", "This flag is only used when creating new buckets. If the flag is set, the bucket is created on a european server. This flag forces the \"s3-use-new-style\" flag. Amazon charges slightly more for european buckets.", "false"),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
+                });
+
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return "This backend can read and write data to an Amazon S3 based backend.\nAllowed formats are \"s3://bucketname/prefix\" or \"s3://aws_id:aws_key@bucketname/prefix\".\nNote that if you AWS ID or Key contains either \":\", \"/\" or \"@\" you cannot use the second form, but must supply them through arguments.";
+            }
+        }
+        
         #endregion
 
         #region IDisposable Members

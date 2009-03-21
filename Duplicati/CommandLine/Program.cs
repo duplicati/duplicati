@@ -75,9 +75,9 @@ namespace Duplicati.CommandLine
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
                     options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
 
-            if (!options.ContainsKey("ftp_password"))
+            if (!options.ContainsKey("ftp-password"))
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_PASSWORD")))
-                    options["ftp_password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");
+                    options["ftp-password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");
 
             if (source.Trim().ToLower() == "list")
                 Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
@@ -127,6 +127,18 @@ namespace Duplicati.CommandLine
                 }
 
                 Console.WriteLine(Duplicati.Library.Main.Interface.RemoveOlderThan(cargs[0], options));
+            }
+            else if (source.Trim().ToLower() == "cleanup")
+            {
+                cargs.RemoveAt(0);
+
+                if (cargs.Count != 1)
+                {
+                    Console.WriteLine("Wrong number of aguments");
+                    return;
+                }
+
+                Console.WriteLine(Duplicati.Library.Main.Interface.Cleanup(cargs[0], options));
             }
             else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
             {

@@ -165,6 +165,28 @@ namespace Duplicati.Library.Backend
             m_interface.Delete(remotename);
         }
 
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                if (m_interface == null)
+                    throw new ArgumentException("This instance was not created with an URL");
+
+                return m_interface.SupportedCommands;
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                if (m_interface == null)
+                    throw new ArgumentException("This instance was not created with an URL");
+
+                return m_interface.Description;
+            }
+        }
+
         #endregion
 
 

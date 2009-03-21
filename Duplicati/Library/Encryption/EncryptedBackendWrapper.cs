@@ -125,6 +125,22 @@ namespace Duplicati.Library.Encryption
             m_realbackend.Delete(remotename);
         }
 
+        public IList<Backend.ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return m_realbackend.SupportedCommands;
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return m_realbackend.Description;
+            }
+        }
+
         #endregion
 
         public static Backend.IBackend WrapWithEncryption(Backend.IBackend backend, Dictionary<string, string> options)

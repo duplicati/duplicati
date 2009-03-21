@@ -361,6 +361,10 @@
       <Project>{6BA21DCB-1701-4936-B177-3B6D4DE3474E}</Project>
       <Name>Duplicati.Library.Backend.SSH</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
+      <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
+      <Name>Duplicati.Library.Backend.WEBDAV</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Core\Duplicati.Library.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Core</Name>
@@ -584,9 +588,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\StatusMenuIcon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="TrayNormal.ico" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />

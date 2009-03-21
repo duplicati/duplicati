@@ -51,8 +51,8 @@ namespace Duplicati.Library.Backend
                 }
                 else
                 {
-                    if (options.ContainsKey("ftp_password"))
-                        m_password = options["ftp_password"];
+                    if (options.ContainsKey("ftp-password"))
+                        m_password = options["ftp-password"];
                 }
             }
 
@@ -134,6 +134,25 @@ namespace Duplicati.Library.Backend
         {
             string path = System.IO.Path.Combine(m_path, remotename);
             System.IO.File.Delete(path);
+        }
+
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\".")
+                });
+
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return "This backend can read and write data to an file based backend.\nAllowed formats are \"file://hostname/folder\" or \"file://username:password@hostname/folder\"\nYou may supply UNC paths (eg: \"file://\\\\server\\folder\") or local paths (eg: (win) \"file://c:\\folder\", (linux) \"file:///usr/pub/files\").";
+            }
         }
 
         #endregion

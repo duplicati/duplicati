@@ -51,6 +51,10 @@ namespace Duplicati.GUI
             Dictionary<string, string> options = new Dictionary<string,string>();
             task.GetOptions(options);
 
+            ApplicationSettings appSet = new ApplicationSettings(task.Schedule.DataParent);
+            if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
+                options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), task.Schedule.ID.ToString());
+
             string results = "";
 
             try
@@ -60,10 +64,9 @@ namespace Duplicati.GUI
                     case DuplicityTaskType.FullBackup:
                     case DuplicityTaskType.IncrementalBackup:
                         {
-
-                            ApplicationSettings appSet = new ApplicationSettings(task.Schedule.DataParent);
-                            if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
-                                options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), task.Schedule.ID.ToString());
+                            //Activate auto-cleanup
+                            options["auto-cleanup"] = "";
+                            options["force"] = "";
 
                             Library.Core.TempFolder tf = null;
                             try

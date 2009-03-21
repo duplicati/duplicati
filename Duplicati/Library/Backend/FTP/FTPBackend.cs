@@ -28,6 +28,7 @@ namespace Duplicati.Library.Backend
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
+        private bool m_useIntegratedAuthentication = false;
         Dictionary<string, string> m_options;
 
         public FTP()
@@ -49,13 +50,14 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     m_userInfo.UserName = u.UserInfo;
-                    if (options.ContainsKey("ftp_password"))
-                        m_userInfo.Password = options["ftp_password"];
+                    if (options.ContainsKey("ftp-password"))
+                        m_userInfo.Password = options["ftp-password"];
                 }
             }
 
             m_options = options;
             m_url = url;
+            m_useIntegratedAuthentication = m_options.ContainsKey("integrated-authentication");
             if (!m_url.EndsWith("/"))
                 m_url += "/";
         }
@@ -187,6 +189,27 @@ namespace Duplicati.Library.Backend
             { }
         }
 
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument("ftp-passive", CommandLineArgument.ArgumentType.Boolean, "Toggles the FTP connections method", "If this flag is set, the FTP connection is made in passive mode, which works better with some firewalls. If the \"ftp-regular\" flag is also set, this flag is ignored", "false"),
+                    new CommandLineArgument("ftp-regular", CommandLineArgument.ArgumentType.Boolean, "Toggles the FTP connections method", "If this flag is set, the FTP connection is made in active mode. Even if the \"ftp-passive\" flag is also set, the connection will be made in active mode", "true"),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
+                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, "Use windows integrated authentication to connect to the server", "If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only avalible with windows servers and clients."),
+                });
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return "This backend can read and write data to an FTP based backend.\nAllowed formats are \"ftp://hostname/folder\" or \"ftp://username:password@hostname/folder\"";
+            }
+        }
+
         #endregion
 
         #region IDisposable Members
@@ -204,7 +227,12 @@ namespace Duplicati.Library.Backend
         private System.Net.FtpWebRequest CreateRequest(string remotename)
         {
             System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(m_url + remotename);
-            req.Credentials = m_userInfo;
+
+            if (m_useIntegratedAuthentication)
+                req.UseDefaultCredentials = true;
+            else 
+                if (m_userInfo != null)
+                    req.Credentials = m_userInfo;
             req.KeepAlive = false;
 
             if (m_options.ContainsKey("ftp-passive"))
@@ -214,6 +242,8 @@ namespace Duplicati.Library.Backend
 
             return req;
         }
+
+
 
     }
 }

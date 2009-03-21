@@ -4,13 +4,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{994F3D0A-E91E-4EEE-80EE-064485E09909}</ProjectGuid>
+    <ProjectGuid>{BAE27510-8B5D-44B2-B33E-372A98908041}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.Library.Backend</RootNamespace>
-    <AssemblyName>Duplicati.Library.Backend.BackendInterface</AssemblyName>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    <RootNamespace>Duplicati.Library.Backend.WEBDAV</RootNamespace>
+    <AssemblyName>Duplicati.Library.Backend.WEBDAV</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,18 +30,22 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandLineArgument.cs" />
-    <Compile Include="IBackend.cs" />
-    <Compile Include="FileEntry.cs" />
-    <Compile Include="ICommandLineArgument.cs" />
-    <Compile Include="IStreamingBackend.cs" />
+    <Compile Include="WEBDAV.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Duplicati.snk" />
+    <ProjectReference Include="..\..\Core\Duplicati.Library.Core.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
+      <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
+      <Name>Duplicati.Library.Backend.BackendInterface</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -103,7 +103,7 @@ namespace Duplicati.Datamodel.Backends
             if (!this.Passwordless)
                 options.Add("ssh-askpass", "");
             else
-                options["ftp_password"] = this.Password;
+                options["ftp-password"] = this.Password;
 
             if (!options.ContainsKey("ssh-options"))
                 options["ssh-options"] = "";

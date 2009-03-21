@@ -79,7 +79,7 @@ namespace Duplicati.Datamodel.Backends
         {
             options["time-separator"] = this.TimeSeparator;
             if (!string.IsNullOrEmpty(this.Password))
-                options["ftp_password"] = this.Password;
+                options["ftp-password"] = this.Password;
         }
 
         public string FriendlyName { get { return "External drive or folder"; } }

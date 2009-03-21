@@ -43,7 +43,7 @@ namespace Duplicati.GUI
         DuplicityTaskType TaskType { get; }
         event TaskCompletedHandler TaskCompleted;
         void RaiseTaskCompleted(string output);
-        void GetArguments(List<string> args);
+
         
         DateTime BeginTime { get; set; }
         Task Task { get; }
@@ -59,7 +59,7 @@ namespace Duplicati.GUI
         protected Schedule m_schedule;
         protected DateTime m_beginTime;
         public abstract DuplicityTaskType TaskType { get; }
-        public abstract void GetArguments(List<string> args);
+
         public Schedule Schedule { get { return m_schedule; } }
         public Task Task { get { return m_schedule.Task; } }
         public event TaskCompletedHandler TaskCompleted;
@@ -120,19 +120,6 @@ namespace Duplicati.GUI
             }
         }
 
-        public override void GetArguments(List<string> args)
-        {
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.SourcePath) + "\"");
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
-
-            if (!string.IsNullOrEmpty(this.Task.Signaturekey))
-            {
-                args.Add("--sign-key");
-                args.Add(this.Task.Signaturekey);
-            }
-
-        }
-
         public override void GetOptions(Dictionary<string, string> options)
         {
             base.GetOptions(options);
@@ -158,12 +145,6 @@ namespace Duplicati.GUI
         public FullBackupTask(Schedule schedule)
             : base(schedule)
         {
-        }
-
-        public override void GetArguments(List<string> args)
-        {
-            args.Add("full");
-            base.GetArguments(args);
         }
 
         public override void GetOptions(Dictionary<string, string> options)
@@ -194,17 +175,6 @@ namespace Duplicati.GUI
         public IncrementalBackupTask(Schedule schedule)
             : base(schedule)
         {
-        }
-
-        public override void GetArguments(List<string> args)
-        {
-            args.Add("incremental");
-            base.GetArguments(args);
-            if (!string.IsNullOrEmpty(this.FullAfter))
-            {
-                args.Add("--full-if-older-than");
-                args.Add(this.FullAfter);
-            }
         }
 
         public override void GetOptions(Dictionary<string, string> options)
@@ -269,12 +239,6 @@ namespace Duplicati.GUI
             m_backups = res.ToArray();
         }
 
-        public override void GetArguments(List<string> args)
-        {
-            args.Add("collection-status");
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
-        }
-
         public override string SourcePath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
@@ -318,18 +282,6 @@ namespace Duplicati.GUI
                 options["restore-time"] = this.When;
         }
 
-        public override void GetArguments(List<string> args)
-        {
-            if (!string.IsNullOrEmpty(When))
-            {
-                args.Add("-t");
-                args.Add(this.When);
-            }
-
-            args.Add("list-current-files");
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
-        }
-
         public override string SourcePath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
@@ -362,11 +314,6 @@ namespace Duplicati.GUI
         }
 
         public string TargetDir { get { return m_targetdir; } }
-
-        public override void GetArguments(List<string> args)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
 
         public override void GetOptions(Dictionary<string, string> options)
         {
@@ -450,25 +397,6 @@ namespace Duplicati.GUI
             }
         }
 
-        public override void GetArguments(List<string> args)
-        {
-            if (!string.IsNullOrEmpty(When))
-            {
-                args.Add("-t");
-                args.Add(this.When);
-            }
-
-            if (!string.IsNullOrEmpty(this.SourceFiles))
-            {
-                args.Add("--file");
-                args.Add(this.SourceFiles);
-            }
-
-            args.Add("--force");
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.TargetDir) + "\"");
-        }
-
         public override string SourcePath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
@@ -525,14 +453,6 @@ namespace Duplicati.GUI
             }            
         }
 
-        public override void GetArguments(List<string> args)
-        {
-            args.Add("remove-all-but-n-full");
-            args.Add(this.FullCount.ToString());
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
-            args.Add("--force");
-        }
-
         public override string SourcePath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
@@ -584,14 +504,6 @@ namespace Duplicati.GUI
                 l.BeginTime = m_beginTime;
                 l.EndTime = DateTime.Now;
             }
-        }
-
-        public override void GetArguments(List<string> args)
-        {
-            args.Add("remove-older-than");
-            args.Add(this.Older);
-            args.Add("\"" + System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()) + "\"");
-            args.Add("--force");
         }
 
         public override string SourcePath

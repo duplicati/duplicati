@@ -43,7 +43,7 @@ namespace Duplicati.CommandLine
 
             string ftp_password = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "unittest_ftppassword.txt");
             if (System.IO.File.Exists(ftp_password))
-                options["ftp_password"] = System.IO.File.ReadAllText(ftp_password).Trim();
+                options["ftp-password"] = System.IO.File.ReadAllText(ftp_password).Trim();
 
             string alttarget = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "unittest_target.txt");
             if (System.IO.File.Exists(alttarget))
@@ -91,11 +91,13 @@ namespace Duplicati.CommandLine
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
+                //Actually this is supposed to be the remote server's OS, not the client OS
+                if (System.Environment.OSVersion.Platform != PlatformID.Unix)
+                    options["time-separator"] = "'";
+
                 if (string.IsNullOrEmpty(target))
                 {
                     target = "file://" + tf;
-                    if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                        options["time-separator"] = "'";
                 }
                 else
                 {

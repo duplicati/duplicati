@@ -125,6 +125,22 @@ namespace Duplicati.Library.Main
             ProtectedInvoke("DeleteInternal", remotename);
         }
 
+        public IList<Backend.ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return m_backend.SupportedCommands;
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return m_backend.Description;
+            }
+        }
+
         #endregion
 
         /// <summary>

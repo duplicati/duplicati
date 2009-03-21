@@ -54,8 +54,8 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     m_username = u.UserInfo;
-                    if (options.ContainsKey("ftp_password"))
-                        m_password = options["ftp_password"];
+                    if (options.ContainsKey("ftp-password"))
+                        m_password = options["ftp-password"];
                 }
             }
 
@@ -176,6 +176,28 @@ namespace Duplicati.Library.Backend
                     p.Close();
                     throw new Exception("Timeout while closing session");
                 }
+            }
+        }
+
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument("sftp-command", CommandLineArgument.ArgumentType.Path, "The path to the \"sftp\" program", "The full path to the \"sftp\" application.", (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) ? "sftp" : "psftp.exe"),
+                    new CommandLineArgument("scp-command", CommandLineArgument.ArgumentType.Path, "The path to the \"scp\" program", "The full path to the \"scp\" application.", (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) ? "scp" : "pscp.exe"),
+                    new CommandLineArgument("ssh-options", CommandLineArgument.ArgumentType.String, "Extra options to the ssh commands", "Supply any extra commandline arguments, which are passed unaltered to the ssh application", "-C"),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
+                });
+
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return "This backend can read and write data to an SSH based backend, using SCP and SFTP.\nAllowed formats are \"ssh://hostname/folder\" or \"ssh://username:password@hostname/folder\"\nNOTE: This backend does not support throttling uploads or downloads.";
             }
         }
 

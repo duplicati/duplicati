@@ -141,8 +141,9 @@ namespace System.Windows.Forms.Wizard
             m_isLastPage = args.TreatAsLast;
 
             //Not sure this works under Mono...
-            try { this.Icon = System.Drawing.Icon.FromHandle(new System.Drawing.Bitmap(PageIcon.Image).GetHicon()); }
-            catch { }
+            //TODO: The scaling sucks...
+            /*try { this.Icon = System.Drawing.Icon.FromHandle(new System.Drawing.Bitmap(PageIcon.Image).GetHicon()); }
+            catch { }*/
 
             UpdateButtons();
 
