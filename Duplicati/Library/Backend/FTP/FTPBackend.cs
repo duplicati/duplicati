@@ -206,7 +206,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an FTP based backend.\nAllowed formats are \"ftp://hostname/folder\" or \"ftp://username:password@hostname/folder\"";
+                return "This backend can read and write data to an FTP based backend. Allowed formats are \"ftp://hostname/folder\" or \"ftp://username:password@hostname/folder\"";
             }
         }
 

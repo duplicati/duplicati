@@ -7,7 +7,7 @@
     <ProjectGuid>{BAE27510-8B5D-44B2-B33E-372A98908041}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.Library.Backend.WEBDAV</RootNamespace>
+    <RootNamespace>Duplicati.Library.Backend</RootNamespace>
     <AssemblyName>Duplicati.Library.Backend.WEBDAV</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

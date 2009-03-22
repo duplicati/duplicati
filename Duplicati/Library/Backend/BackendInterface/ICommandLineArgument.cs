@@ -28,5 +28,6 @@ namespace Duplicati.Library.Backend
         string ShortDescription { get; set; }
         CommandLineArgument.ArgumentType Type { get; set; }
         string[] ValidValues { get; set; }
+        string DefaultValue { get; set; }
     }
 }

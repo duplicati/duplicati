@@ -151,7 +151,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an file based backend.\nAllowed formats are \"file://hostname/folder\" or \"file://username:password@hostname/folder\"\nYou may supply UNC paths (eg: \"file://\\\\server\\folder\") or local paths (eg: (win) \"file://c:\\folder\", (linux) \"file:///usr/pub/files\").";
+                return "This backend can read and write data to an file based backend. Allowed formats are \"file://hostname/folder\" or \"file://username:password@hostname/folder\". You may supply UNC paths (eg: \"file://\\\\server\\folder\") or local paths (eg: (win) \"file://c:\\folder\", (linux) \"file:///usr/pub/files\").";
             }
         }
 

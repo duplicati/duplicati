@@ -197,7 +197,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an SSH based backend, using SCP and SFTP.\nAllowed formats are \"ssh://hostname/folder\" or \"ssh://username:password@hostname/folder\"\nNOTE: This backend does not support throttling uploads or downloads.";
+                return "This backend can read and write data to an SSH based backend, using SCP and SFTP. Allowed formats are \"ssh://hostname/folder\" or \"ssh://username:password@hostname/folder\". NOTE: This backend does not support throttling uploads or downloads, and requires that sftp and scp are installed (using putty for windows).";
             }
         }
 

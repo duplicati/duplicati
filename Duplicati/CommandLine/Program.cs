@@ -305,7 +305,30 @@ namespace Duplicati.CommandLine
             lines.Add("");
 
             foreach (string s in lines)
-                Console.WriteLine(s);
+            {
+                if (string.IsNullOrEmpty(s))
+                {
+                    Console.WriteLine();
+                    continue;
+                }
+
+                string c = s;
+
+                string leadingSpaces = "";
+                while (c.Length > 0 && c.StartsWith(" "))
+                {
+                    leadingSpaces += " ";
+                    c = c.Remove(0, 1);
+                }
+
+                while (c.Length > 0)
+                {
+                    int len = Math.Min(Console.WindowWidth - 2, leadingSpaces.Length + c.Length);
+                    len -= leadingSpaces.Length;
+                    Console.WriteLine(leadingSpaces + c.Substring(0, len));
+                    c = c.Remove(0, len);
+                }
+            }
 
         }
 
@@ -315,6 +338,13 @@ namespace Duplicati.CommandLine
             lines.Add("  " + arg.LongDescription);
             if (arg.Aliases != null && arg.Aliases.Length > 0)
                 lines.Add("  aliases: --" + string.Join(", --", arg.Aliases));
+
+            if (arg.ValidValues != null && arg.ValidValues.Length > 0)
+                lines.Add("  values: " + string.Join(", ", arg.ValidValues));
+
+            if (!string.IsNullOrEmpty(arg.DefaultValue))
+                lines.Add("  default value: " + arg.DefaultValue);
+
         }
     }
 }

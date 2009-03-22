@@ -174,7 +174,7 @@ namespace Duplicati.Library.Backend
 
         public string Description
         {
-            get { return "Supports connections to a WEBDAV enabled web server"; }
+            get { return "Supports connections to a WEBDAV enabled web server, using the HTTP protocol. Allowed formats are \"webdav://hostname/folder\" or \"webdav://username:password@hostname/folder\"."; }
         }
 
         #endregion

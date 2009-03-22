@@ -244,7 +244,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an Amazon S3 based backend.\nAllowed formats are \"s3://bucketname/prefix\" or \"s3://aws_id:aws_key@bucketname/prefix\".\nNote that if you AWS ID or Key contains either \":\", \"/\" or \"@\" you cannot use the second form, but must supply them through arguments.";
+                return "This backend can read and write data to an Amazon S3 based backend. Allowed formats are \"s3://bucketname/prefix\" or \"s3://aws_id:aws_key@bucketname/prefix\". Note that if you AWS ID or Key contains either \":\", \"/\" or \"@\" you cannot use the second form, but must supply them through arguments.";
             }
         }
         

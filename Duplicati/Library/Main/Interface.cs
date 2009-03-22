@@ -36,7 +36,8 @@ namespace Duplicati.Library.Main
     public class Interface : IDisposable
     {
         private string m_backend;
-        private Dictionary<string, string> m_options;
+        //private Dictionary<string, string> m_options;
+        private Options m_options;
 
         //The amount of progressbar allocated for reading incremental data
         private double m_incrementalFraction = 0.15;
@@ -50,14 +51,14 @@ namespace Duplicati.Library.Main
         public Interface(string backend, Dictionary<string, string> options)
         {
             m_backend = backend;
-            m_options = options;
+            m_options = new Options(options);
         }
 
         public string Backup(string source)
         {
             BackupStatistics bs = new BackupStatistics();
 
-            SetupCommonOptions(m_options);
+            SetupCommonOptions();
             Backend.IBackend backend = null;
 
             using (new Logging.Timer("Backup from " + source + " to " + m_backend))
@@ -72,24 +73,17 @@ namespace Duplicati.Library.Main
 
                     FilenameStrategy fns = new FilenameStrategy(m_options);
                     FilenameStrategy cacheFilenameStrategy = new FilenameStrategy("dpl", "_", true);
-                    
-                    Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(m_options);
-                    bool full = m_options.ContainsKey("full");
 
-                    int volumesize = (int)Core.Sizeparser.ParseSize(m_options.ContainsKey("volsize") ? m_options["volsize"] : "5", "mb");
-                    volumesize = Math.Max(1024 * 1024, volumesize);
+                    bool full = m_options.Full;
 
-                    long totalmax = m_options.ContainsKey("totalsize") ? Core.Sizeparser.ParseSize(m_options["totalsize"], "mb") : long.MaxValue;
-                    totalmax = Math.Max(volumesize, totalmax);
-
-                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
+                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
                     if (backend == null)
                         throw new Exception("Unable to find backend for m_backend: " + m_backend);
-                    backend = new BackendWrapper(bs, backend, m_options);
+                    backend = new BackendWrapper(bs, backend, m_options.RawOptions);
                     ((BackendWrapper)backend).ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(BackupTransfer_ProgressEvent);
-                    backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, m_options);
+                    backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, m_options.RawOptions);
 
-                    List<BackupEntry> orphans = m_options.ContainsKey("auto-cleanup") ? new List<BackupEntry>() : null;
+                    List<BackupEntry> orphans = m_options.AutoCleanup ? new List<BackupEntry>() : null;
                     List <BackupEntry > prev = ParseFileList(backend, orphans);
 
                     m_progress = 0.0;
@@ -99,16 +93,16 @@ namespace Duplicati.Library.Main
 
                     if (prev.Count == 0)
                         full = true;
-
-                    if (!full && m_options.ContainsKey("full-if-older-than"))
-                        full = DateTime.Now > Core.Timeparser.ParseTimeInterval(m_options["full-if-older-than"], prev[prev.Count - 1].Time);
+                    
+                    if (!full)
+                        full = DateTime.Now > m_options.FullIfOlderThan(prev[prev.Count - 1].Time);
 
                     List<string> controlfiles = new List<string>();
-                    if (m_options.ContainsKey("signature-control-files"))
-                        controlfiles.AddRange(m_options["signature-control-files"].Split(System.IO.Path.PathSeparator));
+                    if (!string.IsNullOrEmpty(m_options.SignatureControlFiles))
+                        controlfiles.AddRange(m_options.SignatureControlFiles.Split(System.IO.Path.PathSeparator));
 
-                    if (m_options.ContainsKey("signature-cache-path") && !System.IO.Directory.Exists(m_options["signature-cache-path"]))
-                        System.IO.Directory.CreateDirectory(m_options["signature-cache-path"]);
+                    if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && !System.IO.Directory.Exists(m_options.SignatureCachePath))
+                        System.IO.Directory.CreateDirectory(m_options.SignatureCachePath);
 
                     using (Core.TempFolder tempfolder = new Duplicati.Library.Core.TempFolder())
                     {
@@ -126,7 +120,7 @@ namespace Duplicati.Library.Main
 
                         DateTime backuptime = DateTime.Now;
 
-                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, bs, filter, patches))
+                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(source, bs, m_options.Filter, patches))
                         {
                             if (OperationProgress != null)
                             {
@@ -134,7 +128,7 @@ namespace Duplicati.Library.Main
                                 dir.ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(BackupRSyncDir_ProgressEvent);
                             }
 
-                            dir.DisableFiletimeCheck = m_options.ContainsKey("disable-filetime-check");
+                            dir.DisableFiletimeCheck = m_options.DisableFiletimeCheck;
                             using (new Logging.Timer("Initiating multipass"))
                                 dir.InitiateMultiPassDiff(full);
 
@@ -145,7 +139,7 @@ namespace Duplicati.Library.Main
                             List<string> signaturehashes = new List<string>();
 
                             bool done = false;
-                            while (!done && totalsize < totalmax)
+                            while (!done && totalsize < m_options.MaxSize)
                             {
                                 using (new Logging.Timer("Multipass " + (vol + 1).ToString()))
                                 {
@@ -172,12 +166,12 @@ namespace Duplicati.Library.Main
                                         //Only add control files to the very first volume
                                         controlfiles.Clear();
 
-                                        done = dir.MakeMultiPassDiff(signaturearchive, contentarchive, Math.Min(volumesize, totalmax - totalsize));
+                                        done = dir.MakeMultiPassDiff(signaturearchive, contentarchive, Math.Min(m_options.VolumeSize, m_options.MaxSize - totalsize));
                                         totalsize += new System.IO.FileInfo(contentfile).Length;
 
                                         totalsize += signaturearchive.Size;
 
-                                        if (totalsize >= totalmax)
+                                        if (totalsize >= m_options.MaxSize)
                                             dir.FinalizeMultiPass(signaturearchive, contentarchive);
                                     }
 
@@ -197,8 +191,8 @@ namespace Duplicati.Library.Main
                                         //TODO: put this in the backend wrapper, so it can be delayed properly
                                         //For now it works, because the manifest does not contain this entry anyway
                                         //Any problems would only occur when using disabled signature checks
-                                        if (m_options.ContainsKey("signature-cache-path"))
-                                            System.IO.File.Copy(signaturefile, System.IO.Path.Combine(m_options["signature-cache-path"], cacheFilenameStrategy.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1)));
+                                        if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
+                                            System.IO.File.Copy(signaturefile, System.IO.Path.Combine(m_options.SignatureCachePath, cacheFilenameStrategy.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1)));
 
                                         backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", signaturefile);
 
@@ -232,12 +226,9 @@ namespace Duplicati.Library.Main
                                 }
 
                                 vol++;
-
                             }
                         }
                     }
-
-
                 }
                 finally
                 {
@@ -263,24 +254,24 @@ namespace Duplicati.Library.Main
             foreach (BackupEntry be in orphans)
             {
                 Logging.Log.WriteMessage("Removing leftover file: " + be.Filename, Duplicati.Library.Logging.LogMessageType.Information);
-                if (m_options.ContainsKey("force"))
+                if (m_options.Force)
                     backend.Delete(be.Filename);
 
                 foreach (BackupEntry bex in be.SignatureFile)
                 {
                     Logging.Log.WriteMessage("Removing leftover file: " + bex.Filename, Duplicati.Library.Logging.LogMessageType.Information);
-                    if (m_options.ContainsKey("force"))
+                    if (m_options.Force)
                         backend.Delete(bex.Filename);
                 }
                 foreach (BackupEntry bex in be.ContentVolumes)
                 {
                     Logging.Log.WriteMessage("Removing leftover file: " + bex.Filename, Duplicati.Library.Logging.LogMessageType.Information);
-                    if (m_options.ContainsKey("force"))
+                    if (m_options.Force)
                         backend.Delete(bex.Filename);
                 }
             }
 
-            if (!m_options.ContainsKey("force") && orphans.Count > 0)
+            if (!m_options.Force && orphans.Count > 0)
                 Logging.Log.WriteMessage("No files removed, specify --force to remove files.", Duplicati.Library.Logging.LogMessageType.Information);
 
         }
@@ -300,7 +291,7 @@ namespace Duplicati.Library.Main
 
         public string Restore(string target)
         {
-            SetupCommonOptions(m_options);
+            SetupCommonOptions();
             RestoreStatistics rs = new RestoreStatistics();
 
             Backend.IBackend backend = null;
@@ -312,28 +303,26 @@ namespace Duplicati.Library.Main
                     if (OperationStarted != null)
                         OperationStarted(this, DuplicatiOperation.Restore, -1, -1, "Started");
 
-                    string specificfile = m_options.ContainsKey("file-to-restore") ? m_options["file-to-restore"] : "";
-                    string specifictime = m_options.ContainsKey("restore-time") ? m_options["restore-time"] : "now";
-                    Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(m_options);
+                    Core.FilenameFilter filter = m_options.Filter;
 
                     //Filter is prefered, if both file and filter is specified
-                    if (!m_options.ContainsKey("filter") && !string.IsNullOrEmpty(specificfile))
+                    if (!m_options.HasFilter && !string.IsNullOrEmpty(m_options.FileToRestore))
                     {
                         List<Core.IFilenameFilter> list = new List<Duplicati.Library.Core.IFilenameFilter>();
-                        list.Add(new Core.FilelistFilter(true, specificfile.Split(System.IO.Path.PathSeparator)));
+                        list.Add(new Core.FilelistFilter(true, m_options.FileToRestore.Split(System.IO.Path.PathSeparator)));
                         list.Add(new Core.RegularExpressionFilter(false, ".*"));
 
                         filter = new Duplicati.Library.Core.FilenameFilter(list);
                     }
 
-                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
+                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
                     if (backend == null)
                         throw new Exception("Unable to find backend for target: " + m_backend);
-                    backend = new BackendWrapper(rs, backend, m_options);
+                    backend = new BackendWrapper(rs, backend, m_options.RawOptions);
 
-                    BackupEntry bestFit = FindBestMatch(ParseFileList(backend), specifictime);
+                    BackupEntry bestFit = FindBestMatch(ParseFileList(backend), m_options.RestoreTime);
                     if (bestFit.EncryptionMode != null)
-                        backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options);
+                        backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options.RawOptions);
 
                     List<BackupEntry> entries = new List<BackupEntry>();
                     entries.Add(bestFit);
@@ -345,7 +334,7 @@ namespace Duplicati.Library.Main
                         foreach (BackupEntry be in entries)
                         {
                             List<string> contentHashes = null;
-                            if (!m_options.ContainsKey("skip-file-hash-checks"))
+                            if (!m_options.SkipFileHashChecks)
                             {
                                 if (OperationProgress != null)
                                     OperationProgress(this, DuplicatiOperation.Backup, 0, -1, "Reading manifest file: " + be.Filename);
@@ -421,7 +410,7 @@ namespace Duplicati.Library.Main
         /// <returns>A restore report</returns>
         public string RestoreControlFiles(string target)
         {
-            SetupCommonOptions(m_options);
+            SetupCommonOptions();
             RestoreStatistics rs = new RestoreStatistics();
 
             Backend.IBackend backend = null;
@@ -433,10 +422,10 @@ namespace Duplicati.Library.Main
                     if (OperationStarted != null)
                         OperationStarted(this, DuplicatiOperation.Restore, 0, -1, "Started");
 
-                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
+                    backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
                     if (backend == null)
                         throw new Exception("Unable to find backend for target: " + m_backend);
-                    backend = new BackendWrapper(rs, backend, m_options);
+                    backend = new BackendWrapper(rs, backend, m_options.RawOptions);
 
                     List<BackupEntry> attempts = ParseFileList(backend);
 
@@ -455,7 +444,7 @@ namespace Duplicati.Library.Main
                     {
                         Backend.IBackend realbackend = backend;
                         if (be.EncryptionMode != null)
-                            realbackend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, be.EncryptionMode, m_options);
+                            realbackend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, be.EncryptionMode, m_options.RawOptions);
 
                         if (be.SignatureFile.Count > 0)
                             using(Core.TempFile z = new Duplicati.Library.Core.TempFile())
@@ -506,13 +495,9 @@ namespace Duplicati.Library.Main
 
         public string RemoveAllButNFull()
         {
-            if (!m_options.ContainsKey("remove-all-but-n-full"))
-                throw new Exception("No count given for \"Remove All But N Full\"");
+            int x = m_options.RemoveAllButNFull;
 
-            int x = int.Parse(m_options["remove-all-but-n-full"]);
-            if (x < 0)
-                throw new Exception("Invalid count for remove-all-but-n-full");
-            Backend.IBackend backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
+            Backend.IBackend backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
             if (backend == null)
                 throw new Exception("Unable to find backend for target: " + m_backend);
 
@@ -551,10 +536,9 @@ namespace Duplicati.Library.Main
         {
             StringBuilder sb = new StringBuilder();
 
-            if (!m_options.ContainsKey("remove-older-than"))
-                throw new Exception("No count given for \"Remove Older Than\"");
+            DateTime expires = m_options.RemoveOlderThan;
 
-            Backend.IBackend backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
+            Backend.IBackend backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
             if (backend == null)
                 throw new Exception("Unable to find backend for target: " + m_backend);
 
@@ -563,10 +547,8 @@ namespace Duplicati.Library.Main
                 if (OperationStarted != null)
                     OperationStarted(this, DuplicatiOperation.Remove, 0, -1, "Started");
 
-                string duration = m_options["remove-older-than"];
                 List<BackupEntry> entries = ParseFileList(backend);
 
-                DateTime expires = Core.Timeparser.ParseTimeInterval(duration, DateTime.Now, true);
 
                 List<BackupEntry> toremove = new List<BackupEntry>();
 
@@ -625,7 +607,7 @@ namespace Duplicati.Library.Main
             {
                 sb.AppendLine("Deleting backup at " + be.Time.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-                if (m_options.ContainsKey("force"))
+                if (m_options.Force)
                 {
                     //Delete manifest
                     backend.Delete(be.Filename);
@@ -638,7 +620,7 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            if (!m_options.ContainsKey("force") && entries.Count > 0)
+            if (!m_options.Force && entries.Count > 0)
                 sb.AppendLine("Files are not deleted, use the --force command to actually remove files");
 
             return sb.ToString();
@@ -647,10 +629,10 @@ namespace Duplicati.Library.Main
 
         public string[] List()
         {
-            SetupCommonOptions(m_options);
+            SetupCommonOptions();
 
             List<string> res = new List<string>();
-            Duplicati.Library.Backend.IBackend i = new Duplicati.Library.Backend.BackendLoader(m_backend, m_options);
+            Duplicati.Library.Backend.IBackend i = new Duplicati.Library.Backend.BackendLoader(m_backend, m_options.RawOptions);
 
             if (i == null)
                 throw new Exception("Unable to find backend for target: " + m_backend);
@@ -673,7 +655,7 @@ namespace Duplicati.Library.Main
             if (OperationStarted != null)
                 OperationStarted(this, DuplicatiOperation.List, 0, -1, "Started");
 
-            Backend.IBackend obackend = Backend.BackendLoader.GetBackend(m_backend, m_options);
+            Backend.IBackend obackend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
             if (obackend == null)
                 throw new Exception("Unable to find backend for target: " + m_backend);
             using (obackend)
@@ -691,7 +673,7 @@ namespace Duplicati.Library.Main
         {
             bool anyRemoved = false;
 
-            Backend.IBackend backend = Backend.BackendLoader.GetBackend(m_backend, m_options);
+            Backend.IBackend backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
             if (backend == null)
                 throw new Exception("Unable to find backend for target: " + m_backend);
             using (backend)
@@ -726,7 +708,7 @@ namespace Duplicati.Library.Main
                         {
                             anyRemoved = true;
                             Logging.Log.WriteMessage("Removing partial file: " + be.SignatureFile[i].Filename, Duplicati.Library.Logging.LogMessageType.Information);
-                            if (m_options.ContainsKey("force"))
+                            if (m_options.Force)
                                 backend.Delete(be.SignatureFile[i].Filename);
                         }
 
@@ -734,14 +716,14 @@ namespace Duplicati.Library.Main
                         {
                             anyRemoved = true;
                             Logging.Log.WriteMessage("Removing partial file: " + be.SignatureFile[i].Filename, Duplicati.Library.Logging.LogMessageType.Information);
-                            if (m_options.ContainsKey("force"))
+                            if (m_options.Force)
                                 backend.Delete(be.ContentVolumes[i].Filename);
                         }
                     }
                 }
             }
 
-            if (!m_options.ContainsKey("force") && anyRemoved)
+            if (!m_options.Force && anyRemoved)
                 Logging.Log.WriteMessage("No files removed, specify --force to remove files.", Duplicati.Library.Logging.LogMessageType.Information);
 
             return ""; //TODO: Write a message here?
@@ -754,7 +736,7 @@ namespace Duplicati.Library.Main
 
         private List<BackupEntry> ParseFileList(Duplicati.Library.Backend.IBackend backend, List<BackupEntry> orphans)
         {
-            SetupCommonOptions(m_options);
+            SetupCommonOptions();
 
             using (new Logging.Timer("Getting and sorting filelist from " + backend.DisplayName))
             {
@@ -875,24 +857,23 @@ namespace Duplicati.Library.Main
 
         public IList<string> ListContent()
         {
-            SetupCommonOptions(m_options);
+            SetupCommonOptions();
             RestoreStatistics rs = new RestoreStatistics();
 
-            Duplicati.Library.Backend.IBackend backend = new Duplicati.Library.Backend.BackendLoader(m_backend, m_options);
+            Duplicati.Library.Backend.IBackend backend = new Duplicati.Library.Backend.BackendLoader(m_backend, m_options.RawOptions);
 
-            Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(m_options);
+            Core.FilenameFilter filter = m_options.Filter;
 
             if (backend == null)
                 throw new Exception("Unable to find backend for target: " + m_backend);
-            backend = new BackendWrapper(rs, backend, m_options);
+            backend = new BackendWrapper(rs, backend, m_options.RawOptions);
 
             if (OperationStarted != null)
                 OperationStarted(this, DuplicatiOperation.List, 0, -1, "Started");
 
-            string specifictime = m_options.ContainsKey("restore-time") ? m_options["restore-time"] : "now";
-            BackupEntry bestFit = FindBestMatch(ParseFileList(backend), specifictime);
+            BackupEntry bestFit = FindBestMatch(ParseFileList(backend), m_options.RestoreTime);
             if (bestFit.EncryptionMode != null)
-                backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options);
+                backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options.RawOptions);
 
             List<string> res;
 
@@ -920,10 +901,13 @@ namespace Duplicati.Library.Main
             if (string.IsNullOrEmpty(specifictime))
                 specifictime = "now";
 
+            return FindBestMatch(backups, Core.Timeparser.ParseTimeInterval(specifictime, DateTime.Now));
+        }
+
+        private BackupEntry FindBestMatch(List<BackupEntry> backups, DateTime timelimit)
+        {
             if (backups.Count == 0)
                 throw new Exception("No backups found at remote location");
-
-            DateTime timelimit = Core.Timeparser.ParseTimeInterval(specifictime, DateTime.Now);
 
             BackupEntry bestFit = backups[0];
             List<BackupEntry> additions = new List<BackupEntry>();
@@ -944,12 +928,13 @@ namespace Duplicati.Library.Main
             return bestFit;
         }
 
-        private void SetupCommonOptions(Dictionary<string, string> options)
+        private void SetupCommonOptions()
         {
-            if (options.ContainsKey("tempdir"))
-                Core.TempFolder.SystemTempPath = options["tempdir"];
-            if (options.ContainsKey("thread-priority"))
-                System.Threading.Thread.CurrentThread.Priority = Core.Utility.ParsePriority(options["thread-priority"]);
+            if (!string.IsNullOrEmpty(m_options.TempDir))
+                Core.TempFolder.SystemTempPath = m_options.TempDir;
+
+            if (!string.IsNullOrEmpty(m_options.ThreadPriority))
+                System.Threading.Thread.CurrentThread.Priority = Core.Utility.ParsePriority(m_options.ThreadPriority);
         }
 
         private List<Core.IFileArchive> FindPatches(Backend.IBackend backend, List<BackupEntry> entries, List<BackupEntry> orphans, string tempfolder)
@@ -992,7 +977,7 @@ namespace Duplicati.Library.Main
                     m_progress += unitCost;
 
                     List<string> signatureHashes = null;
-                    if (!m_options.ContainsKey("skip-file-hash-checks"))
+                    if (!m_options.SkipFileHashChecks)
                     {
                         if (OperationProgress != null)
                             OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, "Reading manifest file: " + be.Time.ToShortDateString() + " " + be.Time.ToShortTimeString());
@@ -1042,8 +1027,8 @@ namespace Duplicati.Library.Main
 
                         string cachefilename = null;
 
-                        if (m_options.ContainsKey("signature-cache-path"))
-                            cachefilename = System.IO.Path.Combine(m_options["signature-cache-path"], cacheFilenameStrategy.GenerateFilename(bes.Type, bes.IsFull, bes.Time, bes.VolumeNumber));
+                        if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
+                            cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, cacheFilenameStrategy.GenerateFilename(bes.Type, bes.IsFull, bes.Time, bes.VolumeNumber));
 
                         if (cachefilename != null && System.IO.File.Exists(cachefilename))
                             if (signatureHashes != null && Core.Utility.CalculateHash(cachefilename) == signatureHashes[bes.VolumeNumber - 1])

@@ -47,12 +47,8 @@ namespace Duplicati.Library.Main
             m_filenameRegExp = new Regex(@"(?<prefix>" + Regex.Escape(m_prefix) + @")\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{4}\-\d{2}\-\d{2}.\d{2}" + Regex.Escape(m_timeSeperator) + @"\d{2}" + Regex.Escape(m_timeSeperator) + @"\d{2}(?<timezone>([\+\-]\d{2}" + Regex.Escape(m_timeSeperator) + @"\d{2})|Z)?)\.(?<volumegroup>vol(?<volumenumber>\d+)\.)?(?<extension>.+)");
         }
 
-        public FilenameStrategy(Dictionary<string, string> options)
-            : this(
-                options.ContainsKey("backup-prefix") ? options["backup-prefix"] : (options.ContainsKey("short-filenames") ? "dpl" : "duplicati"),
-                options.ContainsKey("time-separator") ? options["time-separator"] : ":",
-                options.ContainsKey("short-filenames")
-            )
+        public FilenameStrategy(Options options)
+            : this(options.BackupPrefix, options.TimeSeperatorChar, options.UseShortFilenames)
         {
         }
 

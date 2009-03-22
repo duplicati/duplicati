@@ -123,6 +123,14 @@ namespace Duplicati.Library.Backend
             set { m_longDescription = value; }
         }
 
+        /// <summary>
+        /// The default value for the parameter
+        /// </summary>
+        public string DefaultValue
+        {
+            get { return m_defaultValue; }
+            set { m_defaultValue = value; }
+        }
 
         /// <summary>
         /// Creates a new CommandLineArgument instance
