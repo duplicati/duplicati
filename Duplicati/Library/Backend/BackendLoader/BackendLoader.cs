@@ -37,6 +37,22 @@ namespace Duplicati.Library.Backend
                 throw new ArgumentException("The supplied url is not supported");
         }
 
+        public static IBackend[] LoadedBackends
+        {
+            get
+            {
+                LoadBackends();
+                List<IBackend> backends = new List<IBackend>();
+                foreach (Type t in m_backends.Values)
+                    if (t.GetConstructor(System.Type.EmptyTypes) != null)
+                        backends.Add((IBackend)Activator.CreateInstance(t));
+
+                //TODO: Deal with backends that have no default constructors
+
+                return backends.ToArray();
+            }
+        }
+
         public static string[] Backends
         {
             get

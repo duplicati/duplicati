@@ -59,7 +59,10 @@ namespace Duplicati.CommandLine
 
             //TODO: Print usage window
             if (cargs.Count < 2)
-                throw new Exception("Not enough parameters");
+            {
+                PrintUsage(true);
+                return;
+            }
 
             string source = cargs[0];
             string target = cargs[1];
@@ -81,6 +84,8 @@ namespace Duplicati.CommandLine
 
             if (source.Trim().ToLower() == "list")
                 Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
+            else if (source.Trim().ToLower() == "list-current-files")
+                Console.WriteLine(string.Join("\r\n", new List<string>(Duplicati.Library.Main.Interface.ListContent(target, options)).ToArray()));
             else if (source.Trim().ToLower() == "delete-all-but-n-full")
             {
                 int n = 0;
@@ -227,6 +232,89 @@ namespace Duplicati.CommandLine
             }
 
             return password.ToString();
+        }
+
+        private static void PrintUsage(bool extended)
+        {
+            List<string> lines = new List<string>();
+            lines.Add("********** Duplicati v. ??? **********");
+            lines.Add("");
+            lines.Add("Usage:");
+            lines.Add("");
+            lines.Add(" Backup (make a full or incremental backup):");
+            lines.Add("  Duplicati.CommandLine [full] [options] <sourcefolder> <backend>");
+            lines.Add("");
+            lines.Add(" Restore (restore all or some files):");
+            lines.Add("  Duplicati.CommandLine [options] <backend> <destinationfolder>");
+            lines.Add("");
+            lines.Add(" Cleanup (remove partial and unused files):");
+            lines.Add("  Duplicati.CommandLine cleanup [options] <backend>");
+            lines.Add("");
+            lines.Add(" List files (backup volumes):");
+            lines.Add("  Duplicati.CommandLine list [options] <backend>");
+            lines.Add("");
+            lines.Add(" List content files (backed up files):");
+            lines.Add("  Duplicati.CommandLine list-current-files [options] <backend>");
+            lines.Add("");
+            lines.Add(" Delete old backups:");
+            lines.Add("  Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>");
+            lines.Add("  Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>");
+            lines.Add("");
+            lines.Add("");
+            lines.Add(" A <backend> is identified by an url like ftp://host/ or ssh://server/.");
+            lines.Add(" Using this system, Duplicati can detect if you want to backup or restore.");
+            lines.Add(" The cleanup and delete command does not delete files, unless the --force option is specified, so you may examine what files are affected, before actually deleting the files.");
+            lines.Add(" The cleanup command should not be used unless a backup was interrupted and has left partial files. Duplicati will inform you if this happens.");
+            lines.Add(" The delete commands can be used to remove backup sets when newer backups are present.");
+            lines.Add("");
+            lines.Add("Option types:");
+            lines.Add("");
+            lines.Add(" The following option types are avalible:");
+            lines.Add("   Integer: a numerical value");
+            lines.Add("   Boolean: a truth value, --force and --force=true are equivalent. --force=false is the oposite");
+            lines.Add("   Timespan: a time in the special time format");
+            lines.Add("   Size: a size like 5mb or 200kb");
+            lines.Add("   Enumeration: any of the listed values");
+            lines.Add("   Path: the path to a folder or file");
+            lines.Add("   String: any other type");
+            lines.Add("");
+            lines.Add("Times:");
+            lines.Add(" Duplicati uses the time system from duplicity, where times may be presented as:");
+            lines.Add("  1: the string \"now\", indicating the current time");
+            lines.Add("  2: the number of seconds after epoch, eg: 123456890");
+            lines.Add("  3: a string like \"2009-03-26T08:30:00+01:00\"");
+            lines.Add("  4: an interval string, using Y, M, W, D, h, m, s for Year, Month, Week, Day, hour, minute or second, eg: \"1M4D\" for one month and four days, or \"5m\" for five minutes.");
+            lines.Add("");
+            lines.Add("Duplicati options:");
+            Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
+            foreach (Library.Backend.ICommandLineArgument arg in opt.SupportedCommands)
+                PrintArgument(lines, arg);
+            lines.Add("");
+            lines.Add("");
+            lines.Add("Supported backends:");
+            foreach (Duplicati.Library.Backend.IBackend back in Library.Backend.BackendLoader.LoadedBackends)
+            {
+                lines.Add(back.DisplayName + " (" + back.ProtocolKey + "):");
+                lines.Add(" " + back.Description);
+                lines.Add(" supported options:");
+                foreach (Library.Backend.ICommandLineArgument arg in back.SupportedCommands)
+                    PrintArgument(lines, arg);
+
+                lines.Add("");
+            }
+            lines.Add("");
+
+            foreach (string s in lines)
+                Console.WriteLine(s);
+
+        }
+
+        private static void PrintArgument(List<string> lines, Duplicati.Library.Backend.ICommandLineArgument arg)
+        {
+            lines.Add(" --" + arg.Name + " (" + arg.Type.ToString()+ "): " + arg.ShortDescription);
+            lines.Add("  " + arg.LongDescription);
+            if (arg.Aliases != null && arg.Aliases.Length > 0)
+                lines.Add("  aliases: --" + string.Join(", --", arg.Aliases));
         }
     }
 }

@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.Library.Backend.WEBDAV
+namespace Duplicati.Library.Backend
 {
     public class WEBDAV : IBackend, IStreamingBackend
     {

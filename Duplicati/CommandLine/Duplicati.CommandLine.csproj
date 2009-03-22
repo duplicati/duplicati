@@ -46,6 +46,10 @@
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
       <Name>Duplicati.Library.Backend.BackendInterface</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\BackendLoader\Duplicati.Library.Backend.BackendLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.Backend.BackendLoader</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
       <Name>Duplicati.Library.Backend.File</Name>
