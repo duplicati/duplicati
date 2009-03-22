@@ -3,7 +3,7 @@
   <?define UpgradeCode="bab49745-b447-45cf-8b10-012006895593" ?>
 
   <!-- Remember to change product version on each install -->
-  <?define ProductVersion="1.0.0.1" ?>
+  <?define ProductVersion="1.0.0.2" ?>
 
   <?define Manufacturer="HexaD" ?>
 
