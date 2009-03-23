@@ -43,6 +43,11 @@ namespace Duplicati.Library.Main
         private double m_incrementalFraction = 0.15;
         private double m_progress = 0.0;
 
+        /// <summary>
+        /// The filenamestrategy for the signature cache
+        /// </summary>
+        FilenameStrategy m_cacheFilenameStrategy = new FilenameStrategy("dpl", "_", true);
+
         public event OperationProgressEvent OperationStarted;
         public event OperationProgressEvent OperationCompleted;
         public event OperationProgressEvent OperationProgress;
@@ -72,16 +77,15 @@ namespace Duplicati.Library.Main
                         OperationProgress(this, DuplicatiOperation.Backup, -1, -1, "Loading remote filelist");
 
                     FilenameStrategy fns = new FilenameStrategy(m_options);
-                    FilenameStrategy cacheFilenameStrategy = new FilenameStrategy("dpl", "_", true);
 
                     bool full = m_options.Full;
 
                     backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
                     if (backend == null)
                         throw new Exception("Unable to find backend for m_backend: " + m_backend);
-                    backend = new BackendWrapper(bs, backend, m_options.RawOptions);
+                    backend = new BackendWrapper(bs, backend, m_options);
                     ((BackendWrapper)backend).ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(BackupTransfer_ProgressEvent);
-                    backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, m_options.RawOptions);
+                    backend = EncryptedBackendWrapper.WrapWithEncryption(backend, m_options);
 
                     List<BackupEntry> orphans = m_options.AutoCleanup ? new List<BackupEntry>() : null;
                     List <BackupEntry > prev = ParseFileList(backend, orphans);
@@ -192,7 +196,7 @@ namespace Duplicati.Library.Main
                                         //For now it works, because the manifest does not contain this entry anyway
                                         //Any problems would only occur when using disabled signature checks
                                         if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
-                                            System.IO.File.Copy(signaturefile, System.IO.Path.Combine(m_options.SignatureCachePath, cacheFilenameStrategy.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1)));
+                                            System.IO.File.Copy(signaturefile, System.IO.Path.Combine(m_options.SignatureCachePath, m_cacheFilenameStrategy.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1)));
 
                                         backend.Put(fns.GenerateFilename(BackupEntry.EntryType.Signature, full, backuptime, vol + 1) + ".zip", signaturefile);
 
@@ -247,27 +251,45 @@ namespace Duplicati.Library.Main
             return bs.ToString();
         }
 
+        private void DeleteSignatureCacheCopy(BackupEntry entry)
+        {
+            if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
+            {
+                string cacheFilename = m_cacheFilenameStrategy.GenerateFilename(entry.Type, entry.IsFull, entry.Time, entry.VolumeNumber);
+                if (System.IO.File.Exists(cacheFilename))
+                    try { System.IO.File.Delete(cacheFilename); }
+                    catch { }
+            }
+        }
+
         private void DeleteOrphans(Backend.IBackend backend, List<BackupEntry> orphans)
         {
-            //TODO: Delete from SignatureCache as well
-
             foreach (BackupEntry be in orphans)
             {
                 Logging.Log.WriteMessage("Removing leftover file: " + be.Filename, Duplicati.Library.Logging.LogMessageType.Information);
                 if (m_options.Force)
+                {
                     backend.Delete(be.Filename);
+                    DeleteSignatureCacheCopy(be);
+                }
 
                 foreach (BackupEntry bex in be.SignatureFile)
                 {
                     Logging.Log.WriteMessage("Removing leftover file: " + bex.Filename, Duplicati.Library.Logging.LogMessageType.Information);
                     if (m_options.Force)
+                    {
                         backend.Delete(bex.Filename);
+                        DeleteSignatureCacheCopy(bex);
+                    }
                 }
                 foreach (BackupEntry bex in be.ContentVolumes)
                 {
                     Logging.Log.WriteMessage("Removing leftover file: " + bex.Filename, Duplicati.Library.Logging.LogMessageType.Information);
                     if (m_options.Force)
+                    {
                         backend.Delete(bex.Filename);
+                        DeleteSignatureCacheCopy(bex);
+                    }
                 }
             }
 
@@ -318,11 +340,11 @@ namespace Duplicati.Library.Main
                     backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
                     if (backend == null)
                         throw new Exception("Unable to find backend for target: " + m_backend);
-                    backend = new BackendWrapper(rs, backend, m_options.RawOptions);
+                    backend = new BackendWrapper(rs, backend, m_options);
 
                     BackupEntry bestFit = FindBestMatch(ParseFileList(backend), m_options.RestoreTime);
                     if (bestFit.EncryptionMode != null)
-                        backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options.RawOptions);
+                        backend = EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options);
 
                     List<BackupEntry> entries = new List<BackupEntry>();
                     entries.Add(bestFit);
@@ -425,7 +447,7 @@ namespace Duplicati.Library.Main
                     backend = Backend.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
                     if (backend == null)
                         throw new Exception("Unable to find backend for target: " + m_backend);
-                    backend = new BackendWrapper(rs, backend, m_options.RawOptions);
+                    backend = new BackendWrapper(rs, backend, m_options);
 
                     List<BackupEntry> attempts = ParseFileList(backend);
 
@@ -444,7 +466,7 @@ namespace Duplicati.Library.Main
                     {
                         Backend.IBackend realbackend = backend;
                         if (be.EncryptionMode != null)
-                            realbackend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, be.EncryptionMode, m_options.RawOptions);
+                            realbackend = EncryptedBackendWrapper.WrapWithEncryption(backend, be.EncryptionMode, m_options);
 
                         if (be.SignatureFile.Count > 0)
                             using(Core.TempFile z = new Duplicati.Library.Core.TempFile())
@@ -600,7 +622,6 @@ namespace Duplicati.Library.Main
 
         private string RemoveBackupSets(Backend.IBackend backend, List<BackupEntry> entries)
         {
-            //TODO: Delete from SignatureCache as well
             StringBuilder sb = new StringBuilder();
 
             foreach (BackupEntry be in entries)
@@ -611,12 +632,19 @@ namespace Duplicati.Library.Main
                 {
                     //Delete manifest
                     backend.Delete(be.Filename);
+                    DeleteSignatureCacheCopy(be);
 
                     foreach (BackupEntry bex in be.ContentVolumes)
+                    {
                         backend.Delete(bex.Filename);
+                        DeleteSignatureCacheCopy(bex);
+                    }
 
                     foreach (BackupEntry bex in be.SignatureFile)
+                    {
                         backend.Delete(bex.Filename);
+                        DeleteSignatureCacheCopy(bex);
+                    }
                 }
             }
 
@@ -709,7 +737,10 @@ namespace Duplicati.Library.Main
                             anyRemoved = true;
                             Logging.Log.WriteMessage("Removing partial file: " + be.SignatureFile[i].Filename, Duplicati.Library.Logging.LogMessageType.Information);
                             if (m_options.Force)
+                            {
                                 backend.Delete(be.SignatureFile[i].Filename);
+                                DeleteSignatureCacheCopy(be.SignatureFile[i]);
+                            }
                         }
 
                         for (int i = count - 1; i < be.ContentVolumes.Count; i++)
@@ -717,7 +748,10 @@ namespace Duplicati.Library.Main
                             anyRemoved = true;
                             Logging.Log.WriteMessage("Removing partial file: " + be.SignatureFile[i].Filename, Duplicati.Library.Logging.LogMessageType.Information);
                             if (m_options.Force)
+                            {
                                 backend.Delete(be.ContentVolumes[i].Filename);
+                                DeleteSignatureCacheCopy(be.ContentVolumes[i]);
+                            }
                         }
                     }
                 }
@@ -866,14 +900,14 @@ namespace Duplicati.Library.Main
 
             if (backend == null)
                 throw new Exception("Unable to find backend for target: " + m_backend);
-            backend = new BackendWrapper(rs, backend, m_options.RawOptions);
+            backend = new BackendWrapper(rs, backend, m_options);
 
             if (OperationStarted != null)
                 OperationStarted(this, DuplicatiOperation.List, 0, -1, "Started");
 
             BackupEntry bestFit = FindBestMatch(ParseFileList(backend), m_options.RestoreTime);
             if (bestFit.EncryptionMode != null)
-                backend = Encryption.EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options.RawOptions);
+                backend = EncryptedBackendWrapper.WrapWithEncryption(backend, bestFit.EncryptionMode, m_options);
 
             List<string> res;
 
@@ -941,7 +975,6 @@ namespace Duplicati.Library.Main
         {
             List<Core.IFileArchive> patches = new List<Core.IFileArchive>();
 
-            FilenameStrategy cacheFilenameStrategy = new FilenameStrategy("dpl", "_", true);
             using (new Logging.Timer("Reading incremental data"))
             {
                 if (OperationProgress != null)
@@ -1028,7 +1061,7 @@ namespace Duplicati.Library.Main
                         string cachefilename = null;
 
                         if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
-                            cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, cacheFilenameStrategy.GenerateFilename(bes.Type, bes.IsFull, bes.Time, bes.VolumeNumber));
+                            cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cacheFilenameStrategy.GenerateFilename(bes.Type, bes.IsFull, bes.Time, bes.VolumeNumber));
 
                         if (cachefilename != null && System.IO.File.Exists(cachefilename))
                             if (signatureHashes != null && Core.Utility.CalculateHash(cachefilename) == signatureHashes[bes.VolumeNumber - 1])
@@ -1059,6 +1092,15 @@ namespace Duplicati.Library.Main
             return patches;
         }
 
+        public void PurgeSignatureCache()
+        {
+            if (string.IsNullOrEmpty(m_options.SignatureCachePath))
+                throw new Exception("Signature cache path was not given as an argument");
+            else
+                System.IO.Directory.Delete(m_options.SignatureCachePath, true);
+        }
+
+            
         //Static helpers
 
         public static string[] List(string target, Dictionary<string, string> options)
@@ -1113,6 +1155,15 @@ namespace Duplicati.Library.Main
         {
             using (Interface i = new Interface(source, options))
                 return i.RestoreControlFiles(target);
+        }
+
+        public static void PurgeSignatureCache(Dictionary<string, string> options)
+        {
+            Options opt = new Options(options);
+            if (string.IsNullOrEmpty(opt.SignatureCachePath))
+                throw new Exception("Signature cache path was not given as an argument");
+            else
+                System.IO.Directory.Delete(opt.SignatureCachePath, true);
         }
 
 

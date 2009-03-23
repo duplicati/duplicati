@@ -60,18 +60,23 @@ namespace Duplicati.Library.Main
                     new Backend.CommandLineArgument("time-separator", Backend.CommandLineArgument.ArgumentType.String, "Backup volume filename timeseperator", "Per default, Duplicati will use the colon \":\" character to seperate the time fields in the filename. However, on some filesystem, notably windows, this character is not allowed. Use this option to use another character."),
                     new Backend.CommandLineArgument("short-filenames", Backend.CommandLineArgument.ArgumentType.Boolean, "Use short filenames", "If the filesystem does not support the long filenames that Duplicati uses, this switch will change the time to be a much more compact, but hard to read format. It will also make the default prefix \"dpl\"."),
 
-                    /*new Backend.CommandLineArgument("include", Backend.CommandLineArgument.ArgumentType.String, "Backup volume filename timeseperator", "Per default, Duplicati will use the colon \":\" character to seperate the time fields in the filename. However, on some filesystem, notably windows, this character is not allowed. Use this option to use another character."),
-                    new Backend.CommandLineArgument("exclude", Backend.CommandLineArgument.ArgumentType.String, "Backup volume filename timeseperator", "Per default, Duplicati will use the colon \":\" character to seperate the time fields in the filename. However, on some filesystem, notably windows, this character is not allowed. Use this option to use another character."),
-                    new Backend.CommandLineArgument("include-regexp", Backend.CommandLineArgument.ArgumentType.String, "Backup volume filename timeseperator", "Per default, Duplicati will use the colon \":\" character to seperate the time fields in the filename. However, on some filesystem, notably windows, this character is not allowed. Use this option to use another character."),
-                    new Backend.CommandLineArgument("exclude-regexp", Backend.CommandLineArgument.ArgumentType.String, "Backup volume filename timeseperator", "Per default, Duplicati will use the colon \":\" character to seperate the time fields in the filename. However, on some filesystem, notably windows, this character is not allowed. Use this option to use another character."),*/
+                    new Backend.CommandLineArgument("include", Backend.CommandLineArgument.ArgumentType.String, "Include files", "Include files that match this filter. The filter is a \"file-globbing\" filter, much like commandline options. You can use \"*.txt\" to include all text files."),
+                    new Backend.CommandLineArgument("exclude", Backend.CommandLineArgument.ArgumentType.String, "Exclude files", "Include files that match this filter. The filter is a \"file-globbing\" filter, much like commandline options. You can use \"*.txt\" to exclude all text files."),
+                    new Backend.CommandLineArgument("include-regexp", Backend.CommandLineArgument.ArgumentType.String, "Include files regular expression", "Include files that match this filter. The filter is a regular expression filter. You can use \"(.*)\\.txt\" to include all text files."),
+                    new Backend.CommandLineArgument("exclude-regexp", Backend.CommandLineArgument.ArgumentType.String, "Exclude files regular expression", "Include files that match this filter. The filter is a regular expression filter. You can use \"(.*)\\.txt\" to exclude all text files."),
 
                     new Backend.CommandLineArgument("passphrase", Backend.CommandLineArgument.ArgumentType.String, "Passphrase used to encrypt backups", "Supply a passphrase that Duplicati will use to encrypt the backup volumes, making the unreadable without the passphrase."),
                     new Backend.CommandLineArgument("gpg-encryption", Backend.CommandLineArgument.ArgumentType.Boolean, "Use GnuPG for encryption", "By default, Duplicati will use the AES encryption algorithm to encrypt the backup volumes, setting this flag makes Duplicati use the GNU Privacy Guard instead. GnuPG must be installed on the machine for this to work."),
-                    new Backend.CommandLineArgument("gpg-program-path", Backend.CommandLineArgument.ArgumentType.Path, "The path to GnuPG", "The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program \"gpg\" is avalible in the system path."),
+                    new Backend.CommandLineArgument("gpg-program-path", Backend.CommandLineArgument.ArgumentType.Path, "The path to GnuPG", "The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program \"gpg\" is avalible in the system path.", "gpg"),
                     new Backend.CommandLineArgument("sign-key", Backend.CommandLineArgument.ArgumentType.String, "Sign key for GnuPG", "The GNU Privacy Guard can optionally sign volumes with a special key. This feature is not currently active in Duplicati."),
                     new Backend.CommandLineArgument("no-encryption", Backend.CommandLineArgument.ArgumentType.Boolean, "Disable encryption", "If you store the backups on a local disk, and prefer that they are kept unencrypted, you can turn of encryption completely by using this switch."),
 
+                    new Backend.CommandLineArgument("number-of-retries", Backend.CommandLineArgument.ArgumentType.Integer, "Number of times to retry a failed transmission", "If an upload or download fails, Duplicati will retry a number of times before failing. Use this to handle unstable network connections better.", "5"),
+                    new Backend.CommandLineArgument("retry-delay", Backend.CommandLineArgument.ArgumentType.Timespan, "Time to wait between retries", "After a failed transmission, Duplicati will wait a short period before attempting again. This is usefull if the network drops out occasionally during transmissions.", "10s"),
+                    new Backend.CommandLineArgument("asynchronous-upload", Backend.CommandLineArgument.ArgumentType.Boolean, "Transmit files on a seperate thread", "By supplying this option, Duplicati will transmit files, while building volumes. This can shorten the time it takes to perform a backup, but requires more diskspace.", "false"),
 
+                    new Backend.CommandLineArgument("max-upload-pr-second", Backend.CommandLineArgument.ArgumentType.Size, "Max number of bytes to upload pr. second", "By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."),
+                    new Backend.CommandLineArgument("max-download-pr-second", Backend.CommandLineArgument.ArgumentType.Size, "Max number of bytes to download pr. second", "By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive.", "false"),
                 });
             }
         }
@@ -268,7 +273,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (m_options.ContainsKey("filter"))
+                if (m_options.ContainsKey("filter") && !string.IsNullOrEmpty(m_options["filter"]))
                     return new Duplicati.Library.Core.FilenameFilter(Core.FilenameFilter.DecodeFilter(m_options["filter"]));
                 else
                     return new Duplicati.Library.Core.FilenameFilter(new List<KeyValuePair<bool, string>>());
@@ -287,7 +292,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("remove-all-but-n-full"))
+                if (!m_options.ContainsKey("remove-all-but-n-full") || string.IsNullOrEmpty(m_options["remove-all-but-n-full"]))
                     throw new Exception("No count given for \"Remove All But N Full\"");
 
                 int x = int.Parse(m_options["remove-all-but-n-full"]);
@@ -309,6 +314,131 @@ namespace Duplicati.Library.Main
                     throw new Exception("No count given for \"Remove Older Than\"");
 
                 return Core.Timeparser.ParseTimeInterval(m_options["remove-older-than"], DateTime.Now, true);
+            }
+        }
+
+        /// <summary>
+        /// Gets the encryption passphrase
+        /// </summary>
+        public string Passphrase
+        {
+            get
+            {
+                if (!m_options.ContainsKey("passphrase") || string.IsNullOrEmpty(m_options["passphrase"]))
+                    return null;
+                else
+                    return m_options["passphrase"];
+            }
+        }
+
+        /// <summary>
+        /// Gets GnuPG program path
+        /// </summary>
+        public string GPGPath
+        {
+            get
+            {
+                if (!m_options.ContainsKey("gpg-program-path") || string.IsNullOrEmpty(m_options["gpg-program-path"]))
+                    return "gpg";
+                else
+                    return m_options["gpg-program-path"];
+            }
+        }
+
+        /// <summary>
+        /// Gets the GPG sign key
+        /// </summary>
+        public string GPGSignKey
+        {
+            get
+            {
+                if (!m_options.ContainsKey("sign-key") || string.IsNullOrEmpty(m_options["sign-key"]))
+                    return null;
+                else
+                    return m_options["sign-key"];
+            }
+        }
+
+        /// <summary>
+        /// A value indicating if backups are not encrypted
+        /// </summary>
+        public bool NoEncryption { get { return GetBool("no-encryption"); } }
+
+        /// <summary>
+        /// A value indicating if GPG encryption is used
+        /// </summary>
+        public bool GPGEncryption 
+        { 
+            get { return GetBool("gpg-encryption"); }
+            set { m_options["gpg-encryption"] = value.ToString(); }
+        }
+
+
+        /// <summary>
+        /// Gets the number of time to retry transmission if it fails
+        /// </summary>
+        public int NumberOfRetries
+        {
+            get
+            {
+                if (!m_options.ContainsKey("number-of-retries") || string.IsNullOrEmpty(m_options["number-of-retries"]))
+                    return 5;
+                else
+                {
+                    int x = int.Parse(m_options["number-of-retries"]);
+                    if (x < 0)
+                        throw new Exception("Invalid count for number-of-retries");
+
+                    return x;
+                }
+            }
+        }
+
+        /// <summary>
+        /// A value indicating if backups are transmitted on a seperate thread
+        /// </summary>
+        public bool AsynchronousUpload { get { return GetBool("asynchronous-upload"); } }
+
+
+        /// <summary>
+        /// Gets the timelimit for removal
+        /// </summary>
+        public TimeSpan RetryDelay
+        {
+            get
+            {
+                if (!m_options.ContainsKey("retry-delay") || string.IsNullOrEmpty(m_options["retry-delay"]))
+                    return new TimeSpan(TimeSpan.TicksPerSecond * 10);
+                else
+                    return Core.Timeparser.ParseTimeSpan(m_options["retry-delay"]);
+            }
+        }
+
+        /// <summary>
+        /// Gets the max upload speed in bytes pr. second
+        /// </summary>
+        public long MaxUploadPrSecond
+        {
+            get
+            {
+                if (!m_options.ContainsKey("max-upload-pr-second") || string.IsNullOrEmpty(m_options["max-upload-pr-second"]))
+                    return 0;
+                else
+                    return Core.Sizeparser.ParseSize(m_options["max-upload-pr-second"], "kb");
+            }
+        }
+
+        /// <summary>
+        /// Gets the max download speed in bytes pr. second
+        /// </summary>
+        public long MaxDownloadPrSecond
+        {
+            get
+            {
+                if (!m_options.ContainsKey("max-download-pr-second") || string.IsNullOrEmpty(m_options["max-download-pr-second"]))
+                    return 0;
+                else
+                    return Core.Sizeparser.ParseSize(m_options["max-download-pr-second"], "kb");
             }
         }
 

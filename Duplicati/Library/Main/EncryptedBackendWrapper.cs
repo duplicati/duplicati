@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.Library.Encryption
+namespace Duplicati.Library.Main
 {
     /// <summary>
     /// Class that wraps a backend and transparently encrypts and decrypts data to and from the backend
@@ -29,29 +29,29 @@ namespace Duplicati.Library.Encryption
     public class EncryptedBackendWrapper : Backend.IStreamingBackend
     {
         private Backend.IBackend m_realbackend;
-        private IEncryption m_encryptionEngine;
+        private Library.Encryption.IEncryption m_encryptionEngine;
 
-        public EncryptedBackendWrapper(string target, Dictionary<string, string> options)
-            : this(Backend.BackendLoader.GetBackend(target, options), options)
+        public EncryptedBackendWrapper(string target, Options options)
+            : this(Backend.BackendLoader.GetBackend(target, options.RawOptions), options)
         {
         }
 
-        public EncryptedBackendWrapper(Backend.IBackend backend, Dictionary<string, string> options)
+        public EncryptedBackendWrapper(Backend.IBackend backend, Options options)
         {
-            if (!options.ContainsKey("passphrase") || string.IsNullOrEmpty(options["passphrase"]))
+            if (string.IsNullOrEmpty(options.Passphrase))
                 throw new Exception("No passphrase set");
 
-            string passphrase = options["passphrase"];
+            string passphrase = options.Passphrase;
 
             m_realbackend = backend;
-            if (options.ContainsKey("gpg-encryption"))
+            if (options.GPGEncryption)
             {
-                if (options.ContainsKey("gpg-program-path"))
-                    GPGEncryption.PGP_PROGRAM = options["gpg-program-path"];
-                m_encryptionEngine = new GPGEncryption(passphrase, options.ContainsKey("sign-key") ? options["sign-key"] : null);
+                if (!string.IsNullOrEmpty(options.GPGPath))
+                    Library.Encryption.GPGEncryption.PGP_PROGRAM = options.GPGPath;
+                m_encryptionEngine = new Library.Encryption.GPGEncryption(options.Passphrase, options.GPGSignKey);
             }
             else
-                m_encryptionEngine = new AESEncryption(passphrase);
+                m_encryptionEngine = new Library.Encryption.AESEncryption(options.Passphrase);
         }
 
         #region IStreamingBackend Members
@@ -90,7 +90,7 @@ namespace Duplicati.Library.Encryption
 
         public void Put(string remotename, string filename)
         {
-            remotename += (m_encryptionEngine is AESEncryption ? ".aes" : ".gpg");
+            remotename += (m_encryptionEngine is Library.Encryption.AESEncryption ? ".aes" : ".gpg");
             using (Core.TempFile tf = new Duplicati.Library.Core.TempFile())
             {
                 m_encryptionEngine.Encrypt(filename, tf);
@@ -143,25 +143,22 @@ namespace Duplicati.Library.Encryption
 
         #endregion
 
-        public static Backend.IBackend WrapWithEncryption(Backend.IBackend backend, Dictionary<string, string> options)
+        public static Backend.IBackend WrapWithEncryption(Backend.IBackend backend, Options options)
         {
-            if (options.ContainsKey("no-encryption"))
+            if (options.NoEncryption)
                 return backend;
             else
                 return new EncryptedBackendWrapper(backend, options);
         }
 
-        public static Backend.IBackend WrapWithEncryption(Backend.IBackend backend, string extension, Dictionary<string, string> options)
+        public static Backend.IBackend WrapWithEncryption(Backend.IBackend backend, string extension, Options options)
         {
             if (string.IsNullOrEmpty(extension))
                 return backend;
             else if (extension == "aes")
-            {
-                if (options.ContainsKey("gpg-encryption"))
-                    options.Remove("gpg-encryption");
-            }
+                options.GPGEncryption = false;
             else if (extension == "gpg")
-                options["gpg-encryption"] = "";
+                options.GPGEncryption = true;
             else
                 throw new Exception("Unsupported encryption extension");
 

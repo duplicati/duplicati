@@ -57,7 +57,16 @@ namespace Duplicati.CommandLine
             }
 #endif
 
-            //TODO: Print usage window
+            if (cargs.Count == 1)
+            {
+                switch (cargs[0].Trim().ToLower())
+                {
+                    case "purge-signature-cache":
+                        Library.Main.Interface.PurgeSignatureCache(options);
+                        return;
+                }
+            }
+
             if (cargs.Count < 2)
             {
                 PrintUsage(true);
@@ -256,6 +265,9 @@ namespace Duplicati.CommandLine
             lines.Add(" List content files (backed up files):");
             lines.Add("  Duplicati.CommandLine list-current-files [options] <backend>");
             lines.Add("");
+            lines.Add(" Purge signature cache:");
+            lines.Add("  Duplicati.CommandLine purge-signature-cache [options]");
+            lines.Add("");
             lines.Add(" Delete old backups:");
             lines.Add("  Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>");
             lines.Add("  Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>");
@@ -268,15 +280,14 @@ namespace Duplicati.CommandLine
             lines.Add(" The delete commands can be used to remove backup sets when newer backups are present.");
             lines.Add("");
             lines.Add("Option types:");
-            lines.Add("");
             lines.Add(" The following option types are avalible:");
-            lines.Add("   Integer: a numerical value");
-            lines.Add("   Boolean: a truth value, --force and --force=true are equivalent. --force=false is the oposite");
-            lines.Add("   Timespan: a time in the special time format");
-            lines.Add("   Size: a size like 5mb or 200kb");
-            lines.Add("   Enumeration: any of the listed values");
-            lines.Add("   Path: the path to a folder or file");
-            lines.Add("   String: any other type");
+            lines.Add("  Integer: a numerical value");
+            lines.Add("  Boolean: a truth value, --force and --force=true are equivalent. --force=false is the oposite");
+            lines.Add("  Timespan: a time in the special time format");
+            lines.Add("  Size: a size like 5mb or 200kb");
+            lines.Add("  Enumeration: any of the listed values");
+            lines.Add("  Path: the path to a folder or file");
+            lines.Add("  String: any other type");
             lines.Add("");
             lines.Add("Times:");
             lines.Add(" Duplicati uses the time system from duplicity, where times may be presented as:");
@@ -284,6 +295,26 @@ namespace Duplicati.CommandLine
             lines.Add("  2: the number of seconds after epoch, eg: 123456890");
             lines.Add("  3: a string like \"2009-03-26T08:30:00+01:00\"");
             lines.Add("  4: an interval string, using Y, M, W, D, h, m, s for Year, Month, Week, Day, hour, minute or second, eg: \"1M4D\" for one month and four days, or \"5m\" for five minutes.");
+            lines.Add("");
+            lines.Add("Filters:");
+            lines.Add(" Duplicati uses filters to include and exclude files.");
+            lines.Add("  Duplicati uses a \"first-touch\" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplciati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:");
+            lines.Add("    --include=*.txt --exclude=*\\Thumbs.db --include=*");
+            lines.Add("");
+            lines.Add("  Even though the last filter includes everything, no files named \"Thumbs.db\" are included because they match the exclude rule before the include rule. Paths are evaluated as paths that are releative to folder being backed up, but including a leading slash. An example:");
+            if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+            {
+                lines.Add("    Duplicati.CommandLine /home/user/ ftp://host/folder --exclude=/file.txt");
+                lines.Add("");
+                lines.Add("  In this example the file \"/home/user/file.txt\" is excluded.");
+            }
+            else
+            {
+                lines.Add("    Duplicati.CommandLine C:\\Documents\\Files ftp://host/folder --exclude=\\file.txt");
+                lines.Add("");
+                lines.Add("  In this example the file \"C:\\Documents\\Files\\file.txt\" is excluded.");
+            }
+            lines.Add("");
             lines.Add("");
             lines.Add("Duplicati options:");
             Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
@@ -296,7 +327,7 @@ namespace Duplicati.CommandLine
             {
                 lines.Add(back.DisplayName + " (" + back.ProtocolKey + "):");
                 lines.Add(" " + back.Description);
-                lines.Add(" supported options:");
+                lines.Add(" Supported options:");
                 foreach (Library.Backend.ICommandLineArgument arg in back.SupportedCommands)
                     PrintArgument(lines, arg);
 
@@ -325,25 +356,31 @@ namespace Duplicati.CommandLine
                 {
                     int len = Math.Min(Console.WindowWidth - 2, leadingSpaces.Length + c.Length);
                     len -= leadingSpaces.Length;
-                    Console.WriteLine(leadingSpaces + c.Substring(0, len));
+                    if (len < c.Length)
+                    {
+                        int ix = c.LastIndexOf(" ", len);
+                        if (ix > 0)
+                            len = ix;
+                    }
+
+                    Console.WriteLine(leadingSpaces + c.Substring(0, len).Trim());
                     c = c.Remove(0, len);
                 }
             }
-
         }
 
         private static void PrintArgument(List<string> lines, Duplicati.Library.Backend.ICommandLineArgument arg)
         {
             lines.Add(" --" + arg.Name + " (" + arg.Type.ToString()+ "): " + arg.ShortDescription);
-            lines.Add("  " + arg.LongDescription);
+            lines.Add("   " + arg.LongDescription);
             if (arg.Aliases != null && arg.Aliases.Length > 0)
-                lines.Add("  aliases: --" + string.Join(", --", arg.Aliases));
+                lines.Add("   * aliases: --" + string.Join(", --", arg.Aliases));
 
             if (arg.ValidValues != null && arg.ValidValues.Length > 0)
-                lines.Add("  values: " + string.Join(", ", arg.ValidValues));
+                lines.Add("   * values: " + string.Join(", ", arg.ValidValues));
 
             if (!string.IsNullOrEmpty(arg.DefaultValue))
-                lines.Add("  default value: " + arg.DefaultValue);
+                lines.Add("   * default value: " + arg.DefaultValue);
 
         }
     }

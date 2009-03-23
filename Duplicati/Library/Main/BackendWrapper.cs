@@ -30,11 +30,7 @@ namespace Duplicati.Library.Main
     {
         private Backend.IBackend m_backend;
         private CommunicationStatistics m_statistics;
-        private Dictionary<string, string> m_options;
-
-        private int m_retries;
-        private TimeSpan m_retrydelay;
-        private bool m_asyncOperation;
+        private Options m_options;
 
         //These keep track of async operations
         private Queue<string[]> m_pendingOperations;
@@ -48,23 +44,13 @@ namespace Duplicati.Library.Main
 
         public event RSync.RSyncDir.ProgressEventDelegate ProgressEvent;
 
-        public BackendWrapper(CommunicationStatistics statistics, Backend.IBackend backend, Dictionary<string, string> options)
+        public BackendWrapper(CommunicationStatistics statistics, Backend.IBackend backend, Options options)
         {
             m_statistics = statistics;
             m_backend = backend;
-            m_retries = 5;
             m_options = options;
 
-            if (options.ContainsKey("number-of-retries"))
-                int.TryParse(options["number-of-retries"], out m_retries);
-
-            m_retrydelay = new TimeSpan(TimeSpan.TicksPerSecond * 10);
-            if (options.ContainsKey("retry-delay"))
-                try { Core.Timeparser.ParseTimeSpan(options["retry-delay"]); }
-                catch { }
-
-            m_asyncOperation = options.ContainsKey("asynchronous-upload");
-            if (m_asyncOperation)
+            if (options.AsynchronousUpload)
             {
                 //If we are using async operations, the entire class is actually threadsafe,
                 //utilizing a common exclusive lock on all operations. But the implementation does
@@ -99,7 +85,7 @@ namespace Duplicati.Library.Main
 
         public void Put(string remotename, string filename)
         {
-            if (!m_asyncOperation)
+            if (!m_options.AsynchronousUpload)
                 PutInternal(remotename, filename);
             else
             {
@@ -160,7 +146,7 @@ namespace Duplicati.Library.Main
 
 
             //If the code is not async, just invoke it
-            if (!m_asyncOperation)
+            if (!m_options.AsynchronousUpload)
             {
                 try
                 {
@@ -212,7 +198,7 @@ namespace Duplicati.Library.Main
 
         private List<Duplicati.Library.Backend.FileEntry> ListInternal()
         {
-            int retries = m_retries;
+            int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
 
             do
@@ -228,8 +214,8 @@ namespace Duplicati.Library.Main
                     m_statistics.LogError(ex.Message);
 
                     retries--;
-                    if (retries > 0 && m_retrydelay.Ticks > 0)
-                        System.Threading.Thread.Sleep(m_retrydelay);
+                    if (retries > 0 && m_options.RetryDelay.Ticks > 0)
+                        System.Threading.Thread.Sleep(m_options.RetryDelay);
                 }
             } while (retries > 0);
 
@@ -238,7 +224,7 @@ namespace Duplicati.Library.Main
 
         private void DeleteInternal(string remotename)
         {
-            int retries = m_retries;
+            int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
 
             do
@@ -255,8 +241,8 @@ namespace Duplicati.Library.Main
                     m_statistics.LogError(ex.Message);
 
                     retries--;
-                    if (retries > 0 && m_retrydelay.Ticks > 0)
-                        System.Threading.Thread.Sleep(m_retrydelay);
+                    if (retries > 0 && m_options.RetryDelay.Ticks > 0)
+                        System.Threading.Thread.Sleep(m_options.RetryDelay);
                 }
             } while (lastEx != null && retries > 0);
 
@@ -266,7 +252,7 @@ namespace Duplicati.Library.Main
 
         private void GetInternal(string remotename, string filename)
         {
-            int retries = m_retries;
+            int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
             m_statusmessage = "Downloading: " + remotename;
 
@@ -277,17 +263,17 @@ namespace Duplicati.Library.Main
                     m_statistics.NumberOfRemoteCalls++;
                     if (!this.SupportsStreaming)
                     {
-                        if (!m_asyncOperation && ProgressEvent != null)
+                        if (!m_options.AsynchronousUpload && ProgressEvent != null)
                             ProgressEvent(50, m_statusmessage);
                         m_backend.Get(remotename, filename);
-                        if (!m_asyncOperation && ProgressEvent != null)
+                        if (!m_options.AsynchronousUpload && ProgressEvent != null)
                             ProgressEvent(100, m_statusmessage);
                     }
                     else
                     {
                         //TODO: How can we guess the remote file size for progress reporting?
                         using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            ((Backend.IStreamingBackend)m_backend).Get(remotename, ThrottleStream(fs, m_options));
+                            ((Backend.IStreamingBackend)m_backend).Get(remotename, new Core.ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond));
                     }
 
                     lastEx = null;
@@ -298,8 +284,8 @@ namespace Duplicati.Library.Main
                     m_statistics.LogError(ex.Message);
 
                     retries--;
-                    if (retries > 0 && m_retrydelay.Ticks > 0)
-                        System.Threading.Thread.Sleep(m_retrydelay);
+                    if (retries > 0 && m_options.RetryDelay.Ticks > 0)
+                        System.Threading.Thread.Sleep(m_options.RetryDelay);
                 }
             } while (lastEx != null && retries > 0);
 
@@ -315,7 +301,7 @@ namespace Duplicati.Library.Main
 
             try
             {
-                int retries = m_retries;
+                int retries = m_options.NumberOfRetries;
                 bool success = false;
 
                 do
@@ -325,10 +311,10 @@ namespace Duplicati.Library.Main
                         m_statistics.NumberOfRemoteCalls++;
                         if (!this.SupportsStreaming)
                         {
-                            if (!m_asyncOperation && ProgressEvent != null)
+                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
                                 ProgressEvent(50, m_statusmessage);
                             m_backend.Put(remotename, filename);
-                            if (!m_asyncOperation && ProgressEvent != null)
+                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
                                 ProgressEvent(50, m_statusmessage);
                         }
                         else
@@ -340,9 +326,9 @@ namespace Duplicati.Library.Main
                             using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, fs.Length))
                             {
                                 l = pgs.Length;
-                                if (!m_asyncOperation)
+                                if (!m_options.AsynchronousUpload)
                                     pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
-                                ((Backend.IStreamingBackend)m_backend).Put(remotename, ThrottleStream(pgs, m_options));
+                                ((Backend.IStreamingBackend)m_backend).Put(remotename, new Core.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond));
                             }
 
                             TimeSpan duration = DateTime.Now - begin;
@@ -366,8 +352,8 @@ namespace Duplicati.Library.Main
                         m_statistics.LogError(ex.Message);
 
                         retries--;
-                        if (retries > 0 && m_retrydelay.Ticks > 0)
-                            System.Threading.Thread.Sleep(m_retrydelay);
+                        if (retries > 0 && m_options.RetryDelay.Ticks > 0)
+                            System.Threading.Thread.Sleep(m_options.RetryDelay);
                     }
                 } while (!success && retries > 0);
 
@@ -431,21 +417,6 @@ namespace Duplicati.Library.Main
                 m_backend.Dispose();
                 m_backend = null;
             }
-        }
-
-
-        private Core.ThrottledStream ThrottleStream(System.IO.Stream basestream, Dictionary<string, string> options)
-        {
-            return new Core.ThrottledStream(basestream,
-                options.ContainsKey("max-upload-pr-second") ? Core.Sizeparser.ParseSize(options["max-upload-pr-second"], "kb") : 0,
-                options.ContainsKey("max-download-pr-second") ? Core.Sizeparser.ParseSize(options["max-download-pr-second"], "kb") : 0);
-        }
-
-        private Core.ThrottledStream ThrottleStream(System.IO.Stream basestream, string upspeed, string downspeed)
-        {
-            return new Core.ThrottledStream(basestream,
-                upspeed == null ? 0 : Core.Sizeparser.ParseSize(upspeed, "kb"),
-                downspeed == null ? 0 : Core.Sizeparser.ParseSize(downspeed, "kb"));
         }
 
         #region IDisposable Members

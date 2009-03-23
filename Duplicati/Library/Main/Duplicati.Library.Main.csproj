@@ -38,6 +38,7 @@
     <Compile Include="BackendWrapper.cs" />
     <Compile Include="BackupEntry.cs" />
     <Compile Include="CommunicationStatistics.cs" />
+    <Compile Include="EncryptedBackendWrapper.cs" />
     <Compile Include="FilenameStrategy.cs" />
     <Compile Include="Interface.cs" />
     <Compile Include="Options.cs" />
