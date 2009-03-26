@@ -76,7 +76,8 @@ namespace Duplicati.Library.Main
                     new Backend.CommandLineArgument("asynchronous-upload", Backend.CommandLineArgument.ArgumentType.Boolean, "Transmit files on a seperate thread", "By supplying this option, Duplicati will transmit files, while building volumes. This can shorten the time it takes to perform a backup, but requires more diskspace.", "false"),
 
                     new Backend.CommandLineArgument("max-upload-pr-second", Backend.CommandLineArgument.ArgumentType.Size, "Max number of bytes to upload pr. second", "By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."),
-                    new Backend.CommandLineArgument("max-download-pr-second", Backend.CommandLineArgument.ArgumentType.Size, "Max number of bytes to download pr. second", "By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive.", "false"),
+                    new Backend.CommandLineArgument("max-download-pr-second", Backend.CommandLineArgument.ArgumentType.Size, "Max number of bytes to download pr. second", "By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."),
+                    new Backend.CommandLineArgument("skip-files-larger-than", Backend.CommandLineArgument.ArgumentType.Size, "A size string that limits the size of files being backed up", "This option allows you to exclude files that are larger than the given value. Use this to prevent backups becoming extremely large."),
                 });
             }
         }
@@ -111,7 +112,21 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("totalsize") || string.IsNullOrEmpty(m_options["totalsize"]))
                     return long.MaxValue;
                 else
-                    return Math.Max(VolumeSize, Core.Sizeparser.ParseSize(m_options["totalsize"]));
+                    return Math.Max(VolumeSize, Core.Sizeparser.ParseSize(m_options["totalsize"], "mb"));
+            }
+        }
+
+        /// <summary>
+        /// Gets the maximum size of a single file
+        /// </summary>
+        public long MaxFileSize
+        {
+            get
+            {
+                if (!m_options.ContainsKey("totalsize") || string.IsNullOrEmpty(m_options["totalsize"]))
+                    return long.MaxValue;
+                else
+                    return Math.Max(VolumeSize, Core.Sizeparser.ParseSize(m_options["totalsize"], "mb"));
             }
         }
 

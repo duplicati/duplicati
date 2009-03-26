@@ -52,6 +52,14 @@ namespace Duplicati.Library.Main
         {
         }
 
+        public string GenerateFilename(BackupEntry entry)
+        {
+            if (entry.Type == BackupEntry.EntryType.Content || entry.Type == BackupEntry.EntryType.Signature)
+                return GenerateFilename(entry.Type, entry.IsFull, entry.Time, entry.VolumeNumber);
+            else
+                return GenerateFilename(entry.Type, entry.IsFull, entry.Time);
+        }
+
         public string GenerateFilename(BackupEntry.EntryType type, bool full, DateTime time, int volume)
         {
             return GenerateFilename(type, full, time) + ".vol" + volume.ToString();

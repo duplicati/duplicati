@@ -38,13 +38,14 @@ namespace Duplicati.GUI
             Stopped,
         }
 
-        public delegate void DuplicatiRunnerProgress(DuplicatiOperation operation, RunnerState state, string message, int progress, int subprogress);
+        public delegate void DuplicatiRunnerProgress(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress);
         public event DuplicatiRunnerProgress DuplicatiProgress;
 
         private DuplicatiOperation m_lastPGOperation;
         private int m_lastPGProgress;
         private int m_lastPGSubprogress;
         private string m_lastPGmessage;
+        private string m_lastPGSubmessage;
 
         public void ExecuteTask(IDuplicityTask task)
         {
@@ -72,7 +73,7 @@ namespace Duplicati.GUI
                             try
                             {
                                 if (DuplicatiProgress != null)
-                                    DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Started, task.Schedule.Name, 0, -1);
+                                    DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Started, task.Schedule.Name, "", 0, -1);
 
                                 if (task.Task.IncludeSetup)
                                 {
@@ -116,7 +117,7 @@ namespace Duplicati.GUI
                                     tf.Dispose();
 
                                 if (DuplicatiProgress != null)
-                                    DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, 100, -1);
+                                    DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                             }
                             break;
                         }
@@ -152,14 +153,14 @@ namespace Duplicati.GUI
                             try
                             {
                                 if (DuplicatiProgress != null)
-                                    DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, 0, -1);
+                                    DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
                                 i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
                                 results = i.Restore(task.TargetPath);
                             }
                             finally
                             {
                                 if (DuplicatiProgress != null)
-                                    DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Stopped, task.Schedule.Name, 100, -1);
+                                    DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                             }
                         }
                         break;
@@ -193,21 +194,22 @@ namespace Duplicati.GUI
             }
         }
 
-        void Duplicati_OperationProgress(Interface caller, DuplicatiOperation operation, int progress, int subprogress, string message)
+        void Duplicati_OperationProgress(Interface caller, DuplicatiOperation operation, int progress, int subprogress, string message, string submessage)
         {
             m_lastPGOperation = operation;
             m_lastPGProgress = progress;
             m_lastPGSubprogress = subprogress;
             m_lastPGmessage = message;
+            m_lastPGSubmessage = submessage;
 
             if (DuplicatiProgress != null)
-                try { DuplicatiProgress(operation, RunnerState.Running, message, progress, subprogress); }
+                try { DuplicatiProgress(operation, RunnerState.Running, message, submessage, progress, subprogress); }
                 catch { }
         }
 
         public void ReinvokeLastProgressEvent()
         {
-            Duplicati_OperationProgress(null, m_lastPGOperation, m_lastPGProgress, m_lastPGSubprogress, m_lastPGmessage);
+            Duplicati_OperationProgress(null, m_lastPGOperation, m_lastPGProgress, m_lastPGSubprogress, m_lastPGmessage, m_lastPGSubmessage );
         }
 
 

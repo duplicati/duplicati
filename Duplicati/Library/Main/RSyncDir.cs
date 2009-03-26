@@ -43,6 +43,7 @@ namespace Duplicati.Library.Main.RSync
         public delegate void ProgressEventDelegate(int progress, string filename);
         public event ProgressEventDelegate ProgressEvent;
 
+
         /// <summary>
         /// This is the folder being backed up
         /// </summary>
@@ -138,14 +139,26 @@ namespace Duplicati.Library.Main.RSync
         private bool m_disableFiletimeCheck = false;
 
         /// <summary>
+        /// A variable that controls the maximum size of a file
+        /// </summary>
+        private long m_maxFileSize = long.MaxValue;
+
+        /// <summary>
         /// This is a list of unprocessed files, used in multipass runs
         /// </summary>
         private List<string> m_unproccesed;
+
+        /// <summary>
+        /// A list of patch files for removal
+        /// </summary>
+        private List<Core.IFileArchive> m_patches;
 
         public RSyncDir(string sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter, List<Core.IFileArchive> patches)
             : this(sourcefolder, stat, filter)
         {
             string prefix = Core.Utility.AppendDirSeperator(SIGNATURE_ROOT);
+
+            m_patches = patches;
 
             foreach (Core.IFileArchive z in patches)
             {
@@ -306,10 +319,11 @@ namespace Duplicati.Library.Main.RSync
 
                 if (ProgressEvent != null)
                 {
-                    int pg = 100 - ((int)((m_unproccesed.Count / (double)m_totalfiles) * 100));
+                    //Update each 0.5% change, so it is visible that files are being examined
+                    int pg = 200 - ((int)((m_unproccesed.Count / (double)m_totalfiles) * 200));
                     if (lastPg != pg)
                     {
-                        ProgressEvent(pg, s);
+                        ProgressEvent(pg / 2, s);
                         lastPg = pg;
                     }
                 }
@@ -334,9 +348,16 @@ namespace Duplicati.Library.Main.RSync
 
                     using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
-                        System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
-                        if (signature != null)
-                            totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile);
+                        if (fs.Length <= m_maxFileSize)
+                        {
+                            //If the file is > 10mb, update the display to show the file being processed
+                            if (ProgressEvent != null && fs.Length > 1024 * 1024 * 10)
+                                ProgressEvent(lastPg, s);
+
+                            System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
+                            if (signature != null)
+                                totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -607,6 +628,13 @@ namespace Duplicati.Library.Main.RSync
 
         public void Dispose()
         {
+            if (m_patches != null)
+            {
+                foreach (Core.IFileArchive arc in m_patches)
+                    try { arc.Dispose(); }
+                    catch { }
+                m_patches = null;
+            }
         }
 
         #endregion
@@ -724,6 +752,12 @@ namespace Duplicati.Library.Main.RSync
         {
             get { return m_disableFiletimeCheck; }
             set { m_disableFiletimeCheck = value; }
+        }
+
+        public long MaxFileSize
+        {
+            get { return m_maxFileSize; }
+            set { m_maxFileSize = value; }
         }
 
         public List<string> UnmatchedFiles()

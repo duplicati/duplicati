@@ -97,13 +97,35 @@ namespace Duplicati.Library.Core
             while (lst.Count > 0)
             {
                 string f = lst.Dequeue();
-                foreach (string s in System.IO.Directory.GetDirectories(f))
-                    if (filter == null || filter.ShouldInclude(basepath, AppendDirSeperator(s)))
-                        lst.Enqueue(s);
+                try
+                {
+                    foreach (string s in System.IO.Directory.GetDirectories(f))
+                        if (filter == null || filter.ShouldInclude(basepath, AppendDirSeperator(s)))
+                            lst.Enqueue(s);
+                }
+                catch(System.Threading.ThreadAbortException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    //TODO: Log this
+                }
 
-                foreach (string s in System.IO.Directory.GetFiles(f))
-                    if (filter == null || filter.ShouldInclude(basepath, s))
-                        files.Add(s);
+                try
+                {
+                    foreach (string s in System.IO.Directory.GetFiles(f))
+                        if (filter == null || filter.ShouldInclude(basepath, s))
+                            files.Add(s);
+                }
+                catch (System.Threading.ThreadAbortException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    //TODO: Log this
+                }
             }
 
             return files;

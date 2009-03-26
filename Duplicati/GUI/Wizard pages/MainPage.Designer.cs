@@ -30,11 +30,11 @@ namespace Duplicati.GUI.Wizard_pages
         {
             this.label1 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.Backup = new System.Windows.Forms.RadioButton();
-            this.Remove = new System.Windows.Forms.RadioButton();
-            this.Restore = new System.Windows.Forms.RadioButton();
-            this.Edit = new System.Windows.Forms.RadioButton();
-            this.CreateNew = new System.Windows.Forms.RadioButton();
+            this.Backup = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.Remove = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.Restore = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.Edit = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.CreateNew = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.ShowAdvanced = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
@@ -70,6 +70,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.Backup.TabStop = true;
             this.Backup.Text = "Run a backup immediately";
             this.Backup.UseVisualStyleBackColor = true;
+            this.Backup.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.Backup.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
             // Remove
@@ -82,6 +83,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.Remove.TabStop = true;
             this.Remove.Text = "Remove an existing backup";
             this.Remove.UseVisualStyleBackColor = true;
+            this.Remove.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.Remove.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
             // Restore
@@ -94,6 +96,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.Restore.TabStop = true;
             this.Restore.Text = "Restore files from a backup";
             this.Restore.UseVisualStyleBackColor = true;
+            this.Restore.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.Restore.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
             // Edit
@@ -106,6 +109,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.Edit.TabStop = true;
             this.Edit.Text = "Edit an existing backup";
             this.Edit.UseVisualStyleBackColor = true;
+            this.Edit.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.Edit.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
             // CreateNew
@@ -118,6 +122,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.CreateNew.TabStop = true;
             this.CreateNew.Text = "Schedule a new backup";
             this.CreateNew.UseVisualStyleBackColor = true;
+            this.CreateNew.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.CreateNew.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
             // ShowAdvanced
@@ -139,7 +144,6 @@ namespace Duplicati.GUI.Wizard_pages
             this.Controls.Add(this.label1);
             this.Name = "MainPage";
             this.Size = new System.Drawing.Size(506, 242);
-            this.Load += new System.EventHandler(this.MainPage_Load);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.ResumeLayout(false);
@@ -151,11 +155,11 @@ namespace Duplicati.GUI.Wizard_pages
 
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.RadioButton Restore;
-        private System.Windows.Forms.RadioButton Edit;
-        private System.Windows.Forms.RadioButton CreateNew;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton Restore;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton Edit;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton CreateNew;
         private System.Windows.Forms.Button ShowAdvanced;
-        private System.Windows.Forms.RadioButton Backup;
-        private System.Windows.Forms.RadioButton Remove;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton Backup;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton Remove;
     }
 }

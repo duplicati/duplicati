@@ -28,8 +28,8 @@ namespace Duplicati.GUI.Wizard_pages
         /// </summary>
         private void InitializeComponent()
         {
-            this.CreateNew = new System.Windows.Forms.RadioButton();
-            this.Restore = new System.Windows.Forms.RadioButton();
+            this.CreateNew = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.Restore = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -45,6 +45,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.CreateNew.TabStop = true;
             this.CreateNew.Text = "Setup a new backup";
             this.CreateNew.UseVisualStyleBackColor = true;
+            this.CreateNew.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.CreateNew.CheckedChanged += new System.EventHandler(this.CreateNew_CheckedChanged);
             // 
             // Restore
@@ -57,6 +58,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.Restore.TabStop = true;
             this.Restore.Text = "Restore settings from a previous Duplicati installation";
             this.Restore.UseVisualStyleBackColor = true;
+            this.Restore.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.Restore.CheckedChanged += new System.EventHandler(this.Restore_CheckedChanged);
             // 
             // label1
@@ -105,8 +107,8 @@ namespace Duplicati.GUI.Wizard_pages
 
         #endregion
 
-        private System.Windows.Forms.RadioButton CreateNew;
-        private System.Windows.Forms.RadioButton Restore;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton CreateNew;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton Restore;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;

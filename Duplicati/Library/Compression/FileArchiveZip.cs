@@ -174,9 +174,10 @@ namespace Duplicati.Library.Compression
 #endif
 
             ICSharpCode.SharpZipLib.Zip.ZipEntry ze = GetEntry(file);
-            
             if (ze == null)
                 return null;
+            else if (ze.Size == 0)
+                return new ZerobyteStream();
             else
                 return m_zip.GetInputStream(ze);
         }
@@ -336,6 +337,23 @@ namespace Duplicati.Library.Compression
         }
 
         #endregion
+
+        /// <summary>
+        /// A stream that is empty. Used to extract zero byte files, because SharpZipLib throws exceptions when reading such files
+        /// </summary>
+        private class ZerobyteStream : System.IO.Stream
+        {
+            public override bool CanRead { get { return true; } }
+            public override bool CanSeek { get { return false; } }
+            public override bool CanWrite { get { return false; } }
+            public override void Flush() { }
+            public override long Length { get { return 0; } }
+            public override long Position { get { return 0; } set { if (value != 0) throw new ArgumentOutOfRangeException(); } }
+            public override int Read(byte[] buffer, int offset, int count) { return 0; }
+            public override long Seek(long offset, System.IO.SeekOrigin origin) { throw new NotImplementedException(); }
+            public override void SetLength(long value) { throw new NotImplementedException(); }
+            public override void Write(byte[] buffer, int offset, int count) { throw new NotImplementedException(); }
+        }
 
 #if !SHARPZIPLIBWORKS
 

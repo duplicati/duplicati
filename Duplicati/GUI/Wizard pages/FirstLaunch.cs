@@ -84,6 +84,11 @@ namespace Duplicati.GUI.Wizard_pages
         {
             FirstLaunch_PageDisplay(sender, null);
         }
+
+        private void RadioButton_DoubleClick(object sender, EventArgs e)
+        {
+            m_owner.NextButton.PerformClick();
+        }
     }
 }
 

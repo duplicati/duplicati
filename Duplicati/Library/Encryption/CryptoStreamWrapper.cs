@@ -36,6 +36,7 @@ namespace Duplicati.Library.Encryption
             : base(basestream)
         {
         }
+
         protected override void Dispose(bool disposing)
         {
             if (!m_hasFlushed && m_basestream.CanWrite)

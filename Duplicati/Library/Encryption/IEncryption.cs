@@ -67,8 +67,8 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// Encrypts the stream
         /// </summary>
-        /// <param name="input">The unencrypted stream</param>
-        /// <returns>The encrypted stream</returns>
+        /// <param name="input">The target stream</param>
+        /// <returns>An encrypted stream that can be written to</returns>
         Stream Encrypt(Stream input);
 
         /// <summary>

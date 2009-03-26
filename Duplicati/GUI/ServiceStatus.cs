@@ -64,19 +64,18 @@ namespace Duplicati.GUI
                 Program.Runner.ReinvokeLastProgressEvent();
         }
 
-        void Runner_DuplicatiProgress(Duplicati.Library.Main.DuplicatiOperation operation, DuplicatiRunner.RunnerState state, string message, int progress, int subprogress)
+        void Runner_DuplicatiProgress(Duplicati.Library.Main.DuplicatiOperation operation, DuplicatiRunner.RunnerState state, string message, string submessage, int progress, int subprogress)
         {
             if (this.InvokeRequired)
-                this.Invoke(new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress), operation, state, message, progress, subprogress);
+                this.Invoke(new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress), operation, state, message, submessage, progress, subprogress);
             else
             {
+                //TODO: Test the display!
                 WorkProgressbar.Visible = ProgressMessage.Visible = state != DuplicatiRunner.RunnerState.Stopped;
                 WorkProgressbar.Style = progress < 0 ? ProgressBarStyle.Marquee : ProgressBarStyle.Blocks;
                 WorkProgressbar.Value = Math.Max(Math.Min(WorkProgressbar.Maximum, progress), WorkProgressbar.Minimum);
-                if (subprogress < 0)
-                    ProgressMessage.Text = message;
-                else
-                    toolTip1.SetToolTip(SubProgressBar, message);
+                ProgressMessage.Text = message;
+                toolTip1.SetToolTip(SubProgressBar, submessage);
 
                 SubProgressBar.Value = Math.Max(Math.Min(SubProgressBar.Maximum, subprogress), SubProgressBar.Minimum);
                 if (!SubProgressBar.Visible && subprogress >= 0)

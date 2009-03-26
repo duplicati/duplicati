@@ -26,14 +26,14 @@ namespace Duplicati.Library.Main
     /// <summary>
     /// Internal class that ensures retry operations, tracks statistics and performs asyncronous operations
     /// </summary>
-    internal class BackendWrapper : Backend.IBackend 
+    internal class BackendWrapper : IDisposable
     {
         private Backend.IBackend m_backend;
         private CommunicationStatistics m_statistics;
         private Options m_options;
 
         //These keep track of async operations
-        private Queue<string[]> m_pendingOperations;
+        private Queue<KeyValuePair<BackupEntry, string>> m_pendingOperations;
         //TODO: Figure out if the linux implementation uses the pthreads model, where signals
         //are lost if there are no waiters at the signaling time
         private System.Threading.ManualResetEvent m_asyncWait;
@@ -42,56 +42,229 @@ namespace Duplicati.Library.Main
         //Temporary variable for progress reporting
         private string m_statusmessage;
 
+        private FilenameStrategy m_filenamestrategy;
+        private FilenameStrategy m_cachefilenamestrategy = new FilenameStrategy("dpl", "_", true);
+
+        private List<BackupEntry> m_orphans;
+
         public event RSync.RSyncDir.ProgressEventDelegate ProgressEvent;
 
-        public BackendWrapper(CommunicationStatistics statistics, Backend.IBackend backend, Options options)
+        private Encryption.IEncryption m_encryption = null;
+
+        public BackendWrapper(CommunicationStatistics statistics, string backend, Options options)
         {
             m_statistics = statistics;
-            m_backend = backend;
             m_options = options;
 
-            if (options.AsynchronousUpload)
+            m_filenamestrategy = new FilenameStrategy(m_options);
+
+            m_backend = Backend.BackendLoader.GetBackend(backend, m_options.RawOptions);
+            if (m_backend == null)
+                throw new Exception("Unable to find backend for m_backend: " + m_backend);
+
+            if (!options.NoEncryption)
+            {
+                if (string.IsNullOrEmpty(options.Passphrase))
+                    throw new Exception("No passphrase set");
+
+                string passphrase = options.Passphrase;
+
+                if (options.GPGEncryption)
+                {
+                    if (!string.IsNullOrEmpty(options.GPGPath))
+                        Library.Encryption.GPGEncryption.PGP_PROGRAM = options.GPGPath;
+                    m_encryption = new Library.Encryption.GPGEncryption(options.Passphrase, options.GPGSignKey);
+                }
+                else
+                    m_encryption = new Library.Encryption.AESEncryption(options.Passphrase);
+            }
+
+            if (m_options.AutoCleanup)
+                m_orphans = new List<BackupEntry>();
+
+            if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && !System.IO.Directory.Exists(m_options.SignatureCachePath))
+                System.IO.Directory.CreateDirectory(m_options.SignatureCachePath);
+
+            if (m_options.AsynchronousUpload)
             {
                 //If we are using async operations, the entire class is actually threadsafe,
                 //utilizing a common exclusive lock on all operations. But the implementation does
                 //not prevent starvation, so it should not be called by multiple threads.
-                m_pendingOperations = new Queue<string[]>();
+                m_pendingOperations = new Queue<KeyValuePair<BackupEntry, string>>();
                 m_asyncWait = new System.Threading.ManualResetEvent(true);
                 m_queuelock = new object();
             }
         }
 
-        #region IBackendInterface Members
-
-        public string DisplayName
+        public void AddOrphan(BackupEntry entry)
         {
-            get { return m_backend.DisplayName; }
+            if (m_orphans != null)
+                m_orphans.Add(entry);
+            else
+                Logging.Log.WriteMessage("Found a partial file, run cleanup to remove: " + entry.Filename, Duplicati.Library.Logging.LogMessageType.Warning);
         }
 
-        public string ProtocolKey
+        public BackupEntry GetBackupSet(string timelimit)
         {
-            get { return m_backend.ProtocolKey; }
+            if (string.IsNullOrEmpty(timelimit))
+                timelimit = "now";
+
+            return GetBackupSet(Core.Timeparser.ParseTimeInterval(timelimit, DateTime.Now));
         }
 
-        public bool SupportsStreaming
+        public BackupEntry GetBackupSet(DateTime timelimit)
         {
-            get { return m_backend is Backend.IStreamingBackend ? ((Backend.IStreamingBackend)m_backend).SupportsStreaming : false; }
+            List<BackupEntry> backups = GetBackupSets();
+
+            if (backups.Count == 0)
+                throw new Exception("No backups found at remote location");
+
+            BackupEntry bestFit = backups[0];
+            List<BackupEntry> additions = new List<BackupEntry>();
+            foreach (BackupEntry be in backups)
+                if (be.Time < timelimit)
+                {
+                    bestFit = be;
+                    foreach (BackupEntry bex in be.Incrementals)
+                        if (bex.Time <= timelimit)
+                            additions.Add(bex);
+
+                }
+
+           if (bestFit.SignatureFile.Count == 0 || bestFit.ContentVolumes.Count == 0)
+                throw new Exception("Unable to parse filenames for the desired volumes");
+
+            bestFit.Incrementals = additions;
+            return bestFit;
+
         }
 
-        public List<Duplicati.Library.Backend.FileEntry> List()
+        public List<BackupEntry> GetBackupSets()
         {
-            return (List<Duplicati.Library.Backend.FileEntry>)ProtectedInvoke("ListInternal");
+            using (new Logging.Timer("Getting and sorting filelist from " + m_backend.DisplayName))
+            {
+                List<BackupEntry> incrementals = new List<BackupEntry>();
+                List<BackupEntry> fulls = new List<BackupEntry>();
+                Dictionary<string, List<BackupEntry>> signatures = new Dictionary<string, List<BackupEntry>>();
+                Dictionary<string, List<BackupEntry>> contents = new Dictionary<string, List<BackupEntry>>();
+
+                foreach (Duplicati.Library.Backend.FileEntry fe in (List<Duplicati.Library.Backend.FileEntry>)ProtectedInvoke("ListInternal"))
+                {
+                    BackupEntry be = m_filenamestrategy.DecodeFilename(fe);
+                    if (be == null)
+                        continue; //Non-duplicati files
+
+                    if (be.Type == BackupEntry.EntryType.Content)
+                    {
+                        string content = m_filenamestrategy.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
+                        if (be.EncryptionMode != null)
+                            content += "." + be.EncryptionMode;
+                        
+                        if (!contents.ContainsKey(content))
+                            contents[content] = new List<BackupEntry>();
+                        contents[content].Add(be);
+                    }
+                    else if (be.Type == BackupEntry.EntryType.Signature)
+                    {
+                        string content = m_filenamestrategy.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
+                        if (be.EncryptionMode != null)
+                            content += "." + be.EncryptionMode;
+
+                        if (!signatures.ContainsKey(content))
+                            signatures[content] = new List<BackupEntry>();
+                        signatures[content].Add(be);
+                    }
+                    else if (be.Type != BackupEntry.EntryType.Manifest)
+                        throw new Exception("Invalid entry type");
+                    else if (be.IsFull)
+                        fulls.Add(be);
+                    else
+                        incrementals.Add(be);
+                }
+
+                fulls.Sort(new Sorter());
+                incrementals.Sort(new Sorter());
+
+                foreach (BackupEntry be in fulls)
+                {
+                    if (contents.ContainsKey(be.Filename))
+                    {
+                        be.ContentVolumes.AddRange(contents[be.Filename]);
+                        contents.Remove(be.Filename);
+                    }
+
+                    if (signatures.ContainsKey(be.Filename))
+                    {
+                        be.SignatureFile.AddRange(signatures[be.Filename]);
+                        signatures.Remove(be.Filename);
+                    }
+                }
+
+
+                int index = 0;
+                foreach (BackupEntry be in incrementals)
+                {
+                    if (contents.ContainsKey(be.Filename))
+                    {
+                        be.ContentVolumes.AddRange(contents[be.Filename]);
+                        contents.Remove(be.Filename);
+                    }
+
+                    if (signatures.ContainsKey(be.Filename))
+                    {
+                        be.SignatureFile.AddRange(signatures[be.Filename]);
+                        signatures.Remove(be.Filename);
+                    }
+
+                    if (index >= fulls.Count || be.Time <= fulls[index].Time)
+                    {
+                        if (m_orphans == null)
+                            Logging.Log.WriteMessage("Failed to match incremental package to a full: " + be.Filename, Duplicati.Library.Logging.LogMessageType.Warning);
+                        else
+                            m_orphans.Add(be);
+                        continue;
+                    }
+                    else
+                    {
+                        while (index < fulls.Count - 1 && be.Time > fulls[index + 1].Time)
+                            index++;
+                        fulls[index].Incrementals.Add(be);
+                    }
+                }
+
+                foreach (BackupEntry be in fulls)
+                {
+                    be.ContentVolumes.Sort(new Sorter());
+                    be.SignatureFile.Sort(new Sorter());
+                }
+
+                foreach (BackupEntry be in incrementals)
+                {
+                    be.ContentVolumes.Sort(new Sorter());
+                    be.SignatureFile.Sort(new Sorter());
+                }
+
+                if (m_orphans != null)
+                {
+                    foreach (List<BackupEntry> lb in contents.Values)
+                        m_orphans.AddRange(lb);
+                    foreach (List<BackupEntry> lb in signatures.Values)
+                        m_orphans.AddRange(lb);
+                }
+
+                return fulls;
+            }
         }
 
-        public void Put(string remotename, string filename)
+        public void Put(BackupEntry remote, string filename)
         {
             if (!m_options.AsynchronousUpload)
-                PutInternal(remotename, filename);
+                PutInternal(remote, filename);
             else
             {
                 lock (m_queuelock)
                 {
-                    m_pendingOperations.Enqueue(new string[] { remotename, filename });
+                    m_pendingOperations.Enqueue(new KeyValuePair<BackupEntry, string>( remote, filename ));
                     if (m_asyncWait.WaitOne(0))
                     {
                         m_asyncWait.Reset();
@@ -101,33 +274,15 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void Get(string remotename, string filename)
+        public void Get(BackupEntry remote, string filename, string filehash)
         {
-            ProtectedInvoke("GetInternal", remotename, filename);
+            ProtectedInvoke("GetInternal", remote, filename, filehash);
         }
 
-        public void Delete(string remotename)
+        public void Delete(BackupEntry remote)
         {
-            ProtectedInvoke("DeleteInternal", remotename);
+            ProtectedInvoke("DeleteInternal", remote);
         }
-
-        public IList<Backend.ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return m_backend.SupportedCommands;
-            }
-        }
-
-        public string Description
-        {
-            get
-            {
-                return m_backend.Description;
-            }
-        }
-
-        #endregion
 
         /// <summary>
         /// This method invokes another method in such a way that no more than one thread is ever 
@@ -196,6 +351,55 @@ namespace Duplicati.Library.Main
 
         }
 
+        private void DeleteSignatureCacheCopy(BackupEntry entry)
+        {
+            if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
+            {
+                string cacheFilename = m_cachefilenamestrategy.GenerateFilename(entry);
+                if (System.IO.File.Exists(cacheFilename))
+                    try { System.IO.File.Delete(cacheFilename); }
+                    catch { }
+            }
+        }
+
+        public void DeleteOrphans()
+        {
+            if (m_orphans == null)
+                return;
+
+            foreach (BackupEntry be in m_orphans)
+            {
+                Logging.Log.WriteMessage("Removing leftover file: " + be.Filename, Duplicati.Library.Logging.LogMessageType.Information);
+                if (m_options.Force)
+                {
+                    m_backend.Delete(be.Filename);
+                    DeleteSignatureCacheCopy(be);
+                }
+
+                foreach (BackupEntry bex in be.SignatureFile)
+                {
+                    Logging.Log.WriteMessage("Removing leftover file: " + bex.Filename, Duplicati.Library.Logging.LogMessageType.Information);
+                    if (m_options.Force)
+                    {
+                        m_backend.Delete(bex.Filename);
+                        DeleteSignatureCacheCopy(bex);
+                    }
+                }
+                foreach (BackupEntry bex in be.ContentVolumes)
+                {
+                    Logging.Log.WriteMessage("Removing leftover file: " + bex.Filename, Duplicati.Library.Logging.LogMessageType.Information);
+                    if (m_options.Force)
+                    {
+                        m_backend.Delete(bex.Filename);
+                        DeleteSignatureCacheCopy(bex);
+                    }
+                }
+            }
+
+            if (!m_options.Force && m_orphans.Count > 0)
+                Logging.Log.WriteMessage("No files removed, specify --force to remove files.", Duplicati.Library.Logging.LogMessageType.Information);
+        }
+
         private List<Duplicati.Library.Backend.FileEntry> ListInternal()
         {
             int retries = m_options.NumberOfRetries;
@@ -222,8 +426,9 @@ namespace Duplicati.Library.Main
             throw new Exception("Failed to retrieve file listing: " + lastEx.Message, lastEx);
         }
 
-        private void DeleteInternal(string remotename)
+        private void DeleteInternal(BackupEntry remote)
         {
+            string remotename = m_filenamestrategy.GenerateFilename(remote);
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
 
@@ -248,10 +453,30 @@ namespace Duplicati.Library.Main
 
             if (lastEx != null)
                 throw new Exception("Failed to delete file: " + lastEx.Message, lastEx);
+
+            if (remote.Type == BackupEntry.EntryType.Signature && !string.IsNullOrEmpty(m_options.SignatureCachePath))
+            {
+                try 
+                { 
+                    if (System.IO.File.Exists(System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote))))
+                        System.IO.File.Delete(System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote))); 
+                }
+                catch {}
+            }
         }
 
-        private void GetInternal(string remotename, string filename)
+        private void GetInternal(BackupEntry remote, string filename, string filehash)
         {
+            //TODO: Remember to change filename when tar is supported
+            string remotename = m_filenamestrategy.GenerateFilename(remote);
+            if (remote.Type == BackupEntry.EntryType.Manifest)
+                remotename += ".manifest";
+            else
+                remotename += ".zip";
+
+            if (m_encryption != null)
+                remotename += "." + m_encryption.FilenameExtension;
+
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
             m_statusmessage = "Downloading: " + remotename;
@@ -260,23 +485,62 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    m_statistics.NumberOfRemoteCalls++;
-                    if (!this.SupportsStreaming)
+                    if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote.Type == BackupEntry.EntryType.Signature)
                     {
-                        if (!m_options.AsynchronousUpload && ProgressEvent != null)
-                            ProgressEvent(50, m_statusmessage);
-                        m_backend.Get(remotename, filename);
-                        if (!m_options.AsynchronousUpload && ProgressEvent != null)
-                            ProgressEvent(100, m_statusmessage);
-                    }
-                    else
-                    {
-                        //TODO: How can we guess the remote file size for progress reporting?
-                        using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            ((Backend.IStreamingBackend)m_backend).Get(remotename, new Core.ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond));
+                        string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
+
+                        if (System.IO.File.Exists(cachefilename))
+                            if (filehash != null && Core.Utility.CalculateHash(cachefilename) == filehash)
+                            {
+                                System.IO.File.Copy(cachefilename, filename); //TODO: Warn on hash mismatch?
+                                return;
+                            }
                     }
 
-                    lastEx = null;
+                    Core.TempFile tempfile;
+                    if (m_encryption != null)
+                        tempfile = new Duplicati.Library.Core.TempFile();
+                    else
+                        tempfile = new Duplicati.Library.Core.TempFile(filename);
+
+                    using (tempfile) //Delete tempfile if exception occurs
+                    {
+                        m_statistics.NumberOfRemoteCalls++;
+                        if (m_backend is Backend.IStreamingBackend && ((Backend.IStreamingBackend)m_backend).SupportsStreaming)
+                        {
+                            //TODO: How can we guess the remote file size for progress reporting?
+                            using (System.IO.FileStream fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                                ((Backend.IStreamingBackend)m_backend).Get(remotename, new Core.ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond));
+                        }
+                        else
+                        {
+                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
+                                ProgressEvent(50, m_statusmessage);
+                            m_backend.Get(remotename, tempfile);
+                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
+                                ProgressEvent(100, m_statusmessage);
+                        }
+
+                        if (m_encryption != null)
+                        {
+                            m_encryption.Decrypt(tempfile, filename);
+                            tempfile.Dispose(); //Remove the encrypted file
+
+                            tempfile = new Duplicati.Library.Core.TempFile(filename);
+                        }
+
+                        if (filehash != null && Core.Utility.CalculateHash(tempfile) != filehash)
+                            throw new Exception("Hash mismatch on file " + remotename + " recorded hash: " + filehash + ", actual hash: " + Core.Utility.CalculateHash(tempfile));
+
+                        if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote.Type == BackupEntry.EntryType.Signature)
+                        {
+                            string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
+                            System.IO.File.Copy(tempfile, cachefilename);
+                        }
+
+                        lastEx = null;
+                        tempfile.Protected = true; //Don't delete it
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -295,12 +559,34 @@ namespace Duplicati.Library.Main
             m_statistics.NumberOfBytesDownloaded += new System.IO.FileInfo(filename).Length;
         }
 
-        private void PutInternal(string remotename, string filename)
+        private void PutInternal(BackupEntry remote, string filename)
         {
+            //TODO: Remember to change filename when tar is supported
+            string remotename = m_filenamestrategy.GenerateFilename(remote);
+            if (remote.Type == BackupEntry.EntryType.Manifest)
+                remotename += ".manifest";
+            else
+                remotename += ".zip";
+
             m_statusmessage = "Uploading: " + remotename + " (" + Core.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length) + ")";
+
+            string encryptedFile = filename;
 
             try
             {
+                if (m_encryption != null)
+                {
+                    remotename += "." + m_encryption.FilenameExtension;
+
+                    using (Core.TempFile tf = new Duplicati.Library.Core.TempFile()) //If exception is thrown, tf will be deleted
+                    {
+                        m_encryption.Encrypt(filename, tf);
+                        tf.Protected = true; //Done, keep file
+                        encryptedFile = tf;
+                    }
+
+                }
+
                 int retries = m_options.NumberOfRetries;
                 bool success = false;
 
@@ -309,41 +595,36 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_statistics.NumberOfRemoteCalls++;
-                        if (!this.SupportsStreaming)
-                        {
-                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
-                                ProgressEvent(50, m_statusmessage);
-                            m_backend.Put(remotename, filename);
-                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
-                                ProgressEvent(50, m_statusmessage);
-                        }
-                        else
+                        if (m_backend is Backend.IStreamingBackend && ((Backend.IStreamingBackend)m_backend).SupportsStreaming)
                         {
 #if DEBUG
                             DateTime begin = DateTime.Now;
-                            long l;
-                            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+#endif
+                            using (System.IO.FileStream fs = System.IO.File.Open(encryptedFile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                             using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, fs.Length))
                             {
-                                l = pgs.Length;
                                 if (!m_options.AsynchronousUpload)
                                     pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
                                 ((Backend.IStreamingBackend)m_backend).Put(remotename, new Core.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond));
                             }
 
+#if DEBUG
                             TimeSpan duration = DateTime.Now - begin;
-
-                            Console.WriteLine("Transferred " + l.ToString() + " bytes in " + duration.TotalSeconds.ToString() + ", yielding : " + (l / (double)1024 / duration.TotalSeconds) + " kb/s");
-#else
-                            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                            using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, fs.Length))
-                            {
-                                if (!m_asyncOperation)
-                                    pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
-                                ((Backend.IStreamingBackend)m_backend).Put(remotename, ThrottleStream(pgs, m_options));
-                            }
+                            long size = new System.IO.FileInfo(encryptedFile).Length;
+                            Console.WriteLine("Transferred " + Core.Utility.FormatSizeString(size) + " in " + duration.TotalSeconds.ToString() + ", yielding : " + ((size / (double)1024.0) / duration.TotalSeconds) + " kb/s");
 #endif
                         }
+                        else
+                        {
+                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
+                                ProgressEvent(50, m_statusmessage);
+                            m_backend.Put(remotename, encryptedFile);
+                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
+                                ProgressEvent(50, m_statusmessage);
+                        }
+
+                        if (remote.Type == BackupEntry.EntryType.Signature && !string.IsNullOrEmpty(m_options.SignatureCachePath))
+                            System.IO.File.Copy(filename, System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote)), true);
 
                         success = true;
                     }
@@ -372,6 +653,13 @@ namespace Duplicati.Library.Main
                         System.IO.File.Delete(filename);
                 }
                 catch { }
+
+                try
+                {
+                    if (System.IO.File.Exists(encryptedFile))
+                        System.IO.File.Delete(encryptedFile);
+                }
+                catch { }
             }
 
         }
@@ -390,7 +678,7 @@ namespace Duplicati.Library.Main
         {
             while (true)
             {
-                string[] args;
+                KeyValuePair<BackupEntry, string> args;
 
                 //Obtain the lock for the queue
                 lock (m_queuelock)
@@ -406,7 +694,7 @@ namespace Duplicati.Library.Main
 
                 }
 
-                PutInternal(args[0], args[1]);
+                PutInternal(args.Key, args.Value);
             }
         }
 

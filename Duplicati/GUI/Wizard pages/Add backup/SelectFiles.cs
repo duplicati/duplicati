@@ -45,12 +45,15 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private string[] m_specialFolders;
 
+        private bool m_warnedFiltersChanged = true;
+
         public SelectFiles()
             : base("Select files to backup", "On this page you must select the folder and files you wish to backup")
         {
             InitializeComponent();
             m_sizes = new Dictionary<string, long>();
 
+            //TODO: If any of these variables point to the same folder, bad things will happen...
             m_myPictures = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
             m_myMusic = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
             m_desktop = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
@@ -75,15 +78,35 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             base.PageLeave += new PageChangeHandler(SelectFiles_PageLeave);
         }
 
+        void m_owner_Cancelled(object sender, CancelEventArgs e)
+        {
+            if (m_calculator != null)
+                m_calculator.ClearQueue(true);
+        }
+
         void SelectFiles_PageLeave(object sender, PageChangedArgs args)
         {
+            m_owner.Cancelled -= new CancelEventHandler(m_owner_Cancelled);
             m_settings["Files:Sizes"] = m_sizes;
+            m_settings["Files:WarnedFilters"] = m_warnedFiltersChanged;
+            m_calculator.ClearQueue(true);
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
             if (DocumentsRadio.Checked)
             {
+                if (!m_warnedFiltersChanged)
+                {
+                    if (MessageBox.Show(this, "You have modified the filters, but selected files by groups.\nSince that feature uses filters, there is a chance that your filters\nwill be removed after this.\nIf you switch to using only a single folder, your filters will not be modified.\n\nDo you want to continue, and possibly lose your filter setup?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                    {
+                        args.Cancel = true;
+                        return;
+                    }
+
+                    m_warnedFiltersChanged = true;
+                }
+
                 List<string> folders = new List<string>();
                 List<string> exfolders = new List<string>();
                 if (IncludeDocuments.Checked)
@@ -145,35 +168,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                         basefolder = Library.Core.Utility.AppendDirSeperator(string.Join(System.IO.Path.DirectorySeparatorChar.ToString(), p1, 0, ix));
                     }
 
-                List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
-
-                List<KeyValuePair<bool, string>> extras = new List<KeyValuePair<bool, string>>();
-                foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters))
-                    if (!tf.Value.StartsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                        extras.Add(tf);
-
-                folders.Sort();
-                folders.Reverse();
-
-                //Include selected folders
-                foreach (string f in folders)
-                {
-                    //Exclude subfolders
-                    foreach (string s in exfolders)
-                        if (s.StartsWith(f) && (basefolder == s || s.StartsWith(basefolder)))
-                            filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(basefolder.Length - 1) + "*")));
-
-                    if (hasCommonParent)
-                        filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f.Substring(basefolder.Length - 1) + "*")));
-                }
-
-                //Exclude everything else if they have a non-included parent
-                if (hasCommonParent)
-                    filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp("*")));
-
-                extras.AddRange(filters);
-                m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(extras);
-
+                m_wrapper.EncodedFilters = EncodeFilterString(basefolder, hasCommonParent, folders, exfolders, m_wrapper.EncodedFilters);
                 m_wrapper.SourcePath = basefolder;
             }
             else
@@ -191,15 +186,51 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (m_calculator != null)
                 m_calculator.ClearQueue(true);
 
-             args.NextPage = new PasswordSettings();
+            m_settings["Files:WarnedFilters"] = m_warnedFiltersChanged;
+            args.NextPage = new PasswordSettings();
+        }
+
+        private string EncodeFilterString(string basefolder, bool hasCommonParent, List<string> folders, List<string> exfolders, string existingFilter)
+        {
+            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
+
+            List<KeyValuePair<bool, string>> extras = new List<KeyValuePair<bool, string>>();
+            foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(existingFilter))
+                if (!tf.Value.StartsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                    extras.Add(tf);
+
+            folders.Sort();
+            folders.Reverse();
+
+            //Include selected folders
+            foreach (string f in folders)
+            {
+                //Exclude subfolders
+                foreach (string s in exfolders)
+                    if (s.StartsWith(f) && (basefolder == s || s.StartsWith(basefolder)))
+                        filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(basefolder.Length - 1) + "*")));
+
+                if (hasCommonParent)
+                    filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f.Substring(basefolder.Length - 1) + "*")));
+            }
+
+            //Exclude everything else if they have a non-included parent
+            if (hasCommonParent)
+                filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp("*")));
+
+            extras.AddRange(filters);
+            return Library.Core.FilenameFilter.EncodeAsFilter(extras);
         }
 
         void SelectFiles_PageEnter(object sender, PageChangedArgs args)
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
+            m_owner.Cancelled += new CancelEventHandler(m_owner_Cancelled);
 
             if (m_settings.ContainsKey("Files:Sizes"))
                 m_sizes = (Dictionary<string, long>)m_settings["Files:Sizes"];
+            if (m_settings.ContainsKey("Files:WarnedFilters"))
+                m_warnedFiltersChanged = (bool)m_settings["Files:WarnedFilters"];
 
             if (!m_valuesAutoLoaded)
             {
@@ -215,35 +246,83 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 else
                 {
                     string p = Library.Core.Utility.AppendDirSeperator(m_wrapper.SourcePath);
-                    Library.Core.FilenameFilter fnf = new Duplicati.Library.Core.FilenameFilter(Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters));
+                    List<KeyValuePair<bool, string>> filters = Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters);
 
-                    List<string> included = new List<string>();
-                    foreach (string s in m_specialFolders)
-                        if (fnf.ShouldInclude(p, s))
-                            included.Add(s);
+                    bool hasCommonBase = false;
+                    List<CheckBox> included = new List<CheckBox>();
+                    List<CheckBox> excluded = new List<CheckBox>();
+
+                    string startChar = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString());
+                    Dictionary<string, CheckBox> specialFolders = new Dictionary<string,CheckBox>();
+
+                    if (m_myDocuments.Substring(1).StartsWith(p))
+                    {
+                        specialFolders.Add(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myDocuments.Substring(p.Length) + "*"), IncludeDocuments);
+                        specialFolders.Add(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myDocuments.Substring(1) + "*"), IncludeDocuments);
+                    }
+                    if (m_myPictures.Substring(1).StartsWith(p))
+                    {
+                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myPictures.Substring(p.Length) + "*")] = IncludeImages;
+                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myPictures.Substring(1) + "*")] = IncludeImages;
+                    }
+                    if (m_myMusic.Substring(1).StartsWith(p))
+                    {
+                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myMusic.Substring(p.Length) + "*")] = IncludeMusic;
+                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myMusic.Substring(1) + "*")] = IncludeMusic;
+                    }
+                    if (m_desktop.Substring(1).StartsWith(p))
+                    {
+                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_desktop.Substring(p.Length) + "*")] = IncludeDesktop;
+                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_desktop.Substring(1) + "*")] = IncludeDesktop;
+                    }
+                    if (m_appData.Substring(1).StartsWith(p))
+                    {
+                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_appData.Substring(p.Length) + "*")] = IncludeSettings;
+                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_appData.Substring(1) + "*")] = IncludeSettings;
+                    }
+
+                    bool unsupported = false;
+
+                    foreach (KeyValuePair<bool, string> s in filters)
+                    {
+                        hasCommonBase |= (s.Key == false && s.Value == ".*");
+
+                        if (s.Value.StartsWith(startChar))
+                        {
+                            if (specialFolders.ContainsKey(s.Value))
+                            {
+                                if (s.Key)
+                                    included.Add(specialFolders[s.Value]);
+                                else
+                                    excluded.Add(specialFolders[s.Value]);
+                            }
+                            else
+                                unsupported = true;
+                        }
+                    }
+
+                    string baseEncoded = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(p);
+                    foreach (string s in specialFolders.Keys)
+                        if (!excluded.Contains(specialFolders[s]) && s.StartsWith(baseEncoded) && !included.Contains(specialFolders[s]))
+                            included.Add(specialFolders[s]);
 
                     TargetFolder.Text = m_wrapper.SourcePath;
 
-                    if (included.Count == 0)
-                    {
-                        FolderRadio.Checked = true;
-                    }
-                    else
-                    {
-                        //TODO: If there are extras here, revert to the Folder type
-                        DocumentsRadio.Checked = true;
-                        IncludeDocuments.Checked = included.Contains(m_myDocuments.Substring(1));
-                        IncludeImages.Checked = included.Contains(m_myPictures.Substring(1));
-                        IncludeMusic.Checked = included.Contains(m_myMusic.Substring(1));
-                        IncludeDesktop.Checked = included.Contains(m_desktop.Substring(1));
-                        IncludeSettings.Checked = included.Contains(m_appData.Substring(1));
+                    IncludeDocuments.Checked =
+                        IncludeImages.Checked =
+                        IncludeMusic.Checked =
+                        IncludeDesktop.Checked =
+                        IncludeSettings.Checked = false;
 
-                        if (!(IncludeDocuments.Checked || IncludeMusic.Checked || IncludeImages.Checked || IncludeDesktop.Checked || IncludeSettings.Checked))
-                        {
-                            FolderRadio.Checked = true;
-                            TargetFolder.Text = m_wrapper.SourcePath;
-                        }
-                    }
+                    foreach (CheckBox c in included)
+                        c.Checked = true;
+
+                    if (unsupported || included.Count == 0)
+                        FolderRadio.Checked = true;
+                    else
+                        DocumentsRadio.Checked = true;
+
+                    m_warnedFiltersChanged = !unsupported;
                 }
             }
 

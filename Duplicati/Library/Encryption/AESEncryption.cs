@@ -85,7 +85,7 @@ namespace Duplicati.Library.Encryption
                 throw new Exception("Useless encryption detected");
 
             System.Security.Cryptography.ICryptoTransform ct = m_instance.CreateEncryptor();
-            return new CryptoStreamWrapper(new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Write));
+            return new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Write);
         }
 
         public override System.IO.Stream Decrypt(System.IO.Stream input)
@@ -95,7 +95,6 @@ namespace Duplicati.Library.Encryption
 
             System.Security.Cryptography.ICryptoTransform ct = m_instance.CreateDecryptor();
             return new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Read);
-
         }
 
         #endregion

@@ -71,6 +71,20 @@ namespace Duplicati.Library.Main
             m_content = new List<BackupEntry>();
             m_incrementals = new List<BackupEntry>();
         }
+
+        public BackupEntry(EntryType type, bool isFull, DateTime backuptime, int volume)
+        {
+            m_type = type;
+            m_isFull = isFull;
+            m_time = backuptime;
+            m_volNumber = volume;
+
+            m_signature = new List<BackupEntry>();
+            m_content = new List<BackupEntry>();
+            m_incrementals = new List<BackupEntry>();
+            m_compressionMode = "zip";
+            m_fileentry = null;
+        }
     }
 
     internal class Sorter : IComparer<BackupEntry>

@@ -43,6 +43,9 @@
     <Compile Include="Dialog.Designer.cs">
       <DependentUpon>Dialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="DoubleClickRadioButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="IWizardControl.cs" />
     <Compile Include="IWizardForm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -169,9 +169,9 @@ namespace Duplicati.GUI.Wizard_pages
 
         }
 
-        private void MainPage_Load(object sender, EventArgs e)
+        private void RadioButton_DoubleClick(object sender, EventArgs e)
         {
+            m_owner.NextButton.PerformClick();
         }
-
     }
 }

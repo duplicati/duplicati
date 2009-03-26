@@ -314,6 +314,7 @@ namespace Duplicati.CommandLine
                 lines.Add("");
                 lines.Add("  In this example the file \"C:\\Documents\\Files\\file.txt\" is excluded.");
             }
+            lines.Add("  If a folder is excluded, files in that folder are always excluded, even if there are filters that include files in that folder. If a folder is included with a wildcard at the end, all files are included, if the folder is included without a wildcard, files may be excluded or included with extra rules.");
             lines.Add("");
             lines.Add("");
             lines.Add("Duplicati options:");
