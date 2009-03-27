@@ -77,8 +77,8 @@ namespace Duplicati.GUI
 
                 bool scheduleRun = wrapper.RunImmediately && wrapper.BackupTimeOffset > DateTime.Now;
 
-                lock(Program.MainLock)
-                    con.CommitRecursiveWithRelations(schedule);
+                lock (Program.MainLock)
+                    con.CommitAllRecursive();
                 schedule = Program.DataConnection.GetObjectById<Schedule>(schedule.ID);
 
                 if (wrapper.UseEncryptionAsDefault)

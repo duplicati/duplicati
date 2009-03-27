@@ -183,7 +183,7 @@ namespace Duplicati.GUI
             task.RaiseTaskCompleted(results);
 
             if (task.Schedule != null)
-                ((System.Data.LightDatamodel.IDataFetcherCached)task.Schedule.DataParent).CommitRecursiveWithRelations();
+                task.Schedule.ScheduledRunCompleted(); //Register as completed
 
             if (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup)
             {

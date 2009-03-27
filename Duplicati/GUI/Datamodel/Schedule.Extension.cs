@@ -25,6 +25,8 @@ namespace Duplicati.Datamodel
 {
     public partial class Schedule
     {
+        private DateTime m_nextSchedule = new DateTime();
+
         public bool ExistsInDb
         {
             get { return this.ID > 0; }
@@ -33,5 +35,41 @@ namespace Duplicati.Datamodel
         public void GetOptions(Dictionary<string, string> options)
         {
         }
+
+        /// <summary>
+        /// Gets or sets the next scheduled time.
+        /// Note that this property is volatile, so
+        /// commiting the object will not persist this value.
+        /// Only a call to ScheduledRunCompleted will persist this value.
+        /// </summary>
+        public DateTime NextScheduledTime
+        {
+            get
+            {
+                if (m_nextSchedule.Ticks == 0)
+                    return this.When;
+                else
+                    return m_nextSchedule;
+            }
+            set 
+            {
+                m_nextSchedule = value;
+            }
+        }
+
+        /// <summary>
+        /// Signals that the a scheduled run has completed.
+        /// Will write a new scheduled time to the database
+        /// </summary>
+        public void ScheduledRunCompleted()
+        {
+            if (m_nextSchedule.Ticks != 0)
+            {
+                this.When = m_nextSchedule;
+                m_nextSchedule = new DateTime();
+                ((System.Data.LightDatamodel.IDataFetcherCached)this.DataParent).CommitRecursiveWithRelations(this);
+            }
+        }
+        
     }
 }

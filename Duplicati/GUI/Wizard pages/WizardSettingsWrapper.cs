@@ -129,7 +129,6 @@ namespace Duplicati.GUI.Wizard_pages
             this.VolumeSize = schedule.Task.VolumeSize;
             this.ThreadPriority = schedule.Task.ThreadPriority;
             this.AsyncTransfer = schedule.Task.AsyncTransfer;
-            this.EncodedFilters = schedule.Task.EncodedFilter;
             this.GPGEncryption = schedule.Task.GPGEncryption;
             this.IncludeSetup = schedule.Task.IncludeSetup;
             this.IgnoreFileTimestamps = schedule.Task.IgnoreTimestamps;
@@ -149,6 +148,7 @@ namespace Duplicati.GUI.Wizard_pages
             if (schedule.Task == null)
                 schedule.Task = schedule.DataParent.Add<Datamodel.Task>();
             schedule.Task.SourcePath = this.SourcePath;
+            //TODO: This does not correctly erase the old filters?
             schedule.Task.EncodedFilter = this.EncodedFilters;
             schedule.Task.Encryptionkey = this.BackupPassword;
 
@@ -217,7 +217,7 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.VolumeSize = this.VolumeSize;
             schedule.Task.ThreadPriority = this.ThreadPriority;
             schedule.Task.AsyncTransfer = this.AsyncTransfer;
-            schedule.Task.EncodedFilter = this.EncodedFilters;
+
             schedule.Task.GPGEncryption = this.GPGEncryption;
             schedule.Task.IncludeSetup = this.IncludeSetup;
             schedule.Task.IgnoreTimestamps = this.IgnoreFileTimestamps;

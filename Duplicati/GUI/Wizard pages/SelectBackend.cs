@@ -139,5 +139,10 @@ namespace Duplicati.GUI.Wizard_pages
         {
             m_owner.NextButton.Enabled = File.Checked || FTP.Checked || SSH.Checked || WebDAV.Checked || S3.Checked;
         }
+
+        private void RadioButton_DoubleClick(object sender, EventArgs e)
+        {
+            m_owner.NextButton.PerformClick();
+        }
     }
 }

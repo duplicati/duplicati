@@ -28,11 +28,11 @@ namespace Duplicati.GUI.Wizard_pages
         /// </summary>
         private void InitializeComponent()
         {
-            this.File = new System.Windows.Forms.RadioButton();
-            this.FTP = new System.Windows.Forms.RadioButton();
-            this.SSH = new System.Windows.Forms.RadioButton();
-            this.WebDAV = new System.Windows.Forms.RadioButton();
-            this.S3 = new System.Windows.Forms.RadioButton();
+            this.File = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.FTP = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.SSH = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.WebDAV = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.S3 = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.Question = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -46,6 +46,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.File.TabStop = true;
             this.File.Text = "An external disk or network drive";
             this.File.UseVisualStyleBackColor = true;
+            this.File.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.File.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // FTP
@@ -58,6 +59,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.FTP.TabStop = true;
             this.FTP.Text = "FTP to a remote server";
             this.FTP.UseVisualStyleBackColor = true;
+            this.FTP.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.FTP.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // SSH
@@ -70,6 +72,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.SSH.TabStop = true;
             this.SSH.Text = "SSH (SFTP) to a remote server";
             this.SSH.UseVisualStyleBackColor = true;
+            this.SSH.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.SSH.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // WebDAV
@@ -83,6 +86,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.WebDAV.Text = "WebDAV to a remote server";
             this.WebDAV.UseVisualStyleBackColor = true;
             this.WebDAV.Visible = false;
+            this.WebDAV.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.WebDAV.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // S3
@@ -95,6 +99,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.S3.TabStop = true;
             this.S3.Text = "Amazon S3 storage";
             this.S3.UseVisualStyleBackColor = true;
+            this.S3.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.S3.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // Question
@@ -125,11 +130,11 @@ namespace Duplicati.GUI.Wizard_pages
 
         #endregion
 
-        private System.Windows.Forms.RadioButton File;
-        private System.Windows.Forms.RadioButton FTP;
-        private System.Windows.Forms.RadioButton SSH;
-        private System.Windows.Forms.RadioButton WebDAV;
-        private System.Windows.Forms.RadioButton S3;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton File;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton FTP;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton SSH;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton WebDAV;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton S3;
         private System.Windows.Forms.Label Question;
     }
 }

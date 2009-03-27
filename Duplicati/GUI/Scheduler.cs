@@ -94,7 +94,7 @@ namespace Duplicati.GUI
                 {
                     if (!string.IsNullOrEmpty(sc.Repeat))
                     {
-                        DateTime start = sc.When;
+                        DateTime start = sc.NextScheduledTime;
 
                         if (start <= DateTime.Now)
                         {
@@ -116,7 +116,7 @@ namespace Duplicati.GUI
                         }
 
                         reps.Add(sc);
-                        sc.When = start;
+                        sc.NextScheduledTime = start;
                     }
                 }
 

@@ -110,6 +110,7 @@ namespace Duplicati.Library.Core
                 catch (Exception)
                 {
                     //TODO: Log this
+                    //TODO: If this happens for an odd reason, files will be marked as "deleted" in the backup :(
                 }
 
                 try
@@ -125,6 +126,7 @@ namespace Duplicati.Library.Core
                 catch (Exception)
                 {
                     //TODO: Log this
+                    //TODO: If this happens for an odd reason, files will be marked as "deleted" in the backup :(
                 }
             }
 
