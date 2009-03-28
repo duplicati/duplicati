@@ -89,14 +89,20 @@ namespace Duplicati.GUI
 
         void Scheduler_NewSchedule(object sender, EventArgs e)
         {
-            if (this.InvokeRequired)
-                this.Invoke(new EventHandler(Scheduler_NewSchedule), sender, e);
-            else
+            try
             {
-                scheduledBackups.Items.Clear();
-                lock(Program.MainLock)
-                    foreach (Schedule s in Program.Scheduler.Schedule)
-                        scheduledBackups.Items.Add(s.When.ToString("g") + " " + s.Name);
+                if (this.InvokeRequired)
+                    this.Invoke(new EventHandler(Scheduler_NewSchedule), sender, e);
+                else
+                {
+                    scheduledBackups.Items.Clear();
+                    lock (Program.MainLock)
+                        foreach (Schedule s in Program.Scheduler.Schedule)
+                            scheduledBackups.Items.Add(s.When.ToString("g") + " " + s.Name);
+                }
+            }
+            catch 
+            { 
             }
         }
 

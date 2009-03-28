@@ -36,7 +36,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         private bool m_hasTested;
         private bool m_warnedPath;
 
-        FTPSettings m_wrapper;
+        private FTPSettings m_wrapper;
 
         public FTPOptions()
             : base("Backup storage options", "On this page you can select where to store the backup data.")
@@ -140,6 +140,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
 
                     return false;
                 }
+
+                m_warnedUsername = true;
             }
 
             if (Password.Text.Trim().Length <= 0 && !m_warnedPassword)
@@ -151,6 +153,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
 
                     return false;
                 }
+
                 m_warnedPassword = true;
             }
 

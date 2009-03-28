@@ -59,13 +59,6 @@ namespace Duplicati.GUI.Wizard_pages
                 return;
             }
 
-            if (WebDAV.Checked)
-            {
-                MessageBox.Show(this, "WebDAV is not implemented yet.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                args.Cancel = true;
-                return;
-            }
-
             if (File.Checked)
             {
                 args.NextPage = new Backends.File.FileOptions();
@@ -90,6 +83,11 @@ namespace Duplicati.GUI.Wizard_pages
             {
                 args.NextPage = new Backends.S3.S3Options();
                 m_wrapper.Backend = WizardSettingsWrapper.BackendType.S3;
+            }
+            else if (WebDAV.Checked)
+            {
+                args.NextPage = new Backends.WebDAV.WebDAVOptions();
+                m_wrapper.Backend = WizardSettingsWrapper.BackendType.WebDav;
             }
             else
             {

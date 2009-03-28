@@ -28,7 +28,6 @@ namespace Duplicati.Library.Backend
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
-        private bool m_useIntegratedAuthentication = false;
         Dictionary<string, string> m_options;
 
         public FTP()
@@ -57,7 +56,6 @@ namespace Duplicati.Library.Backend
 
             m_options = options;
             m_url = url;
-            m_useIntegratedAuthentication = m_options.ContainsKey("integrated-authentication");
             if (!m_url.EndsWith("/"))
                 m_url += "/";
         }
@@ -228,11 +226,8 @@ namespace Duplicati.Library.Backend
         {
             System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(m_url + remotename);
 
-            if (m_useIntegratedAuthentication)
-                req.UseDefaultCredentials = true;
-            else 
-                if (m_userInfo != null)
-                    req.Credentials = m_userInfo;
+            if (m_userInfo != null)
+                req.Credentials = m_userInfo;
             req.KeepAlive = false;
 
             if (m_options.ContainsKey("ftp-passive"))

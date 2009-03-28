@@ -147,7 +147,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             // 
             // TestConnection
             // 
-            this.TestConnection.Location = new System.Drawing.Point(272, 152);
+            this.TestConnection.Location = new System.Drawing.Point(272, 160);
             this.TestConnection.Name = "TestConnection";
             this.TestConnection.Size = new System.Drawing.Size(112, 24);
             this.TestConnection.TabIndex = 10;
@@ -180,17 +180,17 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.Username);
+            this.Controls.Add(this.Password);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.CreateFolderButton);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.PassiveConnection);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.Port);
-            this.Controls.Add(this.Password);
-            this.Controls.Add(this.Username);
             this.Controls.Add(this.Path);
             this.Controls.Add(this.Servername);
             this.Controls.Add(this.label5);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "FTPOptions";

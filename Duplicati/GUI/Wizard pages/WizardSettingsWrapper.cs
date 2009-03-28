@@ -114,6 +114,14 @@ namespace Duplicati.GUI.Wizard_pages
                     this.Backend = BackendType.S3;
                     break;
                 case "webdav":
+                    Datamodel.Backends.WEBDAV webdav = new Duplicati.Datamodel.Backends.WEBDAV(schedule.Task);
+                    this.WEBDAVSettings.Username = webdav.Username;
+                    this.WEBDAVSettings.Password = webdav.Password;
+                    this.WEBDAVSettings.Path = webdav.Folder;
+                    this.WEBDAVSettings.Server = webdav.Host;
+                    this.WEBDAVSettings.Port = webdav.Port;
+                    this.WEBDAVSettings.IntegratedAuthentication = webdav.IntegratedAuthentication;
+                    this.WEBDAVSettings.ForceDigestAuthentication = webdav.ForceDigestAuthentication;
                     this.Backend = BackendType.WebDav;
                     break;
             }
@@ -201,6 +209,15 @@ namespace Duplicati.GUI.Wizard_pages
                     s3.SetService();
                     break;
                 case BackendType.WebDav:
+                    Datamodel.Backends.WEBDAV webdav = new Duplicati.Datamodel.Backends.WEBDAV(schedule.Task);
+                    webdav.Username = this.WEBDAVSettings.Username;
+                    webdav.Password = this.WEBDAVSettings.Password;
+                    webdav.Folder = this.WEBDAVSettings.Path;
+                    webdav.Host = this.WEBDAVSettings.Server;
+                    webdav.Port = this.WEBDAVSettings.Port;
+                    webdav.IntegratedAuthentication = this.WEBDAVSettings.IntegratedAuthentication;
+                    webdav.ForceDigestAuthentication = this.WEBDAVSettings.ForceDigestAuthentication;
+                    webdav.SetService();
                     break;
             }
 
@@ -322,6 +339,11 @@ namespace Duplicati.GUI.Wizard_pages
         /// Returns a customized settings object describing settings for a S3-based backend
         /// </summary>
         public S3Settings S3Settings { get { return new S3Settings(this); } }
+
+        /// <summary>
+        /// Returns a customized settings object describing settings for a WEBDAV-based backend
+        /// </summary>
+        public WEBDAVSettings WEBDAVSettings { get { return new WEBDAVSettings(this); } }
 
         /// <summary>
         /// The offset for running backups
@@ -682,5 +704,30 @@ namespace Duplicati.GUI.Wizard_pages
 
     }
 
+    public class WEBDAVSettings : WebSettings
+    {
+        public WEBDAVSettings(WizardSettingsWrapper parent)
+            : base(parent)
+        {
+            m_defaultPort = 80;
+        }
 
+        /// <summary>
+        /// A value indicating if the connection should use integrated authentication
+        /// </summary>
+        public bool IntegratedAuthentication
+        {
+            get { return m_parent.GetItem<bool>("WEBDAV:IntegratedAuth", false); }
+            set { m_parent.SetItem("WEBDAV:IntegratedAuth", value); }
+        }
+
+        /// <summary>
+        /// A value indicating if the connection should only allow digest authentication
+        /// </summary>
+        public bool ForceDigestAuthentication
+        {
+            get { return m_parent.GetItem<bool>("WEBDAV:DigestAuth", false); }
+            set { m_parent.SetItem("WEBDAV:DigestAuth", value); }
+        }
+    }
 }

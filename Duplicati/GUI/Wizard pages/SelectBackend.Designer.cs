@@ -80,12 +80,11 @@ namespace Duplicati.GUI.Wizard_pages
             this.WebDAV.AutoSize = true;
             this.WebDAV.Location = new System.Drawing.Point(40, 176);
             this.WebDAV.Name = "WebDAV";
-            this.WebDAV.Size = new System.Drawing.Size(158, 17);
+            this.WebDAV.Size = new System.Drawing.Size(160, 17);
             this.WebDAV.TabIndex = 3;
             this.WebDAV.TabStop = true;
-            this.WebDAV.Text = "WebDAV to a remote server";
+            this.WebDAV.Text = "WEBDAV to a remote server";
             this.WebDAV.UseVisualStyleBackColor = true;
-            this.WebDAV.Visible = false;
             this.WebDAV.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.WebDAV.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
