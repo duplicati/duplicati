@@ -772,6 +772,23 @@ namespace Duplicati.Library.Main
                 return backend.GetBackupSets();
         }
 
+        public List<KeyValuePair<RSync.RSyncDir.PatchFileType, string>> ListActualSignatureFiles()
+        {
+            using (BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
+            {
+                BackupEntry bestFit = backend.GetBackupSet(m_options.RestoreTime);
+                if (bestFit.Incrementals.Count > 0) //Get the most recent incremental
+                    bestFit = bestFit.Incrementals[bestFit.Incrementals.Count - 1];
+
+                using (Core.TempFolder folder = new Duplicati.Library.Core.TempFolder())
+                {
+                    List<Core.IFileArchive> patches = FindPatches(backend, new List<BackupEntry>(new BackupEntry[] { bestFit }), folder);
+                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(folder, new CommunicationStatistics(), null))
+                        return dir.ListPatchFiles(patches);
+                }
+            }
+
+        }
             
         //Static helpers
 
@@ -838,6 +855,11 @@ namespace Duplicati.Library.Main
                 System.IO.Directory.Delete(opt.SignatureCachePath, true);
         }
 
+        public static List<KeyValuePair<RSync.RSyncDir.PatchFileType, string>> ListActualSignatureFiles(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.ListActualSignatureFiles();
+        }
 
         #region IDisposable Members
 

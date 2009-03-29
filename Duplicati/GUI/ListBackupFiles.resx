@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,71 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="AddedFolder" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\AddedFolder.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="AddedOrModifiedFile" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\AddedOrModifiedFile.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="CloseMenuIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\CloseMenuIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ControlFile" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ControlFile.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DeletedFile" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\DeletedFile.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DeletedFolder" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\DeletedFolder.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Duplicati" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Duplicati.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ErrorStatusIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ErrorStatusIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Examine" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Examine.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="FolderOpen" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\FolderOpen.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="FullBackup" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\FullBackup.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="OKStatusIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OKStatusIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="PartialBackup" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\PartialBackup.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SettingsMenuIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\SettingsMenuIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SetupMenuIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\SetupMenuIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SmallLogo" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\SmallLogo.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Status_OK" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Status OK.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Status_Working" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Status Working.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="StatusMenuIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\StatusMenuIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TrayNormal" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\TrayNormal.ico;System.Drawing.Icon, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TrayWorking" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\TrayWorking.ico;System.Drawing.Icon, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="WarningStatusIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\WarningStatusIcon.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
+  <metadata name="imageList1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>169, 17</value>
+  </metadata>
+  <metadata name="backgroundWorker1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
 </root>

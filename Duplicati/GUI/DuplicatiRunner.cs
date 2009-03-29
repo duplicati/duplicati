@@ -136,6 +136,9 @@ namespace Duplicati.GUI
                     case DuplicityTaskType.ListFiles:
                         (task as ListFilesTask).Files = Interface.ListContent(task.SourcePath, options);
                         break;
+                    case DuplicityTaskType.ListActualFiles:
+                        (task as ListActualFilesTask).Files = Interface.ListActualSignatureFiles(task.SourcePath, options);
+                        break;
 
                     case DuplicityTaskType.RemoveAllButNFull:
                         results = Interface.RemoveAllButNFull(task.SourcePath, options);
@@ -231,6 +234,13 @@ namespace Duplicati.GUI
             ListBackupsTask task = new ListBackupsTask(schedule);
             ExecuteTask(task);
             return task.Backups;
+        }
+
+        public List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> ListActualFiles(Schedule schedule, DateTime when)
+        {
+            ListActualFilesTask task = new ListActualFilesTask(schedule, when);
+            ExecuteTask(task);
+            return task.Files;
         }
 
         public IList<string> ListFiles(Schedule schedule, DateTime when)

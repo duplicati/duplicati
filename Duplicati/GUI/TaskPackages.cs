@@ -33,7 +33,8 @@ namespace Duplicati.GUI
         Restore,
         ListBackups,
         ListFiles,
-        RestoreSetup
+        RestoreSetup,
+        ListActualFiles
     }
 
     public delegate void TaskCompletedHandler(IDuplicityTask owner, string output);
@@ -292,6 +293,50 @@ namespace Duplicati.GUI
             get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
         }
     }
+
+    public class ListActualFilesTask : BackupTask
+    {
+        protected List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> m_files = null;
+        public override DuplicityTaskType TaskType { get { return DuplicityTaskType.ListActualFiles; } }
+        public List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> Files { get { return m_files; } set { m_files = value; } }
+        protected DateTime m_when;
+
+        public ListActualFilesTask(Schedule schedule, DateTime when)
+            : base(schedule)
+        {
+            m_when = when;
+        }
+
+        public string When
+        {
+            get
+            {
+                if (m_when.Year < 10)
+                    return null;
+                else
+                    return m_when.ToString("s");
+            }
+        }
+
+        public override void GetOptions(Dictionary<string, string> options)
+        {
+            base.GetOptions(options);
+
+            if (!string.IsNullOrEmpty(When))
+                options["restore-time"] = this.When;
+        }
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+    }
+
 
     public class RestoreSetupTask : BackupTask
     {

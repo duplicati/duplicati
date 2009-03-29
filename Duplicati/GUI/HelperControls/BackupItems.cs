@@ -125,5 +125,16 @@ namespace Duplicati.GUI.HelperControls
                 ItemDoubleClicked(this, e);
         }
 
+        private void viewFilesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ListBackupFiles dlg = new ListBackupFiles();
+            dlg.ShowList(this, m_schedule, DateTime.Parse(listView.SelectedItems[0].Text));
+        }
+
+        private void listView_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            viewFilesToolStripMenuItem.Enabled = listView.SelectedItems.Count == 1;
+        }
+
     }
 }

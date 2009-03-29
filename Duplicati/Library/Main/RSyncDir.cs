@@ -29,6 +29,15 @@ namespace Duplicati.Library.Main.RSync
     /// </summary>
     public class RSyncDir : IDisposable
     {
+        public enum PatchFileType
+        {
+            DeletedFolder,
+            AddedFolder,
+            DeletedFile,
+            FullOrPartialFile,
+            ControlFile
+        };
+
         internal static readonly string SIGNATURE_ROOT = "signature";
         internal static readonly string CONTENT_ROOT = "snapshot";
         internal static readonly string DELTA_ROOT = "diff";
@@ -766,6 +775,37 @@ namespace Duplicati.Library.Main.RSync
             lst.AddRange(m_oldFolders.Keys);
             lst.AddRange(m_oldSignatures.Keys);
             return lst;
+        }
+
+        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(List<Core.IFileArchive> patches)
+        {
+            List<KeyValuePair<PatchFileType, string>> files = new List<KeyValuePair<PatchFileType, string>>();
+
+            string signature_prefix = Core.Utility.AppendDirSeperator(SIGNATURE_ROOT);
+            string control_prefix = Core.Utility.AppendDirSeperator(CONTROL_ROOT);
+
+            foreach (Core.IFileArchive arch in patches)
+            {
+                if (arch.FileExists(DELETED_FILES))
+                    foreach (string s in FilenamesFromPlatformIndependant(arch.ReadAllLines(DELETED_FILES)))
+                        files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.DeletedFolder, s));
+
+                foreach (string f in FilenamesFromPlatformIndependant(arch.ListFiles(signature_prefix)))
+                    files.Add(new KeyValuePair<PatchFileType,string>(PatchFileType.FullOrPartialFile, f.Substring(signature_prefix.Length)));
+
+                foreach (string f in FilenamesFromPlatformIndependant(arch.ListFiles(control_prefix)))
+                    files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.ControlFile, f.Substring(control_prefix.Length)));
+
+                if (arch.FileExists(DELETED_FOLDERS))
+                    foreach (string s in FilenamesFromPlatformIndependant(arch.ReadAllLines(DELETED_FOLDERS)))
+                        files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.DeletedFolder, s));
+
+                if (arch.FileExists(ADDED_FOLDERS))
+                    foreach (string s in FilenamesFromPlatformIndependant(arch.ReadAllLines(ADDED_FOLDERS)))
+                        files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.AddedFolder, s));
+            }
+
+            return files;
         }
     }
 }

@@ -95,6 +95,56 @@ namespace Duplicati.CommandLine
                 Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
             else if (source.Trim().ToLower() == "list-current-files")
                 Console.WriteLine(string.Join("\r\n", new List<string>(Duplicati.Library.Main.Interface.ListContent(target, options)).ToArray()));
+            else if (source.Trim().ToLower() == "list-actual-signature-files")
+            {
+                cargs.RemoveAt(0);
+
+                if (cargs.Count != 1)
+                {
+                    Console.WriteLine("Wrong number of aguments");
+                    return;
+                }
+
+                if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
+                {
+                    string pwd = ReadPassphraseFromConsole(false);
+                    if (pwd == null)
+                        return;
+                    else
+                        options["passphrase"] = pwd;
+                }
+
+                List<KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string>> files = Duplicati.Library.Main.Interface.ListActualSignatureFiles(cargs[0], options);
+
+                Console.WriteLine("* Deleted folders:");
+                foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                    if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFolder)
+                        Console.WriteLine(x.Value);
+
+                Console.WriteLine();
+                Console.WriteLine("* Added folders:");
+                foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                    if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedFolder)
+                        Console.WriteLine(x.Value);
+
+                Console.WriteLine();
+                Console.WriteLine("* Deleted files:");
+                foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                    if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFile)
+                        Console.WriteLine(x.Value);
+
+                Console.WriteLine();
+                Console.WriteLine("* New/modified files:");
+                foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                    if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.FullOrPartialFile)
+                        Console.WriteLine(x.Value);
+
+                Console.WriteLine();
+                Console.WriteLine("* Control files:");
+                foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                    if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.ControlFile)
+                        Console.WriteLine(x.Value);
+            }
             else if (source.Trim().ToLower() == "delete-all-but-n-full")
             {
                 int n = 0;
@@ -123,7 +173,7 @@ namespace Duplicati.CommandLine
                 {
                     Duplicati.Library.Core.Timeparser.ParseTimeSpan(target);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine("Unable to parse \"" + target + "\" into a time offset: " + ex.Message);
                     return;

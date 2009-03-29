@@ -91,6 +91,12 @@
     <Compile Include="HelperControls\WaitForOperation.Designer.cs">
       <DependentUpon>WaitForOperation.cs</DependentUpon>
     </Compile>
+    <Compile Include="ListBackupFiles.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ListBackupFiles.Designer.cs">
+      <DependentUpon>ListBackupFiles.cs</DependentUpon>
+    </Compile>
     <Compile Include="LogViewer.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -604,6 +610,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Database schema\2. Refactor for easier extensions.sql" />
+    <EmbeddedResource Include="ListBackupFiles.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ListBackupFiles.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\GeneratedFilenameOptions.resx">
       <SubType>Designer</SubType>
       <DependentUpon>GeneratedFilenameOptions.cs</DependentUpon>
@@ -612,6 +622,33 @@
       <SubType>Designer</SubType>
       <DependentUpon>SettingOverrides.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\DeletedFolder.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\AddedFolder.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\AddedOrModifiedFile.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ControlFile.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\FullBackup.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\PartialBackup.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\FolderOpen.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\DeletedFile.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Examine.png" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />

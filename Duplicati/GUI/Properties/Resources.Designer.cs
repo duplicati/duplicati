@@ -60,9 +60,44 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap AddedFolder {
+            get {
+                object obj = ResourceManager.GetObject("AddedFolder", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap AddedOrModifiedFile {
+            get {
+                object obj = ResourceManager.GetObject("AddedOrModifiedFile", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap CloseMenuIcon {
             get {
                 object obj = ResourceManager.GetObject("CloseMenuIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap ControlFile {
+            get {
+                object obj = ResourceManager.GetObject("ControlFile", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap DeletedFile {
+            get {
+                object obj = ResourceManager.GetObject("DeletedFile", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap DeletedFolder {
+            get {
+                object obj = ResourceManager.GetObject("DeletedFolder", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -81,9 +116,37 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap Examine {
+            get {
+                object obj = ResourceManager.GetObject("Examine", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap FolderOpen {
+            get {
+                object obj = ResourceManager.GetObject("FolderOpen", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap FullBackup {
+            get {
+                object obj = ResourceManager.GetObject("FullBackup", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap OKStatusIcon {
             get {
                 object obj = ResourceManager.GetObject("OKStatusIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap PartialBackup {
+            get {
+                object obj = ResourceManager.GetObject("PartialBackup", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
