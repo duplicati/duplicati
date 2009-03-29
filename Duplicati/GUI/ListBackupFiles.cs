@@ -33,12 +33,12 @@ namespace Duplicati.GUI
         {
             InitializeComponent();
 
-            imageList1.Images.Add("folder", Properties.Resources.FolderOpen);
-            imageList1.Images.Add("newfolder", Properties.Resources.AddedFolder);
-            imageList1.Images.Add("removedfolder", Properties.Resources.DeletedFolder);
-            imageList1.Images.Add("file", Properties.Resources.AddedOrModifiedFile);
-            imageList1.Images.Add("controlfile", Properties.Resources.ControlFile);
-            imageList1.Images.Add("deletedfile", Properties.Resources.DeletedFile);
+            imageList.Images.Add("folder", Properties.Resources.FolderOpen);
+            imageList.Images.Add("newfolder", Properties.Resources.AddedFolder);
+            imageList.Images.Add("removedfolder", Properties.Resources.DeletedFolder);
+            imageList.Images.Add("file", Properties.Resources.AddedOrModifiedFile);
+            imageList.Images.Add("controlfile", Properties.Resources.ControlFile);
+            imageList.Images.Add("deletedfile", Properties.Resources.DeletedFile);
         }
 
         public void ShowList(Control owner, Datamodel.Schedule schedule, DateTime when)
@@ -71,34 +71,79 @@ namespace Duplicati.GUI
             {
                 ContentPanel.Visible = true;
                 List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> entries = e.Result as List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>>;
+
+                List<string> addedfolders = new List<string>();
+                List<string> removedfolders = new List<string>();
+                List<string> addedfiles = new List<string>();
+                List<string> deletedfiles = new List<string>();
+                List<string> controlfiles = new List<string>();
+
                 foreach (KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string> x in entries)
-                {
-                    ListViewItem lvi = new ListViewItem(x.Value);
                     switch (x.Key)
                     {
                         case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedFolder:
-                            lvi.ImageKey = "newfolder";
+                            addedfolders.Add(x.Value);
                             break;
                         case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFolder:
-                            lvi.ImageKey = "removefolder";
+                            removedfolders.Add(x.Value);
                             break;
                         case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.FullOrPartialFile:
-                            lvi.ImageKey = "file";
+                            addedfiles.Add(x.Value);
                             break;
                         case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.ControlFile:
-                            lvi.ImageKey = "controlfile";
+                            controlfiles.Add(x.Value);
                             break;
                         case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFile:
-                            lvi.ImageKey = "deletedfile";
+                            deletedfiles.Add(x.Value);
                             break;
                     }
 
-                    ContentList.Items.Add(lvi);
+
+                addedfolders.Sort();
+                removedfolders.Sort();
+                deletedfiles.Sort();
+                addedfiles.Sort();
+                controlfiles.Sort();
+
+                foreach (string s in addedfolders)
+                    AddTreeItem(s, 1);
+                foreach (string s in removedfolders)
+                    AddTreeItem(s, 2);
+                foreach (string s in addedfiles)
+                    AddTreeItem(s, 3);
+                foreach (string s in controlfiles)
+                    AddTreeItem(s, 4);
+                foreach (string s in deletedfiles)
+                    AddTreeItem(s, 5);
+            }
+
+        }
+
+        private void AddTreeItem(string value, int imagekey)
+        {
+            if (value.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                value = value.Substring(0, value.Length - 1);
+
+            string[] items = value.Split(System.IO.Path.DirectorySeparatorChar);
+            TreeNodeCollection parent = ContentTree.Nodes;
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                TreeNode match = null;
+                foreach (TreeNode n in parent)
+                    if (n.Text == items[i])
+                    {
+                        match = n;
+                        break;
+                    }
+
+                if (match == null)
+                {
+                    match = new TreeNode(items[i], i == items.Length - 1 ? imagekey : 0, i == items.Length - 1 ? imagekey : 0);
+                    parent.Add(match);
                 }
 
-                ContentList.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
-                ContentList.Sorting = SortOrder.Ascending;
-                ContentList.Sort();
+                parent = match.Nodes;
             }
         }
     }
