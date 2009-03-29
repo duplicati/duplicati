@@ -27,17 +27,50 @@ namespace Duplicati.Datamodel
 {
     public partial class Task
     {
-        private SettingsHelper<TaskSetting, string, string> m_settings;
+        public Task()
+        {
+            this.AfterDataCommit += new System.Data.LightDatamodel.DataConnectionEventHandler(Task_AfterDataCommit);
+        }
 
-        public IDictionary<string, string> Settings
+        void Task_AfterDataCommit(object sender, System.Data.LightDatamodel.DataActions action)
+        {
+            if (action != System.Data.LightDatamodel.DataActions.Fetch)
+            {
+                m_backendSettings = null;
+                m_extensionSettings = null;
+            }
+        }
+
+        private SettingsHelper<BackendSetting, string, string> m_backendSettings;
+        private SettingsHelper<TaskExtension, string, string> m_extensionSettings;
+
+        public IDictionary<string, string> BackendSettingsLookup
         {
             get
             {
-                if (m_settings == null)
-                    m_settings = new SettingsHelper<TaskSetting, string, string>(this.DataParent, this.TaskSettings, "Name", "Value");
+                //Extra check because the datamodel copies the collection between contexts... not nice
+                if (m_backendSettings == null || m_backendSettings.DataParent != this.DataParent || m_backendSettings.Collection != this.BackendSettings)
+                    m_backendSettings = new SettingsHelper<BackendSetting, string, string>(this.DataParent, this.BackendSettings, "Name", "Value");
 
-                return m_settings;
+                return m_backendSettings;
             }
+        }
+
+        public IDictionary<string, string> TaskExtensionsLookup
+        {
+            get
+            {
+                //Extra check because the datamodel copies the collection between contexts... not nice
+                if (m_extensionSettings == null || m_extensionSettings.DataParent != this.DataParent || m_extensionSettings.Collection != this.TaskExtensions)
+                    m_extensionSettings = new SettingsHelper<TaskExtension, string, string>(this.DataParent, this.TaskExtensions, "Name", "Value");
+
+                return m_extensionSettings;
+            }
+        }
+
+        public TaskExtensionWrapper Extensions
+        {
+            get { return new TaskExtensionWrapper(this); }
         }
 
         public Backends.IBackend Backend
@@ -74,18 +107,6 @@ namespace Duplicati.Datamodel
 
             if (this.Filters.Count > 0)
                 options["filter"] = this.EncodedFilter; ;
-            if (!string.IsNullOrEmpty(this.MaxUploadsize))
-                options["totalsize"] = this.MaxUploadsize;
-            if (!string.IsNullOrEmpty(this.VolumeSize))
-                options["volsize"] = this.VolumeSize;
-            if (!string.IsNullOrEmpty(this.DownloadBandwidth))
-                options["max-download-pr-second"] = this.DownloadBandwidth;
-            if (!string.IsNullOrEmpty(this.UploadBandwidth))
-                options["max-upload-pr-second"] = this.UploadBandwidth;
-            if (!string.IsNullOrEmpty(this.ThreadPriority))
-                options["thread-priority"] = this.ThreadPriority;
-            if (this.AsyncTransfer)
-                options["asynchronous-upload"] = "";
             if (this.GPGEncryption)
             {
                 options["gpg-encryption"] = "";
@@ -101,8 +122,11 @@ namespace Duplicati.Datamodel
             if (!string.IsNullOrEmpty(set.TempPath))
                 options["tempdir"] = System.Environment.ExpandEnvironmentVariables(set.TempPath);
 
-            if (this.IgnoreTimestamps)
-                options["disable-filetime-check"] = "";
+            this.Extensions.GetOptions(options);
+
+            //Override everything set in the overrides
+            foreach (TaskOverride ov in this.TaskOverrides)
+                options[ov.Name] = ov.Value;
         }
 
         public string EncodedFilter
@@ -124,7 +148,7 @@ namespace Duplicati.Datamodel
                 this.SortedFilters = new TaskFilter[0];
 
                 List<TaskFilter> filters = new List<TaskFilter>();
-                foreach(KeyValuePair<bool, string> f in Library.Core.FilenameFilter.DecodeFilter(value))
+                foreach (KeyValuePair<bool, string> f in Library.Core.FilenameFilter.DecodeFilter(value))
                 {
                     TaskFilter tf = this.DataParent.Add<TaskFilter>();
                     tf.Filter = f.Value;
@@ -165,5 +189,120 @@ namespace Duplicati.Datamodel
             }
         }
 
+
+        public class TaskExtensionWrapper
+        {
+            private const string MAX_UPLOAD_SIZE = "Max Upload Size";
+            private const string UPLOAD_BANDWIDTH = "Upload Bandwidth";
+            private const string DOWNLOAD_BANDWIDTH = "Download Bandwidth";
+            private const string VOLUME_SIZE = "Volume Size";
+            private const string THREAD_PRIORITY = "Thread Priority";
+            private const string ASYNC_TRANSFER = "Async Transfer";
+            private const string INCLUDE_SETUP = "Include Setup";
+            private const string IGNORE_TIMESTAMPS = "Ignore Timestamps";
+            private const string FILE_SIZE_LIMIT = "File Size Limit";
+            private const string FILE_TIME_SEPERATOR = "File Time Seperator";
+            private const string SHORT_FILENAMES = "Short Filenames";
+            private const string FILENAME_PREFIX = "Filename Prefix";
+
+            private Task m_owner;
+
+            public TaskExtensionWrapper(Task owner)
+            {
+                m_owner = owner;
+            }
+
+            public string MaxUploadSize
+            {
+                get { return m_owner.TaskExtensionsLookup[MAX_UPLOAD_SIZE]; }
+                set { m_owner.TaskExtensionsLookup[MAX_UPLOAD_SIZE] = value; }
+            }
+
+            public string UploadBandwidth
+            {
+                get { return m_owner.TaskExtensionsLookup[UPLOAD_BANDWIDTH]; }
+                set { m_owner.TaskExtensionsLookup[UPLOAD_BANDWIDTH] = value; }
+            }
+
+            public string DownloadBandwidth
+            {
+                get { return m_owner.TaskExtensionsLookup[DOWNLOAD_BANDWIDTH]; }
+                set { m_owner.TaskExtensionsLookup[DOWNLOAD_BANDWIDTH] = value; }
+            }
+
+            public string VolumeSize
+            {
+                get { return m_owner.TaskExtensionsLookup[VOLUME_SIZE]; }
+                set { m_owner.TaskExtensionsLookup[VOLUME_SIZE] = value; }
+            }
+
+            public string ThreadPriority
+            {
+                get { return m_owner.TaskExtensionsLookup[THREAD_PRIORITY]; }
+                set { m_owner.TaskExtensionsLookup[THREAD_PRIORITY] = value; }
+            }
+
+            public bool AsyncTransfer
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[ASYNC_TRANSFER], false); }
+                set { m_owner.TaskExtensionsLookup[ASYNC_TRANSFER] = value.ToString(); }
+            }
+
+            public bool IncludeSetup
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[INCLUDE_SETUP], true); }
+                set { m_owner.TaskExtensionsLookup[INCLUDE_SETUP] = value.ToString(); }
+            }
+
+            public bool IgnoreTimestamps
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS], true); }
+                set { m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS] = value.ToString(); }
+            }
+
+            public string FileSizeLimit
+            {
+                get { return m_owner.TaskExtensionsLookup[FILE_SIZE_LIMIT]; }
+                set { m_owner.TaskExtensionsLookup[FILE_SIZE_LIMIT] = value; }
+            }
+
+            public string FileTimeSeperator
+            {
+                get { return m_owner.TaskExtensionsLookup[FILE_TIME_SEPERATOR]; }
+                set { m_owner.TaskExtensionsLookup[FILE_TIME_SEPERATOR] = value; }
+            }
+
+            public bool ShortFilenames
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SHORT_FILENAMES], false); }
+                set { m_owner.TaskExtensionsLookup[SHORT_FILENAMES] = value.ToString(); }
+            }
+
+            public string FilenamePrefix
+            {
+                get { return m_owner.TaskExtensionsLookup[FILENAME_PREFIX]; }
+                set { m_owner.TaskExtensionsLookup[FILENAME_PREFIX] = value; }
+            }
+
+            public void GetOptions(Dictionary<string, string> options)
+            {
+                if (!string.IsNullOrEmpty(this.MaxUploadSize))
+                    options["totalsize"] = this.MaxUploadSize;
+                if (!string.IsNullOrEmpty(this.VolumeSize))
+                    options["volsize"] = this.VolumeSize;
+                if (!string.IsNullOrEmpty(this.DownloadBandwidth))
+                    options["max-download-pr-second"] = this.DownloadBandwidth;
+                if (!string.IsNullOrEmpty(this.UploadBandwidth))
+                    options["max-upload-pr-second"] = this.UploadBandwidth;
+                if (!string.IsNullOrEmpty(this.ThreadPriority))
+                    options["thread-priority"] = this.ThreadPriority;
+                if (this.AsyncTransfer)
+                    options["asynchronous-upload"] = "";
+                if (this.IgnoreTimestamps)
+                    options["disable-filetime-check"] = "";
+                if (!string.IsNullOrEmpty(this.FileTimeSeperator))
+                    options["time-separator"] = this.FileTimeSeperator;
+            }
         }
+    }
 }

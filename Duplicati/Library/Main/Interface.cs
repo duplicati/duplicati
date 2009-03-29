@@ -82,8 +82,6 @@ namespace Duplicati.Library.Main
 
                     OperationProgress(this, DuplicatiOperation.Backup, -1, -1, "Loading remote filelist", "");
 
-                    FilenameStrategy fns = new FilenameStrategy(m_options);
-
                     bool full = m_options.Full;
 
                     backend = new BackendWrapper(bs, m_backend, m_options);
@@ -127,7 +125,7 @@ namespace Duplicati.Library.Main
                             dir.ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(BackupRSyncDir_ProgressEvent);
 
                             dir.DisableFiletimeCheck = m_options.DisableFiletimeCheck;
-                            dir.MaxFileSize = m_options.MaxFileSize;
+                            dir.MaxFileSize = m_options.SkipFilesLargerThan;
                             using (new Logging.Timer("Initiating multipass"))
                                 dir.InitiateMultiPassDiff(full);
 

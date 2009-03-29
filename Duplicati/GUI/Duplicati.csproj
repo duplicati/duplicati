@@ -195,6 +195,18 @@
     <Compile Include="Wizard pages\Add backup\FinishedAdd.Designer.cs">
       <DependentUpon>FinishedAdd.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Add backup\GeneratedFilenameOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\GeneratedFilenameOptions.Designer.cs">
+      <DependentUpon>GeneratedFilenameOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SettingOverrides.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\SettingOverrides.Designer.cs">
+      <DependentUpon>SettingOverrides.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\RestoreSetup\FinishedRestoreSetup.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -589,6 +601,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\StatusMenuIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\2. Refactor for easier extensions.sql" />
+    <EmbeddedResource Include="Wizard pages\Add backup\GeneratedFilenameOptions.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>GeneratedFilenameOptions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\SettingOverrides.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>SettingOverrides.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />

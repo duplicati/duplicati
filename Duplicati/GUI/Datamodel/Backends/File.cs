@@ -27,8 +27,6 @@ namespace Duplicati.Datamodel.Backends
     public class File : IBackend
     {
         private const string DESTINATION_FOLDER = "Destination";
-        private const string TIME_SEPARATOR = "TimeSeparator";
-
         private const string USERNAME = "Username";
         private const string PASSWORD = "Password";
 
@@ -37,32 +35,26 @@ namespace Duplicati.Datamodel.Backends
         public File(Task owner)
         {
             m_owner = owner;
-            if (this.TimeSeparator == null)
-                this.TimeSeparator = "'";
+            if (m_owner.Extensions.FileTimeSeperator == null)
+                m_owner.Extensions.FileTimeSeperator = "'";
         }
 
         public string DestinationFolder
         {
-            get { return m_owner.Settings[DESTINATION_FOLDER]; }
-            set { m_owner.Settings[DESTINATION_FOLDER] = value; }
-        }
-
-        public string TimeSeparator
-        {
-            get { return m_owner.Settings[TIME_SEPARATOR]; }
-            set { m_owner.Settings[TIME_SEPARATOR] = value; }
+            get { return m_owner.BackendSettingsLookup[DESTINATION_FOLDER]; }
+            set { m_owner.BackendSettingsLookup[DESTINATION_FOLDER] = value; }
         }
 
         public string Username
         {
-            get { return m_owner.Settings[USERNAME]; }
-            set { m_owner.Settings[USERNAME] = value; }
+            get { return m_owner.BackendSettingsLookup[USERNAME]; }
+            set { m_owner.BackendSettingsLookup[USERNAME] = value; }
         }
 
         public string Password
         {
-            get { return m_owner.Settings[PASSWORD]; }
-            set { m_owner.Settings[PASSWORD] = value; }
+            get { return m_owner.BackendSettingsLookup[PASSWORD]; }
+            set { m_owner.BackendSettingsLookup[PASSWORD] = value; }
         }
 
         #region IBackend Members
@@ -77,7 +69,6 @@ namespace Duplicati.Datamodel.Backends
 
         public void GetOptions(Dictionary<string, string> options)
         {
-            options["time-separator"] = this.TimeSeparator;
             if (!string.IsNullOrEmpty(this.Password))
                 options["ftp-password"] = this.Password;
         }

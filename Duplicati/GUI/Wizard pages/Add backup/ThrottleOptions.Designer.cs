@@ -132,7 +132,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // BackupLimitEnabled
             // 
             this.BackupLimitEnabled.AutoSize = true;
-            this.BackupLimitEnabled.Location = new System.Drawing.Point(32, 96);
+            this.BackupLimitEnabled.Location = new System.Drawing.Point(32, 89);
             this.BackupLimitEnabled.Name = "BackupLimitEnabled";
             this.BackupLimitEnabled.Size = new System.Drawing.Size(134, 17);
             this.BackupLimitEnabled.TabIndex = 9;
@@ -150,7 +150,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             "kb",
             "mb",
             "gb"});
-            this.BackupLimitSuffix.Location = new System.Drawing.Point(281, 95);
+            this.BackupLimitSuffix.Location = new System.Drawing.Point(281, 88);
             this.BackupLimitSuffix.Name = "BackupLimitSuffix";
             this.BackupLimitSuffix.Size = new System.Drawing.Size(72, 21);
             this.BackupLimitSuffix.TabIndex = 11;
@@ -158,7 +158,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // BackupLimitNumber
             // 
             this.BackupLimitNumber.Enabled = false;
-            this.BackupLimitNumber.Location = new System.Drawing.Point(185, 95);
+            this.BackupLimitNumber.Location = new System.Drawing.Point(185, 88);
             this.BackupLimitNumber.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -178,14 +178,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             "kb",
             "mb",
             "gb"});
-            this.VolumeSizeLimitSuffix.Location = new System.Drawing.Point(280, 128);
+            this.VolumeSizeLimitSuffix.Location = new System.Drawing.Point(280, 120);
             this.VolumeSizeLimitSuffix.Name = "VolumeSizeLimitSuffix";
             this.VolumeSizeLimitSuffix.Size = new System.Drawing.Size(72, 21);
             this.VolumeSizeLimitSuffix.TabIndex = 14;
             // 
             // VolumeSizeLimitNumber
             // 
-            this.VolumeSizeLimitNumber.Location = new System.Drawing.Point(184, 128);
+            this.VolumeSizeLimitNumber.Location = new System.Drawing.Point(184, 120);
             this.VolumeSizeLimitNumber.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -199,7 +199,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // AsyncEnabled
             // 
             this.AsyncEnabled.AutoSize = true;
-            this.AsyncEnabled.Location = new System.Drawing.Point(32, 168);
+            this.AsyncEnabled.Location = new System.Drawing.Point(32, 160);
             this.AsyncEnabled.Name = "AsyncEnabled";
             this.AsyncEnabled.Size = new System.Drawing.Size(124, 17);
             this.AsyncEnabled.TabIndex = 15;
@@ -209,7 +209,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(48, 128);
+            this.label1.Location = new System.Drawing.Point(48, 120);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(103, 13);
             this.label1.TabIndex = 16;
@@ -218,7 +218,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // ThreadPriorityEnabled
             // 
             this.ThreadPriorityEnabled.AutoSize = true;
-            this.ThreadPriorityEnabled.Location = new System.Drawing.Point(32, 200);
+            this.ThreadPriorityEnabled.Location = new System.Drawing.Point(32, 184);
             this.ThreadPriorityEnabled.Name = "ThreadPriorityEnabled";
             this.ThreadPriorityEnabled.Size = new System.Drawing.Size(108, 17);
             this.ThreadPriorityEnabled.TabIndex = 17;
@@ -237,7 +237,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             "Normal",
             "Below normal",
             "Low"});
-            this.ThreadPriority.Location = new System.Drawing.Point(184, 200);
+            this.ThreadPriority.Location = new System.Drawing.Point(184, 184);
             this.ThreadPriority.Name = "ThreadPriority";
             this.ThreadPriority.Size = new System.Drawing.Size(168, 21);
             this.ThreadPriority.TabIndex = 18;

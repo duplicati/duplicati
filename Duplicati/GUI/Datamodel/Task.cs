@@ -38,7 +38,7 @@ namespace Duplicati.Datamodel
 
 #region " private members "
 
-		[AutoIncrement, PrimaryKey, Relation("TaskSettingTask", typeof(TaskSetting), "TaskID", false), Relation("LogTask", typeof(Log), "TaskID", false), Relation("TaskFilterTask", typeof(TaskFilter), "TaskID", false), DatabaseField("ID")]
+		[AutoIncrement, PrimaryKey, Relation("LogTask", typeof(Log), "TaskID", false), Relation("TaskFilterTask", typeof(TaskFilter), "TaskID", false), Relation("BackendSettingTask", typeof(BackendSetting), "TaskID", false), Relation("TaskExtensionTask", typeof(TaskExtension), "TaskID", false), Relation("TaskOverrideTask", typeof(TaskOverride), "TaskID", false), DatabaseField("ID")]
 		private System.Int64 m_ID = long.MinValue;
 		[DatabaseField("Service")]
 		private System.String m_Service = "";
@@ -54,26 +54,12 @@ namespace Duplicati.Datamodel
 		private System.Int64 m_KeepFull = long.MinValue;
 		[DatabaseField("KeepTime")]
 		private System.String m_KeepTime = "";
-		[DatabaseField("MaxUploadsize")]
-		private System.String m_MaxUploadsize = "";
-		[DatabaseField("UploadBandwidth")]
-		private System.String m_UploadBandwidth = "";
-		[DatabaseField("DownloadBandwidth")]
-		private System.String m_DownloadBandwidth = "";
-		[DatabaseField("VolumeSize")]
-		private System.String m_VolumeSize = "";
 		[DatabaseField("FullAfter")]
 		private System.String m_FullAfter = "";
-		[DatabaseField("ThreadPriority")]
-		private System.String m_ThreadPriority = "";
-		[DatabaseField("AsyncTransfer")]
-		private System.Boolean m_AsyncTransfer = false;
 		[DatabaseField("GPGEncryption")]
 		private System.Boolean m_GPGEncryption = false;
 		[DatabaseField("IncludeSetup")]
 		private System.Boolean m_IncludeSetup = false;
-		[DatabaseField("IgnoreTimestamps")]
-		private System.Boolean m_IgnoreTimestamps = false;
 #endregion
 
 #region " properties "
@@ -126,46 +112,10 @@ namespace Duplicati.Datamodel
 			set{object oldvalue = m_KeepTime;OnBeforeDataChange(this, "KeepTime", oldvalue, value);m_KeepTime = value;OnAfterDataChange(this, "KeepTime", oldvalue, value);}
 		}
 
-		public System.String MaxUploadsize
-		{
-			get{return m_MaxUploadsize;}
-			set{object oldvalue = m_MaxUploadsize;OnBeforeDataChange(this, "MaxUploadsize", oldvalue, value);m_MaxUploadsize = value;OnAfterDataChange(this, "MaxUploadsize", oldvalue, value);}
-		}
-
-		public System.String UploadBandwidth
-		{
-			get{return m_UploadBandwidth;}
-			set{object oldvalue = m_UploadBandwidth;OnBeforeDataChange(this, "UploadBandwidth", oldvalue, value);m_UploadBandwidth = value;OnAfterDataChange(this, "UploadBandwidth", oldvalue, value);}
-		}
-
-		public System.String DownloadBandwidth
-		{
-			get{return m_DownloadBandwidth;}
-			set{object oldvalue = m_DownloadBandwidth;OnBeforeDataChange(this, "DownloadBandwidth", oldvalue, value);m_DownloadBandwidth = value;OnAfterDataChange(this, "DownloadBandwidth", oldvalue, value);}
-		}
-
-		public System.String VolumeSize
-		{
-			get{return m_VolumeSize;}
-			set{object oldvalue = m_VolumeSize;OnBeforeDataChange(this, "VolumeSize", oldvalue, value);m_VolumeSize = value;OnAfterDataChange(this, "VolumeSize", oldvalue, value);}
-		}
-
 		public System.String FullAfter
 		{
 			get{return m_FullAfter;}
 			set{object oldvalue = m_FullAfter;OnBeforeDataChange(this, "FullAfter", oldvalue, value);m_FullAfter = value;OnAfterDataChange(this, "FullAfter", oldvalue, value);}
-		}
-
-		public System.String ThreadPriority
-		{
-			get{return m_ThreadPriority;}
-			set{object oldvalue = m_ThreadPriority;OnBeforeDataChange(this, "ThreadPriority", oldvalue, value);m_ThreadPriority = value;OnAfterDataChange(this, "ThreadPriority", oldvalue, value);}
-		}
-
-		public System.Boolean AsyncTransfer
-		{
-			get{return m_AsyncTransfer;}
-			set{object oldvalue = m_AsyncTransfer;OnBeforeDataChange(this, "AsyncTransfer", oldvalue, value);m_AsyncTransfer = value;OnAfterDataChange(this, "AsyncTransfer", oldvalue, value);}
 		}
 
 		public System.Boolean GPGEncryption
@@ -180,12 +130,6 @@ namespace Duplicati.Datamodel
 			set{object oldvalue = m_IncludeSetup;OnBeforeDataChange(this, "IncludeSetup", oldvalue, value);m_IncludeSetup = value;OnAfterDataChange(this, "IncludeSetup", oldvalue, value);}
 		}
 
-		public System.Boolean IgnoreTimestamps
-		{
-			get{return m_IgnoreTimestamps;}
-			set{object oldvalue = m_IgnoreTimestamps;OnBeforeDataChange(this, "IgnoreTimestamps", oldvalue, value);m_IgnoreTimestamps = value;OnAfterDataChange(this, "IgnoreTimestamps", oldvalue, value);}
-		}
-
 #endregion
 
 #region " referenced properties "
@@ -195,15 +139,6 @@ namespace Duplicati.Datamodel
 		{
 			get{ return ((DataFetcherWithRelations)m_dataparent).GetRelatedObject<Schedule>("TaskSchedule", this); }
 			set{ ((DataFetcherWithRelations)m_dataparent).SetRelatedObject("TaskSchedule", this, value); }
-		}
-
-		[Affects(typeof(TaskSetting))]
-		public System.Collections.Generic.IList<TaskSetting> TaskSettings
-		{
-			get
-			{
-				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<TaskSetting>("TaskSettingTask", this);
-			}
 		}
 
 		[Affects(typeof(Log))]
@@ -221,6 +156,33 @@ namespace Duplicati.Datamodel
 			get
 			{
 				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<TaskFilter>("TaskFilterTask", this);
+			}
+		}
+
+		[Affects(typeof(BackendSetting))]
+		public System.Collections.Generic.IList<BackendSetting> BackendSettings
+		{
+			get
+			{
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<BackendSetting>("BackendSettingTask", this);
+			}
+		}
+
+		[Affects(typeof(TaskExtension))]
+		public System.Collections.Generic.IList<TaskExtension> TaskExtensions
+		{
+			get
+			{
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<TaskExtension>("TaskExtensionTask", this);
+			}
+		}
+
+		[Affects(typeof(TaskOverride))]
+		public System.Collections.Generic.IList<TaskOverride> TaskOverrides
+		{
+			get
+			{
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<TaskOverride>("TaskOverrideTask", this);
 			}
 		}
 

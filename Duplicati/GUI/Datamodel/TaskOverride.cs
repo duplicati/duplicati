@@ -22,7 +22,7 @@
 /// <provider name="System.Data.LightDatamodel.SQLiteDataProvider" connectionstring="Version=3;Data Source=D:\Dokumenter\duplicati\Duplicati\GUI\Datamodel\Duplicati.sqlite;" />
 /// <type>Table</type>
 /// <namespace>Duplicati.Datamodel</namespace>
-/// <name>TaskSetting</name>
+/// <name>TaskOverride</name>
 /// <sql></sql>
 /// </metadata>
 
@@ -32,15 +32,15 @@ using System.Data.LightDatamodel.DataClassAttributes;
 namespace Duplicati.Datamodel
 {
 
-	[DatabaseTable("TaskSetting")]
-	public partial class TaskSetting : DataClassBase
+	[DatabaseTable("TaskOverride")]
+	public partial class TaskOverride : DataClassBase
 	{
 
 #region " private members "
 
 		[AutoIncrement, PrimaryKey, DatabaseField("ID")]
 		private System.Int64 m_ID = long.MinValue;
-		[Relation("TaskSettingTask", typeof(Task), "ID"), DatabaseField("TaskID")]
+		[Relation("TaskOverrideTask", typeof(Task), "ID"), DatabaseField("TaskID")]
 		private System.Int64 m_TaskID = long.MinValue;
 		[DatabaseField("Name")]
 		private System.String m_Name = "";
@@ -81,8 +81,8 @@ namespace Duplicati.Datamodel
 		[Affects(typeof(Task))]
 		public Task Task
 		{
-			get{ return ((DataFetcherWithRelations)m_dataparent).GetRelatedObject<Task>("TaskSettingTask", this); }
-			set{ ((DataFetcherWithRelations)m_dataparent).SetRelatedObject("TaskSettingTask", this, value); }
+			get{ return ((DataFetcherWithRelations)m_dataparent).GetRelatedObject<Task>("TaskOverrideTask", this); }
+			set{ ((DataFetcherWithRelations)m_dataparent).SetRelatedObject("TaskOverrideTask", this, value); }
 		}
 
 #endregion

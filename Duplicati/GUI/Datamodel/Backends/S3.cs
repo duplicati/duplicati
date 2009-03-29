@@ -45,58 +45,44 @@ namespace Duplicati.Datamodel.Backends
 
         public string AccessID
         {
-            get { return m_owner.Settings[ACCESS_ID]; }
-            set { m_owner.Settings[ACCESS_ID] = value; }
+            get { return m_owner.BackendSettingsLookup[ACCESS_ID]; }
+            set { m_owner.BackendSettingsLookup[ACCESS_ID] = value; }
         }
 
         public string AccessKey
         {
-            get { return m_owner.Settings[ACCESS_KEY]; }
-            set { m_owner.Settings[ACCESS_KEY] = value; }
+            get { return m_owner.BackendSettingsLookup[ACCESS_KEY]; }
+            set { m_owner.BackendSettingsLookup[ACCESS_KEY] = value; }
         }
 
         public string BucketName
         {
-            get { return m_owner.Settings[BUCKET_NAME]; }
-            set { m_owner.Settings[BUCKET_NAME] = value; }
+            get { return m_owner.BackendSettingsLookup[BUCKET_NAME]; }
+            set { m_owner.BackendSettingsLookup[BUCKET_NAME] = value; }
         }
 
         public string ServerUrl
         {
-            get { return m_owner.Settings[SERVER_URL]; }
-            set { m_owner.Settings[SERVER_URL] = value; }
+            get { return m_owner.BackendSettingsLookup[SERVER_URL]; }
+            set { m_owner.BackendSettingsLookup[SERVER_URL] = value; }
         }
 
         public string Prefix
         {
-            get { return m_owner.Settings[PREFIX]; }
-            set { m_owner.Settings[PREFIX] = value; }
+            get { return m_owner.BackendSettingsLookup[PREFIX]; }
+            set { m_owner.BackendSettingsLookup[PREFIX] = value; }
         }
 
         public bool UseEuroBucket
         {
-            get 
-            {
-                bool v;
-                if (bool.TryParse(m_owner.Settings[EUROBUCKET], out v))
-                    return v;
-                else
-                    return false;
-            }
-            set { m_owner.Settings[EUROBUCKET] = value.ToString(); }
+            get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.BackendSettingsLookup[EUROBUCKET], false); }
+            set { m_owner.BackendSettingsLookup[EUROBUCKET] = value.ToString(); }
         }
 
         public bool UseSubdomainStrategy
         {
-            get
-            {
-                bool v;
-                if (bool.TryParse(m_owner.Settings[SUBDOMAIN], out v))
-                    return v;
-                else
-                    return false;
-            }
-            set { m_owner.Settings[SUBDOMAIN] = value.ToString(); }
+            get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.BackendSettingsLookup[SUBDOMAIN], false); }
+            set { m_owner.BackendSettingsLookup[SUBDOMAIN] = value.ToString(); }
         }
 
         #region IBackend Members

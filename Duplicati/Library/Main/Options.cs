@@ -119,14 +119,14 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the maximum size of a single file
         /// </summary>
-        public long MaxFileSize
+        public long SkipFilesLargerThan
         {
             get
             {
-                if (!m_options.ContainsKey("totalsize") || string.IsNullOrEmpty(m_options["totalsize"]))
+                if (!m_options.ContainsKey("skip-files-larger-than") || string.IsNullOrEmpty(m_options["skip-files-larger-than"]))
                     return long.MaxValue;
                 else
-                    return Math.Max(VolumeSize, Core.Sizeparser.ParseSize(m_options["totalsize"], "mb"));
+                    return Core.Sizeparser.ParseSize(m_options["skip-files-larger-than"], "mb");
             }
         }
 

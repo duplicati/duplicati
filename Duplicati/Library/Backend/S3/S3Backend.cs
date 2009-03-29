@@ -115,7 +115,9 @@ namespace Duplicati.Library.Backend
                     m_bucket = m_host.Substring(0, m_host.Length - ".s3.amazonaws.com".Length);
                     m_host = "s3.amazonaws.com";
                     m_prefix = u.PathAndQuery;
-                    
+
+                    if (m_prefix.StartsWith("/"))
+                        m_prefix = m_prefix.Substring(1);
                 }
                 else
                     throw new Exception("Unable to determine the bucket name for host: " + m_url);
@@ -155,7 +157,13 @@ namespace Duplicati.Library.Backend
 
                 List<FileEntry> lst = con.ListBucket(m_bucket, m_prefix);
                 for (int i = 0; i < lst.Count; i++)
+                {
                     lst[i].Name = lst[i].Name.Substring(m_prefix.Length);
+                    
+                    //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
+                    if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
+                        lst[i].Name = lst[i].Name.Substring(1);
+                }
                 return lst;
             }
             catch (System.Net.WebException wex)

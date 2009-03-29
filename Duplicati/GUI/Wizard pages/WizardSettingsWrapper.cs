@@ -131,15 +131,24 @@ namespace Duplicati.GUI.Wizard_pages
             this.FullBackupInterval = schedule.Task.FullAfter;
             this.MaxFullBackups = (int)schedule.Task.KeepFull;
             this.BackupExpireInterval = schedule.Task.KeepTime;
-            this.UploadSpeedLimit = schedule.Task.UploadBandwidth;
-            this.DownloadSpeedLimit = schedule.Task.DownloadBandwidth;
-            this.BackupSizeLimit = schedule.Task.MaxUploadsize;
-            this.VolumeSize = schedule.Task.VolumeSize;
-            this.ThreadPriority = schedule.Task.ThreadPriority;
-            this.AsyncTransfer = schedule.Task.AsyncTransfer;
+            this.UploadSpeedLimit = schedule.Task.Extensions.UploadBandwidth;
+            this.DownloadSpeedLimit = schedule.Task.Extensions.DownloadBandwidth;
+            this.BackupSizeLimit = schedule.Task.Extensions.MaxUploadSize;
+            this.VolumeSize = schedule.Task.Extensions.VolumeSize;
+            this.ThreadPriority = schedule.Task.Extensions.ThreadPriority;
+            this.AsyncTransfer = schedule.Task.Extensions.AsyncTransfer;
             this.GPGEncryption = schedule.Task.GPGEncryption;
             this.IncludeSetup = schedule.Task.IncludeSetup;
-            this.IgnoreFileTimestamps = schedule.Task.IgnoreTimestamps;
+            this.IgnoreFileTimestamps = schedule.Task.Extensions.IgnoreTimestamps;
+            this.FileSizeLimit = schedule.Task.Extensions.FileSizeLimit;
+
+            this.FilePrefix = schedule.Task.Extensions.FilenamePrefix;
+            this.FileTimeSeperator = schedule.Task.Extensions.FileTimeSeperator;
+            this.ShortFilenames = schedule.Task.Extensions.ShortFilenames;
+
+            this.Overrides = new Dictionary<string, string>();
+            foreach (Datamodel.TaskOverride ov in schedule.Task.TaskOverrides)
+                this.Overrides[ov.Name] = ov.Value;
 
             this.PrimayAction = action;
         }
@@ -156,7 +165,6 @@ namespace Duplicati.GUI.Wizard_pages
             if (schedule.Task == null)
                 schedule.Task = schedule.DataParent.Add<Datamodel.Task>();
             schedule.Task.SourcePath = this.SourcePath;
-            //TODO: This does not correctly erase the old filters?
             schedule.Task.EncodedFilter = this.EncodedFilters;
             schedule.Task.Encryptionkey = this.BackupPassword;
 
@@ -227,17 +235,44 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.KeepFull = this.MaxFullBackups;
             
             schedule.Task.KeepTime = this.BackupExpireInterval;
-            schedule.Task.UploadBandwidth = this.UploadSpeedLimit;
-            schedule.Task.DownloadBandwidth = this.DownloadSpeedLimit;
-            schedule.Task.MaxUploadsize = this.BackupSizeLimit;
+            schedule.Task.Extensions.UploadBandwidth = this.UploadSpeedLimit;
+            schedule.Task.Extensions.DownloadBandwidth = this.DownloadSpeedLimit;
+            schedule.Task.Extensions.MaxUploadSize = this.BackupSizeLimit;
 
-            schedule.Task.VolumeSize = this.VolumeSize;
-            schedule.Task.ThreadPriority = this.ThreadPriority;
-            schedule.Task.AsyncTransfer = this.AsyncTransfer;
+            schedule.Task.Extensions.VolumeSize = this.VolumeSize;
+            schedule.Task.Extensions.ThreadPriority = this.ThreadPriority;
+            schedule.Task.Extensions.AsyncTransfer = this.AsyncTransfer;
 
             schedule.Task.GPGEncryption = this.GPGEncryption;
             schedule.Task.IncludeSetup = this.IncludeSetup;
-            schedule.Task.IgnoreTimestamps = this.IgnoreFileTimestamps;
+            schedule.Task.Extensions.IgnoreTimestamps = this.IgnoreFileTimestamps;
+            schedule.Task.Extensions.FileSizeLimit = this.FileSizeLimit;
+
+            schedule.Task.Extensions.FilenamePrefix = this.FilePrefix;
+            schedule.Task.Extensions.FileTimeSeperator = this.FileTimeSeperator;
+            schedule.Task.Extensions.ShortFilenames = this.ShortFilenames;
+
+            //Synchronize the override collections, preserve existing items
+            Dictionary<string, Datamodel.TaskOverride> ovs = new Dictionary<string, Duplicati.Datamodel.TaskOverride>();
+            foreach (Datamodel.TaskOverride ov in schedule.Task.TaskOverrides)
+                ovs[ov.Name] = ov;
+
+            foreach (string s in this.Overrides.Keys)
+                if (ovs.ContainsKey(s))
+                {
+                    ovs[s].Value = this.Overrides[s];
+                    ovs.Remove(s);
+                }
+                else
+                {
+                    Datamodel.TaskOverride ov = schedule.Task.DataParent.Add<Datamodel.TaskOverride>();
+                    ov.Name = s;
+                    ov.Value = this.Overrides[s];
+                    schedule.Task.TaskOverrides.Add(ov);
+                }
+
+            foreach (Datamodel.TaskOverride ov in ovs.Values)
+                ov.DataParent.DeleteObject(ov);
         }
 
         /// <summary>
@@ -390,7 +425,6 @@ namespace Duplicati.GUI.Wizard_pages
             set { SetItem("BackupExpireInterval", value); }
         }
 
-
         /// <summary>
         /// The interval at which to perform full backups
         /// </summary>
@@ -425,6 +459,15 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get { return GetItem<string>("VolumeSize", ""); }
             set { SetItem("VolumeSize", value); }
+        }
+
+        /// <summary>
+        /// The maximum size of files included in the backup
+        /// </summary>
+        public string FileSizeLimit
+        {
+            get { return GetItem<string>("FileSizeLimit", ""); }
+            set { SetItem("FileSizeLimit", value); }
         }
 
         /// <summary>
@@ -544,6 +587,46 @@ namespace Duplicati.GUI.Wizard_pages
             set { SetItem("IgnoreFileTimestamps", value); }
         }
 
+        /// <summary>
+        /// A prefix to the volume filename
+        /// </summary>
+        public string FilePrefix
+        {
+            get { return GetItem<string>("FilePrefix", ""); }
+            set { SetItem("FilePrefix", value); }
+        }
+
+        /// <summary>
+        /// The character used to seperate time digits in the filename
+        /// </summary>
+        public string FileTimeSeperator
+        {
+            get { return GetItem<string>("FileTimeSeperator", ":"); }
+            set { SetItem("FileTimeSeperator", value); }
+        }
+
+        /// <summary>
+        /// True if the filenames generated should be short
+        /// </summary>
+        public bool ShortFilenames
+        {
+            get { return GetItem<bool>("ShortFilenames", false); }
+            set { SetItem("ShortFilenames", value); }
+        }
+
+        /// <summary>
+        /// Gets all the overrides present on the task
+        /// </summary>
+        public Dictionary<string, string> Overrides
+        {
+            get 
+            {
+                if (GetItem<Dictionary<string, string>>("Overrides", null) == null)
+                    this.Overrides = new Dictionary<string, string>();
+                return GetItem<Dictionary<string, string>>("Overrides", null); 
+            }
+            set { SetItem("Overrides", value); }
+        }
     }
 
     /// <summary>

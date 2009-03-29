@@ -117,12 +117,7 @@ namespace Duplicati.GUI
             {
                 Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
                 List<IDataClass> items = new List<IDataClass>();
-                items.Add(schedule);
-                items.Add(schedule.Task);
-                foreach(TaskSetting ts in schedule.Task.TaskSettings)
-                    items.Add(ts);
-                foreach (TaskFilter tf in schedule.Task.Filters)
-                    items.Add(tf);
+                items.AddRange(Program.DataConnection.FindObjectRelations(schedule));
                 foreach(IDataClass o in items)
                     Program.DataConnection.DeleteObject(o);
                 Program.DataConnection.Commit(items.ToArray());

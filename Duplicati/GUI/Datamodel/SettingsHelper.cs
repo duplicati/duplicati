@@ -35,7 +35,6 @@ namespace Duplicati.Datamodel
 
         private PropertyInfo m_keyfield;
         private PropertyInfo m_valuefield;
-        private TranslatoryEnumerator m_enum;
 
         public SettingsHelper(IDataFetcher parent, IList<TBase> col, string keyfield, string valuefield)
             : this(parent, col, typeof(TBase).GetProperty(keyfield), typeof(TBase).GetProperty(valuefield))
@@ -59,16 +58,35 @@ namespace Duplicati.Datamodel
             if (m_valuefield == null)
                 throw new ArgumentNullException("valuefield");
 
-            m_settings = new Dictionary<TKey, TBase>();
-            m_enum = new TranslatoryEnumerator(this, m_settings.GetEnumerator());
+            parent.AfterDataConnection += new DataConnectionEventHandler(parent_AfterDataConnection);
+        }
 
-            foreach (TBase item in m_col)
-                if (!m_settings.ContainsKey((TKey)m_keyfield.GetValue(item, null)))
-                    m_settings.Add((TKey)m_keyfield.GetValue(item, null), item);
+        void parent_AfterDataConnection(object sender, DataActions action)
+        {
+            if (action != DataActions.Fetch)
+                m_settings = null;
+
         }
 
         public PropertyInfo KeyField { get { return m_keyfield; } }
         public PropertyInfo ValueField { get { return m_valuefield; } }
+
+        private Dictionary<TKey, TBase> InternalSettings
+        {
+            get
+            {
+                if (m_settings == null)
+                {
+                    m_settings = new Dictionary<TKey, TBase>();
+
+                    foreach (TBase item in m_col)
+                        if (!m_settings.ContainsKey((TKey)m_keyfield.GetValue(item, null)))
+                            m_settings.Add((TKey)m_keyfield.GetValue(item, null), item);
+                }
+
+                return m_settings;
+            }
+        }
 
         #region IDictionary<TKey, TValue> Members
 
@@ -78,36 +96,36 @@ namespace Duplicati.Datamodel
             m_keyfield.SetValue(item, key, null);
             m_valuefield.SetValue(item, value, null);
 
-            m_settings.Add(key, item);
+            InternalSettings.Add(key, item);
             m_parent.Add(item);
             m_col.Add(item);
         }
 
         public bool ContainsKey(TKey key)
         {
-            return m_settings.ContainsKey(key);
+            return InternalSettings.ContainsKey(key);
         }
 
         public ICollection<TKey> Keys
         {
-            get { return m_settings.Keys; }
+            get { return InternalSettings.Keys; }
         }
 
         public bool Remove(TKey key)
         {
-            if (m_settings.ContainsKey(key))
+            if (InternalSettings.ContainsKey(key))
             {
-                m_col.Remove(m_settings[key]);
-                m_parent.DeleteObject<TBase>(m_settings[key]);
+                m_col.Remove(InternalSettings[key]);
+                m_parent.DeleteObject<TBase>(InternalSettings[key]);
             }
 
-            return m_settings.Remove(key);
+            return InternalSettings.Remove(key);
         }
 
         public bool TryGetValue(TKey key, out TValue value)
         {
             TBase item;
-            if (m_settings.TryGetValue(key, out item))
+            if (InternalSettings.TryGetValue(key, out item))
             {
                 value = (TValue)m_valuefield.GetValue(item, null);
                 return true;
@@ -125,7 +143,7 @@ namespace Duplicati.Datamodel
             get
             {
                 List<TValue> lst = new List<TValue>();
-                foreach (TBase item in m_settings.Values)
+                foreach (TBase item in InternalSettings.Values)
                     lst.Add((TValue)m_valuefield.GetValue(item, null));
                 return lst;
             }
@@ -135,27 +153,27 @@ namespace Duplicati.Datamodel
         {
             get
             {
-                if (m_settings.ContainsKey(key))
-                    return (TValue)m_valuefield.GetValue(m_settings[key], null);
+                if (InternalSettings.ContainsKey(key))
+                    return (TValue)m_valuefield.GetValue(InternalSettings[key], null);
                 else
                     return default(TValue);
             }
             set
             {
-                if (value == null && m_settings.ContainsKey(key))
+                if (value == null && InternalSettings.ContainsKey(key))
                 {
                     //Remove
                     this.Remove(key);
                 }
-                else if (value != null && !m_settings.ContainsKey(key))
+                else if (value != null && !InternalSettings.ContainsKey(key))
                 {
                     //Add
                     this.Add(key, value);
                 }
-                else if (value != null && m_settings.ContainsKey(key))
+                else if (value != null && InternalSettings.ContainsKey(key))
                 {
                     //Update
-                    m_valuefield.SetValue(m_settings[key], value, null);
+                    m_valuefield.SetValue(InternalSettings[key], value, null);
                 }
                 //else: It should be removed, but does not exist
 
@@ -180,7 +198,7 @@ namespace Duplicati.Datamodel
                 m_parent.DeleteObject<TBase>(item);
             }
 
-            m_settings.Clear();
+            InternalSettings.Clear();
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
@@ -190,12 +208,12 @@ namespace Duplicati.Datamodel
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            ((ICollection<KeyValuePair<TKey, TValue>>)(m_settings)).CopyTo(array, arrayIndex);
+            ((ICollection<KeyValuePair<TKey, TValue>>)(InternalSettings)).CopyTo(array, arrayIndex);
         }
 
         public int Count
         {
-            get { return m_settings.Count; }
+            get { return InternalSettings.Count; }
         }
 
         public bool IsReadOnly
@@ -214,7 +232,7 @@ namespace Duplicati.Datamodel
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return m_enum;
+            return new TranslatoryEnumerator(this, InternalSettings.GetEnumerator());
         }
 
         #endregion
@@ -223,7 +241,7 @@ namespace Duplicati.Datamodel
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return ((System.Collections.IEnumerable)m_settings).GetEnumerator();
+            return ((System.Collections.IEnumerable)InternalSettings).GetEnumerator();
         }
 
         #endregion
@@ -281,5 +299,8 @@ namespace Duplicati.Datamodel
 
             #endregion
         }
+
+        public IDataFetcher DataParent { get { return m_parent; } }
+        public IList<TBase> Collection { get { return m_col; } }
     }
 }

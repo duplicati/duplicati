@@ -8,4 +8,5 @@
   <BackupTimeOffset>13h</BackupTimeOffset>
   <EncodedFilters>e:.*\\Thumbs.db</EncodedFilters>
   <IncludeSetup>true</IncludeSetup>
+  <FileTimeSeperator>'</FileTimeSeperator>
 </settings>

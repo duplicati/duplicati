@@ -89,7 +89,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_owner.Cancelled -= new CancelEventHandler(m_owner_Cancelled);
             m_settings["Files:Sizes"] = m_sizes;
             m_settings["Files:WarnedFilters"] = m_warnedFiltersChanged;
-            m_calculator.ClearQueue(true);
+            
+            if (m_calculator != null)
+                m_calculator.ClearQueue(true);
 
             if (args.Direction == PageChangedDirection.Back)
                 return;

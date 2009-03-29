@@ -48,7 +48,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             m_wrapper.EncodedFilters = filterEditor1.Filter;
             
-            args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
+            if ((bool)m_settings["Advanced:Filenames"])
+                args.NextPage = new Wizard_pages.Add_backup.GeneratedFilenameOptions();
+            else if ((bool)m_settings["Advanced:Overrides"])
+                args.NextPage = new Wizard_pages.Add_backup.SettingOverrides();
+            else
+                args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }
 
         void FilterEditor_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)

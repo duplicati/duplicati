@@ -1,22 +1,15 @@
 CREATE TABLE "Task" (
     "ID" INTEGER PRIMARY KEY,
+    "ScheduleID" INTEGER NULL,
     "Service" TEXT NULL,
     "Encryptionkey" TEXT NULL,
     "Signaturekey" TEXT NULL,
     "SourcePath" TEXT NULL,
-    "ScheduleID" INTEGER NULL,
     "KeepFull" INTEGER NULL,
     "KeepTime" TEXT NULL,
-    "MaxUploadsize" TEXT NULL,
-    "UploadBandwidth" TEXT NULL,
-    "DownloadBandwidth" TEXT NULL,
-    "VolumeSize" TEXT NULL,
 	"FullAfter" TEXT NULL,
-	"ThreadPriority" TEXT NULL,
-	"AsyncTransfer" BOOLEAN NULL,
 	"GPGEncryption" BOOLEAN NULL,
-	"IncludeSetup" BOOLEAN NULL,
-	"IgnoreTimestamps" BOOLEAN NULL
+	"IncludeSetup" BOOLEAN NULL
 );
 
 CREATE TABLE "Schedule" (
@@ -28,8 +21,21 @@ CREATE TABLE "Schedule" (
     "Weekdays" TEXT NULL
 );
 
+CREATE TABLE "BackendSetting" (
+    "ID" INTEGER PRIMARY KEY,
+    "TaskID" INTEGER NULL,
+    "Name" TEXT NULL,
+    "Value" TEXT NULL
+);
 
-CREATE TABLE "TaskSetting" (
+CREATE TABLE "TaskExtension" (
+    "ID" INTEGER PRIMARY KEY,
+    "TaskID" INTEGER NULL,
+    "Name" TEXT NULL,
+    "Value" TEXT NULL
+);
+
+CREATE TABLE "TaskOverride" (
     "ID" INTEGER PRIMARY KEY,
     "TaskID" INTEGER NULL,
     "Name" TEXT NULL,
@@ -80,4 +86,4 @@ CREATE TABLE "TaskFilter" (
 );
 
 
-INSERT INTO "Version" ("Version") VALUES (1);
+INSERT INTO "Version" ("Version") VALUES (2);

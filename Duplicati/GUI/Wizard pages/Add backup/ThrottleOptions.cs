@@ -143,6 +143,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if ((bool)m_settings["Advanced:Filters"])
                 args.NextPage = new Wizard_pages.Add_backup.EditFilters();
+            else if ((bool)m_settings["Advanced:Filenames"])
+                args.NextPage = new Wizard_pages.Add_backup.GeneratedFilenameOptions();
+            else if ((bool)m_settings["Advanced:Overrides"])
+                args.NextPage = new Wizard_pages.Add_backup.SettingOverrides();
             else
                 args.NextPage = new FinishedAdd();
         }

@@ -390,5 +390,34 @@ namespace Duplicati.Library.Core
                     return System.Threading.ThreadPriority.Normal;
             }
         }
+
+        /// <summary>
+        /// Parses a string into a boolean value
+        /// </summary>
+        /// <param name="value">The value to parse</param>
+        /// <param name="default">The default value, in case the string is not a valid boolean value</param>
+        /// <returns>The parsed value or the default value</returns>
+        public static bool ParseBool(string value, bool @default)
+        {
+            if (value == null)
+                value = "";
+
+            switch (value.Trim().ToLower())
+            {
+                case "1":
+                case "on":
+                case "true":
+                case "yes":
+                    return true;
+                case "0":
+                case "off":
+                case "false":
+                case "no":
+                    return false;
+                default:
+                    return @default;
+            }
+        }
+
     }
 }

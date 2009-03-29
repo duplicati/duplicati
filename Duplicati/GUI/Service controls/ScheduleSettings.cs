@@ -92,10 +92,10 @@ namespace Duplicati.GUI.Service_controls
                 ForceFullBackup.Checked = !string.IsNullOrEmpty(m_schedule.Task.FullAfter);
                 ForceFullBackupTimespan.Text = m_schedule.Task.FullAfter;
 
-                MaxUploaded.Text = m_schedule.Task.MaxUploadsize;
-                VolumeSize.Text = m_schedule.Task.VolumeSize;
-                DownloadBandwidth.Text = m_schedule.Task.DownloadBandwidth;
-                UploadBandwidth.Text =m_schedule.Task.UploadBandwidth;
+                MaxUploaded.Text = m_schedule.Task.Extensions.MaxUploadSize;
+                VolumeSize.Text = m_schedule.Task.Extensions.VolumeSize;
+                DownloadBandwidth.Text = m_schedule.Task.Extensions.DownloadBandwidth;
+                UploadBandwidth.Text =m_schedule.Task.Extensions.UploadBandwidth;
             }
             finally
             {
@@ -234,7 +234,7 @@ namespace Duplicati.GUI.Service_controls
             try
             {
                 Library.Core.Sizeparser.ParseSize(MaxUploaded.Text);
-                m_schedule.Task.MaxUploadsize = MaxUploaded.Text;
+                m_schedule.Task.Extensions.MaxUploadSize = MaxUploaded.Text;
                 errorProvider.SetError(MaxUploaded, "");
             }
             catch (Exception ex)
@@ -251,7 +251,7 @@ namespace Duplicati.GUI.Service_controls
             try
             {
                 Library.Core.Sizeparser.ParseSize(VolumeSize.Text);
-                m_schedule.Task.VolumeSize = VolumeSize.Text;
+                m_schedule.Task.Extensions.VolumeSize = VolumeSize.Text;
                 errorProvider.SetError(VolumeSize, "");
             }
             catch (Exception ex)
@@ -268,7 +268,7 @@ namespace Duplicati.GUI.Service_controls
             try
             {
                 Library.Core.Sizeparser.ParseSize(UploadBandwidth.Text);
-                m_schedule.Task.UploadBandwidth = UploadBandwidth.Text;
+                m_schedule.Task.Extensions.UploadBandwidth = UploadBandwidth.Text;
                 errorProvider.SetError(UploadBandwidth, "");
             }
             catch (Exception ex)
@@ -286,7 +286,7 @@ namespace Duplicati.GUI.Service_controls
             try
             {
                 Library.Core.Sizeparser.ParseSize(DownloadBandwidth.Text);
-                m_schedule.Task.DownloadBandwidth = DownloadBandwidth.Text;
+                m_schedule.Task.Extensions.DownloadBandwidth = DownloadBandwidth.Text;
                 errorProvider.SetError(DownloadBandwidth, "");
             }
             catch (Exception ex)

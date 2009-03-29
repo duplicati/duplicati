@@ -96,7 +96,7 @@ namespace Duplicati.Library.Backend
             foreach (string s in System.IO.Directory.GetDirectories(path))
             {
                 System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(s);
-                FileEntry fe = new FileEntry(di.Name,0, di.LastAccessTime, di.LastWriteTime);
+                FileEntry fe = new FileEntry(di.Name, 0, di.LastAccessTime, di.LastWriteTime);
                 fe.IsFolder = true;
                 ls.Add(fe);
             }

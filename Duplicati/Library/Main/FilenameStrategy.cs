@@ -101,6 +101,8 @@ namespace Duplicati.Library.Main
                 m = m_shortRegExp.Match(fe.Name);
             if (!m.Success)
                 return null;
+            if (m.Value != fe.Name)
+                return null; //Accept only full matches
 
             BackupEntry.EntryType type;
             if (m.Groups["type"].Value == "manifest" || m.Groups["type"].Value == "M")

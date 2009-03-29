@@ -42,20 +42,20 @@ namespace Duplicati.Datamodel.Backends
 
         public string Username
         {
-            get { return m_owner.Settings[USERNAME]; }
-            set { m_owner.Settings[USERNAME] = value; }
+            get { return m_owner.BackendSettingsLookup[USERNAME]; }
+            set { m_owner.BackendSettingsLookup[USERNAME] = value; }
         }
 
         public string Password
         {
-            get { return m_owner.Settings[PASSWORD]; }
-            set { m_owner.Settings[PASSWORD] = value; }
+            get { return m_owner.BackendSettingsLookup[PASSWORD]; }
+            set { m_owner.BackendSettingsLookup[PASSWORD] = value; }
         }
 
         public string Host
         {
-            get { return m_owner.Settings[HOST]; }
-            set { m_owner.Settings[HOST] = value; }
+            get { return m_owner.BackendSettingsLookup[HOST]; }
+            set { m_owner.BackendSettingsLookup[HOST] = value; }
         }
 
         public int Port
@@ -63,29 +63,22 @@ namespace Duplicati.Datamodel.Backends
             get
             {
                 int portn = 21;
-                int.TryParse(m_owner.Settings[PORT], out portn);
+                int.TryParse(m_owner.BackendSettingsLookup[PORT], out portn);
                 return portn;
             }
-            set { m_owner.Settings[PORT] = value.ToString(); }
+            set { m_owner.BackendSettingsLookup[PORT] = value.ToString(); }
         }
 
         public string Folder
         {
-            get { return m_owner.Settings[FOLDER]; }
-            set { m_owner.Settings[FOLDER] = value; }
+            get { return m_owner.BackendSettingsLookup[FOLDER]; }
+            set { m_owner.BackendSettingsLookup[FOLDER] = value; }
         }
 
         public bool Passive
         {
-            get 
-            {
-                bool res = false;
-                if (!bool.TryParse(m_owner.Settings[PASSIVE], out res))
-                    return true;
-                else
-                    return res;
-            }
-            set { m_owner.Settings[PASSIVE] = value.ToString(); }
+            get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.BackendSettingsLookup[PASSIVE], false); }
+            set { m_owner.BackendSettingsLookup[PASSIVE] = value.ToString(); }
         }
 
         #region IBackend Members

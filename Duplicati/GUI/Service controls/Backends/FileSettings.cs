@@ -46,7 +46,6 @@ namespace Duplicati.GUI.Service_controls
                 m_file = file;
 
                 DestinationFolder.Text = m_file.DestinationFolder;
-                TimeSeperator.Text = m_file.TimeSeparator;
             }
             finally
             {
@@ -60,14 +59,6 @@ namespace Duplicati.GUI.Service_controls
                 return;
 
             m_file.DestinationFolder = DestinationFolder.Text;
-        }
-
-        private void TimeSeperator_TextChanged(object sender, EventArgs e)
-        {
-            if (m_isUpdating || m_file == null)
-                return;
-
-            m_file.TimeSeparator = TimeSeperator.Text;
         }
 
         private void BrowseTargetFolder_Click(object sender, EventArgs e)

@@ -33,12 +33,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.ThrottleOptions = new System.Windows.Forms.CheckBox();
             this.EditFilters = new System.Windows.Forms.CheckBox();
             this.IncludeDuplicatiSetup = new System.Windows.Forms.CheckBox();
+            this.EditVolumeFilenames = new System.Windows.Forms.CheckBox();
+            this.EditOverrides = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // SelectWhen
             // 
             this.SelectWhen.AutoSize = true;
-            this.SelectWhen.Location = new System.Drawing.Point(32, 32);
+            this.SelectWhen.Location = new System.Drawing.Point(32, 8);
             this.SelectWhen.Name = "SelectWhen";
             this.SelectWhen.Size = new System.Drawing.Size(265, 17);
             this.SelectWhen.TabIndex = 0;
@@ -48,7 +50,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // SelectIncremental
             // 
             this.SelectIncremental.AutoSize = true;
-            this.SelectIncremental.Location = new System.Drawing.Point(32, 64);
+            this.SelectIncremental.Location = new System.Drawing.Point(32, 40);
             this.SelectIncremental.Name = "SelectIncremental";
             this.SelectIncremental.Size = new System.Drawing.Size(439, 17);
             this.SelectIncremental.TabIndex = 1;
@@ -59,7 +61,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // ThrottleOptions
             // 
             this.ThrottleOptions.AutoSize = true;
-            this.ThrottleOptions.Location = new System.Drawing.Point(32, 96);
+            this.ThrottleOptions.Location = new System.Drawing.Point(32, 72);
             this.ThrottleOptions.Name = "ThrottleOptions";
             this.ThrottleOptions.Size = new System.Drawing.Size(329, 17);
             this.ThrottleOptions.TabIndex = 3;
@@ -69,7 +71,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // EditFilters
             // 
             this.EditFilters.AutoSize = true;
-            this.EditFilters.Location = new System.Drawing.Point(32, 128);
+            this.EditFilters.Location = new System.Drawing.Point(32, 104);
             this.EditFilters.Name = "EditFilters";
             this.EditFilters.Size = new System.Drawing.Size(316, 17);
             this.EditFilters.TabIndex = 4;
@@ -81,17 +83,39 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.IncludeDuplicatiSetup.AutoSize = true;
             this.IncludeDuplicatiSetup.Checked = true;
             this.IncludeDuplicatiSetup.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.IncludeDuplicatiSetup.Location = new System.Drawing.Point(32, 160);
+            this.IncludeDuplicatiSetup.Location = new System.Drawing.Point(32, 200);
             this.IncludeDuplicatiSetup.Name = "IncludeDuplicatiSetup";
             this.IncludeDuplicatiSetup.Size = new System.Drawing.Size(256, 17);
             this.IncludeDuplicatiSetup.TabIndex = 5;
             this.IncludeDuplicatiSetup.Text = "Include the current Duplicati setup in the backup";
             this.IncludeDuplicatiSetup.UseVisualStyleBackColor = true;
             // 
+            // EditVolumeFilenames
+            // 
+            this.EditVolumeFilenames.AutoSize = true;
+            this.EditVolumeFilenames.Location = new System.Drawing.Point(32, 136);
+            this.EditVolumeFilenames.Name = "EditVolumeFilenames";
+            this.EditVolumeFilenames.Size = new System.Drawing.Size(369, 17);
+            this.EditVolumeFilenames.TabIndex = 6;
+            this.EditVolumeFilenames.Text = "Change the generated names for files stored on the backend (advanced)";
+            this.EditVolumeFilenames.UseVisualStyleBackColor = true;
+            // 
+            // EditOverrides
+            // 
+            this.EditOverrides.AutoSize = true;
+            this.EditOverrides.Location = new System.Drawing.Point(32, 168);
+            this.EditOverrides.Name = "EditOverrides";
+            this.EditOverrides.Size = new System.Drawing.Size(228, 17);
+            this.EditOverrides.TabIndex = 7;
+            this.EditOverrides.Text = "Manually override settings (very advanced)";
+            this.EditOverrides.UseVisualStyleBackColor = true;
+            // 
             // AdvancedOptions
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.EditOverrides);
+            this.Controls.Add(this.EditVolumeFilenames);
             this.Controls.Add(this.IncludeDuplicatiSetup);
             this.Controls.Add(this.EditFilters);
             this.Controls.Add(this.ThrottleOptions);
@@ -111,5 +135,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.CheckBox ThrottleOptions;
         private System.Windows.Forms.CheckBox EditFilters;
         private System.Windows.Forms.CheckBox IncludeDuplicatiSetup;
+        private System.Windows.Forms.CheckBox EditVolumeFilenames;
+        private System.Windows.Forms.CheckBox EditOverrides;
     }
 }

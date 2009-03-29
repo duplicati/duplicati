@@ -22,7 +22,7 @@
 /// <provider name="System.Data.LightDatamodel.SQLiteDataProvider" connectionstring="Version=3;Data Source=D:\Dokumenter\duplicati\Duplicati\GUI\Datamodel\Duplicati.sqlite;" />
 /// <type>Table</type>
 /// <namespace>Duplicati.Datamodel</namespace>
-/// <name>Schedule</name>
+/// <name>BackendSetting</name>
 /// <sql></sql>
 /// </metadata>
 
@@ -32,24 +32,20 @@ using System.Data.LightDatamodel.DataClassAttributes;
 namespace Duplicati.Datamodel
 {
 
-	[DatabaseTable("Schedule")]
-	public partial class Schedule : DataClassBase
+	[DatabaseTable("BackendSetting")]
+	public partial class BackendSetting : DataClassBase
 	{
 
 #region " private members "
 
-		[AutoIncrement, PrimaryKey, Relation("TaskSchedule", typeof(Task), "ScheduleID", false), DatabaseField("ID")]
+		[AutoIncrement, PrimaryKey, DatabaseField("ID")]
 		private System.Int64 m_ID = long.MinValue;
+		[Relation("BackendSettingTask", typeof(Task), "ID"), DatabaseField("TaskID")]
+		private System.Int64 m_TaskID = long.MinValue;
 		[DatabaseField("Name")]
 		private System.String m_Name = "";
-		[DatabaseField("Path")]
-		private System.String m_Path = "";
-		[DatabaseField("When")]
-		private System.DateTime m_When = new System.DateTime(1, 1, 1);
-		[DatabaseField("Repeat")]
-		private System.String m_Repeat = "";
-		[DatabaseField("Weekdays")]
-		private System.String m_Weekdays = "";
+		[DatabaseField("Value")]
+		private System.String m_Value = "";
 #endregion
 
 #region " properties "
@@ -60,34 +56,22 @@ namespace Duplicati.Datamodel
 			set{object oldvalue = m_ID;OnBeforeDataChange(this, "ID", oldvalue, value);m_ID = value;OnAfterDataChange(this, "ID", oldvalue, value);}
 		}
 
+		public System.Int64 TaskID
+		{
+			get{return m_TaskID;}
+			set{object oldvalue = m_TaskID;OnBeforeDataChange(this, "TaskID", oldvalue, value);m_TaskID = value;OnAfterDataChange(this, "TaskID", oldvalue, value);}
+		}
+
 		public System.String Name
 		{
 			get{return m_Name;}
 			set{object oldvalue = m_Name;OnBeforeDataChange(this, "Name", oldvalue, value);m_Name = value;OnAfterDataChange(this, "Name", oldvalue, value);}
 		}
 
-		public System.String Path
+		public System.String Value
 		{
-			get{return m_Path;}
-			set{object oldvalue = m_Path;OnBeforeDataChange(this, "Path", oldvalue, value);m_Path = value;OnAfterDataChange(this, "Path", oldvalue, value);}
-		}
-
-		public System.DateTime When
-		{
-			get{return m_When;}
-			set{object oldvalue = m_When;OnBeforeDataChange(this, "When", oldvalue, value);m_When = value;OnAfterDataChange(this, "When", oldvalue, value);}
-		}
-
-		public System.String Repeat
-		{
-			get{return m_Repeat;}
-			set{object oldvalue = m_Repeat;OnBeforeDataChange(this, "Repeat", oldvalue, value);m_Repeat = value;OnAfterDataChange(this, "Repeat", oldvalue, value);}
-		}
-
-		public System.String Weekdays
-		{
-			get{return m_Weekdays;}
-			set{object oldvalue = m_Weekdays;OnBeforeDataChange(this, "Weekdays", oldvalue, value);m_Weekdays = value;OnAfterDataChange(this, "Weekdays", oldvalue, value);}
+			get{return m_Value;}
+			set{object oldvalue = m_Value;OnBeforeDataChange(this, "Value", oldvalue, value);m_Value = value;OnAfterDataChange(this, "Value", oldvalue, value);}
 		}
 
 #endregion
@@ -97,8 +81,8 @@ namespace Duplicati.Datamodel
 		[Affects(typeof(Task))]
 		public Task Task
 		{
-			get{ return ((DataFetcherWithRelations)m_dataparent).GetRelatedObject<Task>("TaskSchedule", this); }
-			set{ ((DataFetcherWithRelations)m_dataparent).SetRelatedObject("TaskSchedule", this, value); }
+			get{ return ((DataFetcherWithRelations)m_dataparent).GetRelatedObject<Task>("BackendSettingTask", this); }
+			set{ ((DataFetcherWithRelations)m_dataparent).SetRelatedObject("BackendSettingTask", this, value); }
 		}
 
 #endregion

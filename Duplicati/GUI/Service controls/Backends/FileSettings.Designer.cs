@@ -48,13 +48,9 @@ namespace Duplicati.GUI.Service_controls
         private void InitializeComponent()
         {
             this.button1 = new System.Windows.Forms.Button();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.TimeSeperator = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
             this.BrowseTargetFolder = new System.Windows.Forms.Button();
             this.DestinationFolder = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // button1
@@ -66,32 +62,6 @@ namespace Duplicati.GUI.Service_controls
             this.button1.TabIndex = 2;
             this.button1.Text = "Advanced <<<";
             this.button1.UseVisualStyleBackColor = true;
-            // 
-            // panel1
-            // 
-            this.panel1.Controls.Add(this.TimeSeperator);
-            this.panel1.Controls.Add(this.label2);
-            this.panel1.Location = new System.Drawing.Point(0, 24);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(264, 32);
-            this.panel1.TabIndex = 3;
-            // 
-            // TimeSeperator
-            // 
-            this.TimeSeperator.Location = new System.Drawing.Point(112, 8);
-            this.TimeSeperator.Name = "TimeSeperator";
-            this.TimeSeperator.Size = new System.Drawing.Size(24, 20);
-            this.TimeSeperator.TabIndex = 2;
-            this.TimeSeperator.TextChanged += new System.EventHandler(this.TimeSeperator_TextChanged);
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(8, 8);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(77, 13);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Time seperator";
             // 
             // BrowseTargetFolder
             // 
@@ -125,14 +95,11 @@ namespace Duplicati.GUI.Service_controls
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.BrowseTargetFolder);
-            this.Controls.Add(this.panel1);
             this.Controls.Add(this.DestinationFolder);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.label1);
             this.Name = "FileSettings";
             this.Size = new System.Drawing.Size(268, 96);
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -141,9 +108,6 @@ namespace Duplicati.GUI.Service_controls
         #endregion
 
         private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.TextBox TimeSeperator;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button BrowseTargetFolder;
         private System.Windows.Forms.TextBox DestinationFolder;
         private System.Windows.Forms.Label label1;

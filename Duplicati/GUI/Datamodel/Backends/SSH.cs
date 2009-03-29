@@ -42,52 +42,45 @@ namespace Duplicati.Datamodel.Backends
 
         public string Username
         {
-            get { return m_owner.Settings[USERNAME]; }
-            set { m_owner.Settings[USERNAME] = value; }
+            get { return m_owner.BackendSettingsLookup[USERNAME]; }
+            set { m_owner.BackendSettingsLookup[USERNAME] = value; }
         }
 
         public string Password
         {
-            get { return m_owner.Settings[PASSWORD]; }
-            set { m_owner.Settings[PASSWORD] = value; }
+            get { return m_owner.BackendSettingsLookup[PASSWORD]; }
+            set { m_owner.BackendSettingsLookup[PASSWORD] = value; }
         }
 
         public string Host
         {
-            get { return m_owner.Settings[HOST]; }
-            set { m_owner.Settings[HOST] = value; }
+            get { return m_owner.BackendSettingsLookup[HOST]; }
+            set { m_owner.BackendSettingsLookup[HOST] = value; }
         }
 
         public int Port
         {
             get
             {
-                string port = m_owner.Settings[PORT];
+                string port = m_owner.BackendSettingsLookup[PORT];
                 int portn;
                 if (!int.TryParse(port, out portn))
                     portn = 22;
                 return portn;
             }
-            set { m_owner.Settings[PORT] = value.ToString(); }
+            set { m_owner.BackendSettingsLookup[PORT] = value.ToString(); }
         }
 
         public string Folder
         {
-            get { return m_owner.Settings[FOLDER]; }
-            set { m_owner.Settings[FOLDER] = value; }
+            get { return m_owner.BackendSettingsLookup[FOLDER]; }
+            set { m_owner.BackendSettingsLookup[FOLDER] = value; }
         }
 
         public bool Passwordless
         {
-            get
-            {
-                bool v;
-                if (bool.TryParse(m_owner.Settings[PASWORDLESS], out v))
-                    return v;
-                else
-                    return false;
-            }
-            set { m_owner.Settings[PASWORDLESS] = value.ToString(); }
+            get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.BackendSettingsLookup[PASWORDLESS], false);}
+            set { m_owner.BackendSettingsLookup[PASWORDLESS] = value.ToString(); }
         }
 
 
