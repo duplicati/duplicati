@@ -29,29 +29,24 @@ namespace Duplicati.GUI.HelperControls
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.listView = new System.Windows.Forms.ListView();
+            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.statusLabel = new System.Windows.Forms.Label();
             this.progressBar = new System.Windows.Forms.ProgressBar();
             this.WaitPanel = new System.Windows.Forms.Panel();
-            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.imageList = new System.Windows.Forms.ImageList(this.components);
+            this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
+            this.listView = new System.Windows.Forms.ListView();
             this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.WaitPanel.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
+            this.WaitPanel.SuspendLayout();
             this.SuspendLayout();
             // 
-            // listView
+            // contextMenuStrip
             // 
-            this.listView.ContextMenuStrip = this.contextMenuStrip;
-            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.listView.Location = new System.Drawing.Point(0, 0);
-            this.listView.Name = "listView";
-            this.listView.Size = new System.Drawing.Size(203, 139);
-            this.listView.TabIndex = 0;
-            this.listView.UseCompatibleStateImageBehavior = false;
-            this.listView.View = System.Windows.Forms.View.List;
-            this.listView.Visible = false;
-            this.listView.SelectedIndexChanged += new System.EventHandler(this.listView_SelectedIndexChanged);
-            this.listView.DoubleClick += new System.EventHandler(this.listView_DoubleClick);
+            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewFilesToolStripMenuItem});
+            this.contextMenuStrip.Name = "contextMenuStrip";
+            this.contextMenuStrip.Size = new System.Drawing.Size(168, 26);
             // 
             // statusLabel
             // 
@@ -85,12 +80,30 @@ namespace Duplicati.GUI.HelperControls
             this.WaitPanel.Size = new System.Drawing.Size(184, 72);
             this.WaitPanel.TabIndex = 3;
             // 
-            // contextMenuStrip
+            // imageList
             // 
-            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.viewFilesToolStripMenuItem});
-            this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(168, 26);
+            this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
+            this.imageList.ImageSize = new System.Drawing.Size(16, 16);
+            this.imageList.TransparentColor = System.Drawing.Color.Transparent;
+            // 
+            // backgroundWorker
+            // 
+            this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker_DoWork);
+            this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
+            // 
+            // listView
+            // 
+            this.listView.ContextMenuStrip = this.contextMenuStrip;
+            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listView.FullRowSelect = true;
+            this.listView.Location = new System.Drawing.Point(0, 0);
+            this.listView.MultiSelect = false;
+            this.listView.Name = "listView";
+            this.listView.Size = new System.Drawing.Size(203, 139);
+            this.listView.SmallImageList = this.imageList;
+            this.listView.TabIndex = 4;
+            this.listView.UseCompatibleStateImageBehavior = false;
+            this.listView.View = System.Windows.Forms.View.List;
             // 
             // viewFilesToolStripMenuItem
             // 
@@ -108,8 +121,8 @@ namespace Duplicati.GUI.HelperControls
             this.Controls.Add(this.listView);
             this.Name = "BackupItems";
             this.Size = new System.Drawing.Size(203, 139);
-            this.WaitPanel.ResumeLayout(false);
             this.contextMenuStrip.ResumeLayout(false);
+            this.WaitPanel.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -119,8 +132,10 @@ namespace Duplicati.GUI.HelperControls
         private System.Windows.Forms.Label statusLabel;
         private System.Windows.Forms.ProgressBar progressBar;
         private System.Windows.Forms.Panel WaitPanel;
-        public System.Windows.Forms.ListView listView;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem viewFilesToolStripMenuItem;
+        private System.Windows.Forms.ImageList imageList;
+        private System.ComponentModel.BackgroundWorker backgroundWorker;
+        public System.Windows.Forms.ListView listView;
     }
 }

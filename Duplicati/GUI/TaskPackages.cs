@@ -34,7 +34,8 @@ namespace Duplicati.GUI
         ListBackups,
         ListFiles,
         RestoreSetup,
-        ListActualFiles
+        ListActualFiles,
+        ListBackupEntries
     }
 
     public delegate void TaskCompletedHandler(IDuplicityTask owner, string output);
@@ -185,6 +186,29 @@ namespace Duplicati.GUI
 
             if (!string.IsNullOrEmpty(this.FullAfter))
                 options.Add("full-if-older-than", this.FullAfter);
+        }
+    }
+
+    public class ListBackupEntriesTask : BackupTask
+    {
+        private List<Library.Main.BackupEntry> m_backups = null;
+        public override DuplicityTaskType TaskType { get { return DuplicityTaskType.ListBackupEntries; } }
+        public List<Library.Main.BackupEntry> Backups { get { return m_backups; } set { m_backups = value; } }
+
+        public ListBackupEntriesTask(Schedule schedule)
+            : base(schedule)
+        {
+        }
+
+
+        public override string SourcePath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+        }
+
+        public override string TargetPath
+        {
+            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
         }
     }
 

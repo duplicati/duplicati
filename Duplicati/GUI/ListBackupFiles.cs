@@ -69,52 +69,60 @@ namespace Duplicati.GUI
             }
             else
             {
-                ContentPanel.Visible = true;
-                List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> entries = e.Result as List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>>;
+                try
+                {
+                    ContentTree.BeginUpdate();
+                    List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> entries = e.Result as List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>>;
 
-                List<string> addedfolders = new List<string>();
-                List<string> removedfolders = new List<string>();
-                List<string> addedfiles = new List<string>();
-                List<string> deletedfiles = new List<string>();
-                List<string> controlfiles = new List<string>();
+                    List<string> addedfolders = new List<string>();
+                    List<string> removedfolders = new List<string>();
+                    List<string> addedfiles = new List<string>();
+                    List<string> deletedfiles = new List<string>();
+                    List<string> controlfiles = new List<string>();
 
-                foreach (KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string> x in entries)
-                    switch (x.Key)
-                    {
-                        case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedFolder:
-                            addedfolders.Add(x.Value);
-                            break;
-                        case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFolder:
-                            removedfolders.Add(x.Value);
-                            break;
-                        case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.FullOrPartialFile:
-                            addedfiles.Add(x.Value);
-                            break;
-                        case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.ControlFile:
-                            controlfiles.Add(x.Value);
-                            break;
-                        case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFile:
-                            deletedfiles.Add(x.Value);
-                            break;
-                    }
+                    foreach (KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string> x in entries)
+                        switch (x.Key)
+                        {
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedFolder:
+                                addedfolders.Add(x.Value);
+                                break;
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFolder:
+                                removedfolders.Add(x.Value);
+                                break;
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.FullOrPartialFile:
+                                addedfiles.Add(x.Value);
+                                break;
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.ControlFile:
+                                controlfiles.Add(x.Value);
+                                break;
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFile:
+                                deletedfiles.Add(x.Value);
+                                break;
+                        }
 
 
-                addedfolders.Sort();
-                removedfolders.Sort();
-                deletedfiles.Sort();
-                addedfiles.Sort();
-                controlfiles.Sort();
+                    addedfolders.Sort();
+                    removedfolders.Sort();
+                    deletedfiles.Sort();
+                    addedfiles.Sort();
+                    controlfiles.Sort();
 
-                foreach (string s in addedfolders)
-                    AddTreeItem(s, 1);
-                foreach (string s in removedfolders)
-                    AddTreeItem(s, 2);
-                foreach (string s in addedfiles)
-                    AddTreeItem(s, 3);
-                foreach (string s in controlfiles)
-                    AddTreeItem(s, 4);
-                foreach (string s in deletedfiles)
-                    AddTreeItem(s, 5);
+                    foreach (string s in addedfolders)
+                        AddTreeItem(s, 1);
+                    foreach (string s in removedfolders)
+                        AddTreeItem(s, 2);
+                    foreach (string s in addedfiles)
+                        AddTreeItem(s, 3);
+                    foreach (string s in controlfiles)
+                        AddTreeItem(s, 4);
+                    foreach (string s in deletedfiles)
+                        AddTreeItem(s, 5);
+                }
+                finally
+                {
+                    ContentTree.EndUpdate();
+                    ContentPanel.Visible = true;
+                }
             }
 
         }

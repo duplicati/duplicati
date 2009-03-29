@@ -36,10 +36,10 @@ namespace Duplicati.GUI
         public RestoreBackup()
         {
             InitializeComponent();
-            backupItems.listView.ItemSelectionChanged += new ListViewItemSelectionChangedEventHandler(listView_ItemSelectionChanged);
+            backupItems.listView.SelectedIndexChanged += new EventHandler(listView_SelectedIndexChanged);
         }
 
-        void listView_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
+        void listView_SelectedIndexChanged(object sender, EventArgs e)
         {
             TargetFolder_TextChanged(null, null);
         }
@@ -52,7 +52,7 @@ namespace Duplicati.GUI
 
         private void TargetFolder_TextChanged(object sender, EventArgs e)
         {
-            OKBtn.Enabled = backupItems.listView.SelectedItems.Count == 1 && TargetFolder.Text.Trim().Length > 0;
+            OKBtn.Enabled = backupItems.SelectedItem.Ticks > 0;
         }
 
         private void SelectTargetFolder_Click(object sender, EventArgs e)
@@ -64,17 +64,7 @@ namespace Duplicati.GUI
         private void OKBtn_Click(object sender, EventArgs e)
         {
             DateTime dt = new DateTime();
-            try
-            {
-                dt = Timeparser.ParseDuplicityFileTime(backupItems.listView.SelectedItems[0].Text);
-            }
-            catch(Exception ex)
-            {
-                if (MessageBox.Show(this, "An error occured while parsing the time: " + ex.Message + "\r\nDo you want to try to restore the most current backup instead?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
-                    return;
-
-                dt = new DateTime();
-            }
+            dt = backupItems.SelectedItem;
 
             if (System.IO.Directory.Exists(TargetFolder.Text))
             {

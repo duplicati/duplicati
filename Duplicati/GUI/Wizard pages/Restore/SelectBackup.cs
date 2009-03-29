@@ -49,7 +49,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            if (BackupList.SelectedItem == null)
+            if (BackupList.SelectedItem.Ticks == 0)
             {
                 MessageBox.Show(this, "You must select the backup to restore", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
@@ -57,19 +57,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             }
 
             m_selectedDate = new DateTime();
-            try
-            {
-                m_selectedDate = DateTime.Parse(BackupList.SelectedItem);
-            }
-            catch (Exception ex)
-            {
-                if (MessageBox.Show(this, "An error occured while parsing the time: " + ex.Message + "\r\nDo you want to try to restore the most current backup instead?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
-                {
-                    args.Cancel = true;
-                    return;
-                }
-                m_selectedDate = new DateTime();
-            }
+            m_selectedDate = BackupList.SelectedItem;
 
             m_wrapper.RestoreTime = m_selectedDate;
             args.NextPage = new TargetFolder();

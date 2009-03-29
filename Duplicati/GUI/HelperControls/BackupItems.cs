@@ -31,92 +31,35 @@ namespace Duplicati.GUI.HelperControls
 {
     public partial class BackupItems : UserControl
     {
-        private Thread m_workThread;
-        private Schedule m_schedule;
-        private string[] m_backups;
-        private Exception m_exception;
-
         public event EventHandler ListLoaded;
         public event EventHandler LoadError;
         public event EventHandler ItemDoubleClicked;
+        private Datamodel.Schedule m_schedule;
 
         public BackupItems()
         {
             InitializeComponent();
+
+            imageList.Images.Add("full", Properties.Resources.FullBackup);
+            imageList.Images.Add("partial", Properties.Resources.PartialBackup);
         }
 
         public void Setup(Schedule schedule)
         {
-            if (m_workThread != null)
-            {
-                if (m_workThread.IsAlive)
-                    m_workThread.Abort();
-                m_workThread.Join(500);
-            }
-
+            m_schedule = schedule;
             WaitPanel.Visible = true;
             statusLabel.Visible = false;
             listView.Visible = false;
 
-            m_exception = null;
-            m_backups = null;
-            m_schedule = schedule;
-            m_workThread = new Thread(new ThreadStart(Runner));
-            m_workThread.Start();
+            backgroundWorker.RunWorkerAsync(schedule);
         }
 
-        private void Loaded(object sender, EventArgs e)
-        {
-            if (this.InvokeRequired)
-                this.Invoke(new EventHandler(Loaded), sender, e);
-            else
-            {
-                WaitPanel.Visible = false;
-
-                if (m_exception != null)
-                {
-                    progressBar.Visible = false;
-                    statusLabel.Text = "Error: " + m_exception.Message;
-                    if (LoadError != null)
-                        LoadError(this, null);
-                    return;
-                }
-
-                try
-                {
-                    listView.Visible = true;
-                    listView.BeginUpdate();
-                    listView.Items.Clear();
-
-                    foreach (string s in m_backups)
-                        listView.Items.Add(s);
-                }
-                finally
-                {
-                    listView.EndUpdate();
-                    listView.Visible = true;
-                }
-
-                if (ListLoaded != null)
-                    ListLoaded(this, null);
-            }
-        }
-
-        public string SelectedItem { get { return listView.SelectedItems.Count == 1 ? listView.SelectedItems[0].Text : null; } }
-
-        private void Runner()
-        {
-            try
-            {
-                DuplicatiRunner r = new DuplicatiRunner();
-                m_backups = r.ListBackups(m_schedule);
-            }
-            catch (Exception e)
-            {
-                m_exception = e;
-            }
-
-            Loaded(null, null);
+        public DateTime SelectedItem 
+        { 
+            get 
+            { 
+                return listView.SelectedItems.Count != 1 ? new DateTime() : ((Library.Main.BackupEntry)listView.SelectedItems[0].Tag).Time; 
+            } 
         }
 
         private void listView_DoubleClick(object sender, EventArgs e)
@@ -128,10 +71,67 @@ namespace Duplicati.GUI.HelperControls
         private void viewFilesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ListBackupFiles dlg = new ListBackupFiles();
-            dlg.ShowList(this, m_schedule, DateTime.Parse(listView.SelectedItems[0].Text));
+            dlg.ShowList(this, m_schedule, this.SelectedItem);
         }
 
-        private void listView_SelectedIndexChanged(object sender, EventArgs e)
+        private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            DuplicatiRunner r = new DuplicatiRunner();
+            e.Result = r.ListBackupEntries(m_schedule);
+        }
+
+        private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            WaitPanel.Visible = false;
+
+            if (e.Error != null || e.Cancelled || e.Result == null)
+            {
+                Exception ex = e.Error;
+                if (e.Cancelled)
+                    ex = new Exception("Cancelled");
+                else if (e.Result == null)
+                    ex = new Exception("No data recieved");
+
+                progressBar.Visible = false;
+                statusLabel.Text = "Error: " + ex.Message;
+                if (LoadError != null)
+                    LoadError(this, null);
+            }
+            else
+            {
+                try
+                {
+                    listView.Visible = true;
+                    listView.BeginUpdate();
+                    listView.Items.Clear();
+
+                    foreach (Library.Main.BackupEntry ef in (List<Library.Main.BackupEntry>)e.Result)
+                    {
+                        ListViewItem n = new ListViewItem(ef.Time.ToLongDateString() + " " + ef.Time.ToLongTimeString(), 0);
+                        n.Tag = ef;
+                        listView.Items.Add(n);
+
+                        foreach (Library.Main.BackupEntry i in ef.Incrementals)
+                        {
+                            ListViewItem nn = new ListViewItem(i.Time.ToLongDateString() + " " + i.Time.ToLongTimeString(), 1);
+                            nn.Tag = i;
+                            listView.Items.Add(nn);
+                        }
+                    }
+                }
+                finally
+                {
+                    listView.EndUpdate();
+                }
+
+                if (ListLoaded != null)
+                    ListLoaded(this, null);
+
+            }
+
+        }
+
+        private void treeView_AfterSelect(object sender, TreeViewEventArgs e)
         {
             viewFilesToolStripMenuItem.Enabled = listView.SelectedItems.Count == 1;
         }

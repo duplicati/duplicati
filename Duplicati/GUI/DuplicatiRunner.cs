@@ -133,6 +133,9 @@ namespace Duplicati.GUI
 
                         (task as ListBackupsTask).Backups = res.ToArray();
                         break;
+                    case DuplicityTaskType.ListBackupEntries:
+                        (task as ListBackupEntriesTask).Backups = Interface.ParseFileList(task.SourcePath, options);
+                        break;
                     case DuplicityTaskType.ListFiles:
                         (task as ListFilesTask).Files = Interface.ListContent(task.SourcePath, options);
                         break;
@@ -235,6 +238,14 @@ namespace Duplicati.GUI
             ExecuteTask(task);
             return task.Backups;
         }
+
+        public List<BackupEntry> ListBackupEntries(Schedule schedule)
+        {
+            ListBackupEntriesTask task = new ListBackupEntriesTask(schedule);
+            ExecuteTask(task);
+            return task.Backups;
+        }
+
 
         public List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> ListActualFiles(Schedule schedule, DateTime when)
         {
