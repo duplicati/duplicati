@@ -36,9 +36,10 @@ namespace Duplicati.GUI
             InitializeComponent();
 
             imageList.Images.Clear();
-            imageList.Images.Add("OK", Properties.Resources.OKStatusIcon);
-            imageList.Images.Add("Warning", Properties.Resources.WarningStatusIcon);
-            imageList.Images.Add("Error", Properties.Resources.ErrorStatusIcon);
+            imageList.Images.Add(DuplicatiOutputParser.OKStatus, Properties.Resources.OKStatusIcon);
+            imageList.Images.Add(DuplicatiOutputParser.WarningStatus, Properties.Resources.WarningStatusIcon);
+            imageList.Images.Add(DuplicatiOutputParser.ErrorStatus, Properties.Resources.ErrorStatusIcon);
+            imageList.Images.Add(DuplicatiOutputParser.PartialStatus, Properties.Resources.PartialStatusIcon);
         }
 
         private void ServiceStatus_Load(object sender, EventArgs e)
@@ -102,7 +103,9 @@ namespace Duplicati.GUI
                 }
             }
             catch 
-            { 
+            {
+                //TODO: This happens occasionally when the user closes the dialog because, the form is disposed before the event is detached
+                //I've only seen it happen once
             }
         }
 
@@ -202,6 +205,22 @@ namespace Duplicati.GUI
                 lvi.Tag = l;
                 lvi.ImageIndex = imageList.Images.ContainsKey(l.ParsedStatus) ? imageList.Images.IndexOfKey(l.ParsedStatus) : imageList.Images.IndexOfKey("Warning");
                 recentBackups.Items.Add(lvi);
+
+                switch (l.ParsedStatus)
+                {
+                    case DuplicatiOutputParser.OKStatus:
+                        lvi.ToolTipText = "Successfull backup";
+                        break;
+                    case DuplicatiOutputParser.ErrorStatus:
+                        lvi.ToolTipText = "Failed backup";
+                        break;
+                    case DuplicatiOutputParser.WarningStatus:
+                        lvi.ToolTipText = "Completed backup with warnings";
+                        break;
+                    case DuplicatiOutputParser.PartialStatus:
+                        lvi.ToolTipText = "Backup only processed some of the files";
+                        break;
+                }
             }
 
 

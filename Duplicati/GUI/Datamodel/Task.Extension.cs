@@ -256,7 +256,7 @@ namespace Duplicati.Datamodel
 
             public bool IgnoreTimestamps
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS], true); }
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS], false); }
                 set { m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS] = value.ToString(); }
             }
 

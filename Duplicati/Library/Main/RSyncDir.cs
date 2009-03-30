@@ -155,7 +155,7 @@ namespace Duplicati.Library.Main.RSync
         /// <summary>
         /// This is a list of unprocessed files, used in multipass runs
         /// </summary>
-        private List<string> m_unproccesed;
+        private PathCollector m_unproccesed;
 
         /// <summary>
         /// A list of patch files for removal
@@ -225,31 +225,27 @@ namespace Duplicati.Library.Main.RSync
             m_newfolders = new List<string>();
             m_deletedfolders = new List<string>();
 
+            m_unproccesed = new PathCollector();
             //TODO: Figure out how to make this faster, but still random
             //Perhaps use itterative callbacks, with random recurse or itterate on each folder
-            m_unproccesed = Core.Utility.EnumerateFileSystemEntries(m_sourcefolder, m_filter);
+            //... we need to know the total length to provide a progress bar... :(
+            Core.Utility.EnumerateFileSystemEntries(m_sourcefolder, m_filter, new Duplicati.Library.Core.Utility.EnumerationCallbackDelegate(m_unproccesed.Callback));
 
-            m_totalfiles = m_unproccesed.Count;
-
+            m_totalfiles = m_unproccesed.Files.Count;
             m_isfirstmultipass = true;
             
             //Build folder diffs
             string dirmarker = System.IO.Path.DirectorySeparatorChar.ToString();
-            for(int i = 0; i < m_unproccesed.Count; i++)
+            for(int i = 0; i < m_unproccesed.Folders.Count; i++)
             {
-                string s = m_unproccesed[i];
-                if (s.EndsWith(dirmarker))
-                {
-                    string relpath = s.Substring(m_sourcefolder.Length);
-                    if (!m_oldFolders.ContainsKey(relpath))
-                        m_newfolders.Add(relpath);
-                    else
-                        m_oldFolders.Remove(relpath);
-
-                    m_unproccesed.RemoveAt(i);
-                    i--;
-                }
+                string relpath = m_unproccesed.Files[i].Substring(m_sourcefolder.Length);
+                if (!m_oldFolders.ContainsKey(relpath))
+                    m_newfolders.Add(relpath);
+                else
+                    m_oldFolders.Remove(relpath);
             }
+
+            m_unproccesed.Folders.Clear();
 
             m_deletedfolders = new List<string>();
             m_deletedfolders.AddRange(m_oldFolders.Keys);
@@ -259,8 +255,12 @@ namespace Duplicati.Library.Main.RSync
         {
             if (!m_finalized)
             {
-                if (m_unproccesed.Count == 0)
+                if (m_unproccesed.Files.Count == 0)
                 {
+                    foreach (string s in m_unproccesed.FilesWithError)
+                        if (m_oldSignatures.ContainsKey(s))
+                            m_oldSignatures.Remove(s);
+
                     m_deletedfiles.AddRange(m_oldSignatures.Keys);
 
                     if (m_deletedfiles.Count > 0)
@@ -268,23 +268,6 @@ namespace Duplicati.Library.Main.RSync
                         signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
                         contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
                     }
-                }
-
-
-                if (m_stat is BackupStatistics)
-                {
-                    BackupStatistics bs = m_stat as BackupStatistics;
-
-                    bs.DeletedFiles = m_deletedfiles.Count;
-                    bs.DeletedFolders = m_deletedfolders.Count;
-                    bs.ModifiedFiles = m_diffedfiles;
-                    bs.AddedFiles = m_addedfiles;
-                    bs.ExaminedFiles = m_examinedfiles;
-                    bs.SizeOfModifiedFiles = m_diffedfilessize;
-                    bs.SizeOfAddedFiles = m_addedfilessize;
-                    bs.SizeOfExaminedFiles = m_examinedfilesize;
-                    bs.UnprocessedFiles = m_unproccesed.Count;
-                    bs.AddedFolders = m_newfolders.Count;
                 }
 
                 m_finalized = true;
@@ -319,17 +302,17 @@ namespace Duplicati.Library.Main.RSync
 
             int lastPg = -1;
 
-            while (m_unproccesed.Count > 0 && totalSize < volumesize)
+            while (m_unproccesed.Files.Count > 0 && totalSize < volumesize)
             {
 
-                int next = r.Next(0, m_unproccesed.Count);
-                string s = m_unproccesed[next];
-                m_unproccesed.RemoveAt(next);
+                int next = r.Next(0, m_unproccesed.Files.Count);
+                string s = m_unproccesed.Files[next];
+                m_unproccesed.Files.RemoveAt(next);
 
                 if (ProgressEvent != null)
                 {
                     //Update each 0.5% change, so it is visible that files are being examined
-                    int pg = 200 - ((int)((m_unproccesed.Count / (double)m_totalfiles) * 200));
+                    int pg = 200 - ((int)((m_unproccesed.Files.Count / (double)m_totalfiles) * 200));
                     if (lastPg != pg)
                     {
                         ProgressEvent(pg / 2, s);
@@ -355,17 +338,24 @@ namespace Duplicati.Library.Main.RSync
                         }
                     }
 
-                    using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    if (m_unproccesed.Errors.Count > 0 && m_unproccesed.IsAffectedByError(s))
+                        m_unproccesed.FilesWithError.Add(s);
+                    else
                     {
-                        if (fs.Length <= m_maxFileSize)
+                        using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
                         {
-                            //If the file is > 10mb, update the display to show the file being processed
-                            if (ProgressEvent != null && fs.Length > 1024 * 1024 * 10)
-                                ProgressEvent(lastPg, s);
+                            if (fs.Length > m_maxFileSize)
+                                m_unproccesed.FilesTooLarge.Add(s);
+                            else
+                            {
+                                //If the file is > 10mb, update the display to show the file being processed
+                                if (ProgressEvent != null && fs.Length > 1024 * 1024 * 10)
+                                    ProgressEvent(lastPg / 2, s);
 
-                            System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
-                            if (signature != null)
-                                totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile);
+                                System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
+                                if (signature != null)
+                                    totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile);
+                            }
                         }
                     }
                 }
@@ -374,14 +364,15 @@ namespace Duplicati.Library.Main.RSync
                     if (m_stat != null)
                         m_stat.LogError("Failed to process file: \"" + s + "\", Error message: " + ex.Message);
                     Logging.Log.WriteMessage("Failed to process file: \"" + s + "\"", Duplicati.Library.Logging.LogMessageType.Error, ex);
+                    m_unproccesed.FilesWithError.Add(s);
                 }
             }
 
-            if (m_unproccesed.Count == 0)
+            if (m_unproccesed.Files.Count == 0)
                 FinalizeMultiPass(signaturefile, contentfile);
 
 
-            return m_unproccesed.Count == 0;
+            return m_unproccesed.Files.Count == 0;
         }
 
         private System.IO.Stream ProccessDiff(System.IO.FileStream fs, string s, Core.IFileArchive signaturefile)
@@ -644,6 +635,23 @@ namespace Duplicati.Library.Main.RSync
                     catch { }
                 m_patches = null;
             }
+
+            if (m_stat is BackupStatistics)
+            {
+                BackupStatistics bs = m_stat as BackupStatistics;
+
+                bs.DeletedFiles = m_deletedfiles.Count;
+                bs.DeletedFolders = m_deletedfolders.Count;
+                bs.ModifiedFiles = m_diffedfiles;
+                bs.AddedFiles = m_addedfiles;
+                bs.ExaminedFiles = m_examinedfiles;
+                bs.SizeOfModifiedFiles = m_diffedfilessize;
+                bs.SizeOfAddedFiles = m_addedfilessize;
+                bs.SizeOfExaminedFiles = m_examinedfilesize;
+                bs.UnprocessedFiles = m_unproccesed.Files.Count;
+                bs.AddedFolders = m_newfolders.Count;
+            }
+
         }
 
         #endregion
@@ -788,7 +796,7 @@ namespace Duplicati.Library.Main.RSync
             {
                 if (arch.FileExists(DELETED_FILES))
                     foreach (string s in FilenamesFromPlatformIndependant(arch.ReadAllLines(DELETED_FILES)))
-                        files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.DeletedFolder, s));
+                        files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.DeletedFile, s));
 
                 foreach (string f in FilenamesFromPlatformIndependant(arch.ListFiles(signature_prefix)))
                     files.Add(new KeyValuePair<PatchFileType,string>(PatchFileType.FullOrPartialFile, f.Substring(signature_prefix.Length)));
@@ -807,5 +815,43 @@ namespace Duplicati.Library.Main.RSync
 
             return files;
         }
+
+        /// <summary>
+        /// An internal helper class to collect filenames from the enumeration callback
+        /// </summary>
+        private class PathCollector
+        {
+            private List<string> m_files = new List<string>();
+            private List<string> m_folders = new List<string>();
+            private List<string> m_errors = new List<string>();
+            private List<string> m_filesWithError = new List<string>();
+            private List<string> m_filesTooLarge = new List<string>();
+
+            public void Callback(string rootpath, string path, Core.Utility.EnumeratedFileStatus status)
+            {
+                if (status == Core.Utility.EnumeratedFileStatus.Folder)
+                    m_folders.Add(path);
+                else if (status == Core.Utility.EnumeratedFileStatus.File)
+                    m_files.Add(path);
+                else if (status == Core.Utility.EnumeratedFileStatus.Error)
+                    m_errors.Add(path);
+            }
+
+            public List<string> Files { get { return m_files; } }
+            public List<string> Folders { get { return m_folders; } }
+            public List<string> Errors { get { return m_errors; } }
+            public List<string> FilesWithError { get { return m_filesWithError; } }
+            public List<string> FilesTooLarge { get { return m_filesTooLarge; } }
+
+            public bool IsAffectedByError(string path)
+            {
+                foreach (string s in m_errors)
+                    if (path.StartsWith(s))
+                        return true;
+
+                return false;
+            }
+        }
+
     }
 }

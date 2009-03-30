@@ -109,13 +109,16 @@ namespace Duplicati.GUI.HelperControls
                     {
                         ListViewItem n = new ListViewItem(ef.Time.ToLongDateString() + " " + ef.Time.ToLongTimeString(), 0);
                         n.Tag = ef;
+                        n.ToolTipText = "Full backup";
                         listView.Items.Add(n);
 
                         foreach (Library.Main.BackupEntry i in ef.Incrementals)
                         {
                             ListViewItem nn = new ListViewItem(i.Time.ToLongDateString() + " " + i.Time.ToLongTimeString(), 1);
                             nn.Tag = i;
+                            nn.ToolTipText = "Partial backup";
                             listView.Items.Add(nn);
+
                         }
                     }
                 }

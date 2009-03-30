@@ -32,10 +32,10 @@ namespace Duplicati.GUI
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.ContentPanel = new System.Windows.Forms.Panel();
+            this.ContentTree = new System.Windows.Forms.TreeView();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.CancelBtn = new System.Windows.Forms.Button();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.ContentTree = new System.Windows.Forms.TreeView();
             this.groupBox1.SuspendLayout();
             this.ContentPanel.SuspendLayout();
             this.SuspendLayout();
@@ -72,6 +72,18 @@ namespace Duplicati.GUI
             this.ContentPanel.TabIndex = 1;
             this.ContentPanel.Visible = false;
             // 
+            // ContentTree
+            // 
+            this.ContentTree.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ContentTree.ImageIndex = 0;
+            this.ContentTree.ImageList = this.imageList;
+            this.ContentTree.Location = new System.Drawing.Point(0, 0);
+            this.ContentTree.Name = "ContentTree";
+            this.ContentTree.SelectedImageIndex = 0;
+            this.ContentTree.ShowNodeToolTips = true;
+            this.ContentTree.Size = new System.Drawing.Size(265, 339);
+            this.ContentTree.TabIndex = 0;
+            // 
             // imageList
             // 
             this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
@@ -93,17 +105,6 @@ namespace Duplicati.GUI
             // 
             this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
             this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
-            // 
-            // ContentTree
-            // 
-            this.ContentTree.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ContentTree.ImageIndex = 0;
-            this.ContentTree.ImageList = this.imageList;
-            this.ContentTree.Location = new System.Drawing.Point(0, 0);
-            this.ContentTree.Name = "ContentTree";
-            this.ContentTree.SelectedImageIndex = 0;
-            this.ContentTree.Size = new System.Drawing.Size(265, 339);
-            this.ContentTree.TabIndex = 0;
             // 
             // ListBackupFiles
             // 

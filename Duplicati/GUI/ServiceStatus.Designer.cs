@@ -173,6 +173,7 @@ namespace Duplicati.GUI
             this.recentBackups.Location = new System.Drawing.Point(0, 80);
             this.recentBackups.MultiSelect = false;
             this.recentBackups.Name = "recentBackups";
+            this.recentBackups.ShowItemToolTips = true;
             this.recentBackups.Size = new System.Drawing.Size(328, 80);
             this.recentBackups.SmallImageList = this.imageList;
             this.recentBackups.TabIndex = 15;

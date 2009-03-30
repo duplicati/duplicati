@@ -25,6 +25,15 @@ namespace Duplicati.Library.Core
 {
     public static class Utility
     {
+        public enum EnumeratedFileStatus
+        {
+            File,
+            Folder,
+            Error
+        };
+
+        public delegate void EnumerationCallbackDelegate(string rootpath, string path, EnumeratedFileStatus status);
+
         /// <summary>
         /// Copies the content of one stream into another
         /// </summary>
@@ -80,44 +89,28 @@ namespace Duplicati.Library.Core
         /// Returns a list of all files found in the given folder.
         /// The search is recursive.
         /// </summary>
-        /// <param name="basepath">The folder to look in</param>
+        /// <param name="rootpath">The folder to look in</param>
         /// <param name="filter">An optional filter to apply to the filenames</param>
+        /// <param name="callback">The function to call with the filenames</param>
         /// <returns>A list of the full filenames</returns>
-        public static List<string> EnumerateFiles(string basepath, FilenameFilter filter)
+        public static void EnumerateFileSystemEntries(string rootpath, FilenameFilter filter, EnumerationCallbackDelegate callback)
         {
-            List<string> files = new List<string>();
-
-            if (!System.IO.Directory.Exists(basepath))
-                return files;
+            if (!System.IO.Directory.Exists(rootpath))
+                return;
 
             Queue<string> lst = new Queue<string>();
-
-            lst.Enqueue(basepath);
+            lst.Enqueue(rootpath);
 
             while (lst.Count > 0)
             {
-                string f = lst.Dequeue();
+                string f = AppendDirSeperator(lst.Dequeue());
                 try
                 {
                     foreach (string s in System.IO.Directory.GetDirectories(f))
-                        if (filter == null || filter.ShouldInclude(basepath, AppendDirSeperator(s)))
+                        if (filter == null || filter.ShouldInclude(rootpath, AppendDirSeperator(s)))
                             lst.Enqueue(s);
-                }
-                catch(System.Threading.ThreadAbortException)
-                {
-                    throw;
-                }
-                catch (Exception)
-                {
-                    //TODO: Log this
-                    //TODO: If this happens for an odd reason, files will be marked as "deleted" in the backup :(
-                }
 
-                try
-                {
-                    foreach (string s in System.IO.Directory.GetFiles(f))
-                        if (filter == null || filter.ShouldInclude(basepath, s))
-                            files.Add(s);
+                    callback(rootpath, f, EnumeratedFileStatus.Folder);
                 }
                 catch (System.Threading.ThreadAbortException)
                 {
@@ -125,12 +118,96 @@ namespace Duplicati.Library.Core
                 }
                 catch (Exception)
                 {
-                    //TODO: Log this
-                    //TODO: If this happens for an odd reason, files will be marked as "deleted" in the backup :(
+                    callback(rootpath, f, EnumeratedFileStatus.Error);
                 }
+
+                try
+                {
+                    foreach (string s in System.IO.Directory.GetFiles(f))
+                        if (filter == null || filter.ShouldInclude(rootpath, s))
+                            callback(rootpath, s, EnumeratedFileStatus.File);
+                }
+                catch (System.Threading.ThreadAbortException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    callback(rootpath, f, EnumeratedFileStatus.Error);
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// An internal helper class to collect filenames from the enumeration callback
+        /// </summary>
+        private class PathCollector
+        {
+            private List<string> m_files;
+            private bool m_includeFolders;
+            private bool m_includeFiles;
+
+            public PathCollector(bool includeFolders, bool includeFiles)
+            {
+                m_files = new List<string>();
+                m_includeFolders = includeFolders;
+                m_includeFiles = includeFiles;
             }
 
-            return files;
+            public void Callback(string rootpath, string path, EnumeratedFileStatus status)
+            {
+                if (m_includeFolders && status == EnumeratedFileStatus.Folder)
+                    m_files.Add(path);
+                else if (m_includeFiles && status == EnumeratedFileStatus.File)
+                    m_files.Add(path);
+            }
+
+            public List<string> Files { get { return m_files; } }
+        }
+
+        /// <summary>
+        /// An internal helper class to calculate the size of a folders files
+        /// </summary>
+        private class PathSizeCalculator
+        {
+            private long m_size = 0;
+
+            public void Callback(string rootpath, string path, EnumeratedFileStatus status)
+            {
+                if (status == EnumeratedFileStatus.File)
+                    try { m_size += new System.IO.FileInfo(path).Length; }
+                    catch { }
+            }
+
+            public long Size { get { return m_size; } }
+        }
+
+        /// <summary>
+        /// Calculates the size of files in a given folder
+        /// </summary>
+        /// <param name="folder">The folder to examine</param>
+        /// <param name="filter">A filter to apply</param>
+        /// <returns>The combined size of all files that match the filter</returns>
+        public static long GetDirectorySize(string folder, FilenameFilter filter)
+        {
+            PathSizeCalculator c = new PathSizeCalculator();
+            EnumerateFileSystemEntries(folder, filter, new EnumerationCallbackDelegate(c.Callback));
+            return c.Size;
+        }
+
+        /// <summary>
+        /// Returns a list of all files found in the given folder.
+        /// The search is recursive.
+        /// </summary>
+        /// <param name="basepath">The folder to look in</param>
+        /// <param name="filter">An optional filter to apply to the filenames</param>
+        /// <returns>A list of the full filenames</returns>
+        public static List<string> EnumerateFiles(string basepath, FilenameFilter filter)
+        {
+            PathCollector c = new PathCollector(false, true);
+            EnumerateFileSystemEntries(basepath, filter, new EnumerationCallbackDelegate(c.Callback));
+            return c.Files;
         }
 
         /// <summary>
@@ -153,34 +230,9 @@ namespace Duplicati.Library.Core
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseperator char</returns>
         public static List<string> EnumerateFileSystemEntries(string basepath, FilenameFilter filter)
         {
-            List<string> entries = new List<string>();
-
-            if (!System.IO.Directory.Exists(basepath))
-                return entries;
-
-            Queue<string> lst = new Queue<string>();
-
-            lst.Enqueue(basepath);
-
-            while (lst.Count > 0)
-            {
-                string f = lst.Dequeue();
-                foreach (string s in System.IO.Directory.GetDirectories(f))
-                {
-                    string folder = AppendDirSeperator(s);
-                    if (filter == null || filter.ShouldInclude(basepath, folder))
-                    {
-                        lst.Enqueue(folder);
-                        entries.Add(folder);
-                    }
-                }
-
-                foreach (string s in System.IO.Directory.GetFiles(f))
-                    if (filter == null || filter.ShouldInclude(basepath, s))
-                        entries.Add(s);
-            }
-
-            return entries;
+            PathCollector c = new PathCollector(true, true);
+            EnumerateFileSystemEntries(basepath, filter, new EnumerationCallbackDelegate(c.Callback));
+            return c.Files;
         }
 
         /// <summary>
@@ -192,29 +244,9 @@ namespace Duplicati.Library.Core
         /// <returns>A list of the full paths</returns>
         public static List<string> EnumerateFolders(string basepath, FilenameFilter filter)
         {
-            List<string> folders = new List<string>();
-
-            if (!System.IO.Directory.Exists(basepath))
-                return folders;
-
-            Queue<string> lst = new Queue<string>();
-            lst.Enqueue(basepath);
-
-            while (lst.Count > 0)
-            {
-                string f = lst.Dequeue();
-                foreach (string s in System.IO.Directory.GetDirectories(f))
-                {
-                    if (filter == null || filter.ShouldInclude(basepath, Core.Utility.AppendDirSeperator(s)))
-                    {
-                        folders.Add(s);
-                        lst.Enqueue(s);
-                    }
-                }
-
-            }
-
-            return folders;
+            PathCollector c = new PathCollector(true, false);
+            EnumerateFileSystemEntries(basepath, filter, new EnumerationCallbackDelegate(c.Callback));
+            return c.Files;
         }
 
         /// <summary>

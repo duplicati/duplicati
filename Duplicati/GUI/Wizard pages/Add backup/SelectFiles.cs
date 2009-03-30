@@ -460,17 +460,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     fnf = new Duplicati.Library.Core.FilenameFilter(filters);
             }
 
-            if (System.IO.Directory.Exists(folder))
-            {
-                try
-                {
-                    foreach (string file in Duplicati.Library.Core.Utility.EnumerateFiles(folder, fnf))
-                        try { size += new System.IO.FileInfo(file).Length; }
-                        catch { }
-                }
-                catch { }
-            }
-
+            //Calculate outside lock
+            size = Duplicati.Library.Core.Utility.GetDirectorySize(folder, fnf);
             lock (m_lock)
                 m_sizes[folderkey] = size;
         }

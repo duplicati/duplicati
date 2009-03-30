@@ -148,6 +148,27 @@ namespace Duplicati.GUI
                 if (match == null)
                 {
                     match = new TreeNode(items[i], i == items.Length - 1 ? imagekey : 0, i == items.Length - 1 ? imagekey : 0);
+                    switch (match.ImageIndex)
+                    {
+                        case 0:
+                            match.ToolTipText = "Existing folder";
+                            break;
+                        case 1:
+                            match.ToolTipText = "Added folder";
+                            break;
+                        case 2:
+                            match.ToolTipText = "Deleted folder";
+                            break;
+                        case 3:
+                            match.ToolTipText = "Added or modified file";
+                            break;
+                        case 4:
+                            match.ToolTipText = "Control file";
+                            break;
+                        case 5:
+                            match.ToolTipText = "Deleted file";
+                            break;
+                    }
                     parent.Add(match);
                 }
 

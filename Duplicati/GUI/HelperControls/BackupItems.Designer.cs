@@ -30,13 +30,13 @@ namespace Duplicati.GUI.HelperControls
         {
             this.components = new System.ComponentModel.Container();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusLabel = new System.Windows.Forms.Label();
             this.progressBar = new System.Windows.Forms.ProgressBar();
             this.WaitPanel = new System.Windows.Forms.Panel();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
             this.listView = new System.Windows.Forms.ListView();
-            this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip.SuspendLayout();
             this.WaitPanel.SuspendLayout();
             this.SuspendLayout();
@@ -47,6 +47,14 @@ namespace Duplicati.GUI.HelperControls
             this.viewFilesToolStripMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
             this.contextMenuStrip.Size = new System.Drawing.Size(168, 26);
+            // 
+            // viewFilesToolStripMenuItem
+            // 
+            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Examine;
+            this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
+            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
+            this.viewFilesToolStripMenuItem.Text = "View contents ...";
+            this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
             // 
             // statusLabel
             // 
@@ -99,19 +107,12 @@ namespace Duplicati.GUI.HelperControls
             this.listView.Location = new System.Drawing.Point(0, 0);
             this.listView.MultiSelect = false;
             this.listView.Name = "listView";
+            this.listView.ShowItemToolTips = true;
             this.listView.Size = new System.Drawing.Size(203, 139);
             this.listView.SmallImageList = this.imageList;
             this.listView.TabIndex = 4;
             this.listView.UseCompatibleStateImageBehavior = false;
             this.listView.View = System.Windows.Forms.View.List;
-            // 
-            // viewFilesToolStripMenuItem
-            // 
-            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Examine;
-            this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
-            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
-            this.viewFilesToolStripMenuItem.Text = "View contents ...";
-            this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
             // 
             // BackupItems
             // 

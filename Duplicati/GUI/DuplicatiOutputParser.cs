@@ -26,30 +26,44 @@ namespace Duplicati.GUI
 {
     public class DuplicatiOutputParser
     {
+        public const string ErrorStatus = "Error";
+        public const string OKStatus = "OK";
+        public const string WarningStatus = "Warning";
+        public const string PartialStatus = "Partial";
+
         private const string OK_INDICATOR = "Duration";
         private const string WARNING_INDICATOR = "NumberOfErrors";
 
         private const string SIZE_INDICATOR = "BytesUploaded";
+        private const string PARTIAL_INDICATOR = "Unprocessed";
 
         public static void ParseData(Log log)
         {
             string text = log.Blob.StringData;
 
-            log.ParsedStatus = "Error";
+            log.ParsedStatus = ErrorStatus;
 
             if (text.IndexOf(OK_INDICATOR) >= 0)
-                log.ParsedStatus = "OK";
+                log.ParsedStatus = OKStatus;
 
             long c = ExtractNumber(text, WARNING_INDICATOR, -1);
             if (c > 0)
-                log.ParsedStatus = "Warning";
+                log.ParsedStatus = WarningStatus;
 
             c = ExtractNumber(text, SIZE_INDICATOR, -1);
 
             if (c == 0)
-                log.ParsedStatus = "Warning";
+                log.ParsedStatus = WarningStatus;
 
             log.Transfersize = c;
+
+            if (log.ParsedStatus == WarningStatus)
+            {
+                long missing = ExtractNumber(text, PARTIAL_INDICATOR, 0);
+                if (missing > 0)
+                    log.ParsedStatus = PartialStatus;
+            }
+
         }
 
         private static long ExtractNumber(string output, string key, long @default)

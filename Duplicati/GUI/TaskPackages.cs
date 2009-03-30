@@ -538,6 +538,8 @@ namespace Duplicati.GUI
 
             options.Add("remove-all-but-n-full", this.FullCount.ToString());
             options.Add("force", "");
+            if (!options.ContainsKey("number-of-retries"))
+                options["number-of-retries"] = "2";
         }
     }
 
@@ -591,6 +593,8 @@ namespace Duplicati.GUI
 
             options.Add("remove-older-than", this.Older);
             options.Add("force", "");
+            if (!options.ContainsKey("number-of-retries"))
+                options["number-of-retries"] = "2";
         }
 
     }

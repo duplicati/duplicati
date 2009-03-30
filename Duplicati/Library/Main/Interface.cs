@@ -72,6 +72,8 @@ namespace Duplicati.Library.Main
 
             SetupCommonOptions();
             BackendWrapper backend = null;
+            long volumesUploaded = 0;
+
 
             using (new Logging.Timer("Backup from " + source + " to " + m_backend))
             {
@@ -95,7 +97,7 @@ namespace Duplicati.Library.Main
 
                     if (backupsets.Count == 0)
                         full = true;
-                    
+
                     if (!full)
                         full = DateTime.Now > m_options.FullIfOlderThan(backupsets[backupsets.Count - 1].Time);
 
@@ -210,10 +212,21 @@ namespace Duplicati.Library.Main
                                     backend.Put(new BackupEntry(BackupEntry.EntryType.Manifest, full, backuptime, 0), mf);
                                 }
 
+                                //A control for partial uploads
+                                volumesUploaded++;
+
+                                //The file volume counter
                                 vol++;
                             }
                         }
                     }
+                }
+                catch(Exception ex)
+                {
+                    if (volumesUploaded == 0)
+                        throw; //This also activates "finally", unlike in other languages...
+
+                    bs.LogError("Failed after uploading " + volumesUploaded.ToString() + " volumes. Message: " + ex.Message);
                 }
                 finally
                 {

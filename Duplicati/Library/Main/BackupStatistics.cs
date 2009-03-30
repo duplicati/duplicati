@@ -37,6 +37,8 @@ namespace Duplicati.Library.Main
         private long m_sizeOfExaminedFiles;
         private long m_unprocessedFiles;
         private long m_addedFolders;
+        private long m_tooLargeFiles;
+        private long m_filesWithError;
 
         public BackupStatistics()
         {
@@ -120,6 +122,18 @@ namespace Duplicati.Library.Main
             set { m_addedFolders = value; }
         }
 
+        public long FilesTooLarge
+        {
+            get { return m_tooLargeFiles; }
+            set { m_tooLargeFiles = value; }
+        }
+
+        public long FilesWithError
+        {
+            get { return m_filesWithError; }
+            set { m_filesWithError = value; }
+        }
+
 
         public override string ToString()
         {
@@ -137,6 +151,8 @@ namespace Duplicati.Library.Main
             sb.Append("SizeOfAdded     : " + this.SizeOfAddedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfExamined  : " + this.SizeOfExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("Unprocessed     : " + this.UnprocessedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("TooLargeFiles   : " + this.FilesTooLarge.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("FilesWithError  : " + this.FilesWithError.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             
             sb.Append(base.ToString());
             return sb.ToString();

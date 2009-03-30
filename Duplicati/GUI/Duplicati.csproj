@@ -651,6 +651,9 @@
     <None Include="Resources\Examine.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\PartialStatusIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

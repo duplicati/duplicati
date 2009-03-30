@@ -151,6 +151,13 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap PartialStatusIcon {
+            get {
+                object obj = ResourceManager.GetObject("PartialStatusIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap SettingsMenuIcon {
             get {
                 object obj = ResourceManager.GetObject("SettingsMenuIcon", resourceCulture);
