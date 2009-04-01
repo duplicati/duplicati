@@ -116,9 +116,9 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
-        internal static System.Drawing.Bitmap Examine {
+        internal static System.Drawing.Bitmap ExamineMenuIcon {
             get {
-                object obj = ResourceManager.GetObject("Examine", resourceCulture);
+                object obj = ResourceManager.GetObject("ExamineMenuIcon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -134,6 +134,20 @@ namespace Duplicati.GUI.Properties {
             get {
                 object obj = ResourceManager.GetObject("FullBackup", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap LogMenuIcon {
+            get {
+                object obj = ResourceManager.GetObject("LogMenuIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Icon LogViewer {
+            get {
+                object obj = ResourceManager.GetObject("LogViewer", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
             }
         }
         

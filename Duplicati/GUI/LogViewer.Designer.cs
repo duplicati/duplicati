@@ -47,7 +47,6 @@ namespace Duplicati.GUI
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LogViewer));
             this.LogText = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
@@ -70,8 +69,8 @@ namespace Duplicati.GUI
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(405, 352);
             this.Controls.Add(this.LogText);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "LogViewer";
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Log data";
             this.ResumeLayout(false);

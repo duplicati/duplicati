@@ -43,6 +43,7 @@ namespace Duplicati.GUI
             imageList.Images.Add("file", Properties.Resources.AddedOrModifiedFile);
             imageList.Images.Add("controlfile", Properties.Resources.ControlFile);
             imageList.Images.Add("deletedfile", Properties.Resources.DeletedFile);
+            this.Icon = Properties.Resources.TrayNormal;
         }
 
         public void ShowList(Control owner, Datamodel.Schedule schedule, DateTime when)

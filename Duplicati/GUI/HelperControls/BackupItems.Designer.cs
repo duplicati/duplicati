@@ -50,7 +50,7 @@ namespace Duplicati.GUI.HelperControls
             // 
             // viewFilesToolStripMenuItem
             // 
-            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Examine;
+            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.ExamineMenuIcon;
             this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
             this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
             this.viewFilesToolStripMenuItem.Text = "View contents ...";

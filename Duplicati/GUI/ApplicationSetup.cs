@@ -76,6 +76,8 @@ namespace Duplicati.GUI
             {
                 m_isUpdating = false;
             }
+
+            this.Icon = Properties.Resources.TrayNormal;
         }
 
         private bool TestForFiles(string folder, params string[] files)

@@ -236,7 +236,8 @@ namespace Duplicati.GUI
                 return;
 
             LogViewer dlg = new LogViewer();
-            //TODO: Figure out why the LDM fails here
+            //TODO: Figure out why the LDM fails here 
+            //TODO: Figure out if it still does?
             dlg.LogText.Text = l.Blob.StringData;
 
             dlg.ShowDialog(this);
@@ -261,7 +262,7 @@ namespace Duplicati.GUI
 
         private void recentBackups_SelectedIndexChanged(object sender, EventArgs e)
         {
-            viewFilesToolStripMenuItem.Enabled = recentBackups.SelectedItems.Count == 1;
+            viewFilesToolStripMenuItem.Enabled = viewLogToolStripMenuItem.Enabled = recentBackups.SelectedItems.Count == 1;
         }
 
         private void viewFilesToolStripMenuItem_Click(object sender, EventArgs e)
@@ -273,10 +274,15 @@ namespace Duplicati.GUI
             if (l == null)
                 return;
             Schedule s = l.OwnerTask.Schedule;
-            DateTime time = l.EndTime; //Not the excact time to use, but close enough unless there were multiple backups running at the same time
+            DateTime time = l.EndTime; //Not the exact time to use, but close enough unless there were multiple backups running at the same time
 
             ListBackupFiles dlg = new ListBackupFiles();
             dlg.ShowList(this, s, time);
+        }
+
+        private void viewLogToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            recentBackups_DoubleClick(sender, e);
         }
 
     }

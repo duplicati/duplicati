@@ -32,6 +32,7 @@ namespace Duplicati.GUI
         public LogViewer()
         {
             InitializeComponent();
+            this.Icon = Properties.Resources.LogViewer;
         }
     }
 }

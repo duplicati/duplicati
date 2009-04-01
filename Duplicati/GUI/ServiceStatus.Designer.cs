@@ -62,18 +62,19 @@ namespace Duplicati.GUI
             this.columnHeader1 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader2 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader3 = new System.Windows.Forms.ColumnHeader();
+            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.statusImage = new System.Windows.Forms.PictureBox();
             this.ShowAdvanced = new System.Windows.Forms.Button();
             this.CurrentStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.advancedPanel.SuspendLayout();
             this.simplePanel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.statusImage)).BeginInit();
             this.contextMenuStrip.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.statusImage)).BeginInit();
             this.SuspendLayout();
             // 
             // label3
@@ -201,6 +202,22 @@ namespace Duplicati.GUI
             this.columnHeader3.Text = "Size";
             this.columnHeader3.Width = 75;
             // 
+            // contextMenuStrip
+            // 
+            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewLogToolStripMenuItem,
+            this.viewFilesToolStripMenuItem});
+            this.contextMenuStrip.Name = "contextMenuStrip";
+            this.contextMenuStrip.Size = new System.Drawing.Size(168, 48);
+            // 
+            // viewFilesToolStripMenuItem
+            // 
+            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.ExamineMenuIcon;
+            this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
+            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
+            this.viewFilesToolStripMenuItem.Text = "View contents ...";
+            this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
+            // 
             // imageList
             // 
             this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
@@ -244,20 +261,14 @@ namespace Duplicati.GUI
             this.label1.TabIndex = 10;
             this.label1.Text = "Recently completed backups";
             // 
-            // contextMenuStrip
+            // viewLogToolStripMenuItem
             // 
-            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.viewFilesToolStripMenuItem});
-            this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(168, 48);
-            // 
-            // viewFilesToolStripMenuItem
-            // 
-            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Examine;
-            this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
-            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
-            this.viewFilesToolStripMenuItem.Text = "View contents ...";
-            this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
+            this.viewLogToolStripMenuItem.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.viewLogToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.LogMenuIcon;
+            this.viewLogToolStripMenuItem.Name = "viewLogToolStripMenuItem";
+            this.viewLogToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
+            this.viewLogToolStripMenuItem.Text = "View log ...";
+            this.viewLogToolStripMenuItem.Click += new System.EventHandler(this.viewLogToolStripMenuItem_Click);
             // 
             // ServiceStatus
             // 
@@ -279,8 +290,8 @@ namespace Duplicati.GUI
             this.advancedPanel.PerformLayout();
             this.simplePanel.ResumeLayout(false);
             this.simplePanel.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.statusImage)).EndInit();
             this.contextMenuStrip.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.statusImage)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -308,5 +319,6 @@ namespace Duplicati.GUI
         private System.Windows.Forms.ProgressBar SubProgressBar;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem viewFilesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewLogToolStripMenuItem;
     }
 }

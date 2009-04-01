@@ -648,13 +648,19 @@
     <None Include="Resources\DeletedFile.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Examine.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\PartialStatusIcon.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\WizardMenuIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\LogMenuIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ExamineMenuIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\LogViewer.ico" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Wizard pages\Rearrange\" />
