@@ -165,13 +165,6 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
-        internal static System.Drawing.Bitmap SetupMenuIcon {
-            get {
-                object obj = ResourceManager.GetObject("SetupMenuIcon", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
         internal static System.Drawing.Bitmap SmallLogo {
             get {
                 object obj = ResourceManager.GetObject("SmallLogo", resourceCulture);
@@ -217,6 +210,13 @@ namespace Duplicati.GUI.Properties {
         internal static System.Drawing.Bitmap WarningStatusIcon {
             get {
                 object obj = ResourceManager.GetObject("WarningStatusIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap WizardMenuIcon {
+            get {
+                object obj = ResourceManager.GetObject("WizardMenuIcon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

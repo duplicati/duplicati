@@ -42,8 +42,15 @@ namespace Duplicati.Library.Main
         //Temporary variable for progress reporting
         private string m_statusmessage;
 
+        /// <summary>
+        /// The cache filename strategy used
+        /// </summary>
+        /// <returns>A cache filename strategy object</returns>
+        public static FilenameStrategy CreateCacheFilenameStrategy() { return new FilenameStrategy("dpl", "_", true); }
+
         private FilenameStrategy m_filenamestrategy;
-        private FilenameStrategy m_cachefilenamestrategy = new FilenameStrategy("dpl", "_", true);
+        private FilenameStrategy m_cachefilenamestrategy = BackendWrapper.CreateCacheFilenameStrategy();
+
 
         private List<BackupEntry> m_orphans;
 

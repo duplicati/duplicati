@@ -68,9 +68,12 @@ namespace Duplicati.GUI
             this.CurrentStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.advancedPanel.SuspendLayout();
             this.simplePanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).BeginInit();
+            this.contextMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // label3
@@ -169,6 +172,7 @@ namespace Duplicati.GUI
             this.columnHeader1,
             this.columnHeader2,
             this.columnHeader3});
+            this.recentBackups.ContextMenuStrip = this.contextMenuStrip;
             this.recentBackups.FullRowSelect = true;
             this.recentBackups.Location = new System.Drawing.Point(0, 80);
             this.recentBackups.MultiSelect = false;
@@ -179,6 +183,7 @@ namespace Duplicati.GUI
             this.recentBackups.TabIndex = 15;
             this.recentBackups.UseCompatibleStateImageBehavior = false;
             this.recentBackups.View = System.Windows.Forms.View.Details;
+            this.recentBackups.SelectedIndexChanged += new System.EventHandler(this.recentBackups_SelectedIndexChanged);
             this.recentBackups.DoubleClick += new System.EventHandler(this.recentBackups_DoubleClick);
             // 
             // columnHeader1
@@ -239,6 +244,21 @@ namespace Duplicati.GUI
             this.label1.TabIndex = 10;
             this.label1.Text = "Recently completed backups";
             // 
+            // contextMenuStrip
+            // 
+            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewFilesToolStripMenuItem});
+            this.contextMenuStrip.Name = "contextMenuStrip";
+            this.contextMenuStrip.Size = new System.Drawing.Size(168, 48);
+            // 
+            // viewFilesToolStripMenuItem
+            // 
+            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Examine;
+            this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
+            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
+            this.viewFilesToolStripMenuItem.Text = "View contents ...";
+            this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
+            // 
             // ServiceStatus
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -260,6 +280,7 @@ namespace Duplicati.GUI
             this.simplePanel.ResumeLayout(false);
             this.simplePanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).EndInit();
+            this.contextMenuStrip.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -285,5 +306,7 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Label ProgressMessage;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.ProgressBar SubProgressBar;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
+        private System.Windows.Forms.ToolStripMenuItem viewFilesToolStripMenuItem;
     }
 }

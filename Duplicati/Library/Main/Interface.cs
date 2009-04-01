@@ -776,7 +776,7 @@ namespace Duplicati.Library.Main
             if (string.IsNullOrEmpty(m_options.SignatureCachePath))
                 throw new Exception("Signature cache path was not given as an argument");
             else
-                System.IO.Directory.Delete(m_options.SignatureCachePath, true);
+                RemoveSignatureFiles(m_options.SignatureCachePath);
         }
 
         public List<BackupEntry> GetBackupSets()
@@ -801,6 +801,20 @@ namespace Duplicati.Library.Main
                 }
             }
 
+        }
+
+        public static void RemoveSignatureFiles(string folder)
+        {
+            FilenameStrategy cachenames = BackendWrapper.CreateCacheFilenameStrategy();
+            foreach (string s in Core.Utility.EnumerateFiles(folder))
+            {
+                BackupEntry e = cachenames.DecodeFilename(new Duplicati.Library.Backend.FileEntry(System.IO.Path.GetFileName(s)));
+                if (e.IsShortName == cachenames.UseShortNames && e.Type == BackupEntry.EntryType.Signature)
+                {
+                    try { System.IO.File.Delete(s); }
+                    catch {}
+                }
+            }
         }
             
         //Static helpers

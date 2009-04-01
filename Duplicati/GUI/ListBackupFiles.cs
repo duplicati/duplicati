@@ -29,6 +29,10 @@ namespace Duplicati.GUI
 {
     public partial class ListBackupFiles : Form
     {
+
+        private object m_lock = new object();
+        private System.Threading.Thread m_thread = null;
+
         public ListBackupFiles()
         {
             InitializeComponent();
@@ -49,9 +53,25 @@ namespace Duplicati.GUI
 
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            object[] args = (object[])e.Argument;
-            DuplicatiRunner r = new DuplicatiRunner();
-            e.Result = r.ListActualFiles((Datamodel.Schedule)args[0], (DateTime)args[1]);
+            lock (m_lock)
+                m_thread = System.Threading.Thread.CurrentThread;
+
+            try
+            {
+                object[] args = (object[])e.Argument;
+                DuplicatiRunner r = new DuplicatiRunner();
+                e.Result = r.ListActualFiles((Datamodel.Schedule)args[0], (DateTime)args[1]);
+            }
+            catch (System.Threading.ThreadAbortException)
+            {
+                System.Threading.Thread.ResetAbort();
+                e.Cancel = true;
+            }
+            finally
+            {
+                lock (m_lock)
+                    m_thread = null;
+            }
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -174,6 +194,13 @@ namespace Duplicati.GUI
 
                 parent = match.Nodes;
             }
+        }
+
+        private void ListBackupFiles_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            lock (m_lock)
+                if (m_thread != null)
+                    m_thread.Abort();
         }
     }
 }

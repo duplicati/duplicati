@@ -35,6 +35,11 @@ namespace Duplicati.GUI
         private ApplicationSettings m_settings;
         private bool m_isUpdating = false;
 
+        //These variables handle the worker thread size calculation
+        private object m_lock = new object();
+        private System.Threading.Thread m_thread = null;
+        private bool m_restartCalculator = false;
+
         public ApplicationSetup()
         {
             InitializeComponent();
@@ -65,6 +70,7 @@ namespace Duplicati.GUI
 
                 SignatureCacheEnabled.Checked = m_settings.SignatureCacheEnabled;
                 SignatureCachePath.Text = m_settings.SignatureCachePath;
+                CalculateSignatureCacheSize();
             }
             finally
             {
@@ -212,6 +218,7 @@ namespace Duplicati.GUI
                 return;
 
             m_settings.SignatureCachePath = SignatureCachePath.Text;
+            CalculateSignatureCacheSize();
         }
 
         private void SignatureCacheEnabled_CheckedChanged(object sender, EventArgs e)
@@ -222,7 +229,89 @@ namespace Duplicati.GUI
                 return;
 
             m_settings.SignatureCacheEnabled = SignatureCacheEnabled.Checked;
+            CalculateSignatureCacheSize();
+        }
 
+        private void CacheSizeCalculator_DoWork(object sender, DoWorkEventArgs e)
+        {
+            lock (m_lock)
+                m_thread = System.Threading.Thread.CurrentThread;
+
+            try
+            {
+                e.Result = "Cache size: " + Library.Core.Utility.FormatSizeString(Library.Core.Utility.GetDirectorySize(System.Environment.ExpandEnvironmentVariables((string)e.Argument), null));
+            }
+            catch (System.Threading.ThreadAbortException)
+            {
+                System.Threading.Thread.ResetAbort();
+                e.Cancel = true;
+            }
+            finally
+            {
+                lock (m_lock)
+                    m_thread = null;
+            }
+
+        }
+
+        private void CacheSizeCalculator_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled)
+                CacheSizeLabel.Text = "Cancelled";
+            else if (e.Error != null)
+                CacheSizeLabel.Text = e.Error.Message;
+            else
+                CacheSizeLabel.Text = (string)e.Result;
+
+            if (m_restartCalculator)
+                CalculateSignatureCacheSize();
+        }
+
+        private void CalculateSignatureCacheSize()
+        {
+            CacheSizeLabel.Text = "Calculating cache size ...";
+
+            lock (m_lock)
+                if (CacheSizeCalculator.IsBusy)
+                {
+                    m_restartCalculator = true;
+                    m_thread.Abort();
+                }
+                else
+                {
+                    m_restartCalculator = false;
+                    if (SignatureCacheEnabled.Checked)
+                        CacheSizeCalculator.RunWorkerAsync(SignatureCachePath.Text);
+                    else
+                        CacheSizeLabel.Text = "";
+                }
+        }
+
+        private void ClearCacheButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string path = System.Environment.ExpandEnvironmentVariables(SignatureCachePath.Text);
+                if (MessageBox.Show(this, "Delete signature files in the folder: \n" + path, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                    return;
+
+                Library.Main.Interface.RemoveSignatureFiles(path);
+                CalculateSignatureCacheSize();
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(this, "An error occured: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ApplicationSetup_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            lock(m_lock)
+                if (m_thread != null)
+                {
+                    m_restartCalculator = false;
+                    m_thread.Abort();
+                }
         }
 
     }

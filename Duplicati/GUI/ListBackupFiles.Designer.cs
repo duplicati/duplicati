@@ -121,6 +121,7 @@ namespace Duplicati.GUI
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Files in selected backup";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ListBackupFiles_FormClosing);
             this.groupBox1.ResumeLayout(false);
             this.ContentPanel.ResumeLayout(false);
             this.ResumeLayout(false);

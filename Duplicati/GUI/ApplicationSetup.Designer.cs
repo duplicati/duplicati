@@ -33,8 +33,12 @@ namespace Duplicati.GUI
             this.GPGPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.CacheSizeLabel = new System.Windows.Forms.Label();
+            this.ClearCacheButton = new System.Windows.Forms.Button();
+            this.SignatureCacheEnabled = new System.Windows.Forms.CheckBox();
+            this.SignatureCachePathBrowse = new System.Windows.Forms.Button();
+            this.SignatureCachePath = new System.Windows.Forms.TextBox();
             this.TempPathBrowse = new System.Windows.Forms.Button();
             this.TempPath = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -57,10 +61,9 @@ namespace Duplicati.GUI
             this.CommonPasswordUseGPG = new System.Windows.Forms.CheckBox();
             this.CommonPassword = new System.Windows.Forms.TextBox();
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
-            this.SignatureCachePathBrowse = new System.Windows.Forms.Button();
-            this.SignatureCachePath = new System.Windows.Forms.TextBox();
-            this.SignatureCacheEnabled = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
+            this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -108,19 +111,12 @@ namespace Duplicati.GUI
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "User interface settings";
             // 
-            // RecentDuration
-            // 
-            this.RecentDuration.Location = new System.Drawing.Point(208, 24);
-            this.RecentDuration.Name = "RecentDuration";
-            this.RecentDuration.Size = new System.Drawing.Size(221, 21);
-            this.RecentDuration.TabIndex = 1;
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
-            // 
             // groupBox2
             // 
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox2.Controls.Add(this.CacheSizeLabel);
+            this.groupBox2.Controls.Add(this.ClearCacheButton);
             this.groupBox2.Controls.Add(this.SignatureCacheEnabled);
             this.groupBox2.Controls.Add(this.SignatureCachePathBrowse);
             this.groupBox2.Controls.Add(this.SignatureCachePath);
@@ -138,10 +134,61 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Location = new System.Drawing.Point(8, 176);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(437, 152);
+            this.groupBox2.Size = new System.Drawing.Size(437, 176);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Path settings (Advanced)";
+            // 
+            // CacheSizeLabel
+            // 
+            this.CacheSizeLabel.AutoSize = true;
+            this.CacheSizeLabel.Location = new System.Drawing.Point(128, 152);
+            this.CacheSizeLabel.Name = "CacheSizeLabel";
+            this.CacheSizeLabel.Size = new System.Drawing.Size(125, 13);
+            this.CacheSizeLabel.TabIndex = 28;
+            this.CacheSizeLabel.Text = "Calculating cache size ...";
+            // 
+            // ClearCacheButton
+            // 
+            this.ClearCacheButton.Location = new System.Drawing.Point(336, 144);
+            this.ClearCacheButton.Name = "ClearCacheButton";
+            this.ClearCacheButton.Size = new System.Drawing.Size(88, 23);
+            this.ClearCacheButton.TabIndex = 27;
+            this.ClearCacheButton.Text = "Clear cache";
+            this.ClearCacheButton.UseVisualStyleBackColor = true;
+            this.ClearCacheButton.Click += new System.EventHandler(this.ClearCacheButton_Click);
+            // 
+            // SignatureCacheEnabled
+            // 
+            this.SignatureCacheEnabled.AutoSize = true;
+            this.SignatureCacheEnabled.Location = new System.Drawing.Point(8, 120);
+            this.SignatureCacheEnabled.Name = "SignatureCacheEnabled";
+            this.SignatureCacheEnabled.Size = new System.Drawing.Size(104, 17);
+            this.SignatureCacheEnabled.TabIndex = 26;
+            this.SignatureCacheEnabled.Text = "Signature cache";
+            this.SignatureCacheEnabled.UseVisualStyleBackColor = true;
+            this.SignatureCacheEnabled.CheckedChanged += new System.EventHandler(this.SignatureCacheEnabled_CheckedChanged);
+            // 
+            // SignatureCachePathBrowse
+            // 
+            this.SignatureCachePathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.SignatureCachePathBrowse.Location = new System.Drawing.Point(400, 120);
+            this.SignatureCachePathBrowse.Name = "SignatureCachePathBrowse";
+            this.SignatureCachePathBrowse.Size = new System.Drawing.Size(24, 20);
+            this.SignatureCachePathBrowse.TabIndex = 25;
+            this.SignatureCachePathBrowse.Text = "...";
+            this.SignatureCachePathBrowse.UseVisualStyleBackColor = true;
+            this.SignatureCachePathBrowse.Click += new System.EventHandler(this.SignatureCachePathBrowse_Click);
+            // 
+            // SignatureCachePath
+            // 
+            this.SignatureCachePath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.SignatureCachePath.Location = new System.Drawing.Point(128, 120);
+            this.SignatureCachePath.Name = "SignatureCachePath";
+            this.SignatureCachePath.Size = new System.Drawing.Size(272, 20);
+            this.SignatureCachePath.TabIndex = 24;
+            this.SignatureCachePath.TextChanged += new System.EventHandler(this.SignatureCachePath_TextChanged);
             // 
             // TempPathBrowse
             // 
@@ -247,7 +294,7 @@ namespace Duplicati.GUI
             // OKBtn
             // 
             this.OKBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.OKBtn.Location = new System.Drawing.Point(135, 341);
+            this.OKBtn.Location = new System.Drawing.Point(135, 361);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(80, 24);
             this.OKBtn.TabIndex = 6;
@@ -259,7 +306,7 @@ namespace Duplicati.GUI
             // 
             this.CancelBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(231, 341);
+            this.CancelBtn.Location = new System.Drawing.Point(231, 361);
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.Size = new System.Drawing.Size(72, 24);
             this.CancelBtn.TabIndex = 7;
@@ -336,6 +383,7 @@ namespace Duplicati.GUI
             this.CommonPassword.Name = "CommonPassword";
             this.CommonPassword.Size = new System.Drawing.Size(296, 20);
             this.CommonPassword.TabIndex = 1;
+            this.CommonPassword.UseSystemPasswordChar = true;
             this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
             // 
             // UseCommonPassword
@@ -349,44 +397,27 @@ namespace Duplicati.GUI
             this.UseCommonPassword.UseVisualStyleBackColor = true;
             this.UseCommonPassword.CheckedChanged += new System.EventHandler(this.UseCommonPassword_CheckedChanged);
             // 
-            // SignatureCachePathBrowse
+            // CacheSizeCalculator
             // 
-            this.SignatureCachePathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.SignatureCachePathBrowse.Location = new System.Drawing.Point(400, 120);
-            this.SignatureCachePathBrowse.Name = "SignatureCachePathBrowse";
-            this.SignatureCachePathBrowse.Size = new System.Drawing.Size(24, 20);
-            this.SignatureCachePathBrowse.TabIndex = 25;
-            this.SignatureCachePathBrowse.Text = "...";
-            this.SignatureCachePathBrowse.UseVisualStyleBackColor = true;
-            this.SignatureCachePathBrowse.Click += new System.EventHandler(this.SignatureCachePathBrowse_Click);
+            this.CacheSizeCalculator.WorkerSupportsCancellation = true;
+            this.CacheSizeCalculator.DoWork += new System.ComponentModel.DoWorkEventHandler(this.CacheSizeCalculator_DoWork);
+            this.CacheSizeCalculator.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.CacheSizeCalculator_RunWorkerCompleted);
             // 
-            // SignatureCachePath
+            // RecentDuration
             // 
-            this.SignatureCachePath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.SignatureCachePath.Location = new System.Drawing.Point(128, 120);
-            this.SignatureCachePath.Name = "SignatureCachePath";
-            this.SignatureCachePath.Size = new System.Drawing.Size(272, 20);
-            this.SignatureCachePath.TabIndex = 24;
-            this.SignatureCachePath.TextChanged += new System.EventHandler(this.SignatureCachePath_TextChanged);
-            // 
-            // SignatureCacheEnabled
-            // 
-            this.SignatureCacheEnabled.AutoSize = true;
-            this.SignatureCacheEnabled.Location = new System.Drawing.Point(8, 120);
-            this.SignatureCacheEnabled.Name = "SignatureCacheEnabled";
-            this.SignatureCacheEnabled.Size = new System.Drawing.Size(104, 17);
-            this.SignatureCacheEnabled.TabIndex = 26;
-            this.SignatureCacheEnabled.Text = "Signature cache";
-            this.SignatureCacheEnabled.UseVisualStyleBackColor = true;
-            this.SignatureCacheEnabled.CheckedChanged += new System.EventHandler(this.SignatureCacheEnabled_CheckedChanged);
+            this.RecentDuration.Location = new System.Drawing.Point(208, 24);
+            this.RecentDuration.Name = "RecentDuration";
+            this.RecentDuration.Size = new System.Drawing.Size(221, 21);
+            this.RecentDuration.TabIndex = 1;
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
             // 
             // ApplicationSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(453, 379);
+            this.ClientSize = new System.Drawing.Size(453, 399);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
@@ -400,6 +431,7 @@ namespace Duplicati.GUI
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Duplicati setup";
             this.Load += new System.EventHandler(this.ApplicationSetup_Load);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ApplicationSetup_FormClosing);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -446,5 +478,8 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Button SignatureCachePathBrowse;
         private System.Windows.Forms.TextBox SignatureCachePath;
         private System.Windows.Forms.FolderBrowserDialog BrowseSignatureCachePath;
+        private System.Windows.Forms.Label CacheSizeLabel;
+        private System.Windows.Forms.Button ClearCacheButton;
+        private System.ComponentModel.BackgroundWorker CacheSizeCalculator;
     }
 }

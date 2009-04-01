@@ -259,5 +259,25 @@ namespace Duplicati.GUI
             SubProgressBar.Left = simplePanel.Width - SubProgressBar.Width;
         }
 
+        private void recentBackups_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            viewFilesToolStripMenuItem.Enabled = recentBackups.SelectedItems.Count == 1;
+        }
+
+        private void viewFilesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (recentBackups.SelectedItems.Count != 1)
+                return;
+
+            Log l = recentBackups.SelectedItems[0].Tag as Log;
+            if (l == null)
+                return;
+            Schedule s = l.OwnerTask.Schedule;
+            DateTime time = l.EndTime; //Not the excact time to use, but close enough unless there were multiple backups running at the same time
+
+            ListBackupFiles dlg = new ListBackupFiles();
+            dlg.ShowList(this, s, time);
+        }
+
     }
 }

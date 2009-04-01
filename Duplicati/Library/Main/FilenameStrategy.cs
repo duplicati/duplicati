@@ -145,5 +145,7 @@ namespace Duplicati.Library.Main
             return new BackupEntry(fe, time, type, isFull, isShortName, volNumber, compression, encryption);
         }
 
+        public bool UseShortNames { get { return m_useShortFilenames; } }
+        public string Prefix { get { return m_prefix; } }
     }
 }

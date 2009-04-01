@@ -123,7 +123,7 @@ namespace Duplicati.GUI
                 TrayIcon.Icon = Properties.Resources.TrayNormal;
 
                 TrayIcon.ContextMenuStrip.Items.Add("Status", Properties.Resources.StatusMenuIcon, new EventHandler(Status_Clicked));
-                TrayIcon.ContextMenuStrip.Items.Add("Setup", Properties.Resources.SetupMenuIcon, new EventHandler(Setup_Clicked));
+                TrayIcon.ContextMenuStrip.Items.Add("Wizard ...", Properties.Resources.WizardMenuIcon, new EventHandler(Setup_Clicked));
                 TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
 
                 TrayIcon.ContextMenuStrip.Items.Add("Settings", Properties.Resources.SettingsMenuIcon, new EventHandler(Settings_Clicked));

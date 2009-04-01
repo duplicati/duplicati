@@ -132,7 +132,7 @@ namespace Duplicati.GUI
 
                 if (m_schedule.Length > 0)
                 {
-                    TimeSpan nextrun = m_schedule[0].When - DateTime.Now;
+                    TimeSpan nextrun = m_schedule[0].NextScheduledTime - DateTime.Now;
                     if (nextrun.TotalMilliseconds < 0)
                         continue;
 

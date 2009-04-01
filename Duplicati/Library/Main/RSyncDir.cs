@@ -238,17 +238,20 @@ namespace Duplicati.Library.Main.RSync
             string dirmarker = System.IO.Path.DirectorySeparatorChar.ToString();
             for(int i = 0; i < m_unproccesed.Folders.Count; i++)
             {
-                string relpath = m_unproccesed.Files[i].Substring(m_sourcefolder.Length);
-                if (!m_oldFolders.ContainsKey(relpath))
-                    m_newfolders.Add(relpath);
-                else
-                    m_oldFolders.Remove(relpath);
+                string relpath = m_unproccesed.Folders[i].Substring(m_sourcefolder.Length);
+                if (relpath.Trim().Length != 0)
+                {
+                    if (!m_oldFolders.ContainsKey(relpath))
+                        m_newfolders.Add(relpath);
+                    else
+                        m_oldFolders.Remove(relpath);
+                }
             }
 
             m_unproccesed.Folders.Clear();
-
-            m_deletedfolders = new List<string>();
-            m_deletedfolders.AddRange(m_oldFolders.Keys);
+            foreach(string s in m_oldFolders.Keys)
+                if (!m_unproccesed.IsAffectedByError(s))
+                    m_deletedfolders.AddRange(m_oldFolders.Keys);
         }
 
         public void FinalizeMultiPass(Core.IFileArchive signaturefile, Core.IFileArchive contentfile)
