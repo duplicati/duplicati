@@ -469,7 +469,7 @@ namespace Duplicati.Library.Main
                 else
                 {
                     v = v.ToLower().Trim();
-                    if (v == "false" || v == "no" || v == "off")
+                    if (v == "false" || v == "no" || v == "off" || v == "0")
                         return false;
                     else
                         return true;

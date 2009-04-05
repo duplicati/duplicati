@@ -132,7 +132,6 @@ namespace Duplicati.Library.Main
                 if (be.Time < timelimit)
                 {
                     bestFit = be;
-                    additions.Clear();
                     foreach (BackupEntry bex in be.Incrementals)
                         if (bex.Time <= timelimit)
                             additions.Add(bex);
@@ -273,7 +272,7 @@ namespace Duplicati.Library.Main
                 lock (m_queuelock)
                 {
                     m_pendingOperations.Enqueue(new KeyValuePair<BackupEntry, string>( remote, filename ));
-                    if (m_asyncWait.WaitOne(0))
+                    if (m_asyncWait.WaitOne(0, false))
                     {
                         m_asyncWait.Reset();
                         System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(ProcessQueue));
@@ -332,7 +331,7 @@ namespace Duplicati.Library.Main
                     lock (m_queuelock)
                     {
                         //If the lock is free, just run, but keep the lock
-                        if (m_asyncWait.WaitOne(0))
+                        if (m_asyncWait.WaitOne(0, false))
                         {
                             try
                             {
@@ -534,6 +533,7 @@ namespace Duplicati.Library.Main
                             m_encryption.Decrypt(tempfile, filename);
                             tempfile.Dispose(); //Remove the encrypted file
 
+                            //TODO: This one does not get disposed if an error occurs
                             tempfile = new Duplicati.Library.Core.TempFile(filename);
                         }
 
