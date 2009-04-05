@@ -132,6 +132,7 @@ namespace Duplicati.Library.Main
                 if (be.Time < timelimit)
                 {
                     bestFit = be;
+                    additions.Clear();
                     foreach (BackupEntry bex in be.Incrementals)
                         if (bex.Time <= timelimit)
                             additions.Add(bex);

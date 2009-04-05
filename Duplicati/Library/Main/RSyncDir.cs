@@ -327,12 +327,12 @@ namespace Duplicati.Library.Main.RSync
                 {
                     if (!m_disableFiletimeCheck)
                     {
+                        //TODO: Make this check faster somehow
                         string relpath = s.Substring(m_sourcefolder.Length);
                         if (m_oldSignatures.ContainsKey(relpath))
                         {
                             string target = System.IO.Path.Combine(SIGNATURE_ROOT, relpath);
-                            DateTime prevTime = m_oldSignatures[relpath].GetLastWriteTime(target);
-                            if (System.IO.File.GetLastWriteTime(s) < prevTime)
+                            if (System.IO.File.GetLastWriteTime(s) < m_oldSignatures[relpath].GetLastWriteTime(target))
                             {
                                 m_oldSignatures.Remove(relpath);
                                 m_examinedfiles++;

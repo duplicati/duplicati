@@ -132,7 +132,8 @@ namespace Duplicati.GUI
 
         public void Show()
         {
-            (m_form as Form).ShowDialog();
+            if (!(m_form as Form).Visible)
+                (m_form as Form).ShowDialog();
         }
 
     }
