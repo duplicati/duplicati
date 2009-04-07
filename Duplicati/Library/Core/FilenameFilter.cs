@@ -110,6 +110,12 @@ namespace Duplicati.Library.Core
             do
             {
                 x = filter.IndexOf(System.IO.Path.PathSeparator, x);
+                
+                //HACK: Detection of linux special case
+                //TODO: Reconsider using the ":" character, as that is the PathSeperator on linux
+                if (System.IO.Path.PathSeparator == ':' && x == 1)
+                    x = filter.IndexOf(System.IO.Path.PathSeparator, x + 1);
+
                 if (x > 0)
                 {
                     string fx = filter.Substring(0, x);

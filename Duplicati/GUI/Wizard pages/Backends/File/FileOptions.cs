@@ -133,12 +133,18 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
         {
             TargetDrive.Items.Clear();
 
-            for (char i = 'A'; i < 'Z'; i++)
-            {
-                System.IO.DriveInfo di = new System.IO.DriveInfo(i.ToString());
-                if (di.DriveType == System.IO.DriveType.Removable)
-                    TargetDrive.Items.Add(i.ToString() + ":");
-            }
+
+            if (System.Environment.OSVersion.Platform != PlatformID.MacOSX && System.Environment.OSVersion.Platform != PlatformID.Unix)
+                for (char i = 'A'; i < 'Z'; i++)
+                {
+                    try
+                    {
+                        System.IO.DriveInfo di = new System.IO.DriveInfo(i.ToString());
+                        if (di.DriveType == System.IO.DriveType.Removable)
+                            TargetDrive.Items.Add(i.ToString() + ":");
+                    }
+                    catch { }
+                }
         }
 
         void FileOptions_PageEnter(object sender, PageChangedArgs args)
