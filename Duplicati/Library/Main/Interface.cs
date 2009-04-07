@@ -345,7 +345,7 @@ namespace Duplicati.Library.Main
                                              using (Core.IFileArchive patch = new Compression.FileArchiveZip(sigFile))
                                              {
                                                  foreach(KeyValuePair<RSync.RSyncDir.PatchFileType, string> k in sync.ListPatchFiles(patch))
-                                                     if (filter.ShouldInclude("/", "/" + k.Value))
+                                                     if (filter.ShouldInclude("", System.IO.Path.DirectorySeparatorChar.ToString() + k.Value))
                                                      {
                                                          hasFiles = true; 
                                                          break;
