@@ -54,12 +54,17 @@ namespace Duplicati.GUI
         void GetOptions(Dictionary<string, string> options); 
         string TargetPath { get; }
         string SourcePath { get; }
+
+        string Result { get; set; }
     }
 
     public abstract class BackupTask : IDuplicityTask
     {
         protected Schedule m_schedule;
         protected DateTime m_beginTime;
+
+        protected string m_result;
+
         public abstract DuplicityTaskType TaskType { get; }
 
         public Schedule Schedule { get { return m_schedule; } }
@@ -88,6 +93,12 @@ namespace Duplicati.GUI
         {
             this.Schedule.GetOptions(options);
             this.Task.GetOptions(options);
+        }
+
+        public string Result
+        {
+            get { return m_result; }
+            set { m_result = value; }
         }
     }
 

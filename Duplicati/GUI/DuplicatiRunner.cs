@@ -186,6 +186,7 @@ namespace Duplicati.GUI
 
             }
 
+            task.Result = results;
             task.RaiseTaskCompleted(results);
 
             if (task.Schedule != null)
@@ -243,6 +244,8 @@ namespace Duplicati.GUI
         {
             ListBackupEntriesTask task = new ListBackupEntriesTask(schedule);
             ExecuteTask(task);
+            if (task.Result.StartsWith("Error:"))
+                throw new Exception(task.Result);
             return task.Backups;
         }
 
@@ -251,6 +254,8 @@ namespace Duplicati.GUI
         {
             ListActualFilesTask task = new ListActualFilesTask(schedule, when);
             ExecuteTask(task);
+            if (task.Result.StartsWith("Error:"))
+                throw new Exception(task.Result);
             return task.Files;
         }
 
@@ -258,6 +263,8 @@ namespace Duplicati.GUI
         {
             ListFilesTask task = new ListFilesTask(schedule, when);
             ExecuteTask(task);
+            if (task.Result.StartsWith("Error:"))
+                throw new Exception(task.Result);
             return task.Files;
         }
 

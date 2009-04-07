@@ -96,6 +96,7 @@ namespace Duplicati.GUI.HelperControls
                 treeView.Visible = false;
                 progressBar.Visible = false;
                 LoadingIndicator.Text = m_exception.Message;
+                return;
             }
 
             if (e != null && e.Cancelled)
