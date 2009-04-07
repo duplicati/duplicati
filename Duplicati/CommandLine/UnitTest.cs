@@ -113,7 +113,7 @@ namespace Duplicati.CommandLine
                 using (new Timer("Full backup of " + folders[0]))
                 {
                     options["full"] = "";
-                    Duplicati.Library.Main.Interface.Backup(folders[0], target, options);
+                    Log.WriteMessage(Duplicati.Library.Main.Interface.Backup(folders[0], target, options), LogMessageType.Information);
                     options.Remove("full");
                 }
 
@@ -124,7 +124,7 @@ namespace Duplicati.CommandLine
                     System.Threading.Thread.Sleep(1000 * 5);
                     Console.WriteLine("Backing up the incremental copy: " + folders[i]);
                     using (new Timer("Incremental backup of " + folders[i]))
-                        Duplicati.Library.Main.Interface.Backup(folders[i], target, options);
+                        Log.WriteMessage(Duplicati.Library.Main.Interface.Backup(folders[i], target, options), LogMessageType.Information);
                 }
 
                 List<Duplicati.Library.Main.BackupEntry> entries = Duplicati.Library.Main.Interface.ParseFileList(target, options);
@@ -146,7 +146,7 @@ namespace Duplicati.CommandLine
                         options["restore-time"] = entries[i].Time.ToString();
 
                         using (new Timer("Restore of " + folders[i]))
-                            Duplicati.Library.Main.Interface.Restore(target, ttf, options);
+                            Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, ttf, options), LogMessageType.Information);
 
                         Console.WriteLine("Verifying the copy: " + folders[i]);
 

@@ -756,9 +756,11 @@ namespace Duplicati.Library.Main.RSync
             if (prefix == null)
                 prefix = "";
 
-            if (System.IO.Path.DirectorySeparatorChar != '/')
-                for (int i = 0; i < filenames.Length; i++)
+            for (int i = 0; i < filenames.Length; i++)
+                if (System.IO.Path.DirectorySeparatorChar != '/')
                     filenames[i] = prefix + filenames[i].Replace('/', System.IO.Path.DirectorySeparatorChar);
+                else
+                    filenames[i] = prefix + filenames[i];
 
             return filenames;
         }
