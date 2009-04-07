@@ -500,6 +500,7 @@ namespace Duplicati.Library.Main
                         if (System.IO.File.Exists(cachefilename))
                             if (filehash != null && Core.Utility.CalculateHash(cachefilename) == filehash)
                             {
+                                //TODO: Don't copy, but just return it as write protected
                                 System.IO.File.Copy(cachefilename, filename); //TODO: Warn on hash mismatch?
                                 return;
                             }

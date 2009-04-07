@@ -140,6 +140,7 @@ namespace Duplicati.GUI.HelperControls
                     }
                 }
 
+                //TODO: Apparently it is much faster to sort nodes when the tree is detached
                 treeView.Sort();
             }
             finally
@@ -241,15 +242,14 @@ namespace Duplicati.GUI.HelperControls
                 e.Node.ImageIndex = e.Node.SelectedImageIndex = OSGeo.MapGuide.Maestro.ResourceEditors.ShellIcons.GetFolderIcon(true);
         }
 
-        public string CheckedFiles
+        public List<string> CheckedFiles
         {
             get
             {
                 List<string> files = new List<string>();
                 Queue<TreeNode> items = new Queue<TreeNode>();
                 foreach (TreeNode t in treeView.Nodes)
-                    if (t.Checked)
-                        items.Enqueue(t);
+                    items.Enqueue(t);
 
                 treeView.PathSeparator = System.IO.Path.DirectorySeparatorChar.ToString();
                 
@@ -258,16 +258,18 @@ namespace Duplicati.GUI.HelperControls
                     TreeNode t = items.Dequeue();
 
                     foreach (TreeNode tn in t.Nodes)
-                        if (tn.Checked)
-                            items.Enqueue(tn);
+                        items.Enqueue(tn);
 
-                    if (t.Tag != null && (bool)t.Tag == true)
-                        files.Add(Library.Core.Utility.AppendDirSeperator(t.FullPath));
-                    else
-                        files.Add(t.FullPath);
+                    if (t.Checked)
+                    {
+                        if (t.Tag != null && (bool)t.Tag == true)
+                            files.Add(Library.Core.Utility.AppendDirSeperator(t.FullPath));
+                        else
+                            files.Add(t.FullPath);
+                    }
                 }
-                //TODO: This creates very large filter lists
-                return string.Join(System.IO.Path.PathSeparator.ToString(), files.ToArray());
+
+                return files;
             }
         }
 
@@ -276,57 +278,19 @@ namespace Duplicati.GUI.HelperControls
             get
             {
                 List<KeyValuePair<bool, string>> filter = new List<KeyValuePair<bool, string>>();
-                filter.Add(new KeyValuePair<bool, string>(false, ".*"));
-
-                Queue<TreeNode> items = new Queue<TreeNode>();
-                foreach (TreeNode t in treeView.Nodes)
-                    if (t.Checked)
-                        items.Enqueue(t);
 
                 treeView.PathSeparator = System.IO.Path.DirectorySeparatorChar.ToString();
 
-                while (items.Count > 0)
-                {
-                    TreeNode t = items.Dequeue();
+                foreach(string path in this.CheckedFiles)
+                    filter.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(treeView.PathSeparator + path)));
 
-                    foreach (TreeNode tn in t.Nodes)
-                        if (tn.Checked)
-                            items.Enqueue(tn);
-
-                    filter.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(treeView.PathSeparator + t.FullPath)));
-                }
+                //Exclude everything else
+                filter.Add(new KeyValuePair<bool, string>(false, ".*"));
 
                 return Library.Core.FilenameFilter.EncodeAsFilter(filter);
             }
         }
 
-        public int CheckedCount
-        {
-            get
-            {
-                int count = 0;
-                Queue<TreeNode> items = new Queue<TreeNode>();
-                foreach (TreeNode t in treeView.Nodes)
-                    if (t.Checked)
-                    {
-                        items.Enqueue(t);
-                        count++;
-                    }
-
-                while (items.Count > 0)
-                {
-                    TreeNode t = items.Dequeue();
-
-                    foreach (TreeNode tn in t.Nodes)
-                        if (tn.Checked)
-                        {
-                            items.Enqueue(tn);
-                            count++;
-                        }
-                }
-
-                return count;
-            }
-        }
+        public int CheckedCount { get { return this.CheckedFiles.Count; } }
     }
 }

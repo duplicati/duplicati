@@ -50,7 +50,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             {
                 if (targetpath.Trim().Length == 0)
                 {
-                    MessageBox.Show(this, "You must enter a folder to backup to", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, "You must enter a folder to restore to", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     args.Cancel = true;
                     return;
                 }
@@ -107,7 +107,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
             WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
             wrapper.RestorePath = targetpath;
-            wrapper.RestoreFilter = PartialRestore.Checked ? backupFileList.CheckedFiles : "";
+            wrapper.RestoreFilter = PartialRestore.Checked ? string.Join(System.IO.Path.PathSeparator.ToString(), backupFileList.CheckedFiles.ToArray()) : "";
             args.NextPage = new FinishedRestore();
         }
 

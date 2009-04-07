@@ -75,6 +75,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
         private void Restore(object sender, DoWorkEventArgs args)
         {
+            //TODO: add a Try-Catch here
             Schedule s = Program.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
 
             RestoreTask task = new RestoreTask(s, m_wrapper.RestorePath, m_wrapper.RestoreFilter, m_wrapper.RestoreTime);
@@ -82,8 +83,15 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             task.GetOptions(options);
             if (options.ContainsKey("filter"))
                 options.Remove("filter");
+
+            //TODO: Should not be replicated here, but executed in the DuplicatiRunner
+            ApplicationSettings appSet = new ApplicationSettings(task.Schedule.DataParent);
+            if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
+                options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), task.Schedule.ID.ToString());
+            
             using (Library.Main.Interface i = new Duplicati.Library.Main.Interface(task.SourcePath, options))
             {
+
                 i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress);
                 i.Restore(task.TargetPath);
             }

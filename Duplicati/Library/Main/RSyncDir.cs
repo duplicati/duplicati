@@ -790,6 +790,13 @@ namespace Duplicati.Library.Main.RSync
             return lst;
         }
 
+        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(Core.IFileArchive patch)
+        {
+            List<Core.IFileArchive> patches = new List<Duplicati.Library.Core.IFileArchive>();
+            patches.Add(patch);
+            return ListPatchFiles(patches);
+        }
+
         public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(List<Core.IFileArchive> patches)
         {
             List<KeyValuePair<PatchFileType, string>> files = new List<KeyValuePair<PatchFileType, string>>();

@@ -297,11 +297,13 @@ namespace Duplicati.Library.Main
                         foreach (BackupEntry be in entries)
                         {
                             List<string> contentHashes = null;
+                            List<string> signatureHashes = null;
                             if (!m_options.SkipFileHashChecks)
                             {
                                 OperationProgress(this, DuplicatiOperation.Backup, 0, -1, "Reading manifest file: " + be.Filename, "");
 
                                 contentHashes = new List<string>();
+                                signatureHashes = new List<string>();
 
                                 using (new Logging.Timer("Get " + be.Filename))
                                 using (Core.TempFile tf = new Duplicati.Library.Core.TempFile())
@@ -311,6 +313,8 @@ namespace Duplicati.Library.Main
                                     doc.Load(tf);
                                     foreach (System.Xml.XmlNode n in doc.SelectNodes("Manifest/ContentFiles/Hash"))
                                         contentHashes.Add(n.InnerText);
+                                    foreach (System.Xml.XmlNode n in doc.SelectNodes("Manifest/SignatureFiles/Hash"))
+                                        signatureHashes.Add(n.InnerText);
                                 }
                             }
 
@@ -327,6 +331,31 @@ namespace Duplicati.Library.Main
                                 {
                                     //TODO: Set better text messages
                                      OperationProgress(this, DuplicatiOperation.Backup, 0, -1, "Patching restore with #" + (patchno + 1).ToString(), "");
+
+                                     if (m_options.HasFilter || !string.IsNullOrEmpty(m_options.FileToRestore))
+                                     {
+                                         bool hasFiles = false;
+
+                                         using (Core.TempFile sigFile = new Duplicati.Library.Core.TempFile())
+                                         {
+                                             BackupEntry signatureVol = new BackupEntry(BackupEntry.EntryType.Signature, vol.IsFull, vol.Time, vol.VolumeNumber);
+                                             using (new Logging.Timer("Get " + signatureVol))
+                                                 backend.Get(signatureVol, sigFile, signatureHashes == null ? null : signatureHashes[signatureVol.VolumeNumber - 1]);
+
+                                             using (Core.IFileArchive patch = new Compression.FileArchiveZip(sigFile))
+                                             {
+                                                 foreach(KeyValuePair<RSync.RSyncDir.PatchFileType, string> k in sync.ListPatchFiles(patch))
+                                                     if (filter.ShouldInclude("/", "/" + k.Value))
+                                                     {
+                                                         hasFiles = true; 
+                                                         break;
+                                                     }
+                                             }
+                                         }
+
+                                         if (!hasFiles)
+                                             continue; //Avoid downloading the content file
+                                     }
 
                                     using (new Logging.Timer("Get " + vol.Filename))
                                         backend.Get(vol, patchzip, contentHashes == null ? null : contentHashes[vol.VolumeNumber - 1]);
