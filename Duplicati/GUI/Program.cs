@@ -87,12 +87,16 @@ namespace Duplicati.GUI
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Unable to start up, perhaps another process is already running?\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Unable to start up, perhaps another process is already running?\nError message: " + ex.ToString(), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 if (!singleInstance.IsFirstInstance)
+                {
+                    //Linux shows this output
+                    Console.WriteLine("Another instance is running, and was notified");
                     return;
+                }
 
                 singleInstance.SecondInstanceDetected += new SingleInstance.SecondInstanceDelegate(singleInstance_SecondInstanceDetected);
 
@@ -101,7 +105,15 @@ namespace Duplicati.GUI
 #else
                 DatabasePath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName), "Duplicati.sqlite");
 #endif
-                System.Data.SQLite.SQLiteConnection con = new System.Data.SQLite.SQLiteConnection();
+                if (new Version(System.Data.SQLite.SQLiteConnection.SQLiteVersion) < new Version(3, 6, 3))
+                {
+                    //The official Mono SQLite provider is also broken with less than 3.6.3
+                    MessageBox.Show("Wrong version of SQLite detected (" + System.Data.SQLite.SQLiteConnection.SQLiteVersion + "), must be 3.6.3 or higher", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+
+                }
+
+                System.Data.IDbConnection con = new System.Data.SQLite.SQLiteConnection();
 
                 try
                 {
@@ -227,6 +239,7 @@ namespace Duplicati.GUI
 
         public static void ShowStatus()
         {
+            //TODO: Guard against calls from other threads
             if (StatusDialog == null || !StatusDialog.Visible)
                 StatusDialog = new ServiceStatus();
 
@@ -236,6 +249,7 @@ namespace Duplicati.GUI
 
         public static void ShowWizard()
         {
+            //TODO: Guard against calls from other threads
             if (Wizard == null || !Wizard.Visible)
                 Wizard = new WizardHandler();
             
@@ -244,6 +258,7 @@ namespace Duplicati.GUI
 
         public static void ShowSetup()
         {
+            //TODO: Guard against calls from other threads
             if (SetupDialog == null || !SetupDialog.Visible)
                 SetupDialog = new ServiceSetup();
 
@@ -253,6 +268,7 @@ namespace Duplicati.GUI
 
         public static void ShowSettings()
         {
+            //TODO: Guard against calls from other threads
             lock (MainLock)
             {
                 ApplicationSetup dlg = new ApplicationSetup();

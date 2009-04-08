@@ -30,11 +30,20 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     public partial class SettingOverrides : System.Windows.Forms.Wizard.WizardControl
     {
         private WizardSettingsWrapper m_wrapper;
+        private bool m_unsupported = false;
 
         public SettingOverrides()
             : base("Override settings", "On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!")
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (NotImplementedException)
+            {
+                MessageBox.Show(this, "This page is not supported on the current platform, this is a known issue.\r\nIf a newer version of Duplicati or Mono is avalible it is possible that the issue is resolved", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                m_unsupported = true;
+            }
 
             m_autoFillValues = false;
             base.PageEnter += new System.Windows.Forms.Wizard.PageChangeHandler(SettingOverrides_PageEnter);
@@ -46,42 +55,51 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (args.Direction == System.Windows.Forms.Wizard.PageChangedDirection.Back)
                 return;
 
-            m_wrapper.Overrides.Clear();
-            foreach (DataRow dr in OverrideTable.Rows)
-                if ((bool)dr["Enabled"])
-                    m_wrapper.Overrides.Add((string)dr["Name"], (string)dr["Value"]);
-
+            if (m_unsupported)
+            {
+                OptionsGrid.Enabled = false;
+            }
+            else
+            {
+                m_wrapper.Overrides.Clear();
+                foreach (DataRow dr in OverrideTable.Rows)
+                    if ((bool)dr["Enabled"])
+                        m_wrapper.Overrides.Add((string)dr["Name"], (string)dr["Value"]);
+            }
             args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }
 
         void SettingOverrides_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
         {
-            m_wrapper = new WizardSettingsWrapper(m_settings);
-
-            if (!m_settings.ContainsKey("Overrides:Table"))
+            if (!m_unsupported)
             {
-                OverrideTable.Rows.Clear();
+                m_wrapper = new WizardSettingsWrapper(m_settings);
 
-                Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
-                foreach (Library.Backend.ICommandLineArgument arg in opt.SupportedCommands)
+                if (!m_settings.ContainsKey("Overrides:Table"))
                 {
-                    DataRow dr = OverrideTable.NewRow();
-                    dr["Enabled"] = m_wrapper.Overrides.ContainsKey(arg.Name);
-                    dr["argument"] = arg;
-                    dr["Name"] = arg.Name;
-                    if (m_wrapper.Overrides.ContainsKey(arg.Name))
-                        dr["Value"] = m_wrapper.Overrides[arg.Name];
-                    OverrideTable.Rows.Add(dr);
-                }
+                    OverrideTable.Rows.Clear();
 
-                m_settings["Overrides:Table"] = BaseDataSet;
-            }
-            else
-            {
-                BaseDataSet = (DataSet)m_settings["Overrides:Table"];
-                OptionsGrid.DataSource = BaseDataSet;
-                OverrideTable = BaseDataSet.Tables["OverrideTable"];
-                OptionsGrid.DataMember = "OverrideTable";
+                    Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
+                    foreach (Library.Backend.ICommandLineArgument arg in opt.SupportedCommands)
+                    {
+                        DataRow dr = OverrideTable.NewRow();
+                        dr["Enabled"] = m_wrapper.Overrides.ContainsKey(arg.Name);
+                        dr["argument"] = arg;
+                        dr["Name"] = arg.Name;
+                        if (m_wrapper.Overrides.ContainsKey(arg.Name))
+                            dr["Value"] = m_wrapper.Overrides[arg.Name];
+                        OverrideTable.Rows.Add(dr);
+                    }
+
+                    m_settings["Overrides:Table"] = BaseDataSet;
+                }
+                else
+                {
+                    BaseDataSet = (DataSet)m_settings["Overrides:Table"];
+                    OptionsGrid.DataSource = BaseDataSet;
+                    OverrideTable = BaseDataSet.Tables["OverrideTable"];
+                    OptionsGrid.DataMember = "OverrideTable";
+                }
             }
 
         }

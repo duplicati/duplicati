@@ -182,7 +182,7 @@ namespace Duplicati.GUI
             {
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
-                results = "Error: " + ex.Message;
+                results = "Error: " + ex.ToString();
 
             }
 

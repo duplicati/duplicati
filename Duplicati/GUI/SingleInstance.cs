@@ -129,8 +129,10 @@ namespace Duplicati.GUI
                     retrycount--;
                 }
 
+                //HACK: the unix file lock does not allow us to read the file length when the file is locked
                 if (new System.IO.FileInfo(lockfile).Length == 0)
-                    throw new Exception("The file was locked, but had no data");
+                    if (System.Environment.OSVersion.Platform != PlatformID.MacOSX && System.Environment.OSVersion.Platform != PlatformID.Unix)
+                        throw new Exception("The file was locked, but had no data");
 
                 //Notify the other process that we have started
                 string filename = System.IO.Path.Combine(m_controldir, COMM_FILE_PREFIX + Guid.NewGuid().ToString());
@@ -223,9 +225,10 @@ namespace Duplicati.GUI
                     }
                     catch
                     {
+                        //Wait before the retry
+                        System.Threading.Thread.Sleep(500);
                     }
 
-                    System.Threading.Thread.Sleep(500);
                     retrycount--;
                 }
 
