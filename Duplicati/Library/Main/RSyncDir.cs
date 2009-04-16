@@ -251,7 +251,7 @@ namespace Duplicati.Library.Main.RSync
             m_unproccesed.Folders.Clear();
             foreach(string s in m_oldFolders.Keys)
                 if (!m_unproccesed.IsAffectedByError(s))
-                    m_deletedfolders.AddRange(m_oldFolders.Keys);
+                    m_deletedfolders.Add(s);
         }
 
         public void FinalizeMultiPass(Core.IFileArchive signaturefile, Core.IFileArchive contentfile)
