@@ -537,6 +537,8 @@ namespace Duplicati.Library.Main.RSync
                                 m_stat.LogError("Failed to remove folder: \"" + s + "\", Error message: " + ex.Message);
                             Logging.Log.WriteMessage("Failed to remove folder: " + s, Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
+                    else
+                        Logging.Log.WriteMessage("Folder was marked for deletion, but did not exist: " + s, Duplicati.Library.Logging.LogMessageType.Warning);
                 }
             }
 
