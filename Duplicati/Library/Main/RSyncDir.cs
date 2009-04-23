@@ -260,11 +260,10 @@ namespace Duplicati.Library.Main.RSync
             {
                 if (m_unproccesed.Files.Count == 0)
                 {
-                    foreach (string s in m_unproccesed.FilesWithError)
-                        if (m_oldSignatures.ContainsKey(s))
-                            m_oldSignatures.Remove(s);
-
-                    m_deletedfiles.AddRange(m_oldSignatures.Keys);
+                    
+                    foreach(string s in m_oldSignatures.Keys)
+                        if (!m_unproccesed.IsAffectedByError(System.IO.Path.Combine(m_sourcefolder, s)))
+                            m_deletedfiles.Add(s);
 
                     if (m_deletedfiles.Count > 0)
                     {
@@ -863,7 +862,7 @@ namespace Duplicati.Library.Main.RSync
                     if (path.StartsWith(s))
                         return true;
 
-                return false;
+                return m_filesWithError.Contains(path);
             }
         }
 
