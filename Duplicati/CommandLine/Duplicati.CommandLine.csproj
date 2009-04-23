@@ -50,6 +50,10 @@
       <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
       <Name>Duplicati.Library.Backend.BackendLoader</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
+      <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
+      <Name>Duplicati.Library.Backend.CloudFiles</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
       <Name>Duplicati.Library.Backend.File</Name>

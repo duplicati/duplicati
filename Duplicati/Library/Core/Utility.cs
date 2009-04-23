@@ -451,5 +451,61 @@ namespace Duplicati.Library.Core
             }
         }
 
+        /// <summary>
+        /// A helper for converting byte arrays to hex, vice versa
+        /// </summary>
+        private const string HEX_DIGITS_UPPER = "0123456789ABCDEF";
+
+        /// <summary>
+        /// Converts the byte array to hex digits
+        /// </summary>
+        /// <param name="data">The data to convert</param>
+        /// <returns>The data as a string of hex digits</returns>
+        public static string ByteArrayAsHexString(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+                return "";
+            
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in data)
+            {
+                sb.Append(HEX_DIGITS_UPPER[(b >> 8) & 0xF]);
+                sb.Append(HEX_DIGITS_UPPER[b & 0xF]);
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Converts the given hex string into a byte array
+        /// </summary>
+        /// <param name="hex">The hex string</param>
+        /// <returns>The byte array</returns>
+        public static byte[] HexStringAsByteArray(string hex)
+        {
+            if (string.IsNullOrEmpty(hex))
+                return new byte[0];
+
+            hex = hex.Trim().ToUpper();
+
+            if (hex.Length % 2 != 0)
+                throw new Exception("The hex string size must be a multiple of two, eg. the length must be even");
+            
+            byte[] data = new byte[hex.Length];
+            for (int i = 0; i < hex.Length; i+= 2)
+            {
+                int upper = HEX_DIGITS_UPPER.IndexOf(hex[i]);
+                int lower = HEX_DIGITS_UPPER.IndexOf(hex[i + 1]);
+
+                if (upper < 0)
+                    throw new Exception("The digit '" + hex[i] + "' is not a valid hex digit");
+                if (lower < 0)
+                    throw new Exception("The digit '" + hex[i + 1] + "' is not a valid hex digit");
+
+                data[i % 2] = (byte)((upper << 8) | lower);
+            }
+
+            return data;
+        }
     }
 }

@@ -364,6 +364,10 @@
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
       <Name>Duplicati.Library.Backend.BackendInterface</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
+      <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
+      <Name>Duplicati.Library.Backend.CloudFiles</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
       <Name>Duplicati.Library.Backend.File</Name>
