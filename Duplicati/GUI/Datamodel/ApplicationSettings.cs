@@ -97,26 +97,6 @@ namespace Duplicati.Datamodel
             set { m_appset[SFTP_PATH] = value; }
         }
 
-
-        /// <summary>
-        /// Gets or sets the path to SFtp. May contain environment variables
-        /// </summary>
-        public string ScpPath
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_appset[SCP_PATH]))
-                {
-                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
-                        return "scp";
-                    else
-                        return System.IO.Path.Combine(PROGRAM_FILES, "putty\\pscp.exe");
-                }
-                return m_appset[SCP_PATH];
-            }
-            set { m_appset[SCP_PATH] = value; }
-        }
-
         /// <summary>
         /// Gets or sets the path to store temporary files. May contain environment variables
         /// </summary>

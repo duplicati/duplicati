@@ -35,6 +35,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SharpExpectProcess.cs" />
     <Compile Include="SSHBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

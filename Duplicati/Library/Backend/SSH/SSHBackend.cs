@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
+
 namespace Duplicati.Library.Backend
 {
     public class SSH : IBackend
@@ -33,14 +34,25 @@ namespace Duplicati.Library.Backend
         Dictionary<string, string> m_options;
 
         private string m_sftp;
-        private string m_scp;
         private string m_ssh_options;
+
+        private const int SSH_TIMEOUT = 30 * 1000;
+
+        private bool m_write_log_info = false;
+        
+        /// <summary>
+        /// A value indicating if the *CLIENT* is a linux client.
+        /// Fortunately the sftp program seems to be client dependent, and not server dependant like the ftp program.
+        /// </summary>
+        private bool m_isLinux = false;
 
         public SSH()
         {
+            m_isLinux = (System.Environment.OSVersion.Platform == PlatformID.MacOSX || System.Environment.OSVersion.Platform == PlatformID.Unix);
         }
 
         public SSH(string url, Dictionary<string, string> options)
+            : this()
         {
             m_options = options;
             Uri u = new Uri(url);
@@ -75,16 +87,6 @@ namespace Duplicati.Library.Backend
                     m_sftp = "psftp.exe";
             }
 
-            if (options.ContainsKey("scp-command"))
-                m_scp = options["scp-command"];
-            else
-            {
-                if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
-                    m_scp = "scp";
-                else
-                    m_scp = "pscp.exe";
-            }
-
             if (options.ContainsKey("ssh-options"))
                 m_ssh_options = options["ssh-options"];
             else
@@ -92,6 +94,8 @@ namespace Duplicati.Library.Backend
 
             if (!u.IsDefaultPort)
                 m_ssh_options += " -P " + u.Port;
+
+            m_write_log_info = options.ContainsKey("debug-to-console");
         }
 
         #region IBackendInterface Members
@@ -108,27 +112,38 @@ namespace Duplicati.Library.Backend
 
         public List<FileEntry> List()
         {
+            if (m_write_log_info)
+                Console.WriteLine("******** List *******");
             List<FileEntry> files = new List<FileEntry>();
 
-            using (System.Diagnostics.Process p = GetConnection(true, null))
+            using (SharpExpect.SharpExpectProcess p = GetConnection())
             {
-                p.StandardInput.WriteLine("ls");
-                p.StandardInput.WriteLine("exit");
+                if (m_isLinux)
+                    p.Sendline("ls -la");
+                else
+                    p.Sendline("ls");
+                p.Sendline("exit");
 
                 string s;
-                while ((s = p.StandardOutput.ReadLine()) != null)
+
+                while ((s = p.GetNextOutputLine(1000)) != null)
                 {
-                    FileEntry fe = FTP.ParseLine(s);
+                    FileEntry fe = FTP.ParseLine(s.Trim());
                     if (fe != null && fe.Name != "." && fe.Name != "..")
                         files.Add(fe);
+                    else if (m_write_log_info)
+                        Console.WriteLine("Failed to parse line: " + s);
                 }
 
-                if (!p.WaitForExit(5000))
-                {
-                    p.Close();
+                if (!p.Process.WaitForExit(5000))
                     throw new Exception("Timeout while closing session");
+
+                if (m_write_log_info)
+                {
+                    Console.WriteLine("******** List Complete *******");
+                    Console.WriteLine(p.LogKillAndDispose());
                 }
-                
+
                 return files;
             }
 
@@ -137,44 +152,82 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, string filename)
         {
-            using (System.Diagnostics.Process p = GetConnection(false, "\"" + filename + "\" \"" + BuildEscapedPath(remotename) + "\""))
+            if (m_write_log_info)
+                Console.WriteLine("******** Put ********");
+            using (SharpExpect.SharpExpectProcess p = GetConnection())
             {
-                if (!p.WaitForExit(5 * 60 * 1000))
-                {
-                    p.Close();
-                    throw new Exception("Timeout while uploading file");
-                }
+                string cmd = "put \"" + filename + "\" \"" + remotename + "\"";
 
-                if (p.StandardError.Peek() != -1)
-                    throw new Exception(p.StandardError.ReadToEnd());
+                p.Sendline(cmd);
+
+                if (p.Expect(SSH_TIMEOUT, "local\\:.+", "Uploading .*") < 0)
+                    throw new Exception("Failed to get expected response to command: " + cmd);
+
+                p.Sendline("exit");
+
+                if (!p.Process.WaitForExit(5 * 60 * 1000))
+                    throw new Exception("Timeout while uploading file");
+
+                if ((m_isLinux ? p.Expect(1000, "exit", "sftp> exit") : p.Expect(1000, "Using username .*")) < 0)
+                    throw new Exception("Got unexpected exit response");
+
+                if (m_write_log_info)
+                {
+                    Console.WriteLine("******** Put Completed ********");
+                    Console.WriteLine(p.LogKillAndDispose());
+                }
             }
         }
 
         public void Get(string remotename, string filename)
         {
-            using (System.Diagnostics.Process p = GetConnection(false, "\"" + BuildEscapedPath(remotename) + "\" \"" + filename + "\""))
-            {
-                if (!p.WaitForExit(5 * 60 * 1000))
-                {
-                    p.Close();
-                    throw new Exception("Timeout while uploading file");
-                }
+            if (m_write_log_info)
+                Console.WriteLine("******** Get ********");
 
-                if (p.StandardError.Peek() != -1)
-                    throw new Exception(p.StandardError.ReadToEnd());
+            using (SharpExpect.SharpExpectProcess p = GetConnection())
+            {
+                string cmd = "get \"" + remotename + "\" \"" + filename + "\"";
+                p.Sendline(cmd);
+
+                if (p.Expect(SSH_TIMEOUT, "remote\\:.+", "Downloading .*", "Fetching .*") < 0)
+                    throw new Exception("Failed to get expected response to command: " + cmd);
+
+                p.Sendline("exit");
+
+                if (!p.Process.WaitForExit(5 * 60 * 1000))
+                    throw new Exception("Timeout while uploading file");
+
+                if ((m_isLinux ? p.Expect(1000, "exit", "sftp> exit") : p.Expect(1000, "Using username .*")) < 0)
+                    throw new Exception("Got unexpected exit response");
+
+                if (m_write_log_info)
+                {
+                    Console.WriteLine("******** Get Completed ********");
+                    Console.WriteLine(p.LogKillAndDispose());
+                }
             }
         }
 
         public void Delete(string remotename)
         {
-            using (System.Diagnostics.Process p = GetConnection(true, null))
+            if (m_write_log_info)
+                Console.WriteLine("******** Delete ********");
+
+            using (SharpExpect.SharpExpectProcess p = GetConnection())
             {
-                p.StandardInput.WriteLine("rm \"" + remotename + "\"");
-                p.StandardInput.WriteLine("exit");
-                if (!p.WaitForExit(5000))
-                {
-                    p.Close();
+                p.Sendline("rm \"" + remotename + "\"");
+                p.Sendline("exit");
+
+                if (p.Expect(1000, ".*No such file or directory.*", ".*Couldn't.*") != -1)
+                    throw new Exception("Failed to delete file: " + p.LogKillAndDispose());
+
+                if (!p.Process.WaitForExit(5000))
                     throw new Exception("Timeout while closing session");
+
+                if (m_write_log_info)
+                {
+                    Console.WriteLine("******** Delete completed ********");
+                    Console.WriteLine(p.LogKillAndDispose());
                 }
             }
         }
@@ -185,9 +238,9 @@ namespace Duplicati.Library.Backend
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("sftp-command", CommandLineArgument.ArgumentType.Path, "The path to the \"sftp\" program", "The full path to the \"sftp\" application.", (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) ? "sftp" : "psftp.exe"),
-                    new CommandLineArgument("scp-command", CommandLineArgument.ArgumentType.Path, "The path to the \"scp\" program", "The full path to the \"scp\" application.", (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) ? "scp" : "pscp.exe"),
                     new CommandLineArgument("ssh-options", CommandLineArgument.ArgumentType.String, "Extra options to the ssh commands", "Supply any extra commandline arguments, which are passed unaltered to the ssh application", "-C"),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
+                    new CommandLineArgument("debug-to-console", CommandLineArgument.ArgumentType.Boolean, "Prints debug info to the console", "The SSH backend relies on an external program (sftp) to work. Since the external program may change at any time, this may break the backend. Enable this option to get debug information about the ssh connection written to the console."),
                 });
 
             }
@@ -230,7 +283,7 @@ namespace Duplicati.Library.Backend
             return path;
         }
 
-        private System.Diagnostics.Process GetConnection(bool sftp, string args)
+        private SharpExpect.SharpExpectProcess GetConnection()
         {
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo.CreateNoWindow = true;
@@ -239,70 +292,122 @@ namespace Duplicati.Library.Backend
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-            p.StartInfo.FileName = sftp ? m_sftp : m_scp;
-            p.StartInfo.Arguments = m_ssh_options;
 
-            if (sftp)
-                p.StartInfo.Arguments += " " + m_server;
+            string server = m_server;
+            if (!string.IsNullOrEmpty(m_username))
+                server = m_username + "@" + server;
 
-            if (args != null)
-                p.StartInfo.Arguments += " " + args;
+            SharpExpect.SharpExpectProcess proc = null;
 
             try
             {
-                p.Start();
-            }
-            catch(Exception ex)
-            {
-                throw new Exception("Failed to start the SSH application (" + p.StartInfo.FileName + ").\r\nError message: " + ex.Message, ex);
-            }
-
-            //TODO: This is not the most robust way of dealing with
-            // the psftp and pscp commands. It is likely not very portable either
-
-            System.Text.StringBuilder prompts = new StringBuilder();
-
-            char[] tmp = new char[1000];
-            int t = p.StandardOutput.Read(tmp, 0, tmp.Length);
-            string greeting = new string(tmp, 0, t);
-            prompts.Append(greeting);
-
-            if (!string.IsNullOrEmpty(m_username) && greeting.Trim() == "login as:")
-            {
-                p.StandardInput.WriteLine(m_username);
-                t = p.StandardOutput.Read(tmp, 0, tmp.Length);
-                greeting = new string(tmp, 0, t);
-                prompts.Append(greeting);
-            }
-
-            if (!string.IsNullOrEmpty(m_password) && greeting.Trim().ToLower().EndsWith(" password:"))
-            {
-                p.StandardInput.WriteLine(m_password);
-
-                t = p.StandardOutput.Read(tmp, 0, tmp.Length);
-                greeting = new string(tmp, 0, t);
-                prompts.Append(greeting);
-            }
-
-            if (sftp && !greeting.Trim().ToLower().StartsWith("remote working directory"))
-            {
-                //Sometime the message comes a little delayed later
-                do
+                if (m_isLinux)
                 {
-                    t = p.StandardOutput.Read(tmp, 0, tmp.Length);
-                    greeting = new string(tmp, 0, t);
-                    prompts.Append(greeting);
-                } while (greeting.Length > 0 && greeting.Length < 4);
+                    //Since SSH uses direct tty/pty manipulation, and SharpExpect does not simulate this,
+                    //we wrap the command with expect, which allows us to use stdin/stdout
+                    p.StartInfo.FileName = "expect";
 
-                if (!greeting.Trim().ToLower().StartsWith("remote working directory"))
-                    throw new Exception("Failed to login, prompts were: " + prompts.ToString());
+                    p.StartInfo.Arguments = @"-c ""set timeout 30"" -c ""spawn \""" + m_sftp + @"\"" " + server + " " + m_ssh_options + @""" -c ""interact {~~}""";
+                }
+                else
+                {
+                    p.StartInfo.FileName = m_sftp;
+                    p.StartInfo.Arguments = server + " " + m_ssh_options;
+                }
+
+                try
+                {
+                    //Console.WriteLine("Command: " + p.StartInfo.FileName);
+                    //Console.WriteLine("Arguments: " + p.StartInfo.Arguments);
+                    proc = SharpExpect.SharpExpectProcess.Spawn(p.StartInfo);
+                    proc.LogEnabled = m_write_log_info;
+                    proc.DefaultTimeout = SSH_TIMEOUT;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    if (m_isLinux)
+                        throw new Exception("Failed to start the SSH application (" + p.StartInfo.FileName + ").\r\nMake sure that \"expect\" is installed\r\nError message: " + ex.Message, ex);
+                    else
+                        throw new Exception("Failed to start the SSH application (" + p.StartInfo.FileName + ").\r\nMake sure that \"putty\" is installed, and you have set the correct path.\r\nError message: " + ex.Message, ex);
+
+                }
+
+                bool ready = false;
+
+                while (!ready)
+                {
+                    switch (proc.Expect(".*timeout.*", ".*denied.*", ".*authenticity.*", ".*Store key in cache\\?.*", ".*login as: .*", ".*(password|passphrase)\\:.*", "sftp>"))
+                    {
+                        case -1:
+                        case 0: //Timeout
+                            throw new Exception("Timeout occured while connection, log: " + proc.LogKillAndDispose());
+                        case 1: //Access denied
+                            throw new Exception("Login failed due to bad credentials, log: " + proc.LogKillAndDispose());
+                        case 2: //Host authentication missing
+                        case 3:
+                            throw new Exception("The host is not authenticated, please connect to the host using SSH, and then re-rerun Duplicati, log: " + proc.LogKillAndDispose());
+                        case 4: //Send username (does not happen on linux)
+                            if (string.IsNullOrEmpty(m_username))
+                                throw new Exception("A username was expected, but none was supplied");
+                            proc.Sendline(m_username);
+                            continue; //Read next line
+                        case 5: //Send password
+                            //TODO: Allow the user to enter it with the option --ssh-askpass?
+                            if (string.IsNullOrEmpty(m_password))
+                                throw new Exception("A password was expected, but passwordless login was specified");
+                            proc.Sendpassword(m_password);
+                            continue; //Wait for sftp
+                        case 6: //We are ready!
+                            ready = true;
+                            break;
+                        default:
+                            throw new Exception("Unexpected error: " + proc.LogKillAndDispose());
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(m_path))
+                {
+                    proc.Sendline("cd \"" + m_path + "\"");
+                    if (proc.Expect(".*not found.*", ".*No such file or directory.*", "sftp>", "Remote directory is now") < 2)
+                        throw new Exception("Folder not found: " + m_path + ", log: " + proc.LogKillAndDispose());
+
+                    string matchpath = m_path;
+                    if (matchpath.EndsWith("/"))
+                        matchpath = matchpath.Substring(0, matchpath.Length - 1);
+
+                    if (!matchpath.StartsWith("/"))
+                        matchpath = "/" + matchpath;
+
+                    proc.Sendline("pwd");
+                    if (proc.Expect(".*" + System.Text.RegularExpressions.Regex.Escape(matchpath) + ".*") < 0)
+                        throw new Exception("Failed to validate the remote directory: " + proc.LogKillAndDispose());
+
+                    while (proc.GetNextOutputLine(1000) != null)
+                    { } //Clean output
+
+                    //Console.WriteLine("Connection is ready!");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                if (m_write_log_info)
+                    Console.WriteLine(ex.ToString());
+
+                if (proc != null)
+                {
+                    if (m_write_log_info)
+                        Console.WriteLine(proc.LogKillAndDispose());
+                    else
+                        proc.Dispose();
+                }
+
+                throw;
             }
 
-            if (sftp)
-                if (!string.IsNullOrEmpty(m_path))
-                    p.StandardInput.WriteLine("cd \"" + m_path + "\"");
-
-            return p;
+           return proc;
         }
+
     }
 }

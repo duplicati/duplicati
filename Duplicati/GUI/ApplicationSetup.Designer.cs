@@ -33,6 +33,7 @@ namespace Duplicati.GUI
             this.GPGPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -42,9 +43,6 @@ namespace Duplicati.GUI
             this.TempPathBrowse = new System.Windows.Forms.Button();
             this.TempPath = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.BrowseSCP = new System.Windows.Forms.Button();
-            this.SCPPath = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
             this.BrowseSFTP = new System.Windows.Forms.Button();
             this.SFTPPath = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
@@ -53,7 +51,6 @@ namespace Duplicati.GUI
             this.CancelBtn = new System.Windows.Forms.Button();
             this.BrowseGPGDialog = new System.Windows.Forms.OpenFileDialog();
             this.BrowseSFTPDialog = new System.Windows.Forms.OpenFileDialog();
-            this.BrowseSCPDialog = new System.Windows.Forms.OpenFileDialog();
             this.BrowseTempPath = new System.Windows.Forms.FolderBrowserDialog();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.PasswordPanel = new System.Windows.Forms.Panel();
@@ -63,7 +60,6 @@ namespace Duplicati.GUI
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -111,6 +107,15 @@ namespace Duplicati.GUI
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "User interface settings";
             // 
+            // RecentDuration
+            // 
+            this.RecentDuration.Location = new System.Drawing.Point(208, 24);
+            this.RecentDuration.Name = "RecentDuration";
+            this.RecentDuration.Size = new System.Drawing.Size(221, 21);
+            this.RecentDuration.TabIndex = 1;
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
+            // 
             // groupBox2
             // 
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
@@ -123,9 +128,6 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.TempPathBrowse);
             this.groupBox2.Controls.Add(this.TempPath);
             this.groupBox2.Controls.Add(this.label4);
-            this.groupBox2.Controls.Add(this.BrowseSCP);
-            this.groupBox2.Controls.Add(this.SCPPath);
-            this.groupBox2.Controls.Add(this.label3);
             this.groupBox2.Controls.Add(this.BrowseSFTP);
             this.groupBox2.Controls.Add(this.SFTPPath);
             this.groupBox2.Controls.Add(this.label6);
@@ -134,7 +136,7 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Location = new System.Drawing.Point(8, 176);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(437, 176);
+            this.groupBox2.Size = new System.Drawing.Size(437, 152);
             this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Path settings (Advanced)";
@@ -142,7 +144,7 @@ namespace Duplicati.GUI
             // CacheSizeLabel
             // 
             this.CacheSizeLabel.AutoSize = true;
-            this.CacheSizeLabel.Location = new System.Drawing.Point(128, 152);
+            this.CacheSizeLabel.Location = new System.Drawing.Point(128, 128);
             this.CacheSizeLabel.Name = "CacheSizeLabel";
             this.CacheSizeLabel.Size = new System.Drawing.Size(125, 13);
             this.CacheSizeLabel.TabIndex = 28;
@@ -150,7 +152,7 @@ namespace Duplicati.GUI
             // 
             // ClearCacheButton
             // 
-            this.ClearCacheButton.Location = new System.Drawing.Point(336, 144);
+            this.ClearCacheButton.Location = new System.Drawing.Point(336, 120);
             this.ClearCacheButton.Name = "ClearCacheButton";
             this.ClearCacheButton.Size = new System.Drawing.Size(88, 23);
             this.ClearCacheButton.TabIndex = 27;
@@ -161,7 +163,7 @@ namespace Duplicati.GUI
             // SignatureCacheEnabled
             // 
             this.SignatureCacheEnabled.AutoSize = true;
-            this.SignatureCacheEnabled.Location = new System.Drawing.Point(8, 120);
+            this.SignatureCacheEnabled.Location = new System.Drawing.Point(8, 96);
             this.SignatureCacheEnabled.Name = "SignatureCacheEnabled";
             this.SignatureCacheEnabled.Size = new System.Drawing.Size(104, 17);
             this.SignatureCacheEnabled.TabIndex = 26;
@@ -172,7 +174,7 @@ namespace Duplicati.GUI
             // SignatureCachePathBrowse
             // 
             this.SignatureCachePathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.SignatureCachePathBrowse.Location = new System.Drawing.Point(400, 120);
+            this.SignatureCachePathBrowse.Location = new System.Drawing.Point(400, 96);
             this.SignatureCachePathBrowse.Name = "SignatureCachePathBrowse";
             this.SignatureCachePathBrowse.Size = new System.Drawing.Size(24, 20);
             this.SignatureCachePathBrowse.TabIndex = 25;
@@ -184,7 +186,7 @@ namespace Duplicati.GUI
             // 
             this.SignatureCachePath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.SignatureCachePath.Location = new System.Drawing.Point(128, 120);
+            this.SignatureCachePath.Location = new System.Drawing.Point(128, 96);
             this.SignatureCachePath.Name = "SignatureCachePath";
             this.SignatureCachePath.Size = new System.Drawing.Size(272, 20);
             this.SignatureCachePath.TabIndex = 24;
@@ -193,7 +195,7 @@ namespace Duplicati.GUI
             // TempPathBrowse
             // 
             this.TempPathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.TempPathBrowse.Location = new System.Drawing.Point(400, 96);
+            this.TempPathBrowse.Location = new System.Drawing.Point(400, 72);
             this.TempPathBrowse.Name = "TempPathBrowse";
             this.TempPathBrowse.Size = new System.Drawing.Size(24, 20);
             this.TempPathBrowse.TabIndex = 22;
@@ -205,7 +207,7 @@ namespace Duplicati.GUI
             // 
             this.TempPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.TempPath.Location = new System.Drawing.Point(128, 96);
+            this.TempPath.Location = new System.Drawing.Point(128, 72);
             this.TempPath.Name = "TempPath";
             this.TempPath.Size = new System.Drawing.Size(272, 20);
             this.TempPath.TabIndex = 21;
@@ -214,41 +216,11 @@ namespace Duplicati.GUI
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(8, 96);
+            this.label4.Location = new System.Drawing.Point(8, 72);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(86, 13);
             this.label4.TabIndex = 20;
             this.label4.Text = "Temporary folder";
-            // 
-            // BrowseSCP
-            // 
-            this.BrowseSCP.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.BrowseSCP.Location = new System.Drawing.Point(400, 72);
-            this.BrowseSCP.Name = "BrowseSCP";
-            this.BrowseSCP.Size = new System.Drawing.Size(24, 20);
-            this.BrowseSCP.TabIndex = 19;
-            this.BrowseSCP.Text = "...";
-            this.BrowseSCP.UseVisualStyleBackColor = true;
-            this.BrowseSCP.Click += new System.EventHandler(this.BrowseSCP_Click);
-            // 
-            // SCPPath
-            // 
-            this.SCPPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.SCPPath.Location = new System.Drawing.Point(128, 72);
-            this.SCPPath.Name = "SCPPath";
-            this.SCPPath.Size = new System.Drawing.Size(272, 20);
-            this.SCPPath.TabIndex = 18;
-            this.SCPPath.TextChanged += new System.EventHandler(this.SCPPath_TextChanged);
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(8, 72);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(48, 13);
-            this.label3.TabIndex = 17;
-            this.label3.Text = "scp path";
             // 
             // BrowseSFTP
             // 
@@ -294,7 +266,7 @@ namespace Duplicati.GUI
             // OKBtn
             // 
             this.OKBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.OKBtn.Location = new System.Drawing.Point(135, 361);
+            this.OKBtn.Location = new System.Drawing.Point(135, 338);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(80, 24);
             this.OKBtn.TabIndex = 6;
@@ -306,7 +278,7 @@ namespace Duplicati.GUI
             // 
             this.CancelBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(231, 361);
+            this.CancelBtn.Location = new System.Drawing.Point(240, 336);
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.Size = new System.Drawing.Size(72, 24);
             this.CancelBtn.TabIndex = 7;
@@ -326,13 +298,6 @@ namespace Duplicati.GUI
             this.BrowseSFTPDialog.FileName = "psftp.exe";
             this.BrowseSFTPDialog.Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*";
             this.BrowseSFTPDialog.Title = "Select the SFTP executable";
-            // 
-            // BrowseSCPDialog
-            // 
-            this.BrowseSCPDialog.AddExtension = false;
-            this.BrowseSCPDialog.FileName = "pscp.exe";
-            this.BrowseSCPDialog.Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*";
-            this.BrowseSCPDialog.Title = "Select the SCP executable";
             // 
             // groupBox3
             // 
@@ -403,21 +368,12 @@ namespace Duplicati.GUI
             this.CacheSizeCalculator.DoWork += new System.ComponentModel.DoWorkEventHandler(this.CacheSizeCalculator_DoWork);
             this.CacheSizeCalculator.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.CacheSizeCalculator_RunWorkerCompleted);
             // 
-            // RecentDuration
-            // 
-            this.RecentDuration.Location = new System.Drawing.Point(208, 24);
-            this.RecentDuration.Name = "RecentDuration";
-            this.RecentDuration.Size = new System.Drawing.Size(221, 21);
-            this.RecentDuration.TabIndex = 1;
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
-            // 
             // ApplicationSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(453, 399);
+            this.ClientSize = new System.Drawing.Size(453, 376);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
@@ -458,12 +414,8 @@ namespace Duplicati.GUI
         private System.Windows.Forms.TextBox SFTPPath;
         private System.Windows.Forms.Label label6;
         private Duplicati.GUI.HelperControls.DurationEditor RecentDuration;
-        private System.Windows.Forms.Button BrowseSCP;
-        private System.Windows.Forms.TextBox SCPPath;
-        private System.Windows.Forms.Label label3;
         private System.Windows.Forms.OpenFileDialog BrowseGPGDialog;
         private System.Windows.Forms.OpenFileDialog BrowseSFTPDialog;
-        private System.Windows.Forms.OpenFileDialog BrowseSCPDialog;
         private System.Windows.Forms.Button TempPathBrowse;
         private System.Windows.Forms.TextBox TempPath;
         private System.Windows.Forms.Label label4;

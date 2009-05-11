@@ -95,12 +95,27 @@ namespace Duplicati.CommandLine
                 if (System.Environment.OSVersion.Platform != PlatformID.Unix)
                     options["time-separator"] = "'";
 
+                //The code below tests for a race condition in the ssh backend.
+                /*string[] list = null;
+                string[] prevList = null;
+
+                for (int i = 0; i < 1000; i++)
+                {
+                    Console.WriteLine(string.Format("Listing, test {0}", i));
+                    list = Duplicati.Library.Main.Interface.List(target, options);
+                    if (i != 0 && list.Length != prevList.Length)
+                        Console.WriteLine(string.Format("Count mismatch {0} vs {1}", list.Length, prevList.Length));
+
+                    prevList = list;
+                }*/
+
                 if (string.IsNullOrEmpty(target))
                 {
                     target = "file://" + tf;
                 }
                 else
                 {
+                    Console.WriteLine("Removing old backups");
                     Dictionary<string, string> tmp = new Dictionary<string, string>(options);
                     tmp["remove-all-but-n-full"] = "0";
                     tmp["force"] = "";

@@ -61,7 +61,6 @@ namespace Duplicati.GUI
                 RecentDuration.Value = m_settings.RecentBackupDuration;
                 GPGPath.Text = m_settings.GPGPath;
                 SFTPPath.Text = m_settings.SFtpPath;
-                SCPPath.Text = m_settings.ScpPath;
                 TempPath.Text = m_settings.TempPath;
 
                 UseCommonPassword.Checked = m_settings.UseCommonPassword;
@@ -137,20 +136,6 @@ namespace Duplicati.GUI
             if (m_isUpdating)
                 return;
             m_settings.SFtpPath = SFTPPath.Text;
-        }
-
-        private void SCPPath_TextChanged(object sender, EventArgs e)
-        {
-            if (m_isUpdating)
-                return;
-            m_settings.ScpPath = SCPPath.Text;
-
-        }
-
-        private void BrowseSCP_Click(object sender, EventArgs e)
-        {
-            if (BrowseSCPDialog.ShowDialog(this) == DialogResult.OK)
-                SCPPath.Text = BrowseSCPDialog.FileName;
         }
 
         private void RecentDuration_ValueChanged(object sender, EventArgs e)

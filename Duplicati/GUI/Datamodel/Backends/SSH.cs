@@ -94,8 +94,6 @@ namespace Duplicati.Datamodel.Backends
         public void GetOptions(Dictionary<string, string> options)
         {
             if (!this.Passwordless)
-                options.Add("ssh-askpass", "");
-            else
                 options["ftp-password"] = this.Password;
 
             if (!options.ContainsKey("ssh-options"))
@@ -104,7 +102,6 @@ namespace Duplicati.Datamodel.Backends
             if (this.Port != 22)
                 options["ssh-options"] += "-P " + this.Port;
 
-            options["scp-command"] = new ApplicationSettings(m_owner.DataParent).ScpPath;
             options["sftp-command"] = new ApplicationSettings(m_owner.DataParent).SFtpPath;
         }
 

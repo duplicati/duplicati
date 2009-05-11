@@ -33,7 +33,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
     {
         private bool m_warnedPath = false;
         private bool m_hasTested = false;
-        private bool m_warnedNoSCP = false;
         private bool m_warnedNoSFTP = false;
 
         private SSHSettings m_wrapper;
@@ -51,7 +50,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         {
             m_settings["SSH:HasWarned"] = m_hasTested;
             m_settings["SSH:WarnedPath"] = m_warnedPath;
-            m_settings["SSH:WarnedNoSCP"] = m_warnedNoSCP; ;
             m_settings["SSH:WarnedNoSFTP"] = m_warnedNoSFTP;
 
             if (args.Direction == PageChangedDirection.Back)
@@ -73,7 +71,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
             m_settings["SSH:HasWarned"] = m_hasTested;
             m_settings["SSH:WarnedPath"] = m_warnedPath;
-            m_settings["SSH:WarnedNoSCP"] = m_warnedNoSCP; ;
             m_settings["SSH:WarnedNoSFTP"] = m_warnedNoSFTP;
 
             m_wrapper.Passwordless = !UsePassword.Checked;
@@ -108,12 +105,17 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
             if (m_settings.ContainsKey("SSH:WarnedPath"))
                 m_warnedPath = (bool)m_settings["SSH:WarnedPath"];
-        
-            if (m_settings.ContainsKey("SSH:WarnedNoSCP"))
-                m_warnedNoSCP = (bool)m_settings["SSH:WarnedNoSCP"];
 
-            if (m_settings.ContainsKey("SSH:WarnedNoSFTP"))
-                m_warnedNoSFTP = (bool)m_settings["SSH:WarnedNoSFTP"];
+            if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+            {
+                //sftp is likely present on linux/mac
+                m_warnedNoSFTP = true;
+            }
+            else
+            {
+                if (m_settings.ContainsKey("SSH:WarnedNoSFTP"))
+                    m_warnedNoSFTP = (bool)m_settings["SSH:WarnedNoSFTP"];
+            }
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -133,6 +135,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
                     ssh.Username = Username.Text;
 
                     string target = ssh.GetDestinationPath();
+
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     ssh.GetOptions(options);
 
@@ -185,24 +188,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
                     return false;
                 }
                 m_warnedPath = true;
-            }
-
-            if (!m_warnedNoSCP)
-            {
-                ApplicationSettings appset = new ApplicationSettings(Program.DataConnection);
-                System.IO.FileInfo fi = null;
-                try { fi = new System.IO.FileInfo(System.Environment.ExpandEnvironmentVariables(appset.ScpPath)); }
-                catch { }
-
-                if (fi == null || !fi.Exists)
-                {
-                    if (MessageBox.Show(this, "Duplicati was unable to verify the existence of the scp program.\nscp may work regardless, if it is located in the system search path.\n\nDo you want to continue anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
-                    {
-                        return false;
-                    }
-
-                    m_warnedNoSCP = true;
-                }
             }
 
             if (!m_warnedNoSFTP)

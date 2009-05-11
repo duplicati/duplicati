@@ -162,6 +162,24 @@ namespace Duplicati.Library.Main
                     if (be == null)
                         continue; //Non-duplicati files
 
+                    //Other type file
+                    if (m_options.NoEncryption != string.IsNullOrEmpty(be.EncryptionMode))
+                        continue;
+
+                    if (!m_options.NoEncryption)
+                    {
+                        if (m_options.GPGEncryption && be.EncryptionMode != "gpg")
+                            continue;
+
+                        if (!m_options.GPGEncryption && be.EncryptionMode != "aes")
+                            continue;
+                    }
+
+                    //TODO: Compression mode should not be manifest
+                    if (be.CompressionMode != "manifest" && be.CompressionMode != "zip")
+                        continue;
+
+
                     if (be.Type == BackupEntry.EntryType.Content)
                     {
                         string content = m_filenamestrategy.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
@@ -436,7 +454,7 @@ namespace Duplicati.Library.Main
 
         private void DeleteInternal(BackupEntry remote)
         {
-            string remotename = m_filenamestrategy.GenerateFilename(remote);
+            string remotename = GetFullFilename(remote);
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
 
@@ -475,16 +493,7 @@ namespace Duplicati.Library.Main
 
         private void GetInternal(BackupEntry remote, string filename, string filehash)
         {
-            //TODO: Remember to change filename when tar is supported
-            string remotename = m_filenamestrategy.GenerateFilename(remote);
-            if (remote.Type == BackupEntry.EntryType.Manifest)
-                remotename += ".manifest";
-            else
-                remotename += ".zip";
-
-            if (m_encryption != null)
-                remotename += "." + m_encryption.FilenameExtension;
-
+            string remotename = GetFullFilename(remote);
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
             m_statusmessage = "Downloading: " + remotename;
@@ -571,13 +580,7 @@ namespace Duplicati.Library.Main
 
         private void PutInternal(BackupEntry remote, string filename)
         {
-            //TODO: Remember to change filename when tar is supported
-            string remotename = m_filenamestrategy.GenerateFilename(remote);
-            if (remote.Type == BackupEntry.EntryType.Manifest)
-                remotename += ".manifest";
-            else
-                remotename += ".zip";
-
+            string remotename = GetFullFilename(remote);
             m_statusmessage = "Uploading: " + remotename + " (" + Core.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length) + ")";
 
             string encryptedFile = filename;
@@ -586,8 +589,6 @@ namespace Duplicati.Library.Main
             {
                 if (m_encryption != null)
                 {
-                    remotename += "." + m_encryption.FilenameExtension;
-
                     using (Core.TempFile tf = new Duplicati.Library.Core.TempFile()) //If exception is thrown, tf will be deleted
                     {
                         m_encryption.Encrypt(filename, tf);
@@ -672,6 +673,21 @@ namespace Duplicati.Library.Main
                 catch { }
             }
 
+        }
+
+        private string GetFullFilename(BackupEntry remote)
+        {
+            //TODO: Remember to change filename when tar is supported
+            string remotename = m_filenamestrategy.GenerateFilename(remote);
+            if (remote.Type == BackupEntry.EntryType.Manifest)
+                remotename += ".manifest";
+            else
+                remotename += ".zip";
+
+            if (m_encryption != null)
+                remotename += "." + m_encryption.FilenameExtension;
+
+            return remotename;
         }
 
         private void pgs_Progress(int progress)
