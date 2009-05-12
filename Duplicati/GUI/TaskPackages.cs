@@ -129,7 +129,8 @@ namespace Duplicati.GUI
                 l.EndTime = DateTime.Now;
 
                 (this.Task.DataParent as System.Data.LightDatamodel.IDataFetcherCached).CommitAll();
-                Program.DataConnection.CommitAll();
+                if (this.Task.DataParent != Program.DataConnection)
+                    Program.DataConnection.CommitAll();
             }
         }
 
@@ -530,6 +531,10 @@ namespace Duplicati.GUI
                 l.Action = "Backup";
                 l.BeginTime = m_beginTime;
                 l.EndTime = DateTime.Now;
+
+                (this.Task.DataParent as System.Data.LightDatamodel.IDataFetcherCached).CommitAll();
+                if (this.Task.DataParent != Program.DataConnection)
+                    Program.DataConnection.CommitAll();
             }            
         }
 

@@ -62,7 +62,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 if (b != null)
                 {
-                    if (MessageBox.Show(this, b + " You have no repetition set, so the backup will never run.\nThis is fine if you only want to run the backup manually, but it is not reccomended.\nDo you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                    if (MessageBox.Show(this, b + " You have no repetition set, so the backup will never run.\nThis is fine if you only want to run the backup manually, but it is not recomended.\nDo you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                     {
                         args.Cancel = true;
                         return;

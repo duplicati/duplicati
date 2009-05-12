@@ -28,7 +28,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PasswordSettings));
             this.EnablePassword = new System.Windows.Forms.CheckBox();
             this.Password = new System.Windows.Forms.TextBox();
             this.PasswordHelptext = new System.Windows.Forms.Label();
@@ -38,10 +37,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.GeneratePassword = new System.Windows.Forms.Button();
             this.PassphraseLength = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
-            this.UseGPG = new System.Windows.Forms.CheckBox();
             this.UseSettingsAsDefault = new System.Windows.Forms.CheckBox();
+            this.EncryptionMethod = new System.Windows.Forms.GroupBox();
+            this.UseAESEncryption = new System.Windows.Forms.RadioButton();
+            this.UseGPGEncryption = new System.Windows.Forms.RadioButton();
             this.PasswordGeneratorSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PassphraseLength)).BeginInit();
+            this.EncryptionMethod.SuspendLayout();
             this.SuspendLayout();
             // 
             // EnablePassword
@@ -72,7 +74,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.PasswordHelptext.Name = "PasswordHelptext";
             this.PasswordHelptext.Size = new System.Drawing.Size(448, 48);
             this.PasswordHelptext.TabIndex = 3;
-            this.PasswordHelptext.Text = resources.GetString("PasswordHelptext.Text");
+            this.PasswordHelptext.Text = "It is highly recommended that you use a strong password, as that will ensure that" +
+                " no-one but you can retrieve the files. Be sure to write down the password, as t" +
+                "he backups will be useless without it.";
             // 
             // PasswordGeneratorSettings
             // 
@@ -157,33 +161,57 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.label2.TabIndex = 5;
             this.label2.Text = "Characters";
             // 
-            // UseGPG
-            // 
-            this.UseGPG.AutoSize = true;
-            this.UseGPG.Location = new System.Drawing.Point(24, 152);
-            this.UseGPG.Name = "UseGPG";
-            this.UseGPG.Size = new System.Drawing.Size(365, 17);
-            this.UseGPG.TabIndex = 5;
-            this.UseGPG.Text = "Use GNU Privacy Guard for encryption (requires that GnuPG is installed)";
-            this.UseGPG.UseVisualStyleBackColor = true;
-            this.UseGPG.CheckedChanged += new System.EventHandler(this.UseGPG_CheckedChanged);
-            // 
             // UseSettingsAsDefault
             // 
             this.UseSettingsAsDefault.AutoSize = true;
-            this.UseSettingsAsDefault.Location = new System.Drawing.Point(24, 192);
+            this.UseSettingsAsDefault.Location = new System.Drawing.Point(32, 200);
             this.UseSettingsAsDefault.Name = "UseSettingsAsDefault";
             this.UseSettingsAsDefault.Size = new System.Drawing.Size(195, 17);
             this.UseSettingsAsDefault.TabIndex = 6;
             this.UseSettingsAsDefault.Text = "Use these settings on new backups";
             this.UseSettingsAsDefault.UseVisualStyleBackColor = true;
             // 
+            // EncryptionMethod
+            // 
+            this.EncryptionMethod.Controls.Add(this.UseGPGEncryption);
+            this.EncryptionMethod.Controls.Add(this.UseAESEncryption);
+            this.EncryptionMethod.Location = new System.Drawing.Point(24, 144);
+            this.EncryptionMethod.Name = "EncryptionMethod";
+            this.EncryptionMethod.Size = new System.Drawing.Size(448, 48);
+            this.EncryptionMethod.TabIndex = 7;
+            this.EncryptionMethod.TabStop = false;
+            this.EncryptionMethod.Text = "Encryption method";
+            // 
+            // UseAESEncryption
+            // 
+            this.UseAESEncryption.AutoSize = true;
+            this.UseAESEncryption.Checked = true;
+            this.UseAESEncryption.Location = new System.Drawing.Point(16, 24);
+            this.UseAESEncryption.Name = "UseAESEncryption";
+            this.UseAESEncryption.Size = new System.Drawing.Size(85, 17);
+            this.UseAESEncryption.TabIndex = 0;
+            this.UseAESEncryption.TabStop = true;
+            this.UseAESEncryption.Text = "AES (built-in)";
+            this.UseAESEncryption.UseVisualStyleBackColor = true;
+            this.UseAESEncryption.CheckedChanged += new System.EventHandler(this.UseAESEncryption_CheckedChanged);
+            // 
+            // UseGPGEncryption
+            // 
+            this.UseGPGEncryption.AutoSize = true;
+            this.UseGPGEncryption.Location = new System.Drawing.Point(160, 24);
+            this.UseGPGEncryption.Name = "UseGPGEncryption";
+            this.UseGPGEncryption.Size = new System.Drawing.Size(275, 17);
+            this.UseGPGEncryption.TabIndex = 1;
+            this.UseGPGEncryption.Text = "GNU Privacy Guard (requires that GnuPG is installed)";
+            this.UseGPGEncryption.UseVisualStyleBackColor = true;
+            this.UseGPGEncryption.CheckedChanged += new System.EventHandler(this.UseGPGEncryption_CheckedChanged);
+            // 
             // PasswordSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.EncryptionMethod);
             this.Controls.Add(this.UseSettingsAsDefault);
-            this.Controls.Add(this.UseGPG);
             this.Controls.Add(this.PasswordGeneratorSettings);
             this.Controls.Add(this.PasswordHelptext);
             this.Controls.Add(this.Password);
@@ -193,6 +221,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.PasswordGeneratorSettings.ResumeLayout(false);
             this.PasswordGeneratorSettings.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PassphraseLength)).EndInit();
+            this.EncryptionMethod.ResumeLayout(false);
+            this.EncryptionMethod.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -209,7 +239,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ComboBox PasswordCharacterSet;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.CheckBox UseGPG;
         private System.Windows.Forms.CheckBox UseSettingsAsDefault;
+        private System.Windows.Forms.GroupBox EncryptionMethod;
+        private System.Windows.Forms.RadioButton UseGPGEncryption;
+        private System.Windows.Forms.RadioButton UseAESEncryption;
     }
 }

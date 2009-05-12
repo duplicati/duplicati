@@ -74,7 +74,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_warnedNoPassword = true;
             }
 
-            if (!m_warnedNoGPG && UseGPG.Checked)
+            if (!m_warnedNoGPG && UseGPGEncryption.Checked)
             {
                 ApplicationSettings apps = new ApplicationSettings(Program.DataConnection);
                 System.IO.FileInfo fi = null;
@@ -107,7 +107,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_settings["Password:WarnedNoGPG"] = m_warnedNoGPG;
             m_settings["Password:WarnedChanged"] = m_warnedChanged;
             m_wrapper.BackupPassword = EnablePassword.Checked ? Password.Text : "";
-            m_wrapper.GPGEncryption = UseGPG.Checked;
+            m_wrapper.GPGEncryption = UseGPGEncryption.Checked;
             m_wrapper.UseEncryptionAsDefault = UseSettingsAsDefault.Checked;
 
             args.NextPage = new SelectBackend();
@@ -121,7 +121,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup);
                 Password.Text = m_wrapper.BackupPassword;
-                UseGPG.Checked = m_wrapper.GPGEncryption;
+                UseGPGEncryption.Checked = m_wrapper.GPGEncryption;
                 m_settingsChanged = false;
 
                 if (Program.DataConnection.GetObjects<Schedule>().Length == 0)
@@ -144,6 +144,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 UseSettingsAsDefault.Visible = false;
 
                 EnablePassword.Text = "Backup is protected with password";
+                EncryptionMethod.Top = PasswordHelptext.Top;
             }
         }
 
@@ -154,7 +155,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void EnablePassword_CheckedChanged(object sender, EventArgs e)
         {
-            Password.Enabled = UseGPG.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
+            Password.Enabled = EncryptionMethod.Enabled = PasswordGeneratorSettings.Enabled = EnablePassword.Checked;
             m_warnedNoPassword = false;
             m_settingsChanged = true;
         }
@@ -163,12 +164,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             m_settingsChanged = true;
             m_warnedNoPassword = false;
-        }
-
-        private void UseGPG_CheckedChanged(object sender, EventArgs e)
-        {
-            m_settingsChanged = true;
-            m_warnedNoGPG = false;
         }
 
         public override string HelpText
@@ -180,6 +175,17 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 else
                     return "Enter the encryption settings that were used to create the backup originally";
             }
+        }
+
+        private void UseAESEncryption_CheckedChanged(object sender, EventArgs e)
+        {
+            m_settingsChanged = true;
+        }
+
+        private void UseGPGEncryption_CheckedChanged(object sender, EventArgs e)
+        {
+            m_settingsChanged = true;
+            m_warnedNoGPG = false;
         }
 
     }

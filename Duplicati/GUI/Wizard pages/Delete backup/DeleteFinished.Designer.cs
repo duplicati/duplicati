@@ -31,6 +31,7 @@ namespace Duplicati.GUI.Wizard_pages.Delete_backup
             this.Summary = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // Summary
@@ -41,7 +42,7 @@ namespace Duplicati.GUI.Wizard_pages.Delete_backup
             this.Summary.Name = "Summary";
             this.Summary.ReadOnly = true;
             this.Summary.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.Summary.Size = new System.Drawing.Size(456, 136);
+            this.Summary.Size = new System.Drawing.Size(456, 104);
             this.Summary.TabIndex = 5;
             // 
             // label1
@@ -57,16 +58,27 @@ namespace Duplicati.GUI.Wizard_pages.Delete_backup
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(24, 192);
+            this.label2.Location = new System.Drawing.Point(24, 152);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(388, 13);
             this.label2.TabIndex = 6;
             this.label2.Text = "Warning: You cannot restore the files after the backup is deleted!!!";
             // 
+            // label3
+            // 
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(24, 176);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(456, 32);
+            this.label3.TabIndex = 7;
+            this.label3.Text = "Note that the actual files will not be removed from the storage backend, you must" +
+                " remove the files manually.";
+            // 
             // DeleteFinished
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.Summary);
             this.Controls.Add(this.label1);
@@ -82,5 +94,6 @@ namespace Duplicati.GUI.Wizard_pages.Delete_backup
         public System.Windows.Forms.TextBox Summary;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
     }
 }

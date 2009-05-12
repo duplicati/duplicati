@@ -33,7 +33,6 @@ namespace Duplicati.GUI
             this.GPGPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -55,15 +54,19 @@ namespace Duplicati.GUI
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.PasswordPanel = new System.Windows.Forms.Panel();
             this.label5 = new System.Windows.Forms.Label();
-            this.CommonPasswordUseGPG = new System.Windows.Forms.CheckBox();
             this.CommonPassword = new System.Windows.Forms.TextBox();
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
+            this.EncryptionMethod = new System.Windows.Forms.GroupBox();
+            this.UseGPGEncryption = new System.Windows.Forms.RadioButton();
+            this.UseAESEncryption = new System.Windows.Forms.RadioButton();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.PasswordPanel.SuspendLayout();
+            this.EncryptionMethod.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -107,15 +110,6 @@ namespace Duplicati.GUI
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "User interface settings";
             // 
-            // RecentDuration
-            // 
-            this.RecentDuration.Location = new System.Drawing.Point(208, 24);
-            this.RecentDuration.Name = "RecentDuration";
-            this.RecentDuration.Size = new System.Drawing.Size(221, 21);
-            this.RecentDuration.TabIndex = 1;
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
-            // 
             // groupBox2
             // 
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
@@ -134,7 +128,7 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.BrowsePGP);
             this.groupBox2.Controls.Add(this.GPGPath);
             this.groupBox2.Controls.Add(this.label2);
-            this.groupBox2.Location = new System.Drawing.Point(8, 176);
+            this.groupBox2.Location = new System.Drawing.Point(8, 232);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(437, 152);
             this.groupBox2.TabIndex = 5;
@@ -266,7 +260,7 @@ namespace Duplicati.GUI
             // OKBtn
             // 
             this.OKBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.OKBtn.Location = new System.Drawing.Point(135, 338);
+            this.OKBtn.Location = new System.Drawing.Point(135, 386);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(80, 24);
             this.OKBtn.TabIndex = 6;
@@ -278,7 +272,7 @@ namespace Duplicati.GUI
             // 
             this.CancelBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(240, 336);
+            this.CancelBtn.Location = new System.Drawing.Point(240, 384);
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.Size = new System.Drawing.Size(72, 24);
             this.CancelBtn.TabIndex = 7;
@@ -307,19 +301,19 @@ namespace Duplicati.GUI
             this.groupBox3.Controls.Add(this.UseCommonPassword);
             this.groupBox3.Location = new System.Drawing.Point(8, 72);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(437, 100);
+            this.groupBox3.Size = new System.Drawing.Size(437, 144);
             this.groupBox3.TabIndex = 8;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Password settings applied to new backups";
             // 
             // PasswordPanel
             // 
+            this.PasswordPanel.Controls.Add(this.EncryptionMethod);
             this.PasswordPanel.Controls.Add(this.label5);
-            this.PasswordPanel.Controls.Add(this.CommonPasswordUseGPG);
             this.PasswordPanel.Controls.Add(this.CommonPassword);
             this.PasswordPanel.Location = new System.Drawing.Point(8, 40);
             this.PasswordPanel.Name = "PasswordPanel";
-            this.PasswordPanel.Size = new System.Drawing.Size(424, 56);
+            this.PasswordPanel.Size = new System.Drawing.Size(424, 96);
             this.PasswordPanel.TabIndex = 3;
             // 
             // label5
@@ -330,17 +324,6 @@ namespace Duplicati.GUI
             this.label5.Size = new System.Drawing.Size(53, 13);
             this.label5.TabIndex = 0;
             this.label5.Text = "Password";
-            // 
-            // CommonPasswordUseGPG
-            // 
-            this.CommonPasswordUseGPG.AutoSize = true;
-            this.CommonPasswordUseGPG.Location = new System.Drawing.Point(24, 32);
-            this.CommonPasswordUseGPG.Name = "CommonPasswordUseGPG";
-            this.CommonPasswordUseGPG.Size = new System.Drawing.Size(210, 17);
-            this.CommonPasswordUseGPG.TabIndex = 2;
-            this.CommonPasswordUseGPG.Text = "Use the GNU Privacy Guard to encrypt";
-            this.CommonPasswordUseGPG.UseVisualStyleBackColor = true;
-            this.CommonPasswordUseGPG.CheckedChanged += new System.EventHandler(this.CommonPasswordUseGPG_CheckedChanged);
             // 
             // CommonPassword
             // 
@@ -368,12 +351,56 @@ namespace Duplicati.GUI
             this.CacheSizeCalculator.DoWork += new System.ComponentModel.DoWorkEventHandler(this.CacheSizeCalculator_DoWork);
             this.CacheSizeCalculator.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.CacheSizeCalculator_RunWorkerCompleted);
             // 
+            // RecentDuration
+            // 
+            this.RecentDuration.Location = new System.Drawing.Point(208, 24);
+            this.RecentDuration.Name = "RecentDuration";
+            this.RecentDuration.Size = new System.Drawing.Size(221, 21);
+            this.RecentDuration.TabIndex = 1;
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
+            // 
+            // EncryptionMethod
+            // 
+            this.EncryptionMethod.Controls.Add(this.UseGPGEncryption);
+            this.EncryptionMethod.Controls.Add(this.UseAESEncryption);
+            this.EncryptionMethod.Location = new System.Drawing.Point(24, 40);
+            this.EncryptionMethod.Name = "EncryptionMethod";
+            this.EncryptionMethod.Size = new System.Drawing.Size(392, 48);
+            this.EncryptionMethod.TabIndex = 8;
+            this.EncryptionMethod.TabStop = false;
+            this.EncryptionMethod.Text = "Encryption method";
+            // 
+            // UseGPGEncryption
+            // 
+            this.UseGPGEncryption.AutoSize = true;
+            this.UseGPGEncryption.Location = new System.Drawing.Point(136, 24);
+            this.UseGPGEncryption.Name = "UseGPGEncryption";
+            this.UseGPGEncryption.Size = new System.Drawing.Size(165, 17);
+            this.UseGPGEncryption.TabIndex = 1;
+            this.UseGPGEncryption.Text = "GNU Privacy Guard (external)";
+            this.UseGPGEncryption.UseVisualStyleBackColor = true;
+            this.UseGPGEncryption.CheckedChanged += new System.EventHandler(this.UseGPGEncryption_CheckedChanged);
+            // 
+            // UseAESEncryption
+            // 
+            this.UseAESEncryption.AutoSize = true;
+            this.UseAESEncryption.Checked = true;
+            this.UseAESEncryption.Location = new System.Drawing.Point(16, 24);
+            this.UseAESEncryption.Name = "UseAESEncryption";
+            this.UseAESEncryption.Size = new System.Drawing.Size(85, 17);
+            this.UseAESEncryption.TabIndex = 0;
+            this.UseAESEncryption.TabStop = true;
+            this.UseAESEncryption.Text = "AES (built-in)";
+            this.UseAESEncryption.UseVisualStyleBackColor = true;
+            this.UseAESEncryption.CheckedChanged += new System.EventHandler(this.UseAESEncryption_CheckedChanged);
+            // 
             // ApplicationSetup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(453, 376);
+            this.ClientSize = new System.Drawing.Size(453, 424);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
@@ -396,6 +423,8 @@ namespace Duplicati.GUI
             this.groupBox3.PerformLayout();
             this.PasswordPanel.ResumeLayout(false);
             this.PasswordPanel.PerformLayout();
+            this.EncryptionMethod.ResumeLayout(false);
+            this.EncryptionMethod.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -421,7 +450,6 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.FolderBrowserDialog BrowseTempPath;
         private System.Windows.Forms.GroupBox groupBox3;
-        private System.Windows.Forms.CheckBox CommonPasswordUseGPG;
         private System.Windows.Forms.TextBox CommonPassword;
         private System.Windows.Forms.CheckBox UseCommonPassword;
         private System.Windows.Forms.Panel PasswordPanel;
@@ -433,5 +461,8 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Label CacheSizeLabel;
         private System.Windows.Forms.Button ClearCacheButton;
         private System.ComponentModel.BackgroundWorker CacheSizeCalculator;
+        private System.Windows.Forms.GroupBox EncryptionMethod;
+        private System.Windows.Forms.RadioButton UseGPGEncryption;
+        private System.Windows.Forms.RadioButton UseAESEncryption;
     }
 }

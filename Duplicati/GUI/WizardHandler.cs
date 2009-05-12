@@ -120,6 +120,7 @@ namespace Duplicati.GUI
                 items.AddRange(Program.DataConnection.FindObjectRelations(schedule));
                 foreach(IDataClass o in items)
                     Program.DataConnection.DeleteObject(o);
+
                 Program.DataConnection.Commit(items.ToArray());
             }
             else if (m_form.CurrentPage is Wizard_pages.RestoreSetup.FinishedRestoreSetup)
