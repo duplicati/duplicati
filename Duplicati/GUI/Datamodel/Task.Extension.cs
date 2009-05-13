@@ -144,6 +144,9 @@ namespace Duplicati.Datamodel
             }
             set
             {
+                if (value == this.EncodedFilter)
+                    return;
+
                 //Delete previous ones
                 this.SortedFilters = new TaskFilter[0];
 
