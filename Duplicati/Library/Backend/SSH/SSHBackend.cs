@@ -71,7 +71,20 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            m_path = u.AbsolutePath.Substring(1);
+            m_path = u.AbsolutePath;
+            
+            if (m_isLinux)
+            {
+                //HACK: "AbsolutePath" strips extra slashes under mono, so we re-add them here
+                int ix = url.IndexOf(m_path);
+                if (ix > 0 && url[ix - 1] == '/')
+                        m_path = "/" + m_path;
+            }
+
+            //Remove 1 leading slash so server/path is mapped to "path",
+            // and server//path is mapped to "/path"
+            m_path = m_path.Substring(1);
+
             if (!m_path.EndsWith("/"))
                 m_path += "/";
 
@@ -81,7 +94,7 @@ namespace Duplicati.Library.Backend
                 m_sftp = options["sftp-command"];
             else
             {
-                if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                if (m_isLinux)
                     m_sftp = "sftp";
                 else
                     m_sftp = "psftp.exe";
@@ -250,7 +263,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an SSH based backend, using SCP and SFTP. Allowed formats are \"ssh://hostname/folder\" or \"ssh://username:password@hostname/folder\". NOTE: This backend does not support throttling uploads or downloads, and requires that sftp and scp are installed (using putty for windows).";
+                return "This backend can read and write data to an SSH based backend, using SFTP. Allowed formats are \"ssh://hostname/folder\" or \"ssh://username:password@hostname/folder\". NOTE: This backend does not support throttling uploads or downloads, and requires that sftp is installed (using putty for windows).";
             }
         }
 
@@ -307,11 +320,11 @@ namespace Duplicati.Library.Backend
                     //we wrap the command with expect, which allows us to use stdin/stdout
                     p.StartInfo.FileName = "expect";
 
-                    p.StartInfo.Arguments = @"-c ""set timeout 30"" -c ""spawn \""" + m_sftp + @"\"" " + server + " " + m_ssh_options + @""" -c ""interact {~~}""";
+                    p.StartInfo.Arguments = @"-c ""set timeout 30"" -c ""spawn \""" + System.Environment.ExpandEnvironmentVariables(m_sftp) + @"\"" " + server + " " + m_ssh_options + @""" -c ""interact {~~}""";
                 }
                 else
                 {
-                    p.StartInfo.FileName = m_sftp;
+                    p.StartInfo.FileName = System.Environment.ExpandEnvironmentVariables(m_sftp);
                     p.StartInfo.Arguments = server + " " + m_ssh_options;
                 }
 

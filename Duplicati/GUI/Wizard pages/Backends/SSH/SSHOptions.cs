@@ -122,8 +122,10 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         {
             if (ValidateForm())
             {
+                Cursor c = this.Cursor;
                 try
                 {
+                    this.Cursor = Cursors.WaitCursor;
                     System.Data.LightDatamodel.IDataFetcherCached con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
                     Datamodel.Backends.SSH ssh = new Duplicati.Datamodel.Backends.SSH(con.Add<Task>());
 
@@ -139,6 +141,9 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     ssh.GetOptions(options);
 
+                    //Make sure that "testing" always produce a log
+                    options.Add("debug-to-console", "");
+
                     string[] files = Duplicati.Library.Main.Interface.List(target, options);
 
                     MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -149,6 +154,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
                     MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 }
+                this.Cursor = c;
             }
         }
 

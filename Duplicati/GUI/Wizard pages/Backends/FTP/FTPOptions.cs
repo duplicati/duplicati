@@ -172,8 +172,10 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         {
             if (ValidateForm())
             {
+                Cursor c = this.Cursor;
                 try
                 {
+                    this.Cursor = Cursors.WaitCursor;
                     System.Data.LightDatamodel.IDataFetcherCached con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
                     Datamodel.Backends.FTP ftp = new Duplicati.Datamodel.Backends.FTP(con.Add<Task>());
 
@@ -196,6 +198,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
                 {
                     MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+                this.Cursor = c;
             }
         }
 

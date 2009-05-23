@@ -185,8 +185,10 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
         {
             if (ValidateForm())
             {
+                Cursor c = this.Cursor;
                 try
                 {
+                    this.Cursor = Cursors.WaitCursor;
                     System.Data.LightDatamodel.IDataFetcherCached con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
                     Datamodel.Backends.WEBDAV webdav = new Duplicati.Datamodel.Backends.WEBDAV(con.Add<Datamodel.Task>());
 
@@ -210,6 +212,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
                 {
                     MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+                this.Cursor = c;
             }
         }
 
