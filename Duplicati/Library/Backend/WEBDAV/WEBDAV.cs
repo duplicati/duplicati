@@ -105,7 +105,7 @@ namespace Duplicati.Library.Backend
                 if (name.Length <= m_url.Length)
                     continue;
 
-                name = System.Web.HttpUtility.UrlDecode(name.Substring(m_url.Length));
+                name = System.Web.HttpUtility.UrlDecode(name.Substring(name.LastIndexOf("/") + 1));
 
                 long size = 0;
                 DateTime lastAccess = new DateTime();
