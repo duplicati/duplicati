@@ -517,14 +517,14 @@ namespace Duplicati.Library.Main
                 List<BackupEntry> entries = backend.GetBackupSets();
                 List<BackupEntry> toremove = new List<BackupEntry>();
 
-                while (entries.Count > 0 && entries[0].Time > expires)
+                while (entries.Count > 0 && entries[0].Time <= expires)
                 {
                     BackupEntry be = entries[0];
                     entries.RemoveAt(0);
 
                     bool hasNewer = false;
                     foreach (BackupEntry bex in be.Incrementals)
-                        if (bex.Time < expires)
+                        if (bex.Time >= expires)
                         {
                             hasNewer = true;
                             break;
@@ -536,7 +536,7 @@ namespace Duplicati.Library.Main
                         t.Insert(0, be);
 
                         for (int i = 0; i < t.Count; i++)
-                            if (t[i].Time > expires)
+                            if (t[i].Time <= expires)
                                 sb.AppendLine("Not deleting backup at time: " + t[i].Time.ToString(System.Globalization.CultureInfo.InvariantCulture) + ", because later backups depend on it");
 
                         break;
