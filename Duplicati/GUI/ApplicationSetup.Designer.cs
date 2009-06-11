@@ -33,6 +33,7 @@ namespace Duplicati.GUI
             this.GPGPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -53,15 +54,14 @@ namespace Duplicati.GUI
             this.BrowseTempPath = new System.Windows.Forms.FolderBrowserDialog();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.PasswordPanel = new System.Windows.Forms.Panel();
+            this.EncryptionMethod = new System.Windows.Forms.GroupBox();
+            this.UseGPGEncryption = new System.Windows.Forms.RadioButton();
+            this.UseAESEncryption = new System.Windows.Forms.RadioButton();
             this.label5 = new System.Windows.Forms.Label();
             this.CommonPassword = new System.Windows.Forms.TextBox();
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
-            this.EncryptionMethod = new System.Windows.Forms.GroupBox();
-            this.UseGPGEncryption = new System.Windows.Forms.RadioButton();
-            this.UseAESEncryption = new System.Windows.Forms.RadioButton();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -71,49 +71,59 @@ namespace Duplicati.GUI
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(8, 24);
+            this.label1.AccessibleDescription = null;
+            this.label1.AccessibleName = null;
+            resources.ApplyResources(this.label1, "label1");
+            this.label1.Font = null;
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(188, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Time a log is shown in recent backups";
             // 
             // GPGPath
             // 
-            this.GPGPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.GPGPath.Location = new System.Drawing.Point(128, 24);
+            this.GPGPath.AccessibleDescription = null;
+            this.GPGPath.AccessibleName = null;
+            resources.ApplyResources(this.GPGPath, "GPGPath");
+            this.GPGPath.BackgroundImage = null;
+            this.GPGPath.Font = null;
             this.GPGPath.Name = "GPGPath";
-            this.GPGPath.Size = new System.Drawing.Size(272, 20);
-            this.GPGPath.TabIndex = 3;
             this.GPGPath.TextChanged += new System.EventHandler(this.GPGPath_TextChanged);
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(8, 24);
+            this.label2.AccessibleDescription = null;
+            this.label2.AccessibleName = null;
+            resources.ApplyResources(this.label2, "label2");
+            this.label2.Font = null;
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(54, 13);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "GPG path";
             // 
             // groupBox1
             // 
-            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox1.AccessibleDescription = null;
+            this.groupBox1.AccessibleName = null;
+            resources.ApplyResources(this.groupBox1, "groupBox1");
+            this.groupBox1.BackgroundImage = null;
             this.groupBox1.Controls.Add(this.RecentDuration);
             this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Location = new System.Drawing.Point(8, 8);
+            this.groupBox1.Font = null;
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(437, 56);
-            this.groupBox1.TabIndex = 4;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "User interface settings";
+            // 
+            // RecentDuration
+            // 
+            this.RecentDuration.AccessibleDescription = null;
+            this.RecentDuration.AccessibleName = null;
+            resources.ApplyResources(this.RecentDuration, "RecentDuration");
+            this.RecentDuration.BackgroundImage = null;
+            this.RecentDuration.Font = null;
+            this.RecentDuration.Name = "RecentDuration";
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
             // 
             // groupBox2
             // 
-            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox2.AccessibleDescription = null;
+            this.groupBox2.AccessibleName = null;
+            resources.ApplyResources(this.groupBox2, "groupBox2");
+            this.groupBox2.BackgroundImage = null;
             this.groupBox2.Controls.Add(this.CacheSizeLabel);
             this.groupBox2.Controls.Add(this.ClearCacheButton);
             this.groupBox2.Controls.Add(this.SignatureCacheEnabled);
@@ -128,222 +138,261 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.BrowsePGP);
             this.groupBox2.Controls.Add(this.GPGPath);
             this.groupBox2.Controls.Add(this.label2);
-            this.groupBox2.Location = new System.Drawing.Point(8, 232);
+            this.groupBox2.Font = null;
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(437, 152);
-            this.groupBox2.TabIndex = 5;
             this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "Path settings (Advanced)";
             // 
             // CacheSizeLabel
             // 
-            this.CacheSizeLabel.AutoSize = true;
-            this.CacheSizeLabel.Location = new System.Drawing.Point(128, 128);
+            this.CacheSizeLabel.AccessibleDescription = null;
+            this.CacheSizeLabel.AccessibleName = null;
+            resources.ApplyResources(this.CacheSizeLabel, "CacheSizeLabel");
+            this.CacheSizeLabel.Font = null;
             this.CacheSizeLabel.Name = "CacheSizeLabel";
-            this.CacheSizeLabel.Size = new System.Drawing.Size(125, 13);
-            this.CacheSizeLabel.TabIndex = 28;
-            this.CacheSizeLabel.Text = "Calculating cache size ...";
             // 
             // ClearCacheButton
             // 
-            this.ClearCacheButton.Location = new System.Drawing.Point(336, 120);
+            this.ClearCacheButton.AccessibleDescription = null;
+            this.ClearCacheButton.AccessibleName = null;
+            resources.ApplyResources(this.ClearCacheButton, "ClearCacheButton");
+            this.ClearCacheButton.BackgroundImage = null;
+            this.ClearCacheButton.Font = null;
             this.ClearCacheButton.Name = "ClearCacheButton";
-            this.ClearCacheButton.Size = new System.Drawing.Size(88, 23);
-            this.ClearCacheButton.TabIndex = 27;
-            this.ClearCacheButton.Text = "Clear cache";
             this.ClearCacheButton.UseVisualStyleBackColor = true;
             this.ClearCacheButton.Click += new System.EventHandler(this.ClearCacheButton_Click);
             // 
             // SignatureCacheEnabled
             // 
-            this.SignatureCacheEnabled.AutoSize = true;
-            this.SignatureCacheEnabled.Location = new System.Drawing.Point(8, 96);
+            this.SignatureCacheEnabled.AccessibleDescription = null;
+            this.SignatureCacheEnabled.AccessibleName = null;
+            resources.ApplyResources(this.SignatureCacheEnabled, "SignatureCacheEnabled");
+            this.SignatureCacheEnabled.BackgroundImage = null;
+            this.SignatureCacheEnabled.Font = null;
             this.SignatureCacheEnabled.Name = "SignatureCacheEnabled";
-            this.SignatureCacheEnabled.Size = new System.Drawing.Size(104, 17);
-            this.SignatureCacheEnabled.TabIndex = 26;
-            this.SignatureCacheEnabled.Text = "Signature cache";
             this.SignatureCacheEnabled.UseVisualStyleBackColor = true;
             this.SignatureCacheEnabled.CheckedChanged += new System.EventHandler(this.SignatureCacheEnabled_CheckedChanged);
             // 
             // SignatureCachePathBrowse
             // 
-            this.SignatureCachePathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.SignatureCachePathBrowse.Location = new System.Drawing.Point(400, 96);
+            this.SignatureCachePathBrowse.AccessibleDescription = null;
+            this.SignatureCachePathBrowse.AccessibleName = null;
+            resources.ApplyResources(this.SignatureCachePathBrowse, "SignatureCachePathBrowse");
+            this.SignatureCachePathBrowse.BackgroundImage = null;
+            this.SignatureCachePathBrowse.Font = null;
             this.SignatureCachePathBrowse.Name = "SignatureCachePathBrowse";
-            this.SignatureCachePathBrowse.Size = new System.Drawing.Size(24, 20);
-            this.SignatureCachePathBrowse.TabIndex = 25;
-            this.SignatureCachePathBrowse.Text = "...";
             this.SignatureCachePathBrowse.UseVisualStyleBackColor = true;
             this.SignatureCachePathBrowse.Click += new System.EventHandler(this.SignatureCachePathBrowse_Click);
             // 
             // SignatureCachePath
             // 
-            this.SignatureCachePath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.SignatureCachePath.Location = new System.Drawing.Point(128, 96);
+            this.SignatureCachePath.AccessibleDescription = null;
+            this.SignatureCachePath.AccessibleName = null;
+            resources.ApplyResources(this.SignatureCachePath, "SignatureCachePath");
+            this.SignatureCachePath.BackgroundImage = null;
+            this.SignatureCachePath.Font = null;
             this.SignatureCachePath.Name = "SignatureCachePath";
-            this.SignatureCachePath.Size = new System.Drawing.Size(272, 20);
-            this.SignatureCachePath.TabIndex = 24;
             this.SignatureCachePath.TextChanged += new System.EventHandler(this.SignatureCachePath_TextChanged);
             // 
             // TempPathBrowse
             // 
-            this.TempPathBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.TempPathBrowse.Location = new System.Drawing.Point(400, 72);
+            this.TempPathBrowse.AccessibleDescription = null;
+            this.TempPathBrowse.AccessibleName = null;
+            resources.ApplyResources(this.TempPathBrowse, "TempPathBrowse");
+            this.TempPathBrowse.BackgroundImage = null;
+            this.TempPathBrowse.Font = null;
             this.TempPathBrowse.Name = "TempPathBrowse";
-            this.TempPathBrowse.Size = new System.Drawing.Size(24, 20);
-            this.TempPathBrowse.TabIndex = 22;
-            this.TempPathBrowse.Text = "...";
             this.TempPathBrowse.UseVisualStyleBackColor = true;
             this.TempPathBrowse.Click += new System.EventHandler(this.TempPathBrowse_Click);
             // 
             // TempPath
             // 
-            this.TempPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.TempPath.Location = new System.Drawing.Point(128, 72);
+            this.TempPath.AccessibleDescription = null;
+            this.TempPath.AccessibleName = null;
+            resources.ApplyResources(this.TempPath, "TempPath");
+            this.TempPath.BackgroundImage = null;
+            this.TempPath.Font = null;
             this.TempPath.Name = "TempPath";
-            this.TempPath.Size = new System.Drawing.Size(272, 20);
-            this.TempPath.TabIndex = 21;
             this.TempPath.TextChanged += new System.EventHandler(this.TempPath_TextChanged);
             // 
             // label4
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(8, 72);
+            this.label4.AccessibleDescription = null;
+            this.label4.AccessibleName = null;
+            resources.ApplyResources(this.label4, "label4");
+            this.label4.Font = null;
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(86, 13);
-            this.label4.TabIndex = 20;
-            this.label4.Text = "Temporary folder";
             // 
             // BrowseSFTP
             // 
-            this.BrowseSFTP.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.BrowseSFTP.Location = new System.Drawing.Point(400, 48);
+            this.BrowseSFTP.AccessibleDescription = null;
+            this.BrowseSFTP.AccessibleName = null;
+            resources.ApplyResources(this.BrowseSFTP, "BrowseSFTP");
+            this.BrowseSFTP.BackgroundImage = null;
+            this.BrowseSFTP.Font = null;
             this.BrowseSFTP.Name = "BrowseSFTP";
-            this.BrowseSFTP.Size = new System.Drawing.Size(24, 20);
-            this.BrowseSFTP.TabIndex = 16;
-            this.BrowseSFTP.Text = "...";
             this.BrowseSFTP.UseVisualStyleBackColor = true;
             this.BrowseSFTP.Click += new System.EventHandler(this.BrowseSFTP_Click);
             // 
             // SFTPPath
             // 
-            this.SFTPPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.SFTPPath.Location = new System.Drawing.Point(128, 48);
+            this.SFTPPath.AccessibleDescription = null;
+            this.SFTPPath.AccessibleName = null;
+            resources.ApplyResources(this.SFTPPath, "SFTPPath");
+            this.SFTPPath.BackgroundImage = null;
+            this.SFTPPath.Font = null;
             this.SFTPPath.Name = "SFTPPath";
-            this.SFTPPath.Size = new System.Drawing.Size(272, 20);
-            this.SFTPPath.TabIndex = 15;
             this.SFTPPath.TextChanged += new System.EventHandler(this.SFTPPath_TextChanged);
             // 
             // label6
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(8, 48);
+            this.label6.AccessibleDescription = null;
+            this.label6.AccessibleName = null;
+            resources.ApplyResources(this.label6, "label6");
+            this.label6.Font = null;
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(48, 13);
-            this.label6.TabIndex = 14;
-            this.label6.Text = "sftp path";
             // 
             // BrowsePGP
             // 
-            this.BrowsePGP.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.BrowsePGP.Location = new System.Drawing.Point(400, 24);
+            this.BrowsePGP.AccessibleDescription = null;
+            this.BrowsePGP.AccessibleName = null;
+            resources.ApplyResources(this.BrowsePGP, "BrowsePGP");
+            this.BrowsePGP.BackgroundImage = null;
+            this.BrowsePGP.Font = null;
             this.BrowsePGP.Name = "BrowsePGP";
-            this.BrowsePGP.Size = new System.Drawing.Size(24, 20);
-            this.BrowsePGP.TabIndex = 8;
-            this.BrowsePGP.Text = "...";
             this.BrowsePGP.UseVisualStyleBackColor = true;
             this.BrowsePGP.Click += new System.EventHandler(this.BrowseGPG_Click);
             // 
             // OKBtn
             // 
-            this.OKBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.OKBtn.Location = new System.Drawing.Point(135, 386);
+            this.OKBtn.AccessibleDescription = null;
+            this.OKBtn.AccessibleName = null;
+            resources.ApplyResources(this.OKBtn, "OKBtn");
+            this.OKBtn.BackgroundImage = null;
+            this.OKBtn.Font = null;
             this.OKBtn.Name = "OKBtn";
-            this.OKBtn.Size = new System.Drawing.Size(80, 24);
-            this.OKBtn.TabIndex = 6;
-            this.OKBtn.Text = "OK";
             this.OKBtn.UseVisualStyleBackColor = true;
             this.OKBtn.Click += new System.EventHandler(this.OKBtn_Click);
             // 
             // CancelBtn
             // 
-            this.CancelBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.CancelBtn.AccessibleDescription = null;
+            this.CancelBtn.AccessibleName = null;
+            resources.ApplyResources(this.CancelBtn, "CancelBtn");
+            this.CancelBtn.BackgroundImage = null;
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(240, 384);
+            this.CancelBtn.Font = null;
             this.CancelBtn.Name = "CancelBtn";
-            this.CancelBtn.Size = new System.Drawing.Size(72, 24);
-            this.CancelBtn.TabIndex = 7;
-            this.CancelBtn.Text = "Cancel";
             this.CancelBtn.UseVisualStyleBackColor = true;
             // 
             // BrowseGPGDialog
             // 
             this.BrowseGPGDialog.AddExtension = false;
             this.BrowseGPGDialog.FileName = "gpg.exe";
-            this.BrowseGPGDialog.Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*";
-            this.BrowseGPGDialog.Title = "Select the GNU Privacy Guard executable";
+            resources.ApplyResources(this.BrowseGPGDialog, "BrowseGPGDialog");
             // 
             // BrowseSFTPDialog
             // 
             this.BrowseSFTPDialog.AddExtension = false;
             this.BrowseSFTPDialog.FileName = "psftp.exe";
-            this.BrowseSFTPDialog.Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*";
-            this.BrowseSFTPDialog.Title = "Select the SFTP executable";
+            resources.ApplyResources(this.BrowseSFTPDialog, "BrowseSFTPDialog");
+            // 
+            // BrowseTempPath
+            // 
+            resources.ApplyResources(this.BrowseTempPath, "BrowseTempPath");
             // 
             // groupBox3
             // 
-            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox3.AccessibleDescription = null;
+            this.groupBox3.AccessibleName = null;
+            resources.ApplyResources(this.groupBox3, "groupBox3");
+            this.groupBox3.BackgroundImage = null;
             this.groupBox3.Controls.Add(this.PasswordPanel);
             this.groupBox3.Controls.Add(this.UseCommonPassword);
-            this.groupBox3.Location = new System.Drawing.Point(8, 72);
+            this.groupBox3.Font = null;
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(437, 144);
-            this.groupBox3.TabIndex = 8;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Password settings applied to new backups";
             // 
             // PasswordPanel
             // 
+            this.PasswordPanel.AccessibleDescription = null;
+            this.PasswordPanel.AccessibleName = null;
+            resources.ApplyResources(this.PasswordPanel, "PasswordPanel");
+            this.PasswordPanel.BackgroundImage = null;
             this.PasswordPanel.Controls.Add(this.EncryptionMethod);
             this.PasswordPanel.Controls.Add(this.label5);
             this.PasswordPanel.Controls.Add(this.CommonPassword);
-            this.PasswordPanel.Location = new System.Drawing.Point(8, 40);
+            this.PasswordPanel.Font = null;
             this.PasswordPanel.Name = "PasswordPanel";
-            this.PasswordPanel.Size = new System.Drawing.Size(424, 96);
-            this.PasswordPanel.TabIndex = 3;
+            // 
+            // EncryptionMethod
+            // 
+            this.EncryptionMethod.AccessibleDescription = null;
+            this.EncryptionMethod.AccessibleName = null;
+            resources.ApplyResources(this.EncryptionMethod, "EncryptionMethod");
+            this.EncryptionMethod.BackgroundImage = null;
+            this.EncryptionMethod.Controls.Add(this.UseGPGEncryption);
+            this.EncryptionMethod.Controls.Add(this.UseAESEncryption);
+            this.EncryptionMethod.Font = null;
+            this.EncryptionMethod.Name = "EncryptionMethod";
+            this.EncryptionMethod.TabStop = false;
+            // 
+            // UseGPGEncryption
+            // 
+            this.UseGPGEncryption.AccessibleDescription = null;
+            this.UseGPGEncryption.AccessibleName = null;
+            resources.ApplyResources(this.UseGPGEncryption, "UseGPGEncryption");
+            this.UseGPGEncryption.BackgroundImage = null;
+            this.UseGPGEncryption.Font = null;
+            this.UseGPGEncryption.Name = "UseGPGEncryption";
+            this.UseGPGEncryption.UseVisualStyleBackColor = true;
+            this.UseGPGEncryption.CheckedChanged += new System.EventHandler(this.UseGPGEncryption_CheckedChanged);
+            // 
+            // UseAESEncryption
+            // 
+            this.UseAESEncryption.AccessibleDescription = null;
+            this.UseAESEncryption.AccessibleName = null;
+            resources.ApplyResources(this.UseAESEncryption, "UseAESEncryption");
+            this.UseAESEncryption.BackgroundImage = null;
+            this.UseAESEncryption.Checked = true;
+            this.UseAESEncryption.Font = null;
+            this.UseAESEncryption.Name = "UseAESEncryption";
+            this.UseAESEncryption.TabStop = true;
+            this.UseAESEncryption.UseVisualStyleBackColor = true;
+            this.UseAESEncryption.CheckedChanged += new System.EventHandler(this.UseAESEncryption_CheckedChanged);
             // 
             // label5
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(24, 8);
+            this.label5.AccessibleDescription = null;
+            this.label5.AccessibleName = null;
+            resources.ApplyResources(this.label5, "label5");
+            this.label5.Font = null;
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(53, 13);
-            this.label5.TabIndex = 0;
-            this.label5.Text = "Password";
             // 
             // CommonPassword
             // 
-            this.CommonPassword.Location = new System.Drawing.Point(120, 8);
+            this.CommonPassword.AccessibleDescription = null;
+            this.CommonPassword.AccessibleName = null;
+            resources.ApplyResources(this.CommonPassword, "CommonPassword");
+            this.CommonPassword.BackgroundImage = null;
+            this.CommonPassword.Font = null;
             this.CommonPassword.Name = "CommonPassword";
-            this.CommonPassword.Size = new System.Drawing.Size(296, 20);
-            this.CommonPassword.TabIndex = 1;
             this.CommonPassword.UseSystemPasswordChar = true;
             this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
             // 
             // UseCommonPassword
             // 
-            this.UseCommonPassword.AutoSize = true;
-            this.UseCommonPassword.Location = new System.Drawing.Point(16, 24);
+            this.UseCommonPassword.AccessibleDescription = null;
+            this.UseCommonPassword.AccessibleName = null;
+            resources.ApplyResources(this.UseCommonPassword, "UseCommonPassword");
+            this.UseCommonPassword.BackgroundImage = null;
+            this.UseCommonPassword.Font = null;
             this.UseCommonPassword.Name = "UseCommonPassword";
-            this.UseCommonPassword.Size = new System.Drawing.Size(194, 17);
-            this.UseCommonPassword.TabIndex = 0;
-            this.UseCommonPassword.Text = "Use a password to protect backups";
             this.UseCommonPassword.UseVisualStyleBackColor = true;
             this.UseCommonPassword.CheckedChanged += new System.EventHandler(this.UseCommonPassword_CheckedChanged);
+            // 
+            // BrowseSignatureCachePath
+            // 
+            resources.ApplyResources(this.BrowseSignatureCachePath, "BrowseSignatureCachePath");
             // 
             // CacheSizeCalculator
             // 
@@ -351,72 +400,27 @@ namespace Duplicati.GUI
             this.CacheSizeCalculator.DoWork += new System.ComponentModel.DoWorkEventHandler(this.CacheSizeCalculator_DoWork);
             this.CacheSizeCalculator.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.CacheSizeCalculator_RunWorkerCompleted);
             // 
-            // RecentDuration
-            // 
-            this.RecentDuration.Location = new System.Drawing.Point(208, 24);
-            this.RecentDuration.Name = "RecentDuration";
-            this.RecentDuration.Size = new System.Drawing.Size(221, 21);
-            this.RecentDuration.TabIndex = 1;
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
-            // 
-            // EncryptionMethod
-            // 
-            this.EncryptionMethod.Controls.Add(this.UseGPGEncryption);
-            this.EncryptionMethod.Controls.Add(this.UseAESEncryption);
-            this.EncryptionMethod.Location = new System.Drawing.Point(24, 40);
-            this.EncryptionMethod.Name = "EncryptionMethod";
-            this.EncryptionMethod.Size = new System.Drawing.Size(392, 48);
-            this.EncryptionMethod.TabIndex = 8;
-            this.EncryptionMethod.TabStop = false;
-            this.EncryptionMethod.Text = "Encryption method";
-            // 
-            // UseGPGEncryption
-            // 
-            this.UseGPGEncryption.AutoSize = true;
-            this.UseGPGEncryption.Location = new System.Drawing.Point(136, 24);
-            this.UseGPGEncryption.Name = "UseGPGEncryption";
-            this.UseGPGEncryption.Size = new System.Drawing.Size(165, 17);
-            this.UseGPGEncryption.TabIndex = 1;
-            this.UseGPGEncryption.Text = "GNU Privacy Guard (external)";
-            this.UseGPGEncryption.UseVisualStyleBackColor = true;
-            this.UseGPGEncryption.CheckedChanged += new System.EventHandler(this.UseGPGEncryption_CheckedChanged);
-            // 
-            // UseAESEncryption
-            // 
-            this.UseAESEncryption.AutoSize = true;
-            this.UseAESEncryption.Checked = true;
-            this.UseAESEncryption.Location = new System.Drawing.Point(16, 24);
-            this.UseAESEncryption.Name = "UseAESEncryption";
-            this.UseAESEncryption.Size = new System.Drawing.Size(85, 17);
-            this.UseAESEncryption.TabIndex = 0;
-            this.UseAESEncryption.TabStop = true;
-            this.UseAESEncryption.Text = "AES (built-in)";
-            this.UseAESEncryption.UseVisualStyleBackColor = true;
-            this.UseAESEncryption.CheckedChanged += new System.EventHandler(this.UseAESEncryption_CheckedChanged);
-            // 
             // ApplicationSetup
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AccessibleDescription = null;
+            this.AccessibleName = null;
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackgroundImage = null;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(453, 424);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
+            this.Font = null;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ApplicationSetup";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Duplicati setup";
             this.Load += new System.EventHandler(this.ApplicationSetup_Load);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ApplicationSetup_FormClosing);
             this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);

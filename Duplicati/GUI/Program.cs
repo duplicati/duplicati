@@ -44,7 +44,6 @@ namespace Duplicati.GUI
         public static object MainLock = new object();
 
         public static ServiceStatus StatusDialog;
-        public static ServiceSetup SetupDialog;
         public static WizardHandler Wizard;
 
         public static ApplicationSettings ApplicationSettings;
@@ -87,14 +86,14 @@ namespace Duplicati.GUI
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Unable to start up, perhaps another process is already running?\nError message: " + ex.ToString(), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(string.Format(Strings.Program.StartupFailure, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 if (!singleInstance.IsFirstInstance)
                 {
                     //Linux shows this output
-                    Console.WriteLine("Another instance is running, and was notified");
+                    Console.WriteLine(Strings.Program.AnotherInstanceDetected);
                     return;
                 }
 
@@ -108,7 +107,7 @@ namespace Duplicati.GUI
                 if (new Version(System.Data.SQLite.SQLiteConnection.SQLiteVersion) < new Version(3, 6, 3))
                 {
                     //The official Mono SQLite provider is also broken with less than 3.6.3
-                    MessageBox.Show("Wrong version of SQLite detected (" + System.Data.SQLite.SQLiteConnection.SQLiteVersion + "), must be 3.6.3 or higher", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(string.Format(Strings.Program.WrongSQLiteVersion, System.Data.SQLite.SQLiteConnection.SQLiteVersion, "3.6.3"), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
 
                 }
@@ -125,7 +124,7 @@ namespace Duplicati.GUI
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Failed to create, open or upgrade the database.\r\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(string.Format(Strings.Program.DatabaseOpenError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
                 DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
@@ -134,14 +133,14 @@ namespace Duplicati.GUI
                 TrayIcon.ContextMenuStrip = new ContextMenuStrip();
                 TrayIcon.Icon = Properties.Resources.TrayNormal;
 
-                TrayIcon.ContextMenuStrip.Items.Add("Status", Properties.Resources.StatusMenuIcon, new EventHandler(Status_Clicked));
-                TrayIcon.ContextMenuStrip.Items.Add("Wizard ...", Properties.Resources.WizardMenuIcon, new EventHandler(Setup_Clicked));
+                TrayIcon.ContextMenuStrip.Items.Add(Strings.Program.MenuStatus, Properties.Resources.StatusMenuIcon, new EventHandler(Status_Clicked));
+                TrayIcon.ContextMenuStrip.Items.Add(Strings.Program.MenuWizard, Properties.Resources.WizardMenuIcon, new EventHandler(Setup_Clicked));
                 TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
 
-                TrayIcon.ContextMenuStrip.Items.Add("Settings", Properties.Resources.SettingsMenuIcon, new EventHandler(Settings_Clicked));
+                TrayIcon.ContextMenuStrip.Items.Add(Strings.Program.MenuSettings, Properties.Resources.SettingsMenuIcon, new EventHandler(Settings_Clicked));
                 TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
 
-                TrayIcon.ContextMenuStrip.Items.Add("Quit", Properties.Resources.CloseMenuIcon, new EventHandler(Quit_Clicked));
+                TrayIcon.ContextMenuStrip.Items.Add(Strings.Program.MenuQuit, Properties.Resources.CloseMenuIcon, new EventHandler(Quit_Clicked));
                 TrayIcon.ContextMenuStrip.Items[0].Font = new Font(TrayIcon.ContextMenuStrip.Items[0].Font, FontStyle.Bold);
 
                 ApplicationSettings = new ApplicationSettings(DataConnection);
@@ -156,7 +155,7 @@ namespace Duplicati.GUI
 
                 DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
 
-                TrayIcon.Text = "Duplicati ready";
+                TrayIcon.Text = Strings.Program.TrayStatusReady;
 
                 TrayIcon.DoubleClick += new EventHandler(TrayIcon_DoubleClick);
                 TrayIcon.Visible = true;
@@ -167,7 +166,7 @@ namespace Duplicati.GUI
 
                 if (count == 0)
                 {
-                    //TODO: shows the wrong icon... Should run under Application.Run() ...
+                    //TODO: shows the wrong icon in the taskbar... Should run under Application.Run() ...
                     ShowWizard();
                 }
 
@@ -175,7 +174,7 @@ namespace Duplicati.GUI
             }
             catch (Exception ex)
             {
-                MessageBox.Show("A serious error occured in Duplicati: " + ex.ToString(), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(string.Format(Strings.Program.SeriousError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             if (Scheduler != null)
@@ -203,13 +202,13 @@ namespace Duplicati.GUI
         static void WorkThread_StartingWork(object sender, EventArgs e)
         {
             TrayIcon.Icon = Properties.Resources.TrayWorking;
-            TrayIcon.Text = "Duplicati running " + (WorkThread.CurrentTask == null ? "" : WorkThread.CurrentTask.Schedule.Name);
+            TrayIcon.Text = string.Format(Strings.Program.TrayStatusRunning, WorkThread.CurrentTask == null ? "" : WorkThread.CurrentTask.Schedule.Name);
         }
 
         static void WorkThread_CompletedWork(object sender, EventArgs e)
         {
             TrayIcon.Icon = Properties.Resources.TrayNormal;
-            TrayIcon.Text = "Duplicati ready";
+            TrayIcon.Text = Strings.Program.TrayStatusReady;
         }
 
         private static void Quit_Clicked(object sender, EventArgs e)
@@ -256,16 +255,6 @@ namespace Duplicati.GUI
             Wizard.Show();
         }
 
-        public static void ShowSetup()
-        {
-            //TODO: Guard against calls from other threads
-            if (SetupDialog == null || !SetupDialog.Visible)
-                SetupDialog = new ServiceSetup();
-
-            SetupDialog.Show();
-            SetupDialog.Activate();
-        }
-
         public static void ShowSettings()
         {
             //TODO: Guard against calls from other threads
@@ -273,6 +262,40 @@ namespace Duplicati.GUI
             {
                 ApplicationSetup dlg = new ApplicationSetup();
                 dlg.ShowDialog();
+            }
+        }
+        
+        /// <summary>
+        /// Returns a localized name for a task type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static string LocalizeTaskType(DuplicityTaskType type)
+        {
+            switch (type)
+            {
+                case DuplicityTaskType.FullBackup:
+                    return Strings.TaskType.FullBackup;
+                case DuplicityTaskType.IncrementalBackup:
+                    return Strings.TaskType.IncrementalBackup;
+                case DuplicityTaskType.ListActualFiles:
+                    return Strings.TaskType.ListActualFiles;
+                case DuplicityTaskType.ListBackupEntries:
+                    return Strings.TaskType.ListBackupEntries;
+                case DuplicityTaskType.ListBackups:
+                    return Strings.TaskType.ListBackups;
+                case DuplicityTaskType.ListFiles:
+                    return Strings.TaskType.ListFiles;
+                case DuplicityTaskType.RemoveAllButNFull:
+                    return Strings.TaskType.RemoveAllButNFull;
+                case DuplicityTaskType.RemoveOlderThan:
+                    return Strings.TaskType.RemoveOlderThan;
+                case DuplicityTaskType.Restore:
+                    return Strings.TaskType.Restore;
+                case DuplicityTaskType.RestoreSetup:
+                    return Strings.TaskType.RestoreSetup;
+                default:
+                    return type.ToString();
             }
         }
 

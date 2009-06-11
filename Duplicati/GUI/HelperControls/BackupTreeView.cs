@@ -177,7 +177,7 @@ namespace Duplicati.GUI.HelperControls
 
         public TreeNode AddFolder(string foldername)
         {
-            TreeNode t = new TreeNode(string.IsNullOrEmpty(foldername) ? "New folder" : foldername);
+            TreeNode t = new TreeNode(string.IsNullOrEmpty(foldername) ? Strings.BackupTreeView.NewFolder : foldername);
             t.ImageIndex = t.SelectedImageIndex = imageList.Images.IndexOfKey("Folder");
 
             GetParentFolder(treeView.SelectedNode).Add(t);
@@ -191,7 +191,7 @@ namespace Duplicati.GUI.HelperControls
                 s = m_connection.Add<Schedule>();
             s.Task.FullAfter = "6M";
             s.Task.KeepFull = 4;
-            s.Path = string.IsNullOrEmpty(name) ? "New backup" : name;
+            s.Path = string.IsNullOrEmpty(name) ? Strings.BackupTreeView.NewBackup : name;
             s.Repeat = "1W";
             s.Weekdays = "sun,mon,tue,wed,thu,fri,sat";
             s.When = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour + 1, 0, 0);
@@ -252,7 +252,7 @@ namespace Duplicati.GUI.HelperControls
 
             if (n.Tag as Schedule != null)
             {
-                if (MessageBox.Show(this, "Remove the backup '" + (n.Tag as Schedule).Name + "' ?", Application.ProductName, MessageBoxButtons.YesNoCancel) == DialogResult.Yes)
+                if (MessageBox.Show(this, string.Format(Strings.BackupTreeView.ConfirmRemoveBackup, (n.Tag as Schedule).Name), Application.ProductName, MessageBoxButtons.YesNoCancel) == DialogResult.Yes)
                 {
                     lock(Program.MainLock)
                         m_connection.DeleteObject(n.Tag);
@@ -261,7 +261,7 @@ namespace Duplicati.GUI.HelperControls
             }
             else
             {
-                if (MessageBox.Show(this, "Do you want to delete this folder and all the backups contained in it?", Application.ProductName, MessageBoxButtons.YesNoCancel) == DialogResult.Yes)
+                if (MessageBox.Show(this, string.Format(Strings.BackupTreeView.ConfirmDeleteFolder, n.Text), Application.ProductName, MessageBoxButtons.YesNoCancel) == DialogResult.Yes)
                 {
                     foreach(TreeNode nx in FlattenTree(n.Nodes, false))
                         lock (Program.MainLock)

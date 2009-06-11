@@ -34,7 +34,7 @@ namespace Duplicati.GUI.Wizard_pages
         WizardSettingsWrapper m_wrapper;
 
         public MainPage()
-            : base("Welcome to the Duplicati Wizard", "Please select the action you want to perform below")
+            : base(Strings.MainPage.PageTitle, Strings.MainPage.PageHelptext)
         {
             InitializeComponent();
 
@@ -58,12 +58,6 @@ namespace Duplicati.GUI.Wizard_pages
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
             UpdateButtonState();
-
-            this.Controls.Remove(ShowAdvanced);
-            m_owner.ButtonPanel.Controls.Add(ShowAdvanced);
-            ShowAdvanced.Top = m_owner.CancelButton.Top;
-            ShowAdvanced.Left = m_owner.ButtonPanel.Width - m_owner.CancelButton.Right;
-            ShowAdvanced.Visible = false; //true;
             args.TreatAsLast = false;
         }
 
@@ -87,10 +81,6 @@ namespace Duplicati.GUI.Wizard_pages
                 return;
             }
 
-            m_owner.ButtonPanel.Controls.Remove(ShowAdvanced);
-            this.Controls.Add(ShowAdvanced);
-            ShowAdvanced.Visible = false;
-
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
             {
                 args.NextPage = new Add_backup.SelectName();
@@ -110,13 +100,6 @@ namespace Duplicati.GUI.Wizard_pages
         private void Radio_CheckedChanged(object sender, EventArgs e)
         {
             UpdateButtonState();
-        }
-
-        private void ShowAdvanced_Click(object sender, EventArgs e)
-        {
-            Program.ShowSetup();
-            m_owner.Dialog.DialogResult = DialogResult.Cancel;
-            m_owner.Dialog.Close();
         }
 
         /// <summary>

@@ -29,6 +29,7 @@ namespace Duplicati.GUI
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ListBackupFiles));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.ContentPanel = new System.Windows.Forms.Panel();
@@ -42,63 +43,41 @@ namespace Duplicati.GUI
             // 
             // groupBox1
             // 
-            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.groupBox1, "groupBox1");
             this.groupBox1.Controls.Add(this.progressBar1);
-            this.groupBox1.Location = new System.Drawing.Point(16, 153);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(265, 56);
-            this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Loading file list, please wait ...";
             // 
             // progressBar1
             // 
-            this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.progressBar1.Location = new System.Drawing.Point(8, 24);
+            resources.ApplyResources(this.progressBar1, "progressBar1");
             this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(249, 23);
             this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
-            this.progressBar1.TabIndex = 0;
             // 
             // ContentPanel
             // 
-            this.ContentPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.ContentPanel, "ContentPanel");
             this.ContentPanel.Controls.Add(this.ContentTree);
-            this.ContentPanel.Location = new System.Drawing.Point(16, 16);
             this.ContentPanel.Name = "ContentPanel";
-            this.ContentPanel.Size = new System.Drawing.Size(265, 339);
-            this.ContentPanel.TabIndex = 1;
-            this.ContentPanel.Visible = false;
             // 
             // ContentTree
             // 
-            this.ContentTree.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ContentTree.ImageIndex = 0;
+            resources.ApplyResources(this.ContentTree, "ContentTree");
             this.ContentTree.ImageList = this.imageList;
-            this.ContentTree.Location = new System.Drawing.Point(0, 0);
             this.ContentTree.Name = "ContentTree";
-            this.ContentTree.SelectedImageIndex = 0;
             this.ContentTree.ShowNodeToolTips = true;
-            this.ContentTree.Size = new System.Drawing.Size(265, 339);
-            this.ContentTree.TabIndex = 0;
             // 
             // imageList
             // 
             this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
-            this.imageList.ImageSize = new System.Drawing.Size(16, 16);
+            resources.ApplyResources(this.imageList, "imageList");
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // CancelBtn
             // 
-            this.CancelBtn.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            resources.ApplyResources(this.CancelBtn, "CancelBtn");
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(116, 371);
             this.CancelBtn.Name = "CancelBtn";
-            this.CancelBtn.Size = new System.Drawing.Size(75, 23);
-            this.CancelBtn.TabIndex = 2;
-            this.CancelBtn.Text = "Close";
             this.CancelBtn.UseVisualStyleBackColor = true;
             // 
             // backgroundWorker1
@@ -108,10 +87,9 @@ namespace Duplicati.GUI
             // 
             // ListBackupFiles
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(301, 407);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.ContentPanel);
             this.Controls.Add(this.groupBox1);
@@ -119,8 +97,6 @@ namespace Duplicati.GUI
             this.Name = "ListBackupFiles";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Files in selected backup";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ListBackupFiles_FormClosing);
             this.groupBox1.ResumeLayout(false);
             this.ContentPanel.ResumeLayout(false);

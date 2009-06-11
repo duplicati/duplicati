@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,4 +117,48 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AnotherInstanceDetected" xml:space="preserve">
+    <value>Another instance is running, and was notified</value>
+    <comment>A message displayed in the console when activating Duplicati and it is already running</comment>
+  </data>
+  <data name="DatabaseOpenError" xml:space="preserve">
+    <value>Failed to create, open or upgrade the database.\r\nError message: {0}</value>
+    <comment>An error message displayed when opening the database fails</comment>
+  </data>
+  <data name="MenuQuit" xml:space="preserve">
+    <value>Quit</value>
+    <comment>Text for the quit menu in the trayicon context menu</comment>
+  </data>
+  <data name="MenuSettings" xml:space="preserve">
+    <value>Settings</value>
+    <comment>Text for the settings menu in the trayicon context menu</comment>
+  </data>
+  <data name="MenuStatus" xml:space="preserve">
+    <value>Status</value>
+    <comment>Text for the status menu in the trayicon context menu</comment>
+  </data>
+  <data name="MenuWizard" xml:space="preserve">
+    <value>Wizard ...</value>
+    <comment>Text for the wizard menu in the trayicon context menu</comment>
+  </data>
+  <data name="SeriousError" xml:space="preserve">
+    <value>A serious error occured in Duplicati: {0}</value>
+    <comment>Duplicati crashes</comment>
+  </data>
+  <data name="StartupFailure" xml:space="preserve">
+    <value>Unable to start up, perhaps another process is already running?\nError message: {0}</value>
+    <comment>An error message displayed when Duplicati startup fails</comment>
+  </data>
+  <data name="TrayStatusReady" xml:space="preserve">
+    <value>Duplicati is ready</value>
+    <comment>Text displayed as a tooltip on the tray icon when Duplicati is ready</comment>
+  </data>
+  <data name="TrayStatusRunning" xml:space="preserve">
+    <value>Duplicati is running {0}</value>
+    <comment>Text displayed as a tooltip on the tray icon when Duplicati is running a task</comment>
+  </data>
+  <data name="WrongSQLiteVersion" xml:space="preserve">
+    <value>Wrong version of SQLite detected ({0}), must be {1} or higher</value>
+    <comment>An error message displayed when the wrong version of SQLite is detected</comment>
+  </data>
 </root>

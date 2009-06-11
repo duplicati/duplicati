@@ -63,6 +63,7 @@ namespace Duplicati.GUI
             this.columnHeader2 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader3 = new System.Windows.Forms.ColumnHeader();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.viewLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.statusImage = new System.Windows.Forms.PictureBox();
@@ -70,7 +71,6 @@ namespace Duplicati.GUI
             this.CurrentStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.viewLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.advancedPanel.SuspendLayout();
             this.simplePanel.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
@@ -79,37 +79,25 @@ namespace Duplicati.GUI
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(0, 0);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(102, 13);
-            this.label3.TabIndex = 2;
-            this.label3.Text = "Scheduled backups";
             // 
             // scheduledBackups
             // 
             this.scheduledBackups.FormattingEnabled = true;
-            this.scheduledBackups.Location = new System.Drawing.Point(0, 16);
+            resources.ApplyResources(this.scheduledBackups, "scheduledBackups");
             this.scheduledBackups.Name = "scheduledBackups";
-            this.scheduledBackups.Size = new System.Drawing.Size(320, 56);
-            this.scheduledBackups.TabIndex = 3;
             // 
             // pendingBackups
             // 
             this.pendingBackups.FormattingEnabled = true;
-            this.pendingBackups.Location = new System.Drawing.Point(0, 96);
+            resources.ApplyResources(this.pendingBackups, "pendingBackups");
             this.pendingBackups.Name = "pendingBackups";
-            this.pendingBackups.Size = new System.Drawing.Size(320, 56);
-            this.pendingBackups.TabIndex = 7;
             // 
             // label5
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(0, 80);
+            resources.ApplyResources(this.label5, "label5");
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(90, 13);
-            this.label5.TabIndex = 6;
-            this.label5.Text = "Pending backups";
             // 
             // advancedPanel
             // 
@@ -117,11 +105,8 @@ namespace Duplicati.GUI
             this.advancedPanel.Controls.Add(this.label3);
             this.advancedPanel.Controls.Add(this.pendingBackups);
             this.advancedPanel.Controls.Add(this.label5);
-            this.advancedPanel.Location = new System.Drawing.Point(8, 8);
+            resources.ApplyResources(this.advancedPanel, "advancedPanel");
             this.advancedPanel.Name = "advancedPanel";
-            this.advancedPanel.Size = new System.Drawing.Size(328, 160);
-            this.advancedPanel.TabIndex = 10;
-            this.advancedPanel.Visible = false;
             // 
             // simplePanel
             // 
@@ -133,38 +118,25 @@ namespace Duplicati.GUI
             this.simplePanel.Controls.Add(this.ShowAdvanced);
             this.simplePanel.Controls.Add(this.CurrentStatus);
             this.simplePanel.Controls.Add(this.label1);
-            this.simplePanel.Location = new System.Drawing.Point(8, 8);
+            resources.ApplyResources(this.simplePanel, "simplePanel");
             this.simplePanel.Name = "simplePanel";
-            this.simplePanel.Size = new System.Drawing.Size(328, 160);
-            this.simplePanel.TabIndex = 11;
             // 
             // SubProgressBar
             // 
-            this.SubProgressBar.Location = new System.Drawing.Point(80, 16);
+            resources.ApplyResources(this.SubProgressBar, "SubProgressBar");
             this.SubProgressBar.Name = "SubProgressBar";
-            this.SubProgressBar.Size = new System.Drawing.Size(248, 16);
-            this.SubProgressBar.TabIndex = 18;
-            this.SubProgressBar.Visible = false;
             // 
             // WorkProgressbar
             // 
-            this.WorkProgressbar.Location = new System.Drawing.Point(40, 32);
+            resources.ApplyResources(this.WorkProgressbar, "WorkProgressbar");
             this.WorkProgressbar.Name = "WorkProgressbar";
-            this.WorkProgressbar.Size = new System.Drawing.Size(288, 16);
-            this.WorkProgressbar.TabIndex = 17;
-            this.WorkProgressbar.Visible = false;
             // 
             // ProgressMessage
             // 
             this.ProgressMessage.AutoEllipsis = true;
-            this.ProgressMessage.AutoSize = true;
-            this.ProgressMessage.Location = new System.Drawing.Point(40, 16);
+            resources.ApplyResources(this.ProgressMessage, "ProgressMessage");
             this.ProgressMessage.MaximumSize = new System.Drawing.Size(288, 13);
             this.ProgressMessage.Name = "ProgressMessage";
-            this.ProgressMessage.Size = new System.Drawing.Size(35, 13);
-            this.ProgressMessage.TabIndex = 16;
-            this.ProgressMessage.Text = "label2";
-            this.ProgressMessage.Visible = false;
             this.ProgressMessage.TextChanged += new System.EventHandler(this.ProgressMessage_TextChanged);
             // 
             // recentBackups
@@ -175,13 +147,11 @@ namespace Duplicati.GUI
             this.columnHeader3});
             this.recentBackups.ContextMenuStrip = this.contextMenuStrip;
             this.recentBackups.FullRowSelect = true;
-            this.recentBackups.Location = new System.Drawing.Point(0, 80);
+            resources.ApplyResources(this.recentBackups, "recentBackups");
             this.recentBackups.MultiSelect = false;
             this.recentBackups.Name = "recentBackups";
             this.recentBackups.ShowItemToolTips = true;
-            this.recentBackups.Size = new System.Drawing.Size(328, 80);
             this.recentBackups.SmallImageList = this.imageList;
-            this.recentBackups.TabIndex = 15;
             this.recentBackups.UseCompatibleStateImageBehavior = false;
             this.recentBackups.View = System.Windows.Forms.View.Details;
             this.recentBackups.SelectedIndexChanged += new System.EventHandler(this.recentBackups_SelectedIndexChanged);
@@ -189,18 +159,15 @@ namespace Duplicati.GUI
             // 
             // columnHeader1
             // 
-            this.columnHeader1.Text = "Time";
-            this.columnHeader1.Width = 116;
+            resources.ApplyResources(this.columnHeader1, "columnHeader1");
             // 
             // columnHeader2
             // 
-            this.columnHeader2.Text = "Action";
-            this.columnHeader2.Width = 96;
+            resources.ApplyResources(this.columnHeader2, "columnHeader2");
             // 
             // columnHeader3
             // 
-            this.columnHeader3.Text = "Size";
-            this.columnHeader3.Width = 75;
+            resources.ApplyResources(this.columnHeader3, "columnHeader3");
             // 
             // contextMenuStrip
             // 
@@ -208,82 +175,62 @@ namespace Duplicati.GUI
             this.viewLogToolStripMenuItem,
             this.viewFilesToolStripMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(168, 48);
+            resources.ApplyResources(this.contextMenuStrip, "contextMenuStrip");
+            // 
+            // viewLogToolStripMenuItem
+            // 
+            resources.ApplyResources(this.viewLogToolStripMenuItem, "viewLogToolStripMenuItem");
+            this.viewLogToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.LogMenuIcon;
+            this.viewLogToolStripMenuItem.Name = "viewLogToolStripMenuItem";
+            this.viewLogToolStripMenuItem.Click += new System.EventHandler(this.viewLogToolStripMenuItem_Click);
             // 
             // viewFilesToolStripMenuItem
             // 
             this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.ExamineMenuIcon;
             this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
-            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
-            this.viewFilesToolStripMenuItem.Text = "View contents ...";
+            resources.ApplyResources(this.viewFilesToolStripMenuItem, "viewFilesToolStripMenuItem");
             this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
             // 
             // imageList
             // 
             this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
-            this.imageList.ImageSize = new System.Drawing.Size(16, 16);
+            resources.ApplyResources(this.imageList, "imageList");
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // statusImage
             // 
-            this.statusImage.Location = new System.Drawing.Point(0, 0);
+            resources.ApplyResources(this.statusImage, "statusImage");
             this.statusImage.Name = "statusImage";
-            this.statusImage.Size = new System.Drawing.Size(32, 32);
-            this.statusImage.TabIndex = 14;
             this.statusImage.TabStop = false;
             // 
             // ShowAdvanced
             // 
-            this.ShowAdvanced.Location = new System.Drawing.Point(232, 56);
+            resources.ApplyResources(this.ShowAdvanced, "ShowAdvanced");
             this.ShowAdvanced.Name = "ShowAdvanced";
-            this.ShowAdvanced.Size = new System.Drawing.Size(96, 24);
-            this.ShowAdvanced.TabIndex = 13;
-            this.ShowAdvanced.Text = "Advanced >>>";
             this.ShowAdvanced.UseVisualStyleBackColor = true;
             this.ShowAdvanced.Click += new System.EventHandler(this.ShowAdvanced_Click);
             // 
             // CurrentStatus
             // 
-            this.CurrentStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.CurrentStatus.Location = new System.Drawing.Point(40, 0);
+            resources.ApplyResources(this.CurrentStatus, "CurrentStatus");
             this.CurrentStatus.Name = "CurrentStatus";
-            this.CurrentStatus.Size = new System.Drawing.Size(288, 16);
-            this.CurrentStatus.TabIndex = 12;
-            this.CurrentStatus.Text = "Waiting for next backup";
-            this.CurrentStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(0, 64);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(145, 13);
-            this.label1.TabIndex = 10;
-            this.label1.Text = "Recently completed backups";
-            // 
-            // viewLogToolStripMenuItem
-            // 
-            this.viewLogToolStripMenuItem.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.viewLogToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.LogMenuIcon;
-            this.viewLogToolStripMenuItem.Name = "viewLogToolStripMenuItem";
-            this.viewLogToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
-            this.viewLogToolStripMenuItem.Text = "View log ...";
-            this.viewLogToolStripMenuItem.Click += new System.EventHandler(this.viewLogToolStripMenuItem_Click);
             // 
             // ServiceStatus
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(345, 175);
             this.Controls.Add(this.simplePanel);
             this.Controls.Add(this.advancedPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ServiceStatus";
-            this.Text = "Duplicati Status";
             this.Load += new System.EventHandler(this.ServiceStatus_Load);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.ServiceStatus_KeyUp);
             this.advancedPanel.ResumeLayout(false);

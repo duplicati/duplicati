@@ -59,7 +59,7 @@ namespace Duplicati.GUI.HelperControls
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "The expression is not a valid regular expression: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Strings.FilterDialog.InvalidRegExpMessage, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
                 f = FilterText.Text;

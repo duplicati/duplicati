@@ -88,12 +88,12 @@ namespace Duplicati.GUI.HelperControls
             {
                 Exception ex = e.Error;
                 if (e.Cancelled)
-                    ex = new Exception("Cancelled");
+                    ex = new Exception(Strings.BackupItems.OperationCancelled);
                 else if (e.Result == null)
-                    ex = new Exception("No data recieved");
+                    ex = new Exception(Strings.BackupItems.NoDataRecieved);
 
                 progressBar.Visible = false;
-                statusLabel.Text = "Error: " + ex.Message;
+                statusLabel.Text = string.Format(Strings.BackupItems.ErrorStatusDisplay, ex.Message);
                 if (LoadError != null)
                     LoadError(this, null);
             }
@@ -109,14 +109,14 @@ namespace Duplicati.GUI.HelperControls
                     {
                         ListViewItem n = new ListViewItem(ef.Time.ToLongDateString() + " " + ef.Time.ToLongTimeString(), 0);
                         n.Tag = ef;
-                        n.ToolTipText = "Full backup";
+                        n.ToolTipText = Strings.BackupItems.TooltipFullBackup;
                         listView.Items.Add(n);
 
                         foreach (Library.Main.BackupEntry i in ef.Incrementals)
                         {
                             ListViewItem nn = new ListViewItem(i.Time.ToLongDateString() + " " + i.Time.ToLongTimeString(), 1);
                             nn.Tag = i;
-                            nn.ToolTipText = "Partial backup";
+                            nn.ToolTipText = Strings.BackupItems.TooltipPartialBackup;
                             listView.Items.Add(nn);
 
                         }

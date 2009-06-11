@@ -83,9 +83,9 @@ namespace Duplicati.GUI
             {
                 Exception ex = e.Error;
                 if (ex == null)
-                    ex = new Exception("No data returned");
+                    ex = new Exception(Strings.ListBackupFiles.NoDataError);
 
-                MessageBox.Show(this, "An error occured: " + ex.ToString(), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, string.Format(Strings.Common.GenericError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
             }
             else
@@ -172,22 +172,22 @@ namespace Duplicati.GUI
                     switch (match.ImageIndex)
                     {
                         case 0:
-                            match.ToolTipText = "Existing folder";
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipExistingFolder;
                             break;
                         case 1:
-                            match.ToolTipText = "Added folder";
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipAddedFolder;
                             break;
                         case 2:
-                            match.ToolTipText = "Deleted folder";
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipDeletedFolder;
                             break;
                         case 3:
-                            match.ToolTipText = "Added or modified file";
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipAddedOrModifiedFile;
                             break;
                         case 4:
-                            match.ToolTipText = "Control file";
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipControlFile;
                             break;
                         case 5:
-                            match.ToolTipText = "Deleted file";
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipDeletedFile;
                             break;
                     }
                     parent.Add(match);

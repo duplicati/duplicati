@@ -49,10 +49,10 @@ namespace Duplicati.GUI
             RecentDuration.SetIntervals(new List<KeyValuePair<string, string>>(
                 new KeyValuePair<string, string>[]
                 {
-                    new KeyValuePair<string, string>("One week", "1W"),
-                    new KeyValuePair<string, string>("Two weeks", "2W"),
-                    new KeyValuePair<string, string>("One month", "1M"),
-                    new KeyValuePair<string, string>("Three months", "3M"),
+                    new KeyValuePair<string, string>(Strings.Common.OneWeek, "1W"),
+                    new KeyValuePair<string, string>(Strings.Common.TwoWeeks, "2W"),
+                    new KeyValuePair<string, string>(Strings.Common.OneMonth, "1M"),
+                    new KeyValuePair<string, string>(Strings.Common.ThreeMonths, "3M"),
                 }));
 
             try
@@ -85,12 +85,12 @@ namespace Duplicati.GUI
             {
                 foreach(string file in files)
                     if (!System.IO.File.Exists(System.IO.Path.Combine(folder, file)))
-                        if (MessageBox.Show(this, "The folder selected does not contain the file: " + file + ".\r\nDo you want to use that folder anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                        if (MessageBox.Show(this, string.Format(Strings.ApplicationSetup.FolderIsMissingFile, file), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                             return false;
             }
             catch (Exception ex)
             {
-                if (MessageBox.Show(this, "An exception occured while examining the folder: "+ ex.Message + ".\r\nDo you want to use that folder anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                if (MessageBox.Show(this, string.Format(Strings.ApplicationSetup.ErrorWhileExaminingFolder, ex.Message), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                     return false;
             }
 
@@ -218,7 +218,7 @@ namespace Duplicati.GUI
 
             try
             {
-                e.Result = "Cache size: " + Library.Core.Utility.FormatSizeString(Library.Core.Utility.GetDirectorySize(System.Environment.ExpandEnvironmentVariables((string)e.Argument), null));
+                e.Result = string.Format(Strings.ApplicationSetup.CacheSize, Library.Core.Utility.FormatSizeString(Library.Core.Utility.GetDirectorySize(System.Environment.ExpandEnvironmentVariables((string)e.Argument), null)));
             }
             catch (System.Threading.ThreadAbortException)
             {
@@ -236,7 +236,7 @@ namespace Duplicati.GUI
         private void CacheSizeCalculator_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Cancelled)
-                CacheSizeLabel.Text = "Cancelled";
+                CacheSizeLabel.Text = Strings.ApplicationSetup.OperationCancelled;
             else if (e.Error != null)
                 CacheSizeLabel.Text = e.Error.Message;
             else
@@ -248,7 +248,7 @@ namespace Duplicati.GUI
 
         private void CalculateSignatureCacheSize()
         {
-            CacheSizeLabel.Text = "Calculating cache size ...";
+            CacheSizeLabel.Text = Strings.ApplicationSetup.CalculatingCacheSize;
 
             lock (m_lock)
                 if (CacheSizeCalculator.IsBusy)
@@ -271,7 +271,7 @@ namespace Duplicati.GUI
             try
             {
                 string path = System.Environment.ExpandEnvironmentVariables(SignatureCachePath.Text);
-                if (MessageBox.Show(this, "Delete signature files in the folder: \n" + path, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                if (MessageBox.Show(this, string.Format(Strings.ApplicationSetup.ConfirmCacheDelete, path), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     return;
 
                 Library.Main.Interface.RemoveSignatureFiles(path);
@@ -279,7 +279,7 @@ namespace Duplicati.GUI
             }
             catch(Exception ex)
             {
-                MessageBox.Show(this, "An error occured: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, string.Format(Strings.Common.GenericError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

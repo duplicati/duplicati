@@ -29,6 +29,7 @@ namespace Duplicati.GUI.HelperControls
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BackupItems));
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusLabel = new System.Windows.Forms.Label();
@@ -46,52 +47,37 @@ namespace Duplicati.GUI.HelperControls
             this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.viewFilesToolStripMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(168, 26);
+            resources.ApplyResources(this.contextMenuStrip, "contextMenuStrip");
             // 
             // viewFilesToolStripMenuItem
             // 
             this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.ExamineMenuIcon;
             this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
-            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
-            this.viewFilesToolStripMenuItem.Text = "View contents ...";
+            resources.ApplyResources(this.viewFilesToolStripMenuItem, "viewFilesToolStripMenuItem");
             this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
             // 
             // statusLabel
             // 
-            this.statusLabel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.statusLabel.Location = new System.Drawing.Point(0, 8);
+            resources.ApplyResources(this.statusLabel, "statusLabel");
             this.statusLabel.Name = "statusLabel";
-            this.statusLabel.Size = new System.Drawing.Size(184, 16);
-            this.statusLabel.TabIndex = 1;
-            this.statusLabel.Text = "Loading list of backups";
-            this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // progressBar
             // 
-            this.progressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.progressBar.Location = new System.Drawing.Point(0, 56);
+            resources.ApplyResources(this.progressBar, "progressBar");
             this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(184, 16);
             this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
-            this.progressBar.TabIndex = 2;
             // 
             // WaitPanel
             // 
-            this.WaitPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.WaitPanel, "WaitPanel");
             this.WaitPanel.Controls.Add(this.progressBar);
             this.WaitPanel.Controls.Add(this.statusLabel);
-            this.WaitPanel.Location = new System.Drawing.Point(8, 16);
             this.WaitPanel.Name = "WaitPanel";
-            this.WaitPanel.Size = new System.Drawing.Size(184, 72);
-            this.WaitPanel.TabIndex = 3;
             // 
             // imageList
             // 
             this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
-            this.imageList.ImageSize = new System.Drawing.Size(16, 16);
+            resources.ApplyResources(this.imageList, "imageList");
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // backgroundWorker
@@ -102,26 +88,22 @@ namespace Duplicati.GUI.HelperControls
             // listView
             // 
             this.listView.ContextMenuStrip = this.contextMenuStrip;
-            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
+            resources.ApplyResources(this.listView, "listView");
             this.listView.FullRowSelect = true;
-            this.listView.Location = new System.Drawing.Point(0, 0);
             this.listView.MultiSelect = false;
             this.listView.Name = "listView";
             this.listView.ShowItemToolTips = true;
-            this.listView.Size = new System.Drawing.Size(203, 139);
             this.listView.SmallImageList = this.imageList;
-            this.listView.TabIndex = 4;
             this.listView.UseCompatibleStateImageBehavior = false;
             this.listView.View = System.Windows.Forms.View.List;
             // 
             // BackupItems
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.WaitPanel);
             this.Controls.Add(this.listView);
             this.Name = "BackupItems";
-            this.Size = new System.Drawing.Size(203, 139);
             this.contextMenuStrip.ResumeLayout(false);
             this.WaitPanel.ResumeLayout(false);
             this.ResumeLayout(false);

@@ -47,7 +47,7 @@ namespace Duplicati.GUI.HelperControls
             EasyDuration.Items.Clear();
 
             if (values[values.Count - 1].Value != "")
-                values.Add(new KeyValuePair<string, string>("Custom...", ""));
+                values.Add(new KeyValuePair<string, string>(Strings.DurationEditor.CustomDuration, ""));
 
             m_values = new string[values.Count];
             for (int i = 0; i < values.Count; i++)

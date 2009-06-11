@@ -34,7 +34,7 @@ namespace Duplicati.GUI.Wizard_pages
         private WizardSettingsWrapper m_wrapper;
 
         public SelectBackend()
-            : base("Select a place to store the backups", "On this page you can select the type of device or service that store the backups. You may need information from the service provider when you continue.")
+            : base(Strings.SelectBackend.PageTitle, Strings.SelectBackend.PageHelptext)
         {
             InitializeComponent();
             base.PageEnter += new PageChangeHandler(SelectBackend_PageEnter);
@@ -54,7 +54,7 @@ namespace Duplicati.GUI.Wizard_pages
 
             if (!(File.Checked || FTP.Checked || SSH.Checked || WebDAV.Checked || S3.Checked))
             {
-                MessageBox.Show(this, "You must enter the storage method before you can continue.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.SelectBackend.NoActionSelected, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
@@ -129,7 +129,7 @@ namespace Duplicati.GUI.Wizard_pages
 
 
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
-                Question.Text = "Where is the backup stored?";
+                Question.Text = Strings.SelectBackend.RestoreSetupTitle;
 
         }
 

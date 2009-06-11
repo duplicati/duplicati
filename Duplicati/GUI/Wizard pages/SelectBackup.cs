@@ -62,7 +62,7 @@ namespace Duplicati.GUI.Wizard_pages
 
             if (BackupList.SelectedBackup == null)
             {
-                MessageBox.Show(this, "You must select a backup before you can continue", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.SelectBackup.NoActionSelected, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
@@ -98,15 +98,15 @@ namespace Duplicati.GUI.Wizard_pages
                 switch (m_wrapper.PrimayAction)
                 {
                     case WizardSettingsWrapper.MainAction.RunNow:
-                        return "Select the backup to run now";
+                        return Strings.SelectBackup.PageTitleRunNow;
                     case WizardSettingsWrapper.MainAction.Remove:
-                        return "Select the backup to remove";
+                        return Strings.SelectBackup.PageTitleRemove;
                     case WizardSettingsWrapper.MainAction.Edit:
-                        return "Select the backup to modify";
+                        return Strings.SelectBackup.PageTitleEdit;
                     case WizardSettingsWrapper.MainAction.Restore:
-                        return "Select the backup to restore";
+                        return Strings.SelectBackup.PageTitleRestore;
                     default:
-                        return "Unknown action";
+                        return Strings.SelectBackup.PageTitleUnknown;
                 }
 
             }
@@ -120,15 +120,15 @@ namespace Duplicati.GUI.Wizard_pages
                 switch (m_wrapper.PrimayAction)
                 {
                     case WizardSettingsWrapper.MainAction.RunNow:
-                        return "In the list below, select the backup you want to run immediately";
+                        return Strings.SelectBackup.PageHelptextRunNow;
                     case WizardSettingsWrapper.MainAction.Remove:
-                        return "In the list below, select the backup you want to delete";
+                        return Strings.SelectBackup.PageHelptextRemove;
                     case WizardSettingsWrapper.MainAction.Edit:
-                        return "In the list below, select the backup you want to modify";
+                        return Strings.SelectBackup.PageHelptextEdit;
                     case WizardSettingsWrapper.MainAction.Restore:
-                        return "In the list below, select the backup you want to restore";
+                        return Strings.SelectBackup.PageHelptextRestore;
                     default:
-                        return "Unknown action";
+                        return Strings.SelectBackup.PageTitleRunNow;
                 }
             }
         }

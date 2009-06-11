@@ -38,6 +38,7 @@ namespace Duplicati.GUI
         ListBackupEntries
     }
 
+
     public delegate void TaskCompletedHandler(IDuplicityTask owner, string output);
 
     public interface IDuplicityTask

@@ -47,32 +47,23 @@ namespace Duplicati.GUI
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LogViewer));
             this.LogText = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // LogText
             // 
-            this.LogText.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.LogText.Location = new System.Drawing.Point(8, 8);
-            this.LogText.Multiline = true;
+            resources.ApplyResources(this.LogText, "LogText");
             this.LogText.Name = "LogText";
             this.LogText.ReadOnly = true;
-            this.LogText.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.LogText.Size = new System.Drawing.Size(388, 335);
-            this.LogText.TabIndex = 0;
             // 
             // LogViewer
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(405, 352);
             this.Controls.Add(this.LogText);
             this.Name = "LogViewer";
             this.ShowInTaskbar = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Log data";
             this.ResumeLayout(false);
             this.PerformLayout();
 

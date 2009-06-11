@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,4 +117,34 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="FullBackup" xml:space="preserve">
+    <value>Full backup</value>
+  </data>
+  <data name="IncrementalBackup" xml:space="preserve">
+    <value>Incremental backup</value>
+  </data>
+  <data name="ListActualFiles" xml:space="preserve">
+    <value>List actual files</value>
+  </data>
+  <data name="ListBackupEntries" xml:space="preserve">
+    <value>List backup entries</value>
+  </data>
+  <data name="ListBackups" xml:space="preserve">
+    <value>List backups</value>
+  </data>
+  <data name="ListFiles" xml:space="preserve">
+    <value>List files</value>
+  </data>
+  <data name="RemoveAllButNFull" xml:space="preserve">
+    <value>Remove all but n full</value>
+  </data>
+  <data name="RemoveOlderThan" xml:space="preserve">
+    <value>Remove older than</value>
+  </data>
+  <data name="Restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="RestoreSetup" xml:space="preserve">
+    <value>Restore setup</value>
+  </data>
 </root>

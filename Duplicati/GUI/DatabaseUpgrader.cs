@@ -83,13 +83,13 @@ namespace Duplicati.GUI
                     dbversion = Convert.ToInt32(cmd.ExecuteScalar());
                 }
                 else
-                    throw new Exception("Unknown table layout detected");
+                    throw new Exception(Strings.DatabaseUpgrader.TableLayoutError);
 
             }
             catch(Exception ex)
             {
                 //Hopefully a more explanatory error message
-                throw new Exception("Unable to determine database format: " + ex.Message, ex);
+                throw new Exception(string.Format(Strings.DatabaseUpgrader.DatabaseFormatError, ex.Message), ex);
             }
 
 
@@ -133,7 +133,7 @@ namespace Duplicati.GUI
 
             if (upgrades.Count > 0)
             {
-                string backupfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sourcefile), "backup " + DateTime.Now.ToString("yyyyMMddhhmmss") + ".sqlite");
+                string backupfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sourcefile), Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + DateTime.Now.ToString("yyyyMMddhhmmss") + ".sqlite");
 
                 try
                 {
@@ -169,7 +169,7 @@ namespace Duplicati.GUI
                     connection.Close();
                     //Restore the database
                     System.IO.File.Copy(backupfile, sourcefile, true);
-                    throw new Exception("Failed to execute SQL: " + cmd.CommandText + "\nError: " + ex.Message + "\nDatabase is NOT upgraded.", ex);
+                    throw new Exception(string.Format(Strings.DatabaseUpgrader.UpgradeFailure, cmd.CommandText, ex.Message), ex);
                 }
             }
 

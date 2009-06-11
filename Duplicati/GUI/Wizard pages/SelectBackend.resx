@@ -117,4 +117,183 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="File.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="File.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 48</value>
+  </data>
+  <data name="File.Size" type="System.Drawing.Size, System.Drawing">
+    <value>179, 17</value>
+  </data>
+  <data name="File.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="File.Text" xml:space="preserve">
+    <value>An external disk or network drive</value>
+  </data>
+  <data name="&gt;&gt;File.Name" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="&gt;&gt;File.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;File.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;File.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="FTP.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="FTP.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 80</value>
+  </data>
+  <data name="FTP.Size" type="System.Drawing.Size, System.Drawing">
+    <value>133, 17</value>
+  </data>
+  <data name="FTP.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="FTP.Text" xml:space="preserve">
+    <value>FTP to a remote server</value>
+  </data>
+  <data name="&gt;&gt;FTP.Name" xml:space="preserve">
+    <value>FTP</value>
+  </data>
+  <data name="&gt;&gt;FTP.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;FTP.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;FTP.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="SSH.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="SSH.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 112</value>
+  </data>
+  <data name="SSH.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 17</value>
+  </data>
+  <data name="SSH.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="SSH.Text" xml:space="preserve">
+    <value>SSH (SFTP) to a remote server</value>
+  </data>
+  <data name="&gt;&gt;SSH.Name" xml:space="preserve">
+    <value>SSH</value>
+  </data>
+  <data name="&gt;&gt;SSH.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;SSH.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;SSH.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="WebDAV.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="WebDAV.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 176</value>
+  </data>
+  <data name="WebDAV.Size" type="System.Drawing.Size, System.Drawing">
+    <value>160, 17</value>
+  </data>
+  <data name="WebDAV.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="WebDAV.Text" xml:space="preserve">
+    <value>WEBDAV to a remote server</value>
+  </data>
+  <data name="&gt;&gt;WebDAV.Name" xml:space="preserve">
+    <value>WebDAV</value>
+  </data>
+  <data name="&gt;&gt;WebDAV.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;WebDAV.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;WebDAV.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="S3.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="S3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 144</value>
+  </data>
+  <data name="S3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>117, 17</value>
+  </data>
+  <data name="S3.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="S3.Text" xml:space="preserve">
+    <value>Amazon S3 storage</value>
+  </data>
+  <data name="&gt;&gt;S3.Name" xml:space="preserve">
+    <value>S3</value>
+  </data>
+  <data name="&gt;&gt;S3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;S3.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;S3.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="Question.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Question.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 16</value>
+  </data>
+  <data name="Question.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 13</value>
+  </data>
+  <data name="Question.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="Question.Text" xml:space="preserve">
+    <value>Where do you want to store the backups?</value>
+  </data>
+  <data name="&gt;&gt;Question.Name" xml:space="preserve">
+    <value>Question</value>
+  </data>
+  <data name="&gt;&gt;Question.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Question.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;Question.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
+  <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
+    <value>506, 242</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>SelectBackend</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.WizardControl, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
 </root>

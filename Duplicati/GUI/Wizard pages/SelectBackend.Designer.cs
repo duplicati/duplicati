@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SelectBackend));
             this.File = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.FTP = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.SSH = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
@@ -38,81 +39,57 @@ namespace Duplicati.GUI.Wizard_pages
             // 
             // File
             // 
-            this.File.AutoSize = true;
-            this.File.Location = new System.Drawing.Point(40, 48);
+            resources.ApplyResources(this.File, "File");
             this.File.Name = "File";
-            this.File.Size = new System.Drawing.Size(179, 17);
-            this.File.TabIndex = 0;
             this.File.TabStop = true;
-            this.File.Text = "An external disk or network drive";
             this.File.UseVisualStyleBackColor = true;
             this.File.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.File.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // FTP
             // 
-            this.FTP.AutoSize = true;
-            this.FTP.Location = new System.Drawing.Point(40, 80);
+            resources.ApplyResources(this.FTP, "FTP");
             this.FTP.Name = "FTP";
-            this.FTP.Size = new System.Drawing.Size(133, 17);
-            this.FTP.TabIndex = 1;
             this.FTP.TabStop = true;
-            this.FTP.Text = "FTP to a remote server";
             this.FTP.UseVisualStyleBackColor = true;
             this.FTP.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.FTP.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // SSH
             // 
-            this.SSH.AutoSize = true;
-            this.SSH.Location = new System.Drawing.Point(40, 112);
+            resources.ApplyResources(this.SSH, "SSH");
             this.SSH.Name = "SSH";
-            this.SSH.Size = new System.Drawing.Size(171, 17);
-            this.SSH.TabIndex = 2;
             this.SSH.TabStop = true;
-            this.SSH.Text = "SSH (SFTP) to a remote server";
             this.SSH.UseVisualStyleBackColor = true;
             this.SSH.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.SSH.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // WebDAV
             // 
-            this.WebDAV.AutoSize = true;
-            this.WebDAV.Location = new System.Drawing.Point(40, 176);
+            resources.ApplyResources(this.WebDAV, "WebDAV");
             this.WebDAV.Name = "WebDAV";
-            this.WebDAV.Size = new System.Drawing.Size(160, 17);
-            this.WebDAV.TabIndex = 3;
             this.WebDAV.TabStop = true;
-            this.WebDAV.Text = "WEBDAV to a remote server";
             this.WebDAV.UseVisualStyleBackColor = true;
             this.WebDAV.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.WebDAV.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // S3
             // 
-            this.S3.AutoSize = true;
-            this.S3.Location = new System.Drawing.Point(40, 144);
+            resources.ApplyResources(this.S3, "S3");
             this.S3.Name = "S3";
-            this.S3.Size = new System.Drawing.Size(117, 17);
-            this.S3.TabIndex = 4;
             this.S3.TabStop = true;
-            this.S3.Text = "Amazon S3 storage";
             this.S3.UseVisualStyleBackColor = true;
             this.S3.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.S3.CheckedChanged += new System.EventHandler(this.Item_CheckChanged);
             // 
             // Question
             // 
-            this.Question.AutoSize = true;
-            this.Question.Location = new System.Drawing.Point(40, 16);
+            resources.ApplyResources(this.Question, "Question");
             this.Question.Name = "Question";
-            this.Question.Size = new System.Drawing.Size(206, 13);
-            this.Question.TabIndex = 5;
-            this.Question.Text = "Where do you want to store the backups?";
             // 
             // SelectBackend
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.Question);
             this.Controls.Add(this.S3);
@@ -121,7 +98,6 @@ namespace Duplicati.GUI.Wizard_pages
             this.Controls.Add(this.FTP);
             this.Controls.Add(this.File);
             this.Name = "SelectBackend";
-            this.Size = new System.Drawing.Size(506, 242);
             this.ResumeLayout(false);
             this.PerformLayout();
 

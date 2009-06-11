@@ -30,7 +30,7 @@ namespace Duplicati.GUI.Wizard_pages
     public partial class FirstLaunch : System.Windows.Forms.Wizard.WizardControl
     {
         public FirstLaunch()
-            : base("Welcome to Duplicati", "Since this is your first use of Duplicati on this machine, this wizard will guide you through a Duplicati setup")
+            : base(Strings.FirstLaunch.PageTitle, Strings.FirstLaunch.PageHelptext)
         {
             InitializeComponent();
             base.PageDisplay += new System.Windows.Forms.Wizard.PageChangeHandler(FirstLaunch_PageDisplay);
@@ -47,7 +47,7 @@ namespace Duplicati.GUI.Wizard_pages
         {
             if (!CreateNew.Checked && !Restore.Checked)
             {
-                MessageBox.Show(this, "You must select an action", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.FirstLaunch.NoActionSelection, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 args.NextPage = null;
                 return;

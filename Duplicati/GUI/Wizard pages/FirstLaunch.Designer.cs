@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FirstLaunch));
             this.CreateNew = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.Restore = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.label1 = new System.Windows.Forms.Label();
@@ -37,59 +38,36 @@ namespace Duplicati.GUI.Wizard_pages
             // 
             // CreateNew
             // 
-            this.CreateNew.AutoSize = true;
-            this.CreateNew.Location = new System.Drawing.Point(48, 64);
+            resources.ApplyResources(this.CreateNew, "CreateNew");
             this.CreateNew.Name = "CreateNew";
-            this.CreateNew.Size = new System.Drawing.Size(124, 17);
-            this.CreateNew.TabIndex = 0;
             this.CreateNew.TabStop = true;
-            this.CreateNew.Text = "Setup a new backup";
             this.CreateNew.UseVisualStyleBackColor = true;
             this.CreateNew.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.CreateNew.CheckedChanged += new System.EventHandler(this.CreateNew_CheckedChanged);
             // 
             // Restore
             // 
-            this.Restore.AutoSize = true;
-            this.Restore.Location = new System.Drawing.Point(48, 128);
+            resources.ApplyResources(this.Restore, "Restore");
             this.Restore.Name = "Restore";
-            this.Restore.Size = new System.Drawing.Size(272, 17);
-            this.Restore.TabIndex = 1;
             this.Restore.TabStop = true;
-            this.Restore.Text = "Restore settings from a previous Duplicati installation";
             this.Restore.UseVisualStyleBackColor = true;
             this.Restore.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.Restore.CheckedChanged += new System.EventHandler(this.Restore_CheckedChanged);
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(48, 24);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(248, 13);
-            this.label1.TabIndex = 2;
-            this.label1.Text = "Select one of the two options below, and click next";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(64, 88);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(367, 13);
-            this.label2.TabIndex = 3;
-            this.label2.Text = "Select this option, if you have not used Duplicati before, or want to start over";
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(64, 152);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(395, 13);
-            this.label3.TabIndex = 4;
-            this.label3.Text = "Select this option if you have used Duplicati before, and want to restore your se" +
-                "tup";
             // 
             // FirstLaunch
             // 
@@ -99,7 +77,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.Controls.Add(this.Restore);
             this.Controls.Add(this.CreateNew);
             this.Name = "FirstLaunch";
-            this.Size = new System.Drawing.Size(506, 242);
+            resources.ApplyResources(this, "$this");
             this.ResumeLayout(false);
             this.PerformLayout();
 

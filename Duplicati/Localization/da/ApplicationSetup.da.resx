@@ -117,91 +117,112 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <metadata name="TreeMenuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>147, 17</value>
-  </metadata>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="label1.AutoSize" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="playToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAW1JREFUOE9jYKAG
-        2L5r+/+qLZX/K/ZWwHHjrsb/pQdL/sNoZDmQ2jXrV/+H2w1S1PuolyTceawTYUDRzqL/DXcaSMJ9F/pQ
-        DSi6WvQfhkGSMy/O/F90ESgGwjA5JHbbuVaEAXk78/6nnEmB44lnJv5/9/7d/5N3T4LDAVkOxm481Yhq
-        QPiR8P8wDPLfz58/wRhk0NoLa//H74mHy4PU1RyrQRiQujHlv902OzC22mL5HxQmMANg9P0n98ExYrvZ
-        FqwO5DJ4LMSvjvtvuNIQgtcY/s/dlIvVgLJNZXB1IG/DDYhZGA2XMFhggGHA3KNz/1svsAarAcmDaAwD
-        QBIwDHPB7ku7//vM94GLo6uBuyBydsR/g2lQA4B0+ILw/2nL0v7rT9NHEQcbAFWXtSoT4YWwaWH/DSZB
-        JYE0SCNYM5IYWCMSH8WAzGkZEEkScPXKaoQLVq9Z/b9oXtH/9MXpROGqZZX/V6xcjjCAkhwNAO3d+227
-        OgtnAAAAAElFTkSuQmCC
-</value>
+  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>188, 32</value>
   </data>
-  <data name="restoreFilesToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAZ9JREFUOE+tk90r
-        Q3EcxvcXYdxIEUruuBFhmgsvG5IZyraEC9ZomyVuWN7yNozNie3ilJdltRRqLhYXuJkb/oSH57d2jrPt
-        QnHq0/n1PM/vOd/fOR2d7j8uSYrC7pAwbpN/BbOBwAGUZ1Nwe9/ymHe/guR61JyuS7VgyBLF5PRzHsfH
-        SQSDyYKea+5eW2AdfcRPLNY7JB9fBFzn+lPTCW1BV88tckkkUiCFPE3BwOAZWlpjAo83Js7X1ByFLD8I
-        uKZGL5tzTNyoE3T3nKCq5gwVlWG4PVFcXccx4wxhYzMi4JoaPWaYHR27UAuMnQHoyw4ExfotWIY3IEky
-        QuFz5U6NXjbHF698xg7jDkpK14RZV+/HqXSBdsOi2Ey4PjySUVW9quR4bKXAYFgXBrGO7CKVehJT1NTO
-        Ckx9fqHR4xTMaQpa21a+xWVhlFcsIBKJ4+PjE+n0uwI1etlcX/++OkFzy9K34RNmsd6HopJ5NDR6xRSE
-        PjV6mQIfNAVmc7aAARVuyGzKx+7YUyfgjzFs9aPXtPkrbLZt7O78KPjLH/0FSQb9JVVtgxAAAAAASUVO
-        RK5CYII=
-</value>
+  <data name="label1.Text" xml:space="preserve">
+    <value>Tid en log vises i listen med seneste backups</value>
   </data>
-  <metadata name="SetupMenuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>17, 17</value>
-  </metadata>
-  <data name="AddFolderMenu.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAU5JREFUOE/dkjtL
-        A0EUhfMzRLCwEcResImgkEZsFQvRUlPZGAQLRYigoFhY2Qha2IukUBQVYzQGN0ViCGgRCzWID/A5k505
-        ziO7s6MWiaULH7sze+fsOXdvKPQ/LuqsgmbXFCSzgrpSyUOc5cCJA5Bj9UyS87WLSAHwDYAtVlnSa2zZ
-        VPfoecwWVwIvC8Dz6A/Y9TDoab8mPaTun4meXwRuxsAuukH3u2yOxlU0L56K+JEUzi7BXs+0kHJQ7APd
-        juiX7wnD27p25xMHe5hR0Whh2gjwTCfoyRTwFNM8Rm3Kg4BE7LO7EcAVf03U+w7k11lpWRcFuR0AgpR6
-        1Zrdx00fZIRKKgpengRkgcdVBPhOMax7JRrqz4ocHJqeE30IA4UOIN9uk20DPJxWQEBSEwGBw1nlwD1o
-        Mew1w5XsNhl2GuAKKpuNtQ9ZXSP91+IvbIPAcpQnrtUAAAAASUVORK5CYII=
-</value>
+  <data name="GPGPath.Location" type="System.Drawing.Point, System.Drawing">
+    <value>136, 24</value>
   </data>
-  <data name="AddBackupMenu.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAgJJREFUOE+1k09r
-        E1EUxfNZuvADuBBcSOkmBaWCBSMuJEppwYD9o9hYLBo1ldZFXdiFBNq6sNiFIHZRRIOaYM3QxgRN45ip
-        LU1txmZMbNokTudlZk65N5ixiosKDvy49/HmnHNneM/l+t9PsWhiq2JDyVnYdxaJDNNu8FcTkZyE+PCQ
-        MeKhRhKJKf2bZoImoTXVxdUdZxoWmTIAiaE+L03vEaiq4DVVMnnyubrXAPYjwBplhBiDsrrNL1L6TyHV
-        rxs67/mfar8ZlO8ApfOMnHnREGvLCvKRcZQXJqGGQ9iUxplPMyEkZyfqJvQJUHthyW6Uw8dYUE0+qNe3
-        9yBMDYbIQjfW8f57lPvqjyVYlYVfDDIeiOdu3qzZSwz9C91IoKJHUNl5yfQkTuJ+uh81cwZCDjgGdrwZ
-        QroOvRDEVnkKuvkYheoUnuWGMLt2g6G+f/EUhtUuTCg+lBJBx4DSrewYoHmZ0sYtpPIj8L07yqLAylkW
-        3i12Y0jrRWDdi9H5PsegFvPBzl8Fsm0N0ul29KTaMbDSiZuFCxjevMT1cu4cOjIn0JVqxaB0ES46OGJ+
-        BMgcAeTDQPoQs5w8iCvKaU4kSNy3dgbej23wJFrQEXPXJzCit0ETmJEDDq+a8CXcBP/rZgRjrcy1aAu6
-        424Wd745vv97QWH+Oc+/i8lgcG7gj+RdUIovDDy0pEgAAAAASUVORK5CYII=
-</value>
+  <data name="GPGPath.Size" type="System.Drawing.Size, System.Drawing">
+    <value>264, 20</value>
   </data>
-  <data name="AddButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAZRJREFUOE+tk89L
-        AlEQx/2HRBfEP0HwP/DHQRD2Ii4sqyiIurL4B9RVE81AV8nEQ5FSBEJBYHSIDnmpo2EHL168TH5H3ltF
-        6+TClzf7ZuYzb2bfulzHfsbjMTXaDbI6FmV7WUp1U2S2TKo1awTfv/UGgwGZfZMy0wzlpjmyviwqfZZY
-        eAfM7tiHIVf9HqnPKgcCAHU/uizsCekjfR+Co6Gy9qY5mmg0/5nTYrEgfaKT8W5IobWddmy7TdGnKJ+A
-        9bJZBQC2tgZCidcE+zATOQ8MDAAoch9hhW/CEgAbvthDjOKPcQYUL4oOAMMJDANUvivT7HsmtVwuCdre
-        Q0xwFKRkK+kA8KK0FMpf52VV9I7k1WrFc4DQEmKUS4XUuuoACtUCAzxND7mr7o1O3TIRtthHjL/up/R5
-        2gFgINiERACScHRUhS18wr8zxOHtkIneqpcr8bpOEl8B9rYPsXu3slKrUOgsRL4Tn2wBdwMSAPgQg89+
-        8EoDYtQNhjBoXXl7ReU/kwUR/wNAGCwSINjoGb5j/7yuXxSK0T5JtfogAAAAAElFTkSuQmCC
-</value>
+  <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>43, 13</value>
   </data>
-  <data name="RemoveButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAVVJREFUOE+tk79q
-        wlAUxvNCooLPIPgGopvgICj4D0VRBPEBSocO2tDUIYmFUDIUGmk7pLRb6VBcnLrZIe/wNd/Fm9R6GzoY
-        +Lj33HvO7/xJommnfnzfx1LXsZpO4fT7uOl0YE4m4ox3ifluHQd3oxG2vR62gwE+Q4gUbQJXtq2GMPip
-        1YqCGaDSutk8hrA0Zn6v1bAJIXLlXiVWctCObVl4LZfxVq0qReBHoxHppVIRM4nmwYERQD3v9Vgq4bcY
-        SDGRMRzGAE7ay+fxMJvha7dLFH3WhQLMej0G0DCzWTGHIAgSRR/6GmEVUQssRxxmMlikUlim02JV7XlH
-        v4MWOBBx+A9JgGUYcQXevYfrbhcXIYAOXKV+2kzAc/oefZX6fI7LYhFnuZwo/XzfjrQlkD587cpPmpCr
-        dltAKEIoaTPzn8GS6LouCFqMx6JUinvOiXen/nm1b+rpvOG2EZwpAAAAAElFTkSuQmCC
-</value>
+  <data name="label2.Text" xml:space="preserve">
+    <value>GPG sti</value>
+  </data>
+  <data name="groupBox1.Text" xml:space="preserve">
+    <value>Bruger interface indstillinger</value>
+  </data>
+  <data name="CacheSizeLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 13</value>
+  </data>
+  <data name="CacheSizeLabel.Text" xml:space="preserve">
+    <value>Beregner størrelse på cache ...</value>
+  </data>
+  <data name="ClearCacheButton.Text" xml:space="preserve">
+    <value>Tøm cache</value>
+  </data>
+  <data name="SignatureCacheEnabled.Size" type="System.Drawing.Size, System.Drawing">
+    <value>98, 17</value>
+  </data>
+  <data name="SignatureCacheEnabled.Text" xml:space="preserve">
+    <value>Signatur cache</value>
+  </data>
+  <data name="SignatureCachePath.Location" type="System.Drawing.Point, System.Drawing">
+    <value>136, 96</value>
+  </data>
+  <data name="SignatureCachePath.Size" type="System.Drawing.Size, System.Drawing">
+    <value>264, 20</value>
+  </data>
+  <data name="TempPath.Location" type="System.Drawing.Point, System.Drawing">
+    <value>136, 72</value>
+  </data>
+  <data name="TempPath.Size" type="System.Drawing.Size, System.Drawing">
+    <value>264, 20</value>
+  </data>
+  <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>124, 13</value>
+  </data>
+  <data name="label4.Text" xml:space="preserve">
+    <value>Mappe til midlertidige filer</value>
+  </data>
+  <data name="SFTPPath.Location" type="System.Drawing.Point, System.Drawing">
+    <value>136, 48</value>
+  </data>
+  <data name="SFTPPath.Size" type="System.Drawing.Size, System.Drawing">
+    <value>264, 20</value>
+  </data>
+  <data name="label6.Size" type="System.Drawing.Size, System.Drawing">
+    <value>37, 13</value>
+  </data>
+  <data name="label6.Text" xml:space="preserve">
+    <value>sftp sti</value>
+  </data>
+  <data name="groupBox2.Text" xml:space="preserve">
+    <value>Indstillinger for fil stier (Avanceret)</value>
+  </data>
+  <data name="CancelBtn.Text" xml:space="preserve">
+    <value>Annuller</value>
+  </data>
+  <data name="groupBox3.Text" xml:space="preserve">
+    <value>Indstillinger for kodeord til en ny backup</value>
+  </data>
+  <data name="EncryptionMethod.Text" xml:space="preserve">
+    <value>Krypteringsmetode</value>
+  </data>
+  <data name="UseGPGEncryption.Size" type="System.Drawing.Size, System.Drawing">
+    <value>207, 17</value>
+  </data>
+  <data name="UseGPGEncryption.Text" xml:space="preserve">
+    <value>GNU Privacy Guard (eksternt program)</value>
+  </data>
+  <data name="UseAESEncryption.Size" type="System.Drawing.Size, System.Drawing">
+    <value>101, 17</value>
+  </data>
+  <data name="UseAESEncryption.Text" xml:space="preserve">
+    <value>AES (indbygget)</value>
+  </data>
+  <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>47, 13</value>
+  </data>
+  <data name="label5.Text" xml:space="preserve">
+    <value>Kodeord</value>
+  </data>
+  <data name="UseCommonPassword.Size" type="System.Drawing.Size, System.Drawing">
+    <value>221, 17</value>
+  </data>
+  <data name="UseCommonPassword.Text" xml:space="preserve">
+    <value>Brug et kodeord til at beskytte en backup</value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>

@@ -124,7 +124,7 @@ namespace Duplicati.GUI
                 this.Invoke(new EventHandler(WorkThread_CompletedWork), sender, e);
             else
             {
-                CurrentStatus.Text = "Waiting for next backup";
+                CurrentStatus.Text = Strings.ServiceStatus.StatusWaiting;
                 statusImage.Image = Properties.Resources.Status_OK;
                 BuildRecent();
             }
@@ -137,9 +137,9 @@ namespace Duplicati.GUI
             else
             {
                 Schedule c = Program.WorkThread.CurrentTask.Schedule;
-                string prefix = Program.WorkThread.CurrentTask.TaskType == DuplicityTaskType.Restore ? "Restore: " : "Backup: ";
+                string prefix = Program.WorkThread.CurrentTask.TaskType == DuplicityTaskType.Restore ? Strings.ServiceStatus.StatusRestore : Strings.ServiceStatus.StatusBackup;
 
-                CurrentStatus.Text = c == null ? "Waiting for next backup" : prefix + c.Name;
+                CurrentStatus.Text = c == null ? Strings.ServiceStatus.StatusWaiting : string.Format(prefix, c.Name);
                 statusImage.Image = Properties.Resources.Status_Working;
                 WorkThread_AddedWork(sender, e);
             }
@@ -154,8 +154,7 @@ namespace Duplicati.GUI
                 pendingBackups.Items.Clear();
                 //No locking here, the list is protected by the thread raising the event
                 foreach (IDuplicityTask t in Program.WorkThread.CurrentTasks)
-                    pendingBackups.Items.Add(t.TaskType.ToString() + ": " + t.Schedule.Name == null ? "" : t.Schedule.Name);
-
+                    pendingBackups.Items.Add(Program.LocalizeTaskType(t.TaskType) + ": " + t.Schedule.Name == null ? "" : t.Schedule.Name);
             }
 
         }
@@ -166,13 +165,13 @@ namespace Duplicati.GUI
             {
                 advancedPanel.Visible = false;
                 simplePanel.Top = advancedPanel.Top;
-                ShowAdvanced.Text = "Advanced <<<";
+                ShowAdvanced.Text = Strings.ServiceStatus.SwitchToAdvanced;
             }
             else
             {
                 advancedPanel.Visible = true;
                 simplePanel.Top = advancedPanel.Bottom;
-                ShowAdvanced.Text = "Simple >>>";
+                ShowAdvanced.Text = Strings.ServiceStatus.SwitchToSimple;
             }
 
             bool reposition = (this.Top == (Screen.PrimaryScreen.WorkingArea.Height - this.Height) && this.Left == (Screen.PrimaryScreen.WorkingArea.Width - this.Width));
@@ -209,16 +208,16 @@ namespace Duplicati.GUI
                 switch (l.ParsedStatus)
                 {
                     case DuplicatiOutputParser.OKStatus:
-                        lvi.ToolTipText = "Successfull backup";
+                        lvi.ToolTipText = Strings.ServiceStatus.BackupStatusOK;
                         break;
                     case DuplicatiOutputParser.ErrorStatus:
-                        lvi.ToolTipText = "Failed backup";
+                        lvi.ToolTipText = Strings.ServiceStatus.BackupStatusError;
                         break;
                     case DuplicatiOutputParser.WarningStatus:
-                        lvi.ToolTipText = "Completed backup with warnings";
+                        lvi.ToolTipText = Strings.ServiceStatus.BackupStatusWarning;
                         break;
                     case DuplicatiOutputParser.PartialStatus:
-                        lvi.ToolTipText = "Backup only processed some of the files";
+                        lvi.ToolTipText = Strings.ServiceStatus.BackupStatusPartial;
                         break;
                 }
             }

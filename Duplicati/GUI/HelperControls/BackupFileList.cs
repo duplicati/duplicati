@@ -37,9 +37,13 @@ namespace Duplicati.GUI.HelperControls
         private Schedule m_schedule;
         private bool m_isInCheck = false;
 
+        private string m_localizedLoadingText;
+
         public BackupFileList()
         {
             InitializeComponent();
+            m_localizedLoadingText = LoadingIndicator.Text;
+
         }
 
         public void LoadFileList(Schedule schedule, DateTime when, List<string> filelist)
@@ -49,7 +53,7 @@ namespace Duplicati.GUI.HelperControls
             progressBar.Visible = true;
             treeView.Visible = false;
             treeView.TreeViewNodeSorter = new NodeSorter();
-            LoadingIndicator.Text = "Loading filelist, please wait ...";
+            LoadingIndicator.Text = m_localizedLoadingText;
 
             m_files = filelist;
             m_when = when;

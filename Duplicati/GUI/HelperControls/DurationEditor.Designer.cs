@@ -29,6 +29,7 @@ namespace Duplicati.GUI.HelperControls
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DurationEditor));
             this.EasyDuration = new System.Windows.Forms.ComboBox();
             this.CustomDuration = new System.Windows.Forms.TextBox();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
@@ -40,25 +41,20 @@ namespace Duplicati.GUI.HelperControls
             this.EasyDuration.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.EasyDuration.FormattingEnabled = true;
             this.EasyDuration.Items.AddRange(new object[] {
-            "Each day",
-            "Each week",
-            "Each second week",
-            "Each month",
-            "Custom ..."});
-            this.EasyDuration.Location = new System.Drawing.Point(0, 0);
+            resources.GetString("EasyDuration.Items"),
+            resources.GetString("EasyDuration.Items1"),
+            resources.GetString("EasyDuration.Items2"),
+            resources.GetString("EasyDuration.Items3"),
+            resources.GetString("EasyDuration.Items4")});
+            resources.ApplyResources(this.EasyDuration, "EasyDuration");
             this.EasyDuration.Name = "EasyDuration";
-            this.EasyDuration.Size = new System.Drawing.Size(112, 21);
-            this.EasyDuration.TabIndex = 0;
             this.EasyDuration.SelectedIndexChanged += new System.EventHandler(this.EasyDuration_SelectedIndexChanged);
             // 
             // CustomDuration
             // 
-            this.errorProvider.SetError(this.CustomDuration, "s");
-            this.CustomDuration.Location = new System.Drawing.Point(136, 0);
+            this.errorProvider.SetError(this.CustomDuration, resources.GetString("CustomDuration.Error"));
+            resources.ApplyResources(this.CustomDuration, "CustomDuration");
             this.CustomDuration.Name = "CustomDuration";
-            this.CustomDuration.Size = new System.Drawing.Size(84, 20);
-            this.CustomDuration.TabIndex = 1;
-            this.CustomDuration.Visible = false;
             this.CustomDuration.TextChanged += new System.EventHandler(this.CustomDuration_TextChanged);
             // 
             // errorProvider
@@ -67,12 +63,11 @@ namespace Duplicati.GUI.HelperControls
             // 
             // DurationEditor
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.CustomDuration);
             this.Controls.Add(this.EasyDuration);
             this.Name = "DurationEditor";
-            this.Size = new System.Drawing.Size(221, 21);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

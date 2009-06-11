@@ -37,15 +37,10 @@ namespace Duplicati.GUI.HelperControls
             // treeView
             // 
             this.treeView.AllowDrop = true;
-            this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.treeView.ImageIndex = 0;
+            resources.ApplyResources(this.treeView, "treeView");
             this.treeView.ImageList = this.imageList;
             this.treeView.LabelEdit = true;
-            this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.SelectedImageIndex = 0;
-            this.treeView.Size = new System.Drawing.Size(150, 150);
-            this.treeView.TabIndex = 0;
             this.treeView.DoubleClick += new System.EventHandler(this.treeView_DoubleClick);
             this.treeView.DragDrop += new System.Windows.Forms.DragEventHandler(this.treeView_DragDrop);
             this.treeView.KeyUp += new System.Windows.Forms.KeyEventHandler(this.treeView_KeyUp);
@@ -61,7 +56,7 @@ namespace Duplicati.GUI.HelperControls
             // 
             // BackupTreeView
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.treeView);
             this.Name = "BackupTreeView";

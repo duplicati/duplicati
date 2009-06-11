@@ -52,6 +52,36 @@
     <Compile Include="ApplicationSetup.Designer.cs">
       <DependentUpon>ApplicationSetup.cs</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\Strings\BackupItems.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>BackupItems.resx</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\Strings\BackupTreeView.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>BackupTreeView.resx</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\Strings\DurationEditor.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DurationEditor.resx</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\Strings\FilterDialog.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FilterDialog.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\ApplicationSetup.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ApplicationSetup.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Common.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Common.resx</DependentUpon>
+    </Compile>
     <Compile Include="DatabaseUpgrader.cs" />
     <Compile Include="DuplicatiRunner.cs" />
     <Compile Include="DuplicatiOutputParser.cs" />
@@ -132,42 +162,6 @@
       <DependentUpon>RestoreBackup.cs</DependentUpon>
     </Compile>
     <Compile Include="Scheduler.cs" />
-    <Compile Include="Service controls\Backends\FileSettings.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Service controls\Backends\FileSettings.Designer.cs">
-      <DependentUpon>FileSettings.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Service controls\Backends\S3Settings.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Service controls\Backends\S3Settings.Designer.cs">
-      <DependentUpon>S3Settings.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Service controls\ScheduleSettings.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Service controls\ScheduleSettings.Designer.cs">
-      <DependentUpon>ScheduleSettings.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Service controls\Backends\SSHSettings.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Service controls\Backends\SSHSettings.Designer.cs">
-      <DependentUpon>SSHSettings.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Service controls\TaskSettingsBase.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Service controls\TaskSettingsBase.Designer.cs">
-      <DependentUpon>TaskSettingsBase.cs</DependentUpon>
-    </Compile>
-    <Compile Include="ServiceSetup.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ServiceSetup.Designer.cs">
-      <DependentUpon>ServiceSetup.cs</DependentUpon>
-    </Compile>
     <Compile Include="ServiceStatus.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -175,6 +169,31 @@
       <DependentUpon>ServiceStatus.cs</DependentUpon>
     </Compile>
     <Compile Include="SingleInstance.cs" />
+    <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\ListBackupFiles.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ListBackupFiles.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Program.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Program.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\ServiceStatus.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ServiceStatus.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\TaskType.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TaskType.resx</DependentUpon>
+    </Compile>
     <Compile Include="TaskPackages.cs" />
     <Compile Include="UrlUtillity.cs" />
     <Compile Include="Wizard pages\Add backup\AdvancedOptions.cs">
@@ -339,6 +358,26 @@
     <Compile Include="Wizard pages\SelectBackup.Designer.cs">
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Strings\FirstLaunch.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FirstLaunch.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Strings\MainPage.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MainPage.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Strings\SelectBackend.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SelectBackend.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Strings\SelectBackup.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SelectBackup.resx</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\WizardSettingsWrapper.cs" />
     <Compile Include="WizardHandler.cs" />
     <Compile Include="WorkerThread.cs" />
@@ -438,30 +477,6 @@
     <EmbeddedResource Include="RestoreBackup.resx">
       <SubType>Designer</SubType>
       <DependentUpon>RestoreBackup.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Service controls\Backends\FileSettings.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>FileSettings.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Service controls\Backends\S3Settings.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>S3Settings.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Service controls\Backends\SSHSettings.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>SSHSettings.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Service controls\ScheduleSettings.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ScheduleSettings.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Service controls\TaskSettingsBase.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>TaskSettingsBase.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ServiceSetup.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ServiceSetup.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ServiceStatus.resx">
       <SubType>Designer</SubType>
@@ -613,10 +628,65 @@
     <None Include="Resources\StatusMenuIcon.png" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="HelperControls\Strings\BackupItems.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>BackupItems.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\Strings\BackupTreeView.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>BackupTreeView.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\Strings\DurationEditor.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DurationEditor.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\Strings\FilterDialog.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FilterDialog.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\ApplicationSetup.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ApplicationSetup.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Common.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Common.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Database schema\2. Refactor for easier extensions.sql" />
     <EmbeddedResource Include="ListBackupFiles.resx">
       <SubType>Designer</SubType>
       <DependentUpon>ListBackupFiles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\DatabaseUpgrader.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\ListBackupFiles.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ListBackupFiles.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Program.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Program.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\ServiceStatus.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ServiceStatus.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\TaskType.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>TaskType.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\GeneratedFilenameOptions.resx">
       <SubType>Designer</SubType>
@@ -625,6 +695,26 @@
     <EmbeddedResource Include="Wizard pages\Add backup\SettingOverrides.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SettingOverrides.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Strings\FirstLaunch.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FirstLaunch.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Strings\MainPage.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>MainPage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Strings\SelectBackend.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SelectBackend.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Strings\SelectBackup.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SelectBackup.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
@@ -665,9 +755,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\LogViewer.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Wizard pages\Rearrange\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
