@@ -28,19 +28,20 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingOverrides));
             this.OptionsGrid = new System.Windows.Forms.DataGridView();
-            this.InfoLabel = new System.Windows.Forms.Label();
+            this.enabledDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.valueDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.argumentDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.BaseDataSet = new System.Data.DataSet();
             this.OverrideTable = new System.Data.DataTable();
             this.EnabledDataColumn = new System.Data.DataColumn();
             this.NameDataColumn = new System.Data.DataColumn();
             this.ValueDataColumn = new System.Data.DataColumn();
-            this.enabledDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.valueDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.argumentDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.argumentDataColumn = new System.Data.DataColumn();
+            this.InfoLabel = new System.Windows.Forms.Label();
+            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.OptionsGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.BaseDataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OverrideTable)).BeginInit();
@@ -59,22 +60,37 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.argumentDataGridViewTextBoxColumn});
             this.OptionsGrid.DataMember = "OverrideTable";
             this.OptionsGrid.DataSource = this.BaseDataSet;
-            this.OptionsGrid.Location = new System.Drawing.Point(16, 16);
+            resources.ApplyResources(this.OptionsGrid, "OptionsGrid");
             this.OptionsGrid.MultiSelect = false;
             this.OptionsGrid.Name = "OptionsGrid";
             this.OptionsGrid.RowHeadersVisible = false;
-            this.OptionsGrid.Size = new System.Drawing.Size(472, 144);
-            this.OptionsGrid.TabIndex = 0;
             this.OptionsGrid.RowEnter += new System.Windows.Forms.DataGridViewCellEventHandler(this.OptionsGrid_RowEnter);
             this.OptionsGrid.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.OptionsGrid_CellEndEdit);
             // 
-            // InfoLabel
+            // enabledDataGridViewCheckBoxColumn
             // 
-            this.InfoLabel.Location = new System.Drawing.Point(16, 168);
-            this.InfoLabel.Name = "InfoLabel";
-            this.InfoLabel.Size = new System.Drawing.Size(472, 64);
-            this.InfoLabel.TabIndex = 0;
-            this.InfoLabel.Text = "Description panel";
+            this.enabledDataGridViewCheckBoxColumn.DataPropertyName = "Enabled";
+            resources.ApplyResources(this.enabledDataGridViewCheckBoxColumn, "enabledDataGridViewCheckBoxColumn");
+            this.enabledDataGridViewCheckBoxColumn.Name = "enabledDataGridViewCheckBoxColumn";
+            // 
+            // nameDataGridViewTextBoxColumn
+            // 
+            this.nameDataGridViewTextBoxColumn.DataPropertyName = "Name";
+            resources.ApplyResources(this.nameDataGridViewTextBoxColumn, "nameDataGridViewTextBoxColumn");
+            this.nameDataGridViewTextBoxColumn.Name = "nameDataGridViewTextBoxColumn";
+            this.nameDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // valueDataGridViewTextBoxColumn
+            // 
+            this.valueDataGridViewTextBoxColumn.DataPropertyName = "Value";
+            resources.ApplyResources(this.valueDataGridViewTextBoxColumn, "valueDataGridViewTextBoxColumn");
+            this.valueDataGridViewTextBoxColumn.Name = "valueDataGridViewTextBoxColumn";
+            // 
+            // argumentDataGridViewTextBoxColumn
+            // 
+            this.argumentDataGridViewTextBoxColumn.DataPropertyName = "argument";
+            resources.ApplyResources(this.argumentDataGridViewTextBoxColumn, "argumentDataGridViewTextBoxColumn");
+            this.argumentDataGridViewTextBoxColumn.Name = "argumentDataGridViewTextBoxColumn";
             // 
             // BaseDataSet
             // 
@@ -107,56 +123,29 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.ValueDataColumn.Caption = "Value";
             this.ValueDataColumn.ColumnName = "Value";
             // 
-            // enabledDataGridViewCheckBoxColumn
-            // 
-            this.enabledDataGridViewCheckBoxColumn.DataPropertyName = "Enabled";
-            this.enabledDataGridViewCheckBoxColumn.HeaderText = "Enabled";
-            this.enabledDataGridViewCheckBoxColumn.Name = "enabledDataGridViewCheckBoxColumn";
-            this.enabledDataGridViewCheckBoxColumn.Width = 50;
-            // 
-            // nameDataGridViewTextBoxColumn
-            // 
-            this.nameDataGridViewTextBoxColumn.DataPropertyName = "Name";
-            this.nameDataGridViewTextBoxColumn.HeaderText = "Name";
-            this.nameDataGridViewTextBoxColumn.Name = "nameDataGridViewTextBoxColumn";
-            this.nameDataGridViewTextBoxColumn.ReadOnly = true;
-            this.nameDataGridViewTextBoxColumn.Width = 150;
-            // 
-            // valueDataGridViewTextBoxColumn
-            // 
-            this.valueDataGridViewTextBoxColumn.DataPropertyName = "Value";
-            this.valueDataGridViewTextBoxColumn.HeaderText = "Value";
-            this.valueDataGridViewTextBoxColumn.Name = "valueDataGridViewTextBoxColumn";
-            this.valueDataGridViewTextBoxColumn.Width = 240;
-            // 
-            // dataGridViewTextBoxColumn1
-            // 
-            this.dataGridViewTextBoxColumn1.DataPropertyName = "argument";
-            this.dataGridViewTextBoxColumn1.HeaderText = "argument";
-            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
-            this.dataGridViewTextBoxColumn1.Visible = false;
-            this.dataGridViewTextBoxColumn1.Width = 5;
-            // 
-            // argumentDataGridViewTextBoxColumn
-            // 
-            this.argumentDataGridViewTextBoxColumn.DataPropertyName = "argument";
-            this.argumentDataGridViewTextBoxColumn.HeaderText = "argument";
-            this.argumentDataGridViewTextBoxColumn.Name = "argumentDataGridViewTextBoxColumn";
-            this.argumentDataGridViewTextBoxColumn.Visible = false;
-            this.argumentDataGridViewTextBoxColumn.Width = 5;
-            // 
             // argumentDataColumn
             // 
             this.argumentDataColumn.Caption = "argument";
             this.argumentDataColumn.ColumnName = "argument";
             this.argumentDataColumn.DataType = typeof(object);
             // 
+            // InfoLabel
+            // 
+            resources.ApplyResources(this.InfoLabel, "InfoLabel");
+            this.InfoLabel.Name = "InfoLabel";
+            // 
+            // dataGridViewTextBoxColumn1
+            // 
+            this.dataGridViewTextBoxColumn1.DataPropertyName = "argument";
+            resources.ApplyResources(this.dataGridViewTextBoxColumn1, "dataGridViewTextBoxColumn1");
+            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            // 
             // SettingOverrides
             // 
             this.Controls.Add(this.InfoLabel);
             this.Controls.Add(this.OptionsGrid);
             this.Name = "SettingOverrides";
-            this.Size = new System.Drawing.Size(506, 242);
+            resources.ApplyResources(this, "$this");
             ((System.ComponentModel.ISupportInitialize)(this.OptionsGrid)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.BaseDataSet)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.OverrideTable)).EndInit();

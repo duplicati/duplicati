@@ -121,6 +121,13 @@
     <value>An error occured: {0}</value>
     <comment>A generic error message</comment>
   </data>
+  <data name="InvalidDuration" xml:space="preserve">
+    <value>The full backup duration entered is not valid: {0}</value>
+  </data>
+  <data name="OneDay" xml:space="preserve">
+    <value>One day</value>
+    <comment>A string displayed in comboboxes indicating that the duration should be one day</comment>
+  </data>
   <data name="OneMonth" xml:space="preserve">
     <value>One month</value>
     <comment>A string displayed in comboboxes indicating that the duration should be one month</comment>

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.GUI.Strings {
+namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Duplicati.GUI.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Common {
+    internal class IncrementalSettings {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Common() {
+        internal IncrementalSettings() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.GUI.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Strings.Common", typeof(Common).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Wizard_pages.Add_backup.Strings.IncrementalSettings", typeof(IncrementalSettings).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,65 +61,56 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An error occured: {0}.
+        ///   Looks up a localized string similar to You have disabled backup removal. If no backups are removed, the amount of stored data will increase forever.\nDisabling backup cleanup may result in storage space being exhausted.\nDo you want to continue without backup removal backups?.
         /// </summary>
-        internal static string GenericError {
+        internal static string DisabledCleanupWarning {
             get {
-                return ResourceManager.GetString("GenericError", resourceCulture);
+                return ResourceManager.GetString("DisabledCleanupWarning", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The full backup duration entered is not valid: {0}.
+        ///   Looks up a localized string similar to You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.\nDisabling full backups may result in a very lengthy restoration process, and may cause a restore to fault.\nDo you want to continue without full backups?.
         /// </summary>
-        internal static string InvalidDuration {
+        internal static string DisabledFullBackupsWarning {
             get {
-                return ResourceManager.GetString("InvalidDuration", resourceCulture);
+                return ResourceManager.GetString("DisabledFullBackupsWarning", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One day.
+        ///   Looks up a localized string similar to To avoid large backups, Duplicati can back up only files that have changed. Each backup is much smaller, but all files are still avalible..
         /// </summary>
-        internal static string OneDay {
+        internal static string PageDescription {
             get {
-                return ResourceManager.GetString("OneDay", resourceCulture);
+                return ResourceManager.GetString("PageDescription", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One month.
+        ///   Looks up a localized string similar to Select incremental options.
         /// </summary>
-        internal static string OneMonth {
+        internal static string PageTitle {
             get {
-                return ResourceManager.GetString("OneMonth", resourceCulture);
+                return ResourceManager.GetString("PageTitle", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One week.
+        ///   Looks up a localized string similar to The cleanup duration entered is less than ten minutes. This will give very poor system performance..
         /// </summary>
-        internal static string OneWeek {
+        internal static string TooShortCleanupDuration {
             get {
-                return ResourceManager.GetString("OneWeek", resourceCulture);
+                return ResourceManager.GetString("TooShortCleanupDuration", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Three months.
+        ///   Looks up a localized string similar to The full backup duration entered is less than ten minutes. This will give very poor system performance..
         /// </summary>
-        internal static string ThreeMonths {
+        internal static string TooShortFullDuration {
             get {
-                return ResourceManager.GetString("ThreeMonths", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Two weeks.
-        /// </summary>
-        internal static string TwoWeeks {
-            get {
-                return ResourceManager.GetString("TwoWeeks", resourceCulture);
+                return ResourceManager.GetString("TooShortFullDuration", resourceCulture);
             }
         }
     }

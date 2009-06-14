@@ -33,7 +33,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         WizardSettingsWrapper m_wrapper;
 
         public EditFilters()
-            : base("Edit filters", "On this page you can modify filters that control what files are included in the backup.")
+            : base(Strings.EditFilters.PageTitle, Strings.EditFilters.PageDescription)
         {
             InitializeComponent();
 

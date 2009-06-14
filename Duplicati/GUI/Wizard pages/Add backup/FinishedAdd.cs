@@ -34,7 +34,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         WizardSettingsWrapper m_wrapper;
 
         public FinishedAdd()
-            : base("Ready to add backup", "You have now entered all the required data, and can now create the backup.")
+            : base(Strings.FinishedAdd.PageTitle, Strings.FinishedAdd.PageDescription)
         {
             InitializeComponent();
 
@@ -56,39 +56,43 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             List<KeyValuePair<string, string>> strings = new List<KeyValuePair<string, string>>();
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
-                strings.Add(new KeyValuePair<string, string>("Action", "Add new backup"));
+                strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryAction, Strings.FinishedAdd.SummaryActionAdd));
             else
-                strings.Add(new KeyValuePair<string, string>("Action", "Modify backup"));
+                strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryAction, Strings.FinishedAdd.SummaryActionModify));
 
-            strings.Add(new KeyValuePair<string, string>("Source folder", m_wrapper.SourcePath));
-            strings.Add(new KeyValuePair<string, string>("When", m_wrapper.BackupTimeOffset.ToString()));
+            strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummarySourceFolder, m_wrapper.SourcePath));
+            strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryWhen, m_wrapper.BackupTimeOffset.ToString()));
             if (!string.IsNullOrEmpty(m_wrapper.RepeatInterval))
-                strings.Add(new KeyValuePair<string, string>("Repeat", m_wrapper.RepeatInterval));
+                strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryRepeat, m_wrapper.RepeatInterval));
             if (!string.IsNullOrEmpty(m_wrapper.FullBackupInterval))
-                strings.Add(new KeyValuePair<string, string>("Full backup each", m_wrapper.FullBackupInterval));
+                strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryFullBackupEach, m_wrapper.FullBackupInterval));
             if (m_wrapper.MaxFullBackups > 0)
-                strings.Add(new KeyValuePair<string, string>("Keep full backups", m_wrapper.MaxFullBackups.ToString()));
+                strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryKeepFullBackups, m_wrapper.MaxFullBackups.ToString()));
 
             strings.Add(new KeyValuePair<string, string>(null, null));
-            strings.Add(new KeyValuePair<string, string>("Destination", m_wrapper.Backend.ToString()));
+            strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryDestination, m_wrapper.Backend.ToString()));
 
             switch(m_wrapper.Backend)
             {
                 case WizardSettingsWrapper.BackendType.File:
                     FileSettings file = new FileSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Destination path", file.Path));
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryDestinationPath, file.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.FTP:
                     FTPSettings ftp = new FTPSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Destination path", ftp.Server + "/" + ftp.Path ));
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryDestinationPath, ftp.Server + "/" + ftp.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.SSH:
                     SSHSettings ssh = new SSHSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Destination path", ssh.Server + "/" + ssh.Path));
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryDestinationPath, ssh.Server + "/" + ssh.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.S3:
                     S3Settings s3 = new S3Settings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Destination path", s3.Path));
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryDestinationPath, s3.Path));
+                    break;
+                case WizardSettingsWrapper.BackendType.WebDav:
+                    WEBDAVSettings webdav = new WEBDAVSettings(m_wrapper);
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryDestinationPath, webdav.Path));
                     break;
             }
             
@@ -116,7 +120,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
                     return base.HelpText;
                 else
-                    return "The backup modifications are now ready to be saved.";
+                    return Strings.FinishedAdd.PageDescriptionModify;
             }
         }
 
@@ -127,7 +131,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
                     return base.Title;
                 else
-                    return "Ready to save modifications";
+                    return Strings.FinishedAdd.PageTitleModify;
             }
         }
     }

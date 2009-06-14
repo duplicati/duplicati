@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SelectName));
             this.BackupFolder = new Duplicati.GUI.HelperControls.BackupTreeView();
             this.label1 = new System.Windows.Forms.Label();
             this.BackupName = new System.Windows.Forms.TextBox();
@@ -37,51 +38,36 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // BackupFolder
             // 
-            this.BackupFolder.Location = new System.Drawing.Point(24, 80);
+            resources.ApplyResources(this.BackupFolder, "BackupFolder");
             this.BackupFolder.Name = "BackupFolder";
             this.BackupFolder.SelectedBackup = null;
             this.BackupFolder.SelectedFolder = "";
-            this.BackupFolder.Size = new System.Drawing.Size(440, 120);
-            this.BackupFolder.TabIndex = 0;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(24, 16);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(73, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Backup name";
             // 
             // BackupName
             // 
-            this.BackupName.Location = new System.Drawing.Point(120, 16);
+            resources.ApplyResources(this.BackupName, "BackupName");
             this.BackupName.Name = "BackupName";
-            this.BackupName.Size = new System.Drawing.Size(344, 20);
-            this.BackupName.TabIndex = 2;
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(24, 64);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(187, 13);
-            this.label2.TabIndex = 3;
-            this.label2.Text = "Place the backup in a group (optional)";
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(344, 200);
+            resources.ApplyResources(this.button1, "button1");
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(120, 24);
-            this.button1.TabIndex = 4;
-            this.button1.Text = "Add a group";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // SelectName
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.button1);
             this.Controls.Add(this.label2);
@@ -89,7 +75,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.label1);
             this.Controls.Add(this.BackupFolder);
             this.Name = "SelectName";
-            this.Size = new System.Drawing.Size(506, 242);
             this.Load += new System.EventHandler(this.SelectName_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

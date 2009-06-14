@@ -38,7 +38,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private WizardSettingsWrapper m_wrapper;
 
         public IncrementalSettings()
-            : base("Select incremental options", "To avoid large backups, Duplicati can back up only files that have changed. Each backup is much smaller, but all files are still avalible.")
+            : base(Strings.IncrementalSettings.PageTitle, Strings.IncrementalSettings.PageDescription)
         {
             InitializeComponent();
 
@@ -46,10 +46,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             base.PageLeave += new PageChangeHandler(IncrementalSettings_PageLeave);
 
             List<KeyValuePair<string, string>> ix = new List<KeyValuePair<string, string>>();
-            ix.Add(new KeyValuePair<string, string>("One day", "1D"));
-            ix.Add(new KeyValuePair<string, string>("One week", "1W"));
-            ix.Add(new KeyValuePair<string, string>("Two weeks", "2W"));
-            ix.Add(new KeyValuePair<string, string>("One month", "1M"));
+            ix.Add(new KeyValuePair<string, string>(GUI.Strings.Common.OneDay, "1D"));
+            ix.Add(new KeyValuePair<string, string>(GUI.Strings.Common.OneWeek, "1W"));
+            ix.Add(new KeyValuePair<string, string>(GUI.Strings.Common.TwoWeeks, "2W"));
+            ix.Add(new KeyValuePair<string, string>(GUI.Strings.Common.OneMonth, "1M"));
             CleanupDuration.SetIntervals(ix);
         }
 
@@ -67,14 +67,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 {
                     if (Timeparser.ParseTimeSpan(FullDuration.Value).TotalMinutes < 10)
                     {
-                        MessageBox.Show(this, "The duration entered is less than ten minutes. This will give very poor system performance.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, Strings.IncrementalSettings.TooShortFullDuration, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         args.Cancel = true;
                         return;
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "The full backup duration entered is not valid: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(GUI.Strings.Common.InvalidDuration, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     args.Cancel = true;
                     return;
                 }
@@ -86,14 +86,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 {
                     if (Timeparser.ParseTimeSpan(CleanupDuration.Value).TotalMinutes < 10)
                     {
-                        MessageBox.Show(this, "The cleanup duration entered is less than ten minutes. This will give very poor system performance.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, Strings.IncrementalSettings.TooShortCleanupDuration , Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         args.Cancel = true;
                         return;
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "The cleanup duration entered is not valid: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(GUI.Strings.Common.InvalidDuration, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     args.Cancel = true;
                     return;
                 }
@@ -101,7 +101,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!m_warnedFull && !FullBackups.Checked)
             {
-                if (MessageBox.Show(this, "You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.\nDisabling full backups may result in a very lengthy restoration process, and may cause a restore to fault.\nDo you want to continue without full backups?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                if (MessageBox.Show(this, Strings.IncrementalSettings.DisabledFullBackupsWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
                     args.Cancel = true;
                     return;
@@ -111,7 +111,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!m_warnedClean && !(EnableCleanupDuration.Checked || EnableFullBackupClean.Checked))
             {
-                if (MessageBox.Show(this, "You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.\nDisabling full backups may result in a very lengthy restore process, and may cause a restore to fault.\nDo you want to continue without full backups?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                if (MessageBox.Show(this, Strings.IncrementalSettings.DisabledCleanupWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
                     args.Cancel = true;
                     return;

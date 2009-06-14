@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.GUI.Strings {
+namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Duplicati.GUI.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Common {
+    internal class SelectName {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Common() {
+        internal SelectName() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.GUI.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Strings.Common", typeof(Common).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Wizard_pages.Add_backup.Strings.SelectName", typeof(SelectName).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,65 +61,20 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An error occured: {0}.
+        ///   Looks up a localized string similar to .
         /// </summary>
-        internal static string GenericError {
+        internal static string PageDescription {
             get {
-                return ResourceManager.GetString("GenericError", resourceCulture);
+                return ResourceManager.GetString("PageDescription", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The full backup duration entered is not valid: {0}.
+        ///   Looks up a localized string similar to .
         /// </summary>
-        internal static string InvalidDuration {
+        internal static string PageTitle {
             get {
-                return ResourceManager.GetString("InvalidDuration", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to One day.
-        /// </summary>
-        internal static string OneDay {
-            get {
-                return ResourceManager.GetString("OneDay", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to One month.
-        /// </summary>
-        internal static string OneMonth {
-            get {
-                return ResourceManager.GetString("OneMonth", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to One week.
-        /// </summary>
-        internal static string OneWeek {
-            get {
-                return ResourceManager.GetString("OneWeek", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Three months.
-        /// </summary>
-        internal static string ThreeMonths {
-            get {
-                return ResourceManager.GetString("ThreeMonths", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Two weeks.
-        /// </summary>
-        internal static string TwoWeeks {
-            get {
-                return ResourceManager.GetString("TwoWeeks", resourceCulture);
+                return ResourceManager.GetString("PageTitle", resourceCulture);
             }
         }
     }

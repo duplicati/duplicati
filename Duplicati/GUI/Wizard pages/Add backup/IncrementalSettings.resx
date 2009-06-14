@@ -117,4 +117,270 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="FullBackups.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="FullBackups.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 8</value>
+  </data>
+  <data name="FullBackups.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 17</value>
+  </data>
+  <data name="FullBackups.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="FullBackups.Text" xml:space="preserve">
+    <value>Perfom full backups regularly</value>
+  </data>
+  <data name="&gt;&gt;FullBackups.Name" xml:space="preserve">
+    <value>FullBackups</value>
+  </data>
+  <data name="&gt;&gt;FullBackups.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FullBackups.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;FullBackups.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="FullDuration.Location" type="System.Drawing.Point, System.Drawing">
+    <value>168, 24</value>
+  </data>
+  <data name="FullDuration.Size" type="System.Drawing.Size, System.Drawing">
+    <value>221, 21</value>
+  </data>
+  <data name="FullDuration.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;FullDuration.Name" xml:space="preserve">
+    <value>FullDuration</value>
+  </data>
+  <data name="&gt;&gt;FullDuration.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.0.183, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;FullDuration.Parent" xml:space="preserve">
+    <value>FullSettings</value>
+  </data>
+  <data name="&gt;&gt;FullDuration.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label2.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 24</value>
+  </data>
+  <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>134, 13</value>
+  </data>
+  <data name="label2.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="label2.Text" xml:space="preserve">
+    <value>Perform a full backup each</value>
+  </data>
+  <data name="&gt;&gt;label2.Name" xml:space="preserve">
+    <value>label2</value>
+  </data>
+  <data name="&gt;&gt;label2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label2.Parent" xml:space="preserve">
+    <value>FullSettings</value>
+  </data>
+  <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="FullSettings.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 8</value>
+  </data>
+  <data name="FullSettings.Size" type="System.Drawing.Size, System.Drawing">
+    <value>448, 56</value>
+  </data>
+  <data name="FullSettings.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;FullSettings.Name" xml:space="preserve">
+    <value>FullSettings</value>
+  </data>
+  <data name="&gt;&gt;FullSettings.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FullSettings.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;FullSettings.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="EnableFullBackupClean.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="EnableFullBackupClean.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 88</value>
+  </data>
+  <data name="EnableFullBackupClean.Size" type="System.Drawing.Size, System.Drawing">
+    <value>239, 17</value>
+  </data>
+  <data name="EnableFullBackupClean.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="EnableFullBackupClean.Text" xml:space="preserve">
+    <value>Never keep more than this many full backups</value>
+  </data>
+  <data name="&gt;&gt;EnableFullBackupClean.Name" xml:space="preserve">
+    <value>EnableFullBackupClean</value>
+  </data>
+  <data name="&gt;&gt;EnableFullBackupClean.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;EnableFullBackupClean.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;EnableFullBackupClean.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="CleanFullBackupCount.Location" type="System.Drawing.Point, System.Drawing">
+    <value>288, 88</value>
+  </data>
+  <data name="CleanFullBackupCount.Size" type="System.Drawing.Size, System.Drawing">
+    <value>56, 20</value>
+  </data>
+  <data name="CleanFullBackupCount.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;CleanFullBackupCount.Name" xml:space="preserve">
+    <value>CleanFullBackupCount</value>
+  </data>
+  <data name="&gt;&gt;CleanFullBackupCount.Type" xml:space="preserve">
+    <value>System.Windows.Forms.NumericUpDown, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CleanFullBackupCount.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;CleanFullBackupCount.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="CleanFullBackupHelptext.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt, style=Italic</value>
+  </data>
+  <data name="CleanFullBackupHelptext.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 112</value>
+  </data>
+  <data name="CleanFullBackupHelptext.Size" type="System.Drawing.Size, System.Drawing">
+    <value>440, 16</value>
+  </data>
+  <data name="CleanFullBackupHelptext.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="CleanFullBackupHelptext.Text" xml:space="preserve">
+    <value>To prevent the backups from growing indefinetly, old backups should be deleted regularly</value>
+  </data>
+  <data name="&gt;&gt;CleanFullBackupHelptext.Name" xml:space="preserve">
+    <value>CleanFullBackupHelptext</value>
+  </data>
+  <data name="&gt;&gt;CleanFullBackupHelptext.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CleanFullBackupHelptext.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;CleanFullBackupHelptext.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="EnableCleanupDuration.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="EnableCleanupDuration.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 152</value>
+  </data>
+  <data name="EnableCleanupDuration.Size" type="System.Drawing.Size, System.Drawing">
+    <value>195, 17</value>
+  </data>
+  <data name="EnableCleanupDuration.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="EnableCleanupDuration.Text" xml:space="preserve">
+    <value>Never keep backups older than this</value>
+  </data>
+  <data name="&gt;&gt;EnableCleanupDuration.Name" xml:space="preserve">
+    <value>EnableCleanupDuration</value>
+  </data>
+  <data name="&gt;&gt;EnableCleanupDuration.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;EnableCleanupDuration.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;EnableCleanupDuration.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="CleanupDuration.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="CleanupDuration.Location" type="System.Drawing.Point, System.Drawing">
+    <value>248, 152</value>
+  </data>
+  <data name="CleanupDuration.Size" type="System.Drawing.Size, System.Drawing">
+    <value>221, 21</value>
+  </data>
+  <data name="CleanupDuration.TabIndex" type="System.Int32, mscorlib">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;CleanupDuration.Name" xml:space="preserve">
+    <value>CleanupDuration</value>
+  </data>
+  <data name="&gt;&gt;CleanupDuration.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.0.183, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;CleanupDuration.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;CleanupDuration.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="IgnoreTimestamps.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="IgnoreTimestamps.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 192</value>
+  </data>
+  <data name="IgnoreTimestamps.Size" type="System.Drawing.Size, System.Drawing">
+    <value>348, 17</value>
+  </data>
+  <data name="IgnoreTimestamps.TabIndex" type="System.Int32, mscorlib">
+    <value>8</value>
+  </data>
+  <data name="IgnoreTimestamps.Text" xml:space="preserve">
+    <value>Ignore file modification timestamp when making incremental backups</value>
+  </data>
+  <data name="&gt;&gt;IgnoreTimestamps.Name" xml:space="preserve">
+    <value>IgnoreTimestamps</value>
+  </data>
+  <data name="&gt;&gt;IgnoreTimestamps.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IgnoreTimestamps.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;IgnoreTimestamps.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
+  <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
+    <value>506, 242</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>IncrementalSettings</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.WizardControl, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
 </root>

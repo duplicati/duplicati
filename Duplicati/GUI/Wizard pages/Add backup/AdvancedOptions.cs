@@ -33,7 +33,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private WizardSettingsWrapper m_wrapper;
 
         public AdvancedOptions()
-            : base("Advanced settings", "On this page you can select more advanced settings for your backup. If you prefer, you can ignore those settings, and use the duplicati defaults.")
+            : base(Strings.AdvancedOptions.PageTitle, Strings.AdvancedOptions.PageDescription)
         {
             InitializeComponent();
 

@@ -48,7 +48,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private bool m_warnedFiltersChanged = true;
 
         public SelectFiles()
-            : base("Select files to backup", "On this page you must select the folder and files you wish to backup")
+            : base(Strings.SelectFiles.PageTitle, Strings.SelectFiles.PageDescription)
         {
             InitializeComponent();
             m_sizes = new Dictionary<string, long>();
@@ -100,7 +100,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 if (!m_warnedFiltersChanged)
                 {
-                    if (MessageBox.Show(this, "You have modified the filters, but selected files by groups.\nSince that feature uses filters, there is a chance that your filters\nwill be removed after this.\nIf you switch to using only a single folder, your filters will not be modified.\n\nDo you want to continue, and possibly lose your filter setup?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Strings.SelectFiles.ModifiedFiltersWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         args.Cancel = true;
                         return;
@@ -138,7 +138,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 if (folders.Count == 0)
                 {
-                    MessageBox.Show(this, "You have not included any files.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Strings.SelectFiles.NoFilesSelectedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     args.Cancel = true;
                     return;
                 }
@@ -161,7 +161,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                         if (ix == 0)
                         {
-                            MessageBox.Show(this, "Due to your machine setup, it is not possible to backup\nthe selected folders in the same backup.\nTry unchecking some items, and create more than one backup.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show(this, Strings.SelectFiles.MultipleSourcesError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                             args.Cancel = true;
                             return;
                         }
@@ -177,7 +177,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 if (!System.IO.Directory.Exists(TargetFolder.Text))
                 {
-                    MessageBox.Show(this, "The folder \"" + TargetFolder.Text + "\" does not exist.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, string.Format(Strings.SelectFiles.FolderDoesNotExistError, TargetFolder.Text), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     args.Cancel = true;
                     return;
                 }
@@ -338,7 +338,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             if (m_calculator == null)
             {
-                totalSize.Text = "Calculating size ...";
+                totalSize.Text = Strings.SelectFiles.CalculatingSize;
                 m_calculator = new WorkerThread<string>(CalculateFolderSize);
                 m_calculator.CompletedWork += new EventHandler(m_calculator_CompletedWork);
             }
@@ -373,9 +373,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     s = m_sizes.ContainsKey(TargetFolder.Text) ? m_sizes[TargetFolder.Text] : 0;
                 
                 if (m_calculator.CurrentTasks.Count == 0 && !m_calculator.Active)
-                    totalSize.Text = string.Format("The selected items take up {0} of space", Library.Core.Utility.FormatSizeString(s));
+                    totalSize.Text = string.Format(Strings.SelectFiles.FinalSizeCalculated, Library.Core.Utility.FormatSizeString(s));
                 else
-                    totalSize.Text = string.Format("Calculating ... (using more than {0} of space)", Library.Core.Utility.FormatSizeString(s));
+                    totalSize.Text = string.Format(Strings.SelectFiles.PartialSizeCalculated, Library.Core.Utility.FormatSizeString(s));
 
                 if (m_sizes.ContainsKey(m_myMusic))
                     myMusicSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myMusic]);

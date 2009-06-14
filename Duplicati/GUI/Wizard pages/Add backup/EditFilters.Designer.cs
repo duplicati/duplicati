@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EditFilters));
             this.filterEditor1 = new Duplicati.GUI.HelperControls.FilterEditor();
             this.SuspendLayout();
             // 
@@ -35,16 +36,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             this.filterEditor1.BasePath = "";
             this.filterEditor1.Filter = "";
-            this.filterEditor1.Location = new System.Drawing.Point(24, 16);
+            resources.ApplyResources(this.filterEditor1, "filterEditor1");
             this.filterEditor1.Name = "filterEditor1";
-            this.filterEditor1.Size = new System.Drawing.Size(464, 208);
-            this.filterEditor1.TabIndex = 0;
             // 
             // EditFilters
             // 
             this.Controls.Add(this.filterEditor1);
             this.Name = "EditFilters";
-            this.Size = new System.Drawing.Size(506, 242);
+            resources.ApplyResources(this, "$this");
             this.ResumeLayout(false);
 
         }

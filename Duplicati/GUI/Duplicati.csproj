@@ -232,6 +232,61 @@
     <Compile Include="Wizard pages\Add backup\SettingOverrides.Designer.cs">
       <DependentUpon>SettingOverrides.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\AdvancedOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AdvancedOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\EditFilters.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>EditFilters.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\FinishedAdd.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FinishedAdd.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\GeneratedFilenameOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>GeneratedFilenameOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\IncrementalSettings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>IncrementalSettings.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\PasswordSettings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>PasswordSettings.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\SelectFiles.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SelectFiles.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\SelectName.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SelectName.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\SelectWhen.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SelectWhen.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\SettingOverrides.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SettingOverrides.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Add backup\Strings\ThrottleOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ThrottleOptions.resx</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\RestoreSetup\FinishedRestoreSetup.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -695,6 +750,61 @@
     <EmbeddedResource Include="Wizard pages\Add backup\SettingOverrides.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SettingOverrides.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\AdvancedOptions.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>AdvancedOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\EditFilters.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>EditFilters.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\FinishedAdd.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FinishedAdd.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\GeneratedFilenameOptions.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>GeneratedFilenameOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\IncrementalSettings.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>IncrementalSettings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\PasswordSettings.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>PasswordSettings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\SelectFiles.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SelectFiles.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\SelectName.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SelectName.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\SelectWhen.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SelectWhen.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\SettingOverrides.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SettingOverrides.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\ThrottleOptions.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ThrottleOptions.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Strings\FirstLaunch.resx">
       <SubType>Designer</SubType>

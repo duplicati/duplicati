@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(IncrementalSettings));
             this.FullBackups = new System.Windows.Forms.CheckBox();
             this.FullSettings = new System.Windows.Forms.GroupBox();
             this.FullDuration = new Duplicati.GUI.HelperControls.DurationEditor();
@@ -44,14 +45,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // FullBackups
             // 
-            this.FullBackups.AutoSize = true;
+            resources.ApplyResources(this.FullBackups, "FullBackups");
             this.FullBackups.Checked = true;
             this.FullBackups.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.FullBackups.Location = new System.Drawing.Point(32, 8);
             this.FullBackups.Name = "FullBackups";
-            this.FullBackups.Size = new System.Drawing.Size(161, 17);
-            this.FullBackups.TabIndex = 3;
-            this.FullBackups.Text = "Perfom full backups regularly";
             this.FullBackups.UseVisualStyleBackColor = true;
             this.FullBackups.CheckedChanged += new System.EventHandler(this.FullBackups_CheckedChanged);
             // 
@@ -59,49 +56,35 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             this.FullSettings.Controls.Add(this.FullDuration);
             this.FullSettings.Controls.Add(this.label2);
-            this.FullSettings.Location = new System.Drawing.Point(24, 8);
+            resources.ApplyResources(this.FullSettings, "FullSettings");
             this.FullSettings.Name = "FullSettings";
-            this.FullSettings.Size = new System.Drawing.Size(448, 56);
-            this.FullSettings.TabIndex = 2;
             this.FullSettings.TabStop = false;
             // 
             // FullDuration
             // 
-            this.FullDuration.Location = new System.Drawing.Point(168, 24);
+            resources.ApplyResources(this.FullDuration, "FullDuration");
             this.FullDuration.Name = "FullDuration";
-            this.FullDuration.Size = new System.Drawing.Size(221, 21);
-            this.FullDuration.TabIndex = 1;
             this.FullDuration.Value = "";
             this.FullDuration.ValueChanged += new System.EventHandler(this.FullDuration_ValueChanged);
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(16, 24);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(134, 13);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Perform a full backup each";
             // 
             // EnableFullBackupClean
             // 
-            this.EnableFullBackupClean.AutoSize = true;
+            resources.ApplyResources(this.EnableFullBackupClean, "EnableFullBackupClean");
             this.EnableFullBackupClean.Checked = true;
             this.EnableFullBackupClean.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.EnableFullBackupClean.Location = new System.Drawing.Point(32, 88);
             this.EnableFullBackupClean.Name = "EnableFullBackupClean";
-            this.EnableFullBackupClean.Size = new System.Drawing.Size(239, 17);
-            this.EnableFullBackupClean.TabIndex = 4;
-            this.EnableFullBackupClean.Text = "Never keep more than this many full backups";
             this.EnableFullBackupClean.UseVisualStyleBackColor = true;
             this.EnableFullBackupClean.CheckedChanged += new System.EventHandler(this.EnableFullBackupClean_CheckedChanged);
             // 
             // CleanFullBackupCount
             // 
-            this.CleanFullBackupCount.Location = new System.Drawing.Point(288, 88);
+            resources.ApplyResources(this.CleanFullBackupCount, "CleanFullBackupCount");
             this.CleanFullBackupCount.Name = "CleanFullBackupCount";
-            this.CleanFullBackupCount.Size = new System.Drawing.Size(56, 20);
-            this.CleanFullBackupCount.TabIndex = 5;
             this.CleanFullBackupCount.Value = new decimal(new int[] {
             4,
             0,
@@ -111,48 +94,32 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // CleanFullBackupHelptext
             // 
-            this.CleanFullBackupHelptext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.CleanFullBackupHelptext.Location = new System.Drawing.Point(32, 112);
+            resources.ApplyResources(this.CleanFullBackupHelptext, "CleanFullBackupHelptext");
             this.CleanFullBackupHelptext.Name = "CleanFullBackupHelptext";
-            this.CleanFullBackupHelptext.Size = new System.Drawing.Size(440, 16);
-            this.CleanFullBackupHelptext.TabIndex = 3;
-            this.CleanFullBackupHelptext.Text = "To prevent the backups from growing indefinetly, old backups should be deleted re" +
-                "gularly";
             // 
             // EnableCleanupDuration
             // 
-            this.EnableCleanupDuration.AutoSize = true;
-            this.EnableCleanupDuration.Location = new System.Drawing.Point(32, 152);
+            resources.ApplyResources(this.EnableCleanupDuration, "EnableCleanupDuration");
             this.EnableCleanupDuration.Name = "EnableCleanupDuration";
-            this.EnableCleanupDuration.Size = new System.Drawing.Size(195, 17);
-            this.EnableCleanupDuration.TabIndex = 6;
-            this.EnableCleanupDuration.Text = "Never keep backups older than this";
             this.EnableCleanupDuration.UseVisualStyleBackColor = true;
             this.EnableCleanupDuration.CheckedChanged += new System.EventHandler(this.EnableCleanupDuration_CheckedChanged);
             // 
             // CleanupDuration
             // 
-            this.CleanupDuration.Enabled = false;
-            this.CleanupDuration.Location = new System.Drawing.Point(248, 152);
+            resources.ApplyResources(this.CleanupDuration, "CleanupDuration");
             this.CleanupDuration.Name = "CleanupDuration";
-            this.CleanupDuration.Size = new System.Drawing.Size(221, 21);
-            this.CleanupDuration.TabIndex = 7;
             this.CleanupDuration.Value = "";
             this.CleanupDuration.ValueChanged += new System.EventHandler(this.CleanupDuration_ValueChanged);
             // 
             // IgnoreTimestamps
             // 
-            this.IgnoreTimestamps.AutoSize = true;
-            this.IgnoreTimestamps.Location = new System.Drawing.Point(32, 192);
+            resources.ApplyResources(this.IgnoreTimestamps, "IgnoreTimestamps");
             this.IgnoreTimestamps.Name = "IgnoreTimestamps";
-            this.IgnoreTimestamps.Size = new System.Drawing.Size(348, 17);
-            this.IgnoreTimestamps.TabIndex = 8;
-            this.IgnoreTimestamps.Text = "Ignore file modification timestamp when making incremental backups";
             this.IgnoreTimestamps.UseVisualStyleBackColor = true;
             // 
             // IncrementalSettings
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.IgnoreTimestamps);
             this.Controls.Add(this.CleanupDuration);
@@ -163,7 +130,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.FullBackups);
             this.Controls.Add(this.FullSettings);
             this.Name = "IncrementalSettings";
-            this.Size = new System.Drawing.Size(506, 242);
             this.Load += new System.EventHandler(this.IncrementalSettings_Load);
             this.FullSettings.ResumeLayout(false);
             this.FullSettings.PerformLayout();

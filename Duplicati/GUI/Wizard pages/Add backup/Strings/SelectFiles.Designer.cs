@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.GUI.Strings {
+namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Duplicati.GUI.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Common {
+    internal class SelectFiles {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Common() {
+        internal SelectFiles() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.GUI.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Strings.Common", typeof(Common).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Wizard_pages.Add_backup.Strings.SelectFiles", typeof(SelectFiles).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,65 +61,83 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An error occured: {0}.
+        ///   Looks up a localized string similar to Calculating size ....
         /// </summary>
-        internal static string GenericError {
+        internal static string CalculatingSize {
             get {
-                return ResourceManager.GetString("GenericError", resourceCulture);
+                return ResourceManager.GetString("CalculatingSize", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The full backup duration entered is not valid: {0}.
+        ///   Looks up a localized string similar to The selected items take up {0} of space.
         /// </summary>
-        internal static string InvalidDuration {
+        internal static string FinalSizeCalculated {
             get {
-                return ResourceManager.GetString("InvalidDuration", resourceCulture);
+                return ResourceManager.GetString("FinalSizeCalculated", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One day.
+        ///   Looks up a localized string similar to The folder &quot;{0}&quot; does not exist..
         /// </summary>
-        internal static string OneDay {
+        internal static string FolderDoesNotExistError {
             get {
-                return ResourceManager.GetString("OneDay", resourceCulture);
+                return ResourceManager.GetString("FolderDoesNotExistError", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One month.
+        ///   Looks up a localized string similar to You have modified the filters, but selected files by groups.\nSince that feature uses filters, there is a chance that your filters\nwill be removed after this.\nIf you switch to using only a single folder, your filters will not be modified.\n\nDo you want to continue, and possibly lose your filter setup?.
         /// </summary>
-        internal static string OneMonth {
+        internal static string ModifiedFiltersWarning {
             get {
-                return ResourceManager.GetString("OneMonth", resourceCulture);
+                return ResourceManager.GetString("ModifiedFiltersWarning", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One week.
+        ///   Looks up a localized string similar to Due to your machine setup, it is not possible to backup\nthe selected folders in the same backup.\nTry unchecking some items, and create more than one backup..
         /// </summary>
-        internal static string OneWeek {
+        internal static string MultipleSourcesError {
             get {
-                return ResourceManager.GetString("OneWeek", resourceCulture);
+                return ResourceManager.GetString("MultipleSourcesError", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Three months.
+        ///   Looks up a localized string similar to You have not included any files..
         /// </summary>
-        internal static string ThreeMonths {
+        internal static string NoFilesSelectedError {
             get {
-                return ResourceManager.GetString("ThreeMonths", resourceCulture);
+                return ResourceManager.GetString("NoFilesSelectedError", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Two weeks.
+        ///   Looks up a localized string similar to On this page you must select the folder and files you wish to backup.
         /// </summary>
-        internal static string TwoWeeks {
+        internal static string PageDescription {
             get {
-                return ResourceManager.GetString("TwoWeeks", resourceCulture);
+                return ResourceManager.GetString("PageDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select files to backup.
+        /// </summary>
+        internal static string PageTitle {
+            get {
+                return ResourceManager.GetString("PageTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Calculating ... (using more than {0} of space).
+        /// </summary>
+        internal static string PartialSizeCalculated {
+            get {
+                return ResourceManager.GetString("PartialSizeCalculated", resourceCulture);
             }
         }
     }

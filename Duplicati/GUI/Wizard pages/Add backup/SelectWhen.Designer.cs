@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SelectWhen));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.RepeatInterval = new Duplicati.GUI.HelperControls.DurationEditor();
             this.label2 = new System.Windows.Forms.Label();
@@ -42,72 +43,52 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             this.groupBox1.Controls.Add(this.RepeatInterval);
             this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Location = new System.Drawing.Point(24, 40);
+            resources.ApplyResources(this.groupBox1, "groupBox1");
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(448, 56);
-            this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             // 
             // RepeatInterval
             // 
-            this.RepeatInterval.Location = new System.Drawing.Point(144, 24);
+            resources.ApplyResources(this.RepeatInterval, "RepeatInterval");
             this.RepeatInterval.Name = "RepeatInterval";
-            this.RepeatInterval.Size = new System.Drawing.Size(221, 21);
-            this.RepeatInterval.TabIndex = 1;
             this.RepeatInterval.Value = "";
             this.RepeatInterval.ValueChanged += new System.EventHandler(this.RepeatInterval_ValueChanged);
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(16, 24);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(69, 13);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Repeat each";
             // 
             // EnableRepeat
             // 
-            this.EnableRepeat.AutoSize = true;
+            resources.ApplyResources(this.EnableRepeat, "EnableRepeat");
             this.EnableRepeat.Checked = true;
             this.EnableRepeat.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.EnableRepeat.Location = new System.Drawing.Point(40, 40);
             this.EnableRepeat.Name = "EnableRepeat";
-            this.EnableRepeat.Size = new System.Drawing.Size(160, 17);
-            this.EnableRepeat.TabIndex = 1;
-            this.EnableRepeat.Text = "Repeat the backup regularly";
             this.EnableRepeat.UseVisualStyleBackColor = true;
             // 
             // OffsetTime
             // 
             this.OffsetTime.Format = System.Windows.Forms.DateTimePickerFormat.Time;
-            this.OffsetTime.Location = new System.Drawing.Point(312, 8);
+            resources.ApplyResources(this.OffsetTime, "OffsetTime");
             this.OffsetTime.Name = "OffsetTime";
             this.OffsetTime.ShowUpDown = true;
-            this.OffsetTime.Size = new System.Drawing.Size(80, 20);
-            this.OffsetTime.TabIndex = 5;
             this.OffsetTime.ValueChanged += new System.EventHandler(this.OffsetTime_ValueChanged);
             // 
             // OffsetDate
             // 
-            this.OffsetDate.Location = new System.Drawing.Point(176, 8);
+            resources.ApplyResources(this.OffsetDate, "OffsetDate");
             this.OffsetDate.Name = "OffsetDate";
-            this.OffsetDate.Size = new System.Drawing.Size(128, 20);
-            this.OffsetDate.TabIndex = 4;
             this.OffsetDate.ValueChanged += new System.EventHandler(this.OffsetDate_ValueChanged);
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(24, 8);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(137, 13);
-            this.label1.TabIndex = 3;
-            this.label1.Text = "Run the backup at this time";
             // 
             // SelectWhen
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.OffsetTime);
             this.Controls.Add(this.EnableRepeat);
@@ -115,7 +96,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.label1);
             this.Controls.Add(this.groupBox1);
             this.Name = "SelectWhen";
-            this.Size = new System.Drawing.Size(506, 242);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);

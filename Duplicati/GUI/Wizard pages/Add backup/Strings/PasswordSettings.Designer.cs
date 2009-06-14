@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.GUI.Strings {
+namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Duplicati.GUI.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Common {
+    internal class PasswordSettings {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Common() {
+        internal PasswordSettings() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.GUI.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Strings.Common", typeof(Common).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Wizard_pages.Add_backup.Strings.PasswordSettings", typeof(PasswordSettings).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,65 +61,74 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An error occured: {0}.
+        ///   Looks up a localized string similar to You must enter a password, remove the check mark next to the box to disable encryption of the backups..
         /// </summary>
-        internal static string GenericError {
+        internal static string EmptyPasswordError {
             get {
-                return ResourceManager.GetString("GenericError", resourceCulture);
+                return ResourceManager.GetString("EmptyPasswordError", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The full backup duration entered is not valid: {0}.
+        ///   Looks up a localized string similar to Backup is protected with password.
         /// </summary>
-        internal static string InvalidDuration {
+        internal static string EnablePasswordRestoreText {
             get {
-                return ResourceManager.GetString("InvalidDuration", resourceCulture);
+                return ResourceManager.GetString("EnablePasswordRestoreText", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One day.
+        ///   Looks up a localized string similar to Duplicati was unable to verify the existence of GNU Privacy Guard.\nGPG may work regardless, if it is located in the system search path.\nIf the encryption fails, no files will be backed up\nDo you want to continue anyway?.
         /// </summary>
-        internal static string OneDay {
+        internal static string GPGNotFoundWarning {
             get {
-                return ResourceManager.GetString("OneDay", resourceCulture);
+                return ResourceManager.GetString("GPGNotFoundWarning", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One month.
+        ///   Looks up a localized string similar to If the backup is stored on machine or device that is not under your direct control,\nit is possible that others may view the files you have stored in the backups.\nIt is highly recomended that you enable encryption.\nDo you want to continue without encryption?.
         /// </summary>
-        internal static string OneMonth {
+        internal static string NoPasswordWarning {
             get {
-                return ResourceManager.GetString("OneMonth", resourceCulture);
+                return ResourceManager.GetString("NoPasswordWarning", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One week.
+        ///   Looks up a localized string similar to On this page you can select options that protect your backups from being read or altered..
         /// </summary>
-        internal static string OneWeek {
+        internal static string PageDescription {
             get {
-                return ResourceManager.GetString("OneWeek", resourceCulture);
+                return ResourceManager.GetString("PageDescription", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Three months.
+        ///   Looks up a localized string similar to Enter the encryption settings that were used to create the backup originally.
         /// </summary>
-        internal static string ThreeMonths {
+        internal static string PageDescriptionRestore {
             get {
-                return ResourceManager.GetString("ThreeMonths", resourceCulture);
+                return ResourceManager.GetString("PageDescriptionRestore", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Two weeks.
+        ///   Looks up a localized string similar to Select password for the backup.
         /// </summary>
-        internal static string TwoWeeks {
+        internal static string PageTitle {
             get {
-                return ResourceManager.GetString("TwoWeeks", resourceCulture);
+                return ResourceManager.GetString("PageTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ****************** WARNING ***********************\nYou are modifying the password settings for an existing backup.\nIf you save these changes, you will no longer be able to recover previously backed up files.\nAre you absolutely sure you want to continue?.
+        /// </summary>
+        internal static string PasswordChangedWarning {
+            get {
+                return ResourceManager.GetString("PasswordChangedWarning", resourceCulture);
             }
         }
     }
