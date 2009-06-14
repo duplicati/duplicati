@@ -152,6 +152,7 @@ namespace Duplicati.GUI.Wizard_pages
                     this.SSHSettings.Server = ssh.Host;
                     this.SSHSettings.Port = ssh.Port;
                     this.SSHSettings.Passwordless = ssh.Passwordless;
+                    this.SSHSettings.DebugEnabled = ssh.DebugEnabled;
                     this.Backend = BackendType.SSH;
                     break;
                 case "s3":
@@ -247,6 +248,7 @@ namespace Duplicati.GUI.Wizard_pages
                     ssh.Host = this.SSHSettings.Server;
                     ssh.Port = this.SSHSettings.Port;
                     ssh.Passwordless = this.SSHSettings.Passwordless;
+                    ssh.DebugEnabled = this.SSHSettings.DebugEnabled;
                     ssh.SetService();
                     break;
                 case BackendType.S3:
@@ -764,7 +766,6 @@ namespace Duplicati.GUI.Wizard_pages
             get { return m_parent.GetItem<int>("WEB:Port", m_defaultPort); }
             set { m_parent.SetItem("WEB:Port", value); }
         }
-
     }
 
     /// <summary>
@@ -806,6 +807,15 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get { return m_parent.GetItem<bool>("SSH:Passwordless", false); }
             set { m_parent.SetItem("SSH:Passwordless", value); }
+        }
+
+        /// <summary>
+        /// A value indicating if debug output will be generated
+        /// </summary>
+        public bool DebugEnabled
+        {
+            get { return m_parent.GetItem<bool>("SSH:DebugEnabled", false); }
+            set { m_parent.SetItem("SSH:DebugEnabled", value); }
         }
     }
 

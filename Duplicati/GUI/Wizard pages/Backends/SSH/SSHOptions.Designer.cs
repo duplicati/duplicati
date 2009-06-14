@@ -39,6 +39,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.UsePassword = new System.Windows.Forms.CheckBox();
+            this.GenerateDebugOutput = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
             this.SuspendLayout();
             // 
@@ -157,10 +158,21 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             this.UsePassword.UseVisualStyleBackColor = true;
             this.UsePassword.CheckedChanged += new System.EventHandler(this.UsePassword_CheckedChanged);
             // 
+            // GenerateDebugOutput
+            // 
+            this.GenerateDebugOutput.AutoSize = true;
+            this.GenerateDebugOutput.Location = new System.Drawing.Point(20, 144);
+            this.GenerateDebugOutput.Name = "GenerateDebugOutput";
+            this.GenerateDebugOutput.Size = new System.Drawing.Size(136, 17);
+            this.GenerateDebugOutput.TabIndex = 23;
+            this.GenerateDebugOutput.Text = "Generate debug output";
+            this.GenerateDebugOutput.UseVisualStyleBackColor = true;
+            // 
             // SSHOptions
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.GenerateDebugOutput);
             this.Controls.Add(this.UsePassword);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.Port);
@@ -193,5 +205,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox UsePassword;
+        private System.Windows.Forms.CheckBox GenerateDebugOutput;
     }
 }

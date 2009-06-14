@@ -32,6 +32,7 @@ namespace Duplicati.Datamodel.Backends
         private const string FOLDER = "Folder";
         private const string PASWORDLESS = "Passwordless";
         private const string PORT = "Port";
+        private const string DEBUG_ENABLED = "Debug enabled";
 
         private Task m_owner;
 
@@ -83,6 +84,12 @@ namespace Duplicati.Datamodel.Backends
             set { m_owner.BackendSettingsLookup[PASWORDLESS] = value.ToString(); }
         }
 
+        public bool DebugEnabled
+        {
+            get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.BackendSettingsLookup[DEBUG_ENABLED], false); }
+            set { m_owner.BackendSettingsLookup[DEBUG_ENABLED] = value.ToString(); }
+        }
+
 
         #region IBackend Members
 
@@ -103,6 +110,9 @@ namespace Duplicati.Datamodel.Backends
                 options["ssh-options"] += "-P " + this.Port;
 
             options["sftp-command"] = new ApplicationSettings(m_owner.DataParent).SFtpPath;
+
+            if (this.DebugEnabled)
+                options["debug-to-console"] = "";
         }
 
         public string FriendlyName { get { return "SSH host"; } }

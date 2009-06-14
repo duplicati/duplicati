@@ -79,6 +79,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             m_wrapper.Server = Servername.Text;
             m_wrapper.Path = Path.Text;
             m_wrapper.Username = Username.Text;
+            m_wrapper.DebugEnabled = GenerateDebugOutput.Checked;
 
             if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
                 args.NextPage = new Add_backup.GeneratedFilenameOptions();
@@ -98,6 +99,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
                 UsePassword.Checked = !m_wrapper.Passwordless;
                 Password.Text = m_wrapper.Password;
                 Port.Value = m_wrapper.Port;
+                GenerateDebugOutput.Checked = m_wrapper.DebugEnabled;
             }
 
             if (m_settings.ContainsKey("SSH:HasTested"))
@@ -135,14 +137,12 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
                     ssh.Passwordless = !UsePassword.Checked;
                     ssh.Port = (int)Port.Value;
                     ssh.Username = Username.Text;
+                    ssh.DebugEnabled = true;
 
                     string target = ssh.GetDestinationPath();
 
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     ssh.GetOptions(options);
-
-                    //Make sure that "testing" always produce a log
-                    options.Add("debug-to-console", "");
 
                     string[] files = Duplicati.Library.Main.Interface.List(target, options);
 
