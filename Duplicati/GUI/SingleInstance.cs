@@ -77,10 +77,19 @@ namespace Duplicati.GUI
         /// <summary>
         /// Constructs a new SingleInstance object
         /// </summary>
-        /// <param name="path">The path where control files are stored</param>
+        /// <param name="appname">The application name</param>
         public SingleInstance(string appname)
+            : this(appname, System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData))
+        { }
+
+        /// <summary>
+        /// Constructs a new SingleInstance object
+        /// </summary>
+        /// <param name="appname">The application name</param>
+        /// <param name="basefolder">The folder in which the control file structure is placed</param>
+        public SingleInstance(string appname, string basefolder)
         {
-            m_controldir = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), appname);
+            m_controldir = System.IO.Path.Combine(basefolder, appname);
             if (!System.IO.Directory.Exists(m_controldir))
                 System.IO.Directory.CreateDirectory(m_controldir);
 

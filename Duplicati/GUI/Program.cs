@@ -82,7 +82,13 @@ namespace Duplicati.GUI
             {
                 try
                 {
+#if DEBUG
+                    //debug mode uses a lock file located in the app folder
+                    singleInstance = new SingleInstance(Application.ProductName, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+#else
+                    //release mode uses the systems "Application Data" folder
                     singleInstance = new SingleInstance(Application.ProductName);
+#endif
                 }
                 catch (Exception ex)
                 {
