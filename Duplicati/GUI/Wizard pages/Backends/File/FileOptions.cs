@@ -124,7 +124,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             }
 
             if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
-                args.NextPage = new RestoreSetup.FinishedRestoreSetup();
+                args.NextPage = new Add_backup.GeneratedFilenameOptions();
             else
                 args.NextPage = new Add_backup.AdvancedOptions();
         }

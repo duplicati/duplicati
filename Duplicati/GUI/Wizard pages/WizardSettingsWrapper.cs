@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Datamodel;
 
 namespace Duplicati.GUI.Wizard_pages
 {
@@ -55,6 +56,57 @@ namespace Duplicati.GUI.Wizard_pages
         public WizardSettingsWrapper(Dictionary<string, object> settings)
         {
             m_settings = settings;
+        }
+
+
+        /// <summary>
+        /// The purpose of this function is to set the default
+        /// settings on the new backup.
+        /// </summary>
+        public void SetupDefaults()
+        {
+            m_settings.Clear();
+
+            ApplicationSettings appset = new ApplicationSettings(Program.DataConnection);
+            if (appset.UseCommonPassword)
+            {
+                this.BackupPassword = appset.CommonPassword;
+                this.GPGEncryption = appset.CommonPasswordUseGPG;
+            }
+
+            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+            doc.Load(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(Program), "Backup defaults.xml"));
+
+            System.Xml.XmlNode root = doc.SelectSingleNode("settings");
+
+            List<System.Xml.XmlNode> nodes = new List<System.Xml.XmlNode>();
+
+            if (root != null)
+                foreach (System.Xml.XmlNode n in root.ChildNodes)
+                    nodes.Add(n);
+
+            //Load user supplied settings, if any
+            string filename = System.IO.Path.Combine(System.Windows.Forms.Application.StartupPath, "Backup defaults.xml");
+            if (System.IO.File.Exists(filename))
+            {
+                doc.Load(filename);
+                root = doc.SelectSingleNode("settings");
+                if (root != null)
+                    foreach (System.Xml.XmlNode n in root.ChildNodes)
+                        nodes.Add(n);
+            }
+
+            foreach (System.Xml.XmlNode n in nodes)
+                if (n.NodeType == System.Xml.XmlNodeType.Element)
+                {
+                    System.Reflection.PropertyInfo pi = this.GetType().GetProperty(n.Name);
+                    if (pi != null && pi.CanWrite)
+                        if (pi.PropertyType == typeof(DateTime))
+                            pi.SetValue(this, Library.Core.Timeparser.ParseTimeInterval(n.InnerText, DateTime.Now.Date), null);
+                        else
+                            pi.SetValue(this, Convert.ChangeType(n.InnerText, pi.PropertyType), null);
+                }
+
         }
 
         /// <summary>

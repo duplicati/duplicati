@@ -32,7 +32,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private WizardSettingsWrapper m_wrapper;
 
         public GeneratedFilenameOptions()
-            : base("Generated filenames", "On this page you can control how filenames are generated. This can be used if the remote server does not support the default filenames.")
+            : base(Strings.GeneratedFilenameOptions.PageTitle, Strings.GeneratedFilenameOptions.PageDescription)
         {
             InitializeComponent();
 
@@ -49,7 +49,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_wrapper.FilePrefix = FilePrefixEnabled.Checked ? "" : FilePrefix.Text;
             m_wrapper.ShortFilenames = UseShortFilenames.Checked;
 
-            if ((bool)m_settings["Advanced:Overrides"])
+            if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+                args.NextPage = new RestoreSetup.FinishedRestoreSetup();
+            else if ((bool)m_settings["Advanced:Overrides"])
                 args.NextPage = new Wizard_pages.Add_backup.SettingOverrides();
             else
                 args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();

@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GeneratedFilenameOptions));
             this.label1 = new System.Windows.Forms.Label();
             this.FilePrefixEnabled = new System.Windows.Forms.CheckBox();
             this.UseShortFilenames = new System.Windows.Forms.CheckBox();
@@ -37,54 +38,36 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(40, 24);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(92, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "File time seperator";
             // 
             // FilePrefixEnabled
             // 
-            this.FilePrefixEnabled.AutoSize = true;
-            this.FilePrefixEnabled.Location = new System.Drawing.Point(24, 56);
+            resources.ApplyResources(this.FilePrefixEnabled, "FilePrefixEnabled");
             this.FilePrefixEnabled.Name = "FilePrefixEnabled";
-            this.FilePrefixEnabled.Size = new System.Drawing.Size(133, 17);
-            this.FilePrefixEnabled.TabIndex = 1;
-            this.FilePrefixEnabled.Text = "Change filename prefix";
             this.FilePrefixEnabled.UseVisualStyleBackColor = true;
             this.FilePrefixEnabled.CheckedChanged += new System.EventHandler(this.FilePrefixEnabled_CheckedChanged);
             // 
             // UseShortFilenames
             // 
-            this.UseShortFilenames.AutoSize = true;
-            this.UseShortFilenames.Location = new System.Drawing.Point(24, 88);
+            resources.ApplyResources(this.UseShortFilenames, "UseShortFilenames");
             this.UseShortFilenames.Name = "UseShortFilenames";
-            this.UseShortFilenames.Size = new System.Drawing.Size(118, 17);
-            this.UseShortFilenames.TabIndex = 2;
-            this.UseShortFilenames.Text = "Use short filenames";
             this.UseShortFilenames.UseVisualStyleBackColor = true;
             // 
             // FilePrefix
             // 
-            this.FilePrefix.Enabled = false;
-            this.FilePrefix.Location = new System.Drawing.Point(168, 56);
+            resources.ApplyResources(this.FilePrefix, "FilePrefix");
             this.FilePrefix.Name = "FilePrefix";
-            this.FilePrefix.Size = new System.Drawing.Size(128, 20);
-            this.FilePrefix.TabIndex = 3;
             // 
             // FileTimeSeperator
             // 
-            this.FileTimeSeperator.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            resources.ApplyResources(this.FileTimeSeperator, "FileTimeSeperator");
             this.FileTimeSeperator.FormattingEnabled = true;
             this.FileTimeSeperator.Items.AddRange(new object[] {
-            "\'",
-            ":",
-            "_"});
-            this.FileTimeSeperator.Location = new System.Drawing.Point(168, 24);
+            resources.GetString("FileTimeSeperator.Items"),
+            resources.GetString("FileTimeSeperator.Items1"),
+            resources.GetString("FileTimeSeperator.Items2")});
             this.FileTimeSeperator.Name = "FileTimeSeperator";
-            this.FileTimeSeperator.Size = new System.Drawing.Size(56, 22);
-            this.FileTimeSeperator.TabIndex = 4;
             // 
             // GeneratedFilenameOptions
             // 
@@ -94,7 +77,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.FilePrefixEnabled);
             this.Controls.Add(this.label1);
             this.Name = "GeneratedFilenameOptions";
-            this.Size = new System.Drawing.Size(506, 242);
+            resources.ApplyResources(this, "$this");
             this.ResumeLayout(false);
             this.PerformLayout();
 

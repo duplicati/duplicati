@@ -63,6 +63,7 @@ namespace Duplicati.GUI.Wizard_pages
             }
             else
             {
+                wrapper.SetupDefaults();
                 args.NextPage = new Add_backup.PasswordSettings();
                 wrapper.PrimayAction = WizardSettingsWrapper.MainAction.RestoreSetup;
             }

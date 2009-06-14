@@ -84,7 +84,7 @@ namespace Duplicati.GUI.Wizard_pages
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
             {
                 args.NextPage = new Add_backup.SelectName();
-                SetupDefaults();
+                m_wrapper.SetupDefaults();
                 m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Add;
             }
             else
@@ -100,56 +100,6 @@ namespace Duplicati.GUI.Wizard_pages
         private void Radio_CheckedChanged(object sender, EventArgs e)
         {
             UpdateButtonState();
-        }
-
-        /// <summary>
-        /// The purpose of this function is to set the default
-        /// settings on the new backup.
-        /// </summary>
-        private void SetupDefaults()
-        {
-            m_settings.Clear();
-
-            ApplicationSettings appset = new ApplicationSettings(Program.DataConnection);
-            if (appset.UseCommonPassword)
-            {
-                m_wrapper.BackupPassword = appset.CommonPassword;
-                m_wrapper.GPGEncryption = appset.CommonPasswordUseGPG;
-            }
-
-            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-            doc.Load(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(Program), "Backup defaults.xml"));
-
-            System.Xml.XmlNode root = doc.SelectSingleNode("settings");
-
-            List<System.Xml.XmlNode> nodes = new List<System.Xml.XmlNode>();
-
-            if (root != null)
-                foreach(System.Xml.XmlNode n in root.ChildNodes)
-                    nodes.Add(n);
-
-            //Load user supplied settings
-            string filename = System.IO.Path.Combine(Application.StartupPath, "Backup defaults.xml");
-            if (System.IO.File.Exists(filename))
-            {
-                doc.Load(filename);
-                root = doc.SelectSingleNode("settings");
-                if (root != null)
-                    foreach (System.Xml.XmlNode n in root.ChildNodes)
-                        nodes.Add(n);
-            }
-
-            foreach(System.Xml.XmlNode n in nodes)
-                if (n.NodeType == System.Xml.XmlNodeType.Element)
-                {
-                    System.Reflection.PropertyInfo pi = m_wrapper.GetType().GetProperty(n.Name);
-                    if (pi != null && pi.CanWrite)
-                        if (pi.PropertyType == typeof(DateTime))
-                            pi.SetValue(m_wrapper,Library.Core.Timeparser.ParseTimeInterval(n.InnerText, DateTime.Now.Date), null);
-                        else
-                            pi.SetValue(m_wrapper, Convert.ChangeType(n.InnerText, pi.PropertyType), null);
-                }
-
         }
 
         private void RadioButton_DoubleClick(object sender, EventArgs e)
