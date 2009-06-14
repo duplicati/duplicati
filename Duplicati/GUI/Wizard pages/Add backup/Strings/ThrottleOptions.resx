@@ -118,9 +118,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="PageDescription" xml:space="preserve">
-    <value />
+    <value>On this page you may select limits that prevent the backup procedure from using too many resources</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
-    <value />
+    <value>Select how to limit the backup</value>
   </data>
 </root>

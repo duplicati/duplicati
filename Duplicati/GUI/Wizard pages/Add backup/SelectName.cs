@@ -34,7 +34,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private WizardSettingsWrapper m_wrapper;
 
         public SelectName()
-            : base("Enter a name for the backup", "On this page you can enter a name for the backup, so you can find and modify it later")
+            : base(Strings.SelectName.PageTitle, Strings.SelectName.PageDescription)
         {
             InitializeComponent();
             BackupFolder.treeView.HideSelection = false;
@@ -61,7 +61,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (BackupName.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, "You must enter a name for the backup", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.SelectName.NoNameEnteredError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
@@ -69,7 +69,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             Schedule[] tmp = Program.DataConnection.GetObjects<Schedule>("Name LIKE ? AND Path Like ?", BackupName.Text, BackupFolder.SelectedFolder);
             if ((tmp.Length == 1 && tmp[0].ID != m_wrapper.ScheduleID ) || tmp.Length > 1)
             {
-                MessageBox.Show(this, "There already exists a backup with that name", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.SelectName.DuplicateNameEnteredError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }

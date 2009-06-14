@@ -36,7 +36,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         DateTime m_selectedDate = new DateTime();
 
         public SelectBackup()
-            : base("Select the backup to restore", "The list below shows all the avalible backups. Select one to restore")
+            : base(Strings.SelectBackup.PageTitle, Strings.SelectBackup.PageDescription)
         {
             InitializeComponent();
 
@@ -51,7 +51,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
             if (BackupList.SelectedItem.Ticks == 0)
             {
-                MessageBox.Show(this, "You must select the backup to restore", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.SelectBackup.NoBackupSelectedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }

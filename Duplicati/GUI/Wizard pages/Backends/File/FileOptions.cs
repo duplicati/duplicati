@@ -34,7 +34,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
         FileSettings m_wrapper;
 
         public FileOptions()
-            : base("Backup storage options", "On this page you can select where to store the backup data.")
+            : base(Strings.FileOptions.PageTitle, Strings.FileOptions.PageDescription)
         {
             InitializeComponent();
 
@@ -56,7 +56,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             if (UseCredentials.Checked)
                 if (!Duplicati.Library.Backend.File.PreAuthenticate(targetpath, Username.Text, Password.Text))
                 {
-                    MessageBox.Show(this, "Failed to authenticate using the given credentials.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, Strings.FileOptions.AuthenticationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -64,21 +64,21 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             {
                 if (targetpath.Trim().Length == 0)
                 {
-                    MessageBox.Show(this, "You must enter a folder to backup to", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Strings.FileOptions.EmptyFoldernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     args.Cancel = true;
                     return;
                 }
 
                 if (!System.IO.Path.IsPathRooted(targetpath))
                 {
-                    MessageBox.Show(this, "You must enter the full path of the folder", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Strings.FileOptions.NonRootedPathError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     args.Cancel = true;
                     return;
                 }
 
                 if (!System.IO.Directory.Exists(targetpath))
                 {
-                    switch (MessageBox.Show(this, "The selected folder does not exist. Do you want to create it?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    switch (MessageBox.Show(this, Strings.FileOptions.CreateFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                     {
                         case DialogResult.Yes:
                             System.IO.Directory.CreateDirectory(targetpath);
@@ -91,7 +91,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, string.Format(Strings.FileOptions.FolderValidationError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 args.Cancel = true;
                 return;
             }
@@ -99,7 +99,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             try
             {
                 if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0 && new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.Add)
-                    if (MessageBox.Show(this, "The selected folder is not empty. Do you want to use it anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Strings.FileOptions.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         args.Cancel = true;
                         return;
@@ -107,7 +107,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, string.Format(Strings.FileOptions.FolderValidationError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 args.Cancel = true;
                 return;
             }
@@ -188,7 +188,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
 
             if (TargetDrive.Enabled && TargetDrive.Items.Count == 0)
             {
-                MessageBox.Show(this, "No removable drives were found on your system. Please enter the path manually.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.FileOptions.NoRemovableDrivesError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 UsePath.Checked = true;
             }
 

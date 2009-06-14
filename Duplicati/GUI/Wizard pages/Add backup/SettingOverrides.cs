@@ -33,7 +33,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private bool m_unsupported = false;
 
         public SettingOverrides()
-            : base("Override settings", "On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!")
+            : base(Strings.SettingOverrides.PageTitle, Strings.SettingOverrides.PageDescription)
         {
             try
             {
@@ -41,7 +41,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             }
             catch (NotImplementedException)
             {
-                MessageBox.Show(this, "This page is not supported on the current platform, this is a known issue.\r\nIf a newer version of Duplicati or Mono is avalible it is possible that the issue is resolved", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, Strings.SettingOverrides.PageNotSupportedWarning, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 m_unsupported = true;
             }
 
@@ -108,7 +108,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             DataRow r = OverrideTable.Rows[e.RowIndex];
             Library.Backend.ICommandLineArgument arg = (Library.Backend.ICommandLineArgument)r["argument"];
-            InfoLabel.Text = string.Format("Type: {0}. {1}. {2}", arg.Type.ToString(), arg.ShortDescription, arg.LongDescription);
+
+            InfoLabel.Text = string.Format(Strings.SettingOverrides.InfoLabelFormat, arg.Typename, arg.ShortDescription, arg.LongDescription);
         }
 
         private void OptionsGrid_CellEndEdit(object sender, DataGridViewCellEventArgs e)

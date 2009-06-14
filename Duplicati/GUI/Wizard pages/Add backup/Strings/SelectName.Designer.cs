@@ -61,7 +61,25 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to There already exists a backup with that name.
+        /// </summary>
+        internal static string DuplicateNameEnteredError {
+            get {
+                return ResourceManager.GetString("DuplicateNameEnteredError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You must enter a name for the backup.
+        /// </summary>
+        internal static string NoNameEnteredError {
+            get {
+                return ResourceManager.GetString("NoNameEnteredError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to On this page you can enter a name for the backup, so you can find and modify it later.
         /// </summary>
         internal static string PageDescription {
             get {
@@ -70,7 +88,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to Enter a name for the backup.
         /// </summary>
         internal static string PageTitle {
             get {

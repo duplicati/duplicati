@@ -137,6 +137,7 @@ namespace Duplicati.Library.Main
 
         public override string ToString()
         {
+            //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
             sb.Append("BeginTime       : " + this.BeginTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("EndTime         : " + this.EndTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");

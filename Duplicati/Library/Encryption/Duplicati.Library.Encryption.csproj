@@ -42,6 +42,26 @@
     <Compile Include="IEncryption.cs" />
     <Compile Include="GPGEncryption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Strings\AESEncryption.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AESEncryption.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\EncryptionBase.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>EncryptionBase.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\GPGEncryption.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>GPGEncryption.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\GPGStreamWrapper.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>GPGStreamWrapper.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
@@ -59,6 +79,28 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Strings\AESEncryption.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>AESEncryption.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\EncryptionBase.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>EncryptionBase.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\GPGEncryption.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>GPGEncryption.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\GPGStreamWrapper.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>GPGStreamWrapper.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

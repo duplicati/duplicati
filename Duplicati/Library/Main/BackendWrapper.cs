@@ -67,12 +67,12 @@ namespace Duplicati.Library.Main
 
             m_backend = Backend.BackendLoader.GetBackend(backend, m_options.RawOptions);
             if (m_backend == null)
-                throw new Exception("Unable to find backend for m_backend: " + m_backend);
+                throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, m_backend));
 
             if (!options.NoEncryption)
             {
                 if (string.IsNullOrEmpty(options.Passphrase))
-                    throw new Exception("No passphrase set");
+                    throw new Exception(Strings.BackendWrapper.PassphraseMissingError);
 
                 string passphrase = options.Passphrase;
 
@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main
             if (m_orphans != null)
                 m_orphans.Add(entry);
             else
-                Logging.Log.WriteMessage("Found a partial file, run cleanup to remove: " + entry.Filename, Duplicati.Library.Logging.LogMessageType.Warning);
+                Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.PartialFileFoundMessage, entry.Filename), Duplicati.Library.Logging.LogMessageType.Warning);
         }
 
         public BackupEntry GetBackupSet(string timelimit)
@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main
             List<BackupEntry> backups = GetBackupSets();
 
             if (backups.Count == 0)
-                throw new Exception("No backups found at remote location");
+                throw new Exception(Strings.BackendWrapper.NoBackupsFoundError);
 
             BackupEntry bestFit = backups[0];
             List<BackupEntry> additions = new List<BackupEntry>();
@@ -140,7 +140,7 @@ namespace Duplicati.Library.Main
                 }
 
            if (bestFit.SignatureFile.Count == 0 || bestFit.ContentVolumes.Count == 0)
-                throw new Exception("Unable to parse filenames for the desired volumes");
+                throw new Exception(Strings.BackendWrapper.FilenameParseError);
 
             bestFit.Incrementals = additions;
             return bestFit;
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main
                         signatures[content].Add(be);
                     }
                     else if (be.Type != BackupEntry.EntryType.Manifest)
-                        throw new Exception("Invalid entry type");
+                        throw new Exception(string.Format(Strings.BackendWrapper.InvalidEntryTypeError, be.Type));
                     else if (be.IsFull)
                         fulls.Add(be);
                     else
@@ -245,7 +245,7 @@ namespace Duplicati.Library.Main
                     if (index >= fulls.Count || be.Time <= fulls[index].Time)
                     {
                         if (m_orphans == null)
-                            Logging.Log.WriteMessage("Failed to match incremental package to a full: " + be.Filename, Duplicati.Library.Logging.LogMessageType.Warning);
+                            Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.OrphanIncrementalFoundMessage, be.Filename), Duplicati.Library.Logging.LogMessageType.Warning);
                         else
                             m_orphans.Add(be);
                         continue;
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main
             if (method == null)
                 method = this.GetType().GetMethod(methodname, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             if (method == null)
-                throw new Exception("Failed to find function: " + methodname);
+                throw new Exception(string.Format(Strings.BackendWrapper.FunctionLookupError, methodname));
 
 
             //If the code is not async, just invoke it
@@ -395,7 +395,7 @@ namespace Duplicati.Library.Main
 
             foreach (BackupEntry be in m_orphans)
             {
-                Logging.Log.WriteMessage("Removing leftover file: " + be.Filename, Duplicati.Library.Logging.LogMessageType.Information);
+                Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, be.Filename), Duplicati.Library.Logging.LogMessageType.Information);
                 if (m_options.Force)
                 {
                     m_backend.Delete(be.Filename);
@@ -404,7 +404,7 @@ namespace Duplicati.Library.Main
 
                 foreach (BackupEntry bex in be.SignatureFile)
                 {
-                    Logging.Log.WriteMessage("Removing leftover file: " + bex.Filename, Duplicati.Library.Logging.LogMessageType.Information);
+                    Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Filename), Duplicati.Library.Logging.LogMessageType.Information);
                     if (m_options.Force)
                     {
                         m_backend.Delete(bex.Filename);
@@ -413,7 +413,7 @@ namespace Duplicati.Library.Main
                 }
                 foreach (BackupEntry bex in be.ContentVolumes)
                 {
-                    Logging.Log.WriteMessage("Removing leftover file: " + bex.Filename, Duplicati.Library.Logging.LogMessageType.Information);
+                    Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Filename), Duplicati.Library.Logging.LogMessageType.Information);
                     if (m_options.Force)
                     {
                         m_backend.Delete(bex.Filename);
@@ -423,7 +423,7 @@ namespace Duplicati.Library.Main
             }
 
             if (!m_options.Force && m_orphans.Count > 0)
-                Logging.Log.WriteMessage("No files removed, specify --force to remove files.", Duplicati.Library.Logging.LogMessageType.Information);
+                Logging.Log.WriteMessage(Strings.BackendWrapper.FilesNotForceRemovedMessage, Duplicati.Library.Logging.LogMessageType.Information);
         }
 
         private List<Duplicati.Library.Backend.FileEntry> ListInternal()
@@ -449,7 +449,7 @@ namespace Duplicati.Library.Main
                 }
             } while (retries > 0);
 
-            throw new Exception("Failed to retrieve file listing: " + lastEx.Message, lastEx);
+            throw new Exception(string.Format(Strings.BackendWrapper.FileListingError, lastEx.Message), lastEx);
         }
 
         private void DeleteInternal(BackupEntry remote)
@@ -478,7 +478,7 @@ namespace Duplicati.Library.Main
             } while (lastEx != null && retries > 0);
 
             if (lastEx != null)
-                throw new Exception("Failed to delete file: " + lastEx.Message, lastEx);
+                throw new Exception(string.Format(Strings.BackendWrapper.FileDeleteError, lastEx.Message), lastEx);
 
             if (remote.Type == BackupEntry.EntryType.Signature && !string.IsNullOrEmpty(m_options.SignatureCachePath))
             {
@@ -496,7 +496,7 @@ namespace Duplicati.Library.Main
             string remotename = GetFullFilename(remote);
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
-            m_statusmessage = "Downloading: " + remotename;
+            m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageDownloading, remotename);
 
             do
             {
@@ -549,7 +549,7 @@ namespace Duplicati.Library.Main
                         }
 
                         if (filehash != null && Core.Utility.CalculateHash(tempfile) != filehash)
-                            throw new Exception("Hash mismatch on file " + remotename + " recorded hash: " + filehash + ", actual hash: " + Core.Utility.CalculateHash(tempfile));
+                            throw new Exception(string.Format(Strings.BackendWrapper.HashMismatchError, remotename, filehash, Core.Utility.CalculateHash(tempfile)));
 
                         if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote.Type == BackupEntry.EntryType.Signature)
                         {
@@ -573,7 +573,7 @@ namespace Duplicati.Library.Main
             } while (lastEx != null && retries > 0);
 
             if (lastEx != null)
-                throw new Exception("Failed to download file: " + lastEx.Message, lastEx);
+                throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError, lastEx.Message), lastEx);
 
             m_statistics.NumberOfBytesDownloaded += new System.IO.FileInfo(filename).Length;
         }
@@ -581,7 +581,7 @@ namespace Duplicati.Library.Main
         private void PutInternal(BackupEntry remote, string filename)
         {
             string remotename = GetFullFilename(remote);
-            m_statusmessage = "Uploading: " + remotename + " (" + Core.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length) + ")";
+            m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageUploading, remotename, Core.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length));
 
             string encryptedFile = filename;
 
@@ -600,6 +600,7 @@ namespace Duplicati.Library.Main
 
                 int retries = m_options.NumberOfRetries;
                 bool success = false;
+                Exception lastEx = null;
 
                 do
                 {
@@ -638,6 +639,7 @@ namespace Duplicati.Library.Main
                             System.IO.File.Copy(filename, System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote)), true);
 
                         success = true;
+                        lastEx = null;
                     }
                     catch (Exception ex)
                     {
@@ -646,11 +648,13 @@ namespace Duplicati.Library.Main
                         retries--;
                         if (retries > 0 && m_options.RetryDelay.Ticks > 0)
                             System.Threading.Thread.Sleep(m_options.RetryDelay);
+
+                        lastEx = ex;
                     }
                 } while (!success && retries > 0);
 
                 if (!success)
-                    throw new Exception("Failed to upload file");
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError, lastEx == null ? "<null>" : lastEx.Message));
 
                 m_statistics.NumberOfBytesUploaded += new System.IO.FileInfo(filename).Length;
             }

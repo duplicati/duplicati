@@ -55,7 +55,7 @@ namespace Duplicati.Library.Backend
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (m_hasWritten)
-                throw new InvalidOperationException("Cannot read and write on the same stream");
+                throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
             m_hasRead = true;
 
 
@@ -67,7 +67,7 @@ namespace Duplicati.Library.Backend
         public override void Write(byte[] buffer, int offset, int count)
         {
             if (m_hasRead)
-                throw new InvalidOperationException("Cannot read and write on the same stream");
+                throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
             m_hasWritten = true;
 
             //TODO: This needs to use a while loop, and a storage of prev. data

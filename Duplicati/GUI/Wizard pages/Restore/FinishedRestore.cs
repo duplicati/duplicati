@@ -35,7 +35,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         private HelperControls.WaitForOperation m_waitdlg;
 
         public FinishedRestore()
-            : base("Ready to restore files", "Duplicati is now ready to restore your files.")
+            : base(Strings.FinishedRestore.PageTitle, Strings.FinishedRestore.PageDescription)
         {
             InitializeComponent();
 
@@ -51,7 +51,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             if (!RunInBackground.Checked)
             {
                 m_waitdlg = new Duplicati.GUI.HelperControls.WaitForOperation();
-                m_waitdlg.Setup(new DoWorkEventHandler(Restore), "Restoring files, please wait...");
+                m_waitdlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestore.RestoreWaitDialogTitle);
                 m_waitdlg.ShowDialog();
                 m_owner.CancelButton.PerformClick();
                 m_waitdlg = null;
@@ -64,11 +64,12 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            Summary.Text =
-                "Action: Restore backup\r\n" +
-                "Backup: " + m_wrapper.ScheduleName + "\r\n" +
-                "Date:   " + (m_wrapper.RestoreTime.Ticks == 0 ? "most recent" : m_wrapper.RestoreTime.ToString()) + "\r\n" +
-                "Folder: " + m_wrapper.RestorePath + "\r\n";
+            Summary.Text = string.Format(
+                Strings.FinishedRestore.SummaryText,
+                m_wrapper.ScheduleName,
+                (m_wrapper.RestoreTime.Ticks == 0 ? Strings.FinishedRestore.MostRecent : m_wrapper.RestoreTime.ToString()),
+                m_wrapper.RestorePath
+            );
 
             args.TreatAsLast = true;
         }

@@ -69,7 +69,7 @@ namespace Duplicati.Library.Core
 
             long r;
             if (!long.TryParse(size, out r))
-                throw new Exception("Invalid size value: " + origsize);
+                throw new Exception(string.Format(Strings.Sizeparser.InvalidSizeValueError, origsize));
             else
                 return factor * r;
         }

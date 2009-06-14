@@ -61,7 +61,16 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to Value type: {0}. {1}. {2}.
+        /// </summary>
+        internal static string InfoLabelFormat {
+            get {
+                return ResourceManager.GetString("InfoLabelFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!.
         /// </summary>
         internal static string PageDescription {
             get {
@@ -70,7 +79,16 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to This page is not supported on the current platform, this is a known issue.\r\nA newer version of Mono will enable this page..
+        /// </summary>
+        internal static string PageNotSupportedWarning {
+            get {
+                return ResourceManager.GetString("PageNotSupportedWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Override settings.
         /// </summary>
         internal static string PageTitle {
             get {

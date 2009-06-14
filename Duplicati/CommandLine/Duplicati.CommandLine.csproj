@@ -39,6 +39,11 @@
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Strings\Program.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Program.resx</DependentUpon>
+    </Compile>
     <Compile Include="UnitTest.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -99,7 +104,17 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\Usage.txt" />
+    <None Include="Resources\ExampleLinux.txt" />
+    <None Include="Resources\ExampleWindows.txt" />
     <Content Include="TrayWarning.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Strings\Program.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Program.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

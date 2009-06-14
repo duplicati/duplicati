@@ -28,38 +28,29 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FinishedRestoreSetup));
             this.label1 = new System.Windows.Forms.Label();
             this.Summary = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(24, 16);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(50, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Summary";
             // 
             // Summary
             // 
-            this.Summary.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Summary.Location = new System.Drawing.Point(24, 40);
-            this.Summary.Multiline = true;
+            resources.ApplyResources(this.Summary, "Summary");
             this.Summary.Name = "Summary";
             this.Summary.ReadOnly = true;
-            this.Summary.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.Summary.Size = new System.Drawing.Size(456, 152);
-            this.Summary.TabIndex = 1;
             // 
             // FinishedRestoreSetup
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.Summary);
             this.Controls.Add(this.label1);
             this.Name = "FinishedRestoreSetup";
-            this.Size = new System.Drawing.Size(506, 242);
             this.ResumeLayout(false);
             this.PerformLayout();
 

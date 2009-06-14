@@ -113,7 +113,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-            get { return "FTP based"; }
+            get { return Strings.FTPBackend.DisplayName; }
         }
 
         public string ProtocolKey
@@ -192,10 +192,10 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-passive", CommandLineArgument.ArgumentType.Boolean, "Toggles the FTP connections method", "If this flag is set, the FTP connection is made in passive mode, which works better with some firewalls. If the \"ftp-regular\" flag is also set, this flag is ignored", "false"),
-                    new CommandLineArgument("ftp-regular", CommandLineArgument.ArgumentType.Boolean, "Toggles the FTP connections method", "If this flag is set, the FTP connection is made in active mode. Even if the \"ftp-passive\" flag is also set, the connection will be made in active mode", "true"),
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
-                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, "Use windows integrated authentication to connect to the server", "If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only avalible with windows servers and clients."),
+                    new CommandLineArgument("ftp-passive", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionFTPPassiveShort, Strings.FTPBackend.DescriptionFTPPassiveLong, "false"),
+                    new CommandLineArgument("ftp-regular", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionFTPActiveShort, Strings.FTPBackend.DescriptionFTPActiveLong, "true"),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPPasswordShort, Strings.FTPBackend.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionIntegratedAuthenticationShort, Strings.FTPBackend.DescriptionIntegratedAuthenticationLong),
                 });
             }
         }
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an FTP based backend. Allowed formats are \"ftp://hostname/folder\" or \"ftp://username:password@hostname/folder\"";
+                return Strings.FTPBackend.Description;
             }
         }
 

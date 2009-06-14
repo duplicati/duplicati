@@ -61,7 +61,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to On this page you may select limits that prevent the backup procedure from using too many resources.
         /// </summary>
         internal static string PageDescription {
             get {
@@ -70,7 +70,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to Select how to limit the backup.
         /// </summary>
         internal static string PageTitle {
             get {

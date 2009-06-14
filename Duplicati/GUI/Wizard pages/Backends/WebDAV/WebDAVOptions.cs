@@ -38,7 +38,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
         private WEBDAVSettings m_wrapper;
 
         public WebDAVOptions()
-            : base("Backup storage options", "On this page you can select where to store the backup data.")
+            : base(Strings.WebDAVOptions.PageTitle, Strings.WebDAVOptions.PageDescription)
         {
             InitializeComponent();
 
@@ -60,7 +60,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             }
 
             if (!m_hasTested)
-                switch (MessageBox.Show(this, "Do you want to test the connection?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                switch (MessageBox.Show(this, Backends.Strings.Common.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
                         TestConnection_Click(null, null);
@@ -135,7 +135,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
         {
             if (Servername.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, "You must enter the name of the server", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Backends.Strings.Common.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Servername.Focus(); }
                 catch { }
 
@@ -146,7 +146,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             {
                 if (Username.Text.Trim().Length <= 0 && !m_warnedUsername)
                 {
-                    if (MessageBox.Show(this, "You have not entered a username.\nThis is fine if the server allows anonymous uploads, but likely a username is required\nProceed without a password?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Backends.Strings.Common.EmptyUsernameWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
                     {
                         try { Username.Focus(); }
                         catch { }
@@ -159,7 +159,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
 
                 if (Password.Text.Trim().Length <= 0 && !m_warnedPassword)
                 {
-                    if (MessageBox.Show(this, "You have not entered a password.\nProceed without a password?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Backends.Strings.Common.EmptyPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
                     {
                         try { Password.Focus(); }
                         catch { }
@@ -205,12 +205,12 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
                     webdav.GetOptions(options);
                     string[] files = Duplicati.Library.Main.Interface.List(hostname, options);
 
-                    MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Backends.Strings.Common.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Backends.Strings.Common.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 this.Cursor = c;
             }
@@ -275,12 +275,12 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
                     using (req.GetResponse())
                     { }
 
-                    MessageBox.Show(this, "Folder created!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Backends.Strings.Common.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Backends.Strings.Common.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

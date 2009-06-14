@@ -383,13 +383,13 @@ namespace Duplicati.Library.Core
         public static string FormatSizeString(long size)
         {
             if (size > 1024 * 1024 * 1024)
-                return string.Format("{0:N} GB", (double)size / (1024 * 1024 * 1024));
+                return string.Format(Strings.Utility.FormatStringGB, (double)size / (1024 * 1024 * 1024));
             else if (size > 1024 * 1024)
-                return string.Format("{0:N} MB", (double)size / (1024 * 1024));
+                return string.Format(Strings.Utility.FormatStringGB, (double)size / (1024 * 1024));
             else if (size > 1024)
-                return string.Format("{0:N} KB", (double)size / 1024);
+                return string.Format(Strings.Utility.FormatStringGB, (double)size / 1024);
             else
-                return string.Format("{0} bytes", size);
+                return string.Format(Strings.Utility.FormatStringB, size);
         }
 
         public static System.Threading.ThreadPriority ParsePriority(string value)
@@ -489,7 +489,7 @@ namespace Duplicati.Library.Core
             hex = hex.Trim().ToUpper();
 
             if (hex.Length % 2 != 0)
-                throw new Exception("The hex string size must be a multiple of two, eg. the length must be even");
+                throw new Exception(Strings.Utility.InvalidHexStringLengthError);
             
             byte[] data = new byte[hex.Length];
             for (int i = 0; i < hex.Length; i+= 2)
@@ -498,9 +498,9 @@ namespace Duplicati.Library.Core
                 int lower = HEX_DIGITS_UPPER.IndexOf(hex[i + 1]);
 
                 if (upper < 0)
-                    throw new Exception("The digit '" + hex[i] + "' is not a valid hex digit");
+                    throw new Exception(string.Format(Strings.Utility.InvalidHexDigitError, hex[i]));
                 if (lower < 0)
-                    throw new Exception("The digit '" + hex[i + 1] + "' is not a valid hex digit");
+                    throw new Exception(string.Format(Strings.Utility.InvalidHexDigitError, hex[i + 1]));
 
                 data[i % 2] = (byte)((upper << 8) | lower);
             }

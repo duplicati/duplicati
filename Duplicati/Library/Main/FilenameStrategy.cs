@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main
             else if (type == BackupEntry.EntryType.Signature)
                 t = shortName ? "S" : "signature";
             else
-                throw new Exception("Invalid entry type specified");
+                throw new Exception(string.Format(Strings.FilenameStrategy.InvalidEntryTypeError, type));
 
             if (!shortName)
             {

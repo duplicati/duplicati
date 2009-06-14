@@ -106,6 +106,51 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Above normal.
+        /// </summary>
+        internal static string ThreadPriorityAboveNormal {
+            get {
+                return ResourceManager.GetString("ThreadPriorityAboveNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Below normal.
+        /// </summary>
+        internal static string ThreadPriorityBelowNormal {
+            get {
+                return ResourceManager.GetString("ThreadPriorityBelowNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Highest.
+        /// </summary>
+        internal static string ThreadPriorityHighest {
+            get {
+                return ResourceManager.GetString("ThreadPriorityHighest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Normal.
+        /// </summary>
+        internal static string ThreadPriorityNormal {
+            get {
+                return ResourceManager.GetString("ThreadPriorityNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lowest.
+        /// </summary>
+        internal static string ThreadPriortyLowest {
+            get {
+                return ResourceManager.GetString("ThreadPriortyLowest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Three months.
         /// </summary>
         internal static string ThreeMonths {

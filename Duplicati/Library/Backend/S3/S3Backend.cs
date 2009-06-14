@@ -70,9 +70,9 @@ namespace Duplicati.Library.Backend
             }
 
             if (string.IsNullOrEmpty(m_awsID))
-                throw new Exception("No Amazon S3 userID given");
+                throw new Exception(Strings.S3Backend.NoAMZUserIDError);
             if (string.IsNullOrEmpty(m_awsKey))
-                throw new Exception("No Amazon S3 secret key given");
+                throw new Exception(Strings.S3Backend.NoAMZKeyError);
 
 
             m_prefix = "";
@@ -120,7 +120,7 @@ namespace Duplicati.Library.Backend
                         m_prefix = m_prefix.Substring(1);
                 }
                 else
-                    throw new Exception("Unable to determine the bucket name for host: " + m_url);
+                    throw new Exception(string.Format(Strings.S3Backend.UnableToDecodeBucketnameError, m_url));
             }
 
 
@@ -135,7 +135,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-            get { return "Amazon S3 based"; }
+            get { return Strings.S3Backend.DisplayName; }
         }
 
         public string ProtocolKey
@@ -258,11 +258,11 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Path, "The AWS \"Secret Access Key\"", "The AWS \"Secret Access Key\" can be obtained after logging into your AWS account, this can also be supplied through the \"ftp-password\" property", null, new string[] {"ftp-password"}, null),
-                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.Path, "The AWS \"Access Key ID\"", "The AWS \"Access Key ID\" can be obtained after logging into your AWS account."),
-                    new CommandLineArgument("s3-use-new-style", CommandLineArgument.ArgumentType.Boolean, "Use subdomain calling style", "Specify this argument to make the S3 backend use subdomains rather than the previous url prefix method. See the Amazon S3 documentation for more details.", "true"),
-                    new CommandLineArgument("s3-european-buckets", CommandLineArgument.ArgumentType.Boolean, "Use a European server", "This flag is only used when creating new buckets. If the flag is set, the bucket is created on a european server. This flag forces the \"s3-use-new-style\" flag. Amazon charges slightly more for european buckets.", "false"),
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
+                    new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Path, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, new string[] {"ftp-password"}, null),
+                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.Path, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong),
+                    new CommandLineArgument("s3-use-new-style", CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3NewStyleDescriptionShort, Strings.S3Backend.S3NewStyleDescriptionLong, "true"),
+                    new CommandLineArgument("s3-european-buckets", CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false"),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.S3Backend.FTPPasswordDescriptionShort, Strings.S3Backend.FTPPasswordDescriptionLong),
                 });
 
             }
@@ -272,7 +272,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an Amazon S3 based backend. Allowed formats are \"s3://bucketname/prefix\" or \"s3://aws_id:aws_key@bucketname/prefix\". Note that if you AWS ID or Key contains either \":\", \"/\" or \"@\" you cannot use the second form, but must supply them through arguments.";
+                return Strings.S3Backend.Description;
             }
         }
         

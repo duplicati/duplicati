@@ -32,7 +32,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
     public partial class TargetFolder : WizardControl
     {
         public TargetFolder()
-            : base("Select restore folder", "Please select the folder into which the backup will be restored")
+            : base(Strings.TargetFolder.PageTitle, Strings.TargetFolder.PageDescription)
         {
             InitializeComponent();
 
@@ -50,21 +50,21 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             {
                 if (targetpath.Trim().Length == 0)
                 {
-                    MessageBox.Show(this, "You must enter a folder to restore to", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Strings.TargetFolder.NoFolderError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     args.Cancel = true;
                     return;
                 }
 
                 if (!System.IO.Path.IsPathRooted(targetpath))
                 {
-                    MessageBox.Show(this, "You must enter the full path of the folder", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Strings.TargetFolder.FolderPathRelativeError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     args.Cancel = true;
                     return;
                 }
 
                 if (!System.IO.Directory.Exists(targetpath))
                 {
-                    switch (MessageBox.Show(this, "The selected folder does not exist. Do you want to create it?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    switch (MessageBox.Show(this, Strings.TargetFolder.CreateFolderWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                     {
                         case DialogResult.Yes:
                             System.IO.Directory.CreateDirectory(targetpath);
@@ -77,7 +77,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, string.Format(Strings.TargetFolder.ValidatingFolderError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 args.Cancel = true;
                 return;
             }
@@ -85,7 +85,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             try
             {
                 if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
-                    if (MessageBox.Show(this, "The selected folder is not empty. Do you want to use it anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Strings.TargetFolder.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         args.Cancel = true;
                         return;
@@ -93,14 +93,14 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, string.Format(Strings.TargetFolder.ValidatingFolderError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 args.Cancel = true;
                 return;
             }
 
             if (PartialRestore.Checked && backupFileList.CheckedCount == 0)
             {
-                MessageBox.Show(this, "You have not selected any files to restore.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.TargetFolder.NoFilesSelectedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }

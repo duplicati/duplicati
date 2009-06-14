@@ -45,6 +45,21 @@
     <Compile Include="RestoreStatistics.cs" />
     <Compile Include="RSyncDir.cs" />
     <Compile Include="BackupStatistics.cs" />
+    <Compile Include="Strings\BackendWrapper.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>BackendWrapper.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\FilenameStrategy.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FilenameStrategy.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Interface.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Interface.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
@@ -78,6 +93,23 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Strings\BackendWrapper.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>BackendWrapper.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\FilenameStrategy.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FilenameStrategy.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Interface.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Interface.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

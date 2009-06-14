@@ -87,7 +87,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_zip == null)
-                throw new Exception("Cannot read data while writing");
+                throw new Exception(Strings.FileArchiveZip.AttemptReadWhileWritingError);
 #endif
             List<string> results = new List<string>();
             foreach (ICSharpCode.SharpZipLib.Zip.ZipEntry ze in m_zip)
@@ -107,7 +107,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_zip == null)
-                throw new Exception("Cannot read data while writing");
+                throw new Exception(Strings.FileArchiveZip.AttemptReadWhileWritingError);
 #endif
 
             List<string> results = new List<string>();
@@ -128,7 +128,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_zip == null)
-                throw new Exception("Cannot read data while writing");
+                throw new Exception(Strings.FileArchiveZip.AttemptReadWhileWritingError);
 #endif
 
             List<string> results = new List<string>();
@@ -170,7 +170,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_zip == null)
-                throw new Exception("Cannot read data while writing");
+                throw new Exception(Strings.FileArchiveZip.AttemptReadWhileWritingError);
 #endif
 
             ICSharpCode.SharpZipLib.Zip.ZipEntry ze = GetEntry(file);
@@ -213,7 +213,7 @@ namespace Duplicati.Library.Compression
         public void DeleteFile(string file)
         {
 #if !SHARPZIPLIBWORKS
-            throw new MissingMethodException("Zip does not support deleting");
+            throw new MissingMethodException(Strings.FileArchiveZip.DeleteUnsupportedError);
 #else
             if (FileExists(file))
                 m_zip.Delete(GetEntry(file));
@@ -225,7 +225,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_stream == null)
-                throw new Exception("Cannot write while reading");
+                throw new Exception(Strings.FileArchiveZip.AttemptWriteWhileReadingError);
 #endif
 
 #if SHARPZIPLIBWORKS
@@ -246,7 +246,7 @@ namespace Duplicati.Library.Compression
             if (DirectoryExists(file))
                 m_zip.Delete(GetEntry(file));
 #else
-            throw new MissingMethodException("Zip does not support deleting");
+            throw new MissingMethodException(Strings.FileArchiveZip.DeleteUnsupportedError);
 #endif
         }
 
@@ -254,7 +254,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_stream == null)
-                throw new Exception("Cannot write while reading");
+                throw new Exception(Strings.FileArchiveZip.AttemptWriteWhileReadingError);
 #endif
             m_zip.AddDirectory(PathFromFilesystem(file));
         }
@@ -263,7 +263,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_zip == null)
-                throw new Exception("Cannot read data while writing");
+                throw new Exception(Strings.FileArchiveZip.AttemptReadWhileWritingError);
 #endif
             return GetEntry(file) != null && GetEntry(file).IsFile;
         }
@@ -272,7 +272,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_zip == null)
-                throw new Exception("Cannot read data while writing");
+                throw new Exception(Strings.FileArchiveZip.AttemptReadWhileWritingError);
 #endif
             return GetEntry(file) != null && GetEntry(file).IsDirectory;
         }
@@ -298,12 +298,12 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_zip == null)
-                throw new Exception("Cannot read data while writing");
+                throw new Exception(Strings.FileArchiveZip.AttemptReadWhileWritingError);
 #endif
             if (GetEntry(file) != null)
                 return GetEntry(file).DateTime;
             else 
-                throw new Exception("File not found: " + file);
+                throw new Exception(string.Format(Strings.FileArchiveZip.FileNotFoundError, file));
         }
         
         #endregion

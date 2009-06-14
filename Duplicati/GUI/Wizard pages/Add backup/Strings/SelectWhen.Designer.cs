@@ -61,7 +61,16 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to You have no repetition set, so the backup will never run.\nThis is fine if you only want to run the backup manually, but it is not recomended.\nDo you want to continue?.
+        /// </summary>
+        internal static string NoRepetitionWarning {
+            get {
+                return ResourceManager.GetString("NoRepetitionWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you..
         /// </summary>
         internal static string PageDescription {
             get {
@@ -70,11 +79,38 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to Select when the backup should run.
         /// </summary>
         internal static string PageTitle {
             get {
                 return ResourceManager.GetString("PageTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The time you entered is in the past..
+        /// </summary>
+        internal static string TimeIsInThePastWarning {
+            get {
+                return ResourceManager.GetString("TimeIsInThePastWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The time you entered will occur shortly..
+        /// </summary>
+        internal static string TimeOccursShortlyWarning {
+            get {
+                return ResourceManager.GetString("TimeOccursShortlyWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The duration entered is less than five minutes. That is not acceptable..
+        /// </summary>
+        internal static string TooShortDurationError {
+            get {
+                return ResourceManager.GetString("TooShortDurationError", resourceCulture);
             }
         }
     }

@@ -28,35 +28,29 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SelectBackup));
             this.BackupList = new Duplicati.GUI.HelperControls.BackupItems();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // BackupList
             // 
-            this.BackupList.Location = new System.Drawing.Point(16, 40);
+            resources.ApplyResources(this.BackupList, "BackupList");
             this.BackupList.Name = "BackupList";
-            this.BackupList.Size = new System.Drawing.Size(480, 184);
-            this.BackupList.TabIndex = 0;
             this.BackupList.ItemDoubleClicked += new System.EventHandler(this.BackupList_ItemDoubleClicked);
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(16, 16);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(187, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Select the backup you want to restore";
             // 
             // SelectBackup
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.label1);
             this.Controls.Add(this.BackupList);
             this.Name = "SelectBackup";
-            this.Size = new System.Drawing.Size(506, 242);
             this.ResumeLayout(false);
             this.PerformLayout();
 

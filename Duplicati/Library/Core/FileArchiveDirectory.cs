@@ -161,15 +161,7 @@ namespace Duplicati.Library.Core
 
         public long Size
         {
-            get
-            {
-                //TODO: Much faster with a callback
-                long size = 0;
-                foreach (string s in Core.Utility.EnumerateFiles(m_folder))
-                    size += new System.IO.FileInfo(s).Length;
-
-                return size;
-            }
+            get { return Utility.GetDirectorySize(m_folder, null); }
         }
 
         public DateTime GetLastWriteTime(string file)

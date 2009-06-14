@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(WebDAVOptions));
             this.UseIntegratedAuth = new System.Windows.Forms.CheckBox();
             this.TestConnection = new System.Windows.Forms.Button();
             this.Username = new System.Windows.Forms.TextBox();
@@ -49,36 +50,27 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             // 
             // UseIntegratedAuth
             // 
-            this.UseIntegratedAuth.AutoSize = true;
-            this.UseIntegratedAuth.Location = new System.Drawing.Point(26, 72);
+            resources.ApplyResources(this.UseIntegratedAuth, "UseIntegratedAuth");
             this.UseIntegratedAuth.Name = "UseIntegratedAuth";
-            this.UseIntegratedAuth.Size = new System.Drawing.Size(165, 17);
-            this.UseIntegratedAuth.TabIndex = 24;
-            this.UseIntegratedAuth.Text = "Use integrated authentication";
             this.UseIntegratedAuth.UseVisualStyleBackColor = true;
             this.UseIntegratedAuth.CheckedChanged += new System.EventHandler(this.UseIntegratedAuth_CheckedChanged);
             // 
             // TestConnection
             // 
-            this.TestConnection.Location = new System.Drawing.Point(272, 192);
+            resources.ApplyResources(this.TestConnection, "TestConnection");
             this.TestConnection.Name = "TestConnection";
-            this.TestConnection.Size = new System.Drawing.Size(112, 24);
-            this.TestConnection.TabIndex = 21;
-            this.TestConnection.Text = "Test connection";
             this.TestConnection.UseVisualStyleBackColor = true;
             this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
             // Username
             // 
-            this.Username.Location = new System.Drawing.Point(88, 24);
+            resources.ApplyResources(this.Username, "Username");
             this.Username.Name = "Username";
-            this.Username.Size = new System.Drawing.Size(280, 20);
-            this.Username.TabIndex = 7;
             this.Username.TextChanged += new System.EventHandler(this.Username_TextChanged);
             // 
             // Port
             // 
-            this.Port.Location = new System.Drawing.Point(96, 160);
+            resources.ApplyResources(this.Port, "Port");
             this.Port.Maximum = new decimal(new int[] {
             65500,
             0,
@@ -90,8 +82,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             0,
             0});
             this.Port.Name = "Port";
-            this.Port.Size = new System.Drawing.Size(104, 20);
-            this.Port.TabIndex = 20;
             this.Port.Value = new decimal(new int[] {
             80,
             0,
@@ -101,64 +91,40 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(16, 16);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(38, 13);
-            this.label1.TabIndex = 15;
-            this.label1.Text = "Server";
             // 
             // Path
             // 
-            this.Path.Location = new System.Drawing.Point(96, 40);
+            resources.ApplyResources(this.Path, "Path");
             this.Path.Name = "Path";
-            this.Path.Size = new System.Drawing.Size(288, 20);
-            this.Path.TabIndex = 19;
             this.Path.TextChanged += new System.EventHandler(this.Path_TextChanged);
             // 
             // label4
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(8, 48);
+            resources.ApplyResources(this.label4, "label4");
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(53, 13);
-            this.label4.TabIndex = 3;
-            this.label4.Text = "Password";
             // 
             // Servername
             // 
-            this.Servername.Location = new System.Drawing.Point(96, 16);
+            resources.ApplyResources(this.Servername, "Servername");
             this.Servername.Name = "Servername";
-            this.Servername.Size = new System.Drawing.Size(288, 20);
-            this.Servername.TabIndex = 18;
             this.Servername.TextChanged += new System.EventHandler(this.Servername_TextChanged);
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(8, 24);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(55, 13);
-            this.label3.TabIndex = 2;
-            this.label3.Text = "Username";
             // 
             // label5
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(16, 160);
+            resources.ApplyResources(this.label5, "label5");
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(72, 13);
-            this.label5.TabIndex = 17;
-            this.label5.Text = "Port (optional)";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(16, 40);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(29, 13);
-            this.label2.TabIndex = 16;
-            this.label2.Text = "Path";
             // 
             // PasswordSettings
             // 
@@ -166,45 +132,33 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             this.PasswordSettings.Controls.Add(this.Password);
             this.PasswordSettings.Controls.Add(this.label4);
             this.PasswordSettings.Controls.Add(this.label3);
-            this.PasswordSettings.Location = new System.Drawing.Point(16, 73);
+            resources.ApplyResources(this.PasswordSettings, "PasswordSettings");
             this.PasswordSettings.Name = "PasswordSettings";
-            this.PasswordSettings.Size = new System.Drawing.Size(376, 71);
-            this.PasswordSettings.TabIndex = 25;
             this.PasswordSettings.TabStop = false;
             // 
             // Password
             // 
-            this.Password.Location = new System.Drawing.Point(88, 48);
+            resources.ApplyResources(this.Password, "Password");
             this.Password.Name = "Password";
-            this.Password.PasswordChar = '*';
-            this.Password.Size = new System.Drawing.Size(280, 20);
-            this.Password.TabIndex = 8;
             this.Password.TextChanged += new System.EventHandler(this.Password_TextChanged);
             // 
             // CreateFolderButton
             // 
-            this.CreateFolderButton.Location = new System.Drawing.Point(392, 41);
+            resources.ApplyResources(this.CreateFolderButton, "CreateFolderButton");
             this.CreateFolderButton.Name = "CreateFolderButton";
-            this.CreateFolderButton.Size = new System.Drawing.Size(88, 23);
-            this.CreateFolderButton.TabIndex = 26;
-            this.CreateFolderButton.Text = "Create folder";
             this.CreateFolderButton.UseVisualStyleBackColor = true;
             this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
             // 
             // DigestAuth
             // 
-            this.DigestAuth.AutoSize = true;
-            this.DigestAuth.Location = new System.Drawing.Point(16, 184);
+            resources.ApplyResources(this.DigestAuth, "DigestAuth");
             this.DigestAuth.Name = "DigestAuth";
-            this.DigestAuth.Size = new System.Drawing.Size(209, 17);
-            this.DigestAuth.TabIndex = 27;
-            this.DigestAuth.Text = "Autentication method must be \"Digest\"";
             this.DigestAuth.UseVisualStyleBackColor = true;
             this.DigestAuth.CheckedChanged += new System.EventHandler(this.DigestAuth_CheckedChanged);
             // 
             // WebDAVOptions
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.DigestAuth);
             this.Controls.Add(this.CreateFolderButton);
@@ -218,7 +172,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             this.Controls.Add(this.label2);
             this.Controls.Add(this.PasswordSettings);
             this.Name = "WebDAVOptions";
-            this.Size = new System.Drawing.Size(506, 242);
             ((System.ComponentModel.ISupportInitialize)(this.Port)).EndInit();
             this.PasswordSettings.ResumeLayout(false);
             this.PasswordSettings.PerformLayout();

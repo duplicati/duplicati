@@ -20,14 +20,49 @@
 using System;
 namespace Duplicati.Library.Backend
 {
+    /// <summary>
+    /// The interface used to describe a commandline argument
+    /// </summary>
     public interface ICommandLineArgument
     {
+        /// <summary>
+        /// A list of valid aliases, may be null or an empty array
+        /// </summary>
         string[] Aliases { get; set; }
+
+        /// <summary>
+        /// A long description of the argument
+        /// </summary>
         string LongDescription { get; set; }
+
+        /// <summary>
+        /// The primary name for the argument
+        /// </summary>
         string Name { get; set; }
+
+        /// <summary>
+        /// A short description of the argument
+        /// </summary>
         string ShortDescription { get; set; }
+
+        /// <summary>
+        /// The argument type
+        /// </summary>
         CommandLineArgument.ArgumentType Type { get; set; }
+
+        /// <summary>
+        /// A list of valid values, if applicable
+        /// </summary>
         string[] ValidValues { get; set; }
+
+        /// <summary>
+        /// The default value for the parameter
+        /// </summary>
         string DefaultValue { get; set; }
+
+        /// <summary>
+        /// Returns a localized string indicating the argument type
+        /// </summary>
+        string Typename { get; }
     }
 }

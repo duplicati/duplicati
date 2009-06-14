@@ -66,7 +66,7 @@ namespace Duplicati.Library.Encryption
             catch (System.Security.Cryptography.CryptographicException cex)
             {
                 //Better error message than "Padding is invalid and cannot be removed" :)
-                throw new Exception("Failed to decrypt data (bad key?): " + cex.Message, cex);
+                throw new Exception(string.Format(Strings.EncryptionBase.DecryptionError, cex.Message), cex);
             }
         }
 

@@ -88,7 +88,7 @@ namespace Duplicati.Library.Core
                     sb.Append(System.IO.Path.PathSeparator.ToString());
                 sb.Append(x.Key ? "i:" : "e:");
                 if (x.Value.Contains(System.IO.Path.PathSeparator.ToString()))
-                    throw new Exception("Filter contains " + System.IO.Path.PathSeparator);
+                    throw new Exception(string.Format(Strings.FilenameFilter.FilterContainsPathSeperator, System.IO.Path.PathSeparator));
                 sb.Append(x.Value);
             }
             return sb.ToString();

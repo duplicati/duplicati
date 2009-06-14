@@ -92,7 +92,7 @@ namespace Duplicati.Library.Core
             set 
             {
                 if (!System.IO.Directory.Exists(value))
-                    throw new Exception("Temporary folder does not exist: " + value);
+                    throw new Exception(string.Format(Strings.TempFolder.TempFolderDoesNotExistError, value));
                 m_system_temp_dir = value; 
             }
         }

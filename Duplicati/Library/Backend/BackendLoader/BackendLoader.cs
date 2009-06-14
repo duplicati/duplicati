@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend
         {
             m_interface = GetBackend(url, options);
             if (m_interface == null)
-                throw new ArgumentException("The supplied url is not supported");
+                throw new ArgumentException(Strings.BackendLoader.UrlNotSupportedError);
         }
 
         public static IBackend[] LoadedBackends
@@ -132,9 +132,9 @@ namespace Duplicati.Library.Backend
             get 
             {
                 if (m_interface == null)
-                    throw new Exception("This instance is not bound to a particular backend");
-                else
-                    return m_interface.DisplayName;
+                    throw new ArgumentException(Strings.BackendLoader.NoURLSuppliedError);
+
+                return m_interface.DisplayName;
             }
         }
 
@@ -143,16 +143,16 @@ namespace Duplicati.Library.Backend
             get
             {
                 if (m_interface == null)
-                    throw new Exception("This instance is not bound to a particular backend");
-                else
-                    return m_interface.ProtocolKey;
+                    throw new ArgumentException(Strings.BackendLoader.NoURLSuppliedError);
+
+                return m_interface.ProtocolKey;
             }
         }
 
         public List<FileEntry> List()
         {
             if (m_interface == null)
-                throw new ArgumentException("This instance was not created with an URL");
+                throw new ArgumentException(Strings.BackendLoader.NoURLSuppliedError);
             
             return m_interface.List();
         }
@@ -160,7 +160,7 @@ namespace Duplicati.Library.Backend
         public void Put(string remotename, string filename)
         {
             if (m_interface == null)
-                throw new ArgumentException("This instance was not created with an URL");
+                throw new ArgumentException(Strings.BackendLoader.NoURLSuppliedError);
             
             m_interface.Put(remotename, filename);
         }
@@ -168,7 +168,7 @@ namespace Duplicati.Library.Backend
         public void Get(string remotename, string filename)
         {
             if (m_interface == null)
-                throw new ArgumentException("This instance was not created with an URL");
+                throw new ArgumentException(Strings.BackendLoader.NoURLSuppliedError);
 
             m_interface.Get(remotename, filename);
         }
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Backend
         public void Delete(string remotename)
         {
             if (m_interface == null)
-                throw new ArgumentException("This instance was not created with an URL");
+                throw new ArgumentException(Strings.BackendLoader.NoURLSuppliedError);
 
             m_interface.Delete(remotename);
         }
@@ -186,7 +186,7 @@ namespace Duplicati.Library.Backend
             get
             {
                 if (m_interface == null)
-                    throw new ArgumentException("This instance was not created with an URL");
+                    throw new ArgumentException(Strings.BackendLoader.NoURLSuppliedError);
 
                 return m_interface.SupportedCommands;
             }
@@ -197,7 +197,7 @@ namespace Duplicati.Library.Backend
             get
             {
                 if (m_interface == null)
-                    throw new ArgumentException("This instance was not created with an URL");
+                    throw new ArgumentException(Strings.BackendLoader.NoURLSuppliedError);
 
                 return m_interface.Description;
             }

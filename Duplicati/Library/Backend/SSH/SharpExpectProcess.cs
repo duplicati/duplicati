@@ -428,7 +428,7 @@ namespace Duplicati.Library.SharpExpect
             //Console.WriteLine("Sending line: " + line);
             RecordInLog("I", line);
             if (m_process.HasExited)
-                throw new Exception("Can't write after process has exited: " + LogKillAndDispose());
+                throw new Exception(string.Format(Backend.Strings.SharpExpectProcess.WriteAfterExitError, LogKillAndDispose()));
             m_process.StandardInput.WriteLine(line);
         }
 
@@ -440,9 +440,9 @@ namespace Duplicati.Library.SharpExpect
         public void Sendpassword(string password)
         {
             //Console.WriteLine("Sending password: *password*");
-            RecordInLog("I", "*password*");
+            RecordInLog("I", Backend.Strings.SharpExpectProcess.PasswordMarker);
             if (m_process.HasExited)
-                throw new Exception("Can't write after process has exited: " + LogKillAndDispose());
+                throw new Exception(string.Format(Backend.Strings.SharpExpectProcess.WriteAfterExitError, LogKillAndDispose()));
             m_process.StandardInput.WriteLine(password);
         }
 
@@ -529,7 +529,7 @@ namespace Duplicati.Library.SharpExpect
                 return sb.ToString();
             }
             else
-                return "Log was disabled, no output";
+                return Backend.Strings.SharpExpectProcess.LogDisabled;
         }
 
         #region IDisposable Members

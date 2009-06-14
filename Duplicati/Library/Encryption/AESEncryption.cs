@@ -64,9 +64,9 @@ namespace Duplicati.Library.Encryption
             byte[] iv = new byte[m_instance.IV.Length];
             ms.Position = 0;
             if (ms.Read(iv, 0, iv.Length) != iv.Length)
-                throw new Exception("Bad key stretch");
+                throw new Exception(Strings.AESEncryption.BadKeyStretchError);
             if (ms.Read(realkey, 0, realkey.Length) != realkey.Length)
-                throw new Exception("Bad key stretch");
+                throw new Exception(Strings.AESEncryption.BadKeyStretchError);
             ms.Dispose();
 
             m_instance.IV = iv;
@@ -82,7 +82,7 @@ namespace Duplicati.Library.Encryption
         public override System.IO.Stream Encrypt(System.IO.Stream input)
         {
             if (m_instance.Mode == System.Security.Cryptography.CipherMode.ECB)
-                throw new Exception("Useless encryption detected");
+                throw new Exception(Strings.AESEncryption.UselessEncryptionError);
 
             System.Security.Cryptography.ICryptoTransform ct = m_instance.CreateEncryptor();
             return new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Write);
@@ -91,7 +91,7 @@ namespace Duplicati.Library.Encryption
         public override System.IO.Stream Decrypt(System.IO.Stream input)
         {
             if (m_instance.Mode == System.Security.Cryptography.CipherMode.ECB)
-                throw new Exception("Useless encryption detected");
+                throw new Exception(Strings.AESEncryption.UselessEncryptionError);
 
             System.Security.Cryptography.ICryptoTransform ct = m_instance.CreateDecryptor();
             return new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Read);

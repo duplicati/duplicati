@@ -287,6 +287,41 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ThrottleOptions.resx</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Backends\File\Strings\FileOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FileOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\FTP\Strings\FTPOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FTPOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\S3\Strings\S3Options.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>S3Options.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\SSH\Strings\SSHOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SSHOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\Strings\Common.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Common.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\WebDAV\Strings\WebDAVOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WebDAVOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Delete backup\Strings\DeleteFinished.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DeleteFinished.resx</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\RestoreSetup\FinishedRestoreSetup.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -377,6 +412,11 @@
     <Compile Include="Wizard pages\MainPage.Designer.cs">
       <DependentUpon>MainPage.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FinishedRestoreSetup.resx</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Restore\FinishedRestore.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -389,6 +429,21 @@
     <Compile Include="Wizard pages\Restore\SelectBackup.Designer.cs">
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Restore\Strings\FinishedRestore.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FinishedRestore.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\Strings\SelectBackup.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SelectBackup.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Restore\Strings\TargetFolder.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TargetFolder.resx</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Restore\TargetFolder.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -400,6 +455,11 @@
     </Compile>
     <Compile Include="Wizard pages\RunNow\RunNowFinished.Designer.cs">
       <DependentUpon>RunNowFinished.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\RunNow\Strings\RunNowFinished.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RunNowFinished.resx</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\SelectBackend.cs">
       <SubType>UserControl</SubType>
@@ -805,6 +865,66 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ThrottleOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\File\Strings\FileOptions.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FileOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\FTP\Strings\FTPOptions.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FTPOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\S3\Strings\S3Options.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>S3Options.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\SSH\Strings\SSHOptions.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SSHOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\Strings\Common.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Common.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\WebDAV\Strings\WebDAVOptions.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>WebDAVOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Delete backup\Strings\DeleteFinished.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DeleteFinished.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FinishedRestoreSetup.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Restore\Strings\FinishedRestore.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FinishedRestore.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Restore\Strings\SelectBackup.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SelectBackup.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Restore\Strings\TargetFolder.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>TargetFolder.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\RunNow\Strings\RunNowFinished.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>RunNowFinished.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Strings\FirstLaunch.resx">
       <SubType>Designer</SubType>

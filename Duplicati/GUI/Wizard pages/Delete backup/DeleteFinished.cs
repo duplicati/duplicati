@@ -34,7 +34,7 @@ namespace Duplicati.GUI.Wizard_pages.Delete_backup
         WizardSettingsWrapper m_wrapper;
 
         public DeleteFinished()
-            : base("Delete backup", "You are now ready to delete the backup. Please note that you cannot restore the backup ever again")
+            : base(Strings.DeleteFinished.PageTitle, Strings.DeleteFinished.PageDescription)
         {
             InitializeComponent();
 
@@ -45,10 +45,7 @@ namespace Duplicati.GUI.Wizard_pages.Delete_backup
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            Summary.Text =
-                "Action: Delete backup\r\n" +
-                "Name: " + m_wrapper.ScheduleName;
-
+            Summary.Text = string.Format(Strings.DeleteFinished.SummaryText, m_wrapper.ScheduleName);
             args.TreatAsLast = true;
         }
 

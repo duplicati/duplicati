@@ -32,16 +32,30 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     {
         private WizardSettingsWrapper m_wrapper;
 
+        /// <summary>
+        /// Textual representation of priorities
+        /// </summary>
         private readonly string[] THREAD_PRIORITIES = new string[] {
-            System.Threading.ThreadPriority.Highest.ToString(),
-            System.Threading.ThreadPriority.AboveNormal.ToString(),
-            System.Threading.ThreadPriority.Normal.ToString(),
-            System.Threading.ThreadPriority.BelowNormal.ToString(),
-            System.Threading.ThreadPriority.Lowest.ToString()
+            GUI.Strings.Common.ThreadPriorityHighest,
+            GUI.Strings.Common.ThreadPriorityAboveNormal,
+            GUI.Strings.Common.ThreadPriorityNormal,
+            GUI.Strings.Common.ThreadPriorityBelowNormal,
+            GUI.Strings.Common.ThreadPriortyLowest
+        };
+
+        /// <summary>
+        /// Mapping the priority to the string index
+        /// </summary>
+        private System.Threading.ThreadPriority[] PRIORITY_LOOKUP = new System.Threading.ThreadPriority[] {
+            System.Threading.ThreadPriority.Highest,
+            System.Threading.ThreadPriority.AboveNormal,
+            System.Threading.ThreadPriority.Normal,
+            System.Threading.ThreadPriority.BelowNormal,
+            System.Threading.ThreadPriority.Lowest,
         };
 
         public ThrottleOptions()
-            : base("Select how to limit the backup", "On this page you may select limits that prevent the backup procedure from using too many resources")
+            : base(Strings.ThrottleOptions.PageTitle, Strings.ThrottleOptions.PageDescription)
         {
             InitializeComponent();
 
@@ -112,7 +126,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 LoadItem("VolumeSize", 2, m_wrapper.VolumeSize);
 
                 AsyncEnabled.Checked = m_wrapper.AsyncTransfer;
-                ThreadPriority.SelectedIndex = Array.IndexOf<string>(THREAD_PRIORITIES, Library.Core.Utility.ParsePriority(m_wrapper.ThreadPriority).ToString());
+                ThreadPriority.SelectedIndex = Array.IndexOf<System.Threading.ThreadPriority>(PRIORITY_LOOKUP, Library.Core.Utility.ParsePriority(m_wrapper.ThreadPriority));
                 ThreadPriorityEnabled.Checked = !string.IsNullOrEmpty(m_wrapper.ThreadPriority); 
             }
         }
@@ -139,7 +153,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             m_wrapper.VolumeSize = VolumeSizeLimitNumber.Value.ToString() + VolumeSizeLimitSuffix.Text;
             m_wrapper.AsyncTransfer = AsyncEnabled.Checked;
-            m_wrapper.ThreadPriority = ThreadPriorityEnabled.Checked ? THREAD_PRIORITIES[ThreadPriority.SelectedIndex] : "";
+            m_wrapper.ThreadPriority = ThreadPriorityEnabled.Checked ? PRIORITY_LOOKUP[ThreadPriority.SelectedIndex].ToString() : "";
 
             if ((bool)m_settings["Advanced:Filters"])
                 args.NextPage = new Wizard_pages.Add_backup.EditFilters();

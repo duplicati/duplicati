@@ -36,7 +36,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
         private bool m_hasTested;
        
         public S3Options()
-            : base("Backup storage options", "On this page you can select where to store the backup data.")
+            : base(Strings.S3Options.PageTitle, Strings.S3Options.PageDescription)
         {
             InitializeComponent();
 
@@ -58,7 +58,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             }
 
             if (!m_hasTested)
-                switch (MessageBox.Show(this, "Do you want to test the connection?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                switch (MessageBox.Show(this, Backends.Strings.Common.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
                         TestConnection_Click(null, null);
@@ -114,25 +114,25 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
         {
             if (AWS_ID.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, "You must enter your AWS Access ID.\nYou may click the link to the right\nto open the AWS login page, and retrieve it.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.S3Options.EmptyAWSIDError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
 
             if (AWS_KEY.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, "You must enter your AWS Access ID.\nYou may click the link to the right\nto open the AWS login page, and retrieve it.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.S3Options.EmptyAWSKeyError , Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
 
             if (BucketName.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, "You must enter a name for the bucket.\nYou must use a unique name for each backup.\nYou may enter any name you like.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.S3Options.EmptyBucketnameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
 
             if (!BucketName.Text.ToLower().StartsWith(AWS_ID.Text.ToLower()))
             {
-                DialogResult res = MessageBox.Show(this, "The bucket name does not start with your user ID.\nTo avoid using a bucket owned by another user,\nit is recommended that you put your user ID in front of the bucket name.\nDo you want to insert the user ID in front of the bucket name?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                DialogResult res = MessageBox.Show(this, Strings.S3Options.BucketnameNotPrefixedWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 if (res == DialogResult.Yes)
                     BucketName.Text = AWS_ID.Text.ToLower() + "-" + BucketName.Text;
                 else if (res == DialogResult.Cancel)
@@ -158,10 +158,10 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             if (bucketname.ToLower() != bucketname)
             {
                 string reason = UseEuroBuckets.Checked ?
-                    "The european buckets require that the bucket name is in lower case." :
-                    "The new amazon s3 API requires that bucket names are all lower case.";
+                    Strings.S3Options.EuroBucketsRequireLowerCaseError :
+                    Strings.S3Options.NewS3RequiresLowerCaseError;
 
-                DialogResult res = MessageBox.Show(this, "The bucket name is not in all lower case.\n" + reason + "\nDo you want to convert the bucket name to lower case?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                DialogResult res = MessageBox.Show(this, string.Format(Strings.S3Options.BucketnameCaseWarning, reason), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 if (res == DialogResult.Yes)
                 {
                     bucketname = bucketname.ToLower();
@@ -213,12 +213,12 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
 
                     string[] files = Duplicati.Library.Main.Interface.List(target, options);
 
-                    MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Backends.Strings.Common.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Backends.Strings.Common.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 }
                 this.Cursor = c;

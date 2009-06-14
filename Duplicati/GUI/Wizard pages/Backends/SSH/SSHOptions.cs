@@ -38,7 +38,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         private SSHSettings m_wrapper;
 
         public SSHOptions()
-            : base("Backup storage options", "On this page you can select where to store the backup data.")
+            : base(Strings.SSHOptions.PageTitle, Strings.SSHOptions.PageDescription)
         {
             InitializeComponent();
 
@@ -62,7 +62,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             }
 
             if (!m_hasTested)
-                if (MessageBox.Show(this, "Do you want to test the connection?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
+                if (MessageBox.Show(this, Backends.Strings.Common.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
                     TestConnection_Click(null, null);
                     if (!m_hasTested)
@@ -146,12 +146,12 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
                     string[] files = Duplicati.Library.Main.Interface.List(target, options);
 
-                    MessageBox.Show(this, "Connection succeeded!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Backends.Strings.Common.ConnectionFailure, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "Connection Failed: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Backends.Strings.Common.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 }
                 this.Cursor = c;
@@ -162,7 +162,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         {
             if (Servername.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, "You must enter the name of the server", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Backends.Strings.Common.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Servername.Focus(); }
                 catch { }
 
@@ -171,7 +171,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
             if (Username.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, "You must enter a username", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Backends.Strings.Common.EmptyUsernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Username.Focus(); }
                 catch { }
 
@@ -180,7 +180,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
             if (Password.Text.Trim().Length <= 0 && UsePassword.Checked)
             {
-                MessageBox.Show(this, "You must enter a password", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Backends.Strings.Common.EmptyPasswordError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Password.Focus(); }
                 catch { }
 
@@ -189,7 +189,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
             if (!m_warnedPath && Path.Text.Trim().Length == 0)
             {
-                if (MessageBox.Show(this, "You have not entered a path. This will store all backups in the default directory. Is this what you want?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
+                if (MessageBox.Show(this, Backends.Strings.Common.DefaultDirectoryWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
                 {
                     return false;
                 }
@@ -205,7 +205,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
                 if (fi == null || !fi.Exists)
                 {
-                    if (MessageBox.Show(this, "Duplicati was unable to verify the existence of the sftp program.\nscp may work regardless, if it is located in the system search path.\n\nDo you want to continue anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Strings.SSHOptions.MissingSCPWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         return false;
                     }

@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(S3Options));
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -42,100 +43,66 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(24, 8);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(84, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "AWS Access ID";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(24, 32);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(87, 13);
-            this.label2.TabIndex = 1;
-            this.label2.Text = "AWS Secret Key";
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(24, 56);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(86, 13);
-            this.label3.TabIndex = 2;
-            this.label3.Text = "S3 Bucket name";
             // 
             // AWS_ID
             // 
-            this.AWS_ID.Location = new System.Drawing.Point(136, 8);
+            resources.ApplyResources(this.AWS_ID, "AWS_ID");
             this.AWS_ID.Name = "AWS_ID";
-            this.AWS_ID.Size = new System.Drawing.Size(144, 20);
-            this.AWS_ID.TabIndex = 4;
             this.AWS_ID.TextChanged += new System.EventHandler(this.AWS_ID_TextChanged);
             // 
             // AWS_KEY
             // 
-            this.AWS_KEY.Location = new System.Drawing.Point(136, 32);
+            resources.ApplyResources(this.AWS_KEY, "AWS_KEY");
             this.AWS_KEY.Name = "AWS_KEY";
-            this.AWS_KEY.Size = new System.Drawing.Size(144, 20);
-            this.AWS_KEY.TabIndex = 5;
             this.AWS_KEY.TextChanged += new System.EventHandler(this.AWS_KEY_TextChanged);
             // 
             // BucketName
             // 
-            this.BucketName.Location = new System.Drawing.Point(136, 56);
+            resources.ApplyResources(this.BucketName, "BucketName");
             this.BucketName.Name = "BucketName";
-            this.BucketName.Size = new System.Drawing.Size(144, 20);
-            this.BucketName.TabIndex = 6;
             this.BucketName.TextChanged += new System.EventHandler(this.BucketName_TextChanged);
             // 
             // SignUpLink
             // 
-            this.SignUpLink.AutoSize = true;
-            this.SignUpLink.Location = new System.Drawing.Point(296, 8);
+            resources.ApplyResources(this.SignUpLink, "SignUpLink");
             this.SignUpLink.Name = "SignUpLink";
-            this.SignUpLink.Size = new System.Drawing.Size(151, 13);
-            this.SignUpLink.TabIndex = 7;
             this.SignUpLink.TabStop = true;
-            this.SignUpLink.Text = "Click here for the sign up page";
             this.SignUpLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.SignUpLink_LinkClicked);
             // 
             // label4
             // 
-            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(24, 80);
+            resources.ApplyResources(this.label4, "label4");
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(440, 32);
-            this.label4.TabIndex = 9;
-            this.label4.Text = "A bucket can be thought of as a root folder. Use / in the bucket name, to access " +
-                "subfolders in the bucket";
             // 
             // UseEuroBuckets
             // 
-            this.UseEuroBuckets.AutoSize = true;
-            this.UseEuroBuckets.Location = new System.Drawing.Point(24, 128);
+            resources.ApplyResources(this.UseEuroBuckets, "UseEuroBuckets");
             this.UseEuroBuckets.Name = "UseEuroBuckets";
-            this.UseEuroBuckets.Size = new System.Drawing.Size(176, 17);
-            this.UseEuroBuckets.TabIndex = 10;
-            this.UseEuroBuckets.Text = "Store files on a european server";
             this.UseEuroBuckets.UseVisualStyleBackColor = true;
             this.UseEuroBuckets.CheckedChanged += new System.EventHandler(this.UseEuroBuckets_CheckedChanged);
             // 
             // TestConnection
             // 
-            this.TestConnection.Location = new System.Drawing.Point(360, 120);
+            resources.ApplyResources(this.TestConnection, "TestConnection");
             this.TestConnection.Name = "TestConnection";
-            this.TestConnection.Size = new System.Drawing.Size(112, 24);
-            this.TestConnection.TabIndex = 11;
-            this.TestConnection.Text = "Test Connection";
             this.TestConnection.UseVisualStyleBackColor = true;
             this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
             // S3Options
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.UseEuroBuckets);
@@ -148,7 +115,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "S3Options";
-            this.Size = new System.Drawing.Size(506, 242);
             this.ResumeLayout(false);
             this.PerformLayout();
 

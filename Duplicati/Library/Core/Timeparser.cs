@@ -72,7 +72,7 @@ namespace Duplicati.Library.Core
                 string partial = datestring.Substring(previndex, index - previndex).Trim();
                 int factor;
                 if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out factor))
-                    throw new Exception("Failed to parse the segment: " + partial + ", invalid integer");
+                    throw new Exception(string.Format(Strings.Timeparser.InvalidIntegerError, partial));
 
                 factor *= multiplier;
 
@@ -100,13 +100,13 @@ namespace Duplicati.Library.Core
                         offset = offset.AddYears(factor);
                         break;
                     default:
-                        throw new Exception("Invalid specifier: " + datestring[index]);
+                        throw new Exception(string.Format(Strings.Timeparser.InvalidSpecifierError, datestring[index]));
                 }
                 previndex = index + 1;    
             }
 
             if (datestring.Substring(previndex).Trim().Length > 0)
-                throw new Exception("Unparsed data: " + datestring.Substring(previndex));
+                throw new Exception(string.Format(Strings.Timeparser.UnparsedDataFragmentError, datestring.Substring(previndex)));
 
             return offset;
         }
@@ -115,28 +115,23 @@ namespace Duplicati.Library.Core
         {
             string[] parts = filetime.Trim().Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
 
-            int day, mon, year;
-
-            mon = MONTH_NAMES.IndexOf(parts[1].Trim().ToLower());
+            int mon = MONTH_NAMES.IndexOf(parts[1].Trim().ToLower());
             if (mon < 0)
-                throw new Exception("Unable to parse date: " + filetime + ", unkown month: " + parts[1]);
+                throw new Exception(string.Format(Strings.Timeparser.UnknownMonthError, filetime, parts[1]));
 
             mon++;
 
-            day = -1;
-            year = -1;
-            int.TryParse(parts[2].Trim(), out day);
-            if (day < 0)
-                throw new Exception("Unable to parse date: " + filetime + ", unkown day: " + parts[2]);
+            int day;
+            int year;
+            if (!int.TryParse(parts[2].Trim(), out day) || day < 0)
+                throw new Exception(string.Format(Strings.Timeparser.InvalidDayError, filetime, parts[2]));
 
-            int.TryParse(parts[4].Trim(), out year);
-            if (year < 0)
-                throw new Exception("Unable to parse date: " + filetime + ", unkown day: " + parts[2]);
+            if (!int.TryParse(parts[4].Trim(), out year) || year < 0)
+                throw new Exception(string.Format(Strings.Timeparser.InvalidYearError, filetime, parts[4]));
 
             DateTime t;
-            if (!DateTime.TryParse(parts[3].Trim(),null,  System.Globalization.DateTimeStyles.NoCurrentDateDefault, out t))
-                throw new Exception("Unable to parse date: " + filetime + ", invalid time: " + parts[3]);
-
+            if (!DateTime.TryParse(parts[3].Trim(), null, System.Globalization.DateTimeStyles.NoCurrentDateDefault, out t))
+                throw new Exception(string.Format(Strings.Timeparser.InvalidTimeError, filetime, parts[3]));
 
             return new DateTime(year, mon, day).Add(t.TimeOfDay);
 

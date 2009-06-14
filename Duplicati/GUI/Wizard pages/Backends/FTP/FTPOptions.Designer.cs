@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FTPOptions));
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -46,85 +47,56 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(16, 16);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(38, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Server";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(16, 40);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(29, 13);
-            this.label2.TabIndex = 1;
-            this.label2.Text = "Path";
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(16, 64);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(55, 13);
-            this.label3.TabIndex = 2;
-            this.label3.Text = "Username";
             // 
             // label4
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(16, 88);
+            resources.ApplyResources(this.label4, "label4");
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(53, 13);
-            this.label4.TabIndex = 3;
-            this.label4.Text = "Password";
             // 
             // label5
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(16, 112);
+            resources.ApplyResources(this.label5, "label5");
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(72, 13);
-            this.label5.TabIndex = 4;
-            this.label5.Text = "Port (optional)";
             // 
             // Servername
             // 
-            this.Servername.Location = new System.Drawing.Point(96, 16);
+            resources.ApplyResources(this.Servername, "Servername");
             this.Servername.Name = "Servername";
-            this.Servername.Size = new System.Drawing.Size(288, 20);
-            this.Servername.TabIndex = 5;
             this.Servername.TextChanged += new System.EventHandler(this.Servername_TextChanged);
             // 
             // Path
             // 
-            this.Path.Location = new System.Drawing.Point(96, 40);
+            resources.ApplyResources(this.Path, "Path");
             this.Path.Name = "Path";
-            this.Path.Size = new System.Drawing.Size(288, 20);
-            this.Path.TabIndex = 6;
             this.Path.TextChanged += new System.EventHandler(this.Path_TextChanged);
             // 
             // Username
             // 
-            this.Username.Location = new System.Drawing.Point(96, 64);
+            resources.ApplyResources(this.Username, "Username");
             this.Username.Name = "Username";
-            this.Username.Size = new System.Drawing.Size(288, 20);
-            this.Username.TabIndex = 7;
             this.Username.TextChanged += new System.EventHandler(this.Username_TextChanged);
             // 
             // Password
             // 
-            this.Password.Location = new System.Drawing.Point(96, 88);
+            resources.ApplyResources(this.Password, "Password");
             this.Password.Name = "Password";
-            this.Password.PasswordChar = '*';
-            this.Password.Size = new System.Drawing.Size(288, 20);
-            this.Password.TabIndex = 8;
             this.Password.TextChanged += new System.EventHandler(this.Password_TextChanged);
             // 
             // Port
             // 
-            this.Port.Location = new System.Drawing.Point(96, 112);
+            resources.ApplyResources(this.Port, "Port");
             this.Port.Maximum = new decimal(new int[] {
             65500,
             0,
@@ -136,8 +108,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             0,
             0});
             this.Port.Name = "Port";
-            this.Port.Size = new System.Drawing.Size(104, 20);
-            this.Port.TabIndex = 9;
             this.Port.Value = new decimal(new int[] {
             21,
             0,
@@ -147,38 +117,28 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             // 
             // TestConnection
             // 
-            this.TestConnection.Location = new System.Drawing.Point(272, 160);
+            resources.ApplyResources(this.TestConnection, "TestConnection");
             this.TestConnection.Name = "TestConnection";
-            this.TestConnection.Size = new System.Drawing.Size(112, 24);
-            this.TestConnection.TabIndex = 10;
-            this.TestConnection.Text = "Test connection";
             this.TestConnection.UseVisualStyleBackColor = true;
             this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
             // PassiveConnection
             // 
-            this.PassiveConnection.AutoSize = true;
-            this.PassiveConnection.Location = new System.Drawing.Point(16, 136);
+            resources.ApplyResources(this.PassiveConnection, "PassiveConnection");
             this.PassiveConnection.Name = "PassiveConnection";
-            this.PassiveConnection.Size = new System.Drawing.Size(140, 17);
-            this.PassiveConnection.TabIndex = 11;
-            this.PassiveConnection.Text = "Use passive connection";
             this.PassiveConnection.UseVisualStyleBackColor = true;
             this.PassiveConnection.CheckedChanged += new System.EventHandler(this.PassiveConnection_CheckedChanged);
             // 
             // CreateFolderButton
             // 
-            this.CreateFolderButton.Location = new System.Drawing.Point(392, 40);
+            resources.ApplyResources(this.CreateFolderButton, "CreateFolderButton");
             this.CreateFolderButton.Name = "CreateFolderButton";
-            this.CreateFolderButton.Size = new System.Drawing.Size(88, 23);
-            this.CreateFolderButton.TabIndex = 12;
-            this.CreateFolderButton.Text = "Create folder";
             this.CreateFolderButton.UseVisualStyleBackColor = true;
             this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
             // 
             // FTPOptions
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.Username);
             this.Controls.Add(this.Password);
@@ -194,7 +154,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "FTPOptions";
-            this.Size = new System.Drawing.Size(506, 242);
             ((System.ComponentModel.ISupportInitialize)(this.Port)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

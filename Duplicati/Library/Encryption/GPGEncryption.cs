@@ -117,7 +117,7 @@ namespace Duplicati.Library.Encryption
             }
             catch (Exception ex)
             {
-                throw new Exception("Failed to execute GPG at \"" + PGP_PROGRAM + "\": " + ex.Message, ex);
+                throw new Exception(string.Format(Strings.GPGEncryption.GPGExecuteError, PGP_PROGRAM, ex.Message), ex);
             }
 
             if (encrypt)

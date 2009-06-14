@@ -32,6 +32,7 @@ namespace Duplicati.Library.Backend
         private string m_username;
         private string m_password;
         Dictionary<string, string> m_options;
+        private int m_transfer_timeout;
 
         private string m_sftp;
         private string m_ssh_options;
@@ -108,6 +109,11 @@ namespace Duplicati.Library.Backend
             if (!u.IsDefaultPort)
                 m_ssh_options += " -P " + u.Port;
 
+            if (m_options.ContainsKey("transfer-timeout"))
+                m_transfer_timeout = Math.Min(1000 * 60 * 60, Math.Max(1000 * 60, (int)Duplicati.Library.Core.Timeparser.ParseTimeSpan(m_options["transfer-timeout"]).TotalMilliseconds));
+            else
+                m_transfer_timeout = 1000 * 60 * 10;
+
             m_write_log_info = options.ContainsKey("debug-to-console");
         }
 
@@ -115,7 +121,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-            get { return "SSH based"; }
+            get { return Strings.SSHBackend.DisplayName; }
         }
 
         public string ProtocolKey
@@ -126,7 +132,7 @@ namespace Duplicati.Library.Backend
         public List<FileEntry> List()
         {
             if (m_write_log_info)
-                Console.WriteLine("******** List *******");
+                Console.WriteLine("******** " + Strings.SSHBackend.DebugListHeader + " *******");
             List<FileEntry> files = new List<FileEntry>();
 
             using (SharpExpect.SharpExpectProcess p = GetConnection())
@@ -145,15 +151,15 @@ namespace Duplicati.Library.Backend
                     if (fe != null && fe.Name != "." && fe.Name != "..")
                         files.Add(fe);
                     else if (m_write_log_info)
-                        Console.WriteLine("Failed to parse line: " + s);
+                        Console.WriteLine(string.Format(Strings.SSHBackend.DebugParseFailed, s));
                 }
 
                 if (!p.Process.WaitForExit(5000))
-                    throw new Exception("Timeout while closing session");
+                    throw new Exception(Strings.SSHBackend.CloseTimeoutError);
 
                 if (m_write_log_info)
                 {
-                    Console.WriteLine("******** List Complete *******");
+                    Console.WriteLine("******** " + Strings.SSHBackend.DebugListFooter + " *******");
                     Console.WriteLine(p.LogKillAndDispose());
                 }
 
@@ -166,7 +172,7 @@ namespace Duplicati.Library.Backend
         public void Put(string remotename, string filename)
         {
             if (m_write_log_info)
-                Console.WriteLine("******** Put ********");
+                Console.WriteLine("******** " + Strings.SSHBackend.DebugPutHeader + " ********");
             using (SharpExpect.SharpExpectProcess p = GetConnection())
             {
                 string cmd = "put \"" + filename + "\" \"" + remotename + "\"";
@@ -174,19 +180,19 @@ namespace Duplicati.Library.Backend
                 p.Sendline(cmd);
 
                 if (p.Expect(SSH_TIMEOUT, "local\\:.+", "Uploading .*") < 0)
-                    throw new Exception("Failed to get expected response to command: " + cmd);
+                    throw new Exception(string.Format(Strings.SSHBackend.UnexpectedResponseError, cmd));
 
                 p.Sendline("exit");
 
-                if (!p.Process.WaitForExit(5 * 60 * 1000))
-                    throw new Exception("Timeout while uploading file");
+                if (!p.Process.WaitForExit(m_transfer_timeout))
+                    throw new Exception(Strings.SSHBackend.UploadTimeoutError);
 
                 if ((m_isLinux ? p.Expect(1000, "exit", "sftp> exit") : p.Expect(1000, "Using username .*")) < 0)
-                    throw new Exception("Got unexpected exit response");
+                    throw new Exception(Strings.SSHBackend.UnexpectedExitResponseError);
 
                 if (m_write_log_info)
                 {
-                    Console.WriteLine("******** Put Completed ********");
+                    Console.WriteLine("******** " + Strings.SSHBackend.DebugPutFooter + " ********");
                     Console.WriteLine(p.LogKillAndDispose());
                 }
             }
@@ -195,7 +201,7 @@ namespace Duplicati.Library.Backend
         public void Get(string remotename, string filename)
         {
             if (m_write_log_info)
-                Console.WriteLine("******** Get ********");
+                Console.WriteLine("******** " + Strings.SSHBackend.DebugGetHeader + " ********");
 
             using (SharpExpect.SharpExpectProcess p = GetConnection())
             {
@@ -203,19 +209,19 @@ namespace Duplicati.Library.Backend
                 p.Sendline(cmd);
 
                 if (p.Expect(SSH_TIMEOUT, "remote\\:.+", "Downloading .*", "Fetching .*") < 0)
-                    throw new Exception("Failed to get expected response to command: " + cmd);
+                    throw new Exception(string.Format(Strings.SSHBackend.UnexpectedResponseError, cmd));
 
                 p.Sendline("exit");
 
-                if (!p.Process.WaitForExit(5 * 60 * 1000))
-                    throw new Exception("Timeout while uploading file");
+                if (!p.Process.WaitForExit(m_transfer_timeout))
+                    throw new Exception(Strings.SSHBackend.DownloadTimeoutError);
 
                 if ((m_isLinux ? p.Expect(1000, "exit", "sftp> exit") : p.Expect(1000, "Using username .*")) < 0)
-                    throw new Exception("Got unexpected exit response");
+                    throw new Exception(Strings.SSHBackend.UnexpectedExitResponseError);
 
                 if (m_write_log_info)
                 {
-                    Console.WriteLine("******** Get Completed ********");
+                    Console.WriteLine("******** " + Strings.SSHBackend.DebugGetFooter + " ********");
                     Console.WriteLine(p.LogKillAndDispose());
                 }
             }
@@ -224,7 +230,7 @@ namespace Duplicati.Library.Backend
         public void Delete(string remotename)
         {
             if (m_write_log_info)
-                Console.WriteLine("******** Delete ********");
+                Console.WriteLine("******** " + Strings.SSHBackend.DebugDeleteHeader + " ********");
 
             using (SharpExpect.SharpExpectProcess p = GetConnection())
             {
@@ -232,14 +238,14 @@ namespace Duplicati.Library.Backend
                 p.Sendline("exit");
 
                 if (p.Expect(1000, ".*No such file or directory.*", ".*Couldn't.*") != -1)
-                    throw new Exception("Failed to delete file: " + p.LogKillAndDispose());
+                    throw new Exception(string.Format(Strings.SSHBackend.DeleteError, p.LogKillAndDispose()));
 
                 if (!p.Process.WaitForExit(5000))
-                    throw new Exception("Timeout while closing session");
+                    throw new Exception(Strings.SSHBackend.CloseTimeoutError);
 
                 if (m_write_log_info)
                 {
-                    Console.WriteLine("******** Delete completed ********");
+                    Console.WriteLine("******** " + Strings.SSHBackend.DebugDeleteFooter + " ********");
                     Console.WriteLine(p.LogKillAndDispose());
                 }
             }
@@ -250,10 +256,11 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("sftp-command", CommandLineArgument.ArgumentType.Path, "The path to the \"sftp\" program", "The full path to the \"sftp\" application.", (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) ? "sftp" : "psftp.exe"),
-                    new CommandLineArgument("ssh-options", CommandLineArgument.ArgumentType.String, "Extra options to the ssh commands", "Supply any extra commandline arguments, which are passed unaltered to the ssh application", "-C"),
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
-                    new CommandLineArgument("debug-to-console", CommandLineArgument.ArgumentType.Boolean, "Prints debug info to the console", "The SSH backend relies on an external program (sftp) to work. Since the external program may change at any time, this may break the backend. Enable this option to get debug information about the ssh connection written to the console."),
+                    new CommandLineArgument("sftp-command", CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSFTPCommandShort, Strings.SSHBackend.DescriptionSFTPCommandLong, (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) ? "sftp" : "psftp.exe"),
+                    new CommandLineArgument("ssh-options", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionSSHOptionsShort, Strings.SSHBackend.DescriptionSSHOptionsLong, "-C"),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPPasswordShort, Strings.SSHBackend.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("debug-to-console", CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionDebugToConsoleShort, Strings.SSHBackend.DescriptionDebugToConsoleLong),
+                    new CommandLineArgument("transfer-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SSHBackend.DescriptionTransferTimeoutShort, Strings.SSHBackend.DescriptionTransferTimeoutLong, "10m"),
                 });
 
             }
@@ -263,7 +270,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an SSH based backend, using SFTP. Allowed formats are \"ssh://hostname/folder\" or \"ssh://username:password@hostname/folder\". NOTE: This backend does not support throttling uploads or downloads, and requires that sftp is installed (using putty for windows).";
+                return Strings.SSHBackend.Description;
             }
         }
 
@@ -340,9 +347,9 @@ namespace Duplicati.Library.Backend
                 {
                     Console.WriteLine(ex.ToString());
                     if (m_isLinux)
-                        throw new Exception("Failed to start the SSH application (" + p.StartInfo.FileName + ").\r\nMake sure that \"expect\" is installed\r\nError message: " + ex.Message, ex);
+                        throw new Exception(string.Format(Strings.SSHBackend.LaunchErrorLinux, p.StartInfo.FileName, ex.Message), ex);
                     else
-                        throw new Exception("Failed to start the SSH application (" + p.StartInfo.FileName + ").\r\nMake sure that \"putty\" is installed, and you have set the correct path.\r\nError message: " + ex.Message, ex);
+                        throw new Exception(string.Format(Strings.SSHBackend.LaunchErrorWindows, p.StartInfo.FileName, ex.Message), ex);
 
                 }
 
@@ -354,28 +361,28 @@ namespace Duplicati.Library.Backend
                     {
                         case -1:
                         case 0: //Timeout
-                            throw new Exception("Timeout occured while connection, log: " + proc.LogKillAndDispose());
+                            throw new Exception(string.Format(Strings.SSHBackend.ConnectionTimeoutError, proc.LogKillAndDispose()));
                         case 1: //Access denied
-                            throw new Exception("Login failed due to bad credentials, log: " + proc.LogKillAndDispose());
+                            throw new Exception(string.Format(Strings.SSHBackend.AuthenticationError, proc.LogKillAndDispose()));
                         case 2: //Host authentication missing
                         case 3:
-                            throw new Exception("The host is not authenticated, please connect to the host using SSH, and then re-rerun Duplicati, log: " + proc.LogKillAndDispose());
+                            throw new Exception(string.Format(Strings.SSHBackend.HostNotAuthenticatedError, proc.LogKillAndDispose()));
                         case 4: //Send username (does not happen on linux)
                             if (string.IsNullOrEmpty(m_username))
-                                throw new Exception("A username was expected, but none was supplied");
+                                throw new Exception(Strings.SSHBackend.UsernameMissingError);
                             proc.Sendline(m_username);
                             continue; //Read next line
                         case 5: //Send password
                             //TODO: Allow the user to enter it with the option --ssh-askpass?
                             if (string.IsNullOrEmpty(m_password))
-                                throw new Exception("A password was expected, but passwordless login was specified");
+                                throw new Exception(Strings.SSHBackend.PasswordMissingError);
                             proc.Sendpassword(m_password);
                             continue; //Wait for sftp
                         case 6: //We are ready!
                             ready = true;
                             break;
                         default:
-                            throw new Exception("Unexpected error: " + proc.LogKillAndDispose());
+                            throw new Exception(string.Format(Strings.SSHBackend.UnexpectedConnectionError, proc.LogKillAndDispose()));
                     }
                 }
 
@@ -383,7 +390,7 @@ namespace Duplicati.Library.Backend
                 {
                     proc.Sendline("cd \"" + m_path + "\"");
                     if (proc.Expect(".*not found.*", ".*No such file or directory.*", "sftp>", "Remote directory is now") < 2)
-                        throw new Exception("Folder not found: " + m_path + ", log: " + proc.LogKillAndDispose());
+                        throw new Exception(string.Format(Strings.SSHBackend.FolderNotFoundError, m_path, proc.LogKillAndDispose()));
 
                     string matchpath = m_path;
                     if (matchpath.EndsWith("/"))
@@ -394,7 +401,7 @@ namespace Duplicati.Library.Backend
 
                     proc.Sendline("pwd");
                     if (proc.Expect(".*" + System.Text.RegularExpressions.Regex.Escape(matchpath) + ".*") < 0)
-                        throw new Exception("Failed to validate the remote directory: " + proc.LogKillAndDispose());
+                        throw new Exception(string.Format(Strings.SSHBackend.FolderVerificationError, proc.LogKillAndDispose()));
 
                     while (proc.GetNextOutputLine(1000) != null)
                     { } //Clean output

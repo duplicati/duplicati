@@ -37,6 +37,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Duplicati\Library\Core\Strings\Timeparser.Designer.cs">
+      <Link>Strings\Timeparser.Designer.cs</Link>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Timeparser.resx</DependentUpon>
+    </Compile>
     <Compile Include="..\Duplicati\Library\Core\Timeparser.cs">
       <Link>Timeparser.cs</Link>
     </Compile>
@@ -67,6 +73,13 @@
     <Compile Include="UpdateList.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="..\Duplicati\Library\Core\Strings\Timeparser.resx">
+      <Link>Strings\Timeparser.resx</Link>
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Timeparser.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>Duplicati.Library.Core.Strings</CustomToolNamespace>
+    </EmbeddedResource>
     <EmbeddedResource Include="ClientFileEditor.resx">
       <SubType>Designer</SubType>
       <DependentUpon>ClientFileEditor.cs</DependentUpon>

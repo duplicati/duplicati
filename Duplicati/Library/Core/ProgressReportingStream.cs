@@ -23,6 +23,9 @@ using System.Text;
 
 namespace Duplicati.Library.Core
 {
+    /// <summary>
+    /// This is a stream wrapper that reports the current progress of reading or writing the stream to the supplied delegate
+    /// </summary>
     public class ProgressReportingStream : OverrideableStream
     {
         public delegate void ProgressDelegate(int progress);

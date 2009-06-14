@@ -23,6 +23,9 @@ using System.Text;
 
 namespace Duplicati.Library.Backend
 {
+    /// <summary>
+    /// Primary implementation of the <see cref="ICommandLineArgument">ICommandLineArgument</see> interface.
+    /// </summary>
     public class CommandLineArgument : Duplicati.Library.Backend.ICommandLineArgument
     {
         public enum ArgumentType
@@ -195,6 +198,38 @@ namespace Duplicati.Library.Backend
         {
             m_aliases = aliases;
             m_validValues = values;
+        }
+
+        /// <summary>
+        /// Returns a localized string indicating the argument type
+        /// </summary>
+        public string Typename
+        {
+            get
+            {
+                switch (this.Type)
+                {
+                    case Duplicati.Library.Backend.CommandLineArgument.ArgumentType.Boolean:
+                        return Strings.DataTypes.Boolean;
+                    case Duplicati.Library.Backend.CommandLineArgument.ArgumentType.Enumeration:
+                        return Strings.DataTypes.Enumeration;
+                    case Duplicati.Library.Backend.CommandLineArgument.ArgumentType.Integer:
+                        return Strings.DataTypes.Integer;
+                    case Duplicati.Library.Backend.CommandLineArgument.ArgumentType.Path:
+                        return Strings.DataTypes.Path;
+                    case Duplicati.Library.Backend.CommandLineArgument.ArgumentType.Size:
+                        return Strings.DataTypes.Size;
+                    case Duplicati.Library.Backend.CommandLineArgument.ArgumentType.String:
+                        return Strings.DataTypes.String;
+                    case Duplicati.Library.Backend.CommandLineArgument.ArgumentType.Timespan:
+                        return Strings.DataTypes.Timespan;
+                    case Duplicati.Library.Backend.CommandLineArgument.ArgumentType.Unknown:
+                        return Strings.DataTypes.Unknown;
+                    default:
+                        return this.Type.ToString();
+                }
+
+            }
         }
     }
 }

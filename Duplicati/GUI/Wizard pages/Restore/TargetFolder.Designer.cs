@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TargetFolder));
             this.BrowseFolder = new System.Windows.Forms.Button();
             this.TargetPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -40,65 +41,47 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // 
             // BrowseFolder
             // 
-            this.BrowseFolder.Location = new System.Drawing.Point(464, 16);
+            resources.ApplyResources(this.BrowseFolder, "BrowseFolder");
             this.BrowseFolder.Name = "BrowseFolder";
-            this.BrowseFolder.Size = new System.Drawing.Size(24, 20);
-            this.BrowseFolder.TabIndex = 7;
-            this.BrowseFolder.Text = "...";
             this.BrowseFolder.UseVisualStyleBackColor = true;
             this.BrowseFolder.Click += new System.EventHandler(this.BrowseFolder_Click);
             // 
             // TargetPath
             // 
-            this.TargetPath.Location = new System.Drawing.Point(128, 16);
+            resources.ApplyResources(this.TargetPath, "TargetPath");
             this.TargetPath.Name = "TargetPath";
-            this.TargetPath.Size = new System.Drawing.Size(336, 20);
-            this.TargetPath.TabIndex = 6;
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(16, 16);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(104, 13);
-            this.label2.TabIndex = 5;
-            this.label2.Text = "Restore to this folder";
             // 
             // PartialSettings
             // 
             this.PartialSettings.Controls.Add(this.backupFileList);
-            this.PartialSettings.Enabled = false;
-            this.PartialSettings.Location = new System.Drawing.Point(16, 48);
+            resources.ApplyResources(this.PartialSettings, "PartialSettings");
             this.PartialSettings.Name = "PartialSettings";
-            this.PartialSettings.Size = new System.Drawing.Size(472, 176);
-            this.PartialSettings.TabIndex = 8;
             this.PartialSettings.TabStop = false;
             // 
             // backupFileList
             // 
-            this.backupFileList.Location = new System.Drawing.Point(16, 24);
+            resources.ApplyResources(this.backupFileList, "backupFileList");
             this.backupFileList.Name = "backupFileList";
-            this.backupFileList.Size = new System.Drawing.Size(440, 144);
-            this.backupFileList.TabIndex = 0;
             // 
             // PartialRestore
             // 
-            this.PartialRestore.AutoSize = true;
-            this.PartialRestore.Location = new System.Drawing.Point(24, 48);
+            resources.ApplyResources(this.PartialRestore, "PartialRestore");
             this.PartialRestore.Name = "PartialRestore";
-            this.PartialRestore.Size = new System.Drawing.Size(204, 17);
-            this.PartialRestore.TabIndex = 9;
-            this.PartialRestore.Text = "Restore only the items selected below";
             this.PartialRestore.UseVisualStyleBackColor = true;
             this.PartialRestore.CheckedChanged += new System.EventHandler(this.PartialRestore_CheckedChanged);
             // 
             // folderBrowserDialog
             // 
-            this.folderBrowserDialog.Description = "Select the folder where the backup will be restored";
+            resources.ApplyResources(this.folderBrowserDialog, "folderBrowserDialog");
             // 
             // TargetFolder
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.PartialRestore);
             this.Controls.Add(this.PartialSettings);
@@ -106,7 +89,6 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             this.Controls.Add(this.TargetPath);
             this.Controls.Add(this.label2);
             this.Name = "TargetFolder";
-            this.Size = new System.Drawing.Size(506, 242);
             this.Load += new System.EventHandler(this.TargetFolder_Load);
             this.PartialSettings.ResumeLayout(false);
             this.ResumeLayout(false);

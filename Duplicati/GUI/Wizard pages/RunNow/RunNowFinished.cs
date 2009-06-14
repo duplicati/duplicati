@@ -35,7 +35,7 @@ namespace Duplicati.GUI.Wizard_pages.RunNow
         private WizardSettingsWrapper m_wrapper;
 
         public RunNowFinished()
-            : base("Ready to run backup", "You are now ready to run the backup")
+            : base(Strings.RunNowFinished.PageTitle, Strings.RunNowFinished.PageDescription)
         {
             InitializeComponent();
             base.PageEnter += new PageChangeHandler(RunNowFinished_PageEnter);
@@ -54,9 +54,7 @@ namespace Duplicati.GUI.Wizard_pages.RunNow
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            Summary.Text =
-                "Action: Run backup now\r\n" +
-                "Name:   " + m_wrapper.ScheduleName;
+            Summary.Text = string.Format(Strings.RunNowFinished.SummaryText, m_wrapper.ScheduleName);
             args.TreatAsLast = true;
         }
 

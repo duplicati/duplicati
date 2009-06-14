@@ -136,6 +136,21 @@
     <value>One week</value>
     <comment>A string displayed in comboboxes indicating that the duration should be one week</comment>
   </data>
+  <data name="ThreadPriorityAboveNormal" xml:space="preserve">
+    <value>Above normal</value>
+  </data>
+  <data name="ThreadPriorityBelowNormal" xml:space="preserve">
+    <value>Below normal</value>
+  </data>
+  <data name="ThreadPriorityHighest" xml:space="preserve">
+    <value>Highest</value>
+  </data>
+  <data name="ThreadPriorityNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="ThreadPriortyLowest" xml:space="preserve">
+    <value>Lowest</value>
+  </data>
   <data name="ThreeMonths" xml:space="preserve">
     <value>Three months</value>
     <comment>A string displayed in comboboxes indicating that the duration should be three months</comment>

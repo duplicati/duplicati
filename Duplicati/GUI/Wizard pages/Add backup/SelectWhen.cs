@@ -36,7 +36,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private WizardSettingsWrapper m_wrapper;
 
         public SelectWhen()
-            : base("Select when the backup should run", "On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.")
+            : base(Strings.SelectWhen.PageTitle, Strings.SelectWhen.PageDescription)
         {
             InitializeComponent();
 
@@ -56,13 +56,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 DateTime newtime = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
                 string b = null;
                 if (DateTime.Now > newtime)
-                    b = "The time you entered is int the past.";
+                    b = Strings.SelectWhen.TimeIsInThePastWarning;
                 else if (DateTime.Now > newtime.AddMinutes(10))
-                    b = "The time you entered will occur shortly.";
+                    b = Strings.SelectWhen.TimeOccursShortlyWarning;
 
                 if (b != null)
                 {
-                    if (MessageBox.Show(this, b + " You have no repetition set, so the backup will never run.\nThis is fine if you only want to run the backup manually, but it is not recomended.\nDo you want to continue?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                    if (MessageBox.Show(this, b + " " + Strings.SelectWhen.NoRepetitionWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                     {
                         args.Cancel = true;
                         return;
@@ -78,14 +78,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     TimeSpan sp = Timeparser.ParseTimeSpan(RepeatInterval.Value);
                     if (sp.TotalMinutes < 5)
                     {
-                        MessageBox.Show(this, "The duration entered is less than five minutes. That is not acceptable.", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, Strings.SelectWhen.TooShortDurationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         args.Cancel = true;
                         return;
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "The duration entered is not valid.\nError message: " + ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Duplicati.GUI.Strings.Common.InvalidDuration, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     args.Cancel = true;
                     return;
                 }

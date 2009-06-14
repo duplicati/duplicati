@@ -69,7 +69,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-            get { return "WEBDAV"; }
+            get { return Strings.WEBDAV.DisplayName; }
         }
 
         public string ProtocolKey
@@ -165,16 +165,16 @@ namespace Duplicati.Library.Backend
             get 
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
-                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, "Use windows integrated authentication to connect to the server", "If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only avalible with windows servers and clients."),
-                    new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, "Force the use of the HTTP Digest authentication method", "Using the HTTP Digest authentication method allows the user to authenticate with the server, without sending the password in clear. However, a man-in-the-middle attack is easy, because the HTTP protocol specifies a fallback to Basic authentication, which will make the client send the password to the attacker. Using this flag, the client doest not accept this, and always uses Digest authentication or fails to connect."),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionFTPPasswordShort, Strings.WEBDAV.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
+                    new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                 });
             }
         }
 
         public string Description
         {
-            get { return "Supports connections to a WEBDAV enabled web server, using the HTTP protocol. Allowed formats are \"webdav://hostname/folder\" or \"webdav://username:password@hostname/folder\"."; }
+            get { return Strings.WEBDAV.Description; }
         }
 
         #endregion
@@ -183,7 +183,6 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            //throw new Exception("The method or operation is not implemented.");
         }
 
         #endregion

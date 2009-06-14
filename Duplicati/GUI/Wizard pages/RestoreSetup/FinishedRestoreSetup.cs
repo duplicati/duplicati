@@ -34,7 +34,7 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
         WizardSettingsWrapper m_wrapper;
 
         public FinishedRestoreSetup()
-            : base("Ready to restore settings", "You have now entered all the required data, and can now restore the setup.")
+            : base(Strings.FinishedRestoreSetup.PageTitle, Strings.FinishedRestoreSetup.PageDescription)
         {
             InitializeComponent();
 
@@ -48,11 +48,11 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
                 return;
 
             HelperControls.WaitForOperation dlg = new Duplicati.GUI.HelperControls.WaitForOperation();
-            dlg.Setup(new DoWorkEventHandler(Restore), "Restoring setup, please wait...");
+            dlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestoreSetup.RestoreWaitDialogTitle);
             if (dlg.ShowDialog() != DialogResult.OK)
             {
                 if (dlg.Error != null)
-                    MessageBox.Show(this, "Failed to restore setup files, the error message was:\n" + dlg.Error.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Strings.FinishedRestoreSetup.RestoreFailedError, dlg.Error.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 args.Cancel = true;
                 return;
@@ -64,28 +64,32 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
             List<KeyValuePair<string, string>> strings = new List<KeyValuePair<string, string>>();
-            strings.Add(new KeyValuePair<string, string>("Action", "Restore backup"));
+            strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummaryAction, Strings.FinishedRestoreSetup.SummaryRestoreBackup));
 
             strings.Add(new KeyValuePair<string, string>(null, null));
-            strings.Add(new KeyValuePair<string, string>("Source", m_wrapper.Backend.ToString()));
+            strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummarySource, m_wrapper.Backend.ToString()));
 
             switch(m_wrapper.Backend)
             {
                 case WizardSettingsWrapper.BackendType.File:
                     FileSettings file = new FileSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Source path", file.Path));
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummarySourcePath, file.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.FTP:
                     FTPSettings ftp = new FTPSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Source path", ftp.Server + "/" + ftp.Path));
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummarySourcePath, ftp.Server + "/" + ftp.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.SSH:
                     SSHSettings ssh = new SSHSettings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Source path", ssh.Server + "/" + ssh.Path));
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummarySourcePath, ssh.Server + "/" + ssh.Path));
                     break;
                 case WizardSettingsWrapper.BackendType.S3:
                     S3Settings s3 = new S3Settings(m_wrapper);
-                    strings.Add(new KeyValuePair<string, string>("Source path", s3.Path));
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummarySourcePath, s3.Path));
+                    break;
+                case WizardSettingsWrapper.BackendType.WebDav:
+                    WEBDAVSettings webdav = new WEBDAVSettings(m_wrapper);
+                    strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummarySourcePath, webdav.Path));
                     break;
             }
             
@@ -124,7 +128,7 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
                 if (System.IO.File.Exists(filename))
                     System.IO.File.Copy(filename, Program.DatabasePath, true);
                 else
-                    throw new Exception("Unable to restore setup file from backup");
+                    throw new Exception(Strings.FinishedRestoreSetup.SetupFileMissingError);
 
                 Program.DataConnection.ClearCache();
                 Program.Scheduler.Reschedule();

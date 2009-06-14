@@ -65,7 +65,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-            get { return "File based"; }
+            get { return Strings.FileBackend.DisplayName; }
         }
 
         public string ProtocolKey
@@ -141,7 +141,7 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\".")
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPPasswordShort, Strings.FileBackend.DescriptionFTPPasswordLong)
                 });
 
             }
@@ -151,7 +151,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return "This backend can read and write data to an file based backend. Allowed formats are \"file://hostname/folder\" or \"file://username:password@hostname/folder\". You may supply UNC paths (eg: \"file://\\\\server\\folder\") or local paths (eg: (win) \"file://c:\\folder\", (linux) \"file:///usr/pub/files\").";
+                return Strings.FileBackend.Description;
             }
         }
 

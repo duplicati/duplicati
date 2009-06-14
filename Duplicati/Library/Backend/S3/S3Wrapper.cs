@@ -48,7 +48,7 @@ namespace Duplicati.Library.Backend
             this.m_euBucket = euBuckets;
 
             if (euBuckets && format == CallingFormat.REGULAR)
-                throw new Exception("EU buckets does not work with regular calling format");
+                throw new Exception(Strings.S3Wrapper.EuroBucketsRequireSubDomainError);
 
             this.service = new ThreeSharpQuery(this.config);
 

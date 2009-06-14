@@ -67,9 +67,9 @@ namespace Duplicati.Library.Backend
             }
 
             if (string.IsNullOrEmpty(m_username))
-                throw new Exception("No CloudFiles userID given");
+                throw new Exception(Strings.CloudFiles.NoUserIDError);
             if (string.IsNullOrEmpty(m_password))
-                throw new Exception("No CloudFiles API Access Key given");
+                throw new Exception(Strings.CloudFiles.NoAPIKeyError);
 
             m_options = options;
             m_path = u.Host + u.PathAndQuery;
@@ -81,7 +81,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName
         {
-            get { return "CloudFiles"; }
+            get { return Strings.CloudFiles.DisplayName; }
         }
 
         public string ProtocolKey
@@ -162,16 +162,16 @@ namespace Duplicati.Library.Backend
             get 
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, "Supplies the password used to connect to the server", "The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\"."),
-                    new CommandLineArgument("cloudfiles_username", CommandLineArgument.ArgumentType.String, "Supplies the username used to authenticate with CloudFiles", "Supplies the username used to authenticate with CloudFiles."),
-                    new CommandLineArgument("cloudfiles_accesskey", CommandLineArgument.ArgumentType.String, "Supplies the access key used to connect to the server", "Supplies the API Access Key used to authenticate with CloudFiles."),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionFTPPasswordShort, Strings.CloudFiles.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("cloudfiles_username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong),
+                    new CommandLineArgument("cloudfiles_accesskey", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong),
                 });
             }
         }
 
         public string Description
         {
-            get { return "Supports connections to the CloudFiles backend. Allowed formats are \"cloudfiles://container/folder\" or \"cloudfiles://username:password@container/folder\"."; }
+            get { return Strings.CloudFiles.Description; }
         }
 
         #endregion
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Backend
                 Core.Utility.CopyStream(mds, stream);
 
                 if (mds.GetFinalHashString() != md5Hash)
-                    throw new Exception("MD5 Hash (ETag) verification failed");
+                    throw new Exception(Strings.CloudFiles.ETagVerificationError);
             }
         }
 
@@ -239,7 +239,7 @@ namespace Duplicati.Library.Backend
                 try { Delete(remotename); }
                 catch { }
 
-                throw new Exception("MD5 Hash (ETag) verification failed");
+                throw new Exception(Strings.CloudFiles.ETagVerificationError);
             }
         }
 
@@ -262,7 +262,7 @@ namespace Duplicati.Library.Backend
             }
 
             if (string.IsNullOrEmpty(authToken) || string.IsNullOrEmpty(storageUrl))
-                throw new Exception("Unexpected CloudFiles response, perhaps the API has changed?");
+                throw new Exception(Strings.CloudFiles.UnexpectedResponseError);
 
             req = (HttpWebRequest)HttpWebRequest.Create(storageUrl + m_path + remotename);
             req.Headers.Add("X-Auth-Token", authToken);

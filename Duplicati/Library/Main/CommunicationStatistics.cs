@@ -58,6 +58,7 @@ namespace Duplicati.Library.Main
 
         public override string ToString()
         {
+            //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
             sb.Append("BytesUploaded   : " + this.NumberOfBytesUploaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("BytesDownloaded : " + this.NumberOfBytesDownloaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
