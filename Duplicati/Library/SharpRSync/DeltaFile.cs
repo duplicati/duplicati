@@ -63,10 +63,10 @@ namespace Duplicati.Library.SharpRSync
         {
             byte[] sig = new byte[4];
             if (Utility.ForceStreamRead(m_inputStream, sig, 4) != 4)
-                throw new Exception("End of stream occured while reading initial 4 bytes of delta file");
+                throw new Exception(Strings.DeltaFile.EndofstreamBeforeSignatureError);
             for (int i = 0; i < sig.Length; i++)
                 if (RDiffBinary.DELTA_MAGIC[i] != sig[i])
-                    throw new Exception("Delta stream did not have the correct start marker");
+                    throw new Exception(Strings.DeltaFile.InvalidSignatureError);
 
             //Keep reading until we hit the end command
             while (true)
@@ -77,7 +77,7 @@ namespace Duplicati.Library.SharpRSync
                 
                 //It is an error to omit the end command
                 if (command < 0)
-                    throw new Exception("Stream ended but had no end marker");
+                    throw new Exception(Strings.DeltaFile.EndofstreamWithoutMarkerError);
 
                 if (Enum.IsDefined(typeof(RDiffBinary.LiteralDeltaCommand), (RDiffBinary.LiteralDeltaCommand)command))
                 {
@@ -85,10 +85,10 @@ namespace Duplicati.Library.SharpRSync
                     int len = RDiffBinary.GetLiteralLength((RDiffBinary.LiteralDeltaCommand)command);
                     byte[] tmp = new byte[len];
                     if (Utility.ForceStreamRead(m_inputStream, tmp, tmp.Length) != tmp.Length)
-                        throw new Exception("Unexpected end of stream detected");
+                        throw new Exception(Strings.DeltaFile.UnexpectedEndofstreamError);
                     long size = RDiffBinary.DecodeLength(tmp);
                     if (size < 0)
-                        throw new Exception("Invalid size for literal data");
+                        throw new Exception(Strings.DeltaFile.InvalidLitteralSizeError);
 
                     //Copy the literal data from the patch to the output
                     Utility.StreamCopy(m_inputStream, output, size);
@@ -99,19 +99,19 @@ namespace Duplicati.Library.SharpRSync
                     int len = RDiffBinary.GetCopyOffsetSize((RDiffBinary.CopyDeltaCommand)command);
                     byte[] tmp = new byte[len];
                     if (Utility.ForceStreamRead(m_inputStream, tmp, tmp.Length) != tmp.Length)
-                        throw new Exception("Unexpected end of stream detected");
+                        throw new Exception(Strings.DeltaFile.UnexpectedEndofstreamError);
                     long offset = RDiffBinary.DecodeLength(tmp);
                     if (offset < 0)
-                        throw new Exception("Invalid offset for copy data");
+                        throw new Exception(Strings.DeltaFile.InvalidCopyOffsetError);
 
                     //Find the length of the data to copy from the basefile
                     len = RDiffBinary.GetCopyLengthSize((RDiffBinary.CopyDeltaCommand)command);
                     tmp = new byte[len];
                     if (Utility.ForceStreamRead(m_inputStream, tmp, tmp.Length) != tmp.Length)
-                        throw new Exception("Unexpected end of stream detected");
+                        throw new Exception(Strings.DeltaFile.UnexpectedEndofstreamError);
                     long length = RDiffBinary.DecodeLength(tmp);
                     if (length < 0)
-                        throw new Exception("Invalid length for copy data");
+                        throw new Exception(Strings.DeltaFile.InvalidCopyLengthError);
 
                     //Seek to the begining, and copy
                     basefile.Position = offset;
@@ -123,7 +123,7 @@ namespace Duplicati.Library.SharpRSync
                     Utility.StreamCopy(m_inputStream, output, command);
                 }
                 else
-                    throw new Exception("Unknown command in delta file");
+                    throw new Exception(Strings.DeltaFile.UnknownCommandError);
             }
             
             output.Flush();
@@ -250,7 +250,7 @@ namespace Duplicati.Library.SharpRSync
             unmatched = buffer.Count;
 
             if (matched > 0 && unmatched > 0)
-                throw new Exception("Internal error, had buffered both matched and unmatched blocks!");
+                throw new Exception(Strings.DeltaFile.InternalBufferError);
 
             if (matched > 0)
             {

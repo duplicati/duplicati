@@ -55,6 +55,11 @@
     <Compile Include="StartPage.Designer.cs">
       <DependentUpon>StartPage.cs</DependentUpon>
     </Compile>
+    <Compile Include="Strings\Dialog.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Dialog.resx</DependentUpon>
+    </Compile>
     <Compile Include="WizardControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -71,6 +76,11 @@
     <EmbeddedResource Include="StartPage.resx">
       <SubType>Designer</SubType>
       <DependentUpon>StartPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Dialog.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Dialog.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="WizardControl.resx">
       <SubType>Designer</SubType>

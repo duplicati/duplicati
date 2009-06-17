@@ -28,6 +28,7 @@ namespace System.Windows.Forms.Wizard
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Dialog));
             this._InfoPanel = new System.Windows.Forms.Panel();
             this._InfoLabel = new System.Windows.Forms.Label();
             this._TitleLabel = new System.Windows.Forms.Label();
@@ -48,36 +49,23 @@ namespace System.Windows.Forms.Wizard
             this._InfoPanel.Controls.Add(this._InfoLabel);
             this._InfoPanel.Controls.Add(this._TitleLabel);
             this._InfoPanel.Controls.Add(this._PageIcon);
-            this._InfoPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this._InfoPanel.Location = new System.Drawing.Point(0, 0);
+            resources.ApplyResources(this._InfoPanel, "_InfoPanel");
             this._InfoPanel.Name = "_InfoPanel";
-            this._InfoPanel.Size = new System.Drawing.Size(506, 64);
-            this._InfoPanel.TabIndex = 0;
             // 
             // _InfoLabel
             // 
-            this._InfoLabel.Location = new System.Drawing.Point(40, 24);
+            resources.ApplyResources(this._InfoLabel, "_InfoLabel");
             this._InfoLabel.Name = "_InfoLabel";
-            this._InfoLabel.Size = new System.Drawing.Size(400, 32);
-            this._InfoLabel.TabIndex = 2;
-            this._InfoLabel.Text = "Helptext";
             // 
             // _TitleLabel
             // 
-            this._TitleLabel.AutoSize = true;
-            this._TitleLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this._TitleLabel.Location = new System.Drawing.Point(16, 8);
+            resources.ApplyResources(this._TitleLabel, "_TitleLabel");
             this._TitleLabel.Name = "_TitleLabel";
-            this._TitleLabel.Size = new System.Drawing.Size(32, 13);
-            this._TitleLabel.TabIndex = 1;
-            this._TitleLabel.Text = "Title";
             // 
             // _PageIcon
             // 
-            this._PageIcon.Location = new System.Drawing.Point(448, 8);
+            resources.ApplyResources(this._PageIcon, "_PageIcon");
             this._PageIcon.Name = "_PageIcon";
-            this._PageIcon.Size = new System.Drawing.Size(48, 48);
-            this._PageIcon.TabIndex = 0;
             this._PageIcon.TabStop = false;
             // 
             // _ButtonPanel
@@ -85,58 +73,43 @@ namespace System.Windows.Forms.Wizard
             this._ButtonPanel.Controls.Add(this._BackButton);
             this._ButtonPanel.Controls.Add(this._NextButton);
             this._ButtonPanel.Controls.Add(this._CancelButton);
-            this._ButtonPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this._ButtonPanel.Location = new System.Drawing.Point(0, 306);
+            resources.ApplyResources(this._ButtonPanel, "_ButtonPanel");
             this._ButtonPanel.Name = "_ButtonPanel";
-            this._ButtonPanel.Size = new System.Drawing.Size(506, 48);
-            this._ButtonPanel.TabIndex = 1;
             // 
             // _BackButton
             // 
-            this._BackButton.Location = new System.Drawing.Point(248, 16);
+            resources.ApplyResources(this._BackButton, "_BackButton");
             this._BackButton.Name = "_BackButton";
-            this._BackButton.Size = new System.Drawing.Size(80, 24);
-            this._BackButton.TabIndex = 2;
-            this._BackButton.Text = "< Back";
             this._BackButton.UseVisualStyleBackColor = true;
             this._BackButton.Click += new System.EventHandler(this.BackBtn_Click);
             // 
             // _NextButton
             // 
-            this._NextButton.Location = new System.Drawing.Point(328, 16);
+            resources.ApplyResources(this._NextButton, "_NextButton");
             this._NextButton.Name = "_NextButton";
-            this._NextButton.Size = new System.Drawing.Size(80, 24);
-            this._NextButton.TabIndex = 1;
-            this._NextButton.Text = "Next >";
             this._NextButton.UseVisualStyleBackColor = true;
             this._NextButton.Click += new System.EventHandler(this.NextBtn_Click);
             // 
             // _CancelButton
             // 
             this._CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this._CancelButton.Location = new System.Drawing.Point(416, 16);
+            resources.ApplyResources(this._CancelButton, "_CancelButton");
             this._CancelButton.Name = "_CancelButton";
-            this._CancelButton.Size = new System.Drawing.Size(80, 24);
-            this._CancelButton.TabIndex = 0;
-            this._CancelButton.Text = "Cancel";
             this._CancelButton.UseVisualStyleBackColor = true;
             this._CancelButton.Click += new System.EventHandler(this.CancelBtn_Click);
             // 
             // _ContentPanel
             // 
-            this._ContentPanel.Location = new System.Drawing.Point(-1, 61);
+            resources.ApplyResources(this._ContentPanel, "_ContentPanel");
             this._ContentPanel.Name = "_ContentPanel";
-            this._ContentPanel.Size = new System.Drawing.Size(509, 244);
-            this._ContentPanel.TabIndex = 2;
             this._ContentPanel.TabStop = false;
             // 
             // Dialog
             // 
             this.AcceptButton = this._NextButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this._CancelButton;
-            this.ClientSize = new System.Drawing.Size(506, 354);
             this.Controls.Add(this._ButtonPanel);
             this.Controls.Add(this._InfoPanel);
             this.Controls.Add(this._ContentPanel);
@@ -144,8 +117,6 @@ namespace System.Windows.Forms.Wizard
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "Dialog";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Dialog";
             this.Load += new System.EventHandler(this.Dialog_Load);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Dialog_KeyUp);
             this._InfoPanel.ResumeLayout(false);

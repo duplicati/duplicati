@@ -80,7 +80,7 @@ namespace Duplicati.Library.SharpRSync
             if (size > uint.MaxValue)
                 count += 4;
             if (size > long.MaxValue)
-                throw new Exception("Value must be less than " + long.MaxValue);
+                throw new Exception(string.Format(Strings.RDiffBinary.ValueTooLargeError, long.MaxValue));
             return count;
         }
 
@@ -101,11 +101,11 @@ namespace Duplicati.Library.SharpRSync
             {
                 long tmp = BitConverter.ToInt64(FixEndian(data), 0);
                 if (tmp < 0)
-                    throw new Exception("Unable to size item, because it is larger than " + long.MaxValue.ToString());
+                    throw new Exception(string.Format(Strings.RDiffBinary.SizeTooLargeError, long.MaxValue));
                 return tmp;
             }
             else
-                throw new Exception("Invalid data length");
+                throw new Exception(Strings.RDiffBinary.InvalidDataLengthError);
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Duplicati.Library.SharpRSync
             else if (len == 8)
                 return FixEndian(BitConverter.GetBytes((long)size));
             else
-                throw new Exception("Encoded value had unexpected length");
+                throw new Exception(Strings.RDiffBinary.EncodedLengthError);
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace Duplicati.Library.SharpRSync
                 case CopyDeltaCommand.Copy_Long_Long:
                     return 8;
                 default: 
-                    throw new Exception("Invalid delta copy command");
+                    throw new Exception(string.Format(Strings.RDiffBinary.InvalidDeltaCopyCommandError, command));
             }
         }
 
@@ -236,7 +236,7 @@ namespace Duplicati.Library.SharpRSync
                 case CopyDeltaCommand.Copy_Long_Long:
                     return 8;
                 default:
-                    throw new Exception("Invalid delta copy command");
+                    throw new Exception(string.Format(Strings.RDiffBinary.InvalidDeltaCopyCommandError, command));
             }
         }
 
@@ -258,7 +258,7 @@ namespace Duplicati.Library.SharpRSync
                 case LiteralDeltaCommand.LiteralSizeLong:
                     return 8;
                 default:
-                    throw new Exception("Invalid literal delta command");
+                    throw new Exception(string.Format(Strings.RDiffBinary.InvalidLiteralCommand, command));
             }
         }
 

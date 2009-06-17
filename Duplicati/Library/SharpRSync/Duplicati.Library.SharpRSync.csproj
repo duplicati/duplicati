@@ -48,10 +48,62 @@
     <Compile Include="RDiffBinary.cs" />
     <Compile Include="RollingBuffer.cs" />
     <Compile Include="Interface.cs" />
+    <Compile Include="Strings\ChecksumFile.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ChecksumFile.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\DeltaFile.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DeltaFile.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\RDiffBinary.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RDiffBinary.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\RollingBuffer.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RollingBuffer.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Utility.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Utility.resx</DependentUpon>
+    </Compile>
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Strings\ChecksumFile.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ChecksumFile.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\DeltaFile.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DeltaFile.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\RDiffBinary.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>RDiffBinary.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\RollingBuffer.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>RollingBuffer.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Utility.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Utility.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

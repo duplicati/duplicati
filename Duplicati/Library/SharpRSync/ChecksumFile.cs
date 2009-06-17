@@ -38,7 +38,7 @@ namespace Duplicati.Library.SharpRSync
         private List<KeyValuePair<uint, byte[]>> m_strongList;
         private Adler32Checksum m_adler;
         private System.Security.Cryptography.HashAlgorithm m_md4;
-        private System.Security.Cryptography.HashAlgorithm m_sha;
+        //private System.Security.Cryptography.HashAlgorithm m_sha;
 
         /// <summary>
         /// Reads a ChecksumFile from a stream
@@ -50,21 +50,21 @@ namespace Duplicati.Library.SharpRSync
             m_strongList = new List<KeyValuePair<uint, byte[]>>();
             byte[] sig = new byte[4];
             if (Utility.ForceStreamRead(input, sig, 4) != 4)
-                throw new Exception("End of stream occured while reading initial 4 bytes of signature file");
+                throw new Exception(Strings.ChecksumFile.EndofstreamBeforeSignatureError);
             for (int i = 0; i < sig.Length; i++)
                 if (RDiffBinary.SIGNATURE_MAGIC[i] != sig[i])
-                    throw new Exception("Signature stream did not have the correct start marker");
+                    throw new Exception(Strings.ChecksumFile.InvalidSignatureHeaderError);
 
             if (Utility.ForceStreamRead(input, sig, 4) != 4)
-                throw new Exception("End of stream occured while reading blocksize in signature file");
+                throw new Exception(Strings.ChecksumFile.EndofstreamInBlocksizeError);
             m_blocklen = BitConverter.ToInt32(RDiffBinary.FixEndian(sig), 0);
             if (m_blocklen < 1 || m_blocklen > int.MaxValue / 2)
-                throw new Exception("Blocklen in signature file was: " + m_blocklen + ", which does not seem correct");
+                throw new Exception(string.Format(Strings.ChecksumFile.InvalidBlocksizeError, m_blocklen));
             if (Utility.ForceStreamRead(input, sig, 4) != 4)
-                throw new Exception("End of stream occured while reading stronglen in signature file");
+                throw new Exception(Strings.ChecksumFile.EndofstreamInStronglenError);
             m_stronglen = BitConverter.ToInt32(RDiffBinary.FixEndian(sig), 0);
             if (m_stronglen < 1 || m_stronglen > MD4_LENGTH)
-                throw new Exception("Stronglen in signature file was: " + m_stronglen + ", which does not seem correct");
+                throw new Exception(string.Format(Strings.ChecksumFile.InvalidStrongsizeError, m_stronglen));
 
             while(true)
             {
@@ -74,7 +74,7 @@ namespace Duplicati.Library.SharpRSync
 
                 byte[] strongbuf = new byte[m_stronglen];
                 if (Utility.ForceStreamRead(input, strongbuf, strongbuf.Length) != strongbuf.Length)
-                    throw new Exception("End of stream occured while reading strong signature from signature file");
+                    throw new Exception(Strings.ChecksumFile.EndofstreamInStrongSignatureError);
 
                 if (!m_checksums.ContainsKey(weak))
                     m_checksums[weak] = new List<int>();
@@ -105,8 +105,8 @@ namespace Duplicati.Library.SharpRSync
             m_md4 = System.Security.Cryptography.MD4.Create("MD4");
             m_md4.Initialize();
 
-            m_sha = System.Security.Cryptography.HashAlgorithm.Create("SHA256");
-            m_sha.Initialize();
+            //m_sha = System.Security.Cryptography.HashAlgorithm.Create("SHA256");
+            //m_sha.Initialize();
         }
 
         /// <summary>

@@ -117,4 +117,244 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="_InfoLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 24</value>
+  </data>
+  <data name="_InfoLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>400, 32</value>
+  </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="_InfoLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="_InfoLabel.Text" xml:space="preserve">
+    <value>Helptext</value>
+  </data>
+  <data name="&gt;&gt;_InfoLabel.Name" xml:space="preserve">
+    <value>_InfoLabel</value>
+  </data>
+  <data name="&gt;&gt;_InfoLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_InfoLabel.Parent" xml:space="preserve">
+    <value>_InfoPanel</value>
+  </data>
+  <data name="&gt;&gt;_InfoLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="_TitleLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="_TitleLabel.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt, style=Bold</value>
+  </data>
+  <data name="_TitleLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 8</value>
+  </data>
+  <data name="_TitleLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>32, 13</value>
+  </data>
+  <data name="_TitleLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="_TitleLabel.Text" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="&gt;&gt;_TitleLabel.Name" xml:space="preserve">
+    <value>_TitleLabel</value>
+  </data>
+  <data name="&gt;&gt;_TitleLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_TitleLabel.Parent" xml:space="preserve">
+    <value>_InfoPanel</value>
+  </data>
+  <data name="&gt;&gt;_TitleLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="_PageIcon.Location" type="System.Drawing.Point, System.Drawing">
+    <value>448, 8</value>
+  </data>
+  <data name="_PageIcon.Size" type="System.Drawing.Size, System.Drawing">
+    <value>48, 48</value>
+  </data>
+  <data name="_PageIcon.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;_PageIcon.Name" xml:space="preserve">
+    <value>_PageIcon</value>
+  </data>
+  <data name="&gt;&gt;_PageIcon.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_PageIcon.Parent" xml:space="preserve">
+    <value>_InfoPanel</value>
+  </data>
+  <data name="&gt;&gt;_PageIcon.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="_InfoPanel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
+  <data name="_InfoPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="_InfoPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>506, 64</value>
+  </data>
+  <data name="_InfoPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;_InfoPanel.Name" xml:space="preserve">
+    <value>_InfoPanel</value>
+  </data>
+  <data name="&gt;&gt;_InfoPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_InfoPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;_InfoPanel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="_BackButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>248, 16</value>
+  </data>
+  <data name="_BackButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>80, 24</value>
+  </data>
+  <data name="_BackButton.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="_BackButton.Text" xml:space="preserve">
+    <value>&lt; Back</value>
+  </data>
+  <data name="&gt;&gt;_BackButton.Name" xml:space="preserve">
+    <value>_BackButton</value>
+  </data>
+  <data name="&gt;&gt;_BackButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_BackButton.Parent" xml:space="preserve">
+    <value>_ButtonPanel</value>
+  </data>
+  <data name="&gt;&gt;_BackButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="_NextButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>328, 16</value>
+  </data>
+  <data name="_NextButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>80, 24</value>
+  </data>
+  <data name="_NextButton.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="_NextButton.Text" xml:space="preserve">
+    <value>Next &gt;</value>
+  </data>
+  <data name="&gt;&gt;_NextButton.Name" xml:space="preserve">
+    <value>_NextButton</value>
+  </data>
+  <data name="&gt;&gt;_NextButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_NextButton.Parent" xml:space="preserve">
+    <value>_ButtonPanel</value>
+  </data>
+  <data name="&gt;&gt;_NextButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="_CancelButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>416, 16</value>
+  </data>
+  <data name="_CancelButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>80, 24</value>
+  </data>
+  <data name="_CancelButton.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="_CancelButton.Text" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="&gt;&gt;_CancelButton.Name" xml:space="preserve">
+    <value>_CancelButton</value>
+  </data>
+  <data name="&gt;&gt;_CancelButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_CancelButton.Parent" xml:space="preserve">
+    <value>_ButtonPanel</value>
+  </data>
+  <data name="&gt;&gt;_CancelButton.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="_ButtonPanel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Bottom</value>
+  </data>
+  <data name="_ButtonPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 306</value>
+  </data>
+  <data name="_ButtonPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>506, 48</value>
+  </data>
+  <data name="_ButtonPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;_ButtonPanel.Name" xml:space="preserve">
+    <value>_ButtonPanel</value>
+  </data>
+  <data name="&gt;&gt;_ButtonPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_ButtonPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;_ButtonPanel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="_ContentPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>-1, 61</value>
+  </data>
+  <data name="_ContentPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>509, 244</value>
+  </data>
+  <data name="_ContentPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;_ContentPanel.Name" xml:space="preserve">
+    <value>_ContentPanel</value>
+  </data>
+  <data name="&gt;&gt;_ContentPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;_ContentPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;_ContentPanel.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>506, 354</value>
+  </data>
+  <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
+    <value>CenterScreen</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>Dialog</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>Dialog</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Form, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

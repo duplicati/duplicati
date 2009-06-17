@@ -279,7 +279,7 @@ namespace Duplicati.Library.Main.RSync
         public bool MakeMultiPassDiff(Core.IFileArchive signaturefile, Core.IFileArchive contentfile, long volumesize)
         {
             if (m_unproccesed == null)
-                throw new Exception("Multi pass is not initialized");
+                throw new Exception(Strings.RSyncDir.MultipassUsageError);
 
             Random r = new Random();
             long totalSize = 0;
@@ -364,8 +364,8 @@ namespace Duplicati.Library.Main.RSync
                 catch (Exception ex)
                 {
                     if (m_stat != null)
-                        m_stat.LogError("Failed to process file: \"" + s + "\", Error message: " + ex.Message);
-                    Logging.Log.WriteMessage("Failed to process file: \"" + s + "\"", Duplicati.Library.Logging.LogMessageType.Error, ex);
+                        m_stat.LogError(string.Format(Strings.RSyncDir.FileProcessError, s, ex.Message));
+                    Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.FileProcessError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
                     m_unproccesed.FilesWithError.Add(s);
                 }
             }
@@ -505,13 +505,13 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError("Failed to delete file: \"" + s + "\", Error message: " + ex.Message);
-                            Logging.Log.WriteMessage("Failed to delete file: " + s, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                                m_stat.LogError(string.Format(Strings.RSyncDir.DeleteFileError, s, ex.Message));
+                            Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.DeleteFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                     }
                     else
                     {
-                        Logging.Log.WriteMessage("Filed marked for deletion did not exist: " + s, Duplicati.Library.Logging.LogMessageType.Warning);
+                        Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.FileToDeleteMissingError, s), Duplicati.Library.Logging.LogMessageType.Warning);
                     }
                 }
 
@@ -533,11 +533,11 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError("Failed to remove folder: \"" + s + "\", Error message: " + ex.Message);
-                            Logging.Log.WriteMessage("Failed to remove folder: " + s, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                                m_stat.LogError(string.Format(Strings.RSyncDir.DeleteFolderError, s, ex.Message));
+                            Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.DeleteFolderError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                     else
-                        Logging.Log.WriteMessage("Folder was marked for deletion, but did not exist: " + s, Duplicati.Library.Logging.LogMessageType.Warning);
+                        Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.FolderToDeleteMissingError, s), Duplicati.Library.Logging.LogMessageType.Warning);
                 }
             }
 
@@ -559,8 +559,8 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError("Failed to create folder: \"" + s + "\", Error message: " + ex.Message);
-                            Logging.Log.WriteMessage("Failed to create folder: " + s, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                                m_stat.LogError(string.Format(Strings.RSyncDir.CreateFolderError, s, ex.Message));
+                            Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.CreateFolderError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                 }
             }
@@ -574,7 +574,7 @@ namespace Duplicati.Library.Main.RSync
                 {
                     if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
                     {
-                        Logging.Log.WriteMessage("Folder did not exist on restore " + target, Duplicati.Library.Logging.LogMessageType.Warning);
+                        Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFolderMissingError, target), Duplicati.Library.Logging.LogMessageType.Warning);
                         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
                     }
 
@@ -585,8 +585,8 @@ namespace Duplicati.Library.Main.RSync
                 catch (Exception ex)
                 {
                     if (m_stat != null)
-                        m_stat.LogError("Failed to restore file: \"" + s + "\", Error message: " + ex.Message);
-                    Logging.Log.WriteMessage("Failed to restore file " + s, Duplicati.Library.Logging.LogMessageType.Error, ex);
+                        m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message));
+                    Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
                 }
 
             }
@@ -599,7 +599,7 @@ namespace Duplicati.Library.Main.RSync
                 {
                     if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
                     {
-                        Logging.Log.WriteMessage("Folder did not exist on restore by delta " + target, Duplicati.Library.Logging.LogMessageType.Warning);
+                        Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFolderDeltaError, target), Duplicati.Library.Logging.LogMessageType.Warning);
                         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
                     }
 
@@ -617,8 +617,8 @@ namespace Duplicati.Library.Main.RSync
                 catch (Exception ex)
                 {
                     if (m_stat != null)
-                        m_stat.LogError("Failed to restore file: \"" + s + "\", Error message: " + ex.Message);
-                    Logging.Log.WriteMessage("Failed to restore file " + s, Duplicati.Library.Logging.LogMessageType.Error, ex);
+                        m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message));
+                    Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
 
                     try { System.IO.File.Delete(target); }
                     catch { }

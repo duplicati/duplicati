@@ -62,7 +62,7 @@ namespace Duplicati.Library.SharpRSync
             {
                 int a = input.Read(buf, 0, (int)Math.Min(count, buf.Length));
                 if (a <= 0)
-                    throw new Exception("Unexpected end of stream");
+                    throw new Exception(Strings.Utility.UnexpectedEndOfStreamError);
                 output.Write(buf, 0, a);
                 count -= a;
             }

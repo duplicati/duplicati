@@ -114,7 +114,7 @@ namespace Duplicati.Library.SharpRSync
             int ix = 0;
             long total = this.Count;
             if (total < count)
-                throw new Exception("Buffer has too few bytes");
+                throw new Exception(Strings.RollingBuffer.BufferExhaustedError);
             
             int b = m_tailIndex;
 
@@ -171,7 +171,7 @@ namespace Duplicati.Library.SharpRSync
         {
             int ix = 0;
             if (this.Count < count)
-                throw new Exception("Buffer has too few bytes");
+                throw new Exception(Strings.RollingBuffer.BufferExhaustedError);
 
             int b = m_tailIndex;
             while (count > 0)
@@ -226,7 +226,7 @@ namespace Duplicati.Library.SharpRSync
             }
 
             if (m_buffers.Count <= 1 && m_tailIndex > m_headIndex)
-                throw new Exception("This is one sad rolling buffer :(");
+                throw new Exception(Strings.RollingBuffer.InternalError);
         }
 
         /// <summary>
@@ -238,9 +238,9 @@ namespace Duplicati.Library.SharpRSync
         {
             int ix = 0;
             if (index > this.Count - 1)
-                throw new Exception("Buffer has too few bytes");
+                throw new Exception(Strings.RollingBuffer.BufferExhaustedError);
             if (index < 0)
-                throw new Exception("Index cannot be negative");
+                throw new ArgumentOutOfRangeException(Strings.RollingBuffer.NegativeIndexError);
 
             while (GetAvalible(ix) <= index)
             {

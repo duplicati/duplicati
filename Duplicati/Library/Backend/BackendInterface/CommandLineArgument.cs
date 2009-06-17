@@ -193,6 +193,22 @@ namespace Duplicati.Library.Backend
         /// <param name="defaultValue">The default value of the argumen</param>
         /// <param name="aliases">A list of aliases for the command</param>
         /// <param name="values">A list of valid values for the command</param>
+        public CommandLineArgument(string name, ArgumentType type, string shortDescription, string longDescription, string defaultValue, string[] aliases)
+            : this(name, type, shortDescription, longDescription, defaultValue)
+        {
+            m_aliases = aliases;
+        }
+
+        /// <summary>
+        /// Creates a new CommandLineArgument instance
+        /// </summary>
+        /// <param name="name">The name of the argument</param>
+        /// <param name="type">The argument type</param>
+        /// <param name="shortDescription">The arguments short description</param>
+        /// <param name="longDescription">The arguments long description</param>
+        /// <param name="defaultValue">The default value of the argumen</param>
+        /// <param name="aliases">A list of aliases for the command</param>
+        /// <param name="values">A list of valid values for the command</param>
         public CommandLineArgument(string name, ArgumentType type, string shortDescription, string longDescription, string defaultValue, string[] aliases, string[] values)
             : this(name, type, shortDescription, longDescription, defaultValue)
         {

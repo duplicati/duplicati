@@ -114,9 +114,9 @@ namespace System.Windows.Forms.Wizard
             _BackButton.Enabled = m_visited.Count > 0;
 
             if (m_isLastPage)
-                _NextButton.Text = "Finish";
+                _NextButton.Text = Strings.Dialog.NextButtonText;
             else
-                _NextButton.Text = "Next >";
+                _NextButton.Text = Strings.Dialog.FinishButtonText;
         }
 
         public virtual void UpdateDisplay()
