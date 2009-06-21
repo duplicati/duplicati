@@ -117,12 +117,40 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ErrorWhileExaminingFolder" xml:space="preserve">
-    <value>En fejl opstod under undersøgelse af mappen: {0}.\r\nVil du bruge mappen alligevel?</value>
-    <comment>A string displayed in a messagebox if an error occurs while checking for the existence of a required file</comment>
+  <data name="Description" xml:space="preserve">
+    <value>Supports connections to the CloudFiles backend. Allowed formats are "cloudfiles://container/folder" or "cloudfiles://username:password@container/folder".</value>
   </data>
-  <data name="FolderIsMissingFile" xml:space="preserve">
-    <value>Den valgte mappe indeholder ikke filen: {0}.\r\nVil du bruge denne mappe alligevel?</value>
-    <comment>A string displayed in a messagebox asking the user to approve the use of a folder that does not contain the required file</comment>
+  <data name="DescriptionFTPPasswordLong" xml:space="preserve">
+    <value>The password used to connect to the server. This may also be supplied as the environment variable "FTP_PASSWORD".</value>
+  </data>
+  <data name="DescriptionFTPPasswordShort" xml:space="preserve">
+    <value>Supplies the password used to connect to the server</value>
+  </data>
+  <data name="DescriptionPasswordLong" xml:space="preserve">
+    <value>Supplies the API Access Key used to authenticate with CloudFiles.</value>
+  </data>
+  <data name="DescriptionPasswordShort" xml:space="preserve">
+    <value>Supplies the access key used to connect to the server</value>
+  </data>
+  <data name="DescriptionUsernameLong" xml:space="preserve">
+    <value>Supplies the username used to authenticate with CloudFiles.</value>
+  </data>
+  <data name="DescriptionUsernameShort" xml:space="preserve">
+    <value>Supplies the username used to authenticate with CloudFiles</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>CloudFiles</value>
+  </data>
+  <data name="ETagVerificationError" xml:space="preserve">
+    <value>MD5 Hash (ETag) verification failed</value>
+  </data>
+  <data name="NoAPIKeyError" xml:space="preserve">
+    <value>No CloudFiles API Access Key given</value>
+  </data>
+  <data name="NoUserIDError" xml:space="preserve">
+    <value>No CloudFiles userID given</value>
+  </data>
+  <data name="UnexpectedResponseError" xml:space="preserve">
+    <value>Unexpected CloudFiles response, perhaps the API has changed?</value>
   </data>
 </root>

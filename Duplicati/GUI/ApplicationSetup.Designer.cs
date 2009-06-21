@@ -33,7 +33,6 @@ namespace Duplicati.GUI
             this.GPGPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -62,6 +61,7 @@ namespace Duplicati.GUI
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -106,17 +106,6 @@ namespace Duplicati.GUI
             this.groupBox1.Font = null;
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.TabStop = false;
-            // 
-            // RecentDuration
-            // 
-            this.RecentDuration.AccessibleDescription = null;
-            this.RecentDuration.AccessibleName = null;
-            resources.ApplyResources(this.RecentDuration, "RecentDuration");
-            this.RecentDuration.BackgroundImage = null;
-            this.RecentDuration.Font = null;
-            this.RecentDuration.Name = "RecentDuration";
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
             // 
             // groupBox2
             // 
@@ -400,6 +389,17 @@ namespace Duplicati.GUI
             this.CacheSizeCalculator.DoWork += new System.ComponentModel.DoWorkEventHandler(this.CacheSizeCalculator_DoWork);
             this.CacheSizeCalculator.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.CacheSizeCalculator_RunWorkerCompleted);
             // 
+            // RecentDuration
+            // 
+            this.RecentDuration.AccessibleDescription = null;
+            this.RecentDuration.AccessibleName = null;
+            resources.ApplyResources(this.RecentDuration, "RecentDuration");
+            this.RecentDuration.BackgroundImage = null;
+            this.RecentDuration.Font = null;
+            this.RecentDuration.Name = "RecentDuration";
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
+            // 
             // ApplicationSetup
             // 
             this.AccessibleDescription = null;
@@ -421,6 +421,7 @@ namespace Duplicati.GUI
             this.Load += new System.EventHandler(this.ApplicationSetup_Load);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ApplicationSetup_FormClosing);
             this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);

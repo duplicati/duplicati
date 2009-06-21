@@ -1,0 +1,1 @@
+Usage: Duplicati.CommandLine.Decrypter.exe <passphrase> <inputfile> <outputfile>

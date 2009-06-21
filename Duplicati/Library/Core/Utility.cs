@@ -385,9 +385,9 @@ namespace Duplicati.Library.Core
             if (size > 1024 * 1024 * 1024)
                 return string.Format(Strings.Utility.FormatStringGB, (double)size / (1024 * 1024 * 1024));
             else if (size > 1024 * 1024)
-                return string.Format(Strings.Utility.FormatStringGB, (double)size / (1024 * 1024));
+                return string.Format(Strings.Utility.FormatStringMB, (double)size / (1024 * 1024));
             else if (size > 1024)
-                return string.Format(Strings.Utility.FormatStringGB, (double)size / 1024);
+                return string.Format(Strings.Utility.FormatStringKB, (double)size / 1024);
             else
                 return string.Format(Strings.Utility.FormatStringB, size);
         }

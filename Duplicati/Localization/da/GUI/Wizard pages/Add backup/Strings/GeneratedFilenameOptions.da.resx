@@ -117,20 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="OneMonth" xml:space="preserve">
-    <value>En måned</value>
-    <comment>A string displayed in comboboxes indicating that the duration should be one month</comment>
+  <data name="PageDescription" xml:space="preserve">
+    <value>On this page you can control how filenames are generated. This can be used if the remote server does not support the default filenames.</value>
   </data>
-  <data name="OneWeek" xml:space="preserve">
-    <value>En uge</value>
-    <comment>A string displayed in comboboxes indicating that the duration should be one week</comment>
-  </data>
-  <data name="ThreeMonths" xml:space="preserve">
-    <value>Tre måneder</value>
-    <comment>A string displayed in comboboxes indicating that the duration should be three months</comment>
-  </data>
-  <data name="TwoWeeks" xml:space="preserve">
-    <value>To uger</value>
-    <comment>A string displayed in comboboxes indicating that the duration should be two weeks</comment>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Generated filenames</value>
   </data>
 </root>

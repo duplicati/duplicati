@@ -1,0 +1,33 @@
+﻿<root>
+    <assembly name="Duplicati" folder="GUI" namespace="Duplicati.GUI">
+        <exclude>Datamodel</exclude>
+    </assembly>
+    <assembly name="Duplicati.Datamodel" folder="GUI\Datamodel">
+        <exclude>Datamodel</exclude>
+    </assembly>
+    <assembly name="Duplicati.CommandLine" folder="CommandLine">
+        <exclude>Decrypter</exclude>
+    </assembly>
+    <assembly name="Duplicati.Library.Core" folder="Library\Core" />
+    <assembly name="Duplicati.Library.Main" folder="Library\Main" />
+    <assembly name="Duplicati.Library.Encryption" folder="Library\Encryption" />
+    <assembly name="Duplicati.Library.SharpExpect" folder="Library\SharpExpect" />
+    <assembly name="Duplicati.Library.Compression" folder="Library\Compression" />
+    <assembly name="Duplicati.Library.Encryption" folder="Library\Encryption" />
+    <assembly name="Duplicati.Library.SharpRSync" folder="Library\SharpRSync" />
+
+    <assembly name="Duplicati.Library.Backend.BackendInterface" folder="Library\Backend\BackendInterface" />
+    <assembly name="Duplicati.Library.Backend.BackendLoader" folder="Library\Backend\BackendLoader" />
+    <assembly name="Duplicati.Library.Backend.FTP" folder="Library\Backend\FTP" />
+    <assembly name="Duplicati.Library.Backend.File" folder="Library\Backend\File" />
+    <assembly name="Duplicati.Library.Backend.SSH" folder="Library\Backend\SSH" />
+    <assembly name="Duplicati.Library.Backend.S3" folder="Library\Backend\S3" />
+    <assembly name="Duplicati.Library.Backend.WEBDAV" folder="Library\Backend\WEBDAV" />
+    <assembly name="Duplicati.Library.Backend.CloudFiles" folder="Library\Backend\CloudFiles" />
+    
+    <keyfile>..\GUI\Duplicati.snk</keyfile>
+    <versionassembly>..\GUI\bin\release\Duplicati.exe</versionassembly>
+    <sourcefolder>..</sourcefolder>
+    <outputfolder>compiled</outputfolder>
+    <productname>Duplicati</productname>
+</root>
