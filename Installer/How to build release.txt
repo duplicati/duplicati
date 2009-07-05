@@ -5,6 +5,7 @@ For a release build, do this:
 3. Rebuild the solution in Release mode
 4. Test for added files, by using the "Generate File Include.bat"
 5. Update the revision number in "UpgradeData.wxi"
-6. Build the Release version, and rename it "Duplicati 1.0 RC2 - Windows.msi"
-7. Copy the x64 SQLite dll into the Bin/Release dir, and rebuild, name it "Duplicati 1.0 RC2 Windows x64.msi"
+6. Run "VS Express build.bat"
+7. Rename "Duplicati x86.msi" to "Duplicati 1.0 RC2 - Windows.zip"
+8. Rename "Duplicati x64.msi" to "Duplicati 1.0 RC2 - Windows x64.msi"
 8. Run "Package Linux release.bat", zip the resulting "Duplicati" folder, and name it "Duplicati 1.0 RC2 - Linux.zip"
