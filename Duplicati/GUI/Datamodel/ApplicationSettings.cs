@@ -41,6 +41,8 @@ namespace Duplicati.Datamodel
         private const string SIGNATURE_CACHE_PATH = "Signature Cache Path";
         private const string SIGNATURE_CACHE_ENABLED = "Signature Cache Enabled";
 
+        private const string DISPLAY_LANGUAGE = "Display Language";
+
         //TODO: Deal with this on Linux
         public const string PROGRAM_FILES = "%PROGRAMFILES%";
 
@@ -196,6 +198,21 @@ namespace Duplicati.Datamodel
                     return true;
             }
             set { m_appset[SIGNATURE_CACHE_ENABLED] = value.ToString(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the language used in the user interface
+        /// </summary>
+        public string DisplayLanguage
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_appset[DISPLAY_LANGUAGE]))
+                    return "";
+                else
+                    return m_appset[DISPLAY_LANGUAGE];
+            }
+            set { m_appset[DISPLAY_LANGUAGE] = value; }
         }
 
     }

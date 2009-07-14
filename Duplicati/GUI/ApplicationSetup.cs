@@ -39,12 +39,14 @@ namespace Duplicati.GUI
         private object m_lock = new object();
         private System.Threading.Thread m_thread = null;
         private bool m_restartCalculator = false;
+        private List<System.Globalization.CultureInfo> m_supportedLanguages;
 
         public ApplicationSetup()
         {
             InitializeComponent();
             m_connection = new DataFetcherNested(Program.DataConnection);
             m_settings = new ApplicationSettings(m_connection);
+            m_supportedLanguages = new List<System.Globalization.CultureInfo>();
 
             RecentDuration.SetIntervals(new List<KeyValuePair<string, string>>(
                 new KeyValuePair<string, string>[]
@@ -70,6 +72,44 @@ namespace Duplicati.GUI
                 SignatureCacheEnabled.Checked = m_settings.SignatureCacheEnabled;
                 SignatureCachePath.Text = m_settings.SignatureCachePath;
                 CalculateSignatureCacheSize();
+
+                LanguageSelection.Items.Clear();
+                LanguageSelection.Items.Add(string.Format(Strings.Common.DefaultLanguage, System.Globalization.CultureInfo.InstalledUICulture.DisplayName));
+
+                m_supportedLanguages.Add(System.Globalization.CultureInfo.GetCultureInfo("en"));
+
+                System.Text.RegularExpressions.Regex cix = new System.Text.RegularExpressions.Regex("[A-z][A-z](\\-[A-z][A-z])?");
+
+                foreach(string f in System.IO.Directory.GetDirectories(Application.StartupPath))
+                    if (cix.Match(System.IO.Path.GetFileName(f)).Length == System.IO.Path.GetFileName(f).Length)
+                        try 
+                        {
+                            m_supportedLanguages.Add(System.Globalization.CultureInfo.GetCultureInfo(System.IO.Path.GetFileName(f)));
+                        }
+                        catch 
+                        {
+                        }
+
+                foreach (System.Globalization.CultureInfo ci in m_supportedLanguages)
+                    LanguageSelection.Items.Add(ci.DisplayName);
+
+                if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
+                    LanguageSelection.SelectedIndex = 0;
+                else
+                {
+                    try
+                    {
+                        System.Globalization.CultureInfo cci = System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
+                        if (m_supportedLanguages.Contains(cci))
+                            LanguageSelection.SelectedIndex = m_supportedLanguages.IndexOf(cci) + 1;
+                        else
+                            LanguageSelection.SelectedIndex = -1;
+                    }
+                    catch
+                    {
+                        LanguageSelection.SelectedIndex = -1;
+                    }
+                }
             }
             finally
             {
@@ -77,6 +117,8 @@ namespace Duplicati.GUI
             }
 
             this.Icon = Properties.Resources.TrayNormal;
+
+            
         }
 
         private bool TestForFiles(string folder, params string[] files)
@@ -120,6 +162,16 @@ namespace Duplicati.GUI
         private void OKBtn_Click(object sender, EventArgs e)
         {
             m_connection.CommitRecursive(m_connection.GetObjects<ApplicationSetting>());
+
+            if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
+                System.Threading.Thread.CurrentThread.CurrentUICulture =
+                System.Threading.Thread.CurrentThread.CurrentCulture =
+                    System.Globalization.CultureInfo.InstalledUICulture;
+            else
+                System.Threading.Thread.CurrentThread.CurrentUICulture =
+                System.Threading.Thread.CurrentThread.CurrentCulture =
+                    System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
+
 
             this.DialogResult = DialogResult.OK;
             this.Close();
@@ -307,6 +359,17 @@ namespace Duplicati.GUI
                 return;
 
             m_settings.CommonPasswordUseGPG = UseGPGEncryption.Checked;
+        }
+
+        private void LanguageSelection_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            if (LanguageSelection.SelectedIndex == 0)
+                m_settings.DisplayLanguage = "";
+            else if (LanguageSelection.SelectedIndex > 0)
+                m_settings.DisplayLanguage = m_supportedLanguages[LanguageSelection.SelectedIndex - 1].Name;
         }
 
     }

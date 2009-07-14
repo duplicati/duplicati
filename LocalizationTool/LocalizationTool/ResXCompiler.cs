@@ -28,8 +28,35 @@ namespace LocalizationTool
         public static void CompileResxFiles(string folder, List<string> excludeFolders, string @namespace, string assemblyname, string versionAssembly, string keyfile, string culture, string productname)
         {
             folder = Duplicati.Library.Core.Utility.AppendDirSeperator(folder);
-            string resgenexe = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft Visual Studio 8\\SDK\\v2.0\\Bin\\resgen.exe");
+            string resgenexe = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\resgen.exe");
             string alexe = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\al.exe");
+
+            if (!System.IO.File.Exists(resgenexe))
+            {
+                Console.WriteLine("Unable to locate file: {0}", resgenexe);
+                Console.WriteLine("This can be fixed by installing a microsoft platform SDK, or visual studio (express is fine)");
+                return;
+            }
+            if (!System.IO.File.Exists(alexe))
+            {
+                string v30 = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.0\\al.exe");
+                string v35 = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.5\\al.exe");
+                string sdk = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\al.exe");
+
+                if (System.IO.File.Exists(v30))
+                    alexe = v30;
+                else if (System.IO.File.Exists(v35))
+                    alexe = v35;
+                else if (System.IO.File.Exists(sdk))
+                    alexe = sdk;
+            }
+
+            if (!System.IO.File.Exists(alexe))
+            {
+                Console.WriteLine("Unable to locate file: {0}", alexe);
+                Console.WriteLine("This can be fixed by installing the .Net framework version 2.0");
+                return;
+            }
 
             List<string> resources = new List<string>();
 

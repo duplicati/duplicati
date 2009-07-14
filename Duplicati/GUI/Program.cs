@@ -135,6 +135,11 @@ namespace Duplicati.GUI
                 }
                 DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
 
+                if (!string.IsNullOrEmpty(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage))
+                    System.Threading.Thread.CurrentThread.CurrentUICulture =
+                    System.Threading.Thread.CurrentThread.CurrentCulture =
+                        System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
+
                 TrayIcon = new NotifyIcon();
                 TrayIcon.ContextMenuStrip = new ContextMenuStrip();
                 TrayIcon.Icon = Properties.Resources.TrayNormal;

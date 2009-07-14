@@ -33,6 +33,7 @@ namespace Duplicati.GUI
             this.GPGPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -61,7 +62,8 @@ namespace Duplicati.GUI
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
+            this.label3 = new System.Windows.Forms.Label();
+            this.LanguageSelection = new System.Windows.Forms.ComboBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -71,48 +73,40 @@ namespace Duplicati.GUI
             // 
             // label1
             // 
-            this.label1.AccessibleDescription = null;
-            this.label1.AccessibleName = null;
             resources.ApplyResources(this.label1, "label1");
-            this.label1.Font = null;
             this.label1.Name = "label1";
             // 
             // GPGPath
             // 
-            this.GPGPath.AccessibleDescription = null;
-            this.GPGPath.AccessibleName = null;
             resources.ApplyResources(this.GPGPath, "GPGPath");
-            this.GPGPath.BackgroundImage = null;
-            this.GPGPath.Font = null;
             this.GPGPath.Name = "GPGPath";
             this.GPGPath.TextChanged += new System.EventHandler(this.GPGPath_TextChanged);
             // 
             // label2
             // 
-            this.label2.AccessibleDescription = null;
-            this.label2.AccessibleName = null;
             resources.ApplyResources(this.label2, "label2");
-            this.label2.Font = null;
             this.label2.Name = "label2";
             // 
             // groupBox1
             // 
-            this.groupBox1.AccessibleDescription = null;
-            this.groupBox1.AccessibleName = null;
             resources.ApplyResources(this.groupBox1, "groupBox1");
-            this.groupBox1.BackgroundImage = null;
+            this.groupBox1.Controls.Add(this.LanguageSelection);
+            this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.RecentDuration);
             this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Font = null;
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.TabStop = false;
             // 
+            // RecentDuration
+            // 
+            resources.ApplyResources(this.RecentDuration, "RecentDuration");
+            this.RecentDuration.Name = "RecentDuration";
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
+            // 
             // groupBox2
             // 
-            this.groupBox2.AccessibleDescription = null;
-            this.groupBox2.AccessibleName = null;
             resources.ApplyResources(this.groupBox2, "groupBox2");
-            this.groupBox2.BackgroundImage = null;
             this.groupBox2.Controls.Add(this.CacheSizeLabel);
             this.groupBox2.Controls.Add(this.ClearCacheButton);
             this.groupBox2.Controls.Add(this.SignatureCacheEnabled);
@@ -127,149 +121,95 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.BrowsePGP);
             this.groupBox2.Controls.Add(this.GPGPath);
             this.groupBox2.Controls.Add(this.label2);
-            this.groupBox2.Font = null;
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.TabStop = false;
             // 
             // CacheSizeLabel
             // 
-            this.CacheSizeLabel.AccessibleDescription = null;
-            this.CacheSizeLabel.AccessibleName = null;
             resources.ApplyResources(this.CacheSizeLabel, "CacheSizeLabel");
-            this.CacheSizeLabel.Font = null;
             this.CacheSizeLabel.Name = "CacheSizeLabel";
             // 
             // ClearCacheButton
             // 
-            this.ClearCacheButton.AccessibleDescription = null;
-            this.ClearCacheButton.AccessibleName = null;
             resources.ApplyResources(this.ClearCacheButton, "ClearCacheButton");
-            this.ClearCacheButton.BackgroundImage = null;
-            this.ClearCacheButton.Font = null;
             this.ClearCacheButton.Name = "ClearCacheButton";
             this.ClearCacheButton.UseVisualStyleBackColor = true;
             this.ClearCacheButton.Click += new System.EventHandler(this.ClearCacheButton_Click);
             // 
             // SignatureCacheEnabled
             // 
-            this.SignatureCacheEnabled.AccessibleDescription = null;
-            this.SignatureCacheEnabled.AccessibleName = null;
             resources.ApplyResources(this.SignatureCacheEnabled, "SignatureCacheEnabled");
-            this.SignatureCacheEnabled.BackgroundImage = null;
-            this.SignatureCacheEnabled.Font = null;
             this.SignatureCacheEnabled.Name = "SignatureCacheEnabled";
             this.SignatureCacheEnabled.UseVisualStyleBackColor = true;
             this.SignatureCacheEnabled.CheckedChanged += new System.EventHandler(this.SignatureCacheEnabled_CheckedChanged);
             // 
             // SignatureCachePathBrowse
             // 
-            this.SignatureCachePathBrowse.AccessibleDescription = null;
-            this.SignatureCachePathBrowse.AccessibleName = null;
             resources.ApplyResources(this.SignatureCachePathBrowse, "SignatureCachePathBrowse");
-            this.SignatureCachePathBrowse.BackgroundImage = null;
-            this.SignatureCachePathBrowse.Font = null;
             this.SignatureCachePathBrowse.Name = "SignatureCachePathBrowse";
             this.SignatureCachePathBrowse.UseVisualStyleBackColor = true;
             this.SignatureCachePathBrowse.Click += new System.EventHandler(this.SignatureCachePathBrowse_Click);
             // 
             // SignatureCachePath
             // 
-            this.SignatureCachePath.AccessibleDescription = null;
-            this.SignatureCachePath.AccessibleName = null;
             resources.ApplyResources(this.SignatureCachePath, "SignatureCachePath");
-            this.SignatureCachePath.BackgroundImage = null;
-            this.SignatureCachePath.Font = null;
             this.SignatureCachePath.Name = "SignatureCachePath";
             this.SignatureCachePath.TextChanged += new System.EventHandler(this.SignatureCachePath_TextChanged);
             // 
             // TempPathBrowse
             // 
-            this.TempPathBrowse.AccessibleDescription = null;
-            this.TempPathBrowse.AccessibleName = null;
             resources.ApplyResources(this.TempPathBrowse, "TempPathBrowse");
-            this.TempPathBrowse.BackgroundImage = null;
-            this.TempPathBrowse.Font = null;
             this.TempPathBrowse.Name = "TempPathBrowse";
             this.TempPathBrowse.UseVisualStyleBackColor = true;
             this.TempPathBrowse.Click += new System.EventHandler(this.TempPathBrowse_Click);
             // 
             // TempPath
             // 
-            this.TempPath.AccessibleDescription = null;
-            this.TempPath.AccessibleName = null;
             resources.ApplyResources(this.TempPath, "TempPath");
-            this.TempPath.BackgroundImage = null;
-            this.TempPath.Font = null;
             this.TempPath.Name = "TempPath";
             this.TempPath.TextChanged += new System.EventHandler(this.TempPath_TextChanged);
             // 
             // label4
             // 
-            this.label4.AccessibleDescription = null;
-            this.label4.AccessibleName = null;
             resources.ApplyResources(this.label4, "label4");
-            this.label4.Font = null;
             this.label4.Name = "label4";
             // 
             // BrowseSFTP
             // 
-            this.BrowseSFTP.AccessibleDescription = null;
-            this.BrowseSFTP.AccessibleName = null;
             resources.ApplyResources(this.BrowseSFTP, "BrowseSFTP");
-            this.BrowseSFTP.BackgroundImage = null;
-            this.BrowseSFTP.Font = null;
             this.BrowseSFTP.Name = "BrowseSFTP";
             this.BrowseSFTP.UseVisualStyleBackColor = true;
             this.BrowseSFTP.Click += new System.EventHandler(this.BrowseSFTP_Click);
             // 
             // SFTPPath
             // 
-            this.SFTPPath.AccessibleDescription = null;
-            this.SFTPPath.AccessibleName = null;
             resources.ApplyResources(this.SFTPPath, "SFTPPath");
-            this.SFTPPath.BackgroundImage = null;
-            this.SFTPPath.Font = null;
             this.SFTPPath.Name = "SFTPPath";
             this.SFTPPath.TextChanged += new System.EventHandler(this.SFTPPath_TextChanged);
             // 
             // label6
             // 
-            this.label6.AccessibleDescription = null;
-            this.label6.AccessibleName = null;
             resources.ApplyResources(this.label6, "label6");
-            this.label6.Font = null;
             this.label6.Name = "label6";
             // 
             // BrowsePGP
             // 
-            this.BrowsePGP.AccessibleDescription = null;
-            this.BrowsePGP.AccessibleName = null;
             resources.ApplyResources(this.BrowsePGP, "BrowsePGP");
-            this.BrowsePGP.BackgroundImage = null;
-            this.BrowsePGP.Font = null;
             this.BrowsePGP.Name = "BrowsePGP";
             this.BrowsePGP.UseVisualStyleBackColor = true;
             this.BrowsePGP.Click += new System.EventHandler(this.BrowseGPG_Click);
             // 
             // OKBtn
             // 
-            this.OKBtn.AccessibleDescription = null;
-            this.OKBtn.AccessibleName = null;
             resources.ApplyResources(this.OKBtn, "OKBtn");
-            this.OKBtn.BackgroundImage = null;
-            this.OKBtn.Font = null;
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.UseVisualStyleBackColor = true;
             this.OKBtn.Click += new System.EventHandler(this.OKBtn_Click);
             // 
             // CancelBtn
             // 
-            this.CancelBtn.AccessibleDescription = null;
-            this.CancelBtn.AccessibleName = null;
             resources.ApplyResources(this.CancelBtn, "CancelBtn");
-            this.CancelBtn.BackgroundImage = null;
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Font = null;
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.UseVisualStyleBackColor = true;
             // 
@@ -285,65 +225,41 @@ namespace Duplicati.GUI
             this.BrowseSFTPDialog.FileName = "psftp.exe";
             resources.ApplyResources(this.BrowseSFTPDialog, "BrowseSFTPDialog");
             // 
-            // BrowseTempPath
-            // 
-            resources.ApplyResources(this.BrowseTempPath, "BrowseTempPath");
-            // 
             // groupBox3
             // 
-            this.groupBox3.AccessibleDescription = null;
-            this.groupBox3.AccessibleName = null;
             resources.ApplyResources(this.groupBox3, "groupBox3");
-            this.groupBox3.BackgroundImage = null;
             this.groupBox3.Controls.Add(this.PasswordPanel);
             this.groupBox3.Controls.Add(this.UseCommonPassword);
-            this.groupBox3.Font = null;
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.TabStop = false;
             // 
             // PasswordPanel
             // 
-            this.PasswordPanel.AccessibleDescription = null;
-            this.PasswordPanel.AccessibleName = null;
-            resources.ApplyResources(this.PasswordPanel, "PasswordPanel");
-            this.PasswordPanel.BackgroundImage = null;
             this.PasswordPanel.Controls.Add(this.EncryptionMethod);
             this.PasswordPanel.Controls.Add(this.label5);
             this.PasswordPanel.Controls.Add(this.CommonPassword);
-            this.PasswordPanel.Font = null;
+            resources.ApplyResources(this.PasswordPanel, "PasswordPanel");
             this.PasswordPanel.Name = "PasswordPanel";
             // 
             // EncryptionMethod
             // 
-            this.EncryptionMethod.AccessibleDescription = null;
-            this.EncryptionMethod.AccessibleName = null;
-            resources.ApplyResources(this.EncryptionMethod, "EncryptionMethod");
-            this.EncryptionMethod.BackgroundImage = null;
             this.EncryptionMethod.Controls.Add(this.UseGPGEncryption);
             this.EncryptionMethod.Controls.Add(this.UseAESEncryption);
-            this.EncryptionMethod.Font = null;
+            resources.ApplyResources(this.EncryptionMethod, "EncryptionMethod");
             this.EncryptionMethod.Name = "EncryptionMethod";
             this.EncryptionMethod.TabStop = false;
             // 
             // UseGPGEncryption
             // 
-            this.UseGPGEncryption.AccessibleDescription = null;
-            this.UseGPGEncryption.AccessibleName = null;
             resources.ApplyResources(this.UseGPGEncryption, "UseGPGEncryption");
-            this.UseGPGEncryption.BackgroundImage = null;
-            this.UseGPGEncryption.Font = null;
             this.UseGPGEncryption.Name = "UseGPGEncryption";
             this.UseGPGEncryption.UseVisualStyleBackColor = true;
             this.UseGPGEncryption.CheckedChanged += new System.EventHandler(this.UseGPGEncryption_CheckedChanged);
             // 
             // UseAESEncryption
             // 
-            this.UseAESEncryption.AccessibleDescription = null;
-            this.UseAESEncryption.AccessibleName = null;
             resources.ApplyResources(this.UseAESEncryption, "UseAESEncryption");
-            this.UseAESEncryption.BackgroundImage = null;
             this.UseAESEncryption.Checked = true;
-            this.UseAESEncryption.Font = null;
             this.UseAESEncryption.Name = "UseAESEncryption";
             this.UseAESEncryption.TabStop = true;
             this.UseAESEncryption.UseVisualStyleBackColor = true;
@@ -351,37 +267,22 @@ namespace Duplicati.GUI
             // 
             // label5
             // 
-            this.label5.AccessibleDescription = null;
-            this.label5.AccessibleName = null;
             resources.ApplyResources(this.label5, "label5");
-            this.label5.Font = null;
             this.label5.Name = "label5";
             // 
             // CommonPassword
             // 
-            this.CommonPassword.AccessibleDescription = null;
-            this.CommonPassword.AccessibleName = null;
             resources.ApplyResources(this.CommonPassword, "CommonPassword");
-            this.CommonPassword.BackgroundImage = null;
-            this.CommonPassword.Font = null;
             this.CommonPassword.Name = "CommonPassword";
             this.CommonPassword.UseSystemPasswordChar = true;
             this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
             // 
             // UseCommonPassword
             // 
-            this.UseCommonPassword.AccessibleDescription = null;
-            this.UseCommonPassword.AccessibleName = null;
             resources.ApplyResources(this.UseCommonPassword, "UseCommonPassword");
-            this.UseCommonPassword.BackgroundImage = null;
-            this.UseCommonPassword.Font = null;
             this.UseCommonPassword.Name = "UseCommonPassword";
             this.UseCommonPassword.UseVisualStyleBackColor = true;
             this.UseCommonPassword.CheckedChanged += new System.EventHandler(this.UseCommonPassword_CheckedChanged);
-            // 
-            // BrowseSignatureCachePath
-            // 
-            resources.ApplyResources(this.BrowseSignatureCachePath, "BrowseSignatureCachePath");
             // 
             // CacheSizeCalculator
             // 
@@ -389,31 +290,29 @@ namespace Duplicati.GUI
             this.CacheSizeCalculator.DoWork += new System.ComponentModel.DoWorkEventHandler(this.CacheSizeCalculator_DoWork);
             this.CacheSizeCalculator.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.CacheSizeCalculator_RunWorkerCompleted);
             // 
-            // RecentDuration
+            // label3
             // 
-            this.RecentDuration.AccessibleDescription = null;
-            this.RecentDuration.AccessibleName = null;
-            resources.ApplyResources(this.RecentDuration, "RecentDuration");
-            this.RecentDuration.BackgroundImage = null;
-            this.RecentDuration.Font = null;
-            this.RecentDuration.Name = "RecentDuration";
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
+            resources.ApplyResources(this.label3, "label3");
+            this.label3.Name = "label3";
+            // 
+            // LanguageSelection
+            // 
+            resources.ApplyResources(this.LanguageSelection, "LanguageSelection");
+            this.LanguageSelection.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.LanguageSelection.FormattingEnabled = true;
+            this.LanguageSelection.Name = "LanguageSelection";
+            this.LanguageSelection.SelectedIndexChanged += new System.EventHandler(this.LanguageSelection_SelectedIndexChanged);
             // 
             // ApplicationSetup
             // 
-            this.AccessibleDescription = null;
-            this.AccessibleName = null;
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackgroundImage = null;
             this.CancelButton = this.CancelBtn;
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
-            this.Font = null;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -469,5 +368,7 @@ namespace Duplicati.GUI
         private System.Windows.Forms.GroupBox EncryptionMethod;
         private System.Windows.Forms.RadioButton UseGPGEncryption;
         private System.Windows.Forms.RadioButton UseAESEncryption;
+        private System.Windows.Forms.ComboBox LanguageSelection;
+        private System.Windows.Forms.Label label3;
     }
 }

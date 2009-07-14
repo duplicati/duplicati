@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{1470F75F-D364-4010-91D0-FD4DDA1C5159}</ProjectGuid>
     <OutputType>WinExe</OutputType>
@@ -15,9 +15,11 @@
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>2.0</OldToolsVersion>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <TargetFrameworkSubset>
+    </TargetFrameworkSubset>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -512,6 +514,10 @@
       <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
       <Name>WizardForm</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CommandLine\CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj">
+      <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
+      <Name>Duplicati.CommandLine.BackendTester</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CommandLine\Decrypter\Duplicati.CommandLine.Decrypter.csproj">
       <Project>{E2AF781D-D1E1-4512-BF2C-D6DA8D0F797F}</Project>
       <Name>Duplicati.CommandLine.Decrypter</Name>
@@ -990,6 +996,7 @@
     <None Include="Resources\ExamineMenuIcon.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="Resources\LogViewer.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
