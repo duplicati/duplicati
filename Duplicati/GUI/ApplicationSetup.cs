@@ -74,7 +74,7 @@ namespace Duplicati.GUI
                 CalculateSignatureCacheSize();
 
                 LanguageSelection.Items.Clear();
-                LanguageSelection.Items.Add(string.Format(Strings.Common.DefaultLanguage, System.Globalization.CultureInfo.InstalledUICulture.DisplayName));
+                LanguageSelection.Items.Add(string.Format(Strings.ApplicationSetup.DefaultLanguage, System.Globalization.CultureInfo.InstalledUICulture.DisplayName));
 
                 m_supportedLanguages.Add(System.Globalization.CultureInfo.GetCultureInfo("en"));
 
@@ -163,14 +163,31 @@ namespace Duplicati.GUI
         {
             m_connection.CommitRecursive(m_connection.GetObjects<ApplicationSetting>());
 
-            if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
-                System.Threading.Thread.CurrentThread.CurrentUICulture =
+            System.Globalization.CultureInfo newCI = System.Threading.Thread.CurrentThread.CurrentUICulture;
+
+            try
+            {
+                if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
+                    newCI = System.Globalization.CultureInfo.InstalledUICulture;
+                else
+                    newCI = System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
+            }
+            catch
+            {
+            }
+
+
+            if (newCI != System.Threading.Thread.CurrentThread.CurrentUICulture)
+            {
+                MessageBox.Show(this, Strings.ApplicationSetup.LanguageChangedWarning, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                //We don't change here, because the application has loaded some 
+                // resources already, so the switch would be partial
+
+                /*System.Threading.Thread.CurrentThread.CurrentUICulture =
                 System.Threading.Thread.CurrentThread.CurrentCulture =
-                    System.Globalization.CultureInfo.InstalledUICulture;
-            else
-                System.Threading.Thread.CurrentThread.CurrentUICulture =
-                System.Threading.Thread.CurrentThread.CurrentCulture =
-                    System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
+                    newCI;*/
+            }
 
 
             this.DialogResult = DialogResult.OK;

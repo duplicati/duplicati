@@ -129,6 +129,10 @@
     <value>Delete signature files in the folder: \n{0}</value>
     <comment>A message displayed in a confirmation dialog before deleting the signature cache</comment>
   </data>
+  <data name="DefaultLanguage" xml:space="preserve">
+    <value>System language, {0}</value>
+    <comment>A string displayed to denote the current default language</comment>
+  </data>
   <data name="ErrorWhileExaminingFolder" xml:space="preserve">
     <value>An exception occured while examining the folder: {0}.\r\nDo you want to use that folder anyway?</value>
     <comment>A string displayed in a messagebox if an error occurs while checking for the existence of a required file</comment>
@@ -136,6 +140,10 @@
   <data name="FolderIsMissingFile" xml:space="preserve">
     <value>The folder selected does not contain the file: {0}.\r\nDo you want to use that folder anyway?</value>
     <comment>A string displayed in a messagebox asking the user to approve the use of a folder that does not contain the required file</comment>
+  </data>
+  <data name="LanguageChangedWarning" xml:space="preserve">
+    <value>The language has changed. This will take effect after you restart Duplicati.</value>
+    <comment>A warning displayed to the user when the language has been changed, informing the user that the language change will not be visible until after a restart</comment>
   </data>
   <data name="OperationCancelled" xml:space="preserve">
     <value>Cancelled</value>

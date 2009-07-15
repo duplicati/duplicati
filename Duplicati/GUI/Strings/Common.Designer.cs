@@ -61,15 +61,6 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to System default language ({0}).
-        /// </summary>
-        internal static string DefaultLanguage {
-            get {
-                return ResourceManager.GetString("DefaultLanguage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to An error occured: {0}.
         /// </summary>
         internal static string GenericError {

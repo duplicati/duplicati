@@ -88,6 +88,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to System language, {0}.
+        /// </summary>
+        internal static string DefaultLanguage {
+            get {
+                return ResourceManager.GetString("DefaultLanguage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An exception occured while examining the folder: {0}.\r\nDo you want to use that folder anyway?.
         /// </summary>
         internal static string ErrorWhileExaminingFolder {
@@ -102,6 +111,15 @@ namespace Duplicati.GUI.Strings {
         internal static string FolderIsMissingFile {
             get {
                 return ResourceManager.GetString("FolderIsMissingFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The language has changed. This will take effect after you restart Duplicati..
+        /// </summary>
+        internal static string LanguageChangedWarning {
+            get {
+                return ResourceManager.GetString("LanguageChangedWarning", resourceCulture);
             }
         }
         
