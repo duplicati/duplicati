@@ -235,7 +235,12 @@ namespace Duplicati.Library.Compression
             return new StreamWrapper(new Duplicati.Library.Core.TempFile(), PathFromFilesystem(file), m_zip);
 #else
             //This automatically sets DateTime to now
-            m_stream.PutNextEntry(new ICSharpCode.SharpZipLib.Zip.ZipEntry(PathFromFilesystem(file)));
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = new ICSharpCode.SharpZipLib.Zip.ZipEntry(PathFromFilesystem(file));
+            
+            //Encode filenames as unicode, we do this for all files, to avoid codepage issues
+            ze.Flags |= (int)ICSharpCode.SharpZipLib.Zip.GeneralBitFlags.UnicodeText;
+            
+            m_stream.PutNextEntry(ze);
             return new StreamWrapper2(m_stream);
 #endif
         }

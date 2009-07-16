@@ -27,9 +27,6 @@ namespace Duplicati.CommandLine
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(Strings.Program.AddedFoldersHeader);
-            return;
-
             List<string> cargs = new List<string>(args);
             string filter = Duplicati.Library.Core.FilenameFilter.EncodeAsFilter(Duplicati.Library.Core.FilenameFilter.ParseCommandLine(cargs, true));
 

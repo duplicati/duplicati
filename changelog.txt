@@ -1,0 +1,6 @@
+1.0.1 r215 05 jul 2009
+Fixes to a restore problem when restoring the setup
+Added a debug option for the SSH backend
+Added localization support
+
+1.0.0 - 09 jun 2009

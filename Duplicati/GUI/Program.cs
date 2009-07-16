@@ -136,9 +136,17 @@ namespace Duplicati.GUI
                 DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
 
                 if (!string.IsNullOrEmpty(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage))
-                    System.Threading.Thread.CurrentThread.CurrentUICulture =
-                    System.Threading.Thread.CurrentThread.CurrentCulture =
-                        System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
+                    try
+                    {
+                        System.Threading.Thread.CurrentThread.CurrentUICulture =
+                        System.Threading.Thread.CurrentThread.CurrentCulture =
+                            System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
+                    }
+                    catch(Exception ex)
+                    {
+                        MessageBox.Show(string.Format(Strings.Program.LanguageSelectionError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
 
                 TrayIcon = new NotifyIcon();
                 TrayIcon.ContextMenuStrip = new ContextMenuStrip();

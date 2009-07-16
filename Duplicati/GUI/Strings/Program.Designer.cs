@@ -79,6 +79,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to set the user interface language: {0}.
+        /// </summary>
+        internal static string LanguageSelectionError {
+            get {
+                return ResourceManager.GetString("LanguageSelectionError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Quit.
         /// </summary>
         internal static string MenuQuit {

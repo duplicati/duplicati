@@ -125,6 +125,10 @@
     <value>Failed to create, open or upgrade the database.\r\nError message: {0}</value>
     <comment>An error message displayed when opening the database fails</comment>
   </data>
+  <data name="LanguageSelectionError" xml:space="preserve">
+    <value>Failed to set the user interface language: {0}</value>
+    <comment>An error message displayed if the language cannot be selected</comment>
+  </data>
   <data name="MenuQuit" xml:space="preserve">
     <value>Quit</value>
     <comment>Text for the quit menu in the trayicon context menu</comment>
