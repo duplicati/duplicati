@@ -92,14 +92,14 @@ namespace Duplicati.Datamodel.Backends
 
         public string GetDestinationPath()
         {
-            if (string.IsNullOrEmpty(this.Username))
-                return "webdav://" + this.Host + ":" + this.Port + "/" + this.Folder;
-            else
-                return "webdav://" + this.Username + "@" + this.Host + ":" +  this.Port + "/" + this.Folder;
+            return "webdav://" + this.Host + ":" + this.Port + "/" + this.Folder;
         }
 
         public void GetOptions(Dictionary<string, string> options)
         {
+            if (!string.IsNullOrEmpty(this.Username))
+                options["ftp-username"] = this.Username;
+
             options["ftp-password"] = this.Password;
             if (IntegratedAuthentication)
                 options["integrated-authentication"] = "";

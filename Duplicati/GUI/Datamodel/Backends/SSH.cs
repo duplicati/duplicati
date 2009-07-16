@@ -95,11 +95,14 @@ namespace Duplicati.Datamodel.Backends
 
         public string GetDestinationPath()
         {
-            return "ssh://" + this.Username + "@" + this.Host + "/" + this.Folder;
+            return "ssh://" + this.Host + "/" + this.Folder;
         }
 
         public void GetOptions(Dictionary<string, string> options)
         {
+            if (!string.IsNullOrEmpty(this.Username))
+                options["ftp-username"] = this.Username;
+
             if (!this.Passwordless)
                 options["ftp-password"] = this.Password;
 

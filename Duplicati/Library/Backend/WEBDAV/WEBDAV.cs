@@ -56,6 +56,16 @@ namespace Duplicati.Library.Backend
                         m_userInfo.Password = options["ftp-password"];
                 }
             }
+            else
+            {
+                if (options.ContainsKey("ftp-username"))
+                {
+                    m_userInfo = new System.Net.NetworkCredential();
+                    m_userInfo.UserName = options["ftp-username"];
+                    if (options.ContainsKey("ftp-password"))
+                        m_userInfo.Password = options["ftp-password"];
+                }
+            }
 
             m_options = options;
             m_useIntegratedAuthentication = m_options.ContainsKey("integrated-authentication");
@@ -166,6 +176,7 @@ namespace Duplicati.Library.Backend
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionFTPPasswordShort, Strings.WEBDAV.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionFTPUsernameShort, Strings.WEBDAV.DescriptionFTPUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                 });

@@ -55,6 +55,13 @@ namespace Duplicati.Library.Backend
                         m_password = options["ftp-password"];
                 }
             }
+            else
+            {
+                if (options.ContainsKey("ftp-username"))
+                    m_username = options["ftp-username"];
+                if (options.ContainsKey("ftp-password"))
+                    m_password = options["ftp-password"];
+            }
 
             if (!System.IO.Path.IsPathRooted(url))
                 m_path = System.IO.Path.GetFullPath(m_path);
@@ -141,7 +148,8 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPPasswordShort, Strings.FileBackend.DescriptionFTPPasswordLong)
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPPasswordShort, Strings.FileBackend.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPUsernameShort, Strings.FileBackend.DescriptionFTPUsernameLong)
                 });
 
             }

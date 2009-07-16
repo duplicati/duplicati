@@ -126,6 +126,12 @@
   <data name="DescriptionFTPPasswordShort" xml:space="preserve">
     <value>Supplies the password used to connect to the server</value>
   </data>
+  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
+    <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
+  </data>
+  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
+    <value>Supplies the username used to connect to the server</value>
+  </data>
   <data name="DescriptionPasswordLong" xml:space="preserve">
     <value>Supplies the API Access Key used to authenticate with CloudFiles.</value>
   </data>

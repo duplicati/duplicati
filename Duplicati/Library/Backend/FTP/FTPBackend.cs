@@ -53,6 +53,16 @@ namespace Duplicati.Library.Backend
                         m_userInfo.Password = options["ftp-password"];
                 }
             }
+            else
+            {
+                if (options.ContainsKey("ftp-username"))
+                {
+                    m_userInfo = new System.Net.NetworkCredential();
+                    m_userInfo.UserName = options["ftp-username"];
+                    if (options.ContainsKey("ftp-password"))
+                        m_userInfo.Password = options["ftp-password"];
+                }
+            }
 
             m_options = options;
             m_url = url;
@@ -195,6 +205,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-passive", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionFTPPassiveShort, Strings.FTPBackend.DescriptionFTPPassiveLong, "false"),
                     new CommandLineArgument("ftp-regular", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionFTPActiveShort, Strings.FTPBackend.DescriptionFTPActiveLong, "true"),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPPasswordShort, Strings.FTPBackend.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPUsernameShort, Strings.FTPBackend.DescriptionFTPUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionIntegratedAuthenticationShort, Strings.FTPBackend.DescriptionIntegratedAuthenticationLong),
                 });
             }

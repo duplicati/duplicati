@@ -85,11 +85,12 @@ namespace Duplicati.Datamodel.Backends
 
         public string GetDestinationPath()
         {
-            return "ftp://" + this.Username + "@" + this.Host + ":" +  this.Port + "/" + this.Folder;
+            return "ftp://" + this.Host + ":" +  this.Port + "/" + this.Folder;
         }
 
         public void GetOptions(Dictionary<string, string> options)
         {
+            options["ftp-username"] = this.Username;
             options["ftp-password"] = this.Password;
             if (this.Passive)
                 options["ftp-passive"] = "";

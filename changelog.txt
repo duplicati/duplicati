@@ -1,3 +1,6 @@
+trunk
+Added a FTP_USERNAME option to solve problems with usernames in urls.
+
 1.0.1 r215 05 jul 2009
 Fixes to a restore problem when restoring the setup
 Added a debug option for the SSH backend

@@ -125,38 +125,38 @@
     <value>The full backup duration entered is not valid: {0}</value>
   </data>
   <data name="OneDay" xml:space="preserve">
-    <value>One day</value>
+    <value>En dag</value>
     <comment>A string displayed in comboboxes indicating that the duration should be one day</comment>
   </data>
   <data name="OneMonth" xml:space="preserve">
-    <value>One month</value>
+    <value>En måned</value>
     <comment>A string displayed in comboboxes indicating that the duration should be one month</comment>
   </data>
   <data name="OneWeek" xml:space="preserve">
-    <value>One week</value>
+    <value>En uge</value>
     <comment>A string displayed in comboboxes indicating that the duration should be one week</comment>
   </data>
   <data name="ThreadPriorityAboveNormal" xml:space="preserve">
-    <value>Above normal</value>
+    <value>Over normal</value>
   </data>
   <data name="ThreadPriorityBelowNormal" xml:space="preserve">
-    <value>Below normal</value>
+    <value>Under normal</value>
   </data>
   <data name="ThreadPriorityHighest" xml:space="preserve">
-    <value>Highest</value>
+    <value>Højeste</value>
   </data>
   <data name="ThreadPriorityNormal" xml:space="preserve">
     <value>Normal</value>
   </data>
   <data name="ThreadPriortyLowest" xml:space="preserve">
-    <value>Lowest</value>
+    <value>Laveste</value>
   </data>
   <data name="ThreeMonths" xml:space="preserve">
-    <value>Three months</value>
+    <value>Tre måneder</value>
     <comment>A string displayed in comboboxes indicating that the duration should be three months</comment>
   </data>
   <data name="TwoWeeks" xml:space="preserve">
-    <value>Two weeks</value>
+    <value>To uger</value>
     <comment>A string displayed in comboboxes indicating that the duration should be two weeks</comment>
   </data>
 </root>

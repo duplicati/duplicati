@@ -91,6 +91,10 @@ namespace Duplicati.CommandLine
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_PASSWORD")))
                     options["ftp-password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");
 
+            if (!options.ContainsKey("ftp-username"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_USERNAME")))
+                    options["ftp-username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
+
             if (source.Trim().ToLower() == "list")
                 Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
             else if (source.Trim().ToLower() == "list-current-files")

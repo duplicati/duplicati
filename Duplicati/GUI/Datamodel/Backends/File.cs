@@ -61,14 +61,13 @@ namespace Duplicati.Datamodel.Backends
 
         public string GetDestinationPath()
         {
-            if (!string.IsNullOrEmpty(this.Username))
-                return "file://" + this.Username + "@" + this.DestinationFolder;
-            else
-                return "file://" + this.DestinationFolder;
+            return "file://" + this.DestinationFolder;
         }
 
         public void GetOptions(Dictionary<string, string> options)
         {
+            if (!string.IsNullOrEmpty(this.Username))
+                options["ftp-username"] = this.Username;
             if (!string.IsNullOrEmpty(this.Password))
                 options["ftp-password"] = this.Password;
         }

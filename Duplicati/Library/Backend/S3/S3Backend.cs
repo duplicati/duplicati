@@ -63,6 +63,11 @@ namespace Duplicati.Library.Backend
             }
             else
             {
+                if (options.ContainsKey("ftp-username"))
+                    m_awsID = options["ftp-username"];
+                if (options.ContainsKey("ftp-password"))
+                    m_awsKey = options["ftp-password"];
+
                 if (options.ContainsKey("aws_access_key_id"))
                     m_awsID = options["aws_access_key_id"];
                 if (options.ContainsKey("aws_secret_access_key"))
@@ -259,10 +264,11 @@ namespace Duplicati.Library.Backend
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Path, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, new string[] {"ftp-password"}, null),
-                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.Path, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong),
+                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.Path, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"ftp-username"}, null),
                     new CommandLineArgument("s3-use-new-style", CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3NewStyleDescriptionShort, Strings.S3Backend.S3NewStyleDescriptionLong, "true"),
                     new CommandLineArgument("s3-european-buckets", CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false"),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.S3Backend.FTPPasswordDescriptionShort, Strings.S3Backend.FTPPasswordDescriptionLong),
+                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.DescriptionFTPUsernameShort, Strings.S3Backend.DescriptionFTPUsernameLong)
                 });
 
             }

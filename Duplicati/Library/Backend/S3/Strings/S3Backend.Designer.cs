@@ -79,7 +79,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The AWS &quot;Access Key ID&quot; can be obtained after logging into your AWS account..
+        ///   Looks up a localized string similar to The AWS &quot;Access Key ID&quot; can be obtained after logging into your AWS account, this can also be supplied through the &quot;ftp-username&quot; property.
         /// </summary>
         internal static string AMZUserIDDescriptionLong {
             get {
@@ -102,6 +102,24 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string Description {
             get {
                 return ResourceManager.GetString("Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;FTP_USERNAME&quot;..
+        /// </summary>
+        internal static string DescriptionFTPUsernameLong {
+            get {
+                return ResourceManager.GetString("DescriptionFTPUsernameLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supplies the username used to connect to the server.
+        /// </summary>
+        internal static string DescriptionFTPUsernameShort {
+            get {
+                return ResourceManager.GetString("DescriptionFTPUsernameShort", resourceCulture);
             }
         }
         

@@ -60,6 +60,11 @@ namespace Duplicati.Library.Backend
             }
             else
             {
+                if (options.ContainsKey("ftp-username"))
+                    m_username = options["ftp-username"];
+                if (options.ContainsKey("ftp-password"))
+                    m_password = options["ftp-password"];
+
                 if (options.ContainsKey("cloudfiles_username"))
                     m_username = options["cloudfiles_username"];
                 if (options.ContainsKey("cloudfiles_accesskey"))
@@ -163,6 +168,7 @@ namespace Duplicati.Library.Backend
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionFTPPasswordShort, Strings.CloudFiles.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionFTPUsernameShort, Strings.CloudFiles.DescriptionFTPUsernameLong),
                     new CommandLineArgument("cloudfiles_username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong),
                     new CommandLineArgument("cloudfiles_accesskey", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong),
                 });

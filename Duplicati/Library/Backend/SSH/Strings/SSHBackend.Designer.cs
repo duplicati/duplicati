@@ -223,6 +223,24 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;FTP_USERNAME&quot;..
+        /// </summary>
+        internal static string DescriptionFTPUsernameLong {
+            get {
+                return ResourceManager.GetString("DescriptionFTPUsernameLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supplies the username used to connect to the server.
+        /// </summary>
+        internal static string DescriptionFTPUsernameShort {
+            get {
+                return ResourceManager.GetString("DescriptionFTPUsernameShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The full path to the &quot;sftp&quot; application..
         /// </summary>
         internal static string DescriptionSFTPCommandLong {
