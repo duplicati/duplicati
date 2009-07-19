@@ -124,7 +124,7 @@
     <value>Timeout while closing session</value>
   </data>
   <data name="ConnectionTimeoutError" xml:space="preserve">
-    <value>Timeout occured while connection, log: {0}</value>
+    <value>Timeout occured while connecting, log: {0}</value>
   </data>
   <data name="DebugDeleteFooter" xml:space="preserve">
     <value>Delete complete</value>
@@ -211,10 +211,10 @@
     <value>The host is not authenticated, please connect to the host using SSH, and then re-rerun Duplicati, log: {0}</value>
   </data>
   <data name="LaunchErrorLinux" xml:space="preserve">
-    <value>Failed to start the SSH application ({0}).\nMake sure that "putty" is installed, and you have set the correct path.\nError message: {1}</value>
+    <value>Failed to start the SSH application ({0}).\nMake sure that "expect" is installed.\nError message: {1}</value>
   </data>
   <data name="LaunchErrorWindows" xml:space="preserve">
-    <value>Failed to start the SSH application ({0}).\nMake sure that "expect" is installed.\nError message: {1}</value>
+    <value>Failed to start the SSH application ({0}).\nMake sure that "putty" is installed, and you have set the correct path.\nError message: {1}</value>
   </data>
   <data name="PasswordMissingError" xml:space="preserve">
     <value>A password was expected, but passwordless login was specified</value>

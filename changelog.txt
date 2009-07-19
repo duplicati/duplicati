@@ -1,9 +1,11 @@
-trunk
+1.0.1 r229 - 19 jul 2009
+Added a backend tester application.
 Added a FTP_USERNAME option to solve problems with usernames in urls.
+Fixed a timing bug in the SSH backend.
 
-1.0.1 r215 05 jul 2009
-Fixes to a restore problem when restoring the setup
-Added a debug option for the SSH backend
-Added localization support
+1.0.1 r215 - 05 jul 2009
+Fixes to a restore problem when restoring the setup.
+Added a debug option for the SSH backend.
+Added localization support.
 
 1.0.0 - 09 jun 2009

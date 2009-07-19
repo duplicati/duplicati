@@ -247,5 +247,21 @@ namespace Duplicati.Library.Backend
 
             }
         }
+
+        public static void PrintArgument(List<string> lines, Duplicati.Library.Backend.ICommandLineArgument arg)
+        {
+            lines.Add(" --" + arg.Name + " (" + arg.Typename + "): " + arg.ShortDescription);
+            lines.Add("   " + arg.LongDescription);
+            if (arg.Aliases != null && arg.Aliases.Length > 0)
+                lines.Add("   * " + Strings.CommandLineArgument.AliasesHeader + ": --" + string.Join(", --", arg.Aliases));
+
+            if (arg.ValidValues != null && arg.ValidValues.Length > 0)
+                lines.Add("   * " + Strings.CommandLineArgument.ValuesHeader + ": " + string.Join(", ", arg.ValidValues));
+
+            if (!string.IsNullOrEmpty(arg.DefaultValue))
+                lines.Add("   * " + Strings.CommandLineArgument.DefaultValueHeader + ": " + arg.DefaultValue);
+
+        }
+
     }
 }

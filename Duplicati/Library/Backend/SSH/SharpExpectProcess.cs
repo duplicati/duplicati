@@ -45,6 +45,8 @@ namespace Duplicati.Library.SharpExpect
         private System.Threading.AutoResetEvent m_event = new System.Threading.AutoResetEvent(false);
         private int m_defaultTimeout = 30 * 1000;
         private int m_logLimit = 100;
+        private volatile bool m_stderr_done = true;
+        private volatile bool m_stdout_done = true;
         private List<string> m_log = new List<string>();
 
         /// <summary>
@@ -110,10 +112,16 @@ namespace Duplicati.Library.SharpExpect
             m_process = process;
 
             if (m_process.StartInfo.RedirectStandardError)
+            {
+                m_stderr_done = false;
                 System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(StreamReader), m_process.StandardError);
+            }
 
             if (m_process.StartInfo.RedirectStandardOutput)
+            {
+                m_stdout_done = false;
                 System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(StreamReader), m_process.StandardOutput);
+            }
         }
 
         /// <summary>
@@ -182,10 +190,39 @@ namespace Duplicati.Library.SharpExpect
         /// <returns>The next output line from the selected sources, or null if the operation times out.</returns>
         public string GetNextOutputLine(OutputSource source, int millisecondsTimeout)
         {
-            /*if (PeekNextOutputLine(source) != null)
-                Console.WriteLine("Output from source: " + PeekNextOutputLine(source));*/
-
             //Is there buffered output?
+            string line = GetBufferedLine(source);
+            if (line != null)
+                return line;
+
+            //If we are disposed, or done, there is no point in waiting
+            if (m_process == null || m_process.HasExited)
+            {
+                //Make sure the readers are done
+                while (m_process != null && !m_stderr_done)
+                    System.Threading.Thread.Sleep(100);
+
+                while (m_process != null && !m_stdout_done)
+                    System.Threading.Thread.Sleep(100);
+
+                //Make sure queue is empty
+                return GetBufferedLine(source);
+            }
+
+            //If we can wait, do so, and try again, otherwise return null
+            if (millisecondsTimeout > 0)
+                m_event.WaitOne(millisecondsTimeout, true);
+
+            return GetBufferedLine(source);
+        }
+
+        /// <summary>
+        /// Helper method to extract a buffered line
+        /// </summary>
+        /// <param name="source">A value indicating what streams to examine</param>
+        /// <returns>The next buffered line or null</returns>
+        private string GetBufferedLine(OutputSource source)
+        {
             lock (m_lock)
             {
                 //Check stdout
@@ -200,18 +237,8 @@ namespace Duplicati.Library.SharpExpect
                 m_event.Reset();
             }
 
-            //If we are disposed, or done, there is no point in waiting
-            if (m_process == null || m_process.HasExited)
-                return null;
-
-            //If we can wait, do so, and try again, otherwise return null
-            if (millisecondsTimeout > 0)
-            {
-                m_event.WaitOne(millisecondsTimeout, true);
-                return GetNextOutputLine(0);
-            }
-            else
-                return null;
+            //Notify that there was no waiting data
+            return null;
         }
 
         /// <summary>
@@ -405,7 +432,8 @@ namespace Duplicati.Library.SharpExpect
 
             DateTime expiration = millisecondsTimeout < 0 ? DateTime.Now.AddYears(5) : DateTime.Now.AddMilliseconds(millisecondsTimeout);
 
-            while (DateTime.Now < expiration)
+            //string line = null;
+            while (DateTime.Now <= expiration) //|| line != null)
             {
                 string line = GetNextOutputLine((int)(expiration - DateTime.Now).TotalMilliseconds);
                 if (line == null)
@@ -425,7 +453,6 @@ namespace Duplicati.Library.SharpExpect
         /// <param name="line">The line to send</param>
         public void Sendline(string line)
         {
-            //Console.WriteLine("Sending line: " + line);
             RecordInLog("I", line);
             if (m_process.HasExited)
                 throw new Exception(string.Format(Backend.Strings.SharpExpectProcess.WriteAfterExitError, LogKillAndDispose()));
@@ -439,7 +466,6 @@ namespace Duplicati.Library.SharpExpect
         /// <param name="password">The password to send</param>
         public void Sendpassword(string password)
         {
-            //Console.WriteLine("Sending password: *password*");
             RecordInLog("I", Backend.Strings.SharpExpectProcess.PasswordMarker);
             if (m_process.HasExited)
                 throw new Exception(string.Format(Backend.Strings.SharpExpectProcess.WriteAfterExitError, LogKillAndDispose()));
@@ -456,11 +482,11 @@ namespace Duplicati.Library.SharpExpect
             char[] buf = new char[1024];
             System.IO.StreamReader sr = (System.IO.StreamReader)input;
             List<string> queue = sr == m_process.StandardError ? m_stdErr : m_stdOut;
-
+            
             try
             {
                 //Keep reading until the process exits
-                while (!m_process.HasExited || sr.Peek() > 0)
+                while (true)
                 {
                     int r = sr.Read(buf, 0, buf.Length);
                     if (r > 0)
@@ -472,10 +498,33 @@ namespace Duplicati.Library.SharpExpect
                             m_event.Set();
                         }
                     }
+
+                    if (m_process.HasExited && sr.Peek() < 0)
+                    {
+                        //Protect against races with the reader and the process
+                        System.Threading.Thread.Sleep(100);
+                        if (sr.Peek() < 0)
+                            break; //If there are no lines, exit
+                    }
                 }
             }
             catch
             {
+            }
+            finally
+            {
+                try
+                {
+                    //Flag completion
+                    if (sr == m_process.StandardError)
+                        m_stderr_done = true;
+                    else
+                        m_stdout_done = true;
+                }
+                catch
+                {
+                    //If this instance is disposed, m_process is null
+                }
             }
         }
 

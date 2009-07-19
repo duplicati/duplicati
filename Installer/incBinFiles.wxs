@@ -45,6 +45,7 @@
       <ComponentRef Id="comp_DUPLICATIBIN_21" />
       <ComponentRef Id="comp_DUPLICATIBIN_22" />
       <ComponentRef Id="comp_DUPLICATIBIN_23" />
+      <ComponentRef Id="comp_DUPLICATIBIN_24" />
     </ComponentGroup>
     <DirectoryRef Id="INSTALLLOCATION">
         <Component Id="comp_DUPLICATIBIN_0" DiskId="1" KeyPath="yes" Guid="57F65561-CCE8-4238-8874-AFADE8AF0C1F">
@@ -118,6 +119,9 @@
         </Component>
         <Component Id="comp_DUPLICATIBIN_23" DiskId="1" KeyPath="yes" Guid="A292A6D4-ED9A-4263-8387-932F25FA1764">
           <File Id="file_DUPLICATIBIN_23" Name="System.Windows.Forms.Wizard.dll" Source="..\Duplicati\GUI\bin\Release\System.Windows.Forms.Wizard.dll" />
+        </Component>
+        <Component Id="comp_DUPLICATIBIN_24" DiskId="1" KeyPath="yes" Guid="73B83726-BBD3-4B87-B1A8-91F64AABE300">
+          <File Id="file_DUPLICATIBIN_24" Name="Duplicati.CommandLine.BackendTester.exe" Source="..\Duplicati\GUI\bin\Release\Duplicati.CommandLine.BackendTester.exe" />
         </Component>
     </DirectoryRef>
   </Fragment>

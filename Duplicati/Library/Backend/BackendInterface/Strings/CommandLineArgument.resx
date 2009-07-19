@@ -117,59 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AddedFoldersHeader" xml:space="preserve">
-    <value>Added folders</value>
+  <data name="AliasesHeader" xml:space="preserve">
+    <value>aliases</value>
   </data>
-  <data name="ConfirmPassphrasePrompt" xml:space="preserve">
-    <value>Confirm passphrase</value>
+  <data name="DefaultValueHeader" xml:space="preserve">
+    <value>default value</value>
   </data>
-  <data name="ControlFilesHeader" xml:space="preserve">
-    <value>Control files</value>
-  </data>
-  <data name="DeletedFilesHeader" xml:space="preserve">
-    <value>Deleted files</value>
-  </data>
-  <data name="DeletedFoldersHeader" xml:space="preserve">
-    <value>Deleted folders</value>
-  </data>
-  <data name="DuplicatiOptionsHeader" xml:space="preserve">
-    <value>Duplicati options:</value>
-  </data>
-  <data name="EmptyPassphraseError" xml:space="preserve">
-    <value>Empty passphrases are not allowed</value>
-  </data>
-  <data name="EnterPassphrasePrompt" xml:space="preserve">
-    <value>Enter passphrase</value>
-  </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="ExampleLinux" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ExampleLinux.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
-  </data>
-  <data name="ExampleWindows" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ExampleWindows.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
-  </data>
-  <data name="IntegerParseError" xml:space="preserve">
-    <value>Unable to parse "{0}" into a number</value>
-  </data>
-  <data name="NewOrModifiedFilesHeader" xml:space="preserve">
-    <value>New/Modified files</value>
-  </data>
-  <data name="PassphraseMismatchError" xml:space="preserve">
-    <value>The passphrases do not match</value>
-  </data>
-  <data name="SupportedBackendsHeader" xml:space="preserve">
-    <value>Supported backends:</value>
-  </data>
-  <data name="SupportedOptionsHeader" xml:space="preserve">
-    <value>Supported options:</value>
-  </data>
-  <data name="TimeParseError" xml:space="preserve">
-    <value>Unable to parse "{0}" into a time offset: {1}</value>
-  </data>
-  <data name="Usage" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Usage.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
-  </data>
-  <data name="WrongNumberOfArgumentsError" xml:space="preserve">
-    <value>Wrong number of aguments</value>
+  <data name="ValuesHeader" xml:space="preserve">
+    <value>values</value>
   </data>
 </root>

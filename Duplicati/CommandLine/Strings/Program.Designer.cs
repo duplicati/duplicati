@@ -70,15 +70,6 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to aliases.
-        /// </summary>
-        internal static string AliasesHeader {
-            get {
-                return ResourceManager.GetString("AliasesHeader", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Confirm passphrase.
         /// </summary>
         internal static string ConfirmPassphrasePrompt {
@@ -93,15 +84,6 @@ namespace Duplicati.CommandLine.Strings {
         internal static string ControlFilesHeader {
             get {
                 return ResourceManager.GetString("ControlFilesHeader", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to default value.
-        /// </summary>
-        internal static string DefaultValueHeader {
-            get {
-                return ResourceManager.GetString("DefaultValueHeader", resourceCulture);
             }
         }
         
@@ -251,15 +233,6 @@ namespace Duplicati.CommandLine.Strings {
         internal static string Usage {
             get {
                 return ResourceManager.GetString("Usage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to values.
-        /// </summary>
-        internal static string ValuesHeader {
-            get {
-                return ResourceManager.GetString("ValuesHeader", resourceCulture);
             }
         }
         

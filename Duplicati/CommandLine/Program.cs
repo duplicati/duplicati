@@ -313,7 +313,7 @@ namespace Duplicati.CommandLine
             lines.Add(Strings.Program.DuplicatiOptionsHeader);
             Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
             foreach (Library.Backend.ICommandLineArgument arg in opt.SupportedCommands)
-                PrintArgument(lines, arg);
+                Library.Backend.CommandLineArgument.PrintArgument(lines, arg);
 
             lines.Add("");
             lines.Add("");
@@ -324,7 +324,7 @@ namespace Duplicati.CommandLine
                 lines.Add(" " + back.Description);
                 lines.Add(" " + Strings.Program.SupportedOptionsHeader);
                 foreach (Library.Backend.ICommandLineArgument arg in back.SupportedCommands)
-                    PrintArgument(lines, arg);
+                    Library.Backend.CommandLineArgument.PrintArgument(lines, arg);
 
                 lines.Add("");
             }
@@ -362,21 +362,6 @@ namespace Duplicati.CommandLine
                     c = c.Remove(0, len);
                 }
             }
-        }
-
-        private static void PrintArgument(List<string> lines, Duplicati.Library.Backend.ICommandLineArgument arg)
-        {
-            lines.Add(" --" + arg.Name + " (" + arg.Typename + "): " + arg.ShortDescription);
-            lines.Add("   " + arg.LongDescription);
-            if (arg.Aliases != null && arg.Aliases.Length > 0)
-                lines.Add("   * " + Strings.Program.AliasesHeader + ": --" + string.Join(", --", arg.Aliases));
-
-            if (arg.ValidValues != null && arg.ValidValues.Length > 0)
-                lines.Add("   * " + Strings.Program.ValuesHeader + ": " + string.Join(", ", arg.ValidValues));
-
-            if (!string.IsNullOrEmpty(arg.DefaultValue))
-                lines.Add("   * " + Strings.Program.DefaultValueHeader + ": " + arg.DefaultValue);
-
         }
     }
 }

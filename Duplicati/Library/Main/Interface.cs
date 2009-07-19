@@ -36,7 +36,6 @@ namespace Duplicati.Library.Main
     public class Interface : IDisposable
     {
         private string m_backend;
-        //private Dictionary<string, string> m_options;
         private Options m_options;
 
         //The amount of progressbar allocated for reading incremental data
@@ -63,6 +62,7 @@ namespace Duplicati.Library.Main
 
         void Interface_OperationProgress(Interface caller, DuplicatiOperation operation, int progress, int subprogress, string message, string submessage)
         {
+            //Here we can pause
             m_progress_message = message;
         }
 

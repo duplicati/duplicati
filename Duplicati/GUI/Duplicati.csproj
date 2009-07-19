@@ -514,7 +514,7 @@
       <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
       <Name>WizardForm</Name>
     </ProjectReference>
-    <ProjectReference Include="..\CommandLine\CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj">
+    <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
       <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
       <Name>Duplicati.CommandLine.BackendTester</Name>
     </ProjectReference>

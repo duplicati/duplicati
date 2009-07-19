@@ -49,6 +49,11 @@
     <Compile Include="ICommandLineArgument.cs" />
     <Compile Include="IStreamingBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Strings\CommandLineArgument.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CommandLineArgument.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\DataTypes.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -60,6 +65,10 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Strings\CommandLineArgument.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>CommandLineArgument.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Strings\DataTypes.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>

@@ -79,7 +79,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Timeout occured while connection, log: {0}.
+        ///   Looks up a localized string similar to Timeout occured while connecting, log: {0}.
         /// </summary>
         internal static string ConnectionTimeoutError {
             get {
@@ -340,7 +340,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to start the SSH application ({0}).\nMake sure that &quot;putty&quot; is installed, and you have set the correct path.\nError message: {1}.
+        ///   Looks up a localized string similar to Failed to start the SSH application ({0}).\nMake sure that &quot;expect&quot; is installed.\nError message: {1}.
         /// </summary>
         internal static string LaunchErrorLinux {
             get {
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to start the SSH application ({0}).\nMake sure that &quot;expect&quot; is installed.\nError message: {1}.
+        ///   Looks up a localized string similar to Failed to start the SSH application ({0}).\nMake sure that &quot;putty&quot; is installed, and you have set the correct path.\nError message: {1}.
         /// </summary>
         internal static string LaunchErrorWindows {
             get {

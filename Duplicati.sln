@@ -43,7 +43,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datamodel", "Duplicati\GUI\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WizardForm", "WizardForm\WizardForm.csproj", "{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTester", "Duplicati\CommandLine\CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{E7280DCA-7776-4A73-B9B5-41FD77FC8799}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTester", "Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{E7280DCA-7776-4A73-B9B5-41FD77FC8799}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

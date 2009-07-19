@@ -121,7 +121,7 @@ namespace Duplicati.Library.Backend
         public void Put(string remotename, string filename)
         {
             using (System.IO.FileStream readstream = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Put(remotename, filename);
+                Put(remotename, readstream);
         }
 
         public void Get(string remotename, System.IO.Stream stream)

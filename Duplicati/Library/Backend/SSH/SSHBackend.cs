@@ -119,7 +119,7 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey("transfer-timeout"))
                 m_transfer_timeout = Math.Min(1000 * 60 * 60, Math.Max(1000 * 60, (int)Duplicati.Library.Core.Timeparser.ParseTimeSpan(m_options["transfer-timeout"]).TotalMilliseconds));
             else
-                m_transfer_timeout = 1000 * 60 * 10;
+                m_transfer_timeout = 1000 * 60 * 15;
 
             m_write_log_info = options.ContainsKey("debug-to-console");
         }
@@ -152,7 +152,7 @@ namespace Duplicati.Library.Backend
 
                 string s;
 
-                while ((s = p.GetNextOutputLine(1000)) != null)
+                while ((s = p.GetNextOutputLine(5000)) != null)
                 {
                     FileEntry fe = FTP.ParseLine(s.Trim());
                     if (fe != null && fe.Name != "." && fe.Name != "..")
@@ -162,7 +162,7 @@ namespace Duplicati.Library.Backend
                 }
 
                 if (!p.Process.WaitForExit(5000))
-                    throw new Exception(Strings.SSHBackend.CloseTimeoutError);
+                    throw new Exception(Strings.SSHBackend.CloseTimeoutError + "\r\n" + p.LogKillAndDispose());
 
                 if (m_write_log_info)
                 {
@@ -192,10 +192,10 @@ namespace Duplicati.Library.Backend
                 p.Sendline("exit");
 
                 if (!p.Process.WaitForExit(m_transfer_timeout))
-                    throw new Exception(Strings.SSHBackend.UploadTimeoutError);
+                    throw new Exception(Strings.SSHBackend.UploadTimeoutError + "\r\n" + p.LogKillAndDispose());
 
-                if ((m_isLinux ? p.Expect(1000, "exit", "sftp> exit") : p.Expect(1000, "Using username .*")) < 0)
-                    throw new Exception(Strings.SSHBackend.UnexpectedExitResponseError);
+                if ((m_isLinux ? p.Expect(5000, "exit", "sftp> exit") : p.Expect(5000, "Using username .*")) < 0)
+                    throw new Exception(Strings.SSHBackend.UnexpectedExitResponseError + "\r\n" + p.LogKillAndDispose());
 
                 if (m_write_log_info)
                 {
@@ -221,10 +221,10 @@ namespace Duplicati.Library.Backend
                 p.Sendline("exit");
 
                 if (!p.Process.WaitForExit(m_transfer_timeout))
-                    throw new Exception(Strings.SSHBackend.DownloadTimeoutError);
+                    throw new Exception(Strings.SSHBackend.DownloadTimeoutError + "\r\n" + p.LogKillAndDispose());
 
-                if ((m_isLinux ? p.Expect(1000, "exit", "sftp> exit") : p.Expect(1000, "Using username .*")) < 0)
-                    throw new Exception(Strings.SSHBackend.UnexpectedExitResponseError);
+                if ((m_isLinux ? p.Expect(5000, "exit", "sftp> exit") : p.Expect(5000, "Using username .*")) < 0)
+                    throw new Exception(Strings.SSHBackend.UnexpectedExitResponseError + "\r\n" + p.LogKillAndDispose());
 
                 if (m_write_log_info)
                 {
@@ -248,7 +248,7 @@ namespace Duplicati.Library.Backend
                     throw new Exception(string.Format(Strings.SSHBackend.DeleteError, p.LogKillAndDispose()));
 
                 if (!p.Process.WaitForExit(5000))
-                    throw new Exception(Strings.SSHBackend.CloseTimeoutError);
+                    throw new Exception(Strings.SSHBackend.CloseTimeoutError + "\r\n" + p.LogKillAndDispose());
 
                 if (m_write_log_info)
                 {
@@ -268,7 +268,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPPasswordShort, Strings.SSHBackend.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPUsernameShort, Strings.SSHBackend.DescriptionFTPUsernameLong),
                     new CommandLineArgument("debug-to-console", CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionDebugToConsoleShort, Strings.SSHBackend.DescriptionDebugToConsoleLong),
-                    new CommandLineArgument("transfer-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SSHBackend.DescriptionTransferTimeoutShort, Strings.SSHBackend.DescriptionTransferTimeoutLong, "10m"),
+                    new CommandLineArgument("transfer-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SSHBackend.DescriptionTransferTimeoutShort, Strings.SSHBackend.DescriptionTransferTimeoutLong, "15m"),
                 });
 
             }
