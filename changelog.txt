@@ -1,4 +1,8 @@
+1.0.1 r235 - 20 jul 2009
+Fixed an issue with the WEBDAV backend and Apache servers
+
 1.0.1 r229 - 19 jul 2009
+Added a language selection box in the settings menu
 Added a backend tester application.
 Added a FTP_USERNAME option to solve problems with usernames in urls.
 Fixed a timing bug in the SSH backend.

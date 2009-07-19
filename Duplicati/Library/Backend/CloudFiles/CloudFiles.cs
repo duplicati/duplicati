@@ -91,7 +91,7 @@ namespace Duplicati.Library.Backend
 
         public string ProtocolKey
         {
-            get { return "cloudfiles:"; }
+            get { return "cloudfiles"; }
         }
 
         public List<FileEntry> List()

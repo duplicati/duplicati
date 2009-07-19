@@ -27,6 +27,8 @@ namespace Duplicati.Library.Backend
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
+        private string m_path;
+        private string m_rawurl;
         Dictionary<string, string> m_options;
         private bool m_useIntegratedAuthentication = false;
         private bool m_forceDigestAuthentication = false;
@@ -73,6 +75,13 @@ namespace Duplicati.Library.Backend
             m_url = "http" + url.Substring(u.Scheme.Length);
             if (!m_url.EndsWith("/"))
                 m_url += "/";
+
+            m_path = new Uri(m_url).PathAndQuery;
+            if (m_path.IndexOf("?") > 0)
+                m_path = m_path.Substring(0, m_path.IndexOf("?"));
+            
+            m_path = System.Web.HttpUtility.UrlDecode(m_path);
+            m_rawurl = "http://" + u.Host + m_path;
         }
 
         #region IBackend Members
@@ -100,8 +109,14 @@ namespace Duplicati.Library.Backend
                 s.Write(PROPFIND, 0, PROPFIND.Length);
 
             System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-            using (System.Net.WebResponse resp = req.GetResponse())
-                doc.Load(resp.GetResponseStream());
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+			{
+				int code = (int)resp.StatusCode;
+				if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+					throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+
+				doc.Load(resp.GetResponseStream());
+			}
 
             System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
             nm.AddNamespace("D", "DAV:");
@@ -110,12 +125,23 @@ namespace Duplicati.Library.Backend
 
             foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
             {
-                string name = n.InnerText;
+                string name = System.Web.HttpUtility.UrlDecode(n.InnerText);
 
-                if (name.Length <= m_url.Length)
+                string cmp_path;
+
+                if (name.StartsWith(m_url))
+                    cmp_path = m_url;
+                else if (name.StartsWith(m_rawurl))
+                    cmp_path = m_rawurl;
+                else if (name.StartsWith(m_path))
+                    cmp_path = m_path;
+                else
                     continue;
 
-                name = System.Web.HttpUtility.UrlDecode(name.Substring(name.LastIndexOf("/") + 1));
+                if (name.Length <= cmp_path.Length)
+                    continue;
+
+                name = name.Substring(cmp_path.Length);
 
                 long size = 0;
                 DateTime lastAccess = new DateTime();
@@ -140,6 +166,8 @@ namespace Duplicati.Library.Backend
                     s = stat.SelectSingleNode("D:iscollection", nm);
                     if (s != null)
                         isCollection = s.InnerText.Trim() == "1";
+                    else
+                        isCollection = (stat.SelectSingleNode("D:resourcetype/D:collection", nm) != null);
                 }
 
                 FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
@@ -210,7 +238,12 @@ namespace Duplicati.Library.Backend
                 req.Credentials = cred;
             }
             else
+			{
                 req.Credentials = m_userInfo;
+                if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+					req.PreAuthenticate = true; //We need this under Mono for some reason
+			}
+			
             req.KeepAlive = false;
             req.UserAgent = "Duplicati WEBDAV Client";
 
@@ -236,8 +269,12 @@ namespace Duplicati.Library.Backend
             using (System.IO.Stream s = req.GetRequestStream())
                 Core.Utility.CopyStream(stream, s);
 
-            using (req.GetResponse())
-            { }
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+            {
+				int code = (int)resp.StatusCode;
+				if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+					throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+            }
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -245,9 +282,15 @@ namespace Duplicati.Library.Backend
             System.Net.HttpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Http.Get;
 
-            using (System.Net.WebResponse resp = req.GetResponse())
-            using (System.IO.Stream s = resp.GetResponseStream())
-                Core.Utility.CopyStream(s, stream);
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+			{
+				int code = (int)resp.StatusCode;
+				if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+					throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+
+				using (System.IO.Stream s = resp.GetResponseStream())
+	                Core.Utility.CopyStream(s, stream);
+			}
         }
 
         #endregion
