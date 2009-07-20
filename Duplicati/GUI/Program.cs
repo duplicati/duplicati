@@ -145,7 +145,7 @@ namespace Duplicati.GUI
                     catch(Exception ex)
                     {
                         MessageBox.Show(string.Format(Strings.Program.LanguageSelectionError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+                        //This is non-fatal, just keep running with system default language
                     }
 
                 TrayIcon = new NotifyIcon();

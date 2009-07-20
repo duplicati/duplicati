@@ -76,7 +76,7 @@ namespace Duplicati.GUI
                 LanguageSelection.Items.Clear();
                 LanguageSelection.Items.Add(string.Format(Strings.ApplicationSetup.DefaultLanguage, System.Globalization.CultureInfo.InstalledUICulture.DisplayName));
 
-                m_supportedLanguages.Add(System.Globalization.CultureInfo.GetCultureInfo("en"));
+                m_supportedLanguages.Add(System.Globalization.CultureInfo.GetCultureInfo("en-us"));
 
                 System.Text.RegularExpressions.Regex cix = new System.Text.RegularExpressions.Regex("[A-z][A-z](\\-[A-z][A-z])?");
 
