@@ -33,9 +33,16 @@ namespace LocalizationTool
 
             if (!System.IO.File.Exists(resgenexe))
             {
-                Console.WriteLine("Unable to locate file: {0}", resgenexe);
-                Console.WriteLine("This can be fixed by installing a microsoft platform SDK, or visual studio (express is fine)");
-                return;
+                string resgenexe2 = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft.NET\\SDK\\v2.0\\bin\\resgen.exe");
+
+                if (System.IO.File.Exists(resgenexe2))
+                    resgenexe = resgenexe2;
+                else
+                {
+                    Console.WriteLine("Unable to locate file: {0}", resgenexe);
+                    Console.WriteLine("This can be fixed by installing a microsoft platform SDK, or visual studio (express is fine)");
+                    return;
+                }
             }
             if (!System.IO.File.Exists(alexe))
             {
