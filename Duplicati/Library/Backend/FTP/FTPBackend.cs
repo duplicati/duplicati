@@ -104,8 +104,10 @@ namespace Duplicati.Library.Backend
             FileEntry f = new FileEntry(m.Groups["name"].Value);
 
             string time = m.Groups["timestamp"].Value;
-            string permission = m.Groups["permission"].Value;
             string dir = m.Groups["dir"].Value;
+
+			//Unused
+            string permission = m.Groups["permission"].Value;
 
             if (dir != "" && dir != "-")
                 f.IsFolder = true;

@@ -108,7 +108,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             if (m_settings.ContainsKey("SSH:WarnedPath"))
                 m_warnedPath = (bool)m_settings["SSH:WarnedPath"];
 
-            if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+            if (Library.Core.Utility.IsClientLinux)
             {
                 //sftp is likely present on linux/mac
                 m_warnedNoSFTP = true;

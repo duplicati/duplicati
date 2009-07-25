@@ -507,5 +507,38 @@ namespace Duplicati.Library.Core
 
             return data;
         }
+		
+		/// <value>
+		/// Gets or sets a value indicating if the client is Linux/Unix based
+		/// </value>
+		public static bool IsClientLinux
+		{
+			get 
+			{
+#if __MonoCS__
+        	    if (Environment.OSVersion.Platform == PlatformID.Unix)
+					return true;
+#else
+        	    if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.OSVersion.Platform == PlatformID.MacOSX)
+					return true;
+#endif
+				return false;
+				
+			}
+		}
+		
+		/// <value>
+		/// Returns a value indicating if the filesystem, is case sensitive 
+		/// </value>
+		public static bool IsFSCaseSensitive
+		{
+			get 
+			{
+	            //TODO: This should probably be determined by filesystem rather than OS
+    	        //In case MS decides to support case sensitive filesystems (yeah right :))
+				return IsClientLinux;
+			}
+		}
+			
     }
 }

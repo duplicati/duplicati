@@ -299,7 +299,7 @@ namespace Duplicati.CommandLine
 
         private static void PrintUsage(bool extended)
         {
-            bool isLinux = System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX;
+            bool isLinux = Library.Core.Utility.IsClientLinux;
 
             List<string> lines = new List<string>();
             lines.AddRange(

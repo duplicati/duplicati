@@ -193,9 +193,7 @@ namespace Duplicati.Library.Core
         private static Regex CreateRegEx(string filter)
         {
             RegexOptions opts = RegexOptions.Compiled;
-            //TODO: This should probably be determined by filesystem rather than OS
-            //In case MS decides to support case sensitive filesystems (yeah right :))
-            if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
+            if (!Utility.IsFSCaseSensitive)
                 opts |= RegexOptions.IgnoreCase;
 
             return new Regex(filter, opts);

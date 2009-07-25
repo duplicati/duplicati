@@ -28,7 +28,7 @@ namespace Duplicati.Library.Core
     /// </summary>
     public class FilelistFilter : IFilenameFilter
     {
-        private Dictionary<string, string> m_filter = new Dictionary<string, string>(System.Environment.OSVersion.Platform == PlatformID.MacOSX || System.Environment.OSVersion.Platform == PlatformID.Unix ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase);
+        private Dictionary<string, string> m_filter = new Dictionary<string, string>(Utility.IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase);
         private bool m_include;
 
         public FilelistFilter(bool include, IEnumerable<string> filenames)

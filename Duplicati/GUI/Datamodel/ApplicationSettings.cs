@@ -69,7 +69,7 @@ namespace Duplicati.Datamodel
             { 
                 if (string.IsNullOrEmpty(m_appset[PGP_PATH]))
                 {
-                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    if (Library.Core.Utility.IsClientLinux)
                         return "gpg";
                     else
                         return System.IO.Path.Combine(PROGRAM_FILES, "GNU\\GnuPG\\gpg.exe");
@@ -89,7 +89,7 @@ namespace Duplicati.Datamodel
             {
                 if (string.IsNullOrEmpty(m_appset[SFTP_PATH]))
                 {
-                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    if (Library.Core.Utility.IsClientLinux)
                         return "sftp";
                     else
                         return System.IO.Path.Combine(PROGRAM_FILES, "putty\\psftp.exe");
@@ -108,7 +108,7 @@ namespace Duplicati.Datamodel
             {
                 if (string.IsNullOrEmpty(m_appset[TEMP_PATH]))
                 {
-                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    if (Library.Core.Utility.IsClientLinux)
                         return "";
                     else
                         return "%temp%";
@@ -174,7 +174,7 @@ namespace Duplicati.Datamodel
             {
                 if (string.IsNullOrEmpty(m_appset[SIGNATURE_CACHE_PATH]))
                 {
-                    if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    if (Library.Core.Utility.IsClientLinux)
                         return "";
                     else
                         return System.IO.Path.Combine("%temp%", "Duplicati Signature Cache");

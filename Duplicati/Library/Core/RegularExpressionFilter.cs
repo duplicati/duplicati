@@ -35,10 +35,8 @@ namespace Duplicati.Library.Core
         public RegularExpressionFilter(bool include, string expression)
         {
             RegexOptions opts = RegexOptions.Compiled;
-            //TODO: This should probably be determined by filesystem rather than OS
-            //In case MS decides to support case sensitive filesystems (yeah right :))
-            if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
-                opts |= RegexOptions.IgnoreCase;
+			if (!Utility.IsFSCaseSensitive)
+				opts |= RegexOptions.IgnoreCase;
 
             m_expression = new Regex(expression, opts);
             m_include = include;

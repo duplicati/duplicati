@@ -134,7 +134,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             TargetDrive.Items.Clear();
 
 
-            if (System.Environment.OSVersion.Platform != PlatformID.MacOSX && System.Environment.OSVersion.Platform != PlatformID.Unix)
+            if (!Library.Core.Utility.IsClientLinux)
                 for (char i = 'A'; i < 'Z'; i++)
                 {
                     try

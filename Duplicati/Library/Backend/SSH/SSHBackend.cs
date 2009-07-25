@@ -49,7 +49,7 @@ namespace Duplicati.Library.Backend
 
         public SSH()
         {
-            m_isLinux = (System.Environment.OSVersion.Platform == PlatformID.MacOSX || System.Environment.OSVersion.Platform == PlatformID.Unix);
+            m_isLinux = Library.Core.Utility.IsClientLinux;
         }
 
         public SSH(string url, Dictionary<string, string> options)
@@ -263,7 +263,7 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("sftp-command", CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSFTPCommandShort, Strings.SSHBackend.DescriptionSFTPCommandLong, (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) ? "sftp" : "psftp.exe"),
+                    new CommandLineArgument("sftp-command", CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSFTPCommandShort, Strings.SSHBackend.DescriptionSFTPCommandLong, Library.Core.Utility.IsClientLinux ? "sftp" : "psftp.exe"),
                     new CommandLineArgument("ssh-options", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionSSHOptionsShort, Strings.SSHBackend.DescriptionSSHOptionsLong, "-C"),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPPasswordShort, Strings.SSHBackend.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPUsernameShort, Strings.SSHBackend.DescriptionFTPUsernameLong),
