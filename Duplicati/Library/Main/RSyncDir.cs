@@ -262,8 +262,18 @@ namespace Duplicati.Library.Main.RSync
                 {
                     
                     foreach(string s in m_oldSignatures.Keys)
-                        if (!m_unproccesed.IsAffectedByError(System.IO.Path.Combine(m_sourcefolder, s)))
-                            m_deletedfiles.Add(s);
+                        try
+                        {
+                            if (!m_unproccesed.IsAffectedByError(System.IO.Path.Combine(m_sourcefolder, s)))
+                                m_deletedfiles.Add(s);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (m_stat != null)
+                                m_stat.LogError(string.Format(Strings.RSyncDir.DeletedFilenameError, s, m_sourcefolder)); 
+                            Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.DeletedFilenameError, s, m_sourcefolder), Duplicati.Library.Logging.LogMessageType.Error, ex);
+                            m_unproccesed.FilesWithError.Add(s);
+                        }
 
                     if (m_deletedfiles.Count > 0)
                     {
