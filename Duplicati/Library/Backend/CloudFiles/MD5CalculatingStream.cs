@@ -34,11 +34,17 @@ namespace Duplicati.Library.Backend
         bool m_hasRead = false;
         bool m_hasWritten = false;
 
+        private byte[] m_hashbuffer = null;
+        private int m_hashbufferLength = 0;
+        private byte[] m_hashstore = null;
+
         public MD5CalculatingStream(System.IO.Stream basestream)
             : base(basestream)
         {
             m_hash = (System.Security.Cryptography.MD5)System.Security.Cryptography.HashAlgorithm.Create("MD5");
             m_hash.Initialize();
+            m_hashbuffer = new byte[m_hash.InputBlockSize];
+            m_hashstore = new byte[m_hash.OutputBlockSize];
         }
 
         protected override void Dispose(bool disposing)
@@ -49,6 +55,10 @@ namespace Duplicati.Library.Backend
             {
                 m_hash.Clear();
                 m_hash = null;
+
+                m_hashbuffer = null;
+                m_hashstore = null;
+                m_hashbufferLength = 0;
             }
         }
         
@@ -58,9 +68,8 @@ namespace Duplicati.Library.Backend
                 throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
             m_hasRead = true;
 
+            UpdateHash(buffer, offset, count);
 
-            //TODO: This needs to use a while loop, and a storage of prev. data
-            m_hash.TransformBlock(buffer, offset, count, buffer, offset);
             return base.Read(buffer, offset, count);
         }
 
@@ -70,9 +79,45 @@ namespace Duplicati.Library.Backend
                 throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
             m_hasWritten = true;
 
-            //TODO: This needs to use a while loop, and a storage of prev. data
-            m_hash.TransformBlock(buffer, offset, count, buffer, offset);
+            UpdateHash(buffer, offset, count);
+
             base.Write(buffer, offset, count);
+        }
+
+        private void UpdateHash(byte[] buffer, int offset, int count)
+        {                m_hashbuffer = null;
+                m_hashbufferLength = 0;
+
+            if (m_finalHash != null)
+                throw new Exception("Cannot read/write after hash is read");
+
+            //If we have a fragment from the last block, fill up
+            if (m_hashbufferLength > 0 && count + m_hashbufferLength > m_hashbuffer.Length)
+            {
+                int bytesToUse = m_hashbuffer.Length - m_hashbufferLength;
+                Array.Copy(buffer, m_hashbuffer, bytesToUse);
+                m_hash.TransformBlock(m_hashbuffer, 0, m_hashbuffer.Length, m_hashstore, 0);
+                count -= bytesToUse;
+                offset += bytesToUse;
+                m_hashbufferLength = 0;
+            }
+
+            //Take full blocks directly
+            int fullBlocks = count % m_hashbuffer.Length;
+            if (fullBlocks > 0)
+            {
+                int bytesToUse = fullBlocks * m_hashbuffer.Length;
+                m_hash.TransformBlock(buffer, offset, bytesToUse, m_hashstore, 0);
+                count -= bytesToUse;
+                offset += bytesToUse;
+            }
+
+            //Keep trailing bytes
+            if (count > 0)
+            {
+                Array.Copy(buffer, offset, m_hashbuffer, 0, count);
+                m_hashbufferLength = count;
+            }
         }
 
         public string GetFinalHashString()
@@ -84,7 +129,7 @@ namespace Duplicati.Library.Backend
         {
             if (m_finalHash == null)
             {
-                m_hash.TransformFinalBlock(new byte[0], 0, 0);
+                m_hash.TransformFinalBlock(m_hashbuffer, 0, m_hashbufferLength);
                 m_finalHash = m_hash.Hash;
             }
             return m_finalHash;
