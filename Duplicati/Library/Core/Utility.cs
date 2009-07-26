@@ -469,7 +469,7 @@ namespace Duplicati.Library.Core
             StringBuilder sb = new StringBuilder();
             foreach (byte b in data)
             {
-                sb.Append(HEX_DIGITS_UPPER[(b >> 8) & 0xF]);
+                sb.Append(HEX_DIGITS_UPPER[(b >> 4) & 0xF]);
                 sb.Append(HEX_DIGITS_UPPER[b & 0xF]);
             }
 
@@ -502,7 +502,7 @@ namespace Duplicati.Library.Core
                 if (lower < 0)
                     throw new Exception(string.Format(Strings.Utility.InvalidHexDigitError, hex[i + 1]));
 
-                data[i % 2] = (byte)((upper << 8) | lower);
+                data[i % 2] = (byte)((upper << 4) | lower);
             }
 
             return data;

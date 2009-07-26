@@ -80,6 +80,8 @@ namespace Duplicati.Library.Backend
             m_path = u.Host + u.PathAndQuery;
             if (m_path.EndsWith("/"))
                 m_path = m_path.Substring(0, m_path.Length - 1);
+            if (!m_path.StartsWith("/"))
+                m_path = "/" + m_path;
         }
 
         #region IBackend Members
@@ -97,7 +99,6 @@ namespace Duplicati.Library.Backend
         public List<FileEntry> List()
         {
             List<FileEntry> files = new List<FileEntry>();
-            string storageToken = Guid.NewGuid().ToString();
             string extraUrl = "?format=xml&limit=" + ITEM_LIST_LIMIT.ToString();
             string markerUrl = "";
 
@@ -105,9 +106,11 @@ namespace Duplicati.Library.Backend
 
             do
             {
+                //com.mosso.cloudfiles.IConnection con = new com.mosso.cloudfiles.Connection(new com.mosso.cloudfiles.domain.UserCredentials(m_username, m_password));
+                //con.GetContainerItemList("test");
+
                 System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-                HttpWebRequest req = CreateRequest(extraUrl + markerUrl);
-                req.Headers.Add("X-Storage-Token", storageToken);
+                HttpWebRequest req = CreateRequest("", extraUrl + markerUrl);
                 using (WebResponse resp = req.GetResponse())
                 using (System.IO.Stream s = resp.GetResponseStream())
                     doc.Load(s);
@@ -154,12 +157,15 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            HttpWebRequest req = CreateRequest("/" + remotename);
+            HttpWebRequest req = CreateRequest("/" + remotename, "");
 
             req.Method = "DELETE";
-            using (WebResponse resp = req.GetResponse())
-            using (resp.GetResponseStream())
-            { }
+            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                if ((int)resp.StatusCode >= 300)
+                    throw new WebException("Upload failed", null, (System.Net.WebExceptionStatus)resp.StatusCode, resp);
+                else
+                    using (resp.GetResponseStream())
+                    { }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -197,16 +203,15 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public void Get(string remotename, System.IO.Stream stream)
         {
-            HttpWebRequest req = CreateRequest("/" + remotename);
+            HttpWebRequest req = CreateRequest("/" + remotename, "");
             req.Method = "GET";
 
             using (WebResponse resp = req.GetResponse())
             using (System.IO.Stream s = resp.GetResponseStream())
             using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
             {
-
                 string md5Hash = resp.Headers["ETag"];
                 Core.Utility.CopyStream(mds, stream);
 
@@ -215,10 +220,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public void Put(string remotename, System.IO.Stream stream)
         {
-            HttpWebRequest req = CreateRequest("/" + remotename);
+            HttpWebRequest req = CreateRequest("/" + remotename, "");
             req.Method = "PUT";
+            req.ContentType = "application/octet-stream";
 
             try { req.ContentLength = stream.Length; }
             catch { }
@@ -236,10 +242,13 @@ namespace Duplicati.Library.Backend
 
             string md5Hash = null;
 
-            using (WebResponse resp = req.GetResponse())
-                md5Hash = resp.Headers["ETag"];
+            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                if ((int)resp.StatusCode >= 300)
+                    throw new WebException("Upload failed", null, (System.Net.WebExceptionStatus)resp.StatusCode, resp);
+                else
+                    md5Hash = resp.Headers["ETag"];
 
-            if (md5Hash != fileHash)
+            if (md5Hash == null || md5Hash.ToLower() != fileHash.ToLower())
             {
                 //Remove the broken file
                 try { Delete(remotename); }
@@ -251,14 +260,14 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private HttpWebRequest CreateRequest(string remotename)
+        private HttpWebRequest CreateRequest(string remotename, string query)
         {
             string storageUrl;
             string authToken;
 
             HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(AUTH_URL);
-            req.Headers.Add("X-Auth-User", m_username);
-            req.Headers.Add("X-Auth-Key", m_password);
+            req.Headers.Add("X-Auth-User", UrlEncode(m_username));
+            req.Headers.Add("X-Auth-Key", UrlEncode(m_password));
             req.Method = "GET";
 
             using (WebResponse resp = req.GetResponse())
@@ -270,11 +279,16 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(authToken) || string.IsNullOrEmpty(storageUrl))
                 throw new Exception(Strings.CloudFiles.UnexpectedResponseError);
 
-            req = (HttpWebRequest)HttpWebRequest.Create(storageUrl + m_path + remotename);
-            req.Headers.Add("X-Auth-Token", authToken);
+            req = (HttpWebRequest)HttpWebRequest.Create(storageUrl + UrlEncode(m_path + remotename) + query);
+            req.Headers.Add("X-Auth-Token", UrlEncode(authToken));
 
             return req;
-
         }
+
+        private string UrlEncode(string value)
+        {
+            return System.Web.HttpUtility.UrlEncode(value).Replace("+", "%20").Replace("%2f", "/");
+        }
+
     }
 }

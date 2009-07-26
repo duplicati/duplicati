@@ -36,7 +36,6 @@ namespace Duplicati.Library.Backend
 
         private byte[] m_hashbuffer = null;
         private int m_hashbufferLength = 0;
-        private byte[] m_hashstore = null;
 
         public MD5CalculatingStream(System.IO.Stream basestream)
             : base(basestream)
@@ -44,7 +43,6 @@ namespace Duplicati.Library.Backend
             m_hash = (System.Security.Cryptography.MD5)System.Security.Cryptography.HashAlgorithm.Create("MD5");
             m_hash.Initialize();
             m_hashbuffer = new byte[m_hash.InputBlockSize];
-            m_hashstore = new byte[m_hash.OutputBlockSize];
         }
 
         protected override void Dispose(bool disposing)
@@ -57,7 +55,6 @@ namespace Duplicati.Library.Backend
                 m_hash = null;
 
                 m_hashbuffer = null;
-                m_hashstore = null;
                 m_hashbufferLength = 0;
             }
         }
@@ -85,9 +82,7 @@ namespace Duplicati.Library.Backend
         }
 
         private void UpdateHash(byte[] buffer, int offset, int count)
-        {                m_hashbuffer = null;
-                m_hashbufferLength = 0;
-
+        {
             if (m_finalHash != null)
                 throw new Exception("Cannot read/write after hash is read");
 
@@ -96,18 +91,18 @@ namespace Duplicati.Library.Backend
             {
                 int bytesToUse = m_hashbuffer.Length - m_hashbufferLength;
                 Array.Copy(buffer, m_hashbuffer, bytesToUse);
-                m_hash.TransformBlock(m_hashbuffer, 0, m_hashbuffer.Length, m_hashstore, 0);
+                m_hash.TransformBlock(m_hashbuffer, 0, m_hashbuffer.Length, m_hashbuffer, 0);
                 count -= bytesToUse;
                 offset += bytesToUse;
                 m_hashbufferLength = 0;
             }
 
             //Take full blocks directly
-            int fullBlocks = count % m_hashbuffer.Length;
+            int fullBlocks = count / m_hashbuffer.Length;
             if (fullBlocks > 0)
             {
                 int bytesToUse = fullBlocks * m_hashbuffer.Length;
-                m_hash.TransformBlock(buffer, offset, bytesToUse, m_hashstore, 0);
+                m_hash.TransformBlock(buffer, offset, bytesToUse, buffer, offset);
                 count -= bytesToUse;
                 offset += bytesToUse;
             }
