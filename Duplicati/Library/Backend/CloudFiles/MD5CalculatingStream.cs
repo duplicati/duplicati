@@ -65,9 +65,9 @@ namespace Duplicati.Library.Backend
                 throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
             m_hasRead = true;
 
-            UpdateHash(buffer, offset, count);
-
-            return base.Read(buffer, offset, count);
+            int tmp = base.Read(buffer, offset, count);
+            UpdateHash(buffer, offset, tmp);
+            return tmp;
         }
 
         public override void Write(byte[] buffer, int offset, int count)

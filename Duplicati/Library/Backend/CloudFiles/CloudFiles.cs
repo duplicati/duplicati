@@ -106,18 +106,30 @@ namespace Duplicati.Library.Backend
 
             do
             {
-                //com.mosso.cloudfiles.IConnection con = new com.mosso.cloudfiles.Connection(new com.mosso.cloudfiles.domain.UserCredentials(m_username, m_password));
-                //con.GetContainerItemList("test");
-
                 System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+
                 HttpWebRequest req = CreateRequest("", extraUrl + markerUrl);
-                using (WebResponse resp = req.GetResponse())
+                using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
                 using (System.IO.Stream s = resp.GetResponseStream())
                     doc.Load(s);
 
-                string lastItemName = "";
                 System.Xml.XmlNodeList lst = doc.SelectNodes("container/object");
 
+                //Perhaps the folder does not exist?
+                //The response should be 404 from the server, but it is not :(
+                if (lst.Count == 0 && markerUrl == "") //Only on first itteration
+                {
+                    try
+                    {
+                        HttpWebRequest createReq = CreateRequest("", "");
+                        createReq.Method = "PUT";
+                        using (HttpWebResponse resp = (HttpWebResponse)createReq.GetResponse())
+                        { }
+                    }
+                    catch { } //Ignore
+                }
+
+                string lastItemName = "";
                 foreach (System.Xml.XmlNode n in lst)
                 {
                     string name = n["name"].InnerText;
@@ -162,7 +174,7 @@ namespace Duplicati.Library.Backend
             req.Method = "DELETE";
             using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
                 if ((int)resp.StatusCode >= 300)
-                    throw new WebException("Upload failed", null, (System.Net.WebExceptionStatus)resp.StatusCode, resp);
+                    throw new WebException("Upload failed", null, WebExceptionStatus.ProtocolError , resp);
                 else
                     using (resp.GetResponseStream())
                     { }
@@ -215,7 +227,7 @@ namespace Duplicati.Library.Backend
                 string md5Hash = resp.Headers["ETag"];
                 Core.Utility.CopyStream(mds, stream);
 
-                if (mds.GetFinalHashString() != md5Hash)
+                if (mds.GetFinalHashString().ToLower() != md5Hash.ToLower())
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
             }
         }
@@ -244,7 +256,7 @@ namespace Duplicati.Library.Backend
 
             using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
                 if ((int)resp.StatusCode >= 300)
-                    throw new WebException("Upload failed", null, (System.Net.WebExceptionStatus)resp.StatusCode, resp);
+                    throw new WebException("Upload failed", null, WebExceptionStatus.ProtocolError, resp);
                 else
                     md5Hash = resp.Headers["ETag"];
 

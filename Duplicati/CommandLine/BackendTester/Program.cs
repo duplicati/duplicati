@@ -62,13 +62,13 @@ namespace Duplicati.CommandLine.BackendTester
             for (int i = 0; i < reruns; i++)
             {
                 Console.WriteLine("Starting run no {0}", i);
-                if (!Run(args, options))
+                if (!Run(args, options, i == 0))
                     return;
             }
             Console.WriteLine("Unittest complete!");
         }
 
-        static bool Run(List<string> args, Dictionary<string, string> options)
+        static bool Run(List<string> args, Dictionary<string, string> options, bool first)
         {
             string allowedChars = ValidFilenameChars;
             if (options.ContainsKey("extended-chars"))
@@ -90,6 +90,16 @@ namespace Duplicati.CommandLine.BackendTester
             foreach (Library.Backend.FileEntry fe in curlist)
                 if (!fe.IsFolder)
                 {
+                    if (options.ContainsKey("auto-clean") && first)
+                        if (options.ContainsKey("force"))
+                        {
+                            Console.WriteLine("Auto clean, removing file: {0}", fe.Name);
+                            backend.Delete(fe.Name);
+                            continue;
+                        }
+                        else
+                            Console.WriteLine("Specify the --force flag to actually delete files");
+
                     Console.WriteLine("*** Remote folder is not empty, aborting");
                     return false;
                 }
@@ -152,7 +162,17 @@ namespace Duplicati.CommandLine.BackendTester
                 for (int i = 0; i < files.Count; i++)
                 {
                     Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Core.Utility.FormatSizeString(new System.IO.FileInfo(System.IO.Path.Combine(tf, i.ToString())).Length));
-                    try { backend.Put(files[i].filename, System.IO.Path.Combine(tf, i.ToString())); }
+                    try 
+                    {
+                        if (backend is Library.Backend.IStreamingBackend)
+                        {
+                            using (System.IO.FileStream fs = new System.IO.FileStream(System.IO.Path.Combine(tf, i.ToString()), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                            using (NonSeekableStream nss = new NonSeekableStream(fs))
+                                (backend as Library.Backend.IStreamingBackend).Put(files[i].filename, nss);
+                        }
+                        else
+                            backend.Put(files[i].filename, System.IO.Path.Combine(tf, i.ToString())); 
+                    }
                     catch (Exception ex)
                     {
                         Console.WriteLine("Failed to upload file {0}, error message: {1}", i, ex.ToString());
@@ -193,7 +213,17 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         Exception e = null;
                         Console.Write("Downloading file {0} ... ", i);
-                        try { backend.Get(files[i].filename, cf); }
+                        try 
+                        {
+                            if (backend is Library.Backend.IStreamingBackend)
+                            {
+                                using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                                using (NonSeekableStream nss = new NonSeekableStream(fs))
+                                    (backend as Library.Backend.IStreamingBackend).Get(files[i].filename, nss);
+                            }
+                            else
+                                backend.Get(files[i].filename, cf); 
+                        }
                         catch (Exception ex) { e = ex; }
 
                         if (e != null)
