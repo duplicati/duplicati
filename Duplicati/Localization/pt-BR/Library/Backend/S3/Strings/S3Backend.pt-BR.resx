@@ -1,0 +1,165 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AMZKeyDescriptionLong" xml:space="preserve">
+    <value>A chave de acesso AWS pode ser obtida após o login na sua conta AWS, este parâmetro também pode ser informado através do parâmetro "ftp-password"</value>
+  </data>
+  <data name="AMZKeyDescriptionShort" xml:space="preserve">
+    <value>A chave de acesso AWS</value>
+  </data>
+  <data name="AMZUserIDDescriptionLong" xml:space="preserve">
+    <value>O ID de acesso AWS pode ser obtido após o login a sua conta AWS.</value>
+  </data>
+  <data name="AMZUserIDDescriptionShort" xml:space="preserve">
+    <value>O ID de acesso AWS</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Este protocolo pode ler e escrever dados em um armazenamento Amazon S3. Formatos permitidos "s3://armazenameno/prefixo" ou "s3://id_aws:chave_aws@armazenamento/prefixo". Se o seu ID ou chave AWS possuir um dos seguintes caracteres ":", "/" or "@" você não poderá utilizar o segundo formato, você deverá informar estas opções através de argumentos.</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>Baseado no Amazon S3</value>
+  </data>
+  <data name="FTPPasswordDescriptionLong" xml:space="preserve">
+    <value>A senha utilizada para se conectar no servidor. Este parâmetro pode ser informado através da variável de ambiente "FTP_PASSWORD".</value>
+  </data>
+  <data name="FTPPasswordDescriptionShort" xml:space="preserve">
+    <value>Provê a senha utilizada para conectar ao servidor</value>
+  </data>
+  <data name="NoAMZKeyError" xml:space="preserve">
+    <value>Nenhum chave para acesso ao Amazon S3 foi informada</value>
+  </data>
+  <data name="NoAMZUserIDError" xml:space="preserve">
+    <value>Nenhum ID de usuário Amazon S3 foi informado</value>
+  </data>
+  <data name="S3EurobucketDescriptionLong" xml:space="preserve">
+    <value>Esta opção somente é utilizada para criar armazenamentos. Se esta opção for ativada, o armazenamento será criado em um servidor europeo. Esta opção força o parâmetro "s3-use-new-style". A Amazon cobra um pouco mais por armazenamentos eurpeos.</value>
+  </data>
+  <data name="S3EurobucketDescriptionShort" xml:space="preserve">
+    <value>Utilizar um servidor Europeo</value>
+  </data>
+  <data name="S3NewStyleDescriptionLong" xml:space="preserve">
+    <value>Especifique este argumento para fazer com que o protocolo S3 utilize sub-domínios ao invés de prefixos na url. Verifique a documentação do Amazon S3 para mais detalhes.</value>
+  </data>
+  <data name="S3NewStyleDescriptionShort" xml:space="preserve">
+    <value>Utilizar chamadas com sub-domínios</value>
+  </data>
+  <data name="UnableToDecodeBucketnameError" xml:space="preserve">
+    <value>Não foi possível determinar o nome de armazenamento para o host: {0}</value>
+  </data>
+</root>

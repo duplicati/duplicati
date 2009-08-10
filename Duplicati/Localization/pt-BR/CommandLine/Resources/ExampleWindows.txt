@@ -1,0 +1,3 @@
+    Duplicati.CommandLine C:\Documents\Files ftp://host/folder --exclude=\file.txt
+
+  In this example the file "C:\Documents\Files\file.txt" is excluded.
