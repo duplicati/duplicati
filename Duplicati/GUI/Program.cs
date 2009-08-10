@@ -115,7 +115,6 @@ namespace Duplicati.GUI
                     //The official Mono SQLite provider is also broken with less than 3.6.3
                     MessageBox.Show(string.Format(Strings.Program.WrongSQLiteVersion, System.Data.SQLite.SQLiteConnection.SQLiteVersion, "3.6.3"), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
-
                 }
 
                 System.Data.IDbConnection con = new System.Data.SQLite.SQLiteConnection();
@@ -138,9 +137,15 @@ namespace Duplicati.GUI
                 if (!string.IsNullOrEmpty(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage))
                     try
                     {
-                        System.Threading.Thread.CurrentThread.CurrentUICulture =
-                        System.Threading.Thread.CurrentThread.CurrentCulture =
-                            System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
+                        System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
+                        try
+                        {
+                            System.Threading.Thread.CurrentThread.CurrentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture;
+                        }
+                        catch 
+                        { 
+                            //We still get the userinterface translated, but numbers and other formating is incorrect :(
+                        }
                     }
                     catch(Exception ex)
                     {

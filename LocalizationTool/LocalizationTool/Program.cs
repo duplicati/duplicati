@@ -110,62 +110,67 @@ namespace LocalizationTool
         {
             System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
             doc.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml"));
-            string sourcefolder = System.IO.Path.GetFullPath(Duplicati.Library.Core.Utility.AppendDirSeperator(doc.SelectSingleNode("root/sourcefolder").InnerText));
-            string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Core.Utility.AppendDirSeperator(System.IO.Path.Combine(Application.StartupPath, culture)));
 
-            string target = System.IO.Path.Combine(outputfolder, culture);
-
-            foreach (string s in Duplicati.Library.Core.Utility.EnumerateFiles(sourcefolder))
+            foreach (System.Xml.XmlNode conf in doc.SelectNodes("root/configuration"))
             {
-                if (s.ToLower().StartsWith(Application.StartupPath.ToLower()))
-                    continue;
+                string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Core.Utility.AppendDirSeperator(System.IO.Path.Combine(Application.StartupPath, culture)));
+                string sourcefolder = Duplicati.Library.Core.Utility.AppendDirSeperator(System.IO.Path.GetFullPath(conf["sourcefolder"].InnerText));
 
-                if (s.EndsWith(".resx"))
+                foreach (System.Xml.XmlNode fn in conf.SelectNodes("assembly"))
                 {
-                    string targetName = System.IO.Path.Combine(outputfolder, s.Substring(sourcefolder.Length));
-
-                    string csFile = System.IO.Path.ChangeExtension(s, ".cs");
-
-                    bool isForm = System.IO.File.Exists(csFile);
-
-                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(targetName)))
-                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetName));
-
-                    if (isForm)
-                        System.IO.File.Copy(s, targetName, true); //Copy the updated resx
-
-                    targetName = targetName.Substring(0, targetName.Length - "resx".Length) + culture + ".resx";
-
-                    if (System.IO.File.Exists(targetName))
-                    { 
-                        //TODO: Merge
-                    }
-                    else
+                    foreach (string s in Duplicati.Library.Core.Utility.EnumerateFiles(System.IO.Path.Combine(sourcefolder, fn.Attributes["folder"].Value)))
                     {
-                        if (isForm) //Form
-                            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(targetName))
-                                sw.Write(Properties.Resources.Empty_resx);
-                        else
-                            System.IO.File.Copy(s, targetName);
-                    }
+                        if (s.ToLower().StartsWith(Application.StartupPath.ToLower()))
+                            continue;
 
-                    System.Xml.XmlDocument doc2 = new System.Xml.XmlDocument();
-                    doc2.Load(s);
-
-                    foreach(System.Xml.XmlNode n in doc2.SelectNodes("root/data"))
-                        if (n.Attributes["type"] != null && n.Attributes["type"].Value == "System.Resources.ResXFileRef, System.Windows.Forms")
+                        if (s.EndsWith(".resx"))
                         {
-                            string relname = n["value"].InnerText;
-                            relname = relname.Substring(0, relname.IndexOf(";"));
-                            string sourceRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(s), relname));
-                            string targetRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(targetName), relname));
-                            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(targetRes)))
-                                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetRes));
+                            string targetName = System.IO.Path.Combine(outputfolder, s.Substring(sourcefolder.Length));
 
-                            if (!System.IO.File.Exists(targetRes))
-                                System.IO.File.Copy(sourceRes, targetRes);
+                            string csFile = System.IO.Path.ChangeExtension(s, ".cs");
+
+                            bool isForm = System.IO.File.Exists(csFile);
+
+                            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(targetName)))
+                                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetName));
+
+                            if (isForm)
+                                System.IO.File.Copy(s, targetName, true); //Copy the updated resx
+
+                            targetName = targetName.Substring(0, targetName.Length - "resx".Length) + culture + ".resx";
+
+                            if (System.IO.File.Exists(targetName))
+                            {
+                                //TODO: Merge
+                            }
+                            else
+                            {
+                                if (isForm) //Form
+                                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(targetName))
+                                        sw.Write(Properties.Resources.Empty_resx);
+                                else
+                                    System.IO.File.Copy(s, targetName);
+                            }
+
+                            System.Xml.XmlDocument doc2 = new System.Xml.XmlDocument();
+                            doc2.Load(s);
+
+                            foreach (System.Xml.XmlNode n in doc2.SelectNodes("root/data"))
+                                if (n.Attributes["type"] != null && n.Attributes["type"].Value == "System.Resources.ResXFileRef, System.Windows.Forms")
+                                {
+                                    string relname = n["value"].InnerText;
+                                    relname = relname.Substring(0, relname.IndexOf(";"));
+                                    string sourceRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(s), relname));
+                                    string targetRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(targetName), relname));
+                                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(targetRes)))
+                                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetRes));
+
+                                    if (!System.IO.File.Exists(targetRes))
+                                        System.IO.File.Copy(sourceRes, targetRes);
+                                }
+
                         }
-
+                    }
                 }
             }
 
@@ -194,41 +199,43 @@ namespace LocalizationTool
             System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
             doc.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml"));
 
-            string keyfile = doc.SelectSingleNode("root/keyfile").InnerText;
-            string versionassembly = doc.SelectSingleNode("root/versionassembly").InnerText;
-            string sourcefolder = doc.SelectSingleNode("root/sourcefolder").InnerText;
-            string outputfolder = doc.SelectSingleNode("root/outputfolder").InnerText;
-            string productname = doc.SelectSingleNode("root/productname").InnerText;
-
-            foreach (System.Xml.XmlNode n in doc.SelectNodes("root/assembly"))
+            foreach (System.Xml.XmlNode conf in doc.SelectNodes("root/configuration"))
             {
-                List<string> excludes = new List<string>();
-                foreach (System.Xml.XmlNode x in n.SelectNodes("exclude"))
-                    excludes.Add(x.InnerText);
+                string keyfile = conf["keyfile"].InnerText;
+                string versionassembly = conf["versionassembly"].InnerText;
+                string outputfolder = conf["outputfolder"].InnerText;
+                string productname = conf["productname"].InnerText;
 
-
-                string assemblyName = n.Attributes["name"].Value;
-                string folder = n.Attributes["folder"].Value;
-                string @namespace = n.Attributes["namespace"] == null ? assemblyName : n.Attributes["namespace"].Value;
-
-                foreach (string bf in System.IO.Directory.GetDirectories(Application.StartupPath))
+                foreach (System.Xml.XmlNode n in conf.SelectNodes("assembly"))
                 {
-                    string culture = System.IO.Path.GetFileName(bf);
+                    List<string> excludes = new List<string>();
+                    foreach (System.Xml.XmlNode x in n.SelectNodes("exclude"))
+                        excludes.Add(x.InnerText);
 
-                    try
+
+                    string assemblyName = n.Attributes["name"].Value;
+                    string folder = n.Attributes["folder"].Value;
+                    string @namespace = n.Attributes["namespace"] == null ? assemblyName : n.Attributes["namespace"].Value;
+
+                    foreach (string bf in System.IO.Directory.GetDirectories(Application.StartupPath))
                     {
-                        System.Globalization.CultureInfo.GetCultureInfo(culture);
-                    }
-                    catch
-                    {
-                        continue;
-                    }
+                        string culture = System.IO.Path.GetFileName(bf);
 
-                    string outfolder = System.IO.Path.GetFullPath( System.IO.Path.Combine(outputfolder, culture));
-                    if (!System.IO.Directory.Exists(outfolder))
-                        System.IO.Directory.CreateDirectory(outfolder);
+                        try
+                        {
+                            System.Globalization.CultureInfo.GetCultureInfo(culture);
+                        }
+                        catch
+                        {
+                            continue;
+                        }
 
-                    ResXCompiler.CompileResxFiles(System.IO.Path.Combine(bf, folder), excludes,  @namespace, System.IO.Path.Combine(outfolder, assemblyName + ".resources.dll"), System.IO.Path.GetFullPath(versionassembly), keyfile, culture, productname);
+                        string outfolder = System.IO.Path.GetFullPath(System.IO.Path.Combine(outputfolder, culture));
+                        if (!System.IO.Directory.Exists(outfolder))
+                            System.IO.Directory.CreateDirectory(outfolder);
+
+                        ResXCompiler.CompileResxFiles(System.IO.Path.Combine(bf, folder), excludes, @namespace, System.IO.Path.Combine(outfolder, assemblyName + ".resources.dll"), System.IO.Path.GetFullPath(versionassembly), keyfile, culture, productname);
+                    }
                 }
             }
         }
