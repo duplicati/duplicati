@@ -37,6 +37,10 @@ namespace Duplicati.CommandLine.BackendTester
             if (!options.ContainsKey("ftp_username") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_USERNAME")))
                 options["ftp_username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
 
+            if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
+                Library.Core.TempFolder.SystemTempPath = options["tempdir"];
+
+
             if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
             {
                 Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
@@ -268,6 +272,7 @@ namespace Duplicati.CommandLine.BackendTester
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("reruns", CommandLineArgument.ArgumentType.Integer, "The number of test runs to perform", "A number that describes how many times the test is performed", "5"),
+                    new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, "The path used to store temporary files", "The backend tester will use the system default temp path. You can set this option to choose another path."),
                     new CommandLineArgument("extended-chars", CommandLineArgument.ArgumentType.String, "A list of allowed extended filename chars", "A list of characters besides {a-z, A-Z, 0-9} to use when generating filenames", ExtendedChars),
                     new CommandLineArgument("number-of-files", CommandLineArgument.ArgumentType.Integer, "The number of files to test with", "An integer describing how many files to upload during a test run", "10"),
                     new CommandLineArgument("min-file-size", CommandLineArgument.ArgumentType.Size, "The minimum allowed file size", "File sizes are chosen at random, this valus is the lower bound", "1kb"),

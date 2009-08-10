@@ -52,8 +52,8 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     m_username = u.UserInfo;
-                    if (options.ContainsKey("cloudfiles_accesskey"))
-                        m_password = options["cloudfiles_accesskey"];
+                    if (options.ContainsKey("cloudfiles-accesskey"))
+                        m_password = options["cloudfiles-accesskey"];
                     else if (options.ContainsKey("ftp-password"))
                         m_password = options["ftp-password"];
                 }
@@ -65,10 +65,10 @@ namespace Duplicati.Library.Backend
                 if (options.ContainsKey("ftp-password"))
                     m_password = options["ftp-password"];
 
-                if (options.ContainsKey("cloudfiles_username"))
-                    m_username = options["cloudfiles_username"];
-                if (options.ContainsKey("cloudfiles_accesskey"))
-                    m_password = options["cloudfiles_accesskey"];
+                if (options.ContainsKey("cloudfiles-username"))
+                    m_username = options["cloudfiles-username"];
+                if (options.ContainsKey("cloudfiles-accesskey"))
+                    m_password = options["cloudfiles-accesskey"];
             }
 
             if (string.IsNullOrEmpty(m_username))
@@ -187,8 +187,8 @@ namespace Duplicati.Library.Backend
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionFTPPasswordShort, Strings.CloudFiles.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionFTPUsernameShort, Strings.CloudFiles.DescriptionFTPUsernameLong),
-                    new CommandLineArgument("cloudfiles_username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong),
-                    new CommandLineArgument("cloudfiles_accesskey", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong),
+                    new CommandLineArgument("cloudfiles-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong),
+                    new CommandLineArgument("cloudfiles-accesskey", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong),
                 });
             }
         }
