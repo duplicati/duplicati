@@ -82,7 +82,7 @@ namespace Duplicati.GUI
                                     string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
 
                                     System.IO.File.Copy(Program.DatabasePath, filename, true);
-                                    using (System.Data.IDbConnection con = new System.Data.SQLite.SQLiteConnection())
+                                    using (System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(Program.SQLiteCommandType))
                                     {
                                         con.ConnectionString = "Data Source=" + filename;
                                         con.Open();

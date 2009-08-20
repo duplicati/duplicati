@@ -146,11 +146,13 @@ namespace Duplicati.GUI
                 //Notify the other process that we have started
                 string filename = System.IO.Path.Combine(m_controldir, COMM_FILE_PREFIX + Guid.NewGuid().ToString());
 
+
                 //Write out the commandline arguments
+                string[] cmdargs = System.Environment.GetCommandLineArgs();
                 using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None))
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(fs))
-                    foreach(string s in System.Environment.GetCommandLineArgs())
-                        sw.WriteLine(s);
+                    for (int i = 1; i < cmdargs.Length; i++) //Skip the first, as that is the filename
+                        sw.WriteLine(cmdargs[i]);
 
                 //Wait for the other process to delete the file, indicating that it is processed
                 retrycount = 5;

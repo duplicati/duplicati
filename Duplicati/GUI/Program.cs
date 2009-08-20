@@ -69,11 +69,17 @@ namespace Duplicati.GUI
         public static DuplicatiRunner Runner;
 
         /// <summary>
+        /// The runtime loaded type for System.Data.SQLite.SQLiteCommand
+        /// </summary>
+        public static Type SQLiteCommandType;
+
+        /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             SingleInstance singleInstance = null;
@@ -105,19 +111,22 @@ namespace Duplicati.GUI
 
                 singleInstance.SecondInstanceDetected += new SingleInstance.SecondInstanceDelegate(singleInstance_SecondInstanceDetected);
 
+                SQLiteCommandType = LoadCorrectSQLiteAssembly();
+
 #if DEBUG
                 DatabasePath = System.IO.Path.Combine(Application.StartupPath, "Duplicati.sqlite");
 #else
                 DatabasePath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName), "Duplicati.sqlite");
 #endif
-                if (new Version(System.Data.SQLite.SQLiteConnection.SQLiteVersion) < new Version(3, 6, 3))
+                Version sqliteVersion = new Version((string)SQLiteCommandType.GetProperty("SQLiteVersion").GetValue(null, null));
+                if (sqliteVersion < new Version(3, 6, 3))
                 {
                     //The official Mono SQLite provider is also broken with less than 3.6.3
-                    MessageBox.Show(string.Format(Strings.Program.WrongSQLiteVersion, System.Data.SQLite.SQLiteConnection.SQLiteVersion, "3.6.3"), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(string.Format(Strings.Program.WrongSQLiteVersion, sqliteVersion, "3.6.3"), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                System.Data.IDbConnection con = new System.Data.SQLite.SQLiteConnection();
+                System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteCommandType);
 
                 try
                 {
@@ -193,6 +202,8 @@ namespace Duplicati.GUI
                     //TODO: shows the wrong icon in the taskbar... Should run under Application.Run() ...
                     ShowWizard();
                 }
+                else
+                    handleCommandlineArguments(args);                
 
                 Application.Run();
             }
@@ -211,13 +222,52 @@ namespace Duplicati.GUI
                 singleInstance.Dispose();
         }
 
-        static void singleInstance_SecondInstanceDetected(string[] commandlineargs)
+        private static bool handleCommandlineArguments(string[] _args)
         {
+            List<string> args = new List<string>(_args);
+            Dictionary<string, string> options = CommandLine.CommandLineParser.ExtractOptions(args);
+            if (args.Count == 2 && args[0].ToLower().Trim() == "run-backup")
+            {
+                Schedule[] schedules = Program.DataConnection.GetObjects<Schedule>("Name LIKE ?", args[1].Trim());
+                if (schedules == null || schedules.Length == 0)
+                {
+                    MessageBox.Show(string.Format(Strings.Program.NamedBackupNotFound, args[1]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+                else if (schedules.Length > 1)
+                {
+                    MessageBox.Show(string.Format(Strings.Program.MultipleNamedBackupsFound, args[1], schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+
+                if (options.ContainsKey("full"))
+                    Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
+                else
+                    Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
+                
+                return true;
+            }
+
+            if (args.Count == 1 && args[0] == "show-status")
+            {
+                ShowStatus();
+                return true;
+            }
+
+
+            return false;
+        }
+
+        private static void singleInstance_SecondInstanceDetected(string[] commandlineargs)
+        {
+            if (handleCommandlineArguments(commandlineargs))
+                return;
+
             //TODO: This actually blocks the app thread, and thus may pile up remote invocations
             ShowWizard();
         }
 
-        static void DataConnection_AfterDataConnection(object sender, DataActions action)
+        private static void DataConnection_AfterDataConnection(object sender, DataActions action)
         {
             if (action == DataActions.Insert || action == DataActions.Update)
                 Scheduler.Reschedule();
@@ -320,6 +370,51 @@ namespace Duplicati.GUI
                     return Strings.TaskType.RestoreSetup;
                 default:
                     return type.ToString();
+            }
+        }
+
+
+        /// <summary>
+        /// A helper method to load the correct SQLite assembly for the current architecture
+        /// </summary>
+        public static Type LoadCorrectSQLiteAssembly()
+        {
+            string filename = "System.Data.SQLite.dll";
+            string basePath = System.IO.Path.Combine(Application.StartupPath, "SQLite");
+            string assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
+
+            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT || System.Environment.OSVersion.Platform == PlatformID.Win32Windows)
+            {
+                if (IntPtr.Size == 8 || (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor()))
+                {
+                    if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
+                        assemblyPath = System.IO.Path.Combine(basePath, "win64");
+                }
+                else
+                {
+                    if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
+                        assemblyPath = System.IO.Path.Combine(basePath, "win32");
+                }
+            }
+
+            return System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CallingConvention = System.Runtime.InteropServices.CallingConvention.Winapi)]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        private static extern bool IsWow64Process([System.Runtime.InteropServices.In] IntPtr hProcess, [System.Runtime.InteropServices.Out] out bool lpSystemInfo);
+
+        private static bool Is32BitProcessOn64BitProcessor()
+        {
+            try
+            {
+                bool retVal;
+                IsWow64Process(System.Diagnostics.Process.GetCurrentProcess().Handle, out retVal);
+                return retVal;
+            }
+            catch
+            {
+                return false; //In case the OS is old enough not to have the Wow64 function
             }
         }
 
