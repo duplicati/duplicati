@@ -83,7 +83,7 @@
     <!-- Launch duplicati setup -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <CustomAction Id="LaunchApplication" FileKey="file_DUPLICATIBIN_5" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
+    <CustomAction Id="LaunchApplication" FileKey="file_DUPLICATIBIN_6" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
     
     <!-- TODO: Figure out why this does not work...
     <Property Id="WixShellExecTarget" Value="[#comp_DUPLICATIBIN_5]" />

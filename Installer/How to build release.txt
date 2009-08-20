@@ -3,9 +3,12 @@ For a release build, do this:
 1. Update the SVN to the correct revision and note the revision number
 2. Run the UpdateVersionNumber.exe and set the revision number
 3. Rebuild the solution in Release mode
-4. Test for added files, by using the "Generate File Include.bat"
-5. Update the revision number in "UpgradeData.wxi"
-6. Run "VS Express build.bat"
-7. Rename "Duplicati x86.msi" to "Duplicati 1.0 RC2 - Windows.zip"
-8. Rename "Duplicati x64.msi" to "Duplicati 1.0 RC2 - Windows x64.msi"
-8. Run "Package Linux release.bat", zip the resulting "Duplicati" folder, and name it "Duplicati 1.0 RC2 - Linux.zip"
+4. Update the revision number in "UpgradeData.wxi"
+5. Run "VS Express build.bat"
+6. Go to folder bin\Release
+7. Rename "Duplicati.msi" to "Duplicati 1.0 r???.msi"
+8. Rename "Duplicati.zip" to "Duplicati 1.0 r???.zip"
+9. Verify that the "Run application now" works in the MSI
+
+If the zip file is missing, you need to install 7zip.
+If the msi file is missing, you need to install the .Net SDK 2.0.
