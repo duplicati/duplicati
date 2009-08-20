@@ -84,6 +84,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // CleanFullBackupCount
             // 
             resources.ApplyResources(this.CleanFullBackupCount, "CleanFullBackupCount");
+            this.CleanFullBackupCount.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.CleanFullBackupCount.Name = "CleanFullBackupCount";
             this.CleanFullBackupCount.Value = new decimal(new int[] {
             4,

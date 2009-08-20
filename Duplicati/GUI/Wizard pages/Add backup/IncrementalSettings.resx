@@ -159,7 +159,7 @@
     <value>FullDuration</value>
   </data>
   <data name="&gt;&gt;FullDuration.Type" xml:space="preserve">
-    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.0.183, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.235, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
   <data name="&gt;&gt;FullDuration.Parent" xml:space="preserve">
     <value>FullSettings</value>
@@ -333,7 +333,7 @@
     <value>CleanupDuration</value>
   </data>
   <data name="&gt;&gt;CleanupDuration.Type" xml:space="preserve">
-    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.0.183, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.235, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
   <data name="&gt;&gt;CleanupDuration.Parent" xml:space="preserve">
     <value>$this</value>

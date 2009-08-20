@@ -146,15 +146,8 @@ namespace Duplicati.GUI
                 if (!string.IsNullOrEmpty(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage))
                     try
                     {
+                        System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
                         System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
-                        try
-                        {
-                            System.Threading.Thread.CurrentThread.CurrentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture;
-                        }
-                        catch 
-                        { 
-                            //We still get the userinterface translated, but numbers and other formating is incorrect :(
-                        }
                     }
                     catch(Exception ex)
                     {

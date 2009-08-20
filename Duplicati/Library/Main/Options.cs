@@ -314,8 +314,8 @@ namespace Duplicati.Library.Main
                     throw new Exception("No count given for \"Remove All But N Full\"");
 
                 int x = int.Parse(m_options["remove-all-but-n-full"]);
-                if (x < 0)
-                    throw new Exception("Invalid count for remove-all-but-n-full");
+                if (x <= 0)
+                    throw new Exception("Invalid count for remove-all-but-n-full, must be greater than zero");
 
                 return x;
             }
