@@ -146,7 +146,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
 
                     string[] files = Duplicati.Library.Main.Interface.List(target, options);
 
-                    MessageBox.Show(this, Backends.Strings.Common.ConnectionFailure, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Backends.Strings.Common.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
                 catch (Exception ex)
