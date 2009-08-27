@@ -171,12 +171,19 @@ namespace Duplicati.Library.Backend
                 }
                 return lst;
             }
-            catch (System.Net.WebException wex)
+            catch (Exception ex)
             {
-                //Catch "non-existing" buckets
-                if (wex.Status == System.Net.WebExceptionStatus.ProtocolError)
-                    if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
-                        return new List<FileEntry>();
+				System.Net.WebException wex = ex as System.Net.WebException;
+				Affirma.ThreeSharp.ThreeSharpException tex = ex as Affirma.ThreeSharp.ThreeSharpException;
+				if (wex == null && tex != null)
+					wex = tex.InnerException as System.Net.WebException;
+
+				//Catch "non-existing" buckets
+                if (wex != null && wex.Status == System.Net.WebExceptionStatus.ProtocolError && wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                	return new List<FileEntry>();
+				
+				if (tex != null && tex.StatusCode == System.Net.HttpStatusCode.NotFound)
+					return new List<FileEntry>();
 
                 throw;
             }
@@ -195,28 +202,34 @@ namespace Duplicati.Library.Backend
             {
                 con.AddFileStream(m_bucket, GetFullKey(remotename), input);
             }
-            catch (System.Net.WebException wex)
-            {
-                if (wex.Status == System.Net.WebExceptionStatus.ProtocolError)
+			catch (Exception ex)
+			{
+				bool isBucketMissingError = false;
+				System.Net.WebException wex = ex as System.Net.WebException;
+				Affirma.ThreeSharp.ThreeSharpException tex = ex as Affirma.ThreeSharp.ThreeSharpException;
+				if (wex == null && tex != null)
+					wex = tex.InnerException as System.Net.WebException;
+                if (wex != null && wex.Status == System.Net.WebExceptionStatus.ProtocolError && wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+					isBucketMissingError = true;
+				if (!isBucketMissingError && tex != null && tex.StatusCode == System.Net.HttpStatusCode.NotFound)
+					isBucketMissingError = true;
+				
+				if (isBucketMissingError)
                 {
-                    if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    //Perhaps the bucket needs to be created?
+                    try
                     {
-                        //Perhaps the bucket needs to be created?
-                        try
-                        {
-                            con.AddBucket(m_bucket);
-                            con.AddFileStream(m_bucket, m_prefix + remotename, input);
-                            return;
-                        }
-                        catch
-                        {
-                        }
-
-                        throw;
+                        con.AddBucket(m_bucket);
+                        con.AddFileStream(m_bucket, GetFullKey(remotename), input);
+                        return;
                     }
-                    else
-                        throw;
+                    catch
+                    {
+                    }
+
                 }
+
+				throw;
             }
         }
 

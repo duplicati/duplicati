@@ -42,10 +42,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\thirdparty\Affirma.ThreeSharp\Affirma.ThreeSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Affirma.ThreeSharp.Wrapper, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\thirdparty\Affirma.ThreeSharp\Affirma.ThreeSharp.Wrapper.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Web" />

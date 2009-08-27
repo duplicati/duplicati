@@ -240,7 +240,7 @@ namespace Duplicati.Library.Backend
             else
 			{
                 req.Credentials = m_userInfo;
-                if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX)
+                if (Library.Core.Utility.IsClientLinux)
 					req.PreAuthenticate = true; //We need this under Mono for some reason
 			}
 			

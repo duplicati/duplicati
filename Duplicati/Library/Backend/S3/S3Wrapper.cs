@@ -29,32 +29,35 @@ namespace Duplicati.Library.Backend
 {
     /// <summary>
     /// Helper class that allows a little more configuration than the original wrapper,
-    /// and fixes various problems with it, such as EU bucket support
+    /// and fixes various problems with it, such as EU bucket support and long lists
     /// </summary>
-    public class S3Wrapper : Affirma.ThreeSharp.Wrapper.ThreeSharpWrapper
+    public class S3Wrapper
     {
         private static Dictionary<string, KeyValuePair<DateTime, string>> RedirectCache = new Dictionary<string, KeyValuePair<DateTime, string>>();
 
         protected const string EU_LOCATION_CONSTRAINT = "<CreateBucketConfiguration><LocationConstraint>EU</LocationConstraint></CreateBucketConfiguration>";
         protected bool m_euBucket;
+		private ThreeSharpConfig m_config;
+		private ThreeSharpQuery m_service;
 
         public S3Wrapper(string awsID, string awsKey, CallingFormat format, bool euBuckets)
         {
-            this.config = new ThreeSharpConfig();
-            this.config.AwsAccessKeyID = awsID;
-            this.config.AwsSecretAccessKey = awsKey;
-            this.config.Format = format;
+            m_config = new ThreeSharpConfig();
+            m_config.AwsAccessKeyID = awsID;
+            m_config.AwsSecretAccessKey = awsKey;
+            m_config.Format = format;
+			m_config.IsSecure = false;
 
-            this.m_euBucket = euBuckets;
+            m_euBucket = euBuckets;
 
             if (euBuckets && format == CallingFormat.REGULAR)
                 throw new Exception(Strings.S3Wrapper.EuroBucketsRequireSubDomainError);
 
-            this.service = new ThreeSharpQuery(this.config);
+            m_service = new ThreeSharpQuery(m_config);
 
         }
 
-        public override void AddBucket(string bucketName)
+        public void AddBucket(string bucketName)
         {
             //Due to a resource leak in the S3 code, we flush it here
             GC.Collect();
@@ -63,7 +66,7 @@ namespace Duplicati.Library.Backend
                 if (m_euBucket)
                     request.LoadStreamWithString(EU_LOCATION_CONSTRAINT);
 
-                using (BucketAddResponse response = service.BucketAdd(request))
+                using (BucketAddResponse response = m_service.BucketAdd(request))
                 { }
             }
         }
@@ -75,12 +78,12 @@ namespace Duplicati.Library.Backend
             using (ObjectGetRequest objectGetRequest = new ObjectGetRequest(bucketName, keyName))
             {
                 objectGetRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
-                using (ObjectGetResponse objectGetResponse = this.service.ObjectGet(objectGetRequest))
+                using (ObjectGetResponse objectGetResponse = m_service.ObjectGet(objectGetRequest))
                     Core.Utility.CopyStream(objectGetResponse.DataStream, target);
             }
         }
 
-        public override void GetFileObject(string bucketName, string keyName, string localfile)
+        public void GetFileObject(string bucketName, string keyName, string localfile)
         {
             //Due to a resource leak in the S3 code, we flush it here
             GC.Collect();
@@ -88,7 +91,7 @@ namespace Duplicati.Library.Backend
                 GetFileStream(bucketName, keyName, fs);
         }
 
-        public override void AddFileObject(string bucketName, string keyName, string localfile)
+        public void AddFileObject(string bucketName, string keyName, string localfile)
         {
             //Due to a resource leak in the S3 code, we flush it here
             GC.Collect();
@@ -104,18 +107,16 @@ namespace Duplicati.Library.Backend
             {
                 objectAddRequest.DataStream = source;
 
-                //objectAddRequest.ContentType = "application/octet-stream";
-                try { objectAddRequest.BytesTotal = source.Length; }
-                catch { }
-
+				//objectAddRequest.ContentType = "application/octet-stream";
+                objectAddRequest.BytesTotal = source.Length; //The source length MUST be readable
                 objectAddRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
 
-                using (ObjectAddResponse objectAddResponse = this.service.ObjectAdd(objectAddRequest))
+                using (ObjectAddResponse objectAddResponse = m_service.ObjectAdd(objectAddRequest))
                 { }
             }
         }
 
-        public override void DeleteObject(string bucketName, string keyName)
+        public void DeleteObject(string bucketName, string keyName)
         {
             //Due to a resource leak in the S3 code, we flush it here
             GC.Collect();
@@ -123,7 +124,7 @@ namespace Duplicati.Library.Backend
             {
                 objectDeleteRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
 
-                using (ObjectDeleteResponse objectDeleteResponse = service.ObjectDelete(objectDeleteRequest))
+                using (ObjectDeleteResponse objectDeleteResponse = m_service.ObjectDelete(objectDeleteRequest))
                 { }
             }
 
@@ -144,7 +145,7 @@ namespace Duplicati.Library.Backend
                 GC.Collect();
                 using (BucketListRequest listRequest = new BucketListRequest(bucketName))
                 {
-                    listRequest.RedirectUrl = redirUrl;
+					listRequest.RedirectUrl = redirUrl;
                     if (!string.IsNullOrEmpty(filename))
                         listRequest.QueryList.Add("marker", filename);
 
@@ -152,20 +153,20 @@ namespace Duplicati.Library.Backend
                     if (!string.IsNullOrEmpty(prefix))
                         listRequest.QueryList.Add("prefix", prefix);
 
-                    using (BucketListResponse listResponse = service.BucketList(listRequest))
+                    using (BucketListResponse listResponse = m_service.BucketList(listRequest))
                     {
                         XmlDocument bucketXml = listResponse.StreamResponseToXmlDocument();
                         XmlNodeList objects = bucketXml.SelectNodes("//*[local-name()='Contents']");
 
                         foreach (XmlNode obj in objects)
                         {
-                            filename = obj["Key"].InnerXml;
-                            long size = long.Parse(obj["Size"].InnerXml);
-                            DateTime lastModified = DateTime.Parse(obj["LastModified"].InnerXml);
+                            filename = obj["Key"].InnerText;
+                            long size = long.Parse(obj["Size"].InnerText);
+                            DateTime lastModified = DateTime.Parse(obj["LastModified"].InnerText);
                             files.Add(new FileEntry(filename, size, lastModified, lastModified));
                         }
 
-                        isTruncated = bool.Parse(bucketXml.SelectSingleNode("//*[local-name()='IsTruncated']").InnerXml);
+                        isTruncated = bool.Parse(bucketXml.SelectSingleNode("//*[local-name()='IsTruncated']").InnerText);
                     }
                 }
             }
@@ -181,8 +182,8 @@ namespace Duplicati.Library.Backend
                 GC.Collect();
                 using (BucketListRequest testRequest = new BucketListRequest(bucketName))
                 {
-                    testRequest.Method = "HEAD";
-                    using (BucketListResponse testResponse = service.BucketList(testRequest))
+                   	testRequest.Method = "HEAD";
+                    using (BucketListResponse testResponse = m_service.BucketList(testRequest))
                         if (testResponse.StatusCode == System.Net.HttpStatusCode.TemporaryRedirect)
                             RedirectCache[bucketName] = new KeyValuePair<DateTime,string>(DateTime.Now.AddMinutes(5), testResponse.Headers["Location"].ToString());
                         else
