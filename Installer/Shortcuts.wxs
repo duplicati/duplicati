@@ -70,7 +70,7 @@
       </Directory>
     </DirectoryRef>
 
-    <Icon Id="DuplicatiIcon.exe" SourceFile="..\Duplicati\GUI\bin\Debug\Duplicati.exe" />
+    <Icon Id="DuplicatiIcon.exe" SourceFile="..\Duplicati\GUI\bin\Release\Duplicati.exe" />
 
   </Fragment>
 </Wix>

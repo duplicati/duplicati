@@ -1,5 +1,8 @@
 @echo off
-cd bin\Release
+mkdir bin
+cd bin
+mkdir Release
+cd Release
 mkdir Duplicati
 cd Duplicati
 del * /Q
