@@ -67,7 +67,7 @@ namespace Duplicati.Datamodel
             {
                 this.When = m_nextSchedule;
                 m_nextSchedule = new DateTime();
-                ((System.Data.LightDatamodel.IDataFetcherCached)this.DataParent).CommitRecursiveWithRelations(this);
+                ((System.Data.LightDatamodel.IDataFetcherWithRelations)this.DataParent).CommitRecursiveWithRelations(this);
             }
         }
         

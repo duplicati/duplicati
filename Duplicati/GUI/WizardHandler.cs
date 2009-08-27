@@ -66,7 +66,7 @@ namespace Duplicati.GUI
             if (wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Add || wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Edit)
             {
                 Schedule schedule;
-                IDataFetcherCached con = new DataFetcherNested(Program.DataConnection);
+                IDataFetcherWithRelations con = new DataFetcherNested(Program.DataConnection);
 
                 if (wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Add)
                     schedule = con.Add<Schedule>();

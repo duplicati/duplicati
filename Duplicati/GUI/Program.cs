@@ -31,7 +31,7 @@ namespace Duplicati.GUI
         /// <summary>
         /// This is the only access to the database
         /// </summary>
-        public static IDataFetcherCached DataConnection;
+        public static IDataFetcherWithRelations DataConnection;
 
         /// <summary>
         /// This is the TrayIcon instance
