@@ -189,7 +189,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
                     string hostname = ftp.GetDestinationPath();
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     ftp.GetOptions(options);
-                    string[] files = Duplicati.Library.Main.Interface.List(hostname, options);
+                    Duplicati.Library.Main.Interface.List(hostname, options);
 
                     MessageBox.Show(this, Backends.Strings.Common.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
@@ -241,7 +241,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             {
                 try
                 {
-                    string p = Path.Text;
                     string url = "ftp://" + Servername.Text + ":" + Port.Value.ToString() + "/" + Path.Text;
                     System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(url);
                     req.Credentials = new System.Net.NetworkCredential(Username.Text, Password.Text);

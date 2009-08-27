@@ -203,7 +203,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
                     string hostname = webdav.GetDestinationPath();
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     webdav.GetOptions(options);
-                    string[] files = Duplicati.Library.Main.Interface.List(hostname, options);
+                    Duplicati.Library.Main.Interface.List(hostname, options);
 
                     MessageBox.Show(this, Backends.Strings.Common.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
@@ -256,7 +256,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             {
                 try
                 {
-                    string p = Path.Text;
                     string url = "http://" + Servername.Text + ":" + Port.Value.ToString() + "/" + Path.Text;
                     System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(url);
                     if (UseIntegratedAuth.Checked)

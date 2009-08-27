@@ -300,17 +300,6 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private string BuildEscapedPath(string remotename)
-        {
-            string path = m_path + remotename;
-
-            path = m_server + ":" + path;
-            if (!string.IsNullOrEmpty(m_username))
-                path = m_username + "@" + path;
-
-            return path;
-        }
-
         private SharpExpect.SharpExpectProcess GetConnection()
         {
             System.Diagnostics.Process p = new System.Diagnostics.Process();

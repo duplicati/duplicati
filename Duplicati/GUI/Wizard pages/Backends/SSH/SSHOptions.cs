@@ -144,7 +144,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     ssh.GetOptions(options);
 
-                    string[] files = Duplicati.Library.Main.Interface.List(target, options);
+                    Duplicati.Library.Main.Interface.List(target, options);
 
                     MessageBox.Show(this, Backends.Strings.Common.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;

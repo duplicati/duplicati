@@ -55,7 +55,7 @@ namespace Duplicati.GUI.HelperControls
             {
                 try
                 {
-                    System.Text.RegularExpressions.Regex re = new System.Text.RegularExpressions.Regex(FilterText.Text);
+                    new System.Text.RegularExpressions.Regex(FilterText.Text);
                 }
                 catch (Exception ex)
                 {

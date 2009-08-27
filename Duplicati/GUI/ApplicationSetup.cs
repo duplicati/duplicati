@@ -121,24 +121,6 @@ namespace Duplicati.GUI
             
         }
 
-        private bool TestForFiles(string folder, params string[] files)
-        {
-            try
-            {
-                foreach(string file in files)
-                    if (!System.IO.File.Exists(System.IO.Path.Combine(folder, file)))
-                        if (MessageBox.Show(this, string.Format(Strings.ApplicationSetup.FolderIsMissingFile, file), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
-                            return false;
-            }
-            catch (Exception ex)
-            {
-                if (MessageBox.Show(this, string.Format(Strings.ApplicationSetup.ErrorWhileExaminingFolder, ex.Message), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
-                    return false;
-            }
-
-            return true;
-        }
-
         private void BrowseGPG_Click(object sender, EventArgs e)
         {
             if (BrowseGPGDialog.ShowDialog(this) == DialogResult.OK)

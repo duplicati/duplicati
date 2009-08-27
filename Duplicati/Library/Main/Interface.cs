@@ -43,11 +43,6 @@ namespace Duplicati.Library.Main
         private double m_progress = 0.0;
         private string m_progress_message = "";
 
-        /// <summary>
-        /// The filenamestrategy for the signature cache
-        /// </summary>
-        FilenameStrategy m_cacheFilenameStrategy = new FilenameStrategy("dpl", "_", true);
-
         public event OperationProgressEvent OperationStarted;
         public event OperationProgressEvent OperationCompleted;
         public event OperationProgressEvent OperationProgress;
@@ -617,7 +612,6 @@ namespace Duplicati.Library.Main
             bool anyRemoved = false;
             using (BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
             {
-                List<BackupEntry> orphans = new List<BackupEntry>();
                 List<BackupEntry> sorted = backend.GetBackupSets();
 
                 List<BackupEntry> entries = new List<BackupEntry>();

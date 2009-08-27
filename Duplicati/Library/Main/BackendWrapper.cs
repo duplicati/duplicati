@@ -74,8 +74,6 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrEmpty(options.Passphrase))
                     throw new Exception(Strings.BackendWrapper.PassphraseMissingError);
 
-                string passphrase = options.Passphrase;
-
                 if (options.GPGEncryption)
                 {
                     if (!string.IsNullOrEmpty(options.GPGPath))

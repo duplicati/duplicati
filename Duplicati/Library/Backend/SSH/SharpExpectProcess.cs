@@ -295,10 +295,8 @@ namespace Duplicati.Library.SharpExpect
                 if (queue.Count == 0)
                     return null;
 
-                int lineBreakPos;
-
                 //If the line is split over multiple entries, try to combine it back into a single line
-                while ((lineBreakPos = queue[0].LastIndexOfAny(new char[] { leadChar, trailChar })) < 0 && queue.Count > 1)
+                while (queue[0].LastIndexOfAny(new char[] { leadChar, trailChar }) < 0 && queue.Count > 1)
                 {
                     queue[0] = queue[0] + queue[1];
                     queue.RemoveAt(1);

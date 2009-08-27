@@ -116,7 +116,7 @@ namespace OSGeo.MapGuide.Maestro.ResourceEditors
 				try
 				{
 					SHFILEINFO shinfo = new SHFILEINFO();
-					IntPtr hImg = SHGetFileInfo(ext, type, ref shinfo, System.Runtime.InteropServices.Marshal.SizeOf(shinfo), attributes);
+					SHGetFileInfo(ext, type, ref shinfo, System.Runtime.InteropServices.Marshal.SizeOf(shinfo), attributes);
 					System.Drawing.Icon tmp = (System.Drawing.Icon)System.Drawing.Icon.FromHandle(shinfo.hIcon).Clone();
 					DestroyIcon(shinfo.hIcon);
 					

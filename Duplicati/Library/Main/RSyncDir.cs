@@ -235,7 +235,6 @@ namespace Duplicati.Library.Main.RSync
             m_isfirstmultipass = true;
             
             //Build folder diffs
-            string dirmarker = System.IO.Path.DirectorySeparatorChar.ToString();
             for(int i = 0; i < m_unproccesed.Folders.Count; i++)
             {
                 string relpath = m_unproccesed.Folders[i].Substring(m_sourcefolder.Length);
@@ -669,19 +668,6 @@ namespace Duplicati.Library.Main.RSync
         }
 
         #endregion
-
-        /// <summary>
-        /// Compares two files to see if they are identical
-        /// </summary>
-        /// <param name="file1">One file</param>
-        /// <param name="file2">Another file</param>
-        /// <returns>True if they are binary equals, false otherwise</returns>
-        private static bool CompareFiles(string file1, string file2)
-        {
-            using (System.IO.FileStream fs1 = new System.IO.FileStream(file1, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-            using (System.IO.FileStream fs2 = new System.IO.FileStream(file2, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                return Core.Utility.CompareStreams(fs1, fs2, true);
-        }
 
         public static void MergeSignatures(string basefolder, string updatefolder)
         {

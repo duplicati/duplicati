@@ -31,8 +31,6 @@ namespace Duplicati.Library.Backend
         private string m_username;
         private string m_password;
         private string m_path;
-        Dictionary<string, string> m_options;
-
 
         public CloudFiles()
         {
@@ -76,7 +74,6 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(m_password))
                 throw new Exception(Strings.CloudFiles.NoAPIKeyError);
 
-            m_options = options;
             m_path = u.Host + u.PathAndQuery;
             if (m_path.EndsWith("/"))
                 m_path = m_path.Substring(0, m_path.Length - 1);

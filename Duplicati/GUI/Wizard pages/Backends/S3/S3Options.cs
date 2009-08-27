@@ -211,7 +211,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     s3.GetOptions(options);
 
-                    string[] files = Duplicati.Library.Main.Interface.List(target, options);
+                    Duplicati.Library.Main.Interface.List(target, options);
 
                     MessageBox.Show(this, Backends.Strings.Common.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;

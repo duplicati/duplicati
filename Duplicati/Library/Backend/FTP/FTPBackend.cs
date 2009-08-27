@@ -107,7 +107,7 @@ namespace Duplicati.Library.Backend
             string dir = m.Groups["dir"].Value;
 
 			//Unused
-            string permission = m.Groups["permission"].Value;
+            //string permission = m.Groups["permission"].Value;
 
             if (dir != "" && dir != "-")
                 f.IsFolder = true;

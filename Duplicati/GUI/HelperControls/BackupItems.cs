@@ -62,12 +62,6 @@ namespace Duplicati.GUI.HelperControls
             } 
         }
 
-        private void listView_DoubleClick(object sender, EventArgs e)
-        {
-            if (this.SelectedItem != null && this.ItemDoubleClicked != null)
-                ItemDoubleClicked(this, e);
-        }
-
         private void viewFilesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ListBackupFiles dlg = new ListBackupFiles();
@@ -132,11 +126,6 @@ namespace Duplicati.GUI.HelperControls
 
             }
 
-        }
-
-        private void treeView_AfterSelect(object sender, TreeViewEventArgs e)
-        {
-            viewFilesToolStripMenuItem.Enabled = listView.SelectedItems.Count == 1;
         }
 
     }

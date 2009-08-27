@@ -190,15 +190,6 @@ namespace Duplicati.Library.Core
         {
         }
 
-        private static Regex CreateRegEx(string filter)
-        {
-            RegexOptions opts = RegexOptions.Compiled;
-            if (!Utility.IsFSCaseSensitive)
-                opts |= RegexOptions.IgnoreCase;
-
-            return new Regex(filter, opts);
-        }
-
         public FilenameFilter(List<IFilenameFilter> filters)
         {
             m_filters = filters;

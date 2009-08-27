@@ -99,7 +99,6 @@ namespace Duplicati.CommandLine.BackendTester
             else
                 allowedChars += ExtendedChars;
 
-            Uri url = new Uri(args[0]);
             Library.Backend.IBackend backend = Library.Backend.BackendLoader.GetBackend(args[0], options);
             if (backend == null)
             {

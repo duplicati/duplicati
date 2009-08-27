@@ -66,9 +66,8 @@ namespace Duplicati.GUI
                 }
 
             }
-            catch (Exception ex)
+            catch
             {
-                string s = ex.Message;
                 MessageBox.Show(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
