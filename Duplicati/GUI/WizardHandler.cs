@@ -117,6 +117,7 @@ namespace Duplicati.GUI
             {
                 Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
                 List<IDataClass> items = new List<IDataClass>();
+                IList<Duplicati.Datamodel.Log> tmp = schedule.Task.Logs;
                 items.AddRange(Program.DataConnection.FindObjectRelations(schedule));
                 foreach(IDataClass o in items)
                     Program.DataConnection.DeleteObject(o);
