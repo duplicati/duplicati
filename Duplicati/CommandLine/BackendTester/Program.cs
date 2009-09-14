@@ -154,7 +154,7 @@ namespace Duplicati.CommandLine.BackendTester
                 List<TempFile> files = new List<TempFile>();
                 for (int i = 0; i < number_of_files; i++)
                 {
-                    Console.WriteLine("Generating file {0}", i);
+                    Console.Write("Generating file {0}", i);
                     StringBuilder filename = new StringBuilder();
                     int filenamelen = rnd.Next(min_filename_size, max_filename_size);
                     for (int j = 0; j < filenamelen; j++)
@@ -165,6 +165,9 @@ namespace Duplicati.CommandLine.BackendTester
                         //Random size
                         byte[] buf = new byte[1024];
                         int size = rnd.Next(min_file_size, max_file_size);
+
+                        Console.WriteLine(" ({0})", Duplicati.Library.Core.Utility.FormatSizeString(size));
+
                         while (size > 0)
                         {
                             rnd.NextBytes(buf);

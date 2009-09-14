@@ -185,14 +185,16 @@ namespace Duplicati.Library.Backend
                 string cmd = "put \"" + filename + "\" \"" + remotename + "\"";
 
                 p.Sendline(cmd);
-
-                if (p.Expect(SSH_TIMEOUT, "local\\:.+", "Uploading .*") < 0)
-                    throw new Exception(string.Format(Strings.SSHBackend.UnexpectedResponseError, cmd));
-
                 p.Sendline("exit");
 
+                //Assume that all went well and wait for the process to exit
+                //For some reason the output is sometimes buffered until process exit
                 if (!p.Process.WaitForExit(m_transfer_timeout))
                     throw new Exception(Strings.SSHBackend.UploadTimeoutError + "\r\n" + p.LogKillAndDispose());
+
+                //After the process is completed, the output is flushed, and we need to verify that the response was as expected
+                if (p.Expect(5000, "local\\:.+", "Uploading .*") < 0)
+                    throw new Exception(string.Format(Strings.SSHBackend.UnexpectedResponseError, cmd));
 
                 if ((m_isLinux ? p.Expect(5000, "exit", "sftp> exit") : p.Expect(5000, "Using username .*")) < 0)
                     throw new Exception(Strings.SSHBackend.UnexpectedExitResponseError + "\r\n" + p.LogKillAndDispose());
@@ -213,15 +215,18 @@ namespace Duplicati.Library.Backend
             using (SharpExpect.SharpExpectProcess p = GetConnection())
             {
                 string cmd = "get \"" + remotename + "\" \"" + filename + "\"";
+
                 p.Sendline(cmd);
-
-                if (p.Expect(SSH_TIMEOUT, "remote\\:.+", "Downloading .*", "Fetching .*") < 0)
-                    throw new Exception(string.Format(Strings.SSHBackend.UnexpectedResponseError, cmd));
-
                 p.Sendline("exit");
 
+                //Assume that all went well and wait for the process to exit
+                //For some reason the output is sometimes buffered until process exit
                 if (!p.Process.WaitForExit(m_transfer_timeout))
                     throw new Exception(Strings.SSHBackend.DownloadTimeoutError + "\r\n" + p.LogKillAndDispose());
+
+                //After the process is completed, the output is flushed, and we need to verify that the response was as expected
+                if (p.Expect(SSH_TIMEOUT, "remote\\:.+", "Downloading .*", "Fetching .*") < 0)
+                    throw new Exception(string.Format(Strings.SSHBackend.UnexpectedResponseError, cmd));
 
                 if ((m_isLinux ? p.Expect(5000, "exit", "sftp> exit") : p.Expect(5000, "Using username .*")) < 0)
                     throw new Exception(Strings.SSHBackend.UnexpectedExitResponseError + "\r\n" + p.LogKillAndDispose());
@@ -244,11 +249,11 @@ namespace Duplicati.Library.Backend
                 p.Sendline("rm \"" + remotename + "\"");
                 p.Sendline("exit");
 
-                if (p.Expect(1000, ".*No such file or directory.*", ".*Couldn't.*") != -1)
-                    throw new Exception(string.Format(Strings.SSHBackend.DeleteError, p.LogKillAndDispose()));
-
-                if (!p.Process.WaitForExit(5000))
+                if (!p.Process.WaitForExit(SSH_TIMEOUT))
                     throw new Exception(Strings.SSHBackend.CloseTimeoutError + "\r\n" + p.LogKillAndDispose());
+
+                if (p.Expect(5000, ".*No such file or directory.*", ".*Couldn't.*") != -1)
+                    throw new Exception(string.Format(Strings.SSHBackend.DeleteError, p.LogKillAndDispose()));
 
                 if (m_write_log_info)
                 {
