@@ -34,6 +34,7 @@ namespace System.Windows.Forms.Wizard
         private string m_title;
         private IWizardControl m_currentPage;
         private bool m_isLastPage = false;
+        private bool m_isBack = false; //Is the page change a back event?
         private Dictionary<string, object> m_settings;
 
         //The path the user has chosen
@@ -127,7 +128,7 @@ namespace System.Windows.Forms.Wizard
 
         protected virtual void DisplayPage(IWizardControl page)
         {
-            PageChangedArgs args = new PageChangedArgs(this, this.Pages.IndexOf(page) == this.Pages.Count - 1, PageChangedDirection.Next);
+            PageChangedArgs args = new PageChangedArgs(this, this.Pages.IndexOf(page) == this.Pages.Count - 1, m_isBack ? PageChangedDirection.Back : PageChangedDirection.Next);
 
             page.Enter(this, args);
 
@@ -153,26 +154,35 @@ namespace System.Windows.Forms.Wizard
 
         private void BackBtn_Click(object sender, EventArgs e)
         {
-            PageChangedArgs args = new PageChangedArgs(this, false, PageChangedDirection.Back);
+            try
+            {
+                m_isBack = true;
+                PageChangedArgs args = new PageChangedArgs(this, false, PageChangedDirection.Back);
 
-            if (m_visited.Count > 0)
-                args.NextPage = m_visited.Pop();
+                if (m_visited.Count > 0)
+                    args.NextPage = m_visited.Pop();
 
-            if (this.CurrentPage != null)
-                this.CurrentPage.Leave(this, args);
-            
-            if (BackPressed != null)
-                BackPressed(this, args);
+                if (this.CurrentPage != null)
+                    this.CurrentPage.Leave(this, args);
 
-            if (args.Cancel || args.NextPage == null)
-                return;
+                if (BackPressed != null)
+                    BackPressed(this, args);
 
-            m_isLastPage = args.TreatAsLast;
-            CurrentPage = args.NextPage;
+                if (args.Cancel || args.NextPage == null)
+                    return;
+
+                m_isLastPage = args.TreatAsLast;
+                CurrentPage = args.NextPage;
+            }
+            finally
+            {
+                m_isBack = false;
+            }
         }
 
         private void NextBtn_Click(object sender, EventArgs e)
         {
+            m_isBack = false;
             IWizardControl nextpage = null;
             int pos = Pages.IndexOf(CurrentPage);
             if (pos >= 0 && pos < Pages.Count - 1)
