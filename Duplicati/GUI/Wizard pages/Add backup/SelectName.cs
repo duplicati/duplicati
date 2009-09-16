@@ -47,8 +47,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         void SelectName_PageDisplay(object sender, PageChangedArgs args)
         {
             //Hide the initial page
-            if (Program.DataConnection.GetObjects<Datamodel.Schedule>().Length == 0)
-                m_owner.BackButton.Enabled = false;
+            /*if (Program.DataConnection.GetObjects<Datamodel.Schedule>().Length == 0)
+                m_owner.BackButton.Enabled = false;*/
 
             try { BackupName.Focus(); }
             catch { }

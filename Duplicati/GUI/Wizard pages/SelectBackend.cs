@@ -46,6 +46,23 @@ namespace Duplicati.GUI.Wizard_pages
         void SelectBackend_PageDisplay(object sender, PageChangedArgs args)
         {
             Item_CheckChanged(null, null);
+
+            //If there is just one backend, skip this page
+            if (BackendList.Controls.Count == 1)
+            {
+                if (args.Direction == PageChangedDirection.Next)
+                {
+                    ((RadioButton)BackendList.Controls[0]).Checked = true;
+                    try { m_owner.NextButton.PerformClick(); }
+                    catch { }
+                }
+                else
+                {
+                    try { m_owner.BackButton.PerformClick(); }
+                    catch { }
+                }
+            }
+
         }
 
         void SelectBackend_PageLeave(object sender, PageChangedArgs args)
