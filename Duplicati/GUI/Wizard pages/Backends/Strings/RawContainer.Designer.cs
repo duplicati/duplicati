@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
+namespace Duplicati.GUI.Wizard_pages.Backends.Strings {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class SettingOverrides {
+    internal class RawContainer {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal SettingOverrides() {
+        internal RawContainer() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Wizard_pages.Add_backup.Strings.SettingOverrides", typeof(SettingOverrides).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Wizard_pages.Backends.Strings.RawContainer", typeof(RawContainer).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,20 +61,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!.
+        ///   Looks up a localized string similar to You must enter a destination URL.
         /// </summary>
-        internal static string PageDescription {
+        internal static string NoDestinationError {
             get {
-                return ResourceManager.GetString("PageDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Override settings.
-        /// </summary>
-        internal static string PageTitle {
-            get {
-                return ResourceManager.GetString("PageTitle", resourceCulture);
+                return ResourceManager.GetString("NoDestinationError", resourceCulture);
             }
         }
     }

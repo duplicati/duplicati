@@ -1,6 +1,6 @@
-namespace Duplicati.GUI.Wizard_pages.Backends.File
+namespace Duplicati.Library.Backend
 {
-    partial class FileOptions
+    partial class FileUI
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,7 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FileOptions));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FileUI));
             this.UsePath = new System.Windows.Forms.RadioButton();
             this.UseDisk = new System.Windows.Forms.RadioButton();
             this.TargetFolder = new System.Windows.Forms.TextBox();
@@ -135,7 +135,6 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
             // FileOptions
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.FolderLabel);
             this.Controls.Add(this.Folder);
             this.Controls.Add(this.UseCredentials);

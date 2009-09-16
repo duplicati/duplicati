@@ -24,7 +24,7 @@ using System.Text;
 
 namespace Duplicati.Datamodel.Backends
 {
-    public class SSH : IBackend
+    public class SSH //: IBackend
     {
         private const string USERNAME = "Username";
         private const string PASSWORD = "Password";

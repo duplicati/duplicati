@@ -27,6 +27,8 @@ namespace Duplicati.Datamodel
 {
     public partial class Task
     {
+        public const string DESTINATION_EXTENSION_KEY = "Destination";
+
         public Task()
         {
             this.AfterDataCommit += new System.Data.LightDatamodel.DataConnectionEventHandler(Task_AfterDataCommit);
@@ -73,37 +75,33 @@ namespace Duplicati.Datamodel
             get { return new TaskExtensionWrapper(this); }
         }
 
-        public Backends.IBackend Backend
+        public string GetConfiguration(Dictionary<string, string> options)
         {
-            get
-            {
-                //TODO: This should be more dynamic
-                switch (this.Service.Trim().ToLower())
+            Library.Backend.IBackend selectedBackend = null;
+            foreach (Library.Backend.IBackend b in Library.Backend.BackendLoader.LoadedBackends)
+                if (b.ProtocolKey == this.Service)
                 {
-                    case "ssh":
-                        return new Backends.SSH(this);
-                    case "s3":
-                        return new Backends.S3(this);
-                    case "file":
-                        return new Backends.File(this);
-                    case "ftp":
-                        return new Backends.FTP(this);
-                    case "webdav":
-                        return new Backends.WEBDAV(this);
+                    selectedBackend = b;
+                    break;
                 }
 
-                return null;
+            if (selectedBackend == null)
+                throw new Exception("Missing backend");
+
+            string destination;
+            if (selectedBackend is Library.Backend.IBackendGUI)
+                destination = ((Library.Backend.IBackendGUI)selectedBackend).GetConfiguration(BackendSettingsLookup, options);
+            else
+            {
+                //We store destination with the key "Destination" and other options with the -- prefix
+                if (!options.ContainsKey(DESTINATION_EXTENSION_KEY))
+                    throw new Exception("Invalid configuration");
+
+                destination = options[DESTINATION_EXTENSION_KEY];
+                foreach (KeyValuePair<string, string> k in this.BackendSettingsLookup)
+                    if (k.Key.StartsWith("--")) //All options are prefixed with this
+                        options[k.Key.Substring(2)] = k.Value;
             }
-        }
-
-        public string GetDestinationPath()
-        {
-            return this.Backend.GetDestinationPath();
-        }
-
-        public void GetOptions(Dictionary<string, string> options)
-        {
-            this.Backend.GetOptions(options);
 
             if (this.Filters.Count > 0)
                 options["filter"] = this.EncodedFilter; ;
@@ -127,6 +125,8 @@ namespace Duplicati.Datamodel
             //Override everything set in the overrides
             foreach (TaskOverride ov in this.TaskOverrides)
                 options[ov.Name] = ov.Value;
+
+            return destination;
         }
 
         public string EncodedFilter

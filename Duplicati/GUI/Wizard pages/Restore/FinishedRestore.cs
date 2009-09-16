@@ -81,7 +81,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
             RestoreTask task = new RestoreTask(s, m_wrapper.RestorePath, m_wrapper.RestoreFilter, m_wrapper.RestoreTime);
             Dictionary<string, string> options = new Dictionary<string, string>();
-            task.GetOptions(options);
+            string destination = task.GetConfiguration(options);
             if (options.ContainsKey("filter"))
                 options.Remove("filter");
 
@@ -90,11 +90,10 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
                 options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), task.Schedule.ID.ToString());
             
-            using (Library.Main.Interface i = new Duplicati.Library.Main.Interface(task.SourcePath, options))
+            using (Library.Main.Interface i = new Duplicati.Library.Main.Interface(destination, options))
             {
-
                 i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress);
-                i.Restore(task.TargetPath);
+                i.Restore(task.LocalPath);
             }
         }
 

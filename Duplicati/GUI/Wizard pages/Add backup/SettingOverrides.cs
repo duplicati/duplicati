@@ -30,20 +30,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
     public partial class SettingOverrides : System.Windows.Forms.Wizard.WizardControl
     {
         private WizardSettingsWrapper m_wrapper;
-        private bool m_unsupported = false;
 
         public SettingOverrides()
             : base(Strings.SettingOverrides.PageTitle, Strings.SettingOverrides.PageDescription)
         {
-            try
-            {
-                InitializeComponent();
-            }
-            catch (NotImplementedException)
-            {
-                MessageBox.Show(this, Strings.SettingOverrides.PageNotSupportedWarning, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                m_unsupported = true;
-            }
+            InitializeComponent();
 
             m_autoFillValues = false;
             base.PageEnter += new System.Windows.Forms.Wizard.PageChangeHandler(SettingOverrides_PageEnter);
@@ -55,70 +46,30 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (args.Direction == System.Windows.Forms.Wizard.PageChangedDirection.Back)
                 return;
 
-            if (m_unsupported)
-            {
-                OptionsGrid.Enabled = false;
-            }
-            else
-            {
-                m_wrapper.Overrides.Clear();
-                foreach (DataRow dr in OverrideTable.Rows)
-                    if ((bool)dr["Enabled"])
-                        m_wrapper.Overrides.Add((string)dr["Name"], (string)dr["Value"]);
-            }
+            if (!OptionGrid.Unsupported)
+                m_wrapper.Overrides = OptionGrid.GetConfiguration();
             args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
         }
 
         void SettingOverrides_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
         {
-            if (!m_unsupported)
+            if (!OptionGrid.Unsupported)
             {
                 m_wrapper = new WizardSettingsWrapper(m_settings);
 
                 if (!m_settings.ContainsKey("Overrides:Table"))
                 {
-                    OverrideTable.Rows.Clear();
-
                     Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
-                    foreach (Library.Backend.ICommandLineArgument arg in opt.SupportedCommands)
-                    {
-                        DataRow dr = OverrideTable.NewRow();
-                        dr["Enabled"] = m_wrapper.Overrides.ContainsKey(arg.Name);
-                        dr["argument"] = arg;
-                        dr["Name"] = arg.Name;
-                        if (m_wrapper.Overrides.ContainsKey(arg.Name))
-                            dr["Value"] = m_wrapper.Overrides[arg.Name];
-                        OverrideTable.Rows.Add(dr);
-                    }
+                    OptionGrid.Setup(opt.SupportedCommands, m_wrapper.Overrides);
 
-                    m_settings["Overrides:Table"] = BaseDataSet;
+                    m_settings["Overrides:Table"] = OptionGrid.DataSet;
                 }
                 else
                 {
-                    BaseDataSet = (DataSet)m_settings["Overrides:Table"];
-                    OptionsGrid.DataSource = BaseDataSet;
-                    OverrideTable = BaseDataSet.Tables["OverrideTable"];
-                    OptionsGrid.DataMember = "OverrideTable";
+                    OptionGrid.DataSet = (DataSet)m_settings["Overrides:Table"]; 
                 }
             }
 
-        }
-
-        private void OptionsGrid_RowEnter(object sender, DataGridViewCellEventArgs e)
-        {
-            DataRow r = OverrideTable.Rows[e.RowIndex];
-            Library.Backend.ICommandLineArgument arg = (Library.Backend.ICommandLineArgument)r["argument"];
-
-            InfoLabel.Text = string.Format(Strings.SettingOverrides.InfoLabelFormat, arg.Typename, arg.ShortDescription, arg.LongDescription);
-        }
-
-        private void OptionsGrid_CellEndEdit(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.ColumnIndex != 0)
-            {
-                DataRow r = OverrideTable.Rows[e.RowIndex];
-                r["Enabled"] = r["Value"] != DBNull.Value;
-            }
         }
     }
 }

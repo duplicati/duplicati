@@ -23,7 +23,7 @@ using System.Text;
 
 namespace Duplicati.Datamodel.Backends
 {
-    public class FTP : IBackend
+    public class FTP //: IBackend
     {
         private const string USERNAME = "Username";
         private const string PASSWORD = "Password";

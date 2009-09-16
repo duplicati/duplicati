@@ -295,15 +295,22 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ThrottleOptions.resx</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Backends\File\Strings\FileOptions.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>FileOptions.resx</DependentUpon>
-    </Compile>
     <Compile Include="Wizard pages\Backends\FTP\Strings\FTPOptions.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>FTPOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\GUIContainer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\GUIContainer.Designer.cs">
+      <DependentUpon>GUIContainer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\RawContainer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\Backends\RawContainer.Designer.cs">
+      <DependentUpon>RawContainer.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Backends\S3\Strings\S3Options.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -320,10 +327,21 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Common.resx</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Backends\Strings\RawContainer.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RawContainer.resx</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Backends\WebDAV\Strings\WebDAVOptions.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>WebDAVOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\CommandLineOptionGrid.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\CommandLineOptionGrid.Designer.cs">
+      <DependentUpon>CommandLineOptionGrid.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Delete backup\Strings\DeleteFinished.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -371,12 +389,6 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\ThrottleOptions.Designer.cs">
       <DependentUpon>ThrottleOptions.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\File\FileOptions.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\File\FileOptions.Designer.cs">
-      <DependentUpon>FileOptions.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Backends\FTP\FTPOptions.cs">
       <SubType>UserControl</SubType>
@@ -481,6 +493,11 @@
     <Compile Include="Wizard pages\SelectBackup.Designer.cs">
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizard pages\Strings\CommandLineOptionsGrid.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CommandLineOptionsGrid.resx</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\Strings\FirstLaunch.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -525,6 +542,10 @@
     <ProjectReference Include="..\Library\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
       <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
       <Name>Duplicati.Library.Backend.BackendInterface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\BackendLoader\Duplicati.Library.Backend.BackendLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.Backend.BackendLoader</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
@@ -644,10 +665,6 @@
     <EmbeddedResource Include="Wizard pages\Add backup\ThrottleOptions.resx">
       <SubType>Designer</SubType>
       <DependentUpon>ThrottleOptions.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\File\FileOptions.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>FileOptions.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\FTP\FTPOptions.resx">
       <SubType>Designer</SubType>
@@ -874,15 +891,16 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ThrottleOptions.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\File\Strings\FileOptions.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>FileOptions.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\FTP\Strings\FTPOptions.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FTPOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\GUIContainer.resx">
+      <DependentUpon>GUIContainer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
+      <DependentUpon>RawContainer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\S3\Strings\S3Options.resx">
       <SubType>Designer</SubType>
@@ -899,10 +917,17 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Common.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Backends\Strings\RawContainer.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>RawContainer.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\WebDAV\Strings\WebDAVOptions.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>WebDAVOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\CommandLineOptionGrid.resx">
+      <DependentUpon>CommandLineOptionGrid.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Delete backup\Strings\DeleteFinished.resx">
       <SubType>Designer</SubType>
@@ -933,6 +958,10 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>RunNowFinished.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Wizard pages\Strings\CommandLineOptionsGrid.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>CommandLineOptionsGrid.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Strings\FirstLaunch.resx">
       <SubType>Designer</SubType>

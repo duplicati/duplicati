@@ -91,8 +91,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="Backends\File.cs" />
-    <Compile Include="Backends\IBackend.cs" />
     <Compile Include="Backends\S3.cs" />
     <Compile Include="Backends\SSH.cs" />
     <Compile Include="SettingsHelper.cs" />
@@ -119,6 +117,14 @@
     <Compile Include="Schedule.Extension.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Library\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
+      <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
+      <Name>Duplicati.Library.Backend.BackendInterface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\BackendLoader\Duplicati.Library.Backend.BackendLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.Backend.BackendLoader</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Core\Duplicati.Library.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Core</Name>

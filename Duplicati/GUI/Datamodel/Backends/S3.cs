@@ -24,7 +24,7 @@ using System.Text;
 
 namespace Duplicati.Datamodel.Backends
 {
-    public class S3 : IBackend
+    public class S3 //: IBackend
     {
         private const string ACCESS_ID = "AccessID";
         private const string ACCESS_KEY = "AccessKey";

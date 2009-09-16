@@ -37,6 +37,7 @@ namespace Duplicati.GUI.Wizard_pages
             : base(Strings.SelectBackend.PageTitle, Strings.SelectBackend.PageHelptext)
         {
             InitializeComponent();
+
             base.PageEnter += new PageChangeHandler(SelectBackend_PageEnter);
             base.PageLeave += new PageChangeHandler(SelectBackend_PageLeave);
             base.PageDisplay += new PageChangeHandler(SelectBackend_PageDisplay);
@@ -52,50 +53,23 @@ namespace Duplicati.GUI.Wizard_pages
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            if (!(File.Checked || FTP.Checked || SSH.Checked || WebDAV.Checked || S3.Checked))
+            Library.Backend.IBackend selectedBackend = null;
+            foreach (RadioButton button in BackendList.Controls)
+                if (button.Checked && button.Tag is Library.Backend.IBackend)
+                    selectedBackend = button.Tag as Library.Backend.IBackend;
+
+            if (selectedBackend == null)
             {
                 MessageBox.Show(this, Strings.SelectBackend.NoActionSelected, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
 
-            if (File.Checked)
-            {
-                args.NextPage = new Backends.File.FileOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.File;
-            }
-            else if (FTP.Checked)
-            {
-                args.NextPage = new Backends.FTP.FTPOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.FTP;
-            }
-            else if (SSH.Checked)
-            {
-                args.NextPage = new Backends.SSH.SSHOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.SSH;
-            }
-            else if (WebDAV.Checked)
-            {
-                args.NextPage = new Backends.WebDAV.WebDAVOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.WebDav;
-            }
-            else if (S3.Checked)
-            {
-                args.NextPage = new Backends.S3.S3Options();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.S3;
-            }
-            else if (WebDAV.Checked)
-            {
-                args.NextPage = new Backends.WebDAV.WebDAVOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.WebDav;
-            }
+            m_wrapper.Backend = selectedBackend.ProtocolKey;
+            if (selectedBackend is Library.Backend.IBackendGUI)
+                args.NextPage = new Backends.GUIContainer(selectedBackend as Library.Backend.IBackendGUI);
             else
-            {
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.Unknown;
-                args.NextPage = null;
-                args.Cancel = true;
-                return;
-            }
+                args.NextPage = new Backends.RawContainer(selectedBackend);
         }
 
 
@@ -103,30 +77,26 @@ namespace Duplicati.GUI.Wizard_pages
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            if (!m_valuesAutoLoaded)
+            int top = 0;
+            BackendList.Controls.Clear();
+
+            foreach (Library.Backend.IBackend backend in Library.Backend.BackendLoader.LoadedBackends)
             {
-                switch (m_wrapper.Backend)
-                {
-                    case WizardSettingsWrapper.BackendType.File:
-                        File.Checked = true;
-                        break;
-                    case WizardSettingsWrapper.BackendType.FTP:
-                        FTP.Checked = true;
-                        break;
-                    case WizardSettingsWrapper.BackendType.SSH:
-                        SSH.Checked = true;
-                        break;
-                    case WizardSettingsWrapper.BackendType.WebDav:
-                        WebDAV.Checked = true;
-                        break;
-                    case WizardSettingsWrapper.BackendType.S3:
-                        S3.Checked = true;
-                        break;
-                }
+                RadioButton button = new RadioButton();
+                button.Text = backend.DisplayName;
+                toolTips.SetToolTip(button, backend.Description);
+                button.Left = 0;
+                button.Top = top;
+                button.Tag = backend;
+                button.CheckedChanged += new EventHandler(Item_CheckChanged);
+
+                button.Checked = (backend.ProtocolKey == m_wrapper.Backend);
+
+                top += button.Height + 5;
+                BackendList.Controls.Add(button);
             }
 
             Item_CheckChanged(null, null);
-
 
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
                 Question.Text = Strings.SelectBackend.RestoreSetupTitle;
@@ -135,7 +105,12 @@ namespace Duplicati.GUI.Wizard_pages
 
         private void Item_CheckChanged(object sender, EventArgs e)
         {
-            m_owner.NextButton.Enabled = File.Checked || FTP.Checked || SSH.Checked || WebDAV.Checked || S3.Checked;
+            Library.Backend.IBackend selectedBackend = null;
+            foreach (RadioButton button in BackendList.Controls)
+                if (button.Checked && button.Tag is Library.Backend.IBackend)
+                    selectedBackend = button.Tag as Library.Backend.IBackend;
+
+            m_owner.NextButton.Enabled = selectedBackend != null;
         }
 
         private void RadioButton_DoubleClick(object sender, EventArgs e)

@@ -117,76 +117,101 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="InfoLabel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Bottom</value>
+  </data>
+  <data name="InfoLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="InfoLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 151</value>
+  </data>
+  <data name="InfoLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>471, 64</value>
+  </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="InfoLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="InfoLabel.Text" xml:space="preserve">
+    <value>Description panel</value>
+  </data>
+  <data name="&gt;&gt;InfoLabel.Name" xml:space="preserve">
+    <value>InfoLabel</value>
+  </data>
+  <data name="&gt;&gt;InfoLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;InfoLabel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;InfoLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
   <metadata name="BaseDataSet.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
-  <data name="dataGridViewTextBoxColumn1.HeaderText" xml:space="preserve">
+  <data name="enabledDataGridViewCheckBoxColumn.HeaderText" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="enabledDataGridViewCheckBoxColumn.Width" type="System.Int32, mscorlib">
+    <value>50</value>
+  </data>
+  <data name="nameDataGridViewTextBoxColumn.HeaderText" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="nameDataGridViewTextBoxColumn.Width" type="System.Int32, mscorlib">
+    <value>150</value>
+  </data>
+  <data name="valueDataGridViewTextBoxColumn.HeaderText" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="valueDataGridViewTextBoxColumn.Width" type="System.Int32, mscorlib">
+    <value>240</value>
+  </data>
+  <data name="argumentDataGridViewTextBoxColumn.HeaderText" xml:space="preserve">
     <value>argument</value>
   </data>
-  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="dataGridViewTextBoxColumn1.Visible" type="System.Boolean, mscorlib">
+  <data name="argumentDataGridViewTextBoxColumn.Visible" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="dataGridViewTextBoxColumn1.Width" type="System.Int32, mscorlib">
+  <data name="argumentDataGridViewTextBoxColumn.Width" type="System.Int32, mscorlib">
     <value>5</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="OptionGrid.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 16</value>
+  <data name="OptionsGrid.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
   </data>
-  <data name="OptionGrid.Size" type="System.Drawing.Size, System.Drawing">
-    <value>471, 215</value>
+  <data name="OptionsGrid.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
   </data>
-  <data name="OptionGrid.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+  <data name="OptionsGrid.Size" type="System.Drawing.Size, System.Drawing">
+    <value>471, 151</value>
   </data>
-  <data name="OptionGrid.Table" mimetype="application/x-microsoft.net.object.binary.base64">
-    <value>
-        AAEAAAD/////AQAAAAAAAAAMAgAAAE5TeXN0ZW0uRGF0YSwgVmVyc2lvbj0yLjAuMC4wLCBDdWx0dXJl
-        PW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWI3N2E1YzU2MTkzNGUwODkFAQAAABNTeXN0ZW0uRGF0YS5E
-        YXRhU2V0AwAAABdEYXRhU2V0LlJlbW90aW5nVmVyc2lvbglYbWxTY2hlbWELWG1sRGlmZkdyYW0DAQEO
-        U3lzdGVtLlZlcnNpb24CAAAACQMAAAAGBAAAANQIPD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0i
-        dXRmLTE2Ij8+DQo8eHM6c2NoZW1hIGlkPSJCYXNlRGF0YVNldCIgeG1sbnM9IiIgeG1sbnM6eHM9Imh0
-        dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hIiB4bWxuczptc2RhdGE9InVybjpzY2hlbWFzLW1p
-        Y3Jvc29mdC1jb206eG1sLW1zZGF0YSI+DQogIDx4czplbGVtZW50IG5hbWU9IkJhc2VEYXRhU2V0IiBt
-        c2RhdGE6SXNEYXRhU2V0PSJ0cnVlIiBtc2RhdGE6VXNlQ3VycmVudExvY2FsZT0idHJ1ZSI+DQogICAg
-        PHhzOmNvbXBsZXhUeXBlPg0KICAgICAgPHhzOmNob2ljZSBtaW5PY2N1cnM9IjAiIG1heE9jY3Vycz0i
-        dW5ib3VuZGVkIj4NCiAgICAgICAgPHhzOmVsZW1lbnQgbmFtZT0iT3ZlcnJpZGVUYWJsZSI+DQogICAg
-        ICAgICAgPHhzOmNvbXBsZXhUeXBlPg0KICAgICAgICAgICAgPHhzOnNlcXVlbmNlPg0KICAgICAgICAg
-        ICAgICA8eHM6ZWxlbWVudCBuYW1lPSJFbmFibGVkIiB0eXBlPSJ4czpib29sZWFuIiBtc2RhdGE6dGFy
-        Z2V0TmFtZXNwYWNlPSIiIG1pbk9jY3Vycz0iMCIgLz4NCiAgICAgICAgICAgICAgPHhzOmVsZW1lbnQg
-        bmFtZT0iTmFtZSIgdHlwZT0ieHM6c3RyaW5nIiBtc2RhdGE6dGFyZ2V0TmFtZXNwYWNlPSIiIG1pbk9j
-        Y3Vycz0iMCIgLz4NCiAgICAgICAgICAgICAgPHhzOmVsZW1lbnQgbmFtZT0iVmFsdWUiIHR5cGU9Inhz
-        OnN0cmluZyIgbXNkYXRhOnRhcmdldE5hbWVzcGFjZT0iIiBtaW5PY2N1cnM9IjAiIC8+DQogICAgICAg
-        ICAgICAgIDx4czplbGVtZW50IG5hbWU9ImFyZ3VtZW50IiBtc2RhdGE6RGF0YVR5cGU9IlN5c3RlbS5P
-        YmplY3QsIG1zY29ybGliLCBWZXJzaW9uPTIuMC4wLjAsIEN1bHR1cmU9bmV1dHJhbCwgUHVibGljS2V5
-        VG9rZW49Yjc3YTVjNTYxOTM0ZTA4OSIgdHlwZT0ieHM6YW55VHlwZSIgbXNkYXRhOnRhcmdldE5hbWVz
-        cGFjZT0iIiBtaW5PY2N1cnM9IjAiIC8+DQogICAgICAgICAgICA8L3hzOnNlcXVlbmNlPg0KICAgICAg
-        ICAgIDwveHM6Y29tcGxleFR5cGU+DQogICAgICAgIDwveHM6ZWxlbWVudD4NCiAgICAgIDwveHM6Y2hv
-        aWNlPg0KICAgIDwveHM6Y29tcGxleFR5cGU+DQogIDwveHM6ZWxlbWVudD4NCjwveHM6c2NoZW1hPgYF
-        AAAAgAE8ZGlmZmdyOmRpZmZncmFtIHhtbG5zOm1zZGF0YT0idXJuOnNjaGVtYXMtbWljcm9zb2Z0LWNv
-        bTp4bWwtbXNkYXRhIiB4bWxuczpkaWZmZ3I9InVybjpzY2hlbWFzLW1pY3Jvc29mdC1jb206eG1sLWRp
-        ZmZncmFtLXYxIiAvPgQDAAAADlN5c3RlbS5WZXJzaW9uBAAAAAZfTWFqb3IGX01pbm9yBl9CdWlsZAlf
-        UmV2aXNpb24AAAAACAgICAIAAAAAAAAA//////////8L
-</value>
+  <data name="OptionsGrid.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
   </data>
-  <data name="&gt;&gt;OptionGrid.Name" xml:space="preserve">
-    <value>OptionGrid</value>
+  <data name="&gt;&gt;OptionsGrid.Name" xml:space="preserve">
+    <value>OptionsGrid</value>
   </data>
-  <data name="&gt;&gt;OptionGrid.Type" xml:space="preserve">
-    <value>Duplicati.GUI.Wizard_pages.CommandLineOptionGrid, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  <data name="&gt;&gt;OptionsGrid.Type" xml:space="preserve">
+    <value>System.Windows.Forms.DataGridView, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;OptionGrid.Parent" xml:space="preserve">
+  <data name="&gt;&gt;OptionsGrid.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;OptionGrid.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;OptionsGrid.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
-    <value>506, 242</value>
+    <value>471, 215</value>
   </data>
   <data name="&gt;&gt;BaseDataSet.Name" xml:space="preserve">
     <value>BaseDataSet</value>
@@ -224,16 +249,34 @@
   <data name="&gt;&gt;argumentDataColumn.Type" xml:space="preserve">
     <value>System.Data.DataColumn, System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;dataGridViewTextBoxColumn1.Name" xml:space="preserve">
-    <value>dataGridViewTextBoxColumn1</value>
+  <data name="&gt;&gt;enabledDataGridViewCheckBoxColumn.Name" xml:space="preserve">
+    <value>enabledDataGridViewCheckBoxColumn</value>
   </data>
-  <data name="&gt;&gt;dataGridViewTextBoxColumn1.Type" xml:space="preserve">
+  <data name="&gt;&gt;enabledDataGridViewCheckBoxColumn.Type" xml:space="preserve">
+    <value>System.Windows.Forms.DataGridViewCheckBoxColumn, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;nameDataGridViewTextBoxColumn.Name" xml:space="preserve">
+    <value>nameDataGridViewTextBoxColumn</value>
+  </data>
+  <data name="&gt;&gt;nameDataGridViewTextBoxColumn.Type" xml:space="preserve">
+    <value>System.Windows.Forms.DataGridViewTextBoxColumn, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;valueDataGridViewTextBoxColumn.Name" xml:space="preserve">
+    <value>valueDataGridViewTextBoxColumn</value>
+  </data>
+  <data name="&gt;&gt;valueDataGridViewTextBoxColumn.Type" xml:space="preserve">
+    <value>System.Windows.Forms.DataGridViewTextBoxColumn, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;argumentDataGridViewTextBoxColumn.Name" xml:space="preserve">
+    <value>argumentDataGridViewTextBoxColumn</value>
+  </data>
+  <data name="&gt;&gt;argumentDataGridViewTextBoxColumn.Type" xml:space="preserve">
     <value>System.Windows.Forms.DataGridViewTextBoxColumn, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
-    <value>SettingOverrides</value>
+    <value>CommandLineOptionGrid</value>
   </data>
   <data name="&gt;&gt;$this.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Wizard.WizardControl, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+    <value>System.Windows.Forms.UserControl, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
 </root>

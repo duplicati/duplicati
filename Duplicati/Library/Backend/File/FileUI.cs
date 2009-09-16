@@ -24,115 +24,111 @@ using System.Drawing;
 using System.Data;
 using System.Text;
 using System.Windows.Forms;
-using System.Windows.Forms.Wizard;
-using Duplicati.Datamodel;
 
-namespace Duplicati.GUI.Wizard_pages.Backends.File
+namespace Duplicati.Library.Backend
 {
-    public partial class FileOptions : WizardControl
+    public partial class FileUI : Control
     {
-        FileSettings m_wrapper;
+        IDictionary<string, string> m_options;
 
-        public FileOptions()
-            : base(Strings.FileOptions.PageTitle, Strings.FileOptions.PageDescription)
+        private const string DESTINATION_FOLDER = "Destination";
+        private const string USERNAME = "Username";
+        private const string PASSWORD = "Password";
+
+        public FileUI(IDictionary<string, string> options)
+            : this()
         {
-            InitializeComponent();
-
-            base.PageEnter += new PageChangeHandler(FileOptions_PageEnter);
-            base.PageLeave += new PageChangeHandler(FileOptions_PageLeave);
+            m_options = options;
         }
 
-        void FileOptions_PageLeave(object sender, PageChangedArgs args)
+        private FileUI()
         {
-            if (args.Direction == PageChangedDirection.Back)
-                return;
+            InitializeComponent();
+        }
 
+        internal bool Save(bool validate)
+        {
             string targetpath;
             if (UsePath.Checked)
                 targetpath = TargetFolder.Text;
             else
                 targetpath = TargetDrive.Text + "\\" + Folder.Text;
 
+            m_options[DESTINATION_FOLDER] = targetpath;
+            if (UseCredentials.Checked)
+            {
+                m_options[USERNAME] = Username.Text;
+                m_options[PASSWORD] = Password.Text;
+            }
+            else
+            {
+                m_options[USERNAME] = "";
+                m_options[PASSWORD] = "";
+            }
+
+            if (!validate)
+                return false; 
+
             if (UseCredentials.Checked)
                 if (!Duplicati.Library.Backend.File.PreAuthenticate(targetpath, Username.Text, Password.Text))
                 {
-                    MessageBox.Show(this, Strings.FileOptions.AuthenticationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    MessageBox.Show(this, Strings.FileUI.AuthenticationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
                 }
 
             try
             {
                 if (targetpath.Trim().Length == 0)
                 {
-                    MessageBox.Show(this, Strings.FileOptions.EmptyFoldernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    args.Cancel = true;
-                    return;
+                    MessageBox.Show(this, Strings.FileUI.EmptyFoldernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return false;
                 }
 
                 if (!System.IO.Path.IsPathRooted(targetpath))
                 {
-                    MessageBox.Show(this, Strings.FileOptions.NonRootedPathError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    args.Cancel = true;
-                    return;
+                    MessageBox.Show(this, Strings.FileUI.NonRootedPathError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return false;
                 }
 
                 if (!System.IO.Directory.Exists(targetpath))
                 {
-                    switch (MessageBox.Show(this, Strings.FileOptions.CreateFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    switch (MessageBox.Show(this, Strings.FileUI.CreateFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                     {
                         case DialogResult.Yes:
                             System.IO.Directory.CreateDirectory(targetpath);
                             break;
                         case DialogResult.Cancel:
-                            args.Cancel = true;
-                            return;
+                            return false;
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, string.Format(Strings.FileOptions.FolderValidationError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                args.Cancel = true;
-                return;
+                MessageBox.Show(this, string.Format(Strings.FileUI.FolderValidationError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
 
             try
             {
-                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0 && new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.Add)
-                    if (MessageBox.Show(this, Strings.FileOptions.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
-                    {
-                        args.Cancel = true;
-                        return;
-                    }
+                //TODO: Only check on new backups
+                /*
+                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
+                    if (MessageBox.Show(this, Strings.FileUI.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                        return false;
+                 */
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, string.Format(Strings.FileOptions.FolderValidationError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                args.Cancel = true;
-                return;
+                MessageBox.Show(this, string.Format(Strings.FileUI.FolderValidationError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
 
-            m_wrapper.Path = targetpath;
-            if (UseCredentials.Checked)
-            {
-                m_wrapper.Username = Username.Text;
-                m_wrapper.Password = Password.Text;
-            }
-            else
-            {
-                m_wrapper.Username = m_wrapper.Password = "";
-            }
-
-            if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
-                args.NextPage = new Add_backup.GeneratedFilenameOptions();
-            else
-                args.NextPage = new Add_backup.AdvancedOptions();
+            return true;
         }
 
         private void RescanDrives()
         {
             TargetDrive.Items.Clear();
-
 
             if (!Library.Core.Utility.IsClientLinux)
                 for (char i = 'A'; i < 'Z'; i++)
@@ -147,21 +143,20 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
                 }
         }
 
-        void FileOptions_PageEnter(object sender, PageChangedArgs args)
+        void FileUI_Load(object sender, EventArgs args)
         {
-            m_wrapper = new WizardSettingsWrapper(m_settings).FileSettings;
-
             RescanDrives();
 
-            if (!m_valuesAutoLoaded )
-            {
-                UsePath.Checked = true;
-                TargetFolder.Text = m_wrapper.Path;
+            UsePath.Checked = true;
+            if (m_options.ContainsKey(DESTINATION_FOLDER))
+                TargetFolder.Text = m_options[DESTINATION_FOLDER];
 
-                UseCredentials.Checked = !string.IsNullOrEmpty(m_wrapper.Username);
-                Username.Text = m_wrapper.Username;
-                Password.Text = m_wrapper.Password;
-            }
+
+            UseCredentials.Checked = m_options.ContainsKey(USERNAME) && !string.IsNullOrEmpty(m_options[USERNAME]);
+            if (m_options.ContainsKey(USERNAME))
+                Username.Text = m_options[USERNAME];
+            if (m_options.ContainsKey(PASSWORD))
+                Password.Text = m_options[PASSWORD];
         }
 
         private void UseCredentials_CheckedChanged(object sender, EventArgs e)
@@ -188,10 +183,21 @@ namespace Duplicati.GUI.Wizard_pages.Backends.File
 
             if (TargetDrive.Enabled && TargetDrive.Items.Count == 0)
             {
-                MessageBox.Show(this, Strings.FileOptions.NoRemovableDrivesError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.FileUI.NoRemovableDrivesError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 UsePath.Checked = true;
             }
 
         }
+
+        public static string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        {
+            if (guiOptions.ContainsKey(USERNAME) && !string.IsNullOrEmpty(guiOptions[USERNAME]))
+                commandlineOptions["ftp-username"] = guiOptions[USERNAME];
+            if (guiOptions.ContainsKey(PASSWORD) && !string.IsNullOrEmpty(guiOptions[PASSWORD]))
+                commandlineOptions["ftp-password"] = guiOptions[PASSWORD];
+
+            return "file://" + guiOptions[DESTINATION_FOLDER];
+        }
+
     }
 }

@@ -25,6 +25,8 @@ namespace Duplicati.Library.Backend
 {
     /// <summary>
     /// An interface a backend may implement if it supports streaming operations.
+    /// Backends that implement this interface can be throttled and correctly shows 
+    /// the progressbar when transfering data.
     /// </summary>
     public interface IStreamingBackend : IBackend
     {
