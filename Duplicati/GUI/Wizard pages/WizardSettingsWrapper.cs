@@ -298,7 +298,12 @@ namespace Duplicati.GUI.Wizard_pages
         /// </summary>
         public Dictionary<string, string> BackendSettings
         {
-            get { return GetItem<Dictionary<string, string>>("BackendSettings", new Dictionary<string, string>()); }
+            get 
+            {
+                if (GetItem<Dictionary<string, string>>("BackendSettings", null) == null)
+                    this.BackendSettings = new Dictionary<string, string>();
+                return GetItem<Dictionary<string, string>>("BackendSettings", null); 
+            }
             set { SetItem("BackendSettings", value); }
         }
 

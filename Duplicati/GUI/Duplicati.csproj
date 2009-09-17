@@ -295,11 +295,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ThrottleOptions.resx</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Backends\FTP\Strings\FTPOptions.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>FTPOptions.resx</DependentUpon>
-    </Compile>
     <Compile Include="Wizard pages\Backends\GUIContainer.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -326,11 +321,6 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Common.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\Strings\RawContainer.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>RawContainer.resx</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Backends\WebDAV\Strings\WebDAVOptions.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -389,12 +379,6 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\ThrottleOptions.Designer.cs">
       <DependentUpon>ThrottleOptions.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\FTP\FTPOptions.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\FTP\FTPOptions.Designer.cs">
-      <DependentUpon>FTPOptions.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Backends\S3\S3Options.cs">
       <SubType>UserControl</SubType>
@@ -666,10 +650,6 @@
       <SubType>Designer</SubType>
       <DependentUpon>ThrottleOptions.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\FTP\FTPOptions.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>FTPOptions.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\S3\S3Options.resx">
       <SubType>Designer</SubType>
       <DependentUpon>S3Options.cs</DependentUpon>
@@ -891,11 +871,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ThrottleOptions.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\FTP\Strings\FTPOptions.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>FTPOptions.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\GUIContainer.resx">
       <DependentUpon>GUIContainer.cs</DependentUpon>
     </EmbeddedResource>
@@ -916,10 +891,6 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Common.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\Strings\RawContainer.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>RawContainer.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\WebDAV\Strings\WebDAVOptions.resx">
       <SubType>Designer</SubType>

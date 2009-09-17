@@ -27,13 +27,16 @@ using System.Windows.Forms;
 
 namespace Duplicati.Library.Backend
 {
-    public partial class FileUI : Control
+    public partial class FileUI : UserControl
     {
         IDictionary<string, string> m_options;
 
         private const string DESTINATION_FOLDER = "Destination";
         private const string USERNAME = "Username";
         private const string PASSWORD = "Password";
+        private const string CHECKED_EMPTY = "UI: Checked empty";
+
+        private bool m_hasCheckedEmpty = false;
 
         public FileUI(IDictionary<string, string> options)
             : this()
@@ -54,7 +57,13 @@ namespace Duplicati.Library.Backend
             else
                 targetpath = TargetDrive.Text + "\\" + Folder.Text;
 
+            if (m_hasCheckedEmpty && m_options.ContainsKey(DESTINATION_FOLDER) && targetpath != m_options[DESTINATION_FOLDER])
+                m_hasCheckedEmpty = false;
+
+            m_options.Clear();
+            m_options[CHECKED_EMPTY] = m_hasCheckedEmpty.ToString();
             m_options[DESTINATION_FOLDER] = targetpath;
+            
             if (UseCredentials.Checked)
             {
                 m_options[USERNAME] = Username.Text;
@@ -110,12 +119,12 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                //TODO: Only check on new backups
-                /*
-                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
+                if (!m_hasCheckedEmpty && System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
                     if (MessageBox.Show(this, Strings.FileUI.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                         return false;
-                 */
+                
+                m_hasCheckedEmpty = true;
+                m_options[CHECKED_EMPTY] = "true";
             }
             catch (Exception ex)
             {
@@ -157,6 +166,9 @@ namespace Duplicati.Library.Backend
                 Username.Text = m_options[USERNAME];
             if (m_options.ContainsKey(PASSWORD))
                 Password.Text = m_options[PASSWORD];
+
+            if (!m_options.ContainsKey(CHECKED_EMPTY) || !bool.TryParse(m_options[CHECKED_EMPTY], out m_hasCheckedEmpty))
+                m_hasCheckedEmpty = false;
         }
 
         private void UseCredentials_CheckedChanged(object sender, EventArgs e)

@@ -47,7 +47,7 @@
   <ItemGroup>
     <Compile Include="FileBackend.cs" />
     <Compile Include="FileUI.cs">
-      <SubType>Component</SubType>
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="FileUI.designer.cs">
       <DependentUpon>FileUI.cs</DependentUpon>

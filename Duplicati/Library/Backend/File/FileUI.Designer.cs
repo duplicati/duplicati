@@ -132,9 +132,8 @@ namespace Duplicati.Library.Backend
             // 
             resources.ApplyResources(this.folderBrowserDialog, "folderBrowserDialog");
             // 
-            // FileOptions
+            // FileUI
             // 
-            resources.ApplyResources(this, "$this");
             this.Controls.Add(this.FolderLabel);
             this.Controls.Add(this.Folder);
             this.Controls.Add(this.UseCredentials);
@@ -144,7 +143,9 @@ namespace Duplicati.Library.Backend
             this.Controls.Add(this.TargetFolder);
             this.Controls.Add(this.UseDisk);
             this.Controls.Add(this.UsePath);
-            this.Name = "FileOptions";
+            this.Name = "FileUI";
+            resources.ApplyResources(this, "$this");
+            this.Load += new System.EventHandler(this.FileUI_Load);
             this.Credentials.ResumeLayout(false);
             this.Credentials.PerformLayout();
             this.ResumeLayout(false);

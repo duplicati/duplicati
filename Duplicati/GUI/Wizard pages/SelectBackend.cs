@@ -97,7 +97,12 @@ namespace Duplicati.GUI.Wizard_pages
             int top = 0;
             BackendList.Controls.Clear();
 
+            //Sort backends by display name
+            SortedList<string, Library.Backend.IBackend> lst = new SortedList<string, Duplicati.Library.Backend.IBackend>();
             foreach (Library.Backend.IBackend backend in Library.Backend.BackendLoader.LoadedBackends)
+                lst.Add(backend.DisplayName.Trim().ToLower(), backend);
+
+            foreach (Library.Backend.IBackend backend in lst.Values)
             {
                 RadioButton button = new RadioButton();
                 button.Text = backend.DisplayName;

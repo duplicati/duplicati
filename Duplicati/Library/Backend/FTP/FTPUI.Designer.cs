@@ -1,6 +1,6 @@
-namespace Duplicati.GUI.Wizard_pages.Backends.FTP
+namespace Duplicati.Library.Backend
 {
-    partial class FTPOptions
+    partial class FTPUI
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,7 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FTPOptions));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FTPUI));
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -136,10 +136,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             this.CreateFolderButton.UseVisualStyleBackColor = true;
             this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
             // 
-            // FTPOptions
+            // FTPUI
             // 
-            resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.Username);
             this.Controls.Add(this.Password);
             this.Controls.Add(this.label4);
@@ -153,7 +151,9 @@ namespace Duplicati.GUI.Wizard_pages.Backends.FTP
             this.Controls.Add(this.label5);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Name = "FTPOptions";
+            this.Name = "FTPUI";
+            resources.ApplyResources(this, "$this");
+            this.Load += new System.EventHandler(this.FTPUI_Load);
             ((System.ComponentModel.ISupportInitialize)(this.Port)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

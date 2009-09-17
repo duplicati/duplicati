@@ -40,15 +40,28 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FTPBackend.cs" />
+    <Compile Include="FTPUI.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FTPUI.designer.cs">
+      <DependentUpon>FTPUI.cs</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Strings\FTPBackend.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>FTPBackend.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\FTPUI.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FTPUI.resx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -66,10 +79,17 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="FTPUI.resx">
+      <DependentUpon>FTPUI.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Strings\FTPBackend.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FTPBackend.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\FTPUI.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FTPUI.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -40,7 +40,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends
 
             if (string.IsNullOrEmpty(Destination.Text) || Destination.Text.Trim().Length == 0)
             {
-                MessageBox.Show(this, Strings.RawContainer.NoDestinationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Library.Backend.CommonStrings.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }

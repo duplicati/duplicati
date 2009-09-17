@@ -110,7 +110,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="LightDatamodel.snk" />
-    <Compile Include="Backends\FTP.cs" />
     <Compile Include="Backends\WEBDAV.cs" />
     <Compile Include="Log.Extension.cs" />
     <Compile Include="LogBlob.Extension.cs" />
