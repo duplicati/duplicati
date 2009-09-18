@@ -307,11 +307,6 @@
     <Compile Include="Wizard pages\Backends\RawContainer.Designer.cs">
       <DependentUpon>RawContainer.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Backends\S3\Strings\S3Options.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>S3Options.resx</DependentUpon>
-    </Compile>
     <Compile Include="Wizard pages\Backends\SSH\Strings\SSHOptions.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -379,12 +374,6 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\ThrottleOptions.Designer.cs">
       <DependentUpon>ThrottleOptions.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\S3\S3Options.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\S3\S3Options.Designer.cs">
-      <DependentUpon>S3Options.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Backends\SSH\SSHOptions.cs">
       <SubType>UserControl</SubType>
@@ -650,10 +639,6 @@
       <SubType>Designer</SubType>
       <DependentUpon>ThrottleOptions.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\S3\S3Options.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>S3Options.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\SSH\SSHOptions.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SSHOptions.cs</DependentUpon>
@@ -876,11 +861,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
       <DependentUpon>RawContainer.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\S3\Strings\S3Options.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>S3Options.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\SSH\Strings\SSHOptions.resx">
       <SubType>Designer</SubType>

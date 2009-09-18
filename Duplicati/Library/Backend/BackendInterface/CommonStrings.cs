@@ -121,5 +121,16 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <summary>
+        ///   Looks up a localized string similar to The configuration for the backend is not valid, it is missing the {0} field.
+        /// </summary>
+        public static string ConfigurationIsMissingItemError
+        {
+            get
+            {
+                return Strings.Common.ConfigurationIsMissingItemError;
+            }
+        }
+
     }
 }

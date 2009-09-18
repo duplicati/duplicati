@@ -198,7 +198,6 @@ namespace Duplicati.Library.Backend
                 MessageBox.Show(this, Strings.FileUI.NoRemovableDrivesError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 UsePath.Checked = true;
             }
-
         }
 
         public static string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
@@ -207,6 +206,9 @@ namespace Duplicati.Library.Backend
                 commandlineOptions["ftp-username"] = guiOptions[USERNAME];
             if (guiOptions.ContainsKey(PASSWORD) && !string.IsNullOrEmpty(guiOptions[PASSWORD]))
                 commandlineOptions["ftp-password"] = guiOptions[PASSWORD];
+
+            if (!guiOptions.ContainsKey(DESTINATION_FOLDER))
+                throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, DESTINATION_FOLDER));
 
             return "file://" + guiOptions[DESTINATION_FOLDER];
         }

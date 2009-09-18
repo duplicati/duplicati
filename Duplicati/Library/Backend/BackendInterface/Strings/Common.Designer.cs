@@ -61,6 +61,15 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The configuration for the backend is not valid, it is missing the {0} field.
+        /// </summary>
+        internal static string ConfigurationIsMissingItemError {
+            get {
+                return ResourceManager.GetString("ConfigurationIsMissingItemError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Do you want to test the connection?.
         /// </summary>
         internal static string ConfirmTestConnectionQuestion {

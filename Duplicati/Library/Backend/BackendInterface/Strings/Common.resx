@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ConfigurationIsMissingItemError" xml:space="preserve">
+    <value>The configuration for the backend is not valid, it is missing the {0} field</value>
+  </data>
   <data name="ConfirmTestConnectionQuestion" xml:space="preserve">
     <value>Do you want to test the connection?</value>
   </data>

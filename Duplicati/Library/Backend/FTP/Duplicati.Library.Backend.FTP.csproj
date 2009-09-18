@@ -58,11 +58,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>FTPBackend.resx</DependentUpon>
     </Compile>
-    <Compile Include="Strings\FTPUI.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>FTPUI.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Duplicati.Library.Core.csproj">
@@ -86,10 +81,6 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FTPBackend.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\FTPUI.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>FTPUI.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

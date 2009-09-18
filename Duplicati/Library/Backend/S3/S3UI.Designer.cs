@@ -1,6 +1,6 @@
-namespace Duplicati.GUI.Wizard_pages.Backends.S3
+namespace Duplicati.Library.Backend
 {
-    partial class S3Options
+    partial class S3UI
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,7 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(S3Options));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(S3UI));
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -100,7 +100,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.TestConnection.UseVisualStyleBackColor = true;
             this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
-            // S3Options
+            // S3UI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -114,7 +114,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.S3
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Name = "S3Options";
+            this.Name = "S3UI";
+            this.Load += new System.EventHandler(this.S3UI_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

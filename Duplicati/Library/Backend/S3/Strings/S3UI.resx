@@ -117,10 +117,25 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="PageDescription" xml:space="preserve">
-    <value>On this page you can select where to store the backup data.</value>
+  <data name="BucketnameCaseWarning" xml:space="preserve">
+    <value>The bucket name is not in all lower case.\n{0}\nDo you want to convert the bucket name to lower case?</value>
   </data>
-  <data name="PageTitle" xml:space="preserve">
-    <value>Backup storage options</value>
+  <data name="BucketnameNotPrefixedWarning" xml:space="preserve">
+    <value>The bucket name does not start with your user ID.\nTo avoid using a bucket owned by another user,\nit is recommended that you put your user ID in front of the bucket name.\nDo you want to insert the user ID in front of the bucket name?</value>
+  </data>
+  <data name="EmptyAWSIDError" xml:space="preserve">
+    <value>You must enter your AWS Access ID.\nYou may click the link to the right\nto open the AWS login page, and retrieve it.</value>
+  </data>
+  <data name="EmptyAWSKeyError" xml:space="preserve">
+    <value>You must enter your AWS Secret Key.\nYou may click the link to the right\nto open the AWS login page, and retrieve it.</value>
+  </data>
+  <data name="EmptyBucketnameError" xml:space="preserve">
+    <value>You must enter a name for the bucket.\nYou must use a unique name for each backup.\nYou may enter any name you like.</value>
+  </data>
+  <data name="EuroBucketsRequireLowerCaseError" xml:space="preserve">
+    <value>The european buckets require that the bucket name is in lower case.</value>
+  </data>
+  <data name="NewS3RequiresLowerCaseError" xml:space="preserve">
+    <value>The new amazon s3 API requires that bucket names are all lower case.</value>
   </data>
 </root>

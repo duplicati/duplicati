@@ -91,7 +91,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="Backends\S3.cs" />
     <Compile Include="Backends\SSH.cs" />
     <Compile Include="SettingsHelper.cs" />
     <Compile Include="Task.Extension.cs" />

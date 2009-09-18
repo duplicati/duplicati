@@ -268,8 +268,10 @@ namespace Duplicati.Library.Backend
 
         public static string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
-            commandlineOptions["ftp-username"] = guiOptions[USERNAME];
-            commandlineOptions["ftp-password"] = guiOptions[PASSWORD];
+            if (guiOptions.ContainsKey(USERNAME) && !string.IsNullOrEmpty(guiOptions[USERNAME]))
+                commandlineOptions["ftp-username"] = guiOptions[USERNAME];
+            if (guiOptions.ContainsKey(PASSWORD) && !string.IsNullOrEmpty(guiOptions[PASSWORD]))
+                commandlineOptions["ftp-password"] = guiOptions[PASSWORD];
 
             bool passive;
             if (!guiOptions.ContainsKey(PASSIVE) || !bool.TryParse(guiOptions[PASSIVE], out passive))
@@ -284,7 +286,10 @@ namespace Duplicati.Library.Backend
             if (!guiOptions.ContainsKey(PORT) || !int.TryParse(guiOptions[PORT], out port) || port < 0)
                 port = 21;
 
-            return "ftp://" + guiOptions[HOST] + ":" + port.ToString() + "/" + guiOptions[FOLDER];
+            if (!guiOptions.ContainsKey(HOST))
+                throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, FOLDER));
+
+            return "ftp://" + guiOptions[HOST] + ":" + port.ToString() + "/" + (guiOptions.ContainsKey(FOLDER) ? guiOptions[FOLDER] : "");
         }
 
     }
