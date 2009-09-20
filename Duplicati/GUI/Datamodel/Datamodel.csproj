@@ -91,7 +91,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="Backends\SSH.cs" />
     <Compile Include="SettingsHelper.cs" />
     <Compile Include="Task.Extension.cs" />
     <Compile Include="Task.cs" />
@@ -109,7 +108,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="LightDatamodel.snk" />
-    <Compile Include="Backends\WEBDAV.cs" />
     <Compile Include="Log.Extension.cs" />
     <Compile Include="LogBlob.Extension.cs" />
     <Compile Include="Schedule.Extension.cs" />

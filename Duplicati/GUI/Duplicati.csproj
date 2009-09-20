@@ -307,21 +307,6 @@
     <Compile Include="Wizard pages\Backends\RawContainer.Designer.cs">
       <DependentUpon>RawContainer.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Backends\SSH\Strings\SSHOptions.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SSHOptions.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\Strings\Common.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Common.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\WebDAV\Strings\WebDAVOptions.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>WebDAVOptions.resx</DependentUpon>
-    </Compile>
     <Compile Include="Wizard pages\CommandLineOptionGrid.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -374,18 +359,6 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\ThrottleOptions.Designer.cs">
       <DependentUpon>ThrottleOptions.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\SSH\SSHOptions.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\SSH\SSHOptions.Designer.cs">
-      <DependentUpon>SSHOptions.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\WebDAV\WebDAVOptions.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\WebDAV\WebDAVOptions.Designer.cs">
-      <DependentUpon>WebDAVOptions.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Delete backup\DeleteFinished.cs">
       <SubType>UserControl</SubType>
@@ -639,14 +612,6 @@
       <SubType>Designer</SubType>
       <DependentUpon>ThrottleOptions.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\SSH\SSHOptions.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>SSHOptions.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\WebDAV\WebDAVOptions.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>WebDAVOptions.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Delete backup\DeleteFinished.resx">
       <SubType>Designer</SubType>
       <DependentUpon>DeleteFinished.cs</DependentUpon>
@@ -861,21 +826,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
       <DependentUpon>RawContainer.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\SSH\Strings\SSHOptions.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>SSHOptions.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\Strings\Common.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Common.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\WebDAV\Strings\WebDAVOptions.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>WebDAVOptions.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\CommandLineOptionGrid.resx">
       <DependentUpon>CommandLineOptionGrid.cs</DependentUpon>

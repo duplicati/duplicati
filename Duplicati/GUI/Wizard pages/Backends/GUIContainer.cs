@@ -47,9 +47,10 @@ namespace Duplicati.GUI.Wizard_pages.Backends
 
         void GUIContainer_PageEnter(object sender, PageChangedArgs args)
         {
+            Datamodel.ApplicationSettings appset = new Duplicati.Datamodel.ApplicationSettings(Program.DataConnection);
             m_wrapper = new WizardSettingsWrapper(m_settings);
             m_backendOptions = m_wrapper.BackendSettings;
-            m_control = m_backend.GetControl(m_backendOptions);
+            m_control = m_backend.GetControl(appset.CreateDetachedCopy(), m_backendOptions);
             m_control.SetBounds(0, 0, this.Width, this.Height);
             m_control.Visible = true;
             this.Controls.Add(m_control);

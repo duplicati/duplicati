@@ -292,5 +292,14 @@ namespace Duplicati.Library.Backend
             return "ftp://" + guiOptions[HOST] + ":" + port.ToString() + "/" + (guiOptions.ContainsKey(FOLDER) ? guiOptions[FOLDER] : "");
         }
 
+        public static string PageTitle
+        {
+            get { return Strings.FTPUI.PageTitle; }
+        }
+
+        public static string PageDescription
+        {
+            get { return Strings.FTPUI.PageDescription; }
+        }
     }
 }

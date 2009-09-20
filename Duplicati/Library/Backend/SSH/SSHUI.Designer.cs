@@ -1,6 +1,6 @@
-namespace Duplicati.GUI.Wizard_pages.Backends.SSH
+namespace Duplicati.Library.Backend
 {
-    partial class SSHOptions
+    partial class SSHUI
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,7 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SSHOptions));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SSHUI));
             this.TestConnection = new System.Windows.Forms.Button();
             this.Port = new System.Windows.Forms.NumericUpDown();
             this.Password = new System.Windows.Forms.TextBox();
@@ -131,7 +131,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             this.GenerateDebugOutput.Name = "GenerateDebugOutput";
             this.GenerateDebugOutput.UseVisualStyleBackColor = true;
             // 
-            // SSHOptions
+            // SSHUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -147,7 +147,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.SSH
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Name = "SSHOptions";
+            this.Name = "SSHUI";
+            this.Load += new System.EventHandler(this.SSHUI_PageLoad);
             ((System.ComponentModel.ISupportInitialize)(this.Port)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

@@ -258,15 +258,15 @@ namespace Duplicati.Library.Backend
 
         public string PageTitle
         {
-            get { return Strings.FTPBackend.PageTitle; }
+            get { return FTPUI.PageTitle; }
         }
 
         public string PageDescription
         {
-            get { return Strings.FTPBackend.PageDescription; }
+            get { return FTPUI.PageDescription; }
         }
 
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> options)
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
         {
             return new FTPUI(options);
         }
@@ -281,7 +281,7 @@ namespace Duplicati.Library.Backend
             return ((FTPUI)control).Save(true);
         }
 
-        public string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
             return FTPUI.GetConfiguration(guiOptions, commandlineOptions);
         }

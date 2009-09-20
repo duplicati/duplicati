@@ -90,7 +90,10 @@ namespace Duplicati.Datamodel
 
             string destination;
             if (selectedBackend is Library.Backend.IBackendGUI)
-                destination = ((Library.Backend.IBackendGUI)selectedBackend).GetConfiguration(BackendSettingsLookup, options);
+            {
+                ApplicationSettings appset = new ApplicationSettings(this.DataParent);
+                destination = ((Library.Backend.IBackendGUI)selectedBackend).GetConfiguration(appset.CreateDetachedCopy(), BackendSettingsLookup, options);
+            }
             else
             {
                 //We store destination with the key "Destination" and other options with the -- prefix

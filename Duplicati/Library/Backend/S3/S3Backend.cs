@@ -327,15 +327,15 @@ namespace Duplicati.Library.Backend
 
         public string PageTitle
         {
-            get { return Strings.S3Backend.PageTitle; }
+            get { return S3UI.PageTitle; }
         }
 
         public string PageDescription
         {
-            get { return Strings.S3Backend.PageDescription; }
+            get { return S3UI.PageDescription; }
         }
 
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> options)
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
         {
             return new S3UI(options);
         }
@@ -350,7 +350,7 @@ namespace Duplicati.Library.Backend
             return ((S3UI)control).Save(true);
         }
 
-        public string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
             return S3UI.GetConfiguration(guiOptions, commandlineOptions);
         }

@@ -22,14 +22,14 @@ namespace Duplicati.Library.Backend.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class FileBackend {
+    internal class WebDAVUI {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal FileBackend() {
+        internal WebDAVUI() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Backend.Strings.FileBackend", typeof(FileBackend).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Backend.Strings.WebDAVUI", typeof(WebDAVUI).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,56 +61,20 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This backend can read and write data to an file based backend. Allowed formats are &quot;file://hostname/folder&quot; or &quot;file://username:password@hostname/folder&quot;. You may supply UNC paths (eg: &quot;file://\\server\folder&quot;) or local paths (eg: (win) &quot;file://c:\folder&quot;, (linux) &quot;file:///usr/pub/files&quot;).
+        ///   Looks up a localized string similar to On this page you can select where to store the backup data..
         /// </summary>
-        internal static string Description {
+        internal static string PageDescription {
             get {
-                return ResourceManager.GetString("Description", resourceCulture);
+                return ResourceManager.GetString("PageDescription", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The password used to connect to the server. This may also be supplied as the environment variable &quot;FTP_PASSWORD&quot;..
+        ///   Looks up a localized string similar to Backup storage options.
         /// </summary>
-        internal static string DescriptionFTPPasswordLong {
+        internal static string PageTitle {
             get {
-                return ResourceManager.GetString("DescriptionFTPPasswordLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Supplies the password used to connect to the server.
-        /// </summary>
-        internal static string DescriptionFTPPasswordShort {
-            get {
-                return ResourceManager.GetString("DescriptionFTPPasswordShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The username used to connect to the server. This may also be supplied as the environment variable &quot;FTP_USERNAME&quot;..
-        /// </summary>
-        internal static string DescriptionFTPUsernameLong {
-            get {
-                return ResourceManager.GetString("DescriptionFTPUsernameLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Supplies the username used to connect to the server.
-        /// </summary>
-        internal static string DescriptionFTPUsernameShort {
-            get {
-                return ResourceManager.GetString("DescriptionFTPUsernameShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to File based.
-        /// </summary>
-        internal static string DisplayName {
-            get {
-                return ResourceManager.GetString("DisplayName", resourceCulture);
+                return ResourceManager.GetString("PageTitle", resourceCulture);
             }
         }
     }

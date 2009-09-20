@@ -188,15 +188,15 @@ namespace Duplicati.Library.Backend
 
         public string PageTitle
         {
-            get { return Strings.FileBackend.PageTitle; }
+            get { return FileUI.PageTitle; }
         }
 
         public string PageDescription
         {
-            get { return Strings.FileBackend.PageDescription; }
+            get { return FileUI.PageDescription; }
         }
 
-        public System.Windows.Forms.Control GetControl(IDictionary<string, string> options)
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
         {
             return new FileUI(options);
         }
@@ -211,7 +211,7 @@ namespace Duplicati.Library.Backend
             return ((FileUI)control).Save(true);
         }
 
-        public string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
             return FileUI.GetConfiguration(guiOptions, commandlineOptions);
         }

@@ -1,6 +1,6 @@
-namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
+namespace Duplicati.Library.Backend
 {
-    partial class WebDAVOptions
+    partial class WebDAVUI
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,7 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(WebDAVOptions));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(WebDAVUI));
             this.UseIntegratedAuth = new System.Windows.Forms.CheckBox();
             this.TestConnection = new System.Windows.Forms.Button();
             this.Username = new System.Windows.Forms.TextBox();
@@ -156,7 +156,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             this.DigestAuth.UseVisualStyleBackColor = true;
             this.DigestAuth.CheckedChanged += new System.EventHandler(this.DigestAuth_CheckedChanged);
             // 
-            // WebDAVOptions
+            // WebDAVUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -171,7 +171,8 @@ namespace Duplicati.GUI.Wizard_pages.Backends.WebDAV
             this.Controls.Add(this.label5);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.PasswordSettings);
-            this.Name = "WebDAVOptions";
+            this.Name = "WebDAVUI";
+            this.Load += new System.EventHandler(this.WebDAVUI_PageLoad);
             ((System.ComponentModel.ISupportInitialize)(this.Port)).EndInit();
             this.PasswordSettings.ResumeLayout(false);
             this.PasswordSettings.PerformLayout();

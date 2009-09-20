@@ -153,10 +153,4 @@
   <data name="DisplayName" xml:space="preserve">
     <value>FTP based</value>
   </data>
-  <data name="PageDescription" xml:space="preserve">
-    <value>On this page you can select where to store the backup data.</value>
-  </data>
-  <data name="PageTitle" xml:space="preserve">
-    <value>Backup storage options</value>
-  </data>
 </root>

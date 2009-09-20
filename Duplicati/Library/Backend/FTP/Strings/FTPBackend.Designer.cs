@@ -167,23 +167,5 @@ namespace Duplicati.Library.Backend.Strings {
                 return ResourceManager.GetString("DisplayName", resourceCulture);
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to On this page you can select where to store the backup data..
-        /// </summary>
-        internal static string PageDescription {
-            get {
-                return ResourceManager.GetString("PageDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Backup storage options.
-        /// </summary>
-        internal static string PageTitle {
-            get {
-                return ResourceManager.GetString("PageTitle", resourceCulture);
-            }
-        }
     }
 }

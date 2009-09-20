@@ -213,5 +213,14 @@ namespace Duplicati.Library.Backend
             return "file://" + guiOptions[DESTINATION_FOLDER];
         }
 
+        public static string PageTitle
+        {
+            get { return Strings.FileUI.PageTitle; }
+        }
+
+        public static string PageDescription
+        {
+            get { return Strings.FileUI.PageDescription; }
+        }
     }
 }

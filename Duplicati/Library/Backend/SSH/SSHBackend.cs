@@ -25,7 +25,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSH : IBackend
+    public class SSH : IBackend, IBackendGUI
     {
         private string m_server;
         private string m_path;
@@ -431,5 +431,38 @@ namespace Duplicati.Library.Backend
            return proc;
         }
 
+
+        #region IBackendGUI Members
+
+        public string PageTitle
+        {
+            get { return SSHUI.PageTitle; }
+        }
+
+        public string PageDescription
+        {
+            get { return SSHUI.PageDescription; }
+        }
+
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
+        {
+            return new SSHUI(applicationSettings, options);
+        }
+
+        public void Leave(System.Windows.Forms.Control control)
+        {
+            ((SSHUI)control).Save(false);
+        }
+
+        public bool Validate(System.Windows.Forms.Control control)
+        {
+            return ((SSHUI)control).Save(true);
+        }
+
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        {
+            return SSHUI.GetConfiguration(applicationSettings, guiOptions, commandlineOptions);
+        }
+        #endregion
     }
 }

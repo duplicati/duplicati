@@ -275,5 +275,15 @@ namespace Duplicati.Library.Backend
             else
                 return "s3://" + host + "/" + bucketName + (string.IsNullOrEmpty(prefix) ? "" : "/" + prefix);
         }
+
+        public static string PageTitle
+        {
+            get { return Strings.S3UI.PageTitle; }
+        }
+
+        public static string PageDescription
+        {
+            get { return Strings.S3UI.PageDescription; }
+        }
     }
 }

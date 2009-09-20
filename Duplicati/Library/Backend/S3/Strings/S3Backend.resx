@@ -168,10 +168,4 @@
   <data name="UnableToDecodeBucketnameError" xml:space="preserve">
     <value>Unable to determine the bucket name for host: {0}</value>
   </data>
-  <data name="PageDescription" xml:space="preserve">
-    <value>On this page you can select where to store the backup data.</value>
-  </data>
-  <data name="PageTitle" xml:space="preserve">
-    <value>Backup storage options</value>
-  </data>
 </root>

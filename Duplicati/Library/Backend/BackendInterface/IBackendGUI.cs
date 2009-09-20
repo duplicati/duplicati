@@ -26,9 +26,10 @@ namespace Duplicati.Library.Backend
         /// The method should keep a reference to the dictionary.
         /// The control will be resized to fit in the wizard.
         /// </summary>
+        /// <param name="applicationSettings">The set of settings defined by the calling application</param>
         /// <param name="options">A set of options, either empty or previously stored by the backend</param>
         /// <returns>The control that represents the user interface</returns>
-        Control GetControl(IDictionary<string, string> options);
+        Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options);
 
         /// <summary>
         /// Method that is called when the user leaves the form.
@@ -49,9 +50,10 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// Returns the target path for activating Duplicati, and sets any options required.
         /// </summary>
+        /// <param name="applicationSettings">The set of settings defined by the calling application</param>
         /// <param name="guiOptions">A set of previously saved options for the backend</param>
         /// <param name="commandlineOptions">A set of commandline options for the backend</param>
         /// <returns>The destination path</returns>
-        string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions);
+        string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions);
     }
 }
