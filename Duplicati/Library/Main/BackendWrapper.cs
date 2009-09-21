@@ -522,7 +522,7 @@ namespace Duplicati.Library.Main
                     using (tempfile) //Delete tempfile if exception occurs
                     {
                         m_statistics.NumberOfRemoteCalls++;
-                        if (m_backend is Backend.IStreamingBackend && ((Backend.IStreamingBackend)m_backend).SupportsStreaming)
+                        if (m_backend is Backend.IStreamingBackend)
                         {
                             //TODO: How can we guess the remote file size for progress reporting?
                             using (System.IO.FileStream fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
@@ -605,7 +605,7 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_statistics.NumberOfRemoteCalls++;
-                        if (m_backend is Backend.IStreamingBackend && ((Backend.IStreamingBackend)m_backend).SupportsStreaming)
+                        if (m_backend is Backend.IStreamingBackend)
                         {
 #if DEBUG
                             DateTime begin = DateTime.Now;

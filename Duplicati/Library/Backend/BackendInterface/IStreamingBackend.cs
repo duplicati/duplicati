@@ -31,12 +31,6 @@ namespace Duplicati.Library.Backend
     public interface IStreamingBackend : IBackend
     {
         /// <summary>
-        /// A value that indicates if the backend supports streaming.
-        /// Backends that implement the IStreamingBackend interface should return true.
-        /// </summary>
-        bool SupportsStreaming { get; }
-
-        /// <summary>
         /// Puts the content of the file to the url passed
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
