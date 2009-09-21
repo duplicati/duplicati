@@ -82,6 +82,11 @@ namespace Duplicati.GUI.Wizard_pages
                 return;
             }
 
+            //If the user chooses another backend, we need to clear the settings,
+            // so items like the tested flag are not set
+            if (m_wrapper.Backend != selectedBackend.ProtocolKey)
+                m_wrapper.BackendSettings.Clear();
+
             m_wrapper.Backend = selectedBackend.ProtocolKey;
             if (selectedBackend is Library.Backend.IBackendGUI)
                 args.NextPage = new Backends.GUIContainer(selectedBackend as Library.Backend.IBackendGUI);
@@ -104,13 +109,14 @@ namespace Duplicati.GUI.Wizard_pages
 
             foreach (Library.Backend.IBackend backend in lst.Values)
             {
-                RadioButton button = new RadioButton();
+                DoubleClickRadioButton button = new DoubleClickRadioButton();
                 button.Text = backend.DisplayName;
                 toolTips.SetToolTip(button, backend.Description);
                 button.Left = 0;
                 button.Top = top;
                 button.Tag = backend;
                 button.CheckedChanged += new EventHandler(Item_CheckChanged);
+                button.DoubleClick += new EventHandler(button_DoubleClick);
 
                 button.Checked = (backend.ProtocolKey == m_wrapper.Backend);
 
@@ -123,6 +129,12 @@ namespace Duplicati.GUI.Wizard_pages
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
                 Question.Text = Strings.SelectBackend.RestoreSetupTitle;
 
+        }
+
+        void button_DoubleClick(object sender, EventArgs e)
+        {
+            try { m_owner.NextButton.PerformClick(); }
+            catch { }
         }
 
         private void Item_CheckChanged(object sender, EventArgs e)
