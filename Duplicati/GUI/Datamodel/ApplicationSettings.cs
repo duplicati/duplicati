@@ -31,7 +31,6 @@ namespace Duplicati.Datamodel
         private const string RECENT_DURATION = "Recent duration";
         private const string PGP_PATH = "PGP path";
         private const string SFTP_PATH = "SFTP Path";
-        private const string SCP_PATH = "SCP Path";
         private const string TEMP_PATH = "Temp Path";
 
         private const string USE_COMMON_PASSWORD = "Use common password";
@@ -49,6 +48,24 @@ namespace Duplicati.Datamodel
         public ApplicationSettings(IDataFetcher dataparent)
         {
             m_appset = new SettingsHelper<ApplicationSetting, string, string>(dataparent, new List<ApplicationSetting>(dataparent.GetObjects<ApplicationSetting>()), "Name", "Value");
+        }
+
+        /// <summary>
+        /// Creates a detached copy of all the application settings
+        /// </summary>
+        /// <returns>A dictionary with application settings</returns>
+        public Dictionary<string, string> CreateDetachedCopy()
+        {
+            //We need to read/write all values to make sure they have the propper defaults
+            foreach (System.Reflection.PropertyInfo pi in this.GetType().GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly))
+                if (pi.CanRead && pi.CanWrite)
+                    pi.SetValue(this, pi.GetValue(this, null), null);
+
+            //After that, simply copy the values over
+            Dictionary<string, string> res = new Dictionary<string, string>();
+            foreach (KeyValuePair<string, string> k in m_appset)
+                res[k.Key] = k.Value;
+            return res;
         }
 
         /// <summary>

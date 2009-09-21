@@ -37,6 +37,7 @@ namespace Duplicati.GUI.Wizard_pages
             : base(Strings.SelectBackend.PageTitle, Strings.SelectBackend.PageHelptext)
         {
             InitializeComponent();
+
             base.PageEnter += new PageChangeHandler(SelectBackend_PageEnter);
             base.PageLeave += new PageChangeHandler(SelectBackend_PageLeave);
             base.PageDisplay += new PageChangeHandler(SelectBackend_PageDisplay);
@@ -45,6 +46,23 @@ namespace Duplicati.GUI.Wizard_pages
         void SelectBackend_PageDisplay(object sender, PageChangedArgs args)
         {
             Item_CheckChanged(null, null);
+
+            //If there is just one backend, skip this page
+            if (BackendList.Controls.Count == 1)
+            {
+                if (args.Direction == PageChangedDirection.Next)
+                {
+                    ((RadioButton)BackendList.Controls[0]).Checked = true;
+                    try { m_owner.NextButton.PerformClick(); }
+                    catch { }
+                }
+                else
+                {
+                    try { m_owner.BackButton.PerformClick(); }
+                    catch { }
+                }
+            }
+
         }
 
         void SelectBackend_PageLeave(object sender, PageChangedArgs args)
@@ -52,50 +70,28 @@ namespace Duplicati.GUI.Wizard_pages
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            if (!(File.Checked || FTP.Checked || SSH.Checked || WebDAV.Checked || S3.Checked))
+            Library.Backend.IBackend selectedBackend = null;
+            foreach (RadioButton button in BackendList.Controls)
+                if (button.Checked && button.Tag is Library.Backend.IBackend)
+                    selectedBackend = button.Tag as Library.Backend.IBackend;
+
+            if (selectedBackend == null)
             {
                 MessageBox.Show(this, Strings.SelectBackend.NoActionSelected, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
 
-            if (File.Checked)
-            {
-                args.NextPage = new Backends.File.FileOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.File;
-            }
-            else if (FTP.Checked)
-            {
-                args.NextPage = new Backends.FTP.FTPOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.FTP;
-            }
-            else if (SSH.Checked)
-            {
-                args.NextPage = new Backends.SSH.SSHOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.SSH;
-            }
-            else if (WebDAV.Checked)
-            {
-                args.NextPage = new Backends.WebDAV.WebDAVOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.WebDav;
-            }
-            else if (S3.Checked)
-            {
-                args.NextPage = new Backends.S3.S3Options();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.S3;
-            }
-            else if (WebDAV.Checked)
-            {
-                args.NextPage = new Backends.WebDAV.WebDAVOptions();
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.WebDav;
-            }
+            //If the user chooses another backend, we need to clear the settings,
+            // so items like the tested flag are not set
+            if (m_wrapper.Backend != selectedBackend.ProtocolKey)
+                m_wrapper.BackendSettings.Clear();
+
+            m_wrapper.Backend = selectedBackend.ProtocolKey;
+            if (selectedBackend is Library.Backend.IBackendGUI)
+                args.NextPage = new Backends.GUIContainer(selectedBackend as Library.Backend.IBackendGUI);
             else
-            {
-                m_wrapper.Backend = WizardSettingsWrapper.BackendType.Unknown;
-                args.NextPage = null;
-                args.Cancel = true;
-                return;
-            }
+                args.NextPage = new Backends.RawContainer(selectedBackend);
         }
 
 
@@ -103,39 +99,52 @@ namespace Duplicati.GUI.Wizard_pages
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            if (!m_valuesAutoLoaded)
+            int top = 0;
+            BackendList.Controls.Clear();
+
+            //Sort backends by display name
+            SortedList<string, Library.Backend.IBackend> lst = new SortedList<string, Duplicati.Library.Backend.IBackend>();
+            foreach (Library.Backend.IBackend backend in Library.Backend.BackendLoader.LoadedBackends)
+                lst.Add(backend.DisplayName.Trim().ToLower(), backend);
+
+            foreach (Library.Backend.IBackend backend in lst.Values)
             {
-                switch (m_wrapper.Backend)
-                {
-                    case WizardSettingsWrapper.BackendType.File:
-                        File.Checked = true;
-                        break;
-                    case WizardSettingsWrapper.BackendType.FTP:
-                        FTP.Checked = true;
-                        break;
-                    case WizardSettingsWrapper.BackendType.SSH:
-                        SSH.Checked = true;
-                        break;
-                    case WizardSettingsWrapper.BackendType.WebDav:
-                        WebDAV.Checked = true;
-                        break;
-                    case WizardSettingsWrapper.BackendType.S3:
-                        S3.Checked = true;
-                        break;
-                }
+                DoubleClickRadioButton button = new DoubleClickRadioButton();
+                button.Text = backend.DisplayName;
+                toolTips.SetToolTip(button, backend.Description);
+                button.Left = 0;
+                button.Top = top;
+                button.Tag = backend;
+                button.CheckedChanged += new EventHandler(Item_CheckChanged);
+                button.DoubleClick += new EventHandler(button_DoubleClick);
+
+                button.Checked = (backend.ProtocolKey == m_wrapper.Backend);
+
+                top += button.Height + 5;
+                BackendList.Controls.Add(button);
             }
 
             Item_CheckChanged(null, null);
-
 
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
                 Question.Text = Strings.SelectBackend.RestoreSetupTitle;
 
         }
 
+        void button_DoubleClick(object sender, EventArgs e)
+        {
+            try { m_owner.NextButton.PerformClick(); }
+            catch { }
+        }
+
         private void Item_CheckChanged(object sender, EventArgs e)
         {
-            m_owner.NextButton.Enabled = File.Checked || FTP.Checked || SSH.Checked || WebDAV.Checked || S3.Checked;
+            Library.Backend.IBackend selectedBackend = null;
+            foreach (RadioButton button in BackendList.Controls)
+                if (button.Checked && button.Tag is Library.Backend.IBackend)
+                    selectedBackend = button.Tag as Library.Backend.IBackend;
+
+            m_owner.NextButton.Enabled = selectedBackend != null;
         }
 
         private void RadioButton_DoubleClick(object sender, EventArgs e)

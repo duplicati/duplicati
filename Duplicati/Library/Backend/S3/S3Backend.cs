@@ -24,7 +24,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IStreamingBackend
+    public class S3 : IStreamingBackend, IBackendGUI
     {
         private string m_awsID;
         private string m_awsKey;
@@ -322,5 +322,39 @@ namespace Duplicati.Library.Backend
             return System.Web.HttpUtility.UrlEncode(m_prefix + name).Replace("%2f", "/");
         }
 
+
+        #region IBackendGUI Members
+
+        public string PageTitle
+        {
+            get { return S3UI.PageTitle; }
+        }
+
+        public string PageDescription
+        {
+            get { return S3UI.PageDescription; }
+        }
+
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
+        {
+            return new S3UI(options);
+        }
+
+        public void Leave(System.Windows.Forms.Control control)
+        {
+            ((S3UI)control).Save(false);
+        }
+
+        public bool Validate(System.Windows.Forms.Control control)
+        {
+            return ((S3UI)control).Save(true);
+        }
+
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        {
+            return S3UI.GetConfiguration(guiOptions, commandlineOptions);
+        }
+
+        #endregion
     }
 }

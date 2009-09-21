@@ -48,9 +48,17 @@ namespace Duplicati.GUI.Wizard_pages
             //Skip this, as there is only one valid option
             if (Program.DataConnection.GetObjects<Datamodel.Schedule>().Length == 0)
             {
-                CreateNew.Checked = true;
-                try { m_owner.NextButton.PerformClick(); }
-                catch { }
+                if (args.Direction == PageChangedDirection.Next)
+                {
+                    CreateNew.Checked = true;
+                    try { m_owner.NextButton.PerformClick(); }
+                    catch { }
+                }
+                else
+                {
+                    try { m_owner.BackButton.PerformClick(); }
+                    catch { }
+                }
             }
         }
 
@@ -63,6 +71,9 @@ namespace Duplicati.GUI.Wizard_pages
 
         void MainPage_PageLeave(object sender, PageChangedArgs args)
         {
+            if (args.Direction == PageChangedDirection.Back)
+                return;
+
             if (CreateNew.Checked)
                 m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Add;
             else if (Edit.Checked)

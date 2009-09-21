@@ -52,9 +52,8 @@ namespace Duplicati.GUI
         Task Task { get; }
         Schedule Schedule { get; }
 
-        void GetOptions(Dictionary<string, string> options); 
-        string TargetPath { get; }
-        string SourcePath { get; }
+        string GetConfiguration(Dictionary<string, string> options); 
+        string LocalPath { get; }
 
         string Result { get; set; }
     }
@@ -88,12 +87,11 @@ namespace Duplicati.GUI
                 TaskCompleted(this, output);
         }
 
-        public abstract string TargetPath { get; }
-        public abstract string SourcePath { get; }
-        public virtual void GetOptions(Dictionary<string, string> options)
+        public abstract string LocalPath { get; }
+        public virtual string GetConfiguration(Dictionary<string, string> options)
         {
             this.Schedule.GetOptions(options);
-            this.Task.GetOptions(options);
+            return this.Task.GetConfiguration(options);
         }
 
         public string Result
@@ -135,21 +133,18 @@ namespace Duplicati.GUI
             }
         }
 
-        public override void GetOptions(Dictionary<string, string> options)
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
             if (!string.IsNullOrEmpty(this.Task.Signaturekey))
                 options.Add("sign-key", this.Task.Signaturekey);
+            
+            return destination;
         }
 
-        public override string SourcePath
+        public override string LocalPath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.Task.SourcePath); }
-        }
-
-        public override string TargetPath
-        {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
         }
     }
 
@@ -162,10 +157,11 @@ namespace Duplicati.GUI
         {
         }
 
-        public override void GetOptions(Dictionary<string, string> options)
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
             options.Add("full", "");
+            return destination;
         }
 
     }
@@ -192,13 +188,15 @@ namespace Duplicati.GUI
         {
         }
 
-        public override void GetOptions(Dictionary<string, string> options)
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
             options.Add("incremental", "");
 
             if (!string.IsNullOrEmpty(this.FullAfter))
                 options.Add("full-if-older-than", this.FullAfter);
+
+            return destination;
         }
     }
 
@@ -213,15 +211,9 @@ namespace Duplicati.GUI
         {
         }
 
-
-        public override string SourcePath
+        public override string LocalPath
         {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override string TargetPath
-        {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+            get { throw new NotImplementedException(); }
         }
     }
 
@@ -277,14 +269,9 @@ namespace Duplicati.GUI
             m_backups = res.ToArray();
         }
 
-        public override string SourcePath
+        public override string LocalPath
         {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override string TargetPath
-        {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+            get { throw new NotImplementedException(); }
         }
     }
 
@@ -312,22 +299,19 @@ namespace Duplicati.GUI
             }
         }
 
-        public override void GetOptions(Dictionary<string, string> options)
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
 
             if (!string.IsNullOrEmpty(When))
                 options["restore-time"] = this.When;
+
+            return destination;
         }
 
-        public override string SourcePath
+        public override string LocalPath
         {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override string TargetPath
-        {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+            get { throw new NotImplementedException(); }
         }
     }
 
@@ -355,22 +339,19 @@ namespace Duplicati.GUI
             }
         }
 
-        public override void GetOptions(Dictionary<string, string> options)
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
 
             if (!string.IsNullOrEmpty(When))
                 options["restore-time"] = this.When;
+
+            return destination;
         }
 
-        public override string SourcePath
+        public override string LocalPath
         {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override string TargetPath
-        {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+            get { throw new NotImplementedException(); }
         }
     }
 
@@ -385,23 +366,20 @@ namespace Duplicati.GUI
             m_targetdir = targetdir;
         }
 
-        public override string SourcePath
-        {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override string TargetPath
+        public override string LocalPath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.TargetDir); }
         }
 
         public string TargetDir { get { return m_targetdir; } }
 
-        public override void GetOptions(Dictionary<string, string> options)
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
             if (options.ContainsKey("filter"))
                 options.Remove("filter");
+
+            return destination;
         }
 
         public override DuplicityTaskType TaskType
@@ -479,19 +457,14 @@ namespace Duplicati.GUI
             }
         }
 
-        public override string SourcePath
-        {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override string TargetPath
+        public override string LocalPath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.TargetDir); }
         }
 
-        public override void GetOptions(Dictionary<string, string> options)
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
 
             options.Add("force", "");
             if (!string.IsNullOrEmpty(When))
@@ -499,6 +472,8 @@ namespace Duplicati.GUI
 
             if (!string.IsNullOrEmpty(this.SourceFiles))
                 options.Add("file-to-restore", this.SourceFiles);
+
+            return destination;
         }
     }
 
@@ -539,24 +514,24 @@ namespace Duplicati.GUI
             }            
         }
 
-        public override string SourcePath
+        public override string LocalPath
         {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
+            get 
+            {
+                throw new MissingMethodException();
+            }
         }
 
-        public override string TargetPath
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override void GetOptions(Dictionary<string, string> options)
-        {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
 
             options.Add("remove-all-but-n-full", this.FullCount.ToString());
             options.Add("force", "");
             if (!options.ContainsKey("number-of-retries"))
                 options["number-of-retries"] = "2";
+
+            return destination;
         }
     }
 
@@ -594,25 +569,21 @@ namespace Duplicati.GUI
             }
         }
 
-        public override string SourcePath
+        public override string GetConfiguration(Dictionary<string, string> options)
         {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override string TargetPath
-        {
-            get { return System.Environment.ExpandEnvironmentVariables(this.Task.GetDestinationPath()); }
-        }
-
-        public override void GetOptions(Dictionary<string, string> options)
-        {
-            base.GetOptions(options);
+            string destination = base.GetConfiguration(options);
 
             options.Add("remove-older-than", this.Older);
             options.Add("force", "");
             if (!options.ContainsKey("number-of-retries"))
                 options["number-of-retries"] = "2";
+
+            return destination;
         }
 
+        public override string LocalPath
+        {
+            get { throw new NotImplementedException(); }
+        }
     }
 }

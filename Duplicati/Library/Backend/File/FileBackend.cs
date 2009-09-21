@@ -23,7 +23,7 @@ using System.Text;
 
 namespace Duplicati.Library.Backend
 {
-    public class File : IStreamingBackend
+    public class File : IStreamingBackend, IBackendGUI
     {
         private string m_path;
         private string m_username;
@@ -179,11 +179,43 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-
         public static bool PreAuthenticate(string path, string username, string password)
         {
             return Win32.PreAuthenticate(path, username, password);
         }
 
+        #region IBackendGUI Members
+
+        public string PageTitle
+        {
+            get { return FileUI.PageTitle; }
+        }
+
+        public string PageDescription
+        {
+            get { return FileUI.PageDescription; }
+        }
+
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
+        {
+            return new FileUI(options);
+        }
+
+        public void Leave(System.Windows.Forms.Control control)
+        {
+            ((FileUI)control).Save(false);
+        }
+
+        public bool Validate(System.Windows.Forms.Control control)
+        {
+            return ((FileUI)control).Save(true);
+        }
+
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        {
+            return FileUI.GetConfiguration(guiOptions, commandlineOptions);
+        }
+
+        #endregion
     }
 }

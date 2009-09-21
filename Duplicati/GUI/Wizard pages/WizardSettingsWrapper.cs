@@ -43,21 +43,10 @@ namespace Duplicati.GUI.Wizard_pages
             RestoreSetup
         };
 
-        public enum BackendType
-        {
-            File,
-            FTP,
-            SSH,
-            S3,
-            WebDav,
-            Unknown
-        };
-
         public WizardSettingsWrapper(Dictionary<string, object> settings)
         {
             m_settings = settings;
         }
-
 
         /// <summary>
         /// The purpose of this function is to set the default
@@ -125,59 +114,8 @@ namespace Duplicati.GUI.Wizard_pages
             this.EncodedFilters = schedule.Task.EncodedFilter;
             this.BackupPassword = schedule.Task.Encryptionkey;
 
-            switch (schedule.Task.Service.ToLower())
-            {
-                case "file":
-                    Datamodel.Backends.File file = new Datamodel.Backends.File(schedule.Task);
-                    this.FileSettings.Username = file.Username;
-                    this.FileSettings.Password = file.Password;
-                    this.FileSettings.Path = file.DestinationFolder;
-                    this.Backend = BackendType.File;
-                    break;
-                case "ftp":
-                    Datamodel.Backends.FTP ftp = new Duplicati.Datamodel.Backends.FTP(schedule.Task);
-                    this.FTPSettings.Username = ftp.Username;
-                    this.FTPSettings.Password = ftp.Password;
-                    this.FTPSettings.Path = ftp.Folder;
-                    this.FTPSettings.Server = ftp.Host;
-                    this.FTPSettings.Port = ftp.Port;
-                    this.FTPSettings.Passive = ftp.Passive;
-                    this.Backend = BackendType.FTP;
-                    break;
-                case "ssh":
-                    Datamodel.Backends.SSH ssh = new Duplicati.Datamodel.Backends.SSH(schedule.Task);
-                    this.SSHSettings.Username = ssh.Username;
-                    this.SSHSettings.Password = ssh.Password;
-                    this.SSHSettings.Path = ssh.Folder;
-                    this.SSHSettings.Server = ssh.Host;
-                    this.SSHSettings.Port = ssh.Port;
-                    this.SSHSettings.Passwordless = ssh.Passwordless;
-                    this.SSHSettings.DebugEnabled = ssh.DebugEnabled;
-                    this.Backend = BackendType.SSH;
-                    break;
-                case "s3":
-                    Datamodel.Backends.S3 s3 = new Duplicati.Datamodel.Backends.S3(schedule.Task);
-                    this.S3Settings.Username = s3.AccessID;
-                    this.S3Settings.Password = s3.AccessKey;
-                    this.S3Settings.UseEuroServer = s3.UseEuroBucket;
-                    this.S3Settings.UseSubDomains = s3.UseSubdomainStrategy;
-                    this.S3Settings.Path = s3.BucketName;
-                    if (!string.IsNullOrEmpty(s3.Prefix))
-                        this.S3Settings.Path += "/" + s3.Prefix;
-                    this.Backend = BackendType.S3;
-                    break;
-                case "webdav":
-                    Datamodel.Backends.WEBDAV webdav = new Duplicati.Datamodel.Backends.WEBDAV(schedule.Task);
-                    this.WEBDAVSettings.Username = webdav.Username;
-                    this.WEBDAVSettings.Password = webdav.Password;
-                    this.WEBDAVSettings.Path = webdav.Folder;
-                    this.WEBDAVSettings.Server = webdav.Host;
-                    this.WEBDAVSettings.Port = webdav.Port;
-                    this.WEBDAVSettings.IntegratedAuthentication = webdav.IntegratedAuthentication;
-                    this.WEBDAVSettings.ForceDigestAuthentication = webdav.ForceDigestAuthentication;
-                    this.Backend = BackendType.WebDav;
-                    break;
-            }
+            this.Backend = schedule.Task.Service;
+            this.BackendSettings = new Dictionary<string, string>(schedule.Task.BackendSettingsLookup); 
 
             this.BackupTimeOffset = schedule.When;
             this.RepeatInterval = schedule.Repeat;
@@ -221,67 +159,13 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.EncodedFilter = this.EncodedFilters;
             schedule.Task.Encryptionkey = this.BackupPassword;
 
-            switch (this.Backend)
-            {
-                case BackendType.File:
-                    Datamodel.Backends.File file = new Datamodel.Backends.File(schedule.Task);
-                    file.Username = this.FileSettings.Username;
-                    file.Password = this.FileSettings.Password;
-                    file.DestinationFolder = this.FileSettings.Path;
-                    file.SetService();
-                    break;
-                case BackendType.FTP:
-                    Datamodel.Backends.FTP ftp = new Duplicati.Datamodel.Backends.FTP(schedule.Task);
-                    ftp.Username = this.FTPSettings.Username;
-                    ftp.Password = this.FTPSettings.Password;
-                    ftp.Folder = this.FTPSettings.Path;
-                    ftp.Host = this.FTPSettings.Server;
-                    ftp.Port = this.FTPSettings.Port;
-                    ftp.Passive = this.FTPSettings.Passive;
-                    ftp.SetService();
-                    break;
-                case BackendType.SSH:
-                    Datamodel.Backends.SSH ssh = new Duplicati.Datamodel.Backends.SSH(schedule.Task);
-                    ssh.Username = this.SSHSettings.Username;
-                    ssh.Password = this.SSHSettings.Password;
-                    ssh.Folder = this.SSHSettings.Path;
-                    ssh.Host = this.SSHSettings.Server;
-                    ssh.Port = this.SSHSettings.Port;
-                    ssh.Passwordless = this.SSHSettings.Passwordless;
-                    ssh.DebugEnabled = this.SSHSettings.DebugEnabled;
-                    ssh.SetService();
-                    break;
-                case BackendType.S3:
-                    Datamodel.Backends.S3 s3 = new Duplicati.Datamodel.Backends.S3(schedule.Task);
-                    s3.AccessID = this.S3Settings.Username;
-                    s3.AccessKey = this.S3Settings.Password;
-                    s3.UseEuroBucket = this.S3Settings.UseEuroServer;
-                    s3.UseSubdomainStrategy = this.S3Settings.UseSubDomains;
-                    if (this.S3Settings.Path.Contains("/"))
-                    {
-                        int index = this.S3Settings.Path.IndexOf("/");
-                        s3.BucketName = this.S3Settings.Path.Substring(0, index);
-                        s3.Prefix = this.S3Settings.Path.Substring(index + 1);
-                    }
-                    else
-                    {
-                        s3.BucketName = this.S3Settings.Path;
-                        s3.Prefix = "";
-                    }
-                    s3.SetService();
-                    break;
-                case BackendType.WebDav:
-                    Datamodel.Backends.WEBDAV webdav = new Duplicati.Datamodel.Backends.WEBDAV(schedule.Task);
-                    webdav.Username = this.WEBDAVSettings.Username;
-                    webdav.Password = this.WEBDAVSettings.Password;
-                    webdav.Folder = this.WEBDAVSettings.Path;
-                    webdav.Host = this.WEBDAVSettings.Server;
-                    webdav.Port = this.WEBDAVSettings.Port;
-                    webdav.IntegratedAuthentication = this.WEBDAVSettings.IntegratedAuthentication;
-                    webdav.ForceDigestAuthentication = this.WEBDAVSettings.ForceDigestAuthentication;
-                    webdav.SetService();
-                    break;
-            }
+            schedule.Task.Service = this.Backend;
+            foreach (KeyValuePair<string, string> p in this.BackendSettings)
+                schedule.Task.BackendSettingsLookup[p.Key] = p.Value;
+
+            foreach (string k in new List<string>(schedule.Task.BackendSettingsLookup.Keys))
+                if (!this.BackendSettings.ContainsKey(k))
+                    schedule.Task.BackendSettingsLookup.Remove(k);
 
             schedule.When = this.BackupTimeOffset;
             schedule.Repeat = this.RepeatInterval;
@@ -403,10 +287,24 @@ namespace Duplicati.GUI.Wizard_pages
         /// <summary>
         /// The currently active backend type
         /// </summary>
-        public BackendType Backend
+        public string Backend
         {
-            get { return GetItem<BackendType>("Backend", BackendType.Unknown); }
+            get { return GetItem<string>("Backend", ""); }
             set { SetItem("Backend", value); }
+        }
+
+        /// <summary>
+        /// Gets the current settings for the backend
+        /// </summary>
+        public Dictionary<string, string> BackendSettings
+        {
+            get 
+            {
+                if (GetItem<Dictionary<string, string>>("BackendSettings", null) == null)
+                    this.BackendSettings = new Dictionary<string, string>();
+                return GetItem<Dictionary<string, string>>("BackendSettings", null); 
+            }
+            set { SetItem("BackendSettings", value); }
         }
 
         /// <summary>

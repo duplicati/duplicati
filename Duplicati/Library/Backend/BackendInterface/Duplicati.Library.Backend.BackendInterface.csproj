@@ -40,12 +40,15 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommandLineArgument.cs" />
+    <Compile Include="CommonStrings.cs" />
     <Compile Include="IBackend.cs" />
     <Compile Include="FileEntry.cs" />
+    <Compile Include="IBackendGUI.cs" />
     <Compile Include="ICommandLineArgument.cs" />
     <Compile Include="IStreamingBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -53,6 +56,11 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>CommandLineArgument.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Common.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Common.resx</DependentUpon>
     </Compile>
     <Compile Include="Strings\DataTypes.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -68,6 +76,10 @@
     <EmbeddedResource Include="Strings\CommandLineArgument.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>CommandLineArgument.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Common.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Common.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\DataTypes.resx">
       <SubType>Designer</SubType>

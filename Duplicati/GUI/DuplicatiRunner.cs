@@ -50,7 +50,7 @@ namespace Duplicati.GUI
         public void ExecuteTask(IDuplicityTask task)
         {
             Dictionary<string, string> options = new Dictionary<string,string>();
-            task.GetOptions(options);
+            string destination = task.GetConfiguration(options);
 
             ApplicationSettings appSet = new ApplicationSettings(task.Schedule.DataParent);
             if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
@@ -105,10 +105,10 @@ namespace Duplicati.GUI
                                     options["signature-control-files"] = filename;
                                 }
 
-                                using (Interface i = new Interface(task.TargetPath, options))
+                                using (Interface i = new Interface(destination, options))
                                 {
                                     i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
-                                    results = i.Backup(task.SourcePath);
+                                    results = i.Backup(task.LocalPath);
                                 }
                             }
                             finally
@@ -124,7 +124,7 @@ namespace Duplicati.GUI
                     case DuplicityTaskType.ListBackups:
 
                         List<string> res = new List<string>();
-                        foreach (BackupEntry be in Interface.ParseFileList(task.SourcePath, options))
+                        foreach (BackupEntry be in Interface.ParseFileList(destination, options))
                         {
                             res.Add(be.Time.ToString());
                             foreach (BackupEntry bei in be.Incrementals)
@@ -134,34 +134,34 @@ namespace Duplicati.GUI
                         (task as ListBackupsTask).Backups = res.ToArray();
                         break;
                     case DuplicityTaskType.ListBackupEntries:
-                        (task as ListBackupEntriesTask).Backups = Interface.ParseFileList(task.SourcePath, options);
+                        (task as ListBackupEntriesTask).Backups = Interface.ParseFileList(destination, options);
                         break;
                     case DuplicityTaskType.ListFiles:
-                        (task as ListFilesTask).Files = Interface.ListContent(task.SourcePath, options);
+                        (task as ListFilesTask).Files = Interface.ListContent(destination, options);
                         break;
                     case DuplicityTaskType.ListActualFiles:
-                        (task as ListActualFilesTask).Files = Interface.ListActualSignatureFiles(task.SourcePath, options);
+                        (task as ListActualFilesTask).Files = Interface.ListActualSignatureFiles(destination, options);
                         break;
 
                     case DuplicityTaskType.RemoveAllButNFull:
-                        results = Interface.RemoveAllButNFull(task.SourcePath, options);
+                        results = Interface.RemoveAllButNFull(destination, options);
                         break;
                     case DuplicityTaskType.RemoveOlderThan:
-                        results = Interface.RemoveOlderThan(task.SourcePath, options);
+                        results = Interface.RemoveOlderThan(destination, options);
                         break;
                     case DuplicityTaskType.Restore:
                         options["file-to-restore"] = ((RestoreTask)task).SourceFiles;
                         if (options.ContainsKey("filter"))
                             options.Remove("filter");
 
-                        using (Interface i = new Interface(task.SourcePath, options))
+                        using (Interface i = new Interface(destination, options))
                         {
                             try
                             {
                                 if (DuplicatiProgress != null)
                                     DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
                                 i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
-                                results = i.Restore(task.TargetPath);
+                                results = i.Restore(task.LocalPath);
                             }
                             finally
                             {
@@ -172,7 +172,7 @@ namespace Duplicati.GUI
                         break;
 
                     case DuplicityTaskType.RestoreSetup:
-                        Interface.RestoreControlFiles(task.SourcePath, task.TargetPath, options);
+                        Interface.RestoreControlFiles(destination, task.LocalPath, options);
                         break;
                     default:
                         return;

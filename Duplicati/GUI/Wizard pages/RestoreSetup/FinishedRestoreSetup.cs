@@ -69,7 +69,9 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             strings.Add(new KeyValuePair<string, string>(null, null));
             strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummarySource, m_wrapper.Backend.ToString()));
 
-            switch(m_wrapper.Backend)
+            //TODO: Figure out how to make summary
+
+            /*switch(m_wrapper.Backend)
             {
                 case WizardSettingsWrapper.BackendType.File:
                     FileSettings file = new FileSettings(m_wrapper);
@@ -91,7 +93,7 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
                     WEBDAVSettings webdav = new WEBDAVSettings(m_wrapper);
                     strings.Add(new KeyValuePair<string, string>(Strings.FinishedRestoreSetup.SummarySourcePath, webdav.Path));
                     break;
-            }
+            }*/
             
             int maxlen = 0;
             foreach (KeyValuePair<string, string> i in strings)
@@ -121,8 +123,8 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             {
                 RestoreSetupTask task = new RestoreSetupTask(s, tf);
                 Dictionary<string, string> options = new Dictionary<string, string>();
-                task.GetOptions(options);
-                Library.Main.Interface.RestoreControlFiles(task.SourcePath, task.TargetPath, options);
+                string destination  = task.GetConfiguration(options);
+                Library.Main.Interface.RestoreControlFiles(destination, task.LocalPath, options);
 
                 string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
                 if (System.IO.File.Exists(filename))

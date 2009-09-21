@@ -264,7 +264,7 @@ namespace Duplicati.Datamodel
             {
                 get 
                 {
-                    return new KeyValuePair<TKey, TValue>(m_base.Current.Key, (TValue)m_parent.KeyField.GetValue(m_base.Current.Value, null));
+                    return new KeyValuePair<TKey, TValue>(m_base.Current.Key, (TValue)m_parent.ValueField.GetValue(m_base.Current.Value, null));
                 }
             }
 

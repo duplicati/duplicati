@@ -72,7 +72,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             strings.Add(new KeyValuePair<string, string>(null, null));
             strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryDestination, m_wrapper.Backend.ToString()));
 
-            switch(m_wrapper.Backend)
+            //TODO: Figure out how to make a summary
+
+            /*switch(m_wrapper.Backend)
             {
                 case WizardSettingsWrapper.BackendType.File:
                     FileSettings file = new FileSettings(m_wrapper);
@@ -94,7 +96,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     WEBDAVSettings webdav = new WEBDAVSettings(m_wrapper);
                     strings.Add(new KeyValuePair<string, string>(Strings.FinishedAdd.SummaryDestinationPath, webdav.Path));
                     break;
-            }
+            }*/
             
             int maxlen = 0;
             foreach (KeyValuePair<string, string> i in strings)

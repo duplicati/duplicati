@@ -24,7 +24,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class FTP : IStreamingBackend
+    public class FTP : IStreamingBackend, IBackendGUI
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
@@ -253,5 +253,39 @@ namespace Duplicati.Library.Backend
 
 
 
+
+        #region IBackendGUI Members
+
+        public string PageTitle
+        {
+            get { return FTPUI.PageTitle; }
+        }
+
+        public string PageDescription
+        {
+            get { return FTPUI.PageDescription; }
+        }
+
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
+        {
+            return new FTPUI(options);
+        }
+
+        public void Leave(System.Windows.Forms.Control control)
+        {
+            ((FTPUI)control).Save(false);
+        }
+
+        public bool Validate(System.Windows.Forms.Control control)
+        {
+            return ((FTPUI)control).Save(true);
+        }
+
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        {
+            return FTPUI.GetConfiguration(guiOptions, commandlineOptions);
+        }
+
+        #endregion
     }
 }
