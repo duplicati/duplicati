@@ -151,11 +151,29 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The folder cannot be created because it already exists.
+        /// </summary>
+        internal static string FolderAlreadyExistsError {
+            get {
+                return ResourceManager.GetString("FolderAlreadyExistsError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Folder created!.
         /// </summary>
         internal static string FolderCreated {
             get {
                 return ResourceManager.GetString("FolderCreated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The requested folder does not exist.
+        /// </summary>
+        internal static string FolderMissingError {
+            get {
+                return ResourceManager.GetString("FolderMissingError", resourceCulture);
             }
         }
     }

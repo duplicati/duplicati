@@ -136,7 +136,50 @@ namespace Duplicati.Library.Backend
                 m_prefix += "/";
         }
 
-        #region IBackendInterface Members
+
+        private List<FileEntry> List(bool isTesting)
+        {
+
+            try
+            {
+                S3Wrapper con = CreateRequest();
+
+                List<FileEntry> lst = con.ListBucket(m_bucket, m_prefix);
+                for (int i = 0; i < lst.Count; i++)
+                {
+                    lst[i].Name = lst[i].Name.Substring(m_prefix.Length);
+
+                    //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
+                    if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
+                        lst[i].Name = lst[i].Name.Substring(1);
+                }
+                return lst;
+            }
+            catch (Exception ex)
+            {
+                System.Net.WebException wex = ex as System.Net.WebException;
+                Affirma.ThreeSharp.ThreeSharpException tex = ex as Affirma.ThreeSharp.ThreeSharpException;
+                if (wex == null && tex != null)
+                    wex = tex.InnerException as System.Net.WebException;
+
+                //Catch "non-existing" buckets
+                if (wex != null && wex.Status == System.Net.WebExceptionStatus.ProtocolError && wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    if (isTesting)
+                        throw new Backend.FolderMissingException(wex);
+                    else
+                        return new List<FileEntry>();
+
+                if (tex != null && tex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    if (isTesting)
+                        throw new Backend.FolderMissingException(tex);
+                    else
+                        return new List<FileEntry>();
+
+                throw;
+            }
+        }
+
+        #region IBackend Members
 
         public string DisplayName
         {
@@ -155,38 +198,7 @@ namespace Duplicati.Library.Backend
 
         public List<FileEntry> List()
         {
-
-            try
-            {
-                S3Wrapper con = CreateRequest();
-
-                List<FileEntry> lst = con.ListBucket(m_bucket, m_prefix);
-                for (int i = 0; i < lst.Count; i++)
-                {
-                    lst[i].Name = lst[i].Name.Substring(m_prefix.Length);
-                    
-                    //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                    if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
-                        lst[i].Name = lst[i].Name.Substring(1);
-                }
-                return lst;
-            }
-            catch (Exception ex)
-            {
-				System.Net.WebException wex = ex as System.Net.WebException;
-				Affirma.ThreeSharp.ThreeSharpException tex = ex as Affirma.ThreeSharp.ThreeSharpException;
-				if (wex == null && tex != null)
-					wex = tex.InnerException as System.Net.WebException;
-
-				//Catch "non-existing" buckets
-                if (wex != null && wex.Status == System.Net.WebExceptionStatus.ProtocolError && wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
-                	return new List<FileEntry>();
-				
-				if (tex != null && tex.StatusCode == System.Net.HttpStatusCode.NotFound)
-					return new List<FileEntry>();
-
-                throw;
-            }
+            return List(false);
         }
 
         public void Put(string remotename, string localname)
@@ -271,6 +283,11 @@ namespace Duplicati.Library.Backend
             con.DeleteObject(m_bucket, GetFullKey(remotename));
         }
 
+        public void Test()
+        {
+            List(true);
+        }
+
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -293,6 +310,13 @@ namespace Duplicati.Library.Backend
             {
                 return Strings.S3Backend.Description;
             }
+        }
+
+        public void CreateFolder()
+        {
+            S3Wrapper con = CreateRequest();
+            //S3 does not complain if the bucket already exists
+            con.AddBucket(m_bucket);
         }
         
         #endregion

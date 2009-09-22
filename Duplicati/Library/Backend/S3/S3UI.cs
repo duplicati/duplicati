@@ -37,6 +37,7 @@ namespace Duplicati.Library.Backend
         private const string SERVER_URL = "ServerUrl";
         private const string PREFIX = "Prefix";
         private const string HASTESTED = "UI: HasTested";
+        private const string HASCREATEDBUCKET = "UI: Has created bucket";
 
         private const string S3_PATH = "s3.amazonaws.com";
 
@@ -44,6 +45,7 @@ namespace Duplicati.Library.Backend
         private const string LOGIN_PAGE = "http://aws.amazon.com/s3";
         private IDictionary<string, string> m_options;
         private bool m_hasTested;
+        private bool m_hasCreatedbucket = false;
 
         public S3UI(IDictionary<string, string> options)
             : this()
@@ -63,7 +65,7 @@ namespace Duplicati.Library.Backend
             if (!validate)
                 return true;
 
-            if (!ValidateForm())
+            if (!ValidateForm(true))
                 return false;
 
             if (!m_hasTested)
@@ -88,6 +90,7 @@ namespace Duplicati.Library.Backend
         {
             m_options.Clear();
             m_options[HASTESTED] = m_hasTested.ToString();
+            m_options[HASCREATEDBUCKET] = m_hasCreatedbucket.ToString();
 
             m_options[ACCESS_ID] = AWS_ID.Text;
             m_options[ACCESS_KEY] = AWS_KEY.Text;
@@ -118,9 +121,47 @@ namespace Duplicati.Library.Backend
             if (!m_options.ContainsKey(HASTESTED) || !bool.TryParse(m_options[HASTESTED], out m_hasTested))
                 m_hasTested = false;
 
+            if (!m_options.ContainsKey(HASCREATEDBUCKET) || !bool.TryParse(m_options[HASCREATEDBUCKET], out m_hasCreatedbucket))
+                m_hasCreatedbucket = false;
         }
 
-        private bool ValidateForm()
+        /// <summary>
+        /// Mono has a problem with non-existing buckets
+        /// </summary>
+        /// <returns>True if the bucket is created, false otherwise</returns>
+        private bool EnsureBucketForMono()
+        {
+            try
+            {
+                if (m_hasCreatedbucket)
+                    return true;
+
+                if (Core.Utility.IsMono && Core.Utility.MonoVersion <= new Version(2, 4, 3, 0))
+                {
+                    switch (MessageBox.Show(this, Strings.S3UI.MonoRequiresExistingBucket, Application.ProductName, MessageBoxButtons.YesNoCancel))
+                    {
+                        case DialogResult.Yes: //Create it
+                            CreateBucket.PerformClick();
+                            if (!m_hasCreatedbucket)
+                                return false;
+                            break;
+                        case DialogResult.No: //Ignore
+                            break;
+                        default:
+                            return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidateForm(bool checkForBucket)
         {
             if (AWS_ID.Text.Trim().Length <= 0)
             {
@@ -183,7 +224,10 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            return true;
+            if (checkForBucket)
+                return EnsureBucketForMono();
+            else
+                return true;
         }
 
         private void SignUpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -193,7 +237,7 @@ namespace Duplicati.Library.Backend
 
         private void TestConnection_Click(object sender, EventArgs e)
         {
-            if (ValidateForm())
+            if (ValidateForm(true))
             {
                 Cursor c = this.Cursor;
                 try
@@ -205,17 +249,32 @@ namespace Duplicati.Library.Backend
                     string destination = GetConfiguration(m_options, options);
 
                     S3 s3 = new S3(destination, options);
-                    s3.List();
+                    s3.Test();
 
                     MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
+                    m_hasCreatedbucket = true; //If the test succeeds, the bucket exists
+                }
+                catch (Backend.FolderMissingException)
+                {
+                    switch (MessageBox.Show(this, Strings.S3UI.CreateMissingBucket, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    {
+                        case DialogResult.Yes:
+                            CreateBucket.PerformClick();
+                            TestConnection.PerformClick();
+                            return;
+                        default:
+                            return;
+                    }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-
                 }
-                this.Cursor = c;
+                finally
+                {
+                    this.Cursor = c;
+                }
             }
         }
 
@@ -232,6 +291,7 @@ namespace Duplicati.Library.Backend
         private void BucketName_TextChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
+            m_hasCreatedbucket = false;
         }
 
         private void UseEuroBuckets_CheckedChanged(object sender, EventArgs e)
@@ -284,6 +344,36 @@ namespace Duplicati.Library.Backend
         public static string PageDescription
         {
             get { return Strings.S3UI.PageDescription; }
+        }
+
+        private void CreateBucket_Click(object sender, EventArgs e)
+        {
+            if (ValidateForm(false))
+            {
+                Cursor c = this.Cursor;
+                try
+                {
+                    this.Cursor = Cursors.WaitCursor;
+                    Save();
+
+                    Dictionary<string, string> options = new Dictionary<string, string>();
+                    string destination = GetConfiguration(m_options, options);
+
+                    S3 s3 = new S3(destination, options);
+                    s3.CreateFolder();
+
+                    MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    m_hasTested = true;
+                    m_hasCreatedbucket = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                }
+                this.Cursor = c;
+            }
+
         }
     }
 }

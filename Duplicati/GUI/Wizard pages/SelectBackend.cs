@@ -110,6 +110,7 @@ namespace Duplicati.GUI.Wizard_pages
             foreach (Library.Backend.IBackend backend in lst.Values)
             {
                 DoubleClickRadioButton button = new DoubleClickRadioButton();
+                button.AutoSize = true;
                 button.Text = backend.DisplayName;
                 toolTips.SetToolTip(button, backend.Description);
                 button.Left = 0;

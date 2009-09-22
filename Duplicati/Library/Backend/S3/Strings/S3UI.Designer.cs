@@ -79,6 +79,15 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The bucket does not exist, do you want to create it?.
+        /// </summary>
+        internal static string CreateMissingBucket {
+            get {
+                return ResourceManager.GetString("CreateMissingBucket", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You must enter your AWS Access ID.\nYou may click the link to the right\nto open the AWS login page, and retrieve it..
         /// </summary>
         internal static string EmptyAWSIDError {
@@ -111,6 +120,15 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string EuroBucketsRequireLowerCaseError {
             get {
                 return ResourceManager.GetString("EuroBucketsRequireLowerCaseError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A bug in Mono versions older than 2.4.3,\n prevents the backend from detecting and missing buckets.\nDue to this, it is recommended that you create the bucket.\nDo you want to create the bucket now?.
+        /// </summary>
+        internal static string MonoRequiresExistingBucket {
+            get {
+                return ResourceManager.GetString("MonoRequiresExistingBucket", resourceCulture);
             }
         }
         

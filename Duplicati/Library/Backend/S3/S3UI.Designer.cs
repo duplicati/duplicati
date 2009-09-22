@@ -39,6 +39,7 @@ namespace Duplicati.Library.Backend
             this.label4 = new System.Windows.Forms.Label();
             this.UseEuroBuckets = new System.Windows.Forms.CheckBox();
             this.TestConnection = new System.Windows.Forms.Button();
+            this.CreateBucket = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -100,10 +101,18 @@ namespace Duplicati.Library.Backend
             this.TestConnection.UseVisualStyleBackColor = true;
             this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
+            // CreateBucket
+            // 
+            resources.ApplyResources(this.CreateBucket, "CreateBucket");
+            this.CreateBucket.Name = "CreateBucket";
+            this.CreateBucket.UseVisualStyleBackColor = true;
+            this.CreateBucket.Click += new System.EventHandler(this.CreateBucket_Click);
+            // 
             // S3UI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.CreateBucket);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.UseEuroBuckets);
             this.Controls.Add(this.label4);
@@ -133,5 +142,6 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.CheckBox UseEuroBuckets;
         private System.Windows.Forms.Button TestConnection;
+        private System.Windows.Forms.Button CreateBucket;
     }
 }

@@ -539,6 +539,43 @@ namespace Duplicati.Library.Core
 				return IsClientLinux;
 			}
 		}
+
+        /// <summary>
+        /// Returns a value indicating if the app is running under Mono
+        /// </summary>
+        public static bool IsMono
+        {
+            get 
+            {
+                Type t = Type.GetType("Mono.Runtime");
+                return t != null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the current Mono runtime version, will return 0.0.0.0 if not running Mono
+        /// </summary>
+        public static Version MonoVersion
+        {
+            get
+            {
+                try
+                {
+                    Type t = Type.GetType("Mono.Runtime");
+                    if (t != null)
+                    {
+                        System.Reflection.PropertyInfo pi = t.GetProperty("Version");
+                        if (pi != null)
+                            return new Version((string)pi.GetValue(null, null));
+                    }
+                }
+                catch
+                {
+                }
+
+                return new Version();
+            }
+        }
 			
     }
 }

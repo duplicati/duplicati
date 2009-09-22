@@ -147,7 +147,13 @@
   <data name="EmptyUsernameWarning" xml:space="preserve">
     <value>You have not entered a username.\nThis is fine if the server allows anonymous uploads, but likely a username is required\nProceed without a username?</value>
   </data>
+  <data name="FolderAlreadyExistsError" xml:space="preserve">
+    <value>The folder cannot be created because it already exists</value>
+  </data>
   <data name="FolderCreated" xml:space="preserve">
     <value>Folder created!</value>
+  </data>
+  <data name="FolderMissingError" xml:space="preserve">
+    <value>The requested folder does not exist</value>
   </data>
 </root>

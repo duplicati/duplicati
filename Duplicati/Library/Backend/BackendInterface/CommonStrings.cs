@@ -132,5 +132,26 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <summary>
+        ///   Looks up a localized string similar to The requested folder does not exist.
+        /// </summary>
+        public static string FolderMissingError
+        {
+            get
+            {
+                return Strings.Common.FolderMissingError;
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The folder cannot be created because it already exists.
+        /// </summary>
+        public static string FolderAlreadyExistsError
+        {
+            get
+            {
+                return Strings.Common.FolderAlreadyExistsError;
+            }
+        }
     }
 }

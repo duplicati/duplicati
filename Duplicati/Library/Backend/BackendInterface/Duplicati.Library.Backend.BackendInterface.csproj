@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="CommandLineArgument.cs" />
     <Compile Include="CommonStrings.cs" />
+    <Compile Include="CustomExceptions.cs" />
     <Compile Include="IBackend.cs" />
     <Compile Include="FileEntry.cs" />
     <Compile Include="IBackendGUI.cs" />
