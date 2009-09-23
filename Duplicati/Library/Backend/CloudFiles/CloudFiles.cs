@@ -24,7 +24,7 @@ using System.Net;
 
 namespace Duplicati.Library.Backend
 {
-    public class CloudFiles : IBackend, IStreamingBackend
+    public class CloudFiles : IBackend, IStreamingBackend, IBackendGUI
     {
         private const string AUTH_URL = "https://api.mosso.com/auth";
         private const int ITEM_LIST_LIMIT = 1000;
@@ -150,6 +150,20 @@ namespace Duplicati.Library.Backend
             } while (repeat);
 
             return files;
+        }
+
+        public void Test()
+        {
+            //The "Folder not found" is not detectable :(
+            List();
+        }
+
+        public void CreateFolder()
+        {
+            HttpWebRequest createReq = CreateRequest("", "");
+            createReq.Method = "PUT";
+            using (HttpWebResponse resp = (HttpWebResponse)createReq.GetResponse())
+            { }
         }
 
         public void Put(string remotename, string filename)
@@ -299,5 +313,39 @@ namespace Duplicati.Library.Backend
             return System.Web.HttpUtility.UrlEncode(value).Replace("+", "%20").Replace("%2f", "/");
         }
 
+
+        #region IBackendGUI Members
+
+        public string PageTitle
+        {
+            get { return CloudFilesUI.PageTitle; }
+        }
+
+        public string PageDescription
+        {
+            get { return CloudFilesUI.PageDescription; }
+        }
+
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
+        {
+            return new CloudFilesUI(options);
+        }
+
+        public void Leave(System.Windows.Forms.Control control)
+        {
+            ((CloudFilesUI)control).Save(false);
+        }
+
+        public bool Validate(System.Windows.Forms.Control control)
+        {
+            return ((CloudFilesUI)control).Save(true);
+        }
+
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        {
+            return CloudFilesUI.GetConfiguration(guiOptions, commandlineOptions);
+        }
+
+        #endregion
     }
 }
