@@ -136,7 +136,8 @@ namespace Duplicati.Library.Backend
                 if (m_hasCreatedbucket)
                     return true;
 
-                if (Core.Utility.IsMono && Core.Utility.MonoVersion <= new Version(2, 4, 3, 0))
+                //The problem should be fixed in any version after 2.4.2.3
+                if (Core.Utility.IsMono && Core.Utility.MonoVersion <= new Version(2, 4, 2, 3))
                 {
                     switch (MessageBox.Show(this, Strings.S3UI.MonoRequiresExistingBucket, Application.ProductName, MessageBoxButtons.YesNoCancel))
                     {

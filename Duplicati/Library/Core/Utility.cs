@@ -547,13 +547,12 @@ namespace Duplicati.Library.Core
         {
             get 
             {
-                Type t = Type.GetType("Mono.Runtime");
-                return t != null;
+                return Type.GetType("Mono.Runtime") != null;
             }
         }
 
         /// <summary>
-        /// Gets the current Mono runtime version, will return 0.0.0.0 if not running Mono
+        /// Gets the current Mono runtime version, will return 0.0 if not running Mono
         /// </summary>
         public static Version MonoVersion
         {
@@ -564,9 +563,12 @@ namespace Duplicati.Library.Core
                     Type t = Type.GetType("Mono.Runtime");
                     if (t != null)
                     {
-                        System.Reflection.PropertyInfo pi = t.GetProperty("Version");
-                        if (pi != null)
-                            return new Version((string)pi.GetValue(null, null));
+                        System.Reflection.MethodInfo mi = t.GetMethod("GetDisplayName", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+                        if (mi != null)
+                        {
+                            string version = (string)mi.Invoke(null, null);
+                            return new Version(version.Substring(version.Trim().LastIndexOf(' ')));
+                        }
                     }
                 }
                 catch
