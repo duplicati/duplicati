@@ -118,7 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="MissingSCPWarning" xml:space="preserve">
-    <value>Duplicati was unable to verify the existence of the sftp program.\nsfpt may work regardless, if it is located in the system search path.\n\nDo you want to continue anyway?</value>
+    <value>Duplicati was unable to verify the existence of the sftp program.
+sfpt may work regardless, if it is located in the system search path.
+
+Do you want to continue anyway?</value>
   </data>
   <data name="PageDescription" xml:space="preserve">
     <value>On this page you can select where to store the backup data.</value>

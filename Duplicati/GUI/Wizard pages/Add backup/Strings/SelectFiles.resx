@@ -127,10 +127,17 @@
     <value>The folder "{0}" does not exist.</value>
   </data>
   <data name="ModifiedFiltersWarning" xml:space="preserve">
-    <value>You have modified the filters, but selected files by groups.\nSince that feature uses filters, there is a chance that your filters\nwill be removed after this.\nIf you switch to using only a single folder, your filters will not be modified.\n\nDo you want to continue, and possibly lose your filter setup?</value>
+    <value>You have modified the filters, but selected files by groups.
+Since that feature uses filters, there is a chance that your filters
+will be removed after this.
+If you switch to using only a single folder, your filters will not be modified.
+
+Do you want to continue, and possibly lose your filter setup?</value>
   </data>
   <data name="MultipleSourcesError" xml:space="preserve">
-    <value>Due to your machine setup, it is not possible to backup\nthe selected folders in the same backup.\nTry unchecking some items, and create more than one backup.</value>
+    <value>Due to your machine setup, it is not possible to backup
+the selected folders in the same backup.
+Try unchecking some items, and create more than one backup.</value>
   </data>
   <data name="NoFilesSelectedError" xml:space="preserve">
     <value>You have not included any files.</value>

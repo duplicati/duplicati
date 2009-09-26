@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -127,7 +127,7 @@
     <value>A cada duas semanas</value>
   </data>
   <data name="EasyDuration.Items3" xml:space="preserve">
-    <value>Todo m�s</value>
+    <value>Todo mês</value>
   </data>
   <data name="EasyDuration.Items4" xml:space="preserve">
     <value>Personalizado ...</value>

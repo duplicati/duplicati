@@ -79,7 +79,6 @@ namespace Duplicati.GUI
         [STAThread]
         static void Main(string[] args)
         {
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             SingleInstance singleInstance = null;

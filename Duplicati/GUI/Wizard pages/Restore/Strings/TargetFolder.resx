@@ -139,6 +139,7 @@
     <value>Select restore folder</value>
   </data>
   <data name="ValidatingFolderError" xml:space="preserve">
-    <value>An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: {0}</value>
+    <value>An error occured while verifying the destination. Please make sure it exists and is accessible.
+Error message: {0}</value>
   </data>
 </root>

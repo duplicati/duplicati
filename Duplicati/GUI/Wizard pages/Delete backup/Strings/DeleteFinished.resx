@@ -124,6 +124,7 @@
     <value>Delete backup</value>
   </data>
   <data name="SummaryText" xml:space="preserve">
-    <value>Action: Delete backup\nName: {0}</value>
+    <value>Action: Delete backup
+Name: {0}</value>
   </data>
 </root>

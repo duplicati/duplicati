@@ -118,10 +118,15 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BucketnameCaseWarning" xml:space="preserve">
-    <value>O nome informado não está em minúsculas.\n{0}\nDeseja converter o nome para minúsculas?</value>
+    <value>O nome informado não está em minúsculas.
+{0}
+Deseja converter o nome para minúsculas?</value>
   </data>
   <data name="BucketnameNotPrefixedWarning" xml:space="preserve">
-    <value>O nome informado não inicia pelo seu ID de usuário.\nPara evitar o uso do armazenamento de outro usuário,\né recomendado que você ponha seu ID de usuário em frente ao nome do armazenamento.\nDeseja inserir o ID de usuário na frente do seu nome de armazenamento?</value>
+    <value>O nome informado não inicia pelo seu ID de usuário.
+Para evitar o uso do armazenamento de outro usuário,
+é recomendado que você ponha seu ID de usuário em frente ao nome do armazenamento.
+Deseja inserir o ID de usuário na frente do seu nome de armazenamento?</value>
   </data>
   <data name="EmptyAWSIDError" xml:space="preserve">
     <value>Você precisa inserir seu ID de acesso AWS. Você pode clicar no atalho ao lado para abrir a página de login AWS, e recuperá-lo.</value>

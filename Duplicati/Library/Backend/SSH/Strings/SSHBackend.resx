@@ -166,7 +166,7 @@
     <value>Prints debug info to the console</value>
   </data>
   <data name="DescriptionFTPPasswordLong" xml:space="preserve">
-    <value>The password used to connect to the server. This may also be supplied as the environment variable \"FTP_PASSWORD\".</value>
+    <value>The password used to connect to the server. This may also be supplied as the environment variable "FTP_PASSWORD".</value>
   </data>
   <data name="DescriptionFTPPasswordShort" xml:space="preserve">
     <value>Supplies the password used to connect to the server</value>
@@ -211,10 +211,14 @@
     <value>The host is not authenticated, please connect to the host using SSH, and then re-rerun Duplicati, log: {0}</value>
   </data>
   <data name="LaunchErrorLinux" xml:space="preserve">
-    <value>Failed to start the SSH application ({0}).\nMake sure that "expect" is installed.\nError message: {1}</value>
+    <value>Failed to start the SSH application ({0}).
+Make sure that "expect" is installed.
+Error message: {1}</value>
   </data>
   <data name="LaunchErrorWindows" xml:space="preserve">
-    <value>Failed to start the SSH application ({0}).\nMake sure that "putty" is installed, and you have set the correct path.\nError message: {1}</value>
+    <value>Failed to start the SSH application ({0}).
+Make sure that "putty" is installed, and you have set the correct path.
+Error message: {1}</value>
   </data>
   <data name="PasswordMissingError" xml:space="preserve">
     <value>A password was expected, but passwordless login was specified</value>

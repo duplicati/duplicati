@@ -130,7 +130,9 @@
     <comment>A mensagem a ser exibida quando o layout do banco de dados não for reconhecido</comment>
   </data>
   <data name="UpgradeFailure" xml:space="preserve">
-    <value>Falha na execução do comando SQL: {0}\nErro: {1}\nO banco de dados NÃO foi atualizadoDatabase.</value>
+    <value>Falha na execução do comando SQL: {0}
+Erro: {1}
+O banco de dados NÃO foi atualizadoDatabase.</value>
     <comment>A mensagem a ser exibida se algum dos comandos de atualização SQL falhar</comment>
   </data>
 </root>

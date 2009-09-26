@@ -139,6 +139,7 @@
     <value>Selecione a pasta para restaurar</value>
   </data>
   <data name="ValidatingFolderError" xml:space="preserve">
-    <value>Um erro ocorreu ao verfificar a pasta de destino. Tenha certeza de que ela existe e está acessível.\nMensagem de erro: {0}</value>
+    <value>Um erro ocorreu ao verfificar a pasta de destino. Tenha certeza de que ela existe e está acessível.
+Mensagem de erro: {0}</value>
   </data>
 </root>

@@ -126,15 +126,18 @@
     <comment>Exibe um rótulo de estado quando estiver calculando o tamanho do cache em disco</comment>
   </data>
   <data name="ConfirmCacheDelete" xml:space="preserve">
-    <value>Remover arquivos de assinatura na pasta: \n{0}</value>
+    <value>Remover arquivos de assinatura na pasta: 
+{0}</value>
     <comment>A mensgem que será exibida em uma caixa de diálogo antes de apagar os arquivos de assinatura em cache</comment>
   </data>
   <data name="ErrorWhileExaminingFolder" xml:space="preserve">
-    <value>Ocorreu um erro examinando a pasta: {0}.\r\nGostaria de usar esta pasta mesmo assim?</value>
+    <value>Ocorreu um erro examinando a pasta: {0}.
+Gostaria de usar esta pasta mesmo assim?</value>
     <comment>A mensagem a ser exibida se ocorrer um erro no momento da checagem do arquivo selecionado</comment>
   </data>
   <data name="FolderIsMissingFile" xml:space="preserve">
-    <value>A pasta selecionada não contém o arquivo: {0}.\r\nGostaria de usar esta pasta mesmo assim?</value>
+    <value>A pasta selecionada não contém o arquivo: {0}.
+Gostaria de usar esta pasta mesmo assim?</value>
     <comment>A mensagem a ser exibida ao usuário para confirmar o uso de uma pasta que não contém o arquivo selecionado</comment>
   </data>
   <data name="OperationCancelled" xml:space="preserve">

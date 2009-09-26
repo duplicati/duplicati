@@ -124,7 +124,8 @@
     <value>Pronto para restaurar configurações</value>
   </data>
   <data name="RestoreFailedError" xml:space="preserve">
-    <value>Falha ao restaurar os arquivos de configuração, a mensagem de erro foi:\n {0}</value>
+    <value>Falha ao restaurar os arquivos de configuração, a mensagem de erro foi:
+ {0}</value>
   </data>
   <data name="RestoreWaitDialogTitle" xml:space="preserve">
     <value>Restaurando configurações, por favor aguarde...</value>

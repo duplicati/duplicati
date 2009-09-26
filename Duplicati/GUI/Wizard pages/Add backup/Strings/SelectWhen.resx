@@ -118,7 +118,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="NoRepetitionWarning" xml:space="preserve">
-    <value>You have no repetition set, so the backup will never run.\nThis is fine if you only want to run the backup manually, but it is not recomended.\nDo you want to continue?</value>
+    <value>You have no repetition set, so the backup will never run.
+This is fine if you only want to run the backup manually, but it is not recomended.
+Do you want to continue?</value>
   </data>
   <data name="PageDescription" xml:space="preserve">
     <value>On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.</value>

@@ -130,7 +130,9 @@
     <comment>An error message that is displayed when the layout of the database is unexpected</comment>
   </data>
   <data name="UpgradeFailure" xml:space="preserve">
-    <value>Failed to execute SQL: {0}\nError: {1}\nDatabase is NOT upgraded.</value>
+    <value>Failed to execute SQL: {0}
+Error: {1}
+Database is NOT upgraded.</value>
     <comment>An error message displayed if one of the upgrade SQL statements fail</comment>
   </data>
 </root>

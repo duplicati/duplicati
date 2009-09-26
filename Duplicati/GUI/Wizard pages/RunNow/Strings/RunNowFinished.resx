@@ -124,6 +124,7 @@
     <value>Ready to run backup</value>
   </data>
   <data name="SummaryText" xml:space="preserve">
-    <value>Action: Run backup now\nName: {0}</value>
+    <value>Action: Run backup now
+Name: {0}</value>
   </data>
 </root>

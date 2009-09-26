@@ -122,7 +122,8 @@
     <comment>A mensagem exibida no console cuando o Duplicati for ativado e ele já estiver executando</comment>
   </data>
   <data name="DatabaseOpenError" xml:space="preserve">
-    <value>Falha ao criar, abrir ou executar o banco de dados.\r\nMensagem de erro: {0}</value>
+    <value>Falha ao criar, abrir ou executar o banco de dados.
+Mensagem de erro: {0}</value>
     <comment>A mensagem de erro exibida quando ouver uma falha na abertura do bancode de dados</comment>
   </data>
   <data name="MenuQuit" xml:space="preserve">
@@ -146,7 +147,8 @@
     <comment>Falha no Duplicati</comment>
   </data>
   <data name="StartupFailure" xml:space="preserve">
-    <value>Não foi possível iniciar, talvez outro processo já esteja em andamento.\nMensagem de erro: {0}</value>
+    <value>Não foi possível iniciar, talvez outro processo já esteja em andamento.
+Mensagem de erro: {0}</value>
     <comment>A mensagem de erro exibida quando o Duplicati falha na inicialização</comment>
   </data>
   <data name="TrayStatusReady" xml:space="preserve">

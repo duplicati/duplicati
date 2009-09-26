@@ -136,7 +136,8 @@
     <value>You must enter a password</value>
   </data>
   <data name="EmptyPasswordWarning" xml:space="preserve">
-    <value>You have not entered a password.\nProceed without a password?</value>
+    <value>You have not entered a password.
+Proceed without a password?</value>
   </data>
   <data name="EmptyServernameError" xml:space="preserve">
     <value>You must enter the name of the server</value>
@@ -145,7 +146,9 @@
     <value>You must enter a username</value>
   </data>
   <data name="EmptyUsernameWarning" xml:space="preserve">
-    <value>You have not entered a username.\nThis is fine if the server allows anonymous uploads, but likely a username is required\nProceed without a username?</value>
+    <value>You have not entered a username.
+This is fine if the server allows anonymous uploads, but likely a username is required
+Proceed without a username?</value>
   </data>
   <data name="FolderAlreadyExistsError" xml:space="preserve">
     <value>The folder cannot be created because it already exists</value>

@@ -124,6 +124,7 @@
     <value>Pronto para executar o backup</value>
   </data>
   <data name="SummaryText" xml:space="preserve">
-    <value>Ação: Executar backup agora\nNome: {0}</value>
+    <value>Ação: Executar backup agora
+Nome: {0}</value>
   </data>
 </root>

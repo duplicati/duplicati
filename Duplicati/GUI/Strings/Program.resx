@@ -122,7 +122,8 @@
     <comment>A message displayed in the console when activating Duplicati and it is already running</comment>
   </data>
   <data name="DatabaseOpenError" xml:space="preserve">
-    <value>Failed to create, open or upgrade the database.\r\nError message: {0}</value>
+    <value>Failed to create, open or upgrade the database.
+Error message: {0}</value>
     <comment>An error message displayed when opening the database fails</comment>
   </data>
   <data name="LanguageSelectionError" xml:space="preserve">
@@ -158,7 +159,8 @@
     <comment>Duplicati crashes</comment>
   </data>
   <data name="StartupFailure" xml:space="preserve">
-    <value>Unable to start up, perhaps another process is already running?\nError message: {0}</value>
+    <value>Unable to start up, perhaps another process is already running?
+Error message: {0}</value>
     <comment>An error message displayed when Duplicati startup fails</comment>
   </data>
   <data name="TrayStatusReady" xml:space="preserve">

@@ -118,7 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="MissingSCPWarning" xml:space="preserve">
-    <value>O Duplicati não pode encontrar a existência do programa sftp.\nO sftp pode funcionar mesmo assim, se estiver na pasta padrão do sistema.\n\nDeseja continuar mesmo assim?</value>
+    <value>O Duplicati não pode encontrar a existência do programa sftp.
+O sftp pode funcionar mesmo assim, se estiver na pasta padrão do sistema.
+
+Deseja continuar mesmo assim?</value>
   </data>
   <data name="PageDescription" xml:space="preserve">
     <value>Nesta página você pode selecionar onde deseja armazenar os arquivos do backup.</value>

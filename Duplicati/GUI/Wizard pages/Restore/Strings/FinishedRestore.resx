@@ -130,6 +130,9 @@
     <value>Restoring files, please wait...</value>
   </data>
   <data name="SummaryText" xml:space="preserve">
-    <value>Action: Restore backup\nBackup: {0}\nDate: {1}\nFolder: {2}</value>
+    <value>Action: Restore backup
+Backup: {0}
+Date: {1}
+Folder: {2}</value>
   </data>
 </root>

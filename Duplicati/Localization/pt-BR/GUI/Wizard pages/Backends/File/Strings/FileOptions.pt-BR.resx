@@ -130,7 +130,8 @@
     <value>A pasta selecionada não está vazia. Gostaria de utilizá-la mesmo assim?</value>
   </data>
   <data name="FolderValidationError" xml:space="preserve">
-    <value>Um erro ocorreu verificando a pasta de destino. Tenha certeza que ela existe e que está acessível.\nMensagem de erro: {0}</value>
+    <value>Um erro ocorreu verificando a pasta de destino. Tenha certeza que ela existe e que está acessível.
+Mensagem de erro: {0}</value>
   </data>
   <data name="NonRootedPathError" xml:space="preserve">
     <value>Você precisa informar o caminho completo da pasta</value>

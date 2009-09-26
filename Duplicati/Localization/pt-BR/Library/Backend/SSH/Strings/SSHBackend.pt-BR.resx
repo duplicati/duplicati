@@ -166,7 +166,7 @@
     <value>Exibe informações de debug no console</value>
   </data>
   <data name="DescriptionFTPPasswordLong" xml:space="preserve">
-    <value>A senha utilizada para se conectar ao servidor. Este parâmetro pode ser informado através da variável de ambiente \"FTP_PASSWORD\".</value>
+    <value>A senha utilizada para se conectar ao servidor. Este parâmetro pode ser informado através da variável de ambiente "FTP_PASSWORD".</value>
   </data>
   <data name="DescriptionFTPPasswordShort" xml:space="preserve">
     <value>Provê a senha utilizada para se conectar ao servidor</value>
@@ -205,10 +205,14 @@
     <value>O servidor não foi autenticado, por favor se conecte a este servidor por SSH e rode novamente o Duplicati, log: {0}</value>
   </data>
   <data name="LaunchErrorLinux" xml:space="preserve">
-    <value>Falha ao iniciar a aplicação SSH ({0}).\nTenha certeza que o "putty" está instalado, e que você tenha definido o caminho correto.\nMensagem de erro: {1}</value>
+    <value>Falha ao iniciar a aplicação SSH ({0}).
+Tenha certeza que o "putty" está instalado, e que você tenha definido o caminho correto.
+Mensagem de erro: {1}</value>
   </data>
   <data name="LaunchErrorWindows" xml:space="preserve">
-    <value>Falha ao iniciar a aplicação SSH ({0}).\nTenha certeza de o aplicativo "expect" está instalado.\nMensagem de erro: {1}</value>
+    <value>Falha ao iniciar a aplicação SSH ({0}).
+Tenha certeza de o aplicativo "expect" está instalado.
+Mensagem de erro: {1}</value>
   </data>
   <data name="PasswordMissingError" xml:space="preserve">
     <value>Uma senha foi solicitada, mas foi especificado um login sem senha</value>

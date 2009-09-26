@@ -127,10 +127,17 @@
     <value>A pasta "{0}" não existe.</value>
   </data>
   <data name="ModifiedFiltersWarning" xml:space="preserve">
-    <value>Você modificou os filtros e selecionou arquivos por grupos.\nConsiderando que esta funcionalidade utiliza filtros existe a possibilidade de que\nseus filtros sejamremovidos após isso.\nSe você optar por selecionar somente uma pasta, seus filtros não serão modificados.\n\nDeseja continuar, e possivelmente perder seus filtros?</value>
+    <value>Você modificou os filtros e selecionou arquivos por grupos.
+Considerando que esta funcionalidade utiliza filtros existe a possibilidade de que
+seus filtros sejamremovidos após isso.
+Se você optar por selecionar somente uma pasta, seus filtros não serão modificados.
+
+Deseja continuar, e possivelmente perder seus filtros?</value>
   </data>
   <data name="MultipleSourcesError" xml:space="preserve">
-    <value>Devido as configurações do computador, não é possível\nfazer o backup das pastas selecionadas.\nTente desmarcar alguns ítens e criar mais de um backup.</value>
+    <value>Devido as configurações do computador, não é possível
+fazer o backup das pastas selecionadas.
+Tente desmarcar alguns ítens e criar mais de um backup.</value>
   </data>
   <data name="NoFilesSelectedError" xml:space="preserve">
     <value>Você não incluiu nenhum arquivo.</value>

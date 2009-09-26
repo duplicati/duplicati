@@ -118,7 +118,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="NoRepetitionWarning" xml:space="preserve">
-    <value>Não foi definida uma repetição, seu backup não será executado.\nSe você for executar o backup manualmente não há problema, mas não é recomendado..\nDeseja continuar?</value>
+    <value>Não foi definida uma repetição, seu backup não será executado.
+Se você for executar o backup manualmente não há problema, mas não é recomendado..
+Deseja continuar?</value>
   </data>
   <data name="PageDescription" xml:space="preserve">
     <value>Nesta página você pode configurar quando o backup será executado. Este intervalo garantirá que você sempre tenha um backup atualizado.</value>

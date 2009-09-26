@@ -124,7 +124,8 @@
     <value>Ready to restore settings</value>
   </data>
   <data name="RestoreFailedError" xml:space="preserve">
-    <value>Failed to restore setup files, the error message was:\n {0}</value>
+    <value>Failed to restore setup files, the error message was:
+ {0}</value>
   </data>
   <data name="RestoreWaitDialogTitle" xml:space="preserve">
     <value>Restoring setup, please wait...</value>

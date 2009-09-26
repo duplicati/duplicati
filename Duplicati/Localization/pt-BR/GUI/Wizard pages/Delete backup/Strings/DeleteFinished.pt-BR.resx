@@ -124,6 +124,7 @@
     <value>Apagar backup</value>
   </data>
   <data name="SummaryText" xml:space="preserve">
-    <value>Ação: Apagar backup\nNome: {0}</value>
+    <value>Ação: Apagar backup
+Nome: {0}</value>
   </data>
 </root>

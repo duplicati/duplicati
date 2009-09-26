@@ -130,7 +130,8 @@
     <value>The selected folder is not empty. Do you want to use it anyway?</value>
   </data>
   <data name="FolderValidationError" xml:space="preserve">
-    <value>An error occured while verifying the destination. Please make sure it exists and is accessible.\nError message: {0}</value>
+    <value>An error occured while verifying the destination. Please make sure it exists and is accessible.
+Error message: {0}</value>
   </data>
   <data name="NonRootedPathError" xml:space="preserve">
     <value>You must enter the full path of the folder</value>

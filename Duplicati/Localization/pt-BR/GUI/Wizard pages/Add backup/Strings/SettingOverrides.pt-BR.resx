@@ -124,7 +124,8 @@
     <value>Nesta página você pode sobrescrever todas as configurações do Duplicati. Isto é muito avançcado, tenha cuidado!</value>
   </data>
   <data name="PageNotSupportedWarning" xml:space="preserve">
-    <value>Esta página não é suportada na plataforma atual, este problema é conhecido.\r\nUma versão mais recente do Mono irá ativar esta página.</value>
+    <value>Esta página não é suportada na plataforma atual, este problema é conhecido.
+Uma versão mais recente do Mono irá ativar esta página.</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
     <value>Sobrescrever configurações</value>

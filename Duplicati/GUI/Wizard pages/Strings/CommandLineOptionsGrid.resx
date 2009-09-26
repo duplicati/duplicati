@@ -121,6 +121,7 @@
     <value>Value type: {0}. {1}. {2}</value>
   </data>
   <data name="PageNotSupportedWarning" xml:space="preserve">
-    <value>This page is not supported on the current platform, this is a known issue.\r\nA newer version of Mono will enable this page.</value>
+    <value>This page is not supported on the current platform, this is a known issue.
+A newer version of Mono will enable this page.</value>
   </data>
 </root>
