@@ -187,9 +187,18 @@ namespace Duplicati.Library.Backend
                 p.Sendline(cmd);
                 p.Sendline("exit");
 
+                //We assume 1kb pr. second
+                int timeout = (int)Math.Min(int.MaxValue, (new System.IO.FileInfo(filename).Length / 1024.0) * 1000);
+                
+                //Obey user overrides
+                if (m_options.ContainsKey("transfer-timeout"))
+                    timeout = m_transfer_timeout;
+                else //No overrides, pick the longest default time
+                    timeout = Math.Max(m_transfer_timeout, timeout);
+
                 //Assume that all went well and wait for the process to exit
                 //For some reason the output is sometimes buffered until process exit
-                if (!p.Process.WaitForExit(m_transfer_timeout))
+                if (!p.Process.WaitForExit(timeout))
                     throw new Exception(Strings.SSHBackend.UploadTimeoutError + "\r\n" + p.LogKillAndDispose());
 
                 //After the process is completed, the output is flushed, and we need to verify that the response was as expected
@@ -219,9 +228,18 @@ namespace Duplicati.Library.Backend
                 p.Sendline(cmd);
                 p.Sendline("exit");
 
+                //We assume 1kb pr. second
+                int timeout = (int)Math.Min(int.MaxValue, (new System.IO.FileInfo(filename).Length / 1024.0) * 1000);
+
+                //Obey user overrides
+                if (m_options.ContainsKey("transfer-timeout"))
+                    timeout = m_transfer_timeout;
+                else //No overrides, pick the longest default time
+                    timeout = Math.Max(m_transfer_timeout, timeout);
+
                 //Assume that all went well and wait for the process to exit
                 //For some reason the output is sometimes buffered until process exit
-                if (!p.Process.WaitForExit(m_transfer_timeout))
+                if (!p.Process.WaitForExit(timeout))
                     throw new Exception(Strings.SSHBackend.DownloadTimeoutError + "\r\n" + p.LogKillAndDispose());
 
                 //After the process is completed, the output is flushed, and we need to verify that the response was as expected

@@ -28,6 +28,7 @@ namespace Duplicati.Library.SharpExpect
     /// It eases the manipulation of a remote process by waiting for certain
     /// patterns in the program output.
     /// It does not yet support raw reading and writing of the tty/pty devices in Linux.
+    /// The timimings are not entirely excact, and does not account for time spent in code, but only the waited time.
     /// </summary>
     public class SharpExpectProcess : IDisposable
     {
@@ -127,27 +128,29 @@ namespace Duplicati.Library.SharpExpect
         /// <summary>
         /// Returns the next output line (from stdout or stderr) but does not remove it
         /// </summary>
+        /// <param name="maxWaitTime">The maximum time to wait for a new line</param>
         /// <returns>The next output line (from stdout or stderr) but does not remove it</returns>
-        public string PeekNextOutputLine()
+        public string PeekNextOutputLine(int maxWaitTime)
         {
-            return PeekNextOutputLine(OutputSource.Both);
+            return PeekNextOutputLine(OutputSource.Both, maxWaitTime);
         }
 
         /// <summary>
         /// Returns the next output line from the selected source but does not remove it
         /// </summary>
         /// <param name="source">A value indicating what streams to examine for data</param>
+        /// <param name="maxWaitTime">The maximum number of milliseconds to wait for a line to be recieved</param>
         /// <returns>The next output line from the selected source but does not remove it, returns null if no data is avalible</returns>
-        public string PeekNextOutputLine(OutputSource source)
+        public string PeekNextOutputLine(OutputSource source, int maxWaitTime)
         {
             //Is there buffered output?
             lock (m_lock)
             {
                 if ((source == OutputSource.Both || source == OutputSource.StdOut) && m_stdOut.Count > 0)
-                    return FindNextLine(m_stdOut);
+                    return FindNextLine(m_stdOut, maxWaitTime);
 
                 if ((source == OutputSource.Both || source == OutputSource.StedErr) && m_stdErr.Count > 0)
-                    return FindNextLine(m_stdErr);
+                    return FindNextLine(m_stdErr, maxWaitTime);
             }
 
             return null;
@@ -190,10 +193,16 @@ namespace Duplicati.Library.SharpExpect
         /// <returns>The next output line from the selected sources, or null if the operation times out.</returns>
         public string GetNextOutputLine(OutputSource source, int millisecondsTimeout)
         {
+            DateTime begin = DateTime.Now;
+
             //Is there buffered output?
-            string line = GetBufferedLine(source);
+            string line = GetBufferedLine(source, millisecondsTimeout);
             if (line != null)
                 return line;
+
+            //Adjust the remaining time
+            if (millisecondsTimeout != System.Threading.Timeout.Infinite)
+                millisecondsTimeout = Math.Max(0, millisecondsTimeout - (int)((DateTime.Now - begin).TotalMilliseconds));
 
             //If we are disposed, or done, there is no point in waiting
             if (m_process == null || m_process.HasExited)
@@ -206,32 +215,38 @@ namespace Duplicati.Library.SharpExpect
                     System.Threading.Thread.Sleep(100);
 
                 //Make sure queue is empty
-                return GetBufferedLine(source);
+                return GetBufferedLine(source, System.Threading.Timeout.Infinite);
             }
 
+            begin = DateTime.Now;
             //If we can wait, do so, and try again, otherwise return null
-            if (millisecondsTimeout > 0)
+            if (millisecondsTimeout == System.Threading.Timeout.Infinite || millisecondsTimeout > 0)
                 m_event.WaitOne(millisecondsTimeout, true);
 
-            return GetBufferedLine(source);
+            //Adjust the remaining time
+            if (millisecondsTimeout != System.Threading.Timeout.Infinite)
+                millisecondsTimeout = Math.Max(0, millisecondsTimeout - (int)((DateTime.Now - begin).TotalMilliseconds));
+
+            return GetBufferedLine(source, millisecondsTimeout);
         }
 
         /// <summary>
         /// Helper method to extract a buffered line
         /// </summary>
         /// <param name="source">A value indicating what streams to examine</param>
+        /// <param name="maxWaitTime">The time to wait for a new line</param>
         /// <returns>The next buffered line or null</returns>
-        private string GetBufferedLine(OutputSource source)
+        private string GetBufferedLine(OutputSource source, int maxWaitTime)
         {
             lock (m_lock)
             {
                 //Check stdout
                 if ((source == OutputSource.Both || source == OutputSource.StdOut) && m_stdOut.Count > 0)
-                    return RecordInLog("O", ExtractNextLine(m_stdOut));
+                    return RecordInLog("O", ExtractNextLine(m_stdOut, maxWaitTime));
 
                 //Check stderr
                 if ((source == OutputSource.Both || source == OutputSource.StedErr) && m_stdErr.Count > 0)
-                    return RecordInLog("E", ExtractNextLine(m_stdErr));
+                    return RecordInLog("E", ExtractNextLine(m_stdErr, maxWaitTime));
 
                 //No data, so make sure the event is not set
                 m_event.Reset();
@@ -245,10 +260,11 @@ namespace Duplicati.Library.SharpExpect
         /// Internal helper to remove the next line from the queue
         /// </summary>
         /// <param name="queue">The queue to extract from</param>
+        /// <param name="maxWaitTime">The maximum time to wait for a new line</param>
         /// <returns>The extracted line</returns>
-        private string ExtractNextLine(List<string> queue)
+        private string ExtractNextLine(List<string> queue, int maxWaitTime)
         {
-            string line = FindNextLine(queue);
+            string line = FindNextLine(queue, maxWaitTime);
             if (line == null)
                 return null;
 
@@ -268,10 +284,11 @@ namespace Duplicati.Library.SharpExpect
         /// queue entries, and a single entry may contain more than one line.
         /// </summary>
         /// <param name="queue">The queue to extract from</param>
+        /// <param name="maxWaitTime">The time to wait for a new line</param>
         /// <returns>The next line, or null if there is no data</returns>
-        private string FindNextLine(List<string> queue)
+        private string FindNextLine(List<string> queue, int maxWaitTime)
         {
-            return FindNextLine(queue, true);
+            return FindNextLine(queue, maxWaitTime, true);
         }
 
         /// <summary>
@@ -282,8 +299,9 @@ namespace Duplicati.Library.SharpExpect
         /// </summary>
         /// <param name="queue">The queue to extract from</param>
         /// <param name="allowWait">A value indicating if a wait should be performed if the extracted line does not end with a linefeed</param>
+        /// <param name="maxWaitTime">The time to wait for a new line</param>
         /// <returns>The extracted line, or null if there is no data</returns>
-        private string FindNextLine(List<string> queue, bool allowWait)
+        private string FindNextLine(List<string> queue, int maxWaitTime, bool allowWait)
         {
             char leadChar = '\r';
             char trailChar = '\n';
@@ -305,7 +323,7 @@ namespace Duplicati.Library.SharpExpect
                 tmp = queue[0];
             }
 
-            //If the line ends with return, the wait for a linefeed.
+            //If the line ends with return, then wait for a linefeed.
             //The \r\n is windows style, and the remote output may be from a windows machine, 
             //regardless of the local OS.
             if (tmp.EndsWith(leadChar.ToString()))
@@ -355,18 +373,24 @@ namespace Duplicati.Library.SharpExpect
             }
 
             //If there is no more data, and the extracted line does not end in a linefeed, wait a little
-            if (tmp.IndexOfAny(new char[] { leadChar, trailChar }) < 0)
+            if (allowWait && maxWaitTime != 0 && tmp.IndexOfAny(new char[] { leadChar, trailChar }) < 0)
             {
-                System.Threading.Thread.Sleep(1000);
+                DateTime begin = DateTime.Now;
+                m_event.WaitOne(maxWaitTime, true);
+                if (maxWaitTime != System.Threading.Timeout.Infinite)
+                {
+                    maxWaitTime -= (int)((DateTime.Now - begin).TotalMilliseconds);
+                    maxWaitTime = Math.Max(0, maxWaitTime);
+                }
+
                 lock (m_lock)
                     if (queue.Count == 1) //No new data
                         return tmp;
 
-                return FindNextLine(queue, false); //Extract again, but don't wait
+                return FindNextLine(queue, maxWaitTime, maxWaitTime != 0); //Extract again, but don't wait
             }
             else
                 return tmp; //The line is good, just return
-
         }
 
         /// <summary>
@@ -430,16 +454,23 @@ namespace Duplicati.Library.SharpExpect
 
             DateTime expiration = millisecondsTimeout < 0 ? DateTime.Now.AddYears(5) : DateTime.Now.AddMilliseconds(millisecondsTimeout);
 
+            string combinedLines = "";
+
             //string line = null;
             while (DateTime.Now <= expiration) //|| line != null)
             {
-                string line = GetNextOutputLine((int)(expiration - DateTime.Now).TotalMilliseconds);
-                if (line == null)
+                string line = GetNextOutputLine(1000);
+                if (line == null && DateTime.Now > expiration)
                     return new KeyValuePair<T, string>(default(T), null);
 
-                foreach (KeyValuePair<System.Text.RegularExpressions.Regex, T> expr in possibilities)
-                    if (expr.Key.Match(line).Success)
-                        return new KeyValuePair<T,string>(expr.Value, line);
+                if (line != null)
+                {
+                    combinedLines += line;
+
+                    foreach (KeyValuePair<System.Text.RegularExpressions.Regex, T> expr in possibilities)
+                        if (expr.Key.Match(combinedLines).Success)
+                            return new KeyValuePair<T, string>(expr.Value, combinedLines);
+                }
             }
 
             return new KeyValuePair<T, string>(default(T), null);
@@ -570,7 +601,7 @@ namespace Duplicati.Library.SharpExpect
                 foreach (string s in m_log)
                     sb.AppendLine(s);
 
-                while (PeekNextOutputLine() != null)
+                while (PeekNextOutputLine(1000) != null)
                     sb.AppendLine("*U*: " + GetNextOutputLine(0));
 
                 return sb.ToString();
