@@ -41,10 +41,10 @@ namespace LocalizationTool
             {
                 case "clean":
                 case "cleanup":
-                    Clean();
+                    Clean(args.Length == 2 ? args[1] : null);
                     break;
                 case "build":
-                    Compile();
+                    Compile(args.Length == 2 ? args[1] : null);
                     break;
                 case "update":
                     if (args.Length == 2)
@@ -71,8 +71,8 @@ namespace LocalizationTool
         {
             Console.WriteLine("Usage: ");
 
-            Console.WriteLine("LocalizationTool.exe CLEAN");
-            Console.WriteLine("LocalizationTool.exe BUILD");
+            Console.WriteLine("LocalizationTool.exe CLEAN [locale identifier]");
+            Console.WriteLine("LocalizationTool.exe BUILD [locale identifier]");
             Console.WriteLine("LocalizationTool.exe UPDATE [locale identifier]");
             Console.WriteLine("LocalizationTool.exe CREATE <locale indentifier>");
         }
@@ -176,9 +176,11 @@ namespace LocalizationTool
 
         }
 
-        private static void Clean()
+        private static void Clean(string cultureReq)
         {
             string root = Duplicati.Library.Core.Utility.AppendDirSeperator(Application.StartupPath);
+            if (!string.IsNullOrEmpty(cultureReq))
+                root = System.IO.Path.Combine(root, cultureReq);
 
             foreach (string s in Duplicati.Library.Core.Utility.EnumerateFiles(Application.StartupPath))
                 if (System.IO.Path.GetDirectoryName(s) != Application.StartupPath && (System.IO.Path.GetExtension(s) == ".resources" || System.IO.Path.GetExtension(s) == ".dll"))
@@ -194,14 +196,14 @@ namespace LocalizationTool
                 
         }
 
-        private static void Compile()
+        private static void Compile(string cultureReq)
         {
             System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
             doc.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml"));
 
             foreach (System.Xml.XmlNode conf in doc.SelectNodes("root/configuration"))
             {
-                string keyfile = conf["keyfile"].InnerText;
+                string keyfile = conf["keyfile"] == null ? null : conf["keyfile"].InnerText;
                 string versionassembly = conf["versionassembly"].InnerText;
                 string outputfolder = conf["outputfolder"].InnerText;
                 string productname = conf["productname"].InnerText;
@@ -229,6 +231,9 @@ namespace LocalizationTool
                         {
                             continue;
                         }
+
+                        if (!string.IsNullOrEmpty(cultureReq) && !string.Equals(cultureReq, culture, StringComparison.InvariantCultureIgnoreCase))
+                            continue;
 
                         string outfolder = System.IO.Path.GetFullPath(System.IO.Path.Combine(outputfolder, culture));
                         if (!System.IO.Directory.Exists(outfolder))

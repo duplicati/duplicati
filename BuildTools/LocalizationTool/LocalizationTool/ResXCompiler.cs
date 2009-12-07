@@ -120,7 +120,8 @@ namespace LocalizationTool
                     sw.WriteLine("/product:\"" + productname + "\"");
                     sw.WriteLine("/title:\"" + productname + "\"");
                     sw.WriteLine("/version:" + asm.GetName().Version.ToString());
-                    sw.WriteLine("/keyfile:\"" + keyfile + "\"");
+                    if (!string.IsNullOrEmpty(keyfile))
+                        sw.WriteLine("/keyfile:\"" + keyfile + "\"");
                     sw.WriteLine("/culture:" + culture);
 
                     foreach (string s in resources)
