@@ -37,7 +37,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\Duplicati\Localization\</OutputPath>
+    <OutputPath>..\..\..\Duplicati\Localization\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -45,7 +45,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\Duplicati\Localization\</OutputPath>
+    <OutputPath>..\..\..\Duplicati\Localization\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -87,7 +87,7 @@
     <None Include="Resources\Empty_resx.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati\Library\Core\Duplicati.Library.Core.csproj">
+    <ProjectReference Include="..\..\..\Duplicati\Library\Core\Duplicati.Library.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Core</Name>
     </ProjectReference>

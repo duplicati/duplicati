@@ -37,6 +37,9 @@ namespace LocalizationTool
                 return;
             }
 
+            //All relative paths are to the app dir
+            System.IO.Directory.SetCurrentDirectory(Application.StartupPath);
+
             switch (args[0].ToLower())
             {
                 case "clean":
