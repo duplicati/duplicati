@@ -169,6 +169,8 @@ namespace LocalizationTool
                                 c.Attribute("type") == null
                                 ||
                                 c.Attribute("type").Value == "System.String, mscorlib"
+                                ||
+                                c.Attribute("type").Value == "System.String"
                             );
 
                         sourceElements = sourceElements.Where(filter);
