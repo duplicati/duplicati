@@ -147,4 +147,7 @@
   <data name="RestoreFolderMissingError" xml:space="preserve">
     <value>A pasta não existe na restauração: {0}</value>
   </data>
+  <data name="DeletedFilenameError" xml:space="preserve">
+    <value>An error occured while determining file status, filename: {0}, folder name:{1}</value>
+  </data>
 </root>

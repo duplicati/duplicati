@@ -232,4 +232,10 @@ Mensagem de erro: {1}</value>
   <data name="UsernameMissingError" xml:space="preserve">
     <value>Um nome de usuário era esperado, mas nenhum foi fornecido</value>
   </data>
+  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
+    <value>Supplies the username used to connect to the server</value>
+  </data>
+  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
+    <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
+  </data>
 </root>

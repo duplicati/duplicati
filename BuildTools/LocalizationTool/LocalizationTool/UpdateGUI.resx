@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,39 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CacheSize" xml:space="preserve">
-    <value>Tamanho do cache: {0}</value>
-    <comment>Exibe o tamanho atual do cache em disco</comment>
-  </data>
-  <data name="CalculatingCacheSize" xml:space="preserve">
-    <value>Calculando tamanho do cache ...</value>
-    <comment>Exibe um rótulo de estado quando estiver calculando o tamanho do cache em disco</comment>
-  </data>
-  <data name="ConfirmCacheDelete" xml:space="preserve">
-    <value>Remover arquivos de assinatura na pasta: 
-{0}</value>
-    <comment>A mensgem que será exibida em uma caixa de diálogo antes de apagar os arquivos de assinatura em cache</comment>
-  </data>
-  <data name="ErrorWhileExaminingFolder" xml:space="preserve">
-    <value>Ocorreu um erro examinando a pasta: {0}.
-Gostaria de usar esta pasta mesmo assim?</value>
-    <comment>A mensagem a ser exibida se ocorrer um erro no momento da checagem do arquivo selecionado</comment>
-  </data>
-  <data name="FolderIsMissingFile" xml:space="preserve">
-    <value>A pasta selecionada não contém o arquivo: {0}.
-Gostaria de usar esta pasta mesmo assim?</value>
-    <comment>A mensagem a ser exibida ao usuário para confirmar o uso de uma pasta que não contém o arquivo selecionado</comment>
-  </data>
-  <data name="OperationCancelled" xml:space="preserve">
-    <value>Cancelado</value>
-    <comment>A mensagem a ser exibida quando a operação for cancelada</comment>
-  </data>
-  <data name="LanguageChangedWarning" xml:space="preserve">
-    <value>The language has changed. This will take effect after you restart Duplicati.</value>
-    <comment>A warning displayed to the user when the language has been changed, informing the user that the language change will not be visible until after a restart</comment>
-  </data>
-  <data name="DefaultLanguage" xml:space="preserve">
-    <value>System language, {0}</value>
-    <comment>A string displayed to denote the current default language</comment>
-  </data>
 </root>

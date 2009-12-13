@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -529,22 +529,22 @@
     <value>1</value>
   </data>
   <data name="ThreadPriority.Enabled" type="System.Boolean, mscorlib">
-    <value>Falso</value>
+    <value>False</value>
   </data>
   <data name="ThreadPriority.Items" xml:space="preserve">
-    <value>Alta (Não recomendado)</value>
+    <value>High (Not recommended)</value>
   </data>
   <data name="ThreadPriority.Items1" xml:space="preserve">
-    <value>Acima do normal</value>
+    <value>Above normal</value>
   </data>
   <data name="ThreadPriority.Items2" xml:space="preserve">
     <value>Normal</value>
   </data>
   <data name="ThreadPriority.Items3" xml:space="preserve">
-    <value>Abaixo do normal</value>
+    <value>Below normal</value>
   </data>
   <data name="ThreadPriority.Items4" xml:space="preserve">
-    <value>Baixa</value>
+    <value>Low</value>
   </data>
   <data name="ThreadPriority.Location" type="System.Drawing.Point, System.Drawing">
     <value>184, 184</value>

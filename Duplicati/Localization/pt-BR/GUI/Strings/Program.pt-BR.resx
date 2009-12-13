@@ -163,4 +163,16 @@ Mensagem de erro: {0}</value>
     <value>Versão incorreta do SQLite detectada ({0}), deveria ser {1} ou maior</value>
     <comment>A mensagem de erro exibida quando a versão incorreta do SQLite é encontrada</comment>
   </data>
+  <data name="NamedBackupNotFound" xml:space="preserve">
+    <value>The backup named "{0}" was not found</value>
+    <comment>An error message displayed when invoking a backup from the commandline, and the named backup is not found</comment>
+  </data>
+  <data name="MultipleNamedBackupsFound" xml:space="preserve">
+    <value>The backup named "{0}" was found {1} times</value>
+    <comment>An error message displayed when invoking a backup from the commandline, and the named backup is found multiple times</comment>
+  </data>
+  <data name="LanguageSelectionError" xml:space="preserve">
+    <value>Failed to set the user interface language: {0}</value>
+    <comment>An error message displayed if the language cannot be selected</comment>
+  </data>
 </root>

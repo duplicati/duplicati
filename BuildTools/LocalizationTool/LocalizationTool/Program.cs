@@ -18,8 +18,10 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace LocalizationTool
 {
@@ -40,20 +42,19 @@ namespace LocalizationTool
             //All relative paths are to the app dir
             System.IO.Directory.SetCurrentDirectory(Application.StartupPath);
 
+            string loc = args.Length >= 2 ? args[1] : null;
+
             switch (args[0].ToLower())
             {
                 case "clean":
                 case "cleanup":
-                    Clean(args.Length == 2 ? args[1] : null);
+                    Clean(loc);
                     break;
                 case "build":
-                    Compile(args.Length == 2 ? args[1] : null);
+                    Compile(loc);
                     break;
                 case "update":
-                    if (args.Length == 2)
-                        Update(args[1]);
-                    else
-                        Update();
+                    Update(loc);
                     break;
                 case "create":
                     if (args.Length != 2)
@@ -62,7 +63,17 @@ namespace LocalizationTool
                         PrintUsage();
                         return;
                     }
-                    Create(args[1]);
+                    Create(loc);
+                    break;
+                case "report":
+                    Report(loc);
+                    break;
+                case "guiupdate":
+                    Application.EnableVisualStyles();
+                    Application.DoEvents();
+
+                    Report(loc);
+                    new UpdateGUI(System.IO.Path.Combine(Application.StartupPath, "report." + loc + ".xml")).ShowDialog();
                     break;
                 default:
                     PrintUsage();
@@ -77,27 +88,134 @@ namespace LocalizationTool
             Console.WriteLine("LocalizationTool.exe CLEAN [locale identifier]");
             Console.WriteLine("LocalizationTool.exe BUILD [locale identifier]");
             Console.WriteLine("LocalizationTool.exe UPDATE [locale identifier]");
+            Console.WriteLine("LocalizationTool.exe REPORT [locale identifier]");
             Console.WriteLine("LocalizationTool.exe CREATE <locale indentifier>");
+            Console.WriteLine("LocalizationTool.exe GUIUPDATE <locale identifier>");
         }
 
-        private static void Update()
+        public static IEnumerable<string> GetLocaleFolders(string locid)
         {
-            foreach (string bf in System.IO.Directory.GetDirectories(Application.StartupPath))
+            if (string.IsNullOrEmpty(locid))
+                return System.IO.Directory.GetDirectories(Application.StartupPath).Where(c =>
+                {
+                    try
+                    {
+                        System.Globalization.CultureInfo.GetCultureInfo(System.IO.Path.GetFileName(c));
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }).Select(c => System.IO.Path.GetFileName(c));
+            else
+                return new string[] { locid };
+        }
+
+        private static void Report(string cultures)
+        {
+            foreach (string culture in GetLocaleFolders(cultures))
             {
-                string culture = System.IO.Path.GetFileName(bf);
+                Dictionary<string, string> ignores = new Dictionary<string, string>();
+                string ignorefile = System.IO.Path.Combine(Application.StartupPath, "ignore." + culture + ".xml");
+                if (System.IO.File.Exists(ignorefile))
+                    ignores = XDocument.Load(ignorefile).Element("root").Elements("ignore").Select(c => c.Value).ToDictionary(c => c.ToLower().Trim());
 
-                try
+                XDocument report = new XDocument(
+                    new XElement("root")
+                );
+                XElement reportRoot = report.Element("root");
+
+                IEnumerable<ResXFileInfo> files = GetResXList(culture);
+                var missingFiles = files.Where(c => !System.IO.File.Exists(c.TargetFile));
+                var existingFiles = files.Where(c => System.IO.File.Exists(c.TargetFile));
+
+                var extraFiles = from x in Duplicati.Library.Core.Utility.EnumerateFiles(System.IO.Path.Combine(Application.StartupPath, culture))
+                                 where 
+                                    x.EndsWith("." + culture + ".resx")
+                                    &&
+                                    !files.Select(c => c.TargetFile).Contains(x)
+                                select x;
+
+                reportRoot.Add(
+                    new XElement("files",
+                        new XElement("missing",
+                            from x in missingFiles
+                            select new XElement("file", x.TargetFile)
+                        ),
+                        new XElement("unused",
+                            from x in extraFiles
+                            select new XElement("file", x)
+                        )
+                   )
+                );
+                        
+
+                foreach(ResXFileInfo inf in existingFiles)
                 {
-                    System.Globalization.CultureInfo.GetCultureInfo(culture);
-                }
-                catch
-                {
-                    continue;
+                    IEnumerable<XElement> sourceElements = XDocument.Load(inf.SourceFile).Element("root").Elements("data");
+                    IEnumerable<XElement> targetElements = XDocument.Load(inf.TargetFile).Element("root").Elements("data");
+
+                    if (inf.IsForm)
+                    {
+                        //Look only for strings
+                        Func<XElement, bool> filter = 
+                            c => 
+                            !c.Attribute("name").Value.StartsWith(">>")
+                            &&
+                            c.Attribute("mimetype") == null
+                            &&
+                            (
+                                c.Attribute("type") == null
+                                ||
+                                c.Attribute("type").Value == "System.String, mscorlib"
+                            );
+
+                        sourceElements = sourceElements.Where(filter);
+                        targetElements = targetElements.Where(filter);
+                    }
+
+                    var sourceVals = sourceElements.ToDictionary(c => c.Attribute("name").Value);
+                    var targetVals = targetElements.ToDictionary(c => c.Attribute("name").Value);
+                    var missing = sourceVals.Where(c => !targetVals.ContainsKey(c.Key) && !ignores.ContainsKey(c.Value.Element("value").Value.Trim().ToLower()));
+                    var unused = targetVals.Where(c => !sourceVals.ContainsKey(c.Key));
+                    var notUpdated = sourceVals.Where(c =>
+                        !ignores.ContainsKey(c.Value.Element("value").Value.Trim().ToLower())
+                        &&
+                        targetVals.ContainsKey(c.Key)
+                        &&
+                        targetVals[c.Key].Element("value").Value == c.Value.Element("value").Value);
+
+                    reportRoot.Add(
+                        new XElement("file",
+                            new XAttribute("filename", inf.TargetFile),
+                            new XElement("missing",
+                                from x in missing
+                                select new XElement("item",
+                                    new XAttribute("name", x.Key),
+                                    x.Value.Element("value").Value
+                                )
+                            ),
+                            new XElement("unused",
+                                from x in unused
+                                select new XElement("item",
+                                    new XAttribute("name", x.Key),
+                                    x.Value.Element("value").Value
+                                )
+                            ),
+                            new XElement("not-updated",
+                                from x in notUpdated
+                                select new XElement("item",
+                                    new XAttribute("name", x.Key),
+                                    x.Value.Element("value").Value
+                                )
+                            )
+                        )
+                    );
                 }
 
-                Update(culture);
+                report.Save(System.IO.Path.Combine(Application.StartupPath, "report." + culture + ".xml"));
             }
-
         }
 
         private static void Create(string culture)
@@ -109,75 +227,121 @@ namespace LocalizationTool
             Update(culture);
         }
 
-        private static void Update(string culture)
+        public class ResXFileInfo
         {
-            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-            doc.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml"));
+            public string SourceFile { get; set; }
+            public string TargetFile { get; set; }
+            public string NetrualTargetFile { get; set; }
+            public bool IsForm { get; set; }
+        }
 
-            foreach (System.Xml.XmlNode conf in doc.SelectNodes("root/configuration"))
+        public static IEnumerable<ResXFileInfo> GetResXList(string culture)
+        {
+            List<ResXFileInfo> res = new List<ResXFileInfo>();
+            foreach (XElement conf in XDocument.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml")).Element("root").Elements("configuration"))
             {
                 string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Core.Utility.AppendDirSeperator(System.IO.Path.Combine(Application.StartupPath, culture)));
-                string sourcefolder = Duplicati.Library.Core.Utility.AppendDirSeperator(System.IO.Path.GetFullPath(conf["sourcefolder"].InnerText));
+                string sourcefolder = Duplicati.Library.Core.Utility.AppendDirSeperator(System.IO.Path.GetFullPath(conf.Element("sourcefolder").Value));
 
-                foreach (System.Xml.XmlNode fn in conf.SelectNodes("assembly"))
+                foreach (XElement fn in conf.Elements("assembly"))
                 {
-                    foreach (string s in Duplicati.Library.Core.Utility.EnumerateFiles(System.IO.Path.Combine(sourcefolder, fn.Attributes["folder"].Value)))
+                    foreach (string s in Duplicati.Library.Core.Utility.EnumerateFiles(System.IO.Path.Combine(sourcefolder, fn.Attribute("folder").Value)))
                     {
                         if (s.ToLower().StartsWith(Application.StartupPath.ToLower()))
                             continue;
 
                         if (s.EndsWith(".resx"))
                         {
-                            string targetName = System.IO.Path.Combine(outputfolder, s.Substring(sourcefolder.Length));
+                            string targetNameNeutral = System.IO.Path.Combine(outputfolder, s.Substring(sourcefolder.Length));
 
-                            string csFile = System.IO.Path.ChangeExtension(s, ".cs");
+                            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(targetNameNeutral)))
+                                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetNameNeutral));
 
-                            bool isForm = System.IO.File.Exists(csFile);
-
-                            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(targetName)))
-                                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetName));
-
-                            if (isForm)
-                                System.IO.File.Copy(s, targetName, true); //Copy the updated resx
-
-                            targetName = targetName.Substring(0, targetName.Length - "resx".Length) + culture + ".resx";
-
-                            if (System.IO.File.Exists(targetName))
+                            res.Add(new ResXFileInfo() 
                             {
-                                //TODO: Merge
-                            }
-                            else
-                            {
-                                if (isForm) //Form
-                                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(targetName))
-                                        sw.Write(Properties.Resources.Empty_resx);
-                                else
-                                    System.IO.File.Copy(s, targetName);
-                            }
-
-                            System.Xml.XmlDocument doc2 = new System.Xml.XmlDocument();
-                            doc2.Load(s);
-
-                            foreach (System.Xml.XmlNode n in doc2.SelectNodes("root/data"))
-                                if (n.Attributes["type"] != null && n.Attributes["type"].Value == "System.Resources.ResXFileRef, System.Windows.Forms")
-                                {
-                                    string relname = n["value"].InnerText;
-                                    relname = relname.Substring(0, relname.IndexOf(";"));
-                                    string sourceRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(s), relname));
-                                    string targetRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(targetName), relname));
-                                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(targetRes)))
-                                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetRes));
-
-                                    if (!System.IO.File.Exists(targetRes))
-                                        System.IO.File.Copy(sourceRes, targetRes);
-                                }
-
+                                SourceFile = s,
+                                IsForm = System.IO.File.Exists(System.IO.Path.ChangeExtension(s, ".cs")),
+                                NetrualTargetFile = targetNameNeutral,
+                                TargetFile = targetNameNeutral.Substring(0, targetNameNeutral.Length - "resx".Length) + culture + ".resx"
+                            });
                         }
                     }
                 }
             }
 
+            return res;
         }
+
+        private static void Update(string cultures)
+        {
+            foreach (string culture in GetLocaleFolders(cultures))
+            {
+                foreach (ResXFileInfo inf in GetResXList(culture))
+                {
+                    if (inf.IsForm)
+                        System.IO.File.Copy(inf.SourceFile, inf.NetrualTargetFile, true); //Copy the updated resx
+
+                    if (System.IO.File.Exists(inf.TargetFile))
+                    {
+                        //Merge, forms are auto-merged, in that they depend on the neutral .resx file
+                        if (!inf.IsForm)
+                        {
+                            XDocument targetDoc = XDocument.Load(inf.TargetFile);
+                            XNode insertTarget = targetDoc.Element("root").LastNode;
+
+                            var sourceVals = XDocument.Load(inf.SourceFile).Element("root").Elements("data").ToDictionary(c => c.Attribute("name").Value);
+                            var targetVals = targetDoc.Element("root").Elements("data").ToDictionary(c => c.Attribute("name").Value);
+
+                            bool updated = false;
+                            foreach (var item in sourceVals)
+                                if (!targetVals.ContainsKey(item.Key))
+                                {
+                                    updated = true;
+                                    insertTarget.AddAfterSelf(new XElement(item.Value));
+                                }
+
+                            if (updated)
+                                targetDoc.Save(inf.TargetFile);
+                        }
+                    }
+                    else
+                    {
+                        if (inf.IsForm)
+                            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(inf.TargetFile))
+                                sw.Write(Properties.Resources.Empty_resx);
+                        else
+                            System.IO.File.Copy(inf.SourceFile, inf.TargetFile);
+                    }
+
+                    foreach (var item in from y in
+                                             (from x in XDocument.Load(inf.SourceFile).Element("root").Elements("data")
+                                              where
+                                              x.Attribute("type") != null
+                                              &&
+                                              x.Attribute("type").Value == "System.Resources.ResXFileRef, System.Windows.Forms"
+                                              select x)
+                                         let relname = y.Element("value").Value.Substring(0, y.Element("value").Value.IndexOf(";"))
+                                         let sourceRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(inf.SourceFile), relname))
+                                         let targetRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(inf.TargetFile), relname))
+
+                                         select new { sourceRes, targetRes }
+                                           )
+                    {
+                        if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(item.targetRes)))
+                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(item.targetRes));
+
+                        if (!System.IO.File.Exists(item.targetRes))
+                            System.IO.File.Copy(item.sourceRes, item.targetRes);
+                    }
+
+                }
+
+                string batchfilename = System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, culture), "gui update.bat");
+                System.IO.File.WriteAllText(batchfilename, Properties.Resources.Batchjob_bat, System.Text.Encoding.Default);
+            }
+        }
+                
+
 
         private static void Clean(string cultureReq)
         {
@@ -201,48 +365,29 @@ namespace LocalizationTool
 
         private static void Compile(string cultureReq)
         {
-            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-            doc.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml"));
+            XDocument doc = XDocument.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml"));
 
-            foreach (System.Xml.XmlNode conf in doc.SelectNodes("root/configuration"))
+            foreach (XElement conf in doc.Element("root").Elements("configuration"))
             {
-                string keyfile = conf["keyfile"] == null ? null : conf["keyfile"].InnerText;
-                string versionassembly = conf["versionassembly"].InnerText;
-                string outputfolder = conf["outputfolder"].InnerText;
-                string productname = conf["productname"].InnerText;
+                string keyfile = conf.Element("keyfile") == null ? null : conf.Element("keyfile").Value;
+                string versionassembly = conf.Element("versionassembly").Value;
+                string outputfolder = conf.Element("outputfolder").Value;
+                string productname = conf.Element("productname").Value;
 
-                foreach (System.Xml.XmlNode n in conf.SelectNodes("assembly"))
+                foreach (XElement n in conf.Elements("assembly"))
                 {
-                    List<string> excludes = new List<string>();
-                    foreach (System.Xml.XmlNode x in n.SelectNodes("exclude"))
-                        excludes.Add(x.InnerText);
+                    List<string> excludes = n.Elements("exclude").Select(c => c.Value).ToList();
+                    string assemblyName = n.Attribute("name").Value;
+                    string folder = n.Attribute("folder").Value;
+                    string @namespace = n.Attribute("namespace") == null ? assemblyName : n.Attribute("namespace").Value;
 
-
-                    string assemblyName = n.Attributes["name"].Value;
-                    string folder = n.Attributes["folder"].Value;
-                    string @namespace = n.Attributes["namespace"] == null ? assemblyName : n.Attributes["namespace"].Value;
-
-                    foreach (string bf in System.IO.Directory.GetDirectories(Application.StartupPath))
+                    foreach (string culture in GetLocaleFolders(cultureReq))
                     {
-                        string culture = System.IO.Path.GetFileName(bf);
-
-                        try
-                        {
-                            System.Globalization.CultureInfo.GetCultureInfo(culture);
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-
-                        if (!string.IsNullOrEmpty(cultureReq) && !string.Equals(cultureReq, culture, StringComparison.InvariantCultureIgnoreCase))
-                            continue;
-
                         string outfolder = System.IO.Path.GetFullPath(System.IO.Path.Combine(outputfolder, culture));
                         if (!System.IO.Directory.Exists(outfolder))
                             System.IO.Directory.CreateDirectory(outfolder);
 
-                        ResXCompiler.CompileResxFiles(System.IO.Path.Combine(bf, folder), excludes, @namespace, System.IO.Path.Combine(outfolder, assemblyName + ".resources.dll"), System.IO.Path.GetFullPath(versionassembly), keyfile, culture, productname);
+                        ResXCompiler.CompileResxFiles(System.IO.Path.Combine(Application.StartupPath, culture), excludes, @namespace, System.IO.Path.Combine(outfolder, assemblyName + ".resources.dll"), System.IO.Path.GetFullPath(versionassembly), keyfile, culture, productname);
                     }
                 }
             }
