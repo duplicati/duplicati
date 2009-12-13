@@ -171,13 +171,17 @@ namespace LocalizationTool
             foreach (XElement el in m_updates.Values)
             {
                 XDocument file = XDocument.Load(el.Parent.Parent.Attribute("filename").Value);
-                file.Element("root").Elements("data").Last().AddAfterSelf(
-                    new XElement("data",
-                        new XAttribute("name", el.Attribute("name").Value),
-                        new XAttribute(XNamespace.Xml + "space", "preserve"),
-                        new XElement("value", el.Value)
-                    )
-                );
+                var insertEl = file.Element("root").Elements("data").Where(c => c.Attribute("name").Value == el.Attribute("name").Value).FirstOrDefault();
+                if (insertEl != null)
+                    insertEl.Element("value").Value = el.Value;
+                else
+                    file.Element("root").Elements().Last().AddAfterSelf(
+                        new XElement("data",
+                            new XAttribute("name", el.Attribute("name").Value),
+                            new XAttribute(XNamespace.Xml + "space", "preserve"),
+                            new XElement("value", el.Value)
+                        )
+                    );
 
                 file.Save(el.Parent.Parent.Attribute("filename").Value);
             }
