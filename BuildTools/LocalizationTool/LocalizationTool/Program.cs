@@ -121,6 +121,25 @@ namespace LocalizationTool
                 if (System.IO.File.Exists(ignorefile))
                     ignores = XDocument.Load(ignorefile).Element("root").Elements("ignore").Select(c => c.Value).ToDictionary(c => c.ToLower().Trim());
 
+                //Make sure we ignore empty strings
+                ignores[""] = "";
+
+                //Ignore common leftover values
+                for (int i = 1; i < 20; i++)
+                {
+                    string _i = i.ToString();
+                    ignores["textbox" + _i] = "";
+                    ignores["combobox" + _i] = "";
+                    ignores["checkbox" + _i] = "";
+                    ignores["label" + _i] = "";
+                    ignores["radiobutton" + _i] = "";
+                    ignores["button" + _i] = "";
+                    ignores["toolstrip" + _i] = "";
+                    ignores["toolstripbutton" + _i] = "";
+                    ignores["statusstrip" + _i] = "";
+                }
+
+
                 XDocument report = new XDocument(
                     new XElement("root")
                 );
@@ -149,7 +168,6 @@ namespace LocalizationTool
                         )
                    )
                 );
-                        
 
                 foreach(ResXFileInfo inf in existingFiles)
                 {
@@ -258,14 +276,16 @@ namespace LocalizationTool
 
                             if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(targetNameNeutral)))
                                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetNameNeutral));
-
-                            res.Add(new ResXFileInfo() 
-                            {
-                                SourceFile = s,
-                                IsForm = System.IO.File.Exists(System.IO.Path.ChangeExtension(s, ".cs")),
-                                NetrualTargetFile = targetNameNeutral,
-                                TargetFile = targetNameNeutral.Substring(0, targetNameNeutral.Length - "resx".Length) + culture + ".resx"
-                            });
+                            
+                            string targetFilename = targetNameNeutral.Substring(0, targetNameNeutral.Length - "resx".Length) + culture + ".resx";
+                            if (res.Where(x => x.TargetFile == targetFilename).FirstOrDefault() == null)
+                                res.Add(new ResXFileInfo() 
+                                {
+                                    SourceFile = s,
+                                    IsForm = System.IO.File.Exists(System.IO.Path.ChangeExtension(s, ".cs")),
+                                    NetrualTargetFile = targetNameNeutral,
+                                    TargetFile = targetFilename
+                                });
                         }
                     }
                 }

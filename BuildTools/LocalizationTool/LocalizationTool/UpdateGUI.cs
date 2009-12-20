@@ -64,6 +64,14 @@ namespace LocalizationTool
 
                 foreach (XElement el in x.Element("missing").Elements("item").Union(x.Element("not-updated").Elements("item")))
                 {
+                    //These show up occasionally, but mut not be translated
+                    if (
+                        el.Attribute("name").Value.EndsWith(".Name")
+                            ||
+                        el.Attribute("name").Value.EndsWith(".MappingName")
+                    )
+                        continue;
+
                     string val = el.Value;
                     if (val.Length > 100)
                         val = val.Substring(0, 97) + "...";
@@ -98,7 +106,7 @@ namespace LocalizationTool
                 XElement el = treeView1.SelectedNode.Tag as XElement;
                 panel3.Tag = null;
                 textBox1.Text = el.Attribute("name").Value;
-                textBox2.Text = el.Value;
+                textBox2.Text = el.Value.Replace(Environment.NewLine, "\n").Replace("\n", Environment.NewLine);
                 try 
                 {
                     textBox2.Focus();
