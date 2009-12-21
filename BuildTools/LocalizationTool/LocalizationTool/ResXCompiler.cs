@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace LocalizationTool
 {
@@ -71,9 +72,8 @@ namespace LocalizationTool
             {
                 if (s.ToLower().EndsWith("." + culture.ToLower() + ".resx"))
                 {
-                    foreach (string xf in excludeFolders)
-                        if (s.ToLower().StartsWith(Duplicati.Library.Core.Utility.AppendDirSeperator(xf).ToLower()))
-                            continue;
+                    if (excludeFolders.Any(xf => s.ToLower().StartsWith(Duplicati.Library.Core.Utility.AppendDirSeperator(xf).ToLower())))
+                        continue;
 
                     string resname = System.IO.Path.ChangeExtension(s, ".resources");
 

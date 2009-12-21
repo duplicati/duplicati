@@ -398,7 +398,10 @@ namespace LocalizationTool
 
                 foreach (XElement n in conf.Elements("assembly"))
                 {
-                    List<string> excludes = n.Elements("exclude").Select(c => c.Value).ToList();
+                    List<string> excludes = (from x in n.Elements("exclude")
+                                             let fullpath = System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, cultureReq), x.Value)
+                                             select fullpath).ToList();
+
                     string assemblyName = n.Attribute("name").Value;
                     string folder = n.Attribute("folder").Value;
                     string @namespace = n.Attribute("namespace") == null ? assemblyName : n.Attribute("namespace").Value;
@@ -409,7 +412,7 @@ namespace LocalizationTool
                         if (!System.IO.Directory.Exists(outfolder))
                             System.IO.Directory.CreateDirectory(outfolder);
 
-                        ResXCompiler.CompileResxFiles(System.IO.Path.Combine(Application.StartupPath, culture), excludes, @namespace, System.IO.Path.Combine(outfolder, assemblyName + ".resources.dll"), System.IO.Path.GetFullPath(versionassembly), keyfile, culture, productname);
+                        ResXCompiler.CompileResxFiles(System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, culture), folder), excludes, @namespace, System.IO.Path.Combine(outfolder, assemblyName + ".resources.dll"), System.IO.Path.GetFullPath(versionassembly), keyfile, culture, productname);
                     }
                 }
             }
