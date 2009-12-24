@@ -119,7 +119,7 @@ namespace LocalizationTool
                 Dictionary<string, string> ignores = new Dictionary<string, string>();
                 string ignorefile = System.IO.Path.Combine(Application.StartupPath, "ignore." + culture + ".xml");
                 if (System.IO.File.Exists(ignorefile))
-                    ignores = XDocument.Load(ignorefile).Element("root").Elements("ignore").Select(c => c.Value).ToDictionary(c => c.ToLower().Trim());
+                    ignores = XDocument.Load(ignorefile).Element("root").Elements("ignore").Select(c => c.Value).ToSafeDictionary(c => c.ToLower().Trim(), ignorefile);
 
                 //Make sure we ignore empty strings
                 ignores[""] = "";
@@ -195,8 +195,8 @@ namespace LocalizationTool
                         targetElements = targetElements.Where(filter);
                     }
 
-                    var sourceVals = sourceElements.ToDictionary(c => c.Attribute("name").Value);
-                    var targetVals = targetElements.ToDictionary(c => c.Attribute("name").Value);
+                    var sourceVals = sourceElements.ToSafeDictionary(c => c.Attribute("name").Value, inf.SourceFile);
+                    var targetVals = targetElements.ToSafeDictionary(c => c.Attribute("name").Value, inf.TargetFile);
                     var missing = sourceVals.Where(c => !targetVals.ContainsKey(c.Key) && !ignores.ContainsKey(c.Value.Element("value").Value.Trim().ToLower()));
                     var unused = targetVals.Where(c => !sourceVals.ContainsKey(c.Key));
                     var notUpdated = sourceVals.Where(c =>
@@ -311,8 +311,8 @@ namespace LocalizationTool
                             XDocument targetDoc = XDocument.Load(inf.TargetFile);
                             XNode insertTarget = targetDoc.Element("root").LastNode;
 
-                            var sourceVals = XDocument.Load(inf.SourceFile).Element("root").Elements("data").ToDictionary(c => c.Attribute("name").Value);
-                            var targetVals = targetDoc.Element("root").Elements("data").ToDictionary(c => c.Attribute("name").Value);
+                            var sourceVals = XDocument.Load(inf.SourceFile).Element("root").Elements("data").ToSafeDictionary(c => c.Attribute("name").Value, inf.SourceFile);
+                            var targetVals = targetDoc.Element("root").Elements("data").ToSafeDictionary(c => c.Attribute("name").Value, inf.TargetFile);
 
                             bool updated = false;
                             foreach (var item in sourceVals)
@@ -398,16 +398,16 @@ namespace LocalizationTool
 
                 foreach (XElement n in conf.Elements("assembly"))
                 {
-                    List<string> excludes = (from x in n.Elements("exclude")
-                                             let fullpath = System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, cultureReq), x.Value)
-                                             select fullpath).ToList();
-
                     string assemblyName = n.Attribute("name").Value;
                     string folder = n.Attribute("folder").Value;
                     string @namespace = n.Attribute("namespace") == null ? assemblyName : n.Attribute("namespace").Value;
 
                     foreach (string culture in GetLocaleFolders(cultureReq))
                     {
+                        List<string> excludes = (from x in n.Elements("exclude")
+                                                 let fullpath = System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, culture), x.Value)
+                                                 select fullpath).ToList();
+
                         string outfolder = System.IO.Path.GetFullPath(System.IO.Path.Combine(outputfolder, culture));
                         if (!System.IO.Directory.Exists(outfolder))
                             System.IO.Directory.CreateDirectory(outfolder);
