@@ -117,6 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="FifteenMinutes" xml:space="preserve">
+    <value>15 minutes</value>
+    <comment>A string displayed when the user selects a period of 15 minutes</comment>
+  </data>
+  <data name="FiveMinutes" xml:space="preserve">
+    <value>5 minutes</value>
+    <comment>A string displayed when the user selects a period of 5 minutes</comment>
+  </data>
   <data name="GenericError" xml:space="preserve">
     <value>An error occured: {0}</value>
     <comment>A generic error message</comment>
@@ -124,9 +132,23 @@
   <data name="InvalidDuration" xml:space="preserve">
     <value>The full backup duration entered is not valid: {0}</value>
   </data>
+  <data name="MenuPause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="MenuResume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="NoMinutes" xml:space="preserve">
+    <value>None</value>
+    <comment>A string displayed when the user selects a period of 0</comment>
+  </data>
   <data name="OneDay" xml:space="preserve">
     <value>One day</value>
     <comment>A string displayed in comboboxes indicating that the duration should be one day</comment>
+  </data>
+  <data name="OneMinute" xml:space="preserve">
+    <value>1 minute</value>
+    <comment>A string displayed when the user selects a period of 1 minute</comment>
   </data>
   <data name="OneMonth" xml:space="preserve">
     <value>One month</value>
@@ -135,6 +157,14 @@
   <data name="OneWeek" xml:space="preserve">
     <value>One week</value>
     <comment>A string displayed in comboboxes indicating that the duration should be one week</comment>
+  </data>
+  <data name="SixtyMinutes" xml:space="preserve">
+    <value>1 hour</value>
+    <comment>A string displayed when the user selects a period of 60 minutes</comment>
+  </data>
+  <data name="ThirtyMinutes" xml:space="preserve">
+    <value>30 minutes</value>
+    <comment>A string displayed when the user selects a period of 30 minutes</comment>
   </data>
   <data name="ThreadPriorityAboveNormal" xml:space="preserve">
     <value>Above normal</value>

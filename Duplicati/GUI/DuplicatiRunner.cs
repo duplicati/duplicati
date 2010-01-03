@@ -28,7 +28,7 @@ namespace Duplicati.GUI
     /// <summary>
     /// This class translates tasks into Duplicati calls, and executes them
     /// </summary>
-    public class DuplicatiRunner
+    public class DuplicatiRunner : Duplicati.Library.Main.LiveControl.ILiveControl
     {
         public enum RunnerState
         {
@@ -46,6 +46,9 @@ namespace Duplicati.GUI
         private int m_lastPGSubprogress;
         private string m_lastPGmessage;
         private string m_lastPGSubmessage;
+
+        private object m_lock = new object();
+        private Library.Main.LiveControl.ILiveControl m_currentBackupControlInterface;
 
         public void ExecuteTask(IDuplicityTask task)
         {
@@ -82,7 +85,7 @@ namespace Duplicati.GUI
                                     string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
 
                                     System.IO.File.Copy(Program.DatabasePath, filename, true);
-                                    using (System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(Program.SQLiteCommandType))
+                                    using (System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType))
                                     {
                                         con.ConnectionString = "Data Source=" + filename;
                                         con.Open();
@@ -107,8 +110,21 @@ namespace Duplicati.GUI
 
                                 using (Interface i = new Interface(destination, options))
                                 {
-                                    i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
-                                    results = i.Backup(task.LocalPath);
+                                    try
+                                    {
+                                        lock (m_lock)
+                                            m_currentBackupControlInterface = i;
+                                        
+                                        SetupControlInterface();
+
+                                        i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
+                                        results = i.Backup(task.LocalPath);
+                                    }
+                                    finally
+                                    {
+                                        lock (m_lock)
+                                            m_currentBackupControlInterface = null;
+                                    }
                                 }
                             }
                             finally
@@ -158,6 +174,11 @@ namespace Duplicati.GUI
                         {
                             try
                             {
+                                lock (m_lock)
+                                    m_currentBackupControlInterface = i;
+
+                                SetupControlInterface();
+
                                 if (DuplicatiProgress != null)
                                     DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
                                 i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
@@ -165,6 +186,9 @@ namespace Duplicati.GUI
                             }
                             finally
                             {
+                                lock (m_lock)
+                                    m_currentBackupControlInterface = null;
+
                                 if (DuplicatiProgress != null)
                                     DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                             }
@@ -180,6 +204,9 @@ namespace Duplicati.GUI
             }
             catch (Exception ex)
             {
+                if (ex is System.Threading.ThreadAbortException)
+                    System.Threading.Thread.ResetAbort();
+
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
                 results = "Error: " + ex.ToString(); //Don't localize
@@ -249,7 +276,6 @@ namespace Duplicati.GUI
             return task.Backups;
         }
 
-
         public List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> ListActualFiles(Schedule schedule, DateTime when)
         {
             ListActualFilesTask task = new ListActualFilesTask(schedule, when);
@@ -278,5 +304,93 @@ namespace Duplicati.GUI
             PerformBackup(schedule, true, null);
         }
 
+        /// <summary>
+        /// Function used to apply settings to a new interface
+        /// </summary>
+        private void SetupControlInterface()
+        {
+            //Copy the values to avoid thread race problems
+            System.Threading.ThreadPriority? priority = Program.LiveControl.ThreadPriority;
+            long? uploadLimit = Program.LiveControl.UploadLimit;
+            long? downloadLimit = Program.LiveControl.DownloadLimit;
+
+            if (priority != null)
+                m_currentBackupControlInterface.SetThreadPriority(priority.Value);
+            if (uploadLimit != null)
+                m_currentBackupControlInterface.SetUploadLimit(uploadLimit.Value.ToString() + "b");
+            if (downloadLimit != null)
+                m_currentBackupControlInterface.SetDownloadLimit(downloadLimit.Value.ToString() + "b");
+        }
+
+        public void Pause()
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                    m_currentBackupControlInterface.Pause();
+        }
+
+        public void Resume()
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                    m_currentBackupControlInterface.Resume();
+        }
+
+        public void Stop()
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                    if (m_currentBackupControlInterface.IsStopRequested)
+                        m_currentBackupControlInterface.Terminate();
+                    else
+                        m_currentBackupControlInterface.Stop();
+        }
+
+        public void Terminate()
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                    m_currentBackupControlInterface.Terminate();
+        }
+
+        public bool IsStopRequested
+        {
+            get 
+            { 
+                lock (m_lock)
+                    if (m_currentBackupControlInterface != null)
+                        return m_currentBackupControlInterface.IsStopRequested;
+                    else
+                        return false;
+            }
+        }
+
+        public void SetUploadLimit(string limit)
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                    m_currentBackupControlInterface.SetUploadLimit(limit);
+        }
+
+        public void SetDownloadLimit(string limit)
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                    m_currentBackupControlInterface.SetDownloadLimit(limit);
+        }
+
+        public void SetThreadPriority(System.Threading.ThreadPriority priority)
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                    m_currentBackupControlInterface.SetThreadPriority(priority);
+        }
+
+        public void UnsetThreadPriority()
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                    m_currentBackupControlInterface.UnsetThreadPriority();
+        }
     }
 }

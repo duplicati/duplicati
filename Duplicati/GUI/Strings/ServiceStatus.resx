@@ -132,6 +132,9 @@
   <data name="StatusBackup" xml:space="preserve">
     <value>Backup: {0}</value>
   </data>
+  <data name="StatusPaused" xml:space="preserve">
+    <value>Duplicati is currently paused</value>
+  </data>
   <data name="StatusRestore" xml:space="preserve">
     <value>Restore: {0}</value>
   </data>

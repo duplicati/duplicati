@@ -34,19 +34,9 @@ namespace Duplicati.GUI
         public static IDataFetcherWithRelations DataConnection;
 
         /// <summary>
-        /// This is the TrayIcon instance
-        /// </summary>
-        public static NotifyIcon TrayIcon;
-
-        /// <summary>
         /// This is the lock to be used before manipulating the shared resources
         /// </summary>
         public static object MainLock = new object();
-
-        public static ServiceStatus StatusDialog;
-        public static WizardHandler Wizard;
-
-        public static ApplicationSettings ApplicationSettings;
 
         /// <summary>
         /// This is the scheduling thread
@@ -69,9 +59,14 @@ namespace Duplicati.GUI
         public static DuplicatiRunner Runner;
 
         /// <summary>
-        /// The runtime loaded type for System.Data.SQLite.SQLiteCommand
+        /// The controller interface for pause/resume and throttle options
         /// </summary>
-        public static Type SQLiteCommandType;
+        public static LiveControls LiveControl;
+
+        /// <summary>
+        /// The main form that contains the tray icon
+        /// </summary>
+        public static MainForm DisplayHelper;
 
         /// <summary>
         /// The main entry point for the application.
@@ -110,14 +105,12 @@ namespace Duplicati.GUI
 
                 singleInstance.SecondInstanceDetected += new SingleInstance.SecondInstanceDelegate(singleInstance_SecondInstanceDetected);
 
-                SQLiteCommandType = LoadCorrectSQLiteAssembly();
-
 #if DEBUG
                 DatabasePath = System.IO.Path.Combine(Application.StartupPath, "Duplicati.sqlite");
 #else
                 DatabasePath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName), "Duplicati.sqlite");
 #endif
-                Version sqliteVersion = new Version((string)SQLiteCommandType.GetProperty("SQLiteVersion").GetValue(null, null));
+                Version sqliteVersion = new Version((string)SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
                 if (sqliteVersion < new Version(3, 6, 3))
                 {
                     //The official Mono SQLite provider is also broken with less than 3.6.3
@@ -125,7 +118,7 @@ namespace Duplicati.GUI
                     return;
                 }
 
-                System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteCommandType);
+                System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType);
 
                 try
                 {
@@ -154,67 +147,118 @@ namespace Duplicati.GUI
                         //This is non-fatal, just keep running with system default language
                     }
 
-                TrayIcon = new NotifyIcon();
-                TrayIcon.ContextMenuStrip = new ContextMenuStrip();
-                TrayIcon.Icon = Properties.Resources.TrayNormal;
+                LiveControl = new LiveControls(new ApplicationSettings(DataConnection));
+                LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
+                LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
+                LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
 
-                TrayIcon.ContextMenuStrip.Items.Add(Strings.Program.MenuStatus, Properties.Resources.StatusMenuIcon, new EventHandler(Status_Clicked));
-                TrayIcon.ContextMenuStrip.Items.Add(Strings.Program.MenuWizard, Properties.Resources.WizardMenuIcon, new EventHandler(Setup_Clicked));
-                TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
-
-                TrayIcon.ContextMenuStrip.Items.Add(Strings.Program.MenuSettings, Properties.Resources.SettingsMenuIcon, new EventHandler(Settings_Clicked));
-                TrayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
-
-                TrayIcon.ContextMenuStrip.Items.Add(Strings.Program.MenuQuit, Properties.Resources.CloseMenuIcon, new EventHandler(Quit_Clicked));
-                TrayIcon.ContextMenuStrip.Items[0].Font = new Font(TrayIcon.ContextMenuStrip.Items[0].Font, FontStyle.Bold);
-
-                ApplicationSettings = new ApplicationSettings(DataConnection);
                 Runner = new DuplicatiRunner();
-
-                WorkThread = new WorkerThread<IDuplicityTask>(new WorkerThread<IDuplicityTask>.ProcessItemDelegate(Runner.ExecuteTask));
-
+                WorkThread = new WorkerThread<IDuplicityTask>(new WorkerThread<IDuplicityTask>.ProcessItemDelegate(Runner.ExecuteTask), LiveControl.State == LiveControls.LiveControlState.Paused);
                 Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
-
-                WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
-                WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
 
                 DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
 
-                TrayIcon.Text = Strings.Program.TrayStatusReady;
+                DisplayHelper = new MainForm();
+                DisplayHelper.InitialArguments = args;
 
-                TrayIcon.DoubleClick += new EventHandler(TrayIcon_DoubleClick);
-                TrayIcon.Visible = true;
-
-                long count = 0;
-                lock (MainLock)
-                    count = Program.DataConnection.GetObjects<Schedule>().Length;
-
-                if (count == 0)
-                {
-                    //TODO: shows the wrong icon in the taskbar... Should run under Application.Run() ...
-                    ShowWizard();
-                }
-                else
-                    handleCommandlineArguments(args);                
-
-                Application.Run();
+                Application.Run(DisplayHelper);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(string.Format(Strings.Program.SeriousError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
+            if (Runner != null && WorkThread != null && WorkThread.Active)
+            {
+                Runner.Pause();
+                if (!Runner.IsStopRequested)
+                    Runner.Stop();
+
+                //Wait 10 seconds to see if the stop works
+                for (int i = 0; i < 10; i++)
+                {
+                    System.Threading.Thread.Sleep(1000);
+                    if (!WorkThread.Active)
+                        break;
+                }
+
+                while (WorkThread.Active)
+                {
+                    if (MessageBox.Show(Strings.Program.TerminateForExitQuestion, Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                    {
+                        Runner.Terminate();
+                        System.Threading.Thread.Sleep(500);
+                        break;
+                    }
+
+                    //Wait 18 * 10 seconds = 3 minutes before asking again
+                    for (int i = 0; i < 18; i++)
+                    {
+                        System.Threading.Thread.Sleep(1000 * 10);
+                        if (!WorkThread.Active)
+                            break;
+                    }
+                }
+            }
+
             if (Scheduler != null)
                 Scheduler.Terminate(true);
             if (WorkThread != null)
                 WorkThread.Terminate(true);
-            if(TrayIcon != null)
-                TrayIcon.Visible = false;
             if (singleInstance != null)
                 singleInstance.Dispose();
         }
 
-        private static bool handleCommandlineArguments(string[] _args)
+        /// <summary>
+        /// Handles a change in the LiveControl and updates the Runner
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private static void LiveControl_ThreadPriorityChanged(object sender, EventArgs e)
+        {
+            if (LiveControl.ThreadPriority == null)
+                Runner.UnsetThreadPriority();
+            else
+                Runner.SetThreadPriority(LiveControl.ThreadPriority.Value);
+        }
+
+        /// <summary>
+        /// Handles a change in the LiveControl and updates the Runner
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private static void LiveControl_ThrottleSpeedChanged(object sender, EventArgs e)
+        {
+            if (LiveControl.DownloadLimit == null)
+                Runner.SetDownloadLimit(null);
+            else
+                Runner.SetDownloadLimit(LiveControl.DownloadLimit.Value.ToString() + "b");
+
+            if (LiveControl.UploadLimit == null)
+                Runner.SetUploadLimit(null);
+            else
+                Runner.SetUploadLimit(LiveControl.UploadLimit.Value.ToString() + "b");
+        }
+
+        /// <summary>
+        /// This event handler updates the trayicon menu with the current state of the runner.
+        /// </summary>
+        static void LiveControl_StateChanged(object sender, EventArgs e)
+        {
+            switch (LiveControl.State)
+            {
+                case LiveControls.LiveControlState.Paused:
+                    WorkThread.Pause();
+                    Runner.Pause();
+                    break;
+                case LiveControls.LiveControlState.Running:
+                    WorkThread.Resume();
+                    Runner.Resume();
+                    break;
+            }
+        }
+
+        public static bool HandleCommandlineArguments(string[] _args)
         {
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = CommandLine.CommandLineParser.ExtractOptions(args);
@@ -242,7 +286,7 @@ namespace Duplicati.GUI
 
             if (args.Count == 1 && args[0] == "show-status")
             {
-                ShowStatus();
+                DisplayHelper.ShowStatus();
                 return true;
             }
 
@@ -252,11 +296,11 @@ namespace Duplicati.GUI
 
         private static void singleInstance_SecondInstanceDetected(string[] commandlineargs)
         {
-            if (handleCommandlineArguments(commandlineargs))
+            if (HandleCommandlineArguments(commandlineargs))
                 return;
 
             //TODO: This actually blocks the app thread, and thus may pile up remote invocations
-            ShowWizard();
+            DisplayHelper.ShowWizard();
         }
 
         private static void DataConnection_AfterDataConnection(object sender, DataActions action)
@@ -265,72 +309,7 @@ namespace Duplicati.GUI
                 Scheduler.Reschedule();
         }
 
-        static void WorkThread_StartingWork(object sender, EventArgs e)
-        {
-            TrayIcon.Icon = Properties.Resources.TrayWorking;
-            TrayIcon.Text = string.Format(Strings.Program.TrayStatusRunning, WorkThread.CurrentTask == null ? "" : WorkThread.CurrentTask.Schedule.Name);
-        }
-
-        static void WorkThread_CompletedWork(object sender, EventArgs e)
-        {
-            TrayIcon.Icon = Properties.Resources.TrayNormal;
-            TrayIcon.Text = Strings.Program.TrayStatusReady;
-        }
-
-        private static void Quit_Clicked(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
-        private static void Settings_Clicked(object sender, EventArgs e)
-        {
-            ShowSettings();
-        }
-
-        private static void Status_Clicked(object sender, EventArgs e)
-        {
-            ShowStatus();
-        }
-
-        private static void Setup_Clicked(object sender, EventArgs e)
-        {
-            ShowWizard();
-        }
-
-        private static void TrayIcon_DoubleClick(object sender, EventArgs e)
-        {
-            ShowStatus();
-        }
-
-        public static void ShowStatus()
-        {
-            //TODO: Guard against calls from other threads
-            if (StatusDialog == null || !StatusDialog.Visible)
-                StatusDialog = new ServiceStatus();
-
-            StatusDialog.Show();
-            StatusDialog.Activate();
-        }
-
-        public static void ShowWizard()
-        {
-            //TODO: Guard against calls from other threads
-            if (Wizard == null || !Wizard.Visible)
-                Wizard = new WizardHandler();
-            
-            Wizard.Show();
-        }
-
-        public static void ShowSettings()
-        {
-            //TODO: Guard against calls from other threads
-            lock (MainLock)
-            {
-                ApplicationSetup dlg = new ApplicationSetup();
-                dlg.ShowDialog();
-            }
-        }
-        
+       
         /// <summary>
         /// Returns a localized name for a task type
         /// </summary>
@@ -364,51 +343,5 @@ namespace Duplicati.GUI
                     return type.ToString();
             }
         }
-
-
-        /// <summary>
-        /// A helper method to load the correct SQLite assembly for the current architecture
-        /// </summary>
-        public static Type LoadCorrectSQLiteAssembly()
-        {
-            string filename = "System.Data.SQLite.dll";
-            string basePath = System.IO.Path.Combine(Application.StartupPath, "SQLite");
-            string assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
-
-            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT || System.Environment.OSVersion.Platform == PlatformID.Win32Windows)
-            {
-                if (IntPtr.Size == 8 || (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor()))
-                {
-                    if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
-                        assemblyPath = System.IO.Path.Combine(basePath, "win64");
-                }
-                else
-                {
-                    if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
-                        assemblyPath = System.IO.Path.Combine(basePath, "win32");
-                }
-            }
-
-            return System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
-        }
-
-        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CallingConvention = System.Runtime.InteropServices.CallingConvention.Winapi)]
-        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-        private static extern bool IsWow64Process([System.Runtime.InteropServices.In] IntPtr hProcess, [System.Runtime.InteropServices.Out] out bool lpSystemInfo);
-
-        private static bool Is32BitProcessOn64BitProcessor()
-        {
-            try
-            {
-                bool retVal;
-                IsWow64Process(System.Diagnostics.Process.GetCurrentProcess().Handle, out retVal);
-                return retVal;
-            }
-            catch
-            {
-                return false; //In case the OS is old enough not to have the Wow64 function
-            }
-        }
-
     }
 }

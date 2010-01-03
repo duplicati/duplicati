@@ -144,7 +144,7 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>5</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="GPGPath.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
@@ -154,7 +154,7 @@
     <value>128, 24</value>
   </data>
   <data name="GPGPath.Size" type="System.Drawing.Size, System.Drawing">
-    <value>272, 20</value>
+    <value>276, 20</value>
   </data>
   <data name="GPGPath.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -198,17 +198,152 @@
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
     <value>13</value>
   </data>
-  <data name="groupBox1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
+  <data name="&gt;&gt;StartupDelayDuration.Name" xml:space="preserve">
+    <value>StartupDelayDuration</value>
+  </data>
+  <data name="&gt;&gt;StartupDelayDuration.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;StartupDelayDuration.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;StartupDelayDuration.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;label7.Name" xml:space="preserve">
+    <value>label7</value>
+  </data>
+  <data name="&gt;&gt;label7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label7.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;label7.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;LanguageSelection.Name" xml:space="preserve">
+    <value>LanguageSelection</value>
+  </data>
+  <data name="&gt;&gt;LanguageSelection.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LanguageSelection.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;LanguageSelection.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;label3.Name" xml:space="preserve">
+    <value>label3</value>
+  </data>
+  <data name="&gt;&gt;label3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label3.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;RecentDuration.Name" xml:space="preserve">
+    <value>RecentDuration</value>
+  </data>
+  <data name="&gt;&gt;RecentDuration.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;RecentDuration.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;RecentDuration.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="groupBox1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
+  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 3</value>
+  </data>
+  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>439, 104</value>
+  </data>
+  <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="groupBox1.Text" xml:space="preserve">
+    <value>User interface settings</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
+    <value>tabPage1</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="StartupDelayDuration.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Right</value>
+  </data>
+  <data name="StartupDelayDuration.Location" type="System.Drawing.Point, System.Drawing">
+    <value>208, 72</value>
+  </data>
+  <data name="StartupDelayDuration.Size" type="System.Drawing.Size, System.Drawing">
+    <value>221, 21</value>
+  </data>
+  <data name="StartupDelayDuration.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;StartupDelayDuration.Name" xml:space="preserve">
+    <value>StartupDelayDuration</value>
+  </data>
+  <data name="&gt;&gt;StartupDelayDuration.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;StartupDelayDuration.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;StartupDelayDuration.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label7.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label7.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 72</value>
+  </data>
+  <data name="label7.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 13</value>
+  </data>
+  <data name="label7.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="label7.Text" xml:space="preserve">
+    <value>Period to pause duplicati a startup</value>
+  </data>
+  <data name="&gt;&gt;label7.Name" xml:space="preserve">
+    <value>label7</value>
+  </data>
+  <data name="&gt;&gt;label7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label7.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;label7.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <data name="LanguageSelection.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
+    <value>Right</value>
   </data>
   <data name="LanguageSelection.Location" type="System.Drawing.Point, System.Drawing">
     <value>208, 24</value>
   </data>
   <data name="LanguageSelection.Size" type="System.Drawing.Size, System.Drawing">
-    <value>219, 21</value>
+    <value>223, 21</value>
   </data>
   <data name="LanguageSelection.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -223,7 +358,7 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;LanguageSelection.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>2</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -250,7 +385,10 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>3</value>
+  </data>
+  <data name="RecentDuration.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Right</value>
   </data>
   <data name="RecentDuration.Location" type="System.Drawing.Point, System.Drawing">
     <value>208, 48</value>
@@ -265,40 +403,13 @@
     <value>RecentDuration</value>
   </data>
   <data name="&gt;&gt;RecentDuration.Type" xml:space="preserve">
-    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.215, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
   <data name="&gt;&gt;RecentDuration.Parent" xml:space="preserve">
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;RecentDuration.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 8</value>
-  </data>
-  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>437, 80</value>
-  </data>
-  <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
-  </data>
-  <data name="groupBox1.Text" xml:space="preserve">
-    <value>User interface settings</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
-    <value>groupBox1</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="groupBox2.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
   </data>
   <data name="&gt;&gt;CacheSizeLabel.Name" xml:space="preserve">
     <value>CacheSizeLabel</value>
@@ -444,11 +555,14 @@
   <data name="&gt;&gt;BrowsePGP.ZOrder" xml:space="preserve">
     <value>11</value>
   </data>
+  <data name="groupBox2.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
   <data name="groupBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 256</value>
+    <value>3, 123</value>
   </data>
   <data name="groupBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>437, 152</value>
+    <value>439, 152</value>
   </data>
   <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -463,10 +577,10 @@
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;groupBox2.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>tabPage2</value>
   </data>
   <data name="&gt;&gt;groupBox2.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>0</value>
   </data>
   <data name="CacheSizeLabel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -550,7 +664,7 @@
     <value>Top, Right</value>
   </data>
   <data name="SignatureCachePathBrowse.Location" type="System.Drawing.Point, System.Drawing">
-    <value>400, 96</value>
+    <value>404, 96</value>
   </data>
   <data name="SignatureCachePathBrowse.Size" type="System.Drawing.Size, System.Drawing">
     <value>24, 20</value>
@@ -580,7 +694,7 @@
     <value>128, 96</value>
   </data>
   <data name="SignatureCachePath.Size" type="System.Drawing.Size, System.Drawing">
-    <value>272, 20</value>
+    <value>276, 20</value>
   </data>
   <data name="SignatureCachePath.TabIndex" type="System.Int32, mscorlib">
     <value>24</value>
@@ -601,7 +715,7 @@
     <value>Top, Right</value>
   </data>
   <data name="TempPathBrowse.Location" type="System.Drawing.Point, System.Drawing">
-    <value>400, 72</value>
+    <value>404, 72</value>
   </data>
   <data name="TempPathBrowse.Size" type="System.Drawing.Size, System.Drawing">
     <value>24, 20</value>
@@ -631,7 +745,7 @@
     <value>128, 72</value>
   </data>
   <data name="TempPath.Size" type="System.Drawing.Size, System.Drawing">
-    <value>272, 20</value>
+    <value>276, 20</value>
   </data>
   <data name="TempPath.TabIndex" type="System.Int32, mscorlib">
     <value>21</value>
@@ -679,7 +793,7 @@
     <value>Top, Right</value>
   </data>
   <data name="BrowseSFTP.Location" type="System.Drawing.Point, System.Drawing">
-    <value>400, 48</value>
+    <value>404, 48</value>
   </data>
   <data name="BrowseSFTP.Size" type="System.Drawing.Size, System.Drawing">
     <value>24, 20</value>
@@ -709,7 +823,7 @@
     <value>128, 48</value>
   </data>
   <data name="SFTPPath.Size" type="System.Drawing.Size, System.Drawing">
-    <value>272, 20</value>
+    <value>276, 20</value>
   </data>
   <data name="SFTPPath.TabIndex" type="System.Int32, mscorlib">
     <value>15</value>
@@ -757,7 +871,7 @@
     <value>Top, Right</value>
   </data>
   <data name="BrowsePGP.Location" type="System.Drawing.Point, System.Drawing">
-    <value>400, 24</value>
+    <value>404, 24</value>
   </data>
   <data name="BrowsePGP.Size" type="System.Drawing.Size, System.Drawing">
     <value>24, 20</value>
@@ -784,7 +898,7 @@
     <value>Bottom</value>
   </data>
   <data name="OKBtn.Location" type="System.Drawing.Point, System.Drawing">
-    <value>135, 414</value>
+    <value>142, 8</value>
   </data>
   <data name="OKBtn.Size" type="System.Drawing.Size, System.Drawing">
     <value>80, 24</value>
@@ -802,16 +916,16 @@
     <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;OKBtn.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>panel1</value>
   </data>
   <data name="&gt;&gt;OKBtn.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>0</value>
   </data>
   <data name="CancelBtn.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom</value>
   </data>
   <data name="CancelBtn.Location" type="System.Drawing.Point, System.Drawing">
-    <value>240, 412</value>
+    <value>230, 8</value>
   </data>
   <data name="CancelBtn.Size" type="System.Drawing.Size, System.Drawing">
     <value>72, 24</value>
@@ -829,7 +943,7 @@
     <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;CancelBtn.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>panel1</value>
   </data>
   <data name="&gt;&gt;CancelBtn.ZOrder" xml:space="preserve">
     <value>1</value>
@@ -855,9 +969,6 @@
   <metadata name="BrowseTempPath.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>415, 17</value>
   </metadata>
-  <data name="groupBox3.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
-  </data>
   <data name="&gt;&gt;PasswordPanel.Name" xml:space="preserve">
     <value>PasswordPanel</value>
   </data>
@@ -882,11 +993,14 @@
   <data name="&gt;&gt;UseCommonPassword.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
+  <data name="groupBox3.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
   <data name="groupBox3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 104</value>
+    <value>3, 107</value>
   </data>
   <data name="groupBox3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>437, 144</value>
+    <value>439, 144</value>
   </data>
   <data name="groupBox3.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -901,7 +1015,7 @@
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;groupBox3.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>tabPage1</value>
   </data>
   <data name="&gt;&gt;groupBox3.ZOrder" xml:space="preserve">
     <value>0</value>
@@ -1146,6 +1260,177 @@
   <metadata name="CacheSizeCalculator.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>741, 17</value>
   </metadata>
+  <data name="tabPage1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <data name="tabPage1.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="tabPage1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>445, 317</value>
+  </data>
+  <data name="tabPage1.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="tabPage1.Text" xml:space="preserve">
+    <value>Basic</value>
+  </data>
+  <data name="&gt;&gt;tabPage1.Name" xml:space="preserve">
+    <value>tabPage1</value>
+  </data>
+  <data name="&gt;&gt;tabPage1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabPage1.Parent" xml:space="preserve">
+    <value>tabControl1</value>
+  </data>
+  <data name="&gt;&gt;tabPage1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="BandwidthLimit.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 56</value>
+  </data>
+  <data name="BandwidthLimit.Size" type="System.Drawing.Size, System.Drawing">
+    <value>408, 54</value>
+  </data>
+  <data name="BandwidthLimit.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;BandwidthLimit.Name" xml:space="preserve">
+    <value>BandwidthLimit</value>
+  </data>
+  <data name="&gt;&gt;BandwidthLimit.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.BandwidthLimit, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;BandwidthLimit.Parent" xml:space="preserve">
+    <value>groupBox4</value>
+  </data>
+  <data name="&gt;&gt;BandwidthLimit.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="ThreadPriorityPicker.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 24</value>
+  </data>
+  <data name="ThreadPriorityPicker.Size" type="System.Drawing.Size, System.Drawing">
+    <value>408, 23</value>
+  </data>
+  <data name="ThreadPriorityPicker.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;ThreadPriorityPicker.Name" xml:space="preserve">
+    <value>ThreadPriorityPicker</value>
+  </data>
+  <data name="&gt;&gt;ThreadPriorityPicker.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.ThreadPriorityPicker, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;ThreadPriorityPicker.Parent" xml:space="preserve">
+    <value>groupBox4</value>
+  </data>
+  <data name="&gt;&gt;ThreadPriorityPicker.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="groupBox4.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
+  <data name="groupBox4.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 3</value>
+  </data>
+  <data name="groupBox4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>439, 120</value>
+  </data>
+  <data name="groupBox4.TabIndex" type="System.Int32, mscorlib">
+    <value>10</value>
+  </data>
+  <data name="groupBox4.Text" xml:space="preserve">
+    <value>Backup control settings used at startup</value>
+  </data>
+  <data name="&gt;&gt;groupBox4.Name" xml:space="preserve">
+    <value>groupBox4</value>
+  </data>
+  <data name="&gt;&gt;groupBox4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox4.Parent" xml:space="preserve">
+    <value>tabPage2</value>
+  </data>
+  <data name="&gt;&gt;groupBox4.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="tabPage2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <data name="tabPage2.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="tabPage2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>445, 317</value>
+  </data>
+  <data name="tabPage2.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="tabPage2.Text" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <data name="&gt;&gt;tabPage2.Name" xml:space="preserve">
+    <value>tabPage2</value>
+  </data>
+  <data name="&gt;&gt;tabPage2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabPage2.Parent" xml:space="preserve">
+    <value>tabControl1</value>
+  </data>
+  <data name="&gt;&gt;tabPage2.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="tabControl1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="tabControl1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="tabControl1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>453, 343</value>
+  </data>
+  <data name="tabControl1.TabIndex" type="System.Int32, mscorlib">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;tabControl1.Name" xml:space="preserve">
+    <value>tabControl1</value>
+  </data>
+  <data name="&gt;&gt;tabControl1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabControl1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;tabControl1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="panel1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Bottom</value>
+  </data>
+  <data name="panel1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 303</value>
+  </data>
+  <data name="panel1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>453, 40</value>
+  </data>
+  <data name="panel1.TabIndex" type="System.Int32, mscorlib">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;panel1.Name" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;panel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;panel1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;panel1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
@@ -1153,7 +1438,7 @@
     <value>6, 13</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>453, 452</value>
+    <value>453, 343</value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -1657,6 +1942,9 @@
         qn+qqqp/qqqqf6qqqn+qqqp/qqqqf6qqqn+pqal/m5ubZGBgYA0AAAAAgAEAAAAAAAAAAAAAAAAAAAAA
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAA==
 </value>
+  </data>
+  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>

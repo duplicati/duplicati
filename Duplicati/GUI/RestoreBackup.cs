@@ -77,7 +77,7 @@ namespace Duplicati.GUI
                     return;
 
             Program.WorkThread.AddTask(new RestoreTask(m_schedule, TargetFolder.Text, dt));
-            Program.ShowStatus();
+            Program.DisplayHelper.ShowStatus();
             this.DialogResult = DialogResult.OK;
             this.Close();
         }

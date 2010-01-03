@@ -130,22 +130,6 @@ Error message: {0}</value>
     <value>Failed to set the user interface language: {0}</value>
     <comment>An error message displayed if the language cannot be selected</comment>
   </data>
-  <data name="MenuQuit" xml:space="preserve">
-    <value>Quit</value>
-    <comment>Text for the quit menu in the trayicon context menu</comment>
-  </data>
-  <data name="MenuSettings" xml:space="preserve">
-    <value>Settings</value>
-    <comment>Text for the settings menu in the trayicon context menu</comment>
-  </data>
-  <data name="MenuStatus" xml:space="preserve">
-    <value>Status</value>
-    <comment>Text for the status menu in the trayicon context menu</comment>
-  </data>
-  <data name="MenuWizard" xml:space="preserve">
-    <value>Wizard ...</value>
-    <comment>Text for the wizard menu in the trayicon context menu</comment>
-  </data>
   <data name="MultipleNamedBackupsFound" xml:space="preserve">
     <value>The backup named "{0}" was found {1} times</value>
     <comment>An error message displayed when invoking a backup from the commandline, and the named backup is found multiple times</comment>
@@ -163,13 +147,10 @@ Error message: {0}</value>
 Error message: {0}</value>
     <comment>An error message displayed when Duplicati startup fails</comment>
   </data>
-  <data name="TrayStatusReady" xml:space="preserve">
-    <value>Duplicati is ready</value>
-    <comment>Text displayed as a tooltip on the tray icon when Duplicati is ready</comment>
-  </data>
-  <data name="TrayStatusRunning" xml:space="preserve">
-    <value>Duplicati is running {0}</value>
-    <comment>Text displayed as a tooltip on the tray icon when Duplicati is running a task</comment>
+  <data name="TerminateForExitQuestion" xml:space="preserve">
+    <value>Duplicati is attempting to quit, but a backup is running.
+Do you want Duplicati to wait a little to see if the backup responds to the stop command?</value>
+    <comment>A question displayed to the user after a exit has been issued, but the backup fails to respond to the stop command within a short period</comment>
   </data>
   <data name="WrongSQLiteVersion" xml:space="preserve">
     <value>Wrong version of SQLite detected ({0}), must be {1} or higher</value>

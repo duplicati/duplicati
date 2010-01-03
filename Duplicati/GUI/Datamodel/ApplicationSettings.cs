@@ -45,6 +45,11 @@ namespace Duplicati.Datamodel
         //TODO: Deal with this on Linux
         public const string PROGRAM_FILES = "%PROGRAMFILES%";
 
+        public const string STARTUP_DELAY_DURATION = "Startup delay duration";
+        public const string THREAD_PRIORITY_OVERRIDE = "Thread priority override";
+        public const string UPLOAD_SPEED_LIMIT = "Upload speed limit";
+        public const string DOWNLOAD_SPEED_LIMIT = "Download speed limit";
+
         public ApplicationSettings(IDataFetcher dataparent)
         {
             m_appset = new SettingsHelper<ApplicationSetting, string, string>(dataparent, new List<ApplicationSetting>(dataparent.GetObjects<ApplicationSetting>()), "Name", "Value");
@@ -230,6 +235,54 @@ namespace Duplicati.Datamodel
                     return m_appset[DISPLAY_LANGUAGE];
             }
             set { m_appset[DISPLAY_LANGUAGE] = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the amount of time Duplicati will be paused after startup
+        /// </summary>
+        public string StartupDelayDuration
+        {
+            get { return string.IsNullOrEmpty(m_appset[STARTUP_DELAY_DURATION]) ? "5m" : m_appset[STARTUP_DELAY_DURATION]; }
+            set { m_appset[STARTUP_DELAY_DURATION] = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the thread priority used for the backup thread
+        /// </summary>
+        public System.Threading.ThreadPriority? ThreadPriorityOverride
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_appset[THREAD_PRIORITY_OVERRIDE]))
+                    return null;
+                else
+                    return Library.Core.Utility.ParsePriority(m_appset[THREAD_PRIORITY_OVERRIDE]);
+            }
+            set 
+            {
+                if (value == null)
+                    m_appset[THREAD_PRIORITY_OVERRIDE] = "";
+                else
+                    m_appset[THREAD_PRIORITY_OVERRIDE] = value.Value.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the upper limit for download speeds
+        /// </summary>
+        public string DownloadSpeedLimit
+        {
+            get { return m_appset[DOWNLOAD_SPEED_LIMIT]; }
+            set { m_appset[DOWNLOAD_SPEED_LIMIT] = value == null ? "" : value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the upper limit for upload speeds
+        /// </summary>
+        public string UploadSpeedLimit
+        {
+            get { return m_appset[UPLOAD_SPEED_LIMIT]; }
+            set { m_appset[UPLOAD_SPEED_LIMIT] = value == null ? "" : value; }
         }
 
     }

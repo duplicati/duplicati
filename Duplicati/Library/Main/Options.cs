@@ -25,6 +25,11 @@ namespace Duplicati.Library.Main
 {
     public class Options
     {
+        /// <summary>
+        /// Lock that protects the options collection
+        /// </summary>
+        private object m_lock = new object();
+
         private Dictionary<string, string> m_options;
 
         public Options(Dictionary<string, string> options)
@@ -439,24 +444,42 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("max-upload-pr-second") || string.IsNullOrEmpty(m_options["max-upload-pr-second"]))
-                    return 0;
-                else
-                    return Core.Sizeparser.ParseSize(m_options["max-upload-pr-second"], "kb");
+                lock(m_lock)
+                    if (!m_options.ContainsKey("max-upload-pr-second") || string.IsNullOrEmpty(m_options["max-upload-pr-second"]))
+                        return 0;
+                    else
+                        return Core.Sizeparser.ParseSize(m_options["max-upload-pr-second"], "kb");
+            }
+            set
+            {
+                lock (m_lock)
+                    if (value <= 0)
+                        m_options["max-upload-pr-second"] = "";
+                    else
+                        m_options["max-upload-pr-second"] = value.ToString() + "b";
             }
         }
 
         /// <summary>
-        /// Gets the max download speed in bytes pr. second
+        /// Gets or sets the max download speed in bytes pr. second
         /// </summary>
         public long MaxDownloadPrSecond
         {
             get
             {
-                if (!m_options.ContainsKey("max-download-pr-second") || string.IsNullOrEmpty(m_options["max-download-pr-second"]))
-                    return 0;
-                else
-                    return Core.Sizeparser.ParseSize(m_options["max-download-pr-second"], "kb");
+                lock (m_lock)
+                    if (!m_options.ContainsKey("max-download-pr-second") || string.IsNullOrEmpty(m_options["max-download-pr-second"]))
+                        return 0;
+                    else
+                        return Core.Sizeparser.ParseSize(m_options["max-download-pr-second"], "kb");
+            }
+            set
+            {
+                lock (m_lock)
+                    if (value <= 0)
+                        m_options["max-download-pr-second"] = "";
+                    else
+                        m_options["max-download-pr-second"] = value.ToString() + "b";
             }
         }
 

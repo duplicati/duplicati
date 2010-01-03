@@ -237,7 +237,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;advancedPanel.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="SubProgressBar.Location" type="System.Drawing.Point, System.Drawing">
     <value>80, 16</value>
@@ -338,23 +338,8 @@
   <metadata name="contextMenuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>208, 17</value>
   </metadata>
-  <data name="viewLogToolStripMenuItem.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Tahoma, 8.25pt, style=Bold</value>
-  </data>
-  <data name="viewLogToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>185, 22</value>
-  </data>
-  <data name="viewLogToolStripMenuItem.Text" xml:space="preserve">
-    <value>View log ...</value>
-  </data>
-  <data name="viewFilesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>185, 22</value>
-  </data>
-  <data name="viewFilesToolStripMenuItem.Text" xml:space="preserve">
-    <value>View contents ...</value>
-  </data>
   <data name="contextMenuStrip.Size" type="System.Drawing.Size, System.Drawing">
-    <value>186, 48</value>
+    <value>161, 48</value>
   </data>
   <data name="&gt;&gt;contextMenuStrip.Name" xml:space="preserve">
     <value>contextMenuStrip</value>
@@ -388,6 +373,60 @@
   </data>
   <data name="&gt;&gt;recentBackups.ZOrder" xml:space="preserve">
     <value>3</value>
+  </data>
+  <metadata name="backupTasks.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>346, 17</value>
+  </metadata>
+  <data name="pauseBackupToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="pauseBackupToolStripMenuItem.Text" xml:space="preserve">
+    <value>Pause backup</value>
+  </data>
+  <data name="PauseDuration05Menu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="PauseDuration05Menu.Text" xml:space="preserve">
+    <value>5 minutes</value>
+  </data>
+  <data name="PauseDuration15Menu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="PauseDuration15Menu.Text" xml:space="preserve">
+    <value>15 minutes</value>
+  </data>
+  <data name="PauseDuration30Menu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="PauseDuration30Menu.Text" xml:space="preserve">
+    <value>30 minutes</value>
+  </data>
+  <data name="PauseDuration60Menu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="PauseDuration60Menu.Text" xml:space="preserve">
+    <value>1 hour</value>
+  </data>
+  <data name="pausePeriodMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="pausePeriodMenuItem.Text" xml:space="preserve">
+    <value>Pause period</value>
+  </data>
+  <data name="stopBackupToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="stopBackupToolStripMenuItem.Text" xml:space="preserve">
+    <value>Stop backup</value>
+  </data>
+  <data name="backupTasks.Size" type="System.Drawing.Size, System.Drawing">
+    <value>153, 92</value>
+  </data>
+  <data name="&gt;&gt;backupTasks.Name" xml:space="preserve">
+    <value>backupTasks</value>
+  </data>
+  <data name="&gt;&gt;backupTasks.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="statusImage.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 0</value>
@@ -510,7 +549,22 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;simplePanel.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
+  </data>
+  <data name="viewLogToolStripMenuItem.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Tahoma, 8.25pt, style=Bold</value>
+  </data>
+  <data name="viewLogToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>160, 22</value>
+  </data>
+  <data name="viewLogToolStripMenuItem.Text" xml:space="preserve">
+    <value>View log ...</value>
+  </data>
+  <data name="viewFilesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>160, 22</value>
+  </data>
+  <data name="viewFilesToolStripMenuItem.Text" xml:space="preserve">
+    <value>View contents ...</value>
   </data>
   <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>116, 17</value>
@@ -1066,11 +1120,53 @@
   <data name="&gt;&gt;imageList.Type" xml:space="preserve">
     <value>System.Windows.Forms.ImageList, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="&gt;&gt;pauseBackupToolStripMenuItem.Name" xml:space="preserve">
+    <value>pauseBackupToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;pauseBackupToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;pausePeriodMenuItem.Name" xml:space="preserve">
+    <value>pausePeriodMenuItem</value>
+  </data>
+  <data name="&gt;&gt;pausePeriodMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;stopBackupToolStripMenuItem.Name" xml:space="preserve">
+    <value>stopBackupToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;stopBackupToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="&gt;&gt;toolTip1.Name" xml:space="preserve">
     <value>toolTip1</value>
   </data>
   <data name="&gt;&gt;toolTip1.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PauseDuration05Menu.Name" xml:space="preserve">
+    <value>PauseDuration05Menu</value>
+  </data>
+  <data name="&gt;&gt;PauseDuration05Menu.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PauseDuration15Menu.Name" xml:space="preserve">
+    <value>PauseDuration15Menu</value>
+  </data>
+  <data name="&gt;&gt;PauseDuration15Menu.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PauseDuration30Menu.Name" xml:space="preserve">
+    <value>PauseDuration30Menu</value>
+  </data>
+  <data name="&gt;&gt;PauseDuration30Menu.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PauseDuration60Menu.Name" xml:space="preserve">
+    <value>PauseDuration60Menu</value>
+  </data>
+  <data name="&gt;&gt;PauseDuration60Menu.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>ServiceStatus</value>

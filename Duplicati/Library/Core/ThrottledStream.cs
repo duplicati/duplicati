@@ -34,6 +34,16 @@ namespace Duplicati.Library.Core
     public class ThrottledStream : OverrideableStream
     {
         /// <summary>
+        /// The delegate type for the callback
+        /// </summary>
+        public delegate void ThrottledStreamCallback(ThrottledStream sender);
+
+        /// <summary>
+        /// An event that is raised while the stream is active
+        /// </summary>
+        public event ThrottledStreamCallback Callback;
+
+        /// <summary>
         /// The max number of bytes pr. second to write
         /// </summary>
         private long m_writespeed;
@@ -60,6 +70,11 @@ namespace Duplicati.Library.Core
         private long m_byteswritten;
 
         /// <summary>
+        /// The number of bytes transfered without raising an event
+        /// </summary>
+        private long m_progresscounter = 0;
+
+        /// <summary>
         /// The number of reads or writes to keep track of
         /// </summary>
         private const long STATISTICS_SIZE = 500;
@@ -71,6 +86,11 @@ namespace Duplicati.Library.Core
         /// The number of sub chunks to perform when throttling
         /// </summary>
         private const int DELAY_CHUNK_SIZE = 1024;
+
+        /// <summary>
+        /// The number of bytes to process without raising an event
+        /// </summary>
+        private const int REPORT_DISTANCE_SIZE = 1024 * 50;
 
         /// <summary>
         /// Creates a throttle around a stream.
@@ -93,17 +113,53 @@ namespace Duplicati.Library.Core
         public override int Read(byte[] buffer, int offset, int count)
         {
             int bytesRead = DelayIfRequired(true, buffer, ref offset, ref count);
-            if (count == 0)
-                return bytesRead;
-            else
-                return m_basestream.Read(buffer, offset, count) + bytesRead;
+            if (count != 0)
+                bytesRead += m_basestream.Read(buffer, offset, count);
+
+            m_progresscounter += bytesRead;
+
+            if (m_progresscounter > REPORT_DISTANCE_SIZE)
+            {
+                m_progresscounter %= REPORT_DISTANCE_SIZE;
+                Callback(this);
+            }
+
+            return bytesRead;
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            m_progresscounter += count;
+
             DelayIfRequired(true, buffer, ref offset, ref count);
             if (count > 0)
                 m_basestream.Write(buffer, offset, count);
+
+            if (m_progresscounter > REPORT_DISTANCE_SIZE)
+            {
+                m_progresscounter %= REPORT_DISTANCE_SIZE;
+                Callback(this);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the current read speed in bytes pr. second.
+        /// Set to zero or less to disable throttling.
+        /// </summary>
+        public long ReadSpeed
+        {
+            get { return m_readspeed; }
+            set { m_readspeed = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the current write speed in bytes pr. second.
+        /// Set to zero or less to disable throttling
+        /// </summary>
+        public long WriteSpeed
+        {
+            get { return m_writespeed; }
+            set { m_writespeed = value; }
         }
 
         /// <summary>

@@ -33,6 +33,10 @@ namespace Duplicati.GUI
             this.GPGPath = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
+            this.label7 = new System.Windows.Forms.Label();
+            this.LanguageSelection = new System.Windows.Forms.ComboBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
@@ -62,13 +66,23 @@ namespace Duplicati.GUI
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
-            this.label3 = new System.Windows.Forms.Label();
-            this.LanguageSelection = new System.Windows.Forms.ComboBox();
+            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.Bandwidth = new Duplicati.GUI.HelperControls.BandwidthLimit();
+            this.ThreadPriorityPicker = new Duplicati.GUI.HelperControls.ThreadPriorityPicker();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.PasswordPanel.SuspendLayout();
             this.EncryptionMethod.SuspendLayout();
+            this.tabControl1.SuspendLayout();
+            this.tabPage1.SuspendLayout();
+            this.tabPage2.SuspendLayout();
+            this.groupBox4.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -89,13 +103,40 @@ namespace Duplicati.GUI
             // 
             // groupBox1
             // 
-            resources.ApplyResources(this.groupBox1, "groupBox1");
+            this.groupBox1.Controls.Add(this.StartupDelayDuration);
+            this.groupBox1.Controls.Add(this.label7);
             this.groupBox1.Controls.Add(this.LanguageSelection);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.RecentDuration);
             this.groupBox1.Controls.Add(this.label1);
+            resources.ApplyResources(this.groupBox1, "groupBox1");
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.TabStop = false;
+            // 
+            // StartupDelayDuration
+            // 
+            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
+            this.StartupDelayDuration.Name = "StartupDelayDuration";
+            this.StartupDelayDuration.Value = "";
+            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
+            // 
+            // label7
+            // 
+            resources.ApplyResources(this.label7, "label7");
+            this.label7.Name = "label7";
+            // 
+            // LanguageSelection
+            // 
+            resources.ApplyResources(this.LanguageSelection, "LanguageSelection");
+            this.LanguageSelection.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.LanguageSelection.FormattingEnabled = true;
+            this.LanguageSelection.Name = "LanguageSelection";
+            this.LanguageSelection.SelectedIndexChanged += new System.EventHandler(this.LanguageSelection_SelectedIndexChanged);
+            // 
+            // label3
+            // 
+            resources.ApplyResources(this.label3, "label3");
+            this.label3.Name = "label3";
             // 
             // RecentDuration
             // 
@@ -106,7 +147,6 @@ namespace Duplicati.GUI
             // 
             // groupBox2
             // 
-            resources.ApplyResources(this.groupBox2, "groupBox2");
             this.groupBox2.Controls.Add(this.CacheSizeLabel);
             this.groupBox2.Controls.Add(this.ClearCacheButton);
             this.groupBox2.Controls.Add(this.SignatureCacheEnabled);
@@ -121,6 +161,7 @@ namespace Duplicati.GUI
             this.groupBox2.Controls.Add(this.BrowsePGP);
             this.groupBox2.Controls.Add(this.GPGPath);
             this.groupBox2.Controls.Add(this.label2);
+            resources.ApplyResources(this.groupBox2, "groupBox2");
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.TabStop = false;
             // 
@@ -227,9 +268,9 @@ namespace Duplicati.GUI
             // 
             // groupBox3
             // 
-            resources.ApplyResources(this.groupBox3, "groupBox3");
             this.groupBox3.Controls.Add(this.PasswordPanel);
             this.groupBox3.Controls.Add(this.UseCommonPassword);
+            resources.ApplyResources(this.groupBox3, "groupBox3");
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.TabStop = false;
             // 
@@ -290,29 +331,69 @@ namespace Duplicati.GUI
             this.CacheSizeCalculator.DoWork += new System.ComponentModel.DoWorkEventHandler(this.CacheSizeCalculator_DoWork);
             this.CacheSizeCalculator.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.CacheSizeCalculator_RunWorkerCompleted);
             // 
-            // label3
+            // tabControl1
             // 
-            resources.ApplyResources(this.label3, "label3");
-            this.label3.Name = "label3";
+            this.tabControl1.Controls.Add(this.tabPage1);
+            this.tabControl1.Controls.Add(this.tabPage2);
+            resources.ApplyResources(this.tabControl1, "tabControl1");
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
             // 
-            // LanguageSelection
+            // tabPage1
             // 
-            resources.ApplyResources(this.LanguageSelection, "LanguageSelection");
-            this.LanguageSelection.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.LanguageSelection.FormattingEnabled = true;
-            this.LanguageSelection.Name = "LanguageSelection";
-            this.LanguageSelection.SelectedIndexChanged += new System.EventHandler(this.LanguageSelection_SelectedIndexChanged);
+            this.tabPage1.Controls.Add(this.groupBox3);
+            this.tabPage1.Controls.Add(this.groupBox1);
+            resources.ApplyResources(this.tabPage1, "tabPage1");
+            this.tabPage1.Name = "tabPage1";
+            this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // tabPage2
+            // 
+            this.tabPage2.Controls.Add(this.groupBox2);
+            this.tabPage2.Controls.Add(this.groupBox4);
+            resources.ApplyResources(this.tabPage2, "tabPage2");
+            this.tabPage2.Name = "tabPage2";
+            this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // groupBox4
+            // 
+            this.groupBox4.Controls.Add(this.Bandwidth);
+            this.groupBox4.Controls.Add(this.ThreadPriorityPicker);
+            resources.ApplyResources(this.groupBox4, "groupBox4");
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.TabStop = false;
+            // 
+            // BandwidthLimit
+            // 
+            this.Bandwidth.DownloadLimit = null;
+            this.Bandwidth.DownloadLimitInBytes = ((long)(0));
+            resources.ApplyResources(this.Bandwidth, "BandwidthLimit");
+            this.Bandwidth.Name = "BandwidthLimit";
+            this.Bandwidth.UploadLimit = null;
+            this.Bandwidth.UploadLimitInBytes = ((long)(0));
+            this.Bandwidth.DownloadLimitChanged += new System.EventHandler(this.Bandwidth_DownloadLimitChanged);
+            this.Bandwidth.UploadLimitChanged += new System.EventHandler(this.Bandwidth_UploadLimitChanged);
+            // 
+            // ThreadPriorityPicker
+            // 
+            resources.ApplyResources(this.ThreadPriorityPicker, "ThreadPriorityPicker");
+            this.ThreadPriorityPicker.Name = "ThreadPriorityPicker";
+            this.ThreadPriorityPicker.SelectedPriorityChanged += new System.EventHandler(this.ThreadPriorityPicker_SelectedPriorityChanged);
+            // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.OKBtn);
+            this.panel1.Controls.Add(this.CancelBtn);
+            resources.ApplyResources(this.panel1, "panel1");
+            this.panel1.Name = "panel1";
             // 
             // ApplicationSetup
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.Controls.Add(this.groupBox3);
-            this.Controls.Add(this.CancelBtn);
-            this.Controls.Add(this.OKBtn);
-            this.Controls.Add(this.groupBox2);
-            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.tabControl1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -329,6 +410,11 @@ namespace Duplicati.GUI
             this.PasswordPanel.PerformLayout();
             this.EncryptionMethod.ResumeLayout(false);
             this.EncryptionMethod.PerformLayout();
+            this.tabControl1.ResumeLayout(false);
+            this.tabPage1.ResumeLayout(false);
+            this.tabPage2.ResumeLayout(false);
+            this.groupBox4.ResumeLayout(false);
+            this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -370,5 +456,14 @@ namespace Duplicati.GUI
         private System.Windows.Forms.RadioButton UseAESEncryption;
         private System.Windows.Forms.ComboBox LanguageSelection;
         private System.Windows.Forms.Label label3;
+        private Duplicati.GUI.HelperControls.DurationEditor StartupDelayDuration;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.TabControl tabControl1;
+        private System.Windows.Forms.TabPage tabPage1;
+        private System.Windows.Forms.TabPage tabPage2;
+        private System.Windows.Forms.GroupBox groupBox4;
+        private Duplicati.GUI.HelperControls.BandwidthLimit Bandwidth;
+        private Duplicati.GUI.HelperControls.ThreadPriorityPicker ThreadPriorityPicker;
+        private System.Windows.Forms.Panel panel1;
     }
 }

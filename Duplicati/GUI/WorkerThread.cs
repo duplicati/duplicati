@@ -24,31 +24,106 @@ using System.Threading;
 
 namespace Duplicati.GUI
 {
+    /// <summary>
+    /// Class to encapsulate a thread that runs a list of queued operations
+    /// </summary>
+    /// <typeparam name="Tx">The type to operate on</typeparam>
     public class WorkerThread<Tx> where Tx : class
     {
+        /// <summary>
+        /// Locking object for shared data
+        /// </summary>
         private object m_lock = new object();
+        /// <summary>
+        /// The wait event
+        /// </summary>
         private AutoResetEvent m_event;
+        /// <summary>
+        /// The internal list of tasks to perform
+        /// </summary>
         private Queue<Tx> m_tasks;
+        /// <summary>
+        /// A flag used to terminate the thread
+        /// </summary>
         private volatile bool m_terminate;
+        /// <summary>
+        /// The coordinating thread
+        /// </summary>
         private Thread m_thread;
 
+        /// <summary>
+        /// A value indicating if the coordinating thread is running
+        /// </summary>
         private volatile bool m_active;
 
+        /// <summary>
+        /// The current task being processed
+        /// </summary>
         private Tx m_currentTask;
+        /// <summary>
+        /// A callback that performs the actual work on the item
+        /// </summary>
         private ProcessItemDelegate m_delegate;
 
+        /// <summary>
+        /// A delegate used to signal a changed state
+        /// </summary>
+        /// <param name="sender">The sender of the event</param>
+        /// <param name="state">The new state</param>
+        public delegate void WorkerStateChangedDelegate(WorkerThread<Tx> sender, RunState state);
+
+        /// <summary>
+        /// An event that is raised when the runner state changes
+        /// </summary>
+        public event WorkerStateChangedDelegate WorkerStateChanged;
+
+        /// <summary>
+        /// Event that occurs when a new operation is being processed
+        /// </summary>
         public event EventHandler StartingWork;
+        /// <summary>
+        /// Event that occurs when an operation has completed
+        /// </summary>
         public event EventHandler CompletedWork;
+        /// <summary>
+        /// An operation that occurs when a new task is added to the queue
+        /// </summary>
         public event EventHandler AddedWork;
 
         public delegate void ProcessItemDelegate(Tx item);
 
-        public WorkerThread(ProcessItemDelegate item)
+        /// <summary>
+        /// The internal state
+        /// </summary>
+        private volatile RunState m_state;
+
+        /// <summary>
+        /// The states the scheduler can take
+        /// </summary>
+        public enum RunState
+        {
+            /// <summary>
+            /// The program is running as normal
+            /// </summary>
+            Run,
+            /// <summary>
+            /// The program is suspended by the user
+            /// </summary>
+            Paused
+        }
+
+        /// <summary>
+        /// Constructs a new WorkerThread
+        /// </summary>
+        /// <param name="item">The callback that performs the work</param>
+        public WorkerThread(ProcessItemDelegate item, bool paused)
         {
             m_delegate = item;
-            m_event = new AutoResetEvent(false);
+            m_event = new AutoResetEvent(paused);
             m_terminate = false;
             m_tasks = new Queue<Tx>();
+            m_state = paused ? WorkerThread<Tx>.RunState.Paused : WorkerThread<Tx>.RunState.Run;
+
             m_thread = new Thread(new ThreadStart(Runner));
             m_thread.IsBackground = true;
             m_thread.Start();
@@ -151,16 +226,34 @@ namespace Duplicati.GUI
                 m_currentTask = null;
 
                 lock (m_lock)
-                    if (m_tasks.Count > 0)
+                    if (m_state == WorkerThread<Tx>.RunState.Run && m_tasks.Count > 0)
                         m_currentTask = m_tasks.Dequeue();
 
                 if (m_currentTask == null && !m_terminate)
-                    m_event.WaitOne();
+                    if (m_state == WorkerThread<Tx>.RunState.Run)
+                        m_event.WaitOne(); //Sleep until signaled
+                    else
+                    {
+                        if (WorkerStateChanged != null)
+                            WorkerStateChanged(this, m_state);
+
+                        //Sleep for brief periods, until signaled
+                        while (!m_terminate && m_state != WorkerThread<Tx>.RunState.Run)
+                            m_event.WaitOne(1000 * 60 * 5);
+
+                        //If we were not terminated, we are now ready to run
+                        if (!m_terminate)
+                        {
+                            m_state = WorkerThread<Tx>.RunState.Run;
+                            if (WorkerStateChanged != null)
+                                WorkerStateChanged(this, m_state);
+                        }
+                    }
 
                 if (m_terminate)
                     return;
 
-                if (m_currentTask == null)
+                if (m_currentTask == null && m_state == WorkerThread<Tx>.RunState.Run)
                     lock (m_lock)
                         if (m_tasks.Count > 0)
                             m_currentTask = m_tasks.Dequeue();
@@ -178,6 +271,29 @@ namespace Duplicati.GUI
                 if (CompletedWork != null)
                     CompletedWork(this, null);
             }
+        }
+
+        /// <summary>
+        /// Gets the current run state
+        /// </summary>
+        public RunState State { get { return m_state; } }
+
+        /// <summary>
+        /// Instructs Duplicati to run scheduled backups
+        /// </summary>
+        public void Resume()
+        {
+            m_state = RunState.Run;
+            m_event.Set();
+        }
+
+        /// <summary>
+        /// Instructs Duplicati to pause scheduled backups
+        /// </summary>
+        public void Pause()
+        {
+            m_state = RunState.Paused;
+            m_event.Set();
         }
     }
 }

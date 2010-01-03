@@ -578,6 +578,21 @@ namespace Duplicati.Library.Core
                 return new Version();
             }
         }
+
+        /// <summary>
+        /// Gets the users default UI language
+        /// </summary>
+        public static System.Globalization.CultureInfo DefaultCulture
+        {
+            get
+            {
+                System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ThreadStart(DummyMethod));
+                return t.CurrentUICulture;
+            }
+        }
+
+        //Unused function, used to create a dummy thread
+        private static void DummyMethod() { }
 			
     }
 }

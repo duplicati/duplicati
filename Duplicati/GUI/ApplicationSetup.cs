@@ -57,24 +57,20 @@ namespace Duplicati.GUI
                     new KeyValuePair<string, string>(Strings.Common.ThreeMonths, "3M"),
                 }));
 
+            StartupDelayDuration.SetIntervals(new List<KeyValuePair<string, string>>(
+                new KeyValuePair<string, string>[]
+                {
+                    new KeyValuePair<string, string>(Strings.Common.NoMinutes, "0"),
+                    new KeyValuePair<string, string>(Strings.Common.OneMinute, "1m"),
+                    new KeyValuePair<string, string>(Strings.Common.FiveMinutes, "5m"),
+                    new KeyValuePair<string, string>(Strings.Common.FifteenMinutes, "15m"),
+                    new KeyValuePair<string, string>(Strings.Common.ThirtyMinutes, "30m"),
+                }));
+
             try
             {
-                m_isUpdating = true;
-                RecentDuration.Value = m_settings.RecentBackupDuration;
-                GPGPath.Text = m_settings.GPGPath;
-                SFTPPath.Text = m_settings.SFtpPath;
-                TempPath.Text = m_settings.TempPath;
-
-                UseCommonPassword.Checked = m_settings.UseCommonPassword;
-                CommonPassword.Text = m_settings.CommonPassword;
-                UseGPGEncryption.Checked = m_settings.CommonPasswordUseGPG;
-
-                SignatureCacheEnabled.Checked = m_settings.SignatureCacheEnabled;
-                SignatureCachePath.Text = m_settings.SignatureCachePath;
-                CalculateSignatureCacheSize();
-
                 LanguageSelection.Items.Clear();
-                LanguageSelection.Items.Add(string.Format(Strings.ApplicationSetup.DefaultLanguage, System.Globalization.CultureInfo.InstalledUICulture.DisplayName));
+                LanguageSelection.Items.Add(string.Format(Strings.ApplicationSetup.DefaultLanguage, Library.Core.Utility.DefaultCulture.DisplayName));
 
                 m_supportedLanguages.Add(System.Globalization.CultureInfo.GetCultureInfo("en-us"));
 
@@ -93,23 +89,6 @@ namespace Duplicati.GUI
                 foreach (System.Globalization.CultureInfo ci in m_supportedLanguages)
                     LanguageSelection.Items.Add(ci.DisplayName);
 
-                if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
-                    LanguageSelection.SelectedIndex = 0;
-                else
-                {
-                    try
-                    {
-                        System.Globalization.CultureInfo cci = System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
-                        if (m_supportedLanguages.Contains(cci))
-                            LanguageSelection.SelectedIndex = m_supportedLanguages.IndexOf(cci) + 1;
-                        else
-                            LanguageSelection.SelectedIndex = -1;
-                    }
-                    catch
-                    {
-                        LanguageSelection.SelectedIndex = -1;
-                    }
-                }
             }
             finally
             {
@@ -143,6 +122,7 @@ namespace Duplicati.GUI
 
         private void OKBtn_Click(object sender, EventArgs e)
         {
+
             m_connection.CommitRecursive(m_connection.GetObjects<ApplicationSetting>());
 
             System.Globalization.CultureInfo newCI = System.Threading.Thread.CurrentThread.CurrentUICulture;
@@ -150,7 +130,7 @@ namespace Duplicati.GUI
             try
             {
                 if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
-                    newCI = System.Globalization.CultureInfo.InstalledUICulture;
+                    newCI = Library.Core.Utility.DefaultCulture;
                 else
                     newCI = System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
             }
@@ -165,10 +145,6 @@ namespace Duplicati.GUI
 
                 //We don't change here, because the application has loaded some 
                 // resources already, so the switch would be partial
-
-                /*System.Threading.Thread.CurrentThread.CurrentUICulture =
-                System.Threading.Thread.CurrentThread.CurrentCulture =
-                    newCI;*/
             }
 
 
@@ -209,7 +185,49 @@ namespace Duplicati.GUI
 
         private void ApplicationSetup_Load(object sender, EventArgs e)
         {
+            try
+            {
+                m_isUpdating = true;
+                RecentDuration.Value = m_settings.RecentBackupDuration;
+                GPGPath.Text = m_settings.GPGPath;
+                SFTPPath.Text = m_settings.SFtpPath;
+                TempPath.Text = m_settings.TempPath;
 
+                UseCommonPassword.Checked = m_settings.UseCommonPassword;
+                CommonPassword.Text = m_settings.CommonPassword;
+                UseGPGEncryption.Checked = m_settings.CommonPasswordUseGPG;
+
+                SignatureCacheEnabled.Checked = m_settings.SignatureCacheEnabled;
+                SignatureCachePath.Text = m_settings.SignatureCachePath;
+                CalculateSignatureCacheSize();
+
+                StartupDelayDuration.Value = m_settings.StartupDelayDuration;
+                ThreadPriorityPicker.SelectedPriority = m_settings.ThreadPriorityOverride;
+                Bandwidth.UploadLimit = m_settings.UploadSpeedLimit;
+                Bandwidth.DownloadLimit = m_settings.DownloadSpeedLimit;
+
+                if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
+                    LanguageSelection.SelectedIndex = 0;
+                else
+                {
+                    try
+                    {
+                        System.Globalization.CultureInfo cci = System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
+                        if (m_supportedLanguages.Contains(cci))
+                            LanguageSelection.SelectedIndex = m_supportedLanguages.IndexOf(cci) + 1;
+                        else
+                            LanguageSelection.SelectedIndex = -1;
+                    }
+                    catch
+                    {
+                        LanguageSelection.SelectedIndex = -1;
+                    }
+                }
+            }
+            finally
+            {
+                m_isUpdating = false;
+            }
         }
 
         private void UseCommonPassword_CheckedChanged(object sender, EventArgs e)
@@ -369,6 +387,38 @@ namespace Duplicati.GUI
                 m_settings.DisplayLanguage = "";
             else if (LanguageSelection.SelectedIndex > 0)
                 m_settings.DisplayLanguage = m_supportedLanguages[LanguageSelection.SelectedIndex - 1].Name;
+        }
+
+        private void StartupDelayDuration_ValueChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            m_settings.StartupDelayDuration = StartupDelayDuration.Value;
+        }
+
+        private void ThreadPriorityPicker_SelectedPriorityChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            m_settings.ThreadPriorityOverride = ThreadPriorityPicker.SelectedPriority;
+        }
+
+        private void Bandwidth_UploadLimitChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            m_settings.UploadSpeedLimit = Bandwidth.UploadLimit;
+        }
+
+        private void Bandwidth_DownloadLimitChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            m_settings.DownloadSpeedLimit = Bandwidth.DownloadLimit;
         }
 
     }

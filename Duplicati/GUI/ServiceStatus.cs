@@ -50,11 +50,9 @@ namespace Duplicati.GUI
             Program.WorkThread.AddedWork += new EventHandler(WorkThread_AddedWork);
             Program.Scheduler.NewSchedule += new EventHandler(Scheduler_NewSchedule);
             Program.Runner.DuplicatiProgress += new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
+            Program.LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
 
-            if (Program.WorkThread.CurrentTask == null)
-                WorkThread_CompletedWork(null, null);
-            else
-                WorkThread_StartingWork(null, null);
+            LiveControl_StateChanged(null, null);
 
             WorkThread_AddedWork(null, null);
             Scheduler_NewSchedule(null, null);
@@ -65,13 +63,40 @@ namespace Duplicati.GUI
                 Program.Runner.ReinvokeLastProgressEvent();
         }
 
+        void LiveControl_StateChanged(object sender, EventArgs e)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new EventHandler(LiveControl_StateChanged), sender, e);
+                return;
+            }
+
+            stopBackupToolStripMenuItem.Enabled = Program.WorkThread.Active;
+
+            if (Program.LiveControl.State == LiveControls.LiveControlState.Paused)
+            {
+                pauseBackupToolStripMenuItem.Checked = true;
+                pauseBackupToolStripMenuItem.Text = Strings.Common.MenuResume;
+                CurrentStatus.Text = Strings.ServiceStatus.StatusPaused;
+                statusImage.Image = Properties.Resources.Status_pause;
+            }
+            else
+            {
+                pauseBackupToolStripMenuItem.Checked = false;
+                pauseBackupToolStripMenuItem.Text = Strings.Common.MenuPause;
+                if (Program.WorkThread.CurrentTask == null)
+                    WorkThread_CompletedWork(null, null);
+                else
+                    WorkThread_StartingWork(null, null);
+            }
+        }
+
         void Runner_DuplicatiProgress(Duplicati.Library.Main.DuplicatiOperation operation, DuplicatiRunner.RunnerState state, string message, string submessage, int progress, int subprogress)
         {
             if (this.InvokeRequired)
                 this.Invoke(new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress), operation, state, message, submessage, progress, subprogress);
             else
             {
-                //TODO: Test the display!
                 WorkProgressbar.Visible = ProgressMessage.Visible = state != DuplicatiRunner.RunnerState.Stopped;
                 WorkProgressbar.Style = progress < 0 ? ProgressBarStyle.Marquee : ProgressBarStyle.Blocks;
                 WorkProgressbar.Value = Math.Max(Math.Min(WorkProgressbar.Maximum, progress), WorkProgressbar.Minimum);
@@ -116,6 +141,7 @@ namespace Duplicati.GUI
             Program.WorkThread.AddedWork -= new EventHandler(WorkThread_AddedWork);
             Program.Scheduler.NewSchedule -= new EventHandler(Scheduler_NewSchedule);
             Program.Runner.DuplicatiProgress -= new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
+            Program.LiveControl.StateChanged -= new EventHandler(LiveControl_StateChanged);
         }
 
         void WorkThread_CompletedWork(object sender, EventArgs e)
@@ -124,9 +150,14 @@ namespace Duplicati.GUI
                 this.Invoke(new EventHandler(WorkThread_CompletedWork), sender, e);
             else
             {
-                CurrentStatus.Text = Strings.ServiceStatus.StatusWaiting;
-                statusImage.Image = Properties.Resources.Status_OK;
-                BuildRecent();
+                if (Program.LiveControl.State != LiveControls.LiveControlState.Paused)
+                {
+                    CurrentStatus.Text = Strings.ServiceStatus.StatusWaiting;
+                    statusImage.Image = Properties.Resources.Status_OK;
+                    BuildRecent();
+                }
+
+                stopBackupToolStripMenuItem.Enabled = false;
             }
         }
 
@@ -142,6 +173,7 @@ namespace Duplicati.GUI
                 CurrentStatus.Text = c == null ? Strings.ServiceStatus.StatusWaiting : string.Format(prefix, c.Name);
                 statusImage.Image = Properties.Resources.Status_Working;
                 WorkThread_AddedWork(sender, e);
+                stopBackupToolStripMenuItem.Enabled = true;
             }
         }
 
@@ -193,8 +225,8 @@ namespace Duplicati.GUI
         private void BuildRecent()
         {
             Log[] logs;
-            logs = Program.DataConnection.GetObjects<Log>("EndTime > ? AND SubAction LIKE ? ORDER BY EndTime DESC", Timeparser.ParseTimeInterval(Program.ApplicationSettings.RecentBackupDuration, DateTime.Now, true), "Primary");
-
+            lock(Program.MainLock)
+                logs = Program.DataConnection.GetObjects<Log>("EndTime > ? AND SubAction LIKE ? ORDER BY EndTime DESC", Timeparser.ParseTimeInterval(new Datamodel.ApplicationSettings(Program.DataConnection).RecentBackupDuration, DateTime.Now, true), "Primary");
 
             recentBackups.Items.Clear();
             foreach (Log l in logs)
@@ -235,8 +267,7 @@ namespace Duplicati.GUI
                 return;
 
             LogViewer dlg = new LogViewer();
-            //TODO: Figure out why the LDM fails here 
-            //TODO: Figure out if it still does?
+            //TODO: Figure out if LDM still fails here
             dlg.LogText.Text = l.Blob.StringData;
 
             dlg.ShowDialog(this);
@@ -284,5 +315,32 @@ namespace Duplicati.GUI
             recentBackups_DoubleClick(sender, e);
         }
 
-    }
+        private void pauseBackupToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (Program.LiveControl.State == LiveControls.LiveControlState.Running)
+                Program.LiveControl.Pause();
+            else
+                Program.LiveControl.Resume();
+        }
+
+        private void stopBackupToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Program.Runner.Stop();
+        }
+
+        private void statusImage_Click(object sender, EventArgs e)
+        {
+            backupTasks.Show(Cursor.Position.X, Cursor.Position.Y);
+        }
+
+        private void statusImage_DoubleClick(object sender, EventArgs e)
+        {
+            pauseBackupToolStripMenuItem_Click(sender, e);
+        }
+
+        private void PauseDurationMenu_Click(object sender, EventArgs e)
+        {
+            Program.LiveControl.Pause((string)((ToolStripItem)sender).Tag);
+        }
+     }
 }

@@ -339,7 +339,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (m_calculator == null)
             {
                 totalSize.Text = Strings.SelectFiles.CalculatingSize;
-                m_calculator = new WorkerThread<string>(CalculateFolderSize);
+                m_calculator = new WorkerThread<string>(CalculateFolderSize, false);
                 m_calculator.CompletedWork += new EventHandler(m_calculator_CompletedWork);
             }
         }

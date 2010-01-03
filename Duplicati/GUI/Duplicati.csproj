@@ -60,6 +60,18 @@
     <Compile Include="ApplicationSetup.Designer.cs">
       <DependentUpon>ApplicationSetup.cs</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\BandwidthLimit.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\BandwidthLimit.Designer.cs">
+      <DependentUpon>BandwidthLimit.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\SizeSelector.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\SizeSelector.Designer.cs">
+      <DependentUpon>SizeSelector.cs</DependentUpon>
+    </Compile>
     <Compile Include="HelperControls\Strings\BackupItems.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -80,6 +92,25 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>FilterDialog.resx</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\Strings\SizeSelector.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SizeSelector.resx</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\ThreadPriorityPicker.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\ThreadPriorityPicker.Designer.cs">
+      <DependentUpon>ThreadPriorityPicker.cs</DependentUpon>
+    </Compile>
+    <Compile Include="LiveControls.cs" />
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SQLiteLoader.cs" />
     <Compile Include="Strings\ApplicationSetup.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -187,6 +218,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ListBackupFiles.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\MainForm.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MainForm.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\Program.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -203,6 +239,12 @@
       <DependentUpon>TaskType.resx</DependentUpon>
     </Compile>
     <Compile Include="TaskPackages.cs" />
+    <Compile Include="ThrottleControl.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ThrottleControl.Designer.cs">
+      <DependentUpon>ThrottleControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="UrlUtillity.cs" />
     <Compile Include="Wizard pages\Add backup\AdvancedOptions.cs">
       <SubType>UserControl</SubType>
@@ -698,6 +740,12 @@
     <None Include="Resources\StatusMenuIcon.png" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="HelperControls\BandwidthLimit.resx">
+      <DependentUpon>BandwidthLimit.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\SizeSelector.resx">
+      <DependentUpon>SizeSelector.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="HelperControls\Strings\BackupItems.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
@@ -717,6 +765,16 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FilterDialog.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\Strings\SizeSelector.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SizeSelector.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\ThreadPriorityPicker.resx">
+      <DependentUpon>ThreadPriorityPicker.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\ApplicationSetup.resx">
       <SubType>Designer</SubType>
@@ -743,6 +801,10 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ListBackupFiles.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Strings\MainForm.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>MainForm.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Strings\Program.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
@@ -757,6 +819,9 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>TaskType.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ThrottleControl.resx">
+      <DependentUpon>ThrottleControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\GeneratedFilenameOptions.resx">
       <SubType>Designer</SubType>
@@ -926,6 +991,19 @@
     <None Include="Resources\LogViewer.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\Play.png" />
+    <None Include="Resources\Delay.png" />
+    <None Include="Resources\Pause.png" />
+    <None Include="Resources\TrayNormalPause.ico" />
+    <None Include="Resources\TrayWorkingPause.ico" />
+    <None Include="Resources\Status pause.png" />
+    <None Include="Resources\Stop.png" />
+    <None Include="Resources\Clock05.png" />
+    <None Include="Resources\Clock15.png" />
+    <None Include="Resources\Clock30.png" />
+    <None Include="Resources\Clock60.png" />
+    <None Include="Resources\Throttle.png" />
+    <None Include="Resources\Throttle.ico" />
     <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

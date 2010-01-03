@@ -67,14 +67,23 @@ namespace Duplicati.GUI
             this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.statusImage = new System.Windows.Forms.PictureBox();
+            this.backupTasks = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.pauseBackupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pausePeriodMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.stopBackupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ShowAdvanced = new System.Windows.Forms.Button();
             this.CurrentStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.PauseDuration05Menu = new System.Windows.Forms.ToolStripMenuItem();
+            this.PauseDuration15Menu = new System.Windows.Forms.ToolStripMenuItem();
+            this.PauseDuration30Menu = new System.Windows.Forms.ToolStripMenuItem();
+            this.PauseDuration60Menu = new System.Windows.Forms.ToolStripMenuItem();
             this.advancedPanel.SuspendLayout();
             this.simplePanel.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).BeginInit();
+            this.backupTasks.SuspendLayout();
             this.SuspendLayout();
             // 
             // label3
@@ -199,9 +208,45 @@ namespace Duplicati.GUI
             // 
             // statusImage
             // 
+            this.statusImage.ContextMenuStrip = this.backupTasks;
             resources.ApplyResources(this.statusImage, "statusImage");
             this.statusImage.Name = "statusImage";
             this.statusImage.TabStop = false;
+            this.statusImage.DoubleClick += new System.EventHandler(this.statusImage_DoubleClick);
+            this.statusImage.Click += new System.EventHandler(this.statusImage_Click);
+            // 
+            // backupTasks
+            // 
+            this.backupTasks.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.pauseBackupToolStripMenuItem,
+            this.pausePeriodMenuItem,
+            this.stopBackupToolStripMenuItem});
+            this.backupTasks.Name = "backupTasks";
+            resources.ApplyResources(this.backupTasks, "backupTasks");
+            // 
+            // pauseBackupToolStripMenuItem
+            // 
+            this.pauseBackupToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Pause;
+            this.pauseBackupToolStripMenuItem.Name = "pauseBackupToolStripMenuItem";
+            resources.ApplyResources(this.pauseBackupToolStripMenuItem, "pauseBackupToolStripMenuItem");
+            this.pauseBackupToolStripMenuItem.Click += new System.EventHandler(this.pauseBackupToolStripMenuItem_Click);
+            // 
+            // pausePeriodMenuItem
+            // 
+            this.pausePeriodMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.PauseDuration05Menu,
+            this.PauseDuration15Menu,
+            this.PauseDuration30Menu,
+            this.PauseDuration60Menu});
+            this.pausePeriodMenuItem.Name = "pausePeriodMenuItem";
+            resources.ApplyResources(this.pausePeriodMenuItem, "pausePeriodMenuItem");
+            // 
+            // stopBackupToolStripMenuItem
+            // 
+            this.stopBackupToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Stop;
+            this.stopBackupToolStripMenuItem.Name = "stopBackupToolStripMenuItem";
+            resources.ApplyResources(this.stopBackupToolStripMenuItem, "stopBackupToolStripMenuItem");
+            this.stopBackupToolStripMenuItem.Click += new System.EventHandler(this.stopBackupToolStripMenuItem_Click);
             // 
             // ShowAdvanced
             // 
@@ -219,6 +264,38 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
+            // 
+            // PauseDuration05Menu
+            // 
+            this.PauseDuration05Menu.Image = global::Duplicati.GUI.Properties.Resources.Clock05;
+            this.PauseDuration05Menu.Name = "PauseDuration05Menu";
+            resources.ApplyResources(this.PauseDuration05Menu, "PauseDuration05Menu");
+            this.PauseDuration05Menu.Tag = "5m";
+            this.PauseDuration05Menu.Click += new System.EventHandler(this.PauseDurationMenu_Click);
+            // 
+            // PauseDuration15Menu
+            // 
+            this.PauseDuration15Menu.Image = global::Duplicati.GUI.Properties.Resources.Clock15;
+            this.PauseDuration15Menu.Name = "PauseDuration15Menu";
+            resources.ApplyResources(this.PauseDuration15Menu, "PauseDuration15Menu");
+            this.PauseDuration15Menu.Tag = "15m";
+            this.PauseDuration15Menu.Click += new System.EventHandler(this.PauseDurationMenu_Click);
+            // 
+            // PauseDuration30Menu
+            // 
+            this.PauseDuration30Menu.Image = global::Duplicati.GUI.Properties.Resources.Clock30;
+            this.PauseDuration30Menu.Name = "PauseDuration30Menu";
+            resources.ApplyResources(this.PauseDuration30Menu, "PauseDuration30Menu");
+            this.PauseDuration30Menu.Tag = "30m";
+            this.PauseDuration30Menu.Click += new System.EventHandler(this.PauseDurationMenu_Click);
+            // 
+            // PauseDuration60Menu
+            // 
+            this.PauseDuration60Menu.Image = global::Duplicati.GUI.Properties.Resources.Clock60;
+            this.PauseDuration60Menu.Name = "PauseDuration60Menu";
+            resources.ApplyResources(this.PauseDuration60Menu, "PauseDuration60Menu");
+            this.PauseDuration60Menu.Tag = "1h";
+            this.PauseDuration60Menu.Click += new System.EventHandler(this.PauseDurationMenu_Click);
             // 
             // ServiceStatus
             // 
@@ -239,6 +316,7 @@ namespace Duplicati.GUI
             this.simplePanel.PerformLayout();
             this.contextMenuStrip.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).EndInit();
+            this.backupTasks.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -267,5 +345,13 @@ namespace Duplicati.GUI
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem viewFilesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem viewLogToolStripMenuItem;
+        private System.Windows.Forms.ContextMenuStrip backupTasks;
+        private System.Windows.Forms.ToolStripMenuItem pauseBackupToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem stopBackupToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem pausePeriodMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem PauseDuration05Menu;
+        private System.Windows.Forms.ToolStripMenuItem PauseDuration15Menu;
+        private System.Windows.Forms.ToolStripMenuItem PauseDuration30Menu;
+        private System.Windows.Forms.ToolStripMenuItem PauseDuration60Menu;
     }
 }
