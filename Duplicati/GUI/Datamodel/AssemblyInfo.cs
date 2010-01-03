@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2009, Kenneth Skovhede
+// Copyright (C) 2010, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -31,7 +31,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
+[assembly: AssemblyCopyright("LGPL, Copyright ï¿½ HexaD 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]		
 
