@@ -203,7 +203,7 @@ namespace Duplicati.GUI
 
                 //Waiting on the event, enables a wakeup call from termination
                 // never use waittime = 0
-                m_event.WaitOne(Math.Max(100, waittime), true);
+                m_event.WaitOne(Math.Max(100, waittime), false);
             }
         }
 

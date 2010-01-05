@@ -239,7 +239,7 @@ namespace Duplicati.GUI
 
                         //Sleep for brief periods, until signaled
                         while (!m_terminate && m_state != WorkerThread<Tx>.RunState.Run)
-                            m_event.WaitOne(1000 * 60 * 5);
+                            m_event.WaitOne(1000 * 60 * 5, false);
 
                         //If we were not terminated, we are now ready to run
                         if (!m_terminate)

@@ -221,7 +221,7 @@ namespace Duplicati.Library.SharpExpect
             begin = DateTime.Now;
             //If we can wait, do so, and try again, otherwise return null
             if (millisecondsTimeout == System.Threading.Timeout.Infinite || millisecondsTimeout > 0)
-                m_event.WaitOne(millisecondsTimeout, true);
+                m_event.WaitOne(millisecondsTimeout, false);
 
             //Adjust the remaining time
             if (millisecondsTimeout != System.Threading.Timeout.Infinite)
@@ -376,7 +376,7 @@ namespace Duplicati.Library.SharpExpect
             if (allowWait && maxWaitTime != 0 && tmp.IndexOfAny(new char[] { leadChar, trailChar }) < 0)
             {
                 DateTime begin = DateTime.Now;
-                m_event.WaitOne(maxWaitTime, true);
+                m_event.WaitOne(maxWaitTime, false);
                 if (maxWaitTime != System.Threading.Timeout.Infinite)
                 {
                     maxWaitTime -= (int)((DateTime.Now - begin).TotalMilliseconds);
