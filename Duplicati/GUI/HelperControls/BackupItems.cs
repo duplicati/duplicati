@@ -48,7 +48,7 @@ namespace Duplicati.GUI.HelperControls
         {
             m_schedule = schedule;
             WaitPanel.Visible = true;
-            statusLabel.Visible = false;
+            WaitPanel.Dock = DockStyle.None;
             listView.Visible = false;
 
             backgroundWorker.RunWorkerAsync(schedule);
@@ -81,12 +81,14 @@ namespace Duplicati.GUI.HelperControls
             if (e.Error != null || e.Cancelled || e.Result == null)
             {
                 Exception ex = e.Error;
-                if (e.Cancelled)
+                if (ex == null && e.Cancelled)
                     ex = new Exception(Strings.BackupItems.OperationCancelled);
-                else if (e.Result == null)
+                else if (ex == null && e.Result == null)
                     ex = new Exception(Strings.BackupItems.NoDataRecieved);
 
                 progressBar.Visible = false;
+                WaitPanel.Visible = true;
+                WaitPanel.Dock = DockStyle.Fill;
                 statusLabel.Text = string.Format(Strings.BackupItems.ErrorStatusDisplay, ex.Message);
                 if (LoadError != null)
                     LoadError(this, null);

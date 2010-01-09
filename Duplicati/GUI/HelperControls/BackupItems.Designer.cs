@@ -70,8 +70,8 @@ namespace Duplicati.GUI.HelperControls
             // WaitPanel
             // 
             resources.ApplyResources(this.WaitPanel, "WaitPanel");
-            this.WaitPanel.Controls.Add(this.progressBar);
             this.WaitPanel.Controls.Add(this.statusLabel);
+            this.WaitPanel.Controls.Add(this.progressBar);
             this.WaitPanel.Name = "WaitPanel";
             // 
             // imageList
