@@ -508,6 +508,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SelectBackup.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\WizardHandler.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WizardHandler.resx</DependentUpon>
+    </Compile>
     <Compile Include="Wizard pages\WizardSettingsWrapper.cs" />
     <Compile Include="WizardHandler.cs" />
     <Compile Include="WorkerThread.cs" />
@@ -950,6 +955,10 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>SelectBackup.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\WizardHandler.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>WizardHandler.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

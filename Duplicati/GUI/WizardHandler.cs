@@ -62,7 +62,6 @@ namespace Duplicati.GUI
         {
             Wizard_pages.WizardSettingsWrapper wrapper = new Duplicati.GUI.Wizard_pages.WizardSettingsWrapper(m_form.Settings);
 
-
             if (wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Add || wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Edit)
             {
                 Schedule schedule;
@@ -107,15 +106,98 @@ namespace Duplicati.GUI
             }
             else if (m_form.CurrentPage is Wizard_pages.RunNow.RunNowFinished)
             {
+                if (Program.LiveControl.State == LiveControls.LiveControlState.Paused)
+                {
+                    DialogResult res = MessageBox.Show(m_form.Dialog, Strings.WizardHandler.ResumeNowQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel);
+                    if (res == DialogResult.Cancel)
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
+                    else if (res == DialogResult.Yes)
+                        Program.LiveControl.Resume();
+                }
+
                 Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
                 if (wrapper.ForceFull)
                     Program.WorkThread.AddTask(new FullBackupTask(schedule));
                 else
                     Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));
+
             }
             else if (m_form.CurrentPage is Wizard_pages.Delete_backup.DeleteFinished)
             {
                 Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
+
+                if (Program.WorkThread.Active)
+                {
+                    try
+                    {
+                        //TODO: It's not safe to access the values like this, 
+                        //because the runner thread might interfere
+                        if (Program.WorkThread.CurrentTask.Schedule.ID == schedule.ID)
+                        {
+                            bool paused = Program.LiveControl.State == LiveControls.LiveControlState.Paused;
+                            Program.LiveControl.Pause();
+                            if (MessageBox.Show(m_form.Dialog, Strings.WizardHandler.StopRunningBackupQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
+                            {
+                                e.Cancel = true;
+                                if (!paused)
+                                    Program.LiveControl.Resume();
+                                return;
+                            }
+
+                            bool repaused = Program.LiveControl.State == LiveControls.LiveControlState.Paused;
+                            Program.LiveControl.Pause();
+                            if (Program.WorkThread.CurrentTask.Schedule.ID == schedule.ID)
+                                Program.Runner.Terminate();
+
+                            Cursor prevCursor = m_form.Dialog.Cursor;
+
+                            try
+                            {
+                                m_form.Dialog.Cursor = Cursors.WaitCursor;
+                                for (int i = 0; i < 10; i++)
+                                    if (Program.WorkThread.Active)
+                                    {
+                                        IDuplicityTask t = Program.WorkThread.CurrentTask;
+                                        if (t != null && t.Schedule.ID == schedule.ID)
+                                            System.Threading.Thread.Sleep(1000);
+                                        else
+                                            break;
+                                    }
+                                    else
+                                        break;
+                            }
+                            finally
+                            {
+                                try { m_form.Dialog.Cursor = prevCursor; }
+                                catch { }
+                            }
+
+                            if (Program.WorkThread.Active)
+                            {
+                                IDuplicityTask t = Program.WorkThread.CurrentTask;
+                                if (t == null && t.Schedule.ID == schedule.ID)
+                                {
+                                    MessageBox.Show(m_form.Dialog, Strings.WizardHandler.UnableToStopBackupError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    e.Cancel = true;
+                                    return;
+                                }
+                            }
+
+                            if (!paused || !repaused)
+                                Program.LiveControl.Resume();
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        MessageBox.Show(m_form.Dialog, string.Format(Strings.WizardHandler.StopBackupError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        e.Cancel = true;
+                        return;
+                    }
+                }
+
                 List<IDataClass> items = new List<IDataClass>();
                 IList<Duplicati.Datamodel.Log> tmp = schedule.Task.Logs;
                 items.AddRange(Program.DataConnection.FindObjectRelations(schedule));
