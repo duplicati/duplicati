@@ -50,6 +50,7 @@ namespace Duplicati.GUI
             Program.LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
             Program.WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
+            Program.SingleInstance.SecondInstanceDetected += new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected);
         }
 
         void LiveControl_StateChanged(object sender, EventArgs e)
@@ -97,7 +98,7 @@ namespace Duplicati.GUI
             if (count == 0)
                 ShowWizard();
             else if (InitialArguments != null)
-                Program.HandleCommandlineArguments(InitialArguments);
+                HandleCommandlineArguments(InitialArguments);
 
             BeginInvoke(new EmptyDelegate(HideWindow));
         }
@@ -247,7 +248,57 @@ namespace Duplicati.GUI
             Program.LiveControl.StateChanged -= new EventHandler(LiveControl_StateChanged);
             Program.WorkThread.StartingWork -= new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
+            Program.SingleInstance.SecondInstanceDetected -= new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected);
         }
 
+        private void SingleInstance_SecondInstanceDetected(string[] commandlineargs)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected), new object[] { commandlineargs });
+                return;
+            }
+
+            if (HandleCommandlineArguments(commandlineargs))
+                return;
+
+            //TODO: This actually blocks the app thread, and thus may pile up remote invocations
+            ShowWizard();
+        }
+
+        private bool HandleCommandlineArguments(string[] _args)
+        {
+            List<string> args = new List<string>(_args);
+            Dictionary<string, string> options = CommandLine.CommandLineParser.ExtractOptions(args);
+            if (args.Count == 2 && args[0].ToLower().Trim() == "run-backup")
+            {
+                Datamodel.Schedule[] schedules = Program.DataConnection.GetObjects<Datamodel.Schedule>("Name LIKE ?", args[1].Trim());
+                if (schedules == null || schedules.Length == 0)
+                {
+                    MessageBox.Show(string.Format(Strings.Program.NamedBackupNotFound, args[1]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+                else if (schedules.Length > 1)
+                {
+                    MessageBox.Show(string.Format(Strings.Program.MultipleNamedBackupsFound, args[1], schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+
+                if (options.ContainsKey("full"))
+                    Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
+                else
+                    Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
+
+                return true;
+            }
+
+            if (args.Count == 1 && args[0] == "show-status")
+            {
+                ShowStatus();
+                return true;
+            }
+
+            return false;
+        }
     }
 }

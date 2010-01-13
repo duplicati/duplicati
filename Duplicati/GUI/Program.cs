@@ -69,6 +69,11 @@ namespace Duplicati.GUI
         public static MainForm DisplayHelper;
 
         /// <summary>
+        /// The single instance keeper
+        /// </summary>
+        public static SingleInstance SingleInstance;
+
+        /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
@@ -76,7 +81,6 @@ namespace Duplicati.GUI
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            SingleInstance singleInstance = null;
 
             try
             {
@@ -84,10 +88,10 @@ namespace Duplicati.GUI
                 {
 #if DEBUG
                     //debug mode uses a lock file located in the app folder
-                    singleInstance = new SingleInstance(Application.ProductName, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+                    SingleInstance = new SingleInstance(Application.ProductName, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 #else
                     //release mode uses the systems "Application Data" folder
-                    singleInstance = new SingleInstance(Application.ProductName);
+                    SingleInstance = new SingleInstance(Application.ProductName);
 #endif
                 }
                 catch (Exception ex)
@@ -96,14 +100,12 @@ namespace Duplicati.GUI
                     return;
                 }
 
-                if (!singleInstance.IsFirstInstance)
+                if (!SingleInstance.IsFirstInstance)
                 {
                     //Linux shows this output
                     Console.WriteLine(Strings.Program.AnotherInstanceDetected);
                     return;
                 }
-
-                singleInstance.SecondInstanceDetected += new SingleInstance.SecondInstanceDelegate(singleInstance_SecondInstanceDetected);
 
 #if DEBUG
                 DatabasePath = System.IO.Path.Combine(Application.StartupPath, "Duplicati.sqlite");
@@ -205,8 +207,8 @@ namespace Duplicati.GUI
                 Scheduler.Terminate(true);
             if (WorkThread != null)
                 WorkThread.Terminate(true);
-            if (singleInstance != null)
-                singleInstance.Dispose();
+            if (SingleInstance != null)
+                SingleInstance.Dispose();
         }
 
         /// <summary>
@@ -258,50 +260,6 @@ namespace Duplicati.GUI
             }
         }
 
-        public static bool HandleCommandlineArguments(string[] _args)
-        {
-            List<string> args = new List<string>(_args);
-            Dictionary<string, string> options = CommandLine.CommandLineParser.ExtractOptions(args);
-            if (args.Count == 2 && args[0].ToLower().Trim() == "run-backup")
-            {
-                Schedule[] schedules = Program.DataConnection.GetObjects<Schedule>("Name LIKE ?", args[1].Trim());
-                if (schedules == null || schedules.Length == 0)
-                {
-                    MessageBox.Show(string.Format(Strings.Program.NamedBackupNotFound, args[1]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return false;
-                }
-                else if (schedules.Length > 1)
-                {
-                    MessageBox.Show(string.Format(Strings.Program.MultipleNamedBackupsFound, args[1], schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return false;
-                }
-
-                if (options.ContainsKey("full"))
-                    Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
-                else
-                    Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
-                
-                return true;
-            }
-
-            if (args.Count == 1 && args[0] == "show-status")
-            {
-                DisplayHelper.ShowStatus();
-                return true;
-            }
-
-
-            return false;
-        }
-
-        private static void singleInstance_SecondInstanceDetected(string[] commandlineargs)
-        {
-            if (HandleCommandlineArguments(commandlineargs))
-                return;
-
-            //TODO: This actually blocks the app thread, and thus may pile up remote invocations
-            DisplayHelper.ShowWizard();
-        }
 
         private static void DataConnection_AfterDataConnection(object sender, DataActions action)
         {
