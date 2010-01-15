@@ -45,7 +45,40 @@ namespace Duplicati.GUI.Wizard_pages
 
         void FirstLaunch_PageLeave(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
         {
-            if (!CreateNew.Checked && !Restore.Checked)
+            WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
+
+            if (CreateNew.Checked)
+            {
+                //If there are no existing backups, the mainpage just selects add, and sets the defaults
+                args.NextPage = new MainPage();
+                wrapper.DataConnection = Program.DataConnection;
+                wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Add;
+            }
+            else if (RestoreSetup.Checked)
+            {
+                wrapper.SetupDefaults();
+                args.NextPage = new Add_backup.PasswordSettings();
+                wrapper.DataConnection = Program.DataConnection;
+                wrapper.PrimayAction = WizardSettingsWrapper.MainAction.RestoreSetup;
+            }
+            else if (RestoreFiles.Checked)
+            {
+                wrapper.SetupDefaults();
+                wrapper.DataConnection = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+
+                Datamodel.Schedule s = new Datamodel.Schedule();
+                Datamodel.Task t = new Datamodel.Task();
+
+                wrapper.DataConnection.Add(s);
+                wrapper.DataConnection.Add(t);
+
+                s.Task = t;
+
+                wrapper.ScheduleID = s.ID;
+                args.NextPage = new Add_backup.PasswordSettings();
+                wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Restore;
+            }
+            else
             {
                 MessageBox.Show(this, Strings.FirstLaunch.NoActionSelection, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
@@ -53,27 +86,12 @@ namespace Duplicati.GUI.Wizard_pages
                 return;
             }
 
-            WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
-
-            if (CreateNew.Checked)
-            {
-                //If there are no existing backups, the mainpage just selects add, and sets the defaults
-                args.NextPage = new MainPage();
-                wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Add;
-            }
-            else
-            {
-                wrapper.SetupDefaults();
-                args.NextPage = new Add_backup.PasswordSettings();
-                wrapper.PrimayAction = WizardSettingsWrapper.MainAction.RestoreSetup;
-            }
-
         }
 
         void FirstLaunch_PageDisplay(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
         {
             m_owner.NextButton.Enabled =
-                CreateNew.Checked | Restore.Checked;
+                CreateNew.Checked | RestoreSetup.Checked | RestoreFiles.Checked;
         }
 
         private void CreateNew_CheckedChanged(object sender, EventArgs e)
@@ -81,7 +99,12 @@ namespace Duplicati.GUI.Wizard_pages
             FirstLaunch_PageDisplay(sender, null);
         }
 
-        private void Restore_CheckedChanged(object sender, EventArgs e)
+        private void RestoreSetup_CheckedChanged(object sender, EventArgs e)
+        {
+            FirstLaunch_PageDisplay(sender, null);
+        }
+
+        private void RestoreFiles_CheckedChanged(object sender, EventArgs e)
         {
             FirstLaunch_PageDisplay(sender, null);
         }

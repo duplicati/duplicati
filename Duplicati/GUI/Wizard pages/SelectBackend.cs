@@ -127,7 +127,7 @@ namespace Duplicati.GUI.Wizard_pages
 
             Item_CheckChanged(null, null);
 
-            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
                 Question.Text = Strings.SelectBackend.RestoreSetupTitle;
 
         }

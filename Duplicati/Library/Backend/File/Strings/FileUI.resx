@@ -145,4 +145,7 @@ Error message: {0}</value>
   <data name="PageTitle" xml:space="preserve">
     <value>Backup storage options</value>
   </data>
+  <data name="FolderEmptyError" xml:space="preserve">
+    <value>The selected folder is empty</value>
+  </data>
 </root>

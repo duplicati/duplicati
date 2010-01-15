@@ -50,9 +50,19 @@ namespace Duplicati.GUI.Wizard_pages
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
             if (m_wrapper.ScheduleID > 0)
-                BackupList.SelectedBackup = Program.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
+                BackupList.SelectedBackup = m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
 
-            topLabel.Text = this.Title;
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
+            {
+                topLabel.Visible = false;
+                RestoreOptions.Visible = true;
+            }
+            else
+            {
+                topLabel.Visible = true;
+                RestoreOptions.Visible = false;
+                topLabel.Text = this.Title;
+            }
         }
 
         void SelectBackup_PageLeave(object sender, PageChangedArgs args)
@@ -60,14 +70,32 @@ namespace Duplicati.GUI.Wizard_pages
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            if (BackupList.SelectedBackup == null)
+            if ((RestoreExisting.Checked && BackupList.SelectedBackup == null) || (!RestoreExisting.Checked && !DirectRestore.Checked))
             {
                 MessageBox.Show(this, Strings.SelectBackup.NoActionSelected, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
 
-            m_wrapper.ReflectSchedule(BackupList.SelectedBackup);
+            if (DirectRestore.Checked)
+            {
+                m_wrapper.SetupDefaults();
+                m_wrapper.DataConnection = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+
+                Schedule s = new Schedule();
+                Task t = new Task();
+
+                m_wrapper.DataConnection.Add(s);
+                m_wrapper.DataConnection.Add(t);
+
+                s.Task = t;
+
+                m_wrapper.ScheduleID = s.ID;
+                m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Restore;
+            }
+            else
+                m_wrapper.ReflectSchedule(BackupList.SelectedBackup);
+
             switch (m_wrapper.PrimayAction)
             {
                 case WizardSettingsWrapper.MainAction.Edit:
@@ -77,7 +105,10 @@ namespace Duplicati.GUI.Wizard_pages
                     args.NextPage = new Delete_backup.DeleteFinished();
                     break;
                 case WizardSettingsWrapper.MainAction.Restore:
-                    args.NextPage = new Restore.SelectBackup();
+                    if (DirectRestore.Checked)
+                        args.NextPage = new Add_backup.PasswordSettings();
+                    else
+                        args.NextPage = new Restore.SelectBackup();
                     break;
                 case WizardSettingsWrapper.MainAction.RunNow:
                     args.NextPage = new RunNow.RunNowFinished();
@@ -134,6 +165,17 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         private void BackupList_TreeDoubleClicked(object sender, EventArgs e)
+        {
+            RestoreExisting.Checked = true;
+            m_owner.NextButton.PerformClick();
+        }
+
+        private void BackupList_SelectedBackupChanged(object sender, EventArgs e)
+        {
+            RestoreExisting.Checked = true;
+        }
+
+        private void DirectRestore_DoubleClick(object sender, EventArgs e)
         {
             m_owner.NextButton.PerformClick();
         }

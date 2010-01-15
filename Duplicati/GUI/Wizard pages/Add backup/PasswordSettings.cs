@@ -63,7 +63,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 return;
             }
 
-            if (!m_warnedNoPassword && !EnablePassword.Checked && m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.RestoreSetup)
+            if (!m_warnedNoPassword && !EnablePassword.Checked && m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.RestoreSetup && m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.Restore)
             {
                 if (MessageBox.Show(this, Strings.PasswordSettings.NoPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
@@ -119,7 +119,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!m_valuesAutoLoaded)
             {
-                EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup);
+                EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore);
                 Password.Text = m_wrapper.BackupPassword;
                 UseGPGEncryption.Checked = m_wrapper.GPGEncryption;
                 m_settingsChanged = false;
@@ -137,7 +137,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (m_settings.ContainsKey("Password:SettingsChanged"))
                 m_settingsChanged = (bool)m_settings["Password:SettingsChanged"];
 
-            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
             {
                 PasswordHelptext.Visible =
                 PasswordGeneratorSettings.Visible = 
@@ -170,7 +170,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             get
             {
-                if (m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.RestoreSetup)
+                if (m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.RestoreSetup && m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.Restore)
                     return base.HelpText;
                 else
                     return Strings.PasswordSettings.PageDescriptionRestore;

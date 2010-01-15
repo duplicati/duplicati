@@ -50,11 +50,18 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
             if (!RunInBackground.Checked)
             {
-                m_waitdlg = new Duplicati.GUI.HelperControls.WaitForOperation();
-                m_waitdlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestore.RestoreWaitDialogTitle);
-                m_waitdlg.ShowDialog();
-                m_owner.CancelButton.PerformClick();
-                m_waitdlg = null;
+                try
+                {
+                    m_waitdlg = new Duplicati.GUI.HelperControls.WaitForOperation();
+                    m_waitdlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestore.RestoreWaitDialogTitle);
+                    m_waitdlg.ShowDialog();
+                    m_owner.CancelButton.PerformClick();
+                    m_waitdlg = null;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, string.Format(Strings.FinishedRestore.RestoreFailedError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
                 args.Cancel = true;
                 return;
             }
@@ -72,12 +79,19 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             );
 
             args.TreatAsLast = true;
+
+            Schedule schedule = m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
+            if (!schedule.ExistsInDb)
+            {
+                RunInBackground.Checked = false;
+                RunInBackground.Visible = false;
+            }
         }
 
         private void Restore(object sender, DoWorkEventArgs args)
         {
             //TODO: add a Try-Catch here
-            Schedule s = Program.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
+            Schedule s = m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
 
             RestoreTask task = new RestoreTask(s, m_wrapper.RestorePath, m_wrapper.RestoreFilter, m_wrapper.RestoreTime);
             Dictionary<string, string> options = new Dictionary<string, string>();

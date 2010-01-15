@@ -249,6 +249,15 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
+        /// Gets or sets the DataConnection used for temp operations
+        /// </summary>
+        public System.Data.LightDatamodel.IDataFetcherWithRelations DataConnection
+        {
+            get { return GetItem<System.Data.LightDatamodel.IDataFetcherWithRelations>("DataConnection", null); }
+            set { SetItem("DataConnection", value); }
+        }
+
+        /// <summary>
         /// The name assigned to the backup
         /// </summary>
         public string ScheduleName

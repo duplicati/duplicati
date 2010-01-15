@@ -134,7 +134,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 if (wrapper.RestoreFileList == null)
                     wrapper.RestoreFileList = new List<string>();
 
-                backupFileList.LoadFileList(Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID), wrapper.RestoreTime, wrapper.RestoreFileList);
+                backupFileList.LoadFileList(wrapper.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID), wrapper.RestoreTime, wrapper.RestoreFileList);
             }
         }
     }

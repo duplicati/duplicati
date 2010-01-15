@@ -110,13 +110,18 @@ namespace Duplicati.GUI
 
         private void TrayIcon_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            ShowStatus();
+            TrayIcon_MouseClick(sender, e);
         }
 
         private void TrayIcon_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
-                ShowStatus();
+            {
+                if (Program.DataConnection.GetObjects<Datamodel.Schedule>().Length == 0)
+                    ShowWizard();
+                else
+                    ShowStatus();
+            }
         }
 
         private void DelayDurationMenu_Click(object sender, EventArgs e)

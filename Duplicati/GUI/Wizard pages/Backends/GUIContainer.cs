@@ -57,7 +57,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends
                 return;
             }
 
-            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
                 args.NextPage = new Add_backup.GeneratedFilenameOptions();
             else
                 args.NextPage = new Add_backup.AdvancedOptions();

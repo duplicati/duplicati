@@ -49,8 +49,16 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_wrapper.FilePrefix = FilePrefixEnabled.Checked ? "" : FilePrefix.Text;
             m_wrapper.ShortFilenames = UseShortFilenames.Checked;
 
-            if (new WizardSettingsWrapper(m_settings).PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+            WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
+
+            if (wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
                 args.NextPage = new RestoreSetup.FinishedRestoreSetup();
+            else if (wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
+            {
+                Datamodel.Schedule s = wrapper.DataConnection.GetObjectById<Datamodel.Schedule>(wrapper.ScheduleID);
+                wrapper.UpdateSchedule(s);
+                args.NextPage = new Restore.SelectBackup();
+            }
             else if ((bool)m_settings["Advanced:Overrides"])
                 args.NextPage = new Wizard_pages.Add_backup.SettingOverrides();
             else

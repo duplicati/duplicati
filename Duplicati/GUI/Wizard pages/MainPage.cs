@@ -74,6 +74,8 @@ namespace Duplicati.GUI.Wizard_pages
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
+            m_wrapper.DataConnection = Program.DataConnection;
+
             if (CreateNew.Checked)
                 m_wrapper.PrimayAction = WizardSettingsWrapper.MainAction.Add;
             else if (Edit.Checked)

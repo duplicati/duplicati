@@ -117,37 +117,26 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="BackupList.Location" type="System.Drawing.Point, System.Drawing">
-    <value>32, 40</value>
-  </data>
-  <data name="BackupList.Size" type="System.Drawing.Size, System.Drawing">
-    <value>432, 168</value>
-  </data>
   <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="BackupList.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;BackupList.Name" xml:space="preserve">
-    <value>BackupList</value>
-  </data>
-  <data name="&gt;&gt;BackupList.Type" xml:space="preserve">
-    <value>Duplicati.GUI.HelperControls.BackupTreeView, Duplicati, Version=1.0.0.154, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
-  </data>
-  <data name="&gt;&gt;BackupList.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;BackupList.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
   <data name="topLabel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="topLabel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
+  <data name="topLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="topLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>32, 24</value>
+    <value>0, 0</value>
+  </data>
+  <data name="topLabel.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 4</value>
   </data>
   <data name="topLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>121, 13</value>
+    <value>121, 17</value>
   </data>
   <data name="topLabel.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -162,9 +151,162 @@
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;topLabel.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>panel1</value>
   </data>
   <data name="&gt;&gt;topLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="BackupList.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="BackupList.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 17</value>
+  </data>
+  <data name="BackupList.Size" type="System.Drawing.Size, System.Drawing">
+    <value>432, 127</value>
+  </data>
+  <data name="BackupList.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;BackupList.Name" xml:space="preserve">
+    <value>BackupList</value>
+  </data>
+  <data name="&gt;&gt;BackupList.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.BackupTreeView, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;BackupList.Parent" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;BackupList.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="panel1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="panel1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 56</value>
+  </data>
+  <data name="panel1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>432, 144</value>
+  </data>
+  <data name="panel1.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;panel1.Name" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;panel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;panel1.Parent" xml:space="preserve">
+    <value>ExpanderPanel</value>
+  </data>
+  <data name="&gt;&gt;panel1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="DirectRestore.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="DirectRestore.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="DirectRestore.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="DirectRestore.Size" type="System.Drawing.Size, System.Drawing">
+    <value>119, 17</value>
+  </data>
+  <data name="DirectRestore.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="DirectRestore.Text" xml:space="preserve">
+    <value>Restore files directly</value>
+  </data>
+  <data name="&gt;&gt;DirectRestore.Name" xml:space="preserve">
+    <value>DirectRestore</value>
+  </data>
+  <data name="&gt;&gt;DirectRestore.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;DirectRestore.Parent" xml:space="preserve">
+    <value>RestoreOptions</value>
+  </data>
+  <data name="&gt;&gt;DirectRestore.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="RestoreExisting.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="RestoreExisting.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="RestoreExisting.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 32</value>
+  </data>
+  <data name="RestoreExisting.Size" type="System.Drawing.Size, System.Drawing">
+    <value>177, 17</value>
+  </data>
+  <data name="RestoreExisting.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="RestoreExisting.Text" xml:space="preserve">
+    <value>Restore from an existing backup</value>
+  </data>
+  <data name="&gt;&gt;RestoreExisting.Name" xml:space="preserve">
+    <value>RestoreExisting</value>
+  </data>
+  <data name="&gt;&gt;RestoreExisting.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RestoreExisting.Parent" xml:space="preserve">
+    <value>RestoreOptions</value>
+  </data>
+  <data name="&gt;&gt;RestoreExisting.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="RestoreOptions.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
+  <data name="RestoreOptions.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="RestoreOptions.Size" type="System.Drawing.Size, System.Drawing">
+    <value>432, 56</value>
+  </data>
+  <data name="RestoreOptions.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;RestoreOptions.Name" xml:space="preserve">
+    <value>RestoreOptions</value>
+  </data>
+  <data name="&gt;&gt;RestoreOptions.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RestoreOptions.Parent" xml:space="preserve">
+    <value>ExpanderPanel</value>
+  </data>
+  <data name="&gt;&gt;RestoreOptions.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="ExpanderPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 8</value>
+  </data>
+  <data name="ExpanderPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>432, 200</value>
+  </data>
+  <data name="ExpanderPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;ExpanderPanel.Name" xml:space="preserve">
+    <value>ExpanderPanel</value>
+  </data>
+  <data name="&gt;&gt;ExpanderPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ExpanderPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ExpanderPanel.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">

@@ -119,12 +119,24 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                if (!m_hasCheckedEmpty && System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
-                    if (MessageBox.Show(this, Strings.FileUI.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
-                        return false;
+                //The UI cannot determine if we are restoring or creating a backup, 
+                //so the check below is not active
+
+                /*if (m_options.ContainsKey("PrimaryAction") && m_options["PrimaryAction"] == "Restore")
+                {
+                    if (System.IO.Directory.GetFileSystemEntries(targetpath).Length == 0)
+                        if (MessageBox.Show(this, Strings.FileUI.FolderEmptyError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                            return false;
+                }
+                else
+                {
+                    if (!m_hasCheckedEmpty && System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
+                        if (MessageBox.Show(this, Strings.FileUI.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                            return false;
+                }
                 
                 m_hasCheckedEmpty = true;
-                m_options[CHECKED_EMPTY] = "true";
+                m_options[CHECKED_EMPTY] = "true";*/
             }
             catch (Exception ex)
             {

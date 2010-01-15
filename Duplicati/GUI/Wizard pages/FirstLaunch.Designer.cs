@@ -30,10 +30,12 @@ namespace Duplicati.GUI.Wizard_pages
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FirstLaunch));
             this.CreateNew = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
-            this.Restore = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.RestoreSetup = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
+            this.SetupNewBackupHelp = new System.Windows.Forms.Label();
+            this.RestoreSettingsHelp = new System.Windows.Forms.Label();
+            this.RestoreFilesHelp = new System.Windows.Forms.Label();
+            this.RestoreFiles = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.SuspendLayout();
             // 
             // CreateNew
@@ -45,36 +47,52 @@ namespace Duplicati.GUI.Wizard_pages
             this.CreateNew.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.CreateNew.CheckedChanged += new System.EventHandler(this.CreateNew_CheckedChanged);
             // 
-            // Restore
+            // RestoreSetup
             // 
-            resources.ApplyResources(this.Restore, "Restore");
-            this.Restore.Name = "Restore";
-            this.Restore.TabStop = true;
-            this.Restore.UseVisualStyleBackColor = true;
-            this.Restore.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
-            this.Restore.CheckedChanged += new System.EventHandler(this.Restore_CheckedChanged);
+            resources.ApplyResources(this.RestoreSetup, "RestoreSetup");
+            this.RestoreSetup.Name = "RestoreSetup";
+            this.RestoreSetup.TabStop = true;
+            this.RestoreSetup.UseVisualStyleBackColor = true;
+            this.RestoreSetup.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
+            this.RestoreSetup.CheckedChanged += new System.EventHandler(this.RestoreSetup_CheckedChanged);
             // 
             // label1
             // 
             resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
             // 
-            // label2
+            // SetupNewBackupHelp
             // 
-            resources.ApplyResources(this.label2, "label2");
-            this.label2.Name = "label2";
+            resources.ApplyResources(this.SetupNewBackupHelp, "SetupNewBackupHelp");
+            this.SetupNewBackupHelp.Name = "SetupNewBackupHelp";
             // 
-            // label3
+            // RestoreSettingsHelp
             // 
-            resources.ApplyResources(this.label3, "label3");
-            this.label3.Name = "label3";
+            resources.ApplyResources(this.RestoreSettingsHelp, "RestoreSettingsHelp");
+            this.RestoreSettingsHelp.Name = "RestoreSettingsHelp";
+            // 
+            // RestoreFilesHelp
+            // 
+            resources.ApplyResources(this.RestoreFilesHelp, "RestoreFilesHelp");
+            this.RestoreFilesHelp.Name = "RestoreFilesHelp";
+            // 
+            // RestoreFiles
+            // 
+            resources.ApplyResources(this.RestoreFiles, "RestoreFiles");
+            this.RestoreFiles.Name = "RestoreFiles";
+            this.RestoreFiles.TabStop = true;
+            this.RestoreFiles.UseVisualStyleBackColor = true;
+            this.RestoreFiles.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
+            this.RestoreFiles.CheckedChanged += new System.EventHandler(this.RestoreFiles_CheckedChanged);
             // 
             // FirstLaunch
             // 
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.label2);
+            this.Controls.Add(this.RestoreFilesHelp);
+            this.Controls.Add(this.RestoreFiles);
+            this.Controls.Add(this.RestoreSettingsHelp);
+            this.Controls.Add(this.SetupNewBackupHelp);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.Restore);
+            this.Controls.Add(this.RestoreSetup);
             this.Controls.Add(this.CreateNew);
             this.Name = "FirstLaunch";
             resources.ApplyResources(this, "$this");
@@ -86,10 +104,12 @@ namespace Duplicati.GUI.Wizard_pages
         #endregion
 
         private System.Windows.Forms.Wizard.DoubleClickRadioButton CreateNew;
-        private System.Windows.Forms.Wizard.DoubleClickRadioButton Restore;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton RestoreSetup;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label SetupNewBackupHelp;
+        private System.Windows.Forms.Label RestoreSettingsHelp;
+        private System.Windows.Forms.Label RestoreFilesHelp;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton RestoreFiles;
 
     }
 }

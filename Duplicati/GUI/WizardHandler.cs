@@ -39,7 +39,6 @@ namespace Duplicati.GUI
 
         public WizardHandler()
         {
-
             m_form = new Dialog();
             m_form.Title = "Duplicati Setup Wizard";
 
@@ -94,7 +93,8 @@ namespace Duplicati.GUI
             }
             else if (m_form.CurrentPage is Wizard_pages.Restore.FinishedRestore)
             {
-                Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
+                Schedule schedule = wrapper.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
+
                 DateTime when = wrapper.RestoreTime;
                 string target = wrapper.RestorePath;
                 string restoreFilter = wrapper.RestoreFilter;
@@ -118,7 +118,7 @@ namespace Duplicati.GUI
                         Program.LiveControl.Resume();
                 }
 
-                Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
+                Schedule schedule = wrapper.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
                 if (wrapper.ForceFull)
                     Program.WorkThread.AddTask(new FullBackupTask(schedule));
                 else
@@ -127,7 +127,7 @@ namespace Duplicati.GUI
             }
             else if (m_form.CurrentPage is Wizard_pages.Delete_backup.DeleteFinished)
             {
-                Schedule schedule = Program.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
+                Schedule schedule = wrapper.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
 
                 if (Program.WorkThread.Active)
                 {

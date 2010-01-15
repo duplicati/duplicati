@@ -29,32 +29,80 @@ namespace Duplicati.GUI.Wizard_pages
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SelectBackup));
-            this.BackupList = new Duplicati.GUI.HelperControls.BackupTreeView();
             this.topLabel = new System.Windows.Forms.Label();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.ExpanderPanel = new System.Windows.Forms.Panel();
+            this.RestoreOptions = new System.Windows.Forms.Panel();
+            this.RestoreExisting = new System.Windows.Forms.RadioButton();
+            this.DirectRestore = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.BackupList = new Duplicati.GUI.HelperControls.BackupTreeView();
+            this.panel1.SuspendLayout();
+            this.ExpanderPanel.SuspendLayout();
+            this.RestoreOptions.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // BackupList
-            // 
-            resources.ApplyResources(this.BackupList, "BackupList");
-            this.BackupList.Name = "BackupList";
-            this.BackupList.SelectedBackup = null;
-            this.BackupList.SelectedFolder = null;
-            this.BackupList.TreeDoubleClicked += new System.EventHandler(this.BackupList_TreeDoubleClicked);
             // 
             // topLabel
             // 
             resources.ApplyResources(this.topLabel, "topLabel");
             this.topLabel.Name = "topLabel";
             // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.BackupList);
+            this.panel1.Controls.Add(this.topLabel);
+            resources.ApplyResources(this.panel1, "panel1");
+            this.panel1.Name = "panel1";
+            // 
+            // ExpanderPanel
+            // 
+            this.ExpanderPanel.Controls.Add(this.panel1);
+            this.ExpanderPanel.Controls.Add(this.RestoreOptions);
+            resources.ApplyResources(this.ExpanderPanel, "ExpanderPanel");
+            this.ExpanderPanel.Name = "ExpanderPanel";
+            // 
+            // RestoreOptions
+            // 
+            this.RestoreOptions.Controls.Add(this.DirectRestore);
+            this.RestoreOptions.Controls.Add(this.RestoreExisting);
+            resources.ApplyResources(this.RestoreOptions, "RestoreOptions");
+            this.RestoreOptions.Name = "RestoreOptions";
+            // 
+            // RestoreExisting
+            // 
+            resources.ApplyResources(this.RestoreExisting, "RestoreExisting");
+            this.RestoreExisting.Name = "RestoreExisting";
+            this.RestoreExisting.TabStop = true;
+            this.RestoreExisting.UseVisualStyleBackColor = true;
+            // 
+            // DirectRestore
+            // 
+            resources.ApplyResources(this.DirectRestore, "DirectRestore");
+            this.DirectRestore.Name = "DirectRestore";
+            this.DirectRestore.TabStop = true;
+            this.DirectRestore.UseVisualStyleBackColor = true;
+            this.DirectRestore.DoubleClick += new System.EventHandler(this.DirectRestore_DoubleClick);
+            // 
+            // BackupList
+            // 
+            resources.ApplyResources(this.BackupList, "BackupList");
+            this.BackupList.Name = "BackupList";
+            this.BackupList.SelectedBackup = null;
+            this.BackupList.SelectedFolder = "";
+            this.BackupList.SelectedBackupChanged += new System.EventHandler(this.BackupList_SelectedBackupChanged);
+            this.BackupList.TreeDoubleClicked += new System.EventHandler(this.BackupList_TreeDoubleClicked);
+            // 
             // SelectBackup
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.topLabel);
-            this.Controls.Add(this.BackupList);
+            this.Controls.Add(this.ExpanderPanel);
             this.Name = "SelectBackup";
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
+            this.ExpanderPanel.ResumeLayout(false);
+            this.RestoreOptions.ResumeLayout(false);
+            this.RestoreOptions.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -62,5 +110,10 @@ namespace Duplicati.GUI.Wizard_pages
 
         private Duplicati.GUI.HelperControls.BackupTreeView BackupList;
         private System.Windows.Forms.Label topLabel;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Panel ExpanderPanel;
+        private System.Windows.Forms.Panel RestoreOptions;
+        private System.Windows.Forms.RadioButton RestoreExisting;
+        private System.Windows.Forms.Wizard.DoubleClickRadioButton DirectRestore;
     }
 }

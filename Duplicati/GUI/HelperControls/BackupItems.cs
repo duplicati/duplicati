@@ -49,6 +49,8 @@ namespace Duplicati.GUI.HelperControls
             m_schedule = schedule;
             WaitPanel.Visible = true;
             WaitPanel.Dock = DockStyle.None;
+            statusLabel.TextAlign = ContentAlignment.MiddleCenter;
+            progressBar.Visible = true;
             listView.Visible = false;
 
             backgroundWorker.RunWorkerAsync(schedule);
@@ -90,6 +92,10 @@ namespace Duplicati.GUI.HelperControls
                 WaitPanel.Visible = true;
                 WaitPanel.Dock = DockStyle.Fill;
                 statusLabel.Text = string.Format(Strings.BackupItems.ErrorStatusDisplay, ex.Message);
+                statusLabel.Visible = true;
+                statusLabel.TextAlign = ContentAlignment.TopLeft;
+                WaitPanel.Visible = true;
+
                 if (LoadError != null)
                     LoadError(this, null);
             }
@@ -127,6 +133,13 @@ namespace Duplicati.GUI.HelperControls
                     ListLoaded(this, null);
 
             }
+
+        }
+
+        private void listView_DoubleClick(object sender, EventArgs e)
+        {
+            if (listView.SelectedItems.Count == 1 && ItemDoubleClicked != null)
+                ItemDoubleClicked(sender, e);
 
         }
 

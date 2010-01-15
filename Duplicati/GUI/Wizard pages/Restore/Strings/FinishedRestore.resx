@@ -126,6 +126,9 @@
   <data name="PageTitle" xml:space="preserve">
     <value>Ready to restore files</value>
   </data>
+  <data name="RestoreFailedError" xml:space="preserve">
+    <value>The restore operation failed: {0}</value>
+  </data>
   <data name="RestoreWaitDialogTitle" xml:space="preserve">
     <value>Restoring files, please wait...</value>
   </data>
