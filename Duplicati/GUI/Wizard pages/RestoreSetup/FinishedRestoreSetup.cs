@@ -47,13 +47,22 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            HelperControls.WaitForOperation dlg = new Duplicati.GUI.HelperControls.WaitForOperation();
-            dlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestoreSetup.RestoreWaitDialogTitle);
-            if (dlg.ShowDialog() != DialogResult.OK)
+            try
             {
-                if (dlg.Error != null)
-                    MessageBox.Show(this, string.Format(Strings.FinishedRestoreSetup.RestoreFailedError, dlg.Error.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                HelperControls.WaitForOperation dlg = new Duplicati.GUI.HelperControls.WaitForOperation();
+                dlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestoreSetup.RestoreWaitDialogTitle);
+                if (dlg.ShowDialog() != DialogResult.OK)
+                {
+                    if (dlg.Error != null)
+                        throw dlg.Error;
 
+                    args.Cancel = true;
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, string.Format(Strings.FinishedRestoreSetup.RestoreFailedError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 args.Cancel = true;
                 return;
             }

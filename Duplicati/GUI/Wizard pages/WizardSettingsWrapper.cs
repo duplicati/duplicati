@@ -105,6 +105,7 @@ namespace Duplicati.GUI.Wizard_pages
         public void ReflectSchedule(Datamodel.Schedule schedule)
         {
             MainAction action = this.PrimayAction;
+            System.Data.LightDatamodel.IDataFetcherWithRelations connection = this.DataConnection;
             m_settings.Clear();
 
             this.ScheduleID = schedule.ID;
@@ -142,6 +143,7 @@ namespace Duplicati.GUI.Wizard_pages
                 this.Overrides[ov.Name] = ov.Value;
 
             this.PrimayAction = action;
+            this.DataConnection = connection;
         }
 
 
