@@ -28,7 +28,7 @@ namespace Duplicati.CommandLine.Decrypter
     {
         static void Main(string[] args)
         {
-            if (args.Length == 3)
+            if (args.Length != 3)
             {
                 Console.WriteLine(Strings.Program.Usage);
                 return;
