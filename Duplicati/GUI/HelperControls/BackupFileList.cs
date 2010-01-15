@@ -33,7 +33,6 @@ namespace Duplicati.GUI.HelperControls
     {
         private DateTime m_when;
         private List<string> m_files;
-        private Exception m_exception;
         private Schedule m_schedule;
         private bool m_isInCheck = false;
 
@@ -67,39 +66,32 @@ namespace Duplicati.GUI.HelperControls
 
         private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            try
+            DuplicatiRunner r = new DuplicatiRunner();
+            IList<string> files = r.ListFiles (m_schedule, m_when);
+            if (backgroundWorker.CancellationPending)
             {
-                m_exception = null;
-                DuplicatiRunner r = new DuplicatiRunner();
-                IList<string> files = r.ListFiles (m_schedule, m_when);
-                if (backgroundWorker.CancellationPending)
-                {
-                    e.Cancel = true;
-                    return;
-                }
-                if (m_files != null)
-                {
-                    m_files.Clear();
-                    m_files.AddRange(files);
-                }
-                else
-                    m_files = new List<string>(files);
+                e.Cancel = true;
+                return;
             }
-            catch (Exception ex)
+
+            if (m_files != null)
             {
-                m_exception = ex;
+                m_files.Clear();
+                m_files.AddRange(files);
             }
+            else
+                m_files = new List<string>(files);
         }
 
         private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             treeView.Nodes.Clear();
-            if (m_exception != null)
+            if (e != null && e.Error != null)
             {
                 LoadingIndicator.Visible = true;
                 treeView.Visible = false;
                 progressBar.Visible = false;
-                LoadingIndicator.Text = m_exception.Message;
+                LoadingIndicator.Text = e.Error.Message;
                 return;
             }
 
