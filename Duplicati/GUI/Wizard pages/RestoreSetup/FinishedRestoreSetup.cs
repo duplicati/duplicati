@@ -141,7 +141,17 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
                 else
                     throw new Exception(Strings.FinishedRestoreSetup.SetupFileMissingError);
 
+                Program.LiveControl.Pause();
                 Program.DataConnection.ClearCache();
+
+                //Make sure we have a startup delay, so a restart won't accidently wipe something
+                Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);
+                if (string.IsNullOrEmpty(appset.StartupDelayDuration) || Duplicati.Library.Core.Timeparser.ParseTimeSpan(appset.StartupDelayDuration) < TimeSpan.FromMinutes(5))
+                {
+                    appset.StartupDelayDuration = "5m";
+                    Program.DataConnection.CommitRecursive(Program.DataConnection.GetObjects<Datamodel.ApplicationSetting>());
+                }
+
                 Program.Scheduler.Reschedule();
             }
         }
