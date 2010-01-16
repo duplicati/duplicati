@@ -45,6 +45,7 @@ namespace Duplicati.Library.Main
         private List<BackupEntry> m_content;
 
         public string Filename { get { return m_fileentry.Name; } }
+        public long Size { get { return m_fileentry.Size; } }
         public Backend.FileEntry FileEntry { get { return m_fileentry; } }
         public DateTime Time { get { return m_time; } }
         public bool IsFull { get { return m_isFull; } }

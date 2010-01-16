@@ -73,7 +73,7 @@ namespace Duplicati.Library.Core
 
         private void ReportProgress()
         {
-            if (Progress != null)
+            if (Progress != null && m_expectedSize > 0)
             {
                 int pg = (int)(((m_streamOffset) / (double)m_expectedSize) * 100);
                 if (pg != m_lastPg)

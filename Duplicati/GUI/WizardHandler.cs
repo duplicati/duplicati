@@ -93,6 +93,12 @@ namespace Duplicati.GUI
             }
             else if (m_form.CurrentPage is Wizard_pages.Restore.FinishedRestore)
             {
+                if (!AskToResumeIfPaused())
+                {
+                    e.Cancel = true;
+                    return;
+                }
+
                 Schedule schedule = wrapper.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
 
                 DateTime when = wrapper.RestoreTime;
@@ -106,16 +112,10 @@ namespace Duplicati.GUI
             }
             else if (m_form.CurrentPage is Wizard_pages.RunNow.RunNowFinished)
             {
-                if (Program.LiveControl.State == LiveControls.LiveControlState.Paused)
+                if (!AskToResumeIfPaused())
                 {
-                    DialogResult res = MessageBox.Show(m_form.Dialog, Strings.WizardHandler.ResumeNowQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel);
-                    if (res == DialogResult.Cancel)
-                    {
-                        e.Cancel = true;
-                        return;
-                    }
-                    else if (res == DialogResult.Yes)
-                        Program.LiveControl.Resume();
+                    e.Cancel = true;
+                    return;
                 }
 
                 Schedule schedule = wrapper.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
@@ -220,5 +220,19 @@ namespace Duplicati.GUI
                 (m_form as Form).ShowDialog();
         }
 
+
+        private bool AskToResumeIfPaused()
+        {
+            if (Program.LiveControl.State == LiveControls.LiveControlState.Paused)
+            {
+                DialogResult res = MessageBox.Show(m_form.Dialog, Strings.WizardHandler.ResumeNowQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel);
+                if (res == DialogResult.Cancel)
+                    return false;
+                else if (res == DialogResult.Yes)
+                    Program.LiveControl.Resume();
+            }
+
+            return true;
+        }
     }
 }

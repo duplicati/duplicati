@@ -162,6 +162,12 @@
   <data name="StatusCreatingVolume" xml:space="preserve">
     <value>Creating volume {0}</value>
   </data>
+  <data name="StatusDownloadingContentVolume" xml:space="preserve">
+    <value>Downloading content, volume {0}</value>
+  </data>
+  <data name="StatusDownloadingSignatureVolume" xml:space="preserve">
+    <value>Downloading signatures, volume {0}</value>
+  </data>
   <data name="StatusLoadingFilelist" xml:space="preserve">
     <value>Loading remote filelist</value>
   </data>

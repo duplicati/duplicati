@@ -59,5 +59,36 @@ namespace Duplicati.GUI.HelperControls
         }
 
         public Exception Error { get { return m_exception; } }
+
+        private delegate void SetTitleDelegate(string title);
+        private delegate void SetProgressDelegate(int progress);
+
+        public void SetTitle(string title)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(new SetTitleDelegate(SetTitle), title);
+            else
+            {
+                this.Text = title;
+            }
+        }
+
+        public void SetProgress(int progress)
+        {
+            if (this.InvokeRequired)
+                this.Invoke(new SetProgressDelegate(SetProgress), progress);
+            else
+            {
+                if (progress < 0)
+                {
+                    progressBar1.Style = ProgressBarStyle.Marquee;
+                }
+                else
+                {
+                    progressBar1.Style = ProgressBarStyle.Continuous;
+                    progressBar1.Value = Math.Max(0, Math.Min(progress, 100));
+                }
+            }
+        }
     }
 }

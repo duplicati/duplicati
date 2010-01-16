@@ -121,10 +121,8 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
         void i_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, int progress, int subprogress, string message, string submessage)
         {
-            if (m_waitdlg.InvokeRequired)
-                m_waitdlg.Invoke(new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress), caller, operation, progress, subprogress, message, submessage);
-            else
-                m_waitdlg.Text = message;
+            m_waitdlg.SetTitle(message);
+            m_waitdlg.SetProgress(progress);
         }
 
 

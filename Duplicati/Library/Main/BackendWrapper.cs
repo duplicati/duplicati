@@ -498,7 +498,6 @@ namespace Duplicati.Library.Main
 
         private void DeleteInternal(BackupEntry remote)
         {
-            string remotename = GetFullFilename(remote);
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
 
@@ -507,7 +506,7 @@ namespace Duplicati.Library.Main
                 try
                 {
                     m_statistics.NumberOfRemoteCalls++;
-                    m_backend.Delete(remotename);
+                    m_backend.Delete(remote.Filename);
                     lastEx = null;
                 }
                 catch (Exception ex)
@@ -537,10 +536,9 @@ namespace Duplicati.Library.Main
 
         private void GetInternal(BackupEntry remote, string filename, string filehash)
         {
-            string remotename = GetFullFilename(remote);
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
-            m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageDownloading, remotename);
+            m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageDownloading, remote.Filename);
 
             do
             {
@@ -570,19 +568,20 @@ namespace Duplicati.Library.Main
                         m_statistics.NumberOfRemoteCalls++;
                         if (m_backend is Backend.IStreamingBackend)
                         {
-                            //TODO: How can we guess the remote file size for progress reporting?
                             using (System.IO.FileStream fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            using (Core.ThrottledStream ts = new Duplicati.Library.Core.ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                            using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, remote.Size))
+                            using (Core.ThrottledStream ts = new Duplicati.Library.Core.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                             {
+                                pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
                                 ts.Callback += new Duplicati.Library.Core.ThrottledStream.ThrottledStreamCallback(ThrottledStream_Callback);
-                                ((Backend.IStreamingBackend)m_backend).Get(remotename, ts);
+                                ((Backend.IStreamingBackend)m_backend).Get(remote.Filename, ts);
                             }
                         }
                         else
                         {
                             if (!m_options.AsynchronousUpload && ProgressEvent != null)
                                 ProgressEvent(50, m_statusmessage);
-                            m_backend.Get(remotename, tempfile);
+                            m_backend.Get(remote.Filename, tempfile);
                             if (!m_options.AsynchronousUpload && ProgressEvent != null)
                                 ProgressEvent(100, m_statusmessage);
                         }
@@ -597,7 +596,7 @@ namespace Duplicati.Library.Main
                         }
 
                         if (filehash != null && Core.Utility.CalculateHash(tempfile) != filehash)
-                            throw new Exception(string.Format(Strings.BackendWrapper.HashMismatchError, remotename, filehash, Core.Utility.CalculateHash(tempfile)));
+                            throw new Exception(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Core.Utility.CalculateHash(tempfile)));
 
                         if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote.Type == BackupEntry.EntryType.Signature)
                         {
@@ -639,7 +638,7 @@ namespace Duplicati.Library.Main
 
         private void PutInternal(BackupEntry remote, string filename)
         {
-            string remotename = GetFullFilename(remote);
+            string remotename = GenerateFilename(remote);
             m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageUploading, remotename, Core.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length));
 
             string encryptedFile = filename;
@@ -752,7 +751,7 @@ namespace Duplicati.Library.Main
             sender.WriteSpeed = m_options.MaxDownloadPrSecond;
         }
 
-        private string GetFullFilename(BackupEntry remote)
+        private string GenerateFilename(BackupEntry remote)
         {
             //TODO: Remember to change filename when tar is supported
             string remotename = m_filenamestrategy.GenerateFilename(remote);

@@ -52,6 +52,7 @@ namespace Duplicati.GUI.HelperControls
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "WaitForOperation";
+            this.ShowInTaskbar = false;
             this.Load += new System.EventHandler(this.WaitForOperation_Load);
             this.ResumeLayout(false);
 
