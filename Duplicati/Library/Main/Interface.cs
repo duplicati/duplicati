@@ -397,7 +397,7 @@ namespace Duplicati.Library.Main
 
                                          using (Core.TempFile sigFile = new Duplicati.Library.Core.TempFile())
                                          {
-                                             OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingSignatureVolume, vol.VolumeNumber + 1), "");
+                                             OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingSignatureVolume, patchno + 1), "");
 
                                              BackupEntry signatureVol = new BackupEntry(BackupEntry.EntryType.Signature, vol.IsFull, vol.Time, vol.VolumeNumber);
                                              using (new Logging.Timer("Get " + signatureVol))
@@ -418,7 +418,7 @@ namespace Duplicati.Library.Main
                                              continue; //Avoid downloading the content file
                                     }
 
-                                    OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, vol.VolumeNumber + 1), "");
+                                     OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
 
                                     using (new Logging.Timer("Get " + vol.Filename))
                                         backend.Get(vol, patchzip, contentHashes == null ? null : contentHashes[vol.VolumeNumber - 1]);
