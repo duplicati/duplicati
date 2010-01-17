@@ -215,6 +215,18 @@ namespace Duplicati.Library.Backend
                     MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
+                catch (Backend.FolderMissingException)
+                {
+                    switch (MessageBox.Show(this, Strings.WebDAVUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    {
+                        case DialogResult.Yes:
+                            CreateFolderButton.PerformClick();
+                            TestConnection.PerformClick();
+                            return;
+                        default:
+                            return;
+                    }
+                }
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);

@@ -108,74 +108,85 @@ namespace Duplicati.Library.Backend
             using (System.IO.Stream s = req.GetRequestStream())
                 s.Write(PROPFIND, 0, PROPFIND.Length);
 
-            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
-			{
-				int code = (int)resp.StatusCode;
-				if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-					throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-
-				doc.Load(resp.GetResponseStream());
-			}
-
-            System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
-            nm.AddNamespace("D", "DAV:");
-
-            List<FileEntry> files = new List<FileEntry>();
-
-            foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
+            try
             {
-                string name = System.Web.HttpUtility.UrlDecode(n.InnerText);
-
-                string cmp_path;
-
-                if (name.StartsWith(m_url))
-                    cmp_path = m_url;
-                else if (name.StartsWith(m_rawurl))
-                    cmp_path = m_rawurl;
-                else if (name.StartsWith(m_path))
-                    cmp_path = m_path;
-                else
-                    continue;
-
-                if (name.Length <= cmp_path.Length)
-                    continue;
-
-                name = name.Substring(cmp_path.Length);
-
-                long size = 0;
-                DateTime lastAccess = new DateTime();
-                DateTime lastModified = new DateTime();
-                bool isCollection = false;
-
-                System.Xml.XmlNode stat = n.ParentNode.SelectSingleNode("D:propstat/D:prop", nm);
-                if (stat != null)
+                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
                 {
-                    System.Xml.XmlNode s = stat.SelectSingleNode("D:getcontentlength", nm);
-                    if (s != null)
-                        size = long.Parse(s.InnerText);
-                    s = stat.SelectSingleNode("D:getlastmodified", nm);
-                    if (s != null)
-                        try
-                        {
-                            //Not important if this succeeds
-                            lastAccess = lastModified = DateTime.Parse(s.InnerText, System.Globalization.CultureInfo.InvariantCulture);
-                        }
-                        catch { }
+                    int code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                    s = stat.SelectSingleNode("D:iscollection", nm);
-                    if (s != null)
-                        isCollection = s.InnerText.Trim() == "1";
-                    else
-                        isCollection = (stat.SelectSingleNode("D:resourcetype/D:collection", nm) != null);
+                    doc.Load(resp.GetResponseStream());
                 }
 
-                FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
-                fe.IsFolder = isCollection;
-                files.Add(fe);
+                System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
+                nm.AddNamespace("D", "DAV:");
+
+                List<FileEntry> files = new List<FileEntry>();
+
+                foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
+                {
+                    string name = System.Web.HttpUtility.UrlDecode(n.InnerText);
+
+                    string cmp_path;
+
+                    if (name.StartsWith(m_url))
+                        cmp_path = m_url;
+                    else if (name.StartsWith(m_rawurl))
+                        cmp_path = m_rawurl;
+                    else if (name.StartsWith(m_path))
+                        cmp_path = m_path;
+                    else
+                        continue;
+
+                    if (name.Length <= cmp_path.Length)
+                        continue;
+
+                    name = name.Substring(cmp_path.Length);
+
+                    long size = 0;
+                    DateTime lastAccess = new DateTime();
+                    DateTime lastModified = new DateTime();
+                    bool isCollection = false;
+
+                    System.Xml.XmlNode stat = n.ParentNode.SelectSingleNode("D:propstat/D:prop", nm);
+                    if (stat != null)
+                    {
+                        System.Xml.XmlNode s = stat.SelectSingleNode("D:getcontentlength", nm);
+                        if (s != null)
+                            size = long.Parse(s.InnerText);
+                        s = stat.SelectSingleNode("D:getlastmodified", nm);
+                        if (s != null)
+                            try
+                            {
+                                //Not important if this succeeds
+                                lastAccess = lastModified = DateTime.Parse(s.InnerText, System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                            catch { }
+
+                        s = stat.SelectSingleNode("D:iscollection", nm);
+                        if (s != null)
+                            isCollection = s.InnerText.Trim() == "1";
+                        else
+                            isCollection = (stat.SelectSingleNode("D:resourcetype/D:collection", nm) != null);
+                    }
+
+                    FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
+                    fe.IsFolder = isCollection;
+                    files.Add(fe);
+                }
+
+                return files;
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response as System.Net.HttpWebResponse != null && (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new Backend.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+                else
+                    throw;
             }
 
-            return files;
         }
 
         public void Put(string remotename, string filename)

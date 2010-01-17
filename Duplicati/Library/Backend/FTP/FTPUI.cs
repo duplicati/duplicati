@@ -201,11 +201,26 @@ namespace Duplicati.Library.Backend
                     MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
+                catch (Backend.FolderMissingException)
+                {
+                    switch (MessageBox.Show(this, Strings.FTPUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    {
+                        case DialogResult.Yes:
+                            CreateFolderButton.PerformClick();
+                            TestConnection.PerformClick();
+                            return;
+                        default:
+                            return;
+                    }
+                }
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                this.Cursor = c;
+                finally
+                {
+                    this.Cursor = c;
+                }
             }
         }
 
@@ -246,22 +261,27 @@ namespace Duplicati.Library.Backend
         {
             if (ValidateForm())
             {
+                Cursor c = this.Cursor;
                 try
                 {
-                    string url = "ftp://" + Servername.Text + ":" + Port.Value.ToString() + "/" + Path.Text;
-                    System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(url);
-                    req.Credentials = new System.Net.NetworkCredential(Username.Text, Password.Text);
-                    req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
-                    req.KeepAlive = false;
-                    using (req.GetResponse())
-                    { }
+                    this.Cursor = Cursors.WaitCursor;
+                    SaveSettings();
+
+                    Dictionary<string, string> options = new Dictionary<string, string>();
+                    string hostname = GetConfiguration(m_options, options);
+                    FTP f = new FTP(hostname, options);
+                    f.CreateFolder();
 
                     MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    this.Cursor = c;
                 }
             }
         }

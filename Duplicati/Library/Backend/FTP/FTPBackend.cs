@@ -144,18 +144,28 @@ namespace Duplicati.Library.Backend
             req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
             req.UseBinary = false;
 
-            List<FileEntry> lst = new List<FileEntry>();
-            using (System.Net.WebResponse resp = req.GetResponse())
-            using (System.IO.Stream rs = resp.GetResponseStream())
-            using (System.IO.StreamReader sr = new System.IO.StreamReader(rs))
-                while(sr.Peek() >= 0)
-                {
-                    FileEntry f = ParseLine(sr.ReadLine());
-                    if (f != null)
-                        lst.Add(f);
-                }
+            try
+            {
+                List<FileEntry> lst = new List<FileEntry>();
+                using (System.Net.WebResponse resp = req.GetResponse())
+                using (System.IO.Stream rs = resp.GetResponseStream())
+                using (System.IO.StreamReader sr = new System.IO.StreamReader(rs))
+                    while (sr.Peek() >= 0)
+                    {
+                        FileEntry f = ParseLine(sr.ReadLine());
+                        if (f != null)
+                            lst.Add(f);
+                    }
 
-            return lst;
+                return lst;
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
+                    throw new Backend.FolderMissingException(string.Format(Strings.FTPBackend.MissingFolderError, req.RequestUri.PathAndQuery, wex.Message), wex);
+                else
+                    throw;
+            }
         }
 
         public void Put(string remotename, System.IO.Stream input)
@@ -251,7 +261,14 @@ namespace Duplicati.Library.Backend
             return req;
         }
 
-
+        public void CreateFolder()
+        {
+            System.Net.FtpWebRequest req = CreateRequest("");
+            req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
+            req.KeepAlive = false;
+            using (req.GetResponse())
+            { }
+        }
 
 
         #region IBackendGUI Members
