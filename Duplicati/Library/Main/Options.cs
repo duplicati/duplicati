@@ -79,6 +79,7 @@ namespace Duplicati.Library.Main
                     new Backend.CommandLineArgument("number-of-retries", Backend.CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, "5"),
                     new Backend.CommandLineArgument("retry-delay", Backend.CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, "10s"),
                     new Backend.CommandLineArgument("asynchronous-upload", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false"),
+                    new Backend.CommandLineArgument("disable-streaming-transfers", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
 
                     new Backend.CommandLineArgument("max-upload-pr-second", Backend.CommandLineArgument.ArgumentType.Size, Strings.Options.MaxuploadprsecondShort, Strings.Options.MaxuploadprsecondLong),
                     new Backend.CommandLineArgument("max-download-pr-second", Backend.CommandLineArgument.ArgumentType.Size, Strings.Options.MaxdownloadprsecondShort, Strings.Options.MaxdownloadprsecondLong),
@@ -421,6 +422,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if backups are transmitted on a seperate thread
         /// </summary>
         public bool AsynchronousUpload { get { return GetBool("asynchronous-upload"); } }
+
+        /// <summary>
+        /// A value indicating if use of the streaming interface is disallowed
+        /// </summary>
+        public bool DisableStreamingTransfers { get { return GetBool("disable-streaming-transfers"); } }
 
 
         /// <summary>

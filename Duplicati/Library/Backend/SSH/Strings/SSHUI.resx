@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CreateMissingFolderQuestion" xml:space="preserve">
+    <value>The folder does not exist, do you want to create it?</value>
+  </data>
   <data name="MissingSCPWarning" xml:space="preserve">
     <value>Duplicati was unable to verify the existence of the sftp program.
 sfpt may work regardless, if it is located in the system search path.
@@ -128,5 +131,8 @@ Do you want to continue anyway?</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
     <value>Backup storage options</value>
+  </data>
+  <data name="PasswordRequiredError" xml:space="preserve">
+    <value>A password is required when using the managed SSH option</value>
   </data>
 </root>

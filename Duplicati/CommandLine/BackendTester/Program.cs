@@ -132,6 +132,7 @@ namespace Duplicati.CommandLine.BackendTester
             int max_file_size = 1024 * 1024 * 50;
             int min_filename_size = 5;
             int max_filename_size = 80;
+            bool disableStreaming = options.ContainsKey("disable-streaming-transfers");
 
             if (options.ContainsKey("number-of-files"))
                 number_of_files = int.Parse(options["number-of-files"]);
@@ -189,7 +190,7 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Core.Utility.FormatSizeString(new System.IO.FileInfo(System.IO.Path.Combine(tf, i.ToString())).Length));
                     try 
                     {
-                        if (backend is Library.Backend.IStreamingBackend)
+                        if (backend is Library.Backend.IStreamingBackend && !disableStreaming)
                         {
                             using (System.IO.FileStream fs = new System.IO.FileStream(System.IO.Path.Combine(tf, i.ToString()), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                             using (NonSeekableStream nss = new NonSeekableStream(fs))
@@ -240,7 +241,7 @@ namespace Duplicati.CommandLine.BackendTester
                         Console.Write("Downloading file {0} ... ", i);
                         try 
                         {
-                            if (backend is Library.Backend.IStreamingBackend)
+                            if (backend is Library.Backend.IStreamingBackend && !disableStreaming)
                             {
                                 using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                 using (NonSeekableStream nss = new NonSeekableStream(fs))

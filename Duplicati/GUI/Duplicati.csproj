@@ -1002,6 +1002,7 @@
     <None Include="Resources\LogViewer.ico" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Database schema\3. Default managed SSH.sql" />
     <None Include="Resources\Play.png" />
     <None Include="Resources\Delay.png" />
     <None Include="Resources\Pause.png" />

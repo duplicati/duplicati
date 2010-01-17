@@ -41,6 +41,8 @@ namespace Duplicati.Library.Backend
             this.label1 = new System.Windows.Forms.Label();
             this.UsePassword = new System.Windows.Forms.CheckBox();
             this.GenerateDebugOutput = new System.Windows.Forms.CheckBox();
+            this.UseUnmanagedSSH = new System.Windows.Forms.CheckBox();
+            this.CreateFolderButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
             this.SuspendLayout();
             // 
@@ -131,10 +133,26 @@ namespace Duplicati.Library.Backend
             this.GenerateDebugOutput.Name = "GenerateDebugOutput";
             this.GenerateDebugOutput.UseVisualStyleBackColor = true;
             // 
+            // UseUnmanagedSSH
+            // 
+            resources.ApplyResources(this.UseUnmanagedSSH, "UseUnmanagedSSH");
+            this.UseUnmanagedSSH.Name = "UseUnmanagedSSH";
+            this.UseUnmanagedSSH.UseVisualStyleBackColor = true;
+            this.UseUnmanagedSSH.CheckedChanged += new System.EventHandler(this.UseUnmanagedSSH_CheckedChanged);
+            // 
+            // CreateFolderButton
+            // 
+            resources.ApplyResources(this.CreateFolderButton, "CreateFolderButton");
+            this.CreateFolderButton.Name = "CreateFolderButton";
+            this.CreateFolderButton.UseVisualStyleBackColor = true;
+            this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
+            // 
             // SSHUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.CreateFolderButton);
+            this.Controls.Add(this.UseUnmanagedSSH);
             this.Controls.Add(this.GenerateDebugOutput);
             this.Controls.Add(this.UsePassword);
             this.Controls.Add(this.TestConnection);
@@ -169,5 +187,7 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox UsePassword;
         private System.Windows.Forms.CheckBox GenerateDebugOutput;
+        private System.Windows.Forms.CheckBox UseUnmanagedSSH;
+        private System.Windows.Forms.Button CreateFolderButton;
     }
 }

@@ -119,7 +119,7 @@
   </resheader>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="TestConnection.Location" type="System.Drawing.Point, System.Drawing">
-    <value>296, 168</value>
+    <value>296, 176</value>
   </data>
   <data name="TestConnection.Size" type="System.Drawing.Size, System.Drawing">
     <value>112, 24</value>
@@ -141,7 +141,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;TestConnection.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>4</value>
   </data>
   <data name="Port.Location" type="System.Drawing.Point, System.Drawing">
     <value>120, 112</value>
@@ -162,7 +162,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Port.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>5</value>
   </data>
   <data name="Password.Location" type="System.Drawing.Point, System.Drawing">
     <value>120, 88</value>
@@ -171,7 +171,7 @@
     <value>*</value>
   </data>
   <data name="Password.Size" type="System.Drawing.Size, System.Drawing">
-    <value>288, 20</value>
+    <value>264, 20</value>
   </data>
   <data name="Password.TabIndex" type="System.Int32, mscorlib">
     <value>19</value>
@@ -186,13 +186,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Password.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>6</value>
   </data>
   <data name="Username.Location" type="System.Drawing.Point, System.Drawing">
     <value>120, 64</value>
   </data>
   <data name="Username.Size" type="System.Drawing.Size, System.Drawing">
-    <value>288, 20</value>
+    <value>264, 20</value>
   </data>
   <data name="Username.TabIndex" type="System.Int32, mscorlib">
     <value>18</value>
@@ -207,13 +207,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Username.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>7</value>
   </data>
   <data name="Path.Location" type="System.Drawing.Point, System.Drawing">
     <value>120, 40</value>
   </data>
   <data name="Path.Size" type="System.Drawing.Size, System.Drawing">
-    <value>288, 20</value>
+    <value>264, 20</value>
   </data>
   <data name="Path.TabIndex" type="System.Int32, mscorlib">
     <value>17</value>
@@ -228,13 +228,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Path.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>8</value>
   </data>
   <data name="Servername.Location" type="System.Drawing.Point, System.Drawing">
     <value>120, 16</value>
   </data>
   <data name="Servername.Size" type="System.Drawing.Size, System.Drawing">
-    <value>288, 20</value>
+    <value>264, 20</value>
   </data>
   <data name="Servername.TabIndex" type="System.Int32, mscorlib">
     <value>16</value>
@@ -249,7 +249,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Servername.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>9</value>
   </data>
   <data name="label5.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -276,7 +276,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>10</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -303,7 +303,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>11</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -330,7 +330,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>12</value>
   </data>
   <data name="label1.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -357,7 +357,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>11</value>
+    <value>13</value>
   </data>
   <data name="UsePassword.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -384,13 +384,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;UsePassword.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="GenerateDebugOutput.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
   <data name="GenerateDebugOutput.Location" type="System.Drawing.Point, System.Drawing">
-    <value>20, 144</value>
+    <value>20, 208</value>
   </data>
   <data name="GenerateDebugOutput.Size" type="System.Drawing.Size, System.Drawing">
     <value>136, 17</value>
@@ -411,6 +411,64 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;GenerateDebugOutput.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="UseUnmanagedSSH.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="UseUnmanagedSSH.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="UseUnmanagedSSH.Location" type="System.Drawing.Point, System.Drawing">
+    <value>20, 144</value>
+  </data>
+  <data name="UseUnmanagedSSH.Size" type="System.Drawing.Size, System.Drawing">
+    <value>302, 17</value>
+  </data>
+  <data name="UseUnmanagedSSH.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="UseUnmanagedSSH.Text" xml:space="preserve">
+    <value>Use installed sftp program instead of the built-in SSH library</value>
+  </data>
+  <data name="&gt;&gt;UseUnmanagedSSH.Name" xml:space="preserve">
+    <value>UseUnmanagedSSH</value>
+  </data>
+  <data name="&gt;&gt;UseUnmanagedSSH.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;UseUnmanagedSSH.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;UseUnmanagedSSH.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="CreateFolderButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="CreateFolderButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>392, 40</value>
+  </data>
+  <data name="CreateFolderButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>88, 23</value>
+  </data>
+  <data name="CreateFolderButton.TabIndex" type="System.Int32, mscorlib">
+    <value>25</value>
+  </data>
+  <data name="CreateFolderButton.Text" xml:space="preserve">
+    <value>Create folder</value>
+  </data>
+  <data name="&gt;&gt;CreateFolderButton.Name" xml:space="preserve">
+    <value>CreateFolderButton</value>
+  </data>
+  <data name="&gt;&gt;CreateFolderButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CreateFolderButton.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;CreateFolderButton.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">

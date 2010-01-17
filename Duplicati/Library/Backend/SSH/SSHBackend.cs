@@ -25,7 +25,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSH : IBackend, IBackendGUI
+    public class SSH : IStreamingBackend, IBackendGUI
     {
         private string m_server;
         private string m_path;
@@ -40,6 +40,10 @@ namespace Duplicati.Library.Backend
         private const int SSH_TIMEOUT = 30 * 1000;
 
         private bool m_write_log_info = false;
+
+        private bool m_useManaged = true;
+
+        private int m_port = 22;
         
         /// <summary>
         /// A value indicating if the *CLIENT* is a linux client.
@@ -80,6 +84,9 @@ namespace Duplicati.Library.Backend
             }
 
             m_path = u.AbsolutePath;
+
+            if (options.ContainsKey("use-sftp-application"))
+                m_useManaged = false;
             
             if (m_isLinux)
             {
@@ -114,7 +121,10 @@ namespace Duplicati.Library.Backend
                 m_ssh_options = "-C";
 
             if (!u.IsDefaultPort)
+            {
                 m_ssh_options += " -P " + u.Port;
+                m_port = u.Port;
+            }
 
             if (m_options.ContainsKey("transfer-timeout"))
                 m_transfer_timeout = Math.Min(1000 * 60 * 60, Math.Max(1000 * 60, (int)Duplicati.Library.Core.Timeparser.ParseTimeSpan(m_options["transfer-timeout"]).TotalMilliseconds));
@@ -138,11 +148,89 @@ namespace Duplicati.Library.Backend
 
         public List<FileEntry> List()
         {
+            if (m_useManaged)
+                return ListManaged();
+            else
+                return ListUnmanaged();
+        }
+
+        public void Put(string remotename, string filename)
+        {
+            if (m_useManaged)
+                PutManaged(remotename, filename);
+            else
+                PutUnmanaged(remotename, filename);
+        }
+
+        public void Get(string remotename, string filename)
+        {
+            if (m_useManaged)
+                GetManaged(remotename, filename);
+            else
+                GetUnmanaged(remotename, filename);
+        }
+
+        public void Delete(string remotename)
+        {
+            if (m_useManaged)
+                DeleteManaged(remotename);
+            else
+                DeleteUnmanaged(remotename);
+        }
+
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument("sftp-command", CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSFTPCommandShort, Strings.SSHBackend.DescriptionSFTPCommandLong, Library.Core.Utility.IsClientLinux ? "sftp" : "psftp.exe"),
+                    new CommandLineArgument("ssh-options", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionSSHOptionsShort, Strings.SSHBackend.DescriptionSSHOptionsLong, "-C"),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPPasswordShort, Strings.SSHBackend.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPUsernameShort, Strings.SSHBackend.DescriptionFTPUsernameLong),
+                    new CommandLineArgument("debug-to-console", CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionDebugToConsoleShort, Strings.SSHBackend.DescriptionDebugToConsoleLong),
+                    new CommandLineArgument("transfer-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SSHBackend.DescriptionTransferTimeoutShort, Strings.SSHBackend.DescriptionTransferTimeoutLong, "15m"),
+                    new CommandLineArgument("use-sftp-application", CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionUnmanagedShort, Strings.SSHBackend.DescriptionUnmanagedLong, "false"),
+                });
+
+            }
+        }
+
+        public string Description
+        {
+            get
+            {
+                return Strings.SSHBackend.Description;
+            }
+        }
+
+        #endregion
+
+        public void CreateFolder()
+        {
+            if (m_useManaged)
+                CreateFolderManaged();
+            else
+                CreateFolderUnmanaged();
+        }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+        }
+
+        #endregion
+
+        #region Unmanaged Implementation
+        
+        private List<FileEntry> ListUnmanaged()
+        {
+
             if (m_write_log_info)
                 Console.WriteLine("******** " + Strings.SSHBackend.DebugListHeader + " *******");
             List<FileEntry> files = new List<FileEntry>();
 
-            using (SharpExpect.SharpExpectProcess p = GetConnection())
+            using (SharpExpect.SharpExpectProcess p = GetUnmanagedConnection(true))
             {
                 if (m_isLinux)
                     p.Sendline("ls -la");
@@ -176,11 +264,11 @@ namespace Duplicati.Library.Backend
         }
 
 
-        public void Put(string remotename, string filename)
+        private void PutUnmanaged(string remotename, string filename)
         {
             if (m_write_log_info)
                 Console.WriteLine("******** " + Strings.SSHBackend.DebugPutHeader + " ********");
-            using (SharpExpect.SharpExpectProcess p = GetConnection())
+            using (SharpExpect.SharpExpectProcess p = GetUnmanagedConnection(true))
             {
                 string cmd = "put \"" + filename + "\" \"" + remotename + "\"";
 
@@ -189,7 +277,7 @@ namespace Duplicati.Library.Backend
 
                 //We assume 1kb pr. second
                 int timeout = (int)Math.Min(int.MaxValue, (new System.IO.FileInfo(filename).Length / 1024.0) * 1000);
-                
+
                 //Obey user overrides
                 if (m_options.ContainsKey("transfer-timeout"))
                     timeout = m_transfer_timeout;
@@ -216,12 +304,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, string filename)
+        private void GetUnmanaged(string remotename, string filename)
         {
             if (m_write_log_info)
                 Console.WriteLine("******** " + Strings.SSHBackend.DebugGetHeader + " ********");
 
-            using (SharpExpect.SharpExpectProcess p = GetConnection())
+            using (SharpExpect.SharpExpectProcess p = GetUnmanagedConnection(true))
             {
                 string cmd = "get \"" + remotename + "\" \"" + filename + "\"";
 
@@ -257,12 +345,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Delete(string remotename)
+        private void DeleteUnmanaged(string remotename)
         {
             if (m_write_log_info)
                 Console.WriteLine("******** " + Strings.SSHBackend.DebugDeleteHeader + " ********");
 
-            using (SharpExpect.SharpExpectProcess p = GetConnection())
+            using (SharpExpect.SharpExpectProcess p = GetUnmanagedConnection(true))
             {
                 p.Sendline("rm \"" + remotename + "\"");
                 p.Sendline("exit");
@@ -281,49 +369,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("sftp-command", CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSFTPCommandShort, Strings.SSHBackend.DescriptionSFTPCommandLong, Library.Core.Utility.IsClientLinux ? "sftp" : "psftp.exe"),
-                    new CommandLineArgument("ssh-options", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionSSHOptionsShort, Strings.SSHBackend.DescriptionSSHOptionsLong, "-C"),
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPPasswordShort, Strings.SSHBackend.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPUsernameShort, Strings.SSHBackend.DescriptionFTPUsernameLong),
-                    new CommandLineArgument("debug-to-console", CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionDebugToConsoleShort, Strings.SSHBackend.DescriptionDebugToConsoleLong),
-                    new CommandLineArgument("transfer-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SSHBackend.DescriptionTransferTimeoutShort, Strings.SSHBackend.DescriptionTransferTimeoutLong, "15m"),
-                });
-
-            }
-        }
-
-        public string Description
-        {
-            get
-            {
-                return Strings.SSHBackend.Description;
-            }
-        }
-
-        #endregion
-
-
-        #region IDisposable Members
-
-        public void Dispose()
-        {
-            if (m_options != null)
-                m_options = null;
-            if (m_username != null)
-                m_username = null;
-            if (m_password != null)
-                m_password = null;
-        }
-
-
-        #endregion
-
-        private SharpExpect.SharpExpectProcess GetConnection()
+        private SharpExpect.SharpExpectProcess GetUnmanagedConnection(bool changeDir)
         {
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo.CreateNoWindow = true;
@@ -406,11 +452,11 @@ namespace Duplicati.Library.Backend
                     }
                 }
 
-                if (!string.IsNullOrEmpty(m_path))
+                if (!string.IsNullOrEmpty(m_path) && changeDir)
                 {
                     proc.Sendline("cd \"" + m_path + "\"");
                     if (proc.Expect(".*not found.*", ".*No such file or directory.*", "sftp>", "Remote directory is now") < 2)
-                        throw new Exception(string.Format(Strings.SSHBackend.FolderNotFoundError, m_path, proc.LogKillAndDispose()));
+                        throw new Backend.FolderMissingException(string.Format(Strings.SSHBackend.FolderNotFoundError, m_path, proc.LogKillAndDispose()));
 
                     string matchpath = m_path;
                     if (matchpath.EndsWith("/"))
@@ -449,6 +495,85 @@ namespace Duplicati.Library.Backend
            return proc;
         }
 
+        #endregion
+
+        private void CreateFolderUnmanaged()
+        {
+            using (SharpExpect.SharpExpectProcess p = GetUnmanagedConnection(false))
+            {
+                p.Sendline("mkdir \"" + m_path + "\"");
+                p.Sendline("exit");
+
+                if (!p.Process.WaitForExit(SSH_TIMEOUT))
+                    throw new Exception(Strings.SSHBackend.CloseTimeoutError + "\r\n" + p.LogKillAndDispose());
+
+                if (p.Expect(5000, ".*cannot create.*", ".*Failed.*") != -1)
+                    throw new Exception(string.Format(Strings.SSHBackend.DeleteError, p.LogKillAndDispose()));
+            }
+        }
+
+        #region Managed Implementation
+
+        private SFTPCon CreateManagedConnection(bool changeDir)
+        {
+            SFTPCon con = new SFTPCon(m_server, m_username, m_password);
+            con.Connect(m_port);
+
+            try
+            {
+                if (!string.IsNullOrEmpty(m_path) && changeDir)
+                    con.SetCurrenDir(m_path);
+            }
+            catch (Exception ex)
+            {
+                throw new Backend.FolderMissingException(string.Format(Strings.SSHBackend.FolderNotFoundManagedError, m_path, ex.Message), ex);
+            }
+
+            return con;
+        }
+
+        private List<FileEntry> ListManaged()
+        {
+            using (SFTPCon con = CreateManagedConnection(true))
+            {
+                List<FileEntry> files = new List<FileEntry>();
+
+                DateTime epochOffset = new DateTime(1970, 1, 1);
+
+                foreach (Tamir.SharpSsh.jsch.ChannelSftp.LsEntry ls in con.ListFiles("."))
+                    if (ls.getFilename().ToString() != "." && ls.getFilename().ToString() != "..")
+                        files.Add(new FileEntry(ls.getFilename().ToString(), ls.getAttrs().getSize(), epochOffset.Add(new TimeSpan(ls.getAttrs().getATime() * TimeSpan.TicksPerSecond)), epochOffset.Add(new TimeSpan(ls.getAttrs().getMTime() * TimeSpan.TicksPerSecond))));
+
+                return files;
+            }
+        }
+
+        private void PutManaged(string remotename, string filename)
+        {
+            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                Put(remotename, fs);
+        }
+
+        private void GetManaged(string remotename, string filename)
+        {
+            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                Get(remotename, fs);
+        }
+
+        private void DeleteManaged(string remotename)
+        {
+            using (SFTPCon con = CreateManagedConnection(true))
+                con.Delete(remotename);
+        }
+
+        private void CreateFolderManaged()
+        {
+            using (SFTPCon con = CreateManagedConnection(false))
+                con.Mkdir(m_path);
+
+        }
+
+        #endregion
 
         #region IBackendGUI Members
 
@@ -481,6 +606,28 @@ namespace Duplicati.Library.Backend
         {
             return SSHUI.GetConfiguration(applicationSettings, guiOptions, commandlineOptions);
         }
+        #endregion
+
+        #region IStreamingBackend Members
+
+        public void Put(string remotename, System.IO.Stream stream)
+        {
+            if (!m_useManaged)
+                throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
+
+            using (SFTPCon con = CreateManagedConnection(true))
+                con.Put(remotename, stream);
+        }
+
+        public void Get(string remotename, System.IO.Stream stream)
+        {
+            if (!m_useManaged)
+                throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
+
+            using (SFTPCon con = CreateManagedConnection(true))
+                con.Get(remotename, stream);
+        }
+
         #endregion
     }
 }

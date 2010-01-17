@@ -86,4 +86,4 @@ CREATE TABLE "TaskFilter" (
 );
 
 
-INSERT INTO "Version" ("Version") VALUES (2);
+INSERT INTO "Version" ("Version") VALUES (3);

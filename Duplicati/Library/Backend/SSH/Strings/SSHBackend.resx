@@ -126,6 +126,9 @@
   <data name="ConnectionTimeoutError" xml:space="preserve">
     <value>Timeout occured while connecting, log: {0}</value>
   </data>
+  <data name="CreateFolderError" xml:space="preserve">
+    <value>Failed to create folder: {0}</value>
+  </data>
   <data name="DebugDeleteFooter" xml:space="preserve">
     <value>Delete complete</value>
   </data>
@@ -157,10 +160,10 @@
     <value>Failed to delete file: {0}</value>
   </data>
   <data name="Description" xml:space="preserve">
-    <value>This backend can read and write data to an SSH based backend, using SFTP. Allowed formats are "ssh://hostname/folder" or "ssh://username:password@hostname/folder". NOTE: This backend does not support throttling uploads or downloads, and requires that sftp is installed (using putty for windows).</value>
+    <value>This backend can read and write data to an SSH based backend, using SFTP. Allowed formats are "ssh://hostname/folder" or "ssh://username:password@hostname/folder".</value>
   </data>
   <data name="DescriptionDebugToConsoleLong" xml:space="preserve">
-    <value>The SSH backend relies on an external program (sftp) to work. Since the external program may change at any time, this may break the backend. Enable this option to get debug information about the ssh connection written to the console.</value>
+    <value>The SSH backend relies on an external program (sftp) to work. Since the external program may change at any time, this may break the backend. Enable this option to get debug information about the ssh connection written to the console. Only used if the --use-sftp-application option is supplied.</value>
   </data>
   <data name="DescriptionDebugToConsoleShort" xml:space="preserve">
     <value>Prints debug info to the console</value>
@@ -178,22 +181,28 @@
     <value>Supplies the username used to connect to the server</value>
   </data>
   <data name="DescriptionSFTPCommandLong" xml:space="preserve">
-    <value>The full path to the "sftp" application.</value>
+    <value>The full path to the "sftp" application. Only used if the --use-sftp-application option is supplied.</value>
   </data>
   <data name="DescriptionSFTPCommandShort" xml:space="preserve">
     <value>The path to the "sftp" program</value>
   </data>
   <data name="DescriptionSSHOptionsLong" xml:space="preserve">
-    <value>Supply any extra commandline arguments, which are passed unaltered to the ssh application</value>
+    <value>Supply any extra commandline arguments, which are passed unaltered to the ssh application. The full path to the "sftp" application. Only used if the --use-sftp-application option is supplied.</value>
   </data>
   <data name="DescriptionSSHOptionsShort" xml:space="preserve">
     <value>Extra options to the ssh commands</value>
   </data>
   <data name="DescriptionTransferTimeoutLong" xml:space="preserve">
-    <value>The SSH backend relies on an external program (sftp) to work. Since the external program may hang, Duplicati must use a timeout to detect a stall in the external program. Use this option to adjust the timeout. Minimum allowed value is one minute, maximum allowed is one hour.</value>
+    <value>The SSH backend relies on an external program (sftp) to work. Since the external program may hang, Duplicati must use a timeout to detect a stall in the external program. Use this option to adjust the timeout. Minimum allowed value is one minute, maximum allowed is one hour.The full path to the "sftp" application. Only used if the --use-sftp-application option is supplied.</value>
   </data>
   <data name="DescriptionTransferTimeoutShort" xml:space="preserve">
     <value>Sets the timeout for transfering a file</value>
+  </data>
+  <data name="DescriptionUnmanagedLong" xml:space="preserve">
+    <value>Set this flag to use the sftp command from --sftp-command to communicate with the server. Setting this flag also requires that --disable-streaming-transfers is set</value>
+  </data>
+  <data name="DescriptionUnmanagedShort" xml:space="preserve">
+    <value>Use an external sftp application</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
     <value>SSH based</value>
@@ -203,6 +212,9 @@
   </data>
   <data name="FolderNotFoundError" xml:space="preserve">
     <value>Folder not found: {0}, log: {1}</value>
+  </data>
+  <data name="FolderNotFoundManagedError" xml:space="preserve">
+    <value>Unable to set folder to {0}, error message: {1}</value>
   </data>
   <data name="FolderVerificationError" xml:space="preserve">
     <value>Failed to validate the remote directory: {0}</value>
@@ -222,6 +234,9 @@ Error message: {1}</value>
   </data>
   <data name="PasswordMissingError" xml:space="preserve">
     <value>A password was expected, but passwordless login was specified</value>
+  </data>
+  <data name="StreamingNotSupportedError" xml:space="preserve">
+    <value>The SSH backend does not support streaming when using the unmanaged SSH backend, if you supply --use-sftp-application, you must also specify --disable-streaming-transfers</value>
   </data>
   <data name="UnexpectedConnectionError" xml:space="preserve">
     <value>Unexpected error: {0}</value>

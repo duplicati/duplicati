@@ -566,7 +566,7 @@ namespace Duplicati.Library.Main
                             tempfile = new Duplicati.Library.Core.TempFile(filename);
 
                         m_statistics.NumberOfRemoteCalls++;
-                        if (m_backend is Backend.IStreamingBackend)
+                        if (m_backend is Backend.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
                             using (System.IO.FileStream fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                             using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, remote.Size))
@@ -665,7 +665,7 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_statistics.NumberOfRemoteCalls++;
-                        if (m_backend is Backend.IStreamingBackend)
+                        if (m_backend is Backend.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
 #if DEBUG
                             DateTime begin = DateTime.Now;

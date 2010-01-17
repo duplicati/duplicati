@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Backend</RootNamespace>
     <AssemblyName>Duplicati.Library.Backend.SSH</AssemblyName>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -43,8 +43,13 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="Tamir.SharpSSH, Version=1.1.1.13, Culture=neutral">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\thirdparty\SharpSSH\Tamir.SharpSSH.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SFTPCon.cs" />
     <Compile Include="SharpExpectProcess.cs" />
     <Compile Include="SSHBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -54,6 +59,7 @@
     <Compile Include="SSHUI.designer.cs">
       <DependentUpon>SSHUI.cs</DependentUpon>
     </Compile>
+    <Compile Include="OutputStreamWrapper.cs" />
     <Compile Include="Strings\SharpExpectProcess.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
