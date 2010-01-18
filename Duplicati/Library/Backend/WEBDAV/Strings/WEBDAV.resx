@@ -150,4 +150,9 @@
   <data name="MissingFolderError" xml:space="preserve">
     <value>The folder {0} was not found, message: {1}</value>
   </data>
+  <data name="SeenThenNotFoundError" xml:space="preserve">
+    <value>When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.
+This can be because the file is deleted or unavalible, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.
+Error message: {4}</value>
+  </data>
 </root>

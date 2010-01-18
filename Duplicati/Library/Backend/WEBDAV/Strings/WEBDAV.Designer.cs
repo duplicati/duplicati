@@ -158,5 +158,16 @@ namespace Duplicati.Library.Backend.Strings {
                 return ResourceManager.GetString("MissingFolderError", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.
+        ///This can be because the file is deleted or unavalible, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.
+        ///Error message: {4}.
+        /// </summary>
+        internal static string SeenThenNotFoundError {
+            get {
+                return ResourceManager.GetString("SeenThenNotFoundError", resourceCulture);
+            }
+        }
     }
 }

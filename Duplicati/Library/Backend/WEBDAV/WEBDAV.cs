@@ -33,6 +33,13 @@ namespace Duplicati.Library.Backend
         private bool m_useIntegratedAuthentication = false;
         private bool m_forceDigestAuthentication = false;
 
+        /// <summary>
+        /// A list of files seen in the last List operation.
+        /// It is used to detect a problem with IIS where a file is list,
+        /// but IIS responds 404 because the file mapping is incorrect.
+        /// </summary>
+        private List<string> m_filenamelist = null;
+
         private static readonly byte[] PROPFIND = System.Text.Encoding.UTF8.GetBytes("<?xml version=\"1.0\"?><D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>");
 
         public WEBDAV()
@@ -124,6 +131,7 @@ namespace Duplicati.Library.Backend
                 nm.AddNamespace("D", "DAV:");
 
                 List<FileEntry> files = new List<FileEntry>();
+                m_filenamelist = new List<string>();
 
                 foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
                 {
@@ -175,6 +183,7 @@ namespace Duplicati.Library.Backend
                     FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
                     fe.IsFolder = isCollection;
                     files.Add(fe);
+                    m_filenamelist.Add(name);
                 }
 
                 return files;
@@ -293,15 +302,34 @@ namespace Duplicati.Library.Backend
             System.Net.HttpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Http.Get;
 
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
-			{
-				int code = (int)resp.StatusCode;
-				if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-					throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+            try
+            {
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                {
+                    int code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-				using (System.IO.Stream s = resp.GetResponseStream())
-	                Core.Utility.CopyStream(s, stream);
-			}
+                    using (System.IO.Stream s = resp.GetResponseStream())
+                        Core.Utility.CopyStream(s, stream);
+                }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (
+                    wex.Response as System.Net.HttpWebResponse != null 
+                    && 
+                    (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound
+                    &&
+                    m_filenamelist != null
+                    &&
+                    m_filenamelist.Contains(remotename)
+                )
+                    throw new Exception(string.Format(Strings.WEBDAV.SeenThenNotFoundError, m_path, remotename, System.IO.Path.GetExtension(remotename), wex.Message), wex);
+                else
+                    throw;
+            }
+
         }
 
         #endregion
