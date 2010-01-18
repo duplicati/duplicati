@@ -213,19 +213,35 @@ namespace Duplicati.GUI
 
             }
 
+            try
+            {
+                if (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup)
+                {
+                    if (task.Schedule.Task.KeepFull > 0)
+                    {
+                        RemoveAllButNFullTask tmpTask = new RemoveAllButNFullTask(task.Schedule, (int)task.Schedule.Task.KeepFull);
+                        ExecuteTask(tmpTask);
+                        results += Environment.NewLine + Strings.DuplicatiRunner.CleanupLogdataHeader + Environment.NewLine + tmpTask.Result;
+                    }
+
+                    if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
+                    {
+                        RemoveOlderThanTask tmpTask = new RemoveOlderThanTask(task.Schedule, task.Schedule.Task.KeepTime);
+                        ExecuteTask(tmpTask);
+                        results += Environment.NewLine + Strings.DuplicatiRunner.CleanupLogdataHeader + Environment.NewLine + tmpTask.Result;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                results += Environment.NewLine + string.Format(Strings.DuplicatiRunner.CleanupError, ex.Message);
+            }
+
             task.Result = results;
             task.RaiseTaskCompleted(results);
 
             if (task.Schedule != null)
                 task.Schedule.ScheduledRunCompleted(); //Register as completed
-
-            if (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup)
-            {
-                if (task.Schedule.Task.KeepFull > 0)
-                    ExecuteTask(new RemoveAllButNFullTask(task.Schedule, (int)task.Schedule.Task.KeepFull));
-                if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
-                    ExecuteTask(new RemoveOlderThanTask(task.Schedule, task.Schedule.Task.KeepTime));
-            }
         }
 
         void Duplicati_OperationProgress(Interface caller, DuplicatiOperation operation, int progress, int subprogress, string message, string submessage)

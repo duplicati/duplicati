@@ -61,6 +61,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to As a precaution, the last full backup will never be removed, even if using the --remove-all-but-n-full=0 option. Set this option to allow removing the last backup..
+        /// </summary>
+        internal static string AllowfullremoveLong {
+            get {
+                return ResourceManager.GetString("AllowfullremoveLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Allow removal of the all backups.
+        /// </summary>
+        internal static string AllowfullremoveShort {
+            get {
+                return ResourceManager.GetString("AllowfullremoveShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to By supplying this option, Duplicati will transmit files, while building volumes. This can shorten the time it takes to perform a backup, but requires more diskspace..
         /// </summary>
         internal static string AsynchronousuploadLong {

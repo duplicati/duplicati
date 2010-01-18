@@ -84,9 +84,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 try
                 {
-                    if (Timeparser.ParseTimeSpan(CleanupDuration.Value).TotalMinutes < 10)
+                    if (Timeparser.ParseTimeSpan(CleanupDuration.Value).TotalDays < 1)
                     {
-                        MessageBox.Show(this, Strings.IncrementalSettings.TooShortCleanupDuration , Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, Strings.IncrementalSettings.TooShortCleanupDurationDay , Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         args.Cancel = true;
                         return;
                     }

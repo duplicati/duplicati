@@ -133,8 +133,8 @@ Do you want to continue without full backups?</value>
   <data name="PageTitle" xml:space="preserve">
     <value>Select incremental options</value>
   </data>
-  <data name="TooShortCleanupDuration" xml:space="preserve">
-    <value>The cleanup duration entered is less than ten minutes. This will give very poor system performance.</value>
+  <data name="TooShortCleanupDurationDay" xml:space="preserve">
+    <value>The cleanup duration entered is less than 1 day. This will give very poor system performance.</value>
   </data>
   <data name="TooShortFullDuration" xml:space="preserve">
     <value>The full backup duration entered is less than ten minutes. This will give very poor system performance.</value>

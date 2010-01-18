@@ -49,6 +49,7 @@ namespace Duplicati.Library.Main
                     new Backend.CommandLineArgument("totalsize", Backend.CommandLineArgument.ArgumentType.Size, Strings.Options.TotalsizeShort, Strings.Options.TotalsizeLong),
                     new Backend.CommandLineArgument("auto-cleanup", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong),
                     new Backend.CommandLineArgument("full-if-older-than", Backend.CommandLineArgument.ArgumentType.Timespan, Strings.Options.FullifolderthanShort, Strings.Options.FullifolderthanLong),
+                    new Backend.CommandLineArgument("allow-full-remove", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremoveShort, Strings.Options.AllowfullremoveLong),
 
                     new Backend.CommandLineArgument("signature-control-files", Backend.CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecontrolfilesShort, Strings.Options.SignaturecontrolfilesLong),
                     new Backend.CommandLineArgument("signature-cache-path", Backend.CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecachepathShort, Strings.Options.SignaturecachepathLong),
@@ -488,6 +489,12 @@ namespace Duplicati.Library.Main
                         m_options["max-download-pr-second"] = value.ToString() + "b";
             }
         }
+
+        /// <summary>
+        /// A value indicating if the backup is a full backup
+        /// </summary>
+        public bool AllowFullRemoval { get { return GetBool("allow-full-removal"); } }
+
 
         private bool GetBool(string name)
         {

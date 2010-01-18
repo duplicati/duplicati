@@ -115,6 +115,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An internal error occured, and the operation was aborted to protect the backup sets.
+        /// </summary>
+        internal static string InternalDeleteCountError {
+            get {
+                return ResourceManager.GetString("InternalDeleteCountError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid manifest, no files: {0}.
         /// </summary>
         internal static string ManifestNoFilesError {
@@ -138,6 +147,15 @@ namespace Duplicati.Library.Main.Strings {
         internal static string NotDeletingBackupSetMessage {
             get {
                 return ResourceManager.GetString("NotDeletingBackupSetMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The backup at time {0} is not removed because it is the last full backup, use --allow-full-removal to include this backup in the delete.
+        /// </summary>
+        internal static string NotDeletingLastFullMessage {
+            get {
+                return ResourceManager.GetString("NotDeletingLastFullMessage", resourceCulture);
             }
         }
         

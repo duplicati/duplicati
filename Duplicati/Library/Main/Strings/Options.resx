@@ -315,4 +315,10 @@
   <data name="DisableStreamingShort" xml:space="preserve">
     <value>Disables use of the streaming transfer method</value>
   </data>
+  <data name="AllowfullremoveLong" xml:space="preserve">
+    <value>As a precaution, the last full backup will never be removed, even if using the --remove-all-but-n-full=0 option. Set this option to allow removing the last backup.</value>
+  </data>
+  <data name="AllowfullremoveShort" xml:space="preserve">
+    <value>Allow removal of the all backups</value>
+  </data>
 </root>

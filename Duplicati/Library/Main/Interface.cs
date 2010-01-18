@@ -539,9 +539,11 @@ namespace Duplicati.Library.Main
 
         public string RemoveAllButNFull()
         {
-            int x = m_options.RemoveAllButNFull;
+            int x = Math.Max(0, m_options.RemoveAllButNFull);
 
-            using(BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
+            StringBuilder sb = new StringBuilder();
+
+            using (BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
             try
             {
                 if (OperationStarted != null)
@@ -552,6 +554,12 @@ namespace Duplicati.Library.Main
 
                 while (entries.Count > x)
                 {
+                    if (entries.Count == 1 && !m_options.AllowFullRemoval)
+                    {
+                        sb.AppendLine(string.Format(Strings.Interface.NotDeletingLastFullMessage, entries[0].Time));
+                        break;
+                    }
+
                     BackupEntry be = entries[0];
                     entries.RemoveAt(0);
 
@@ -560,13 +568,18 @@ namespace Duplicati.Library.Main
                     toremove.Add(be);
                 }
 
-                return RemoveBackupSets(backend, toremove);
+                if (entries.Count == 0 && toremove.Count > 0 && !m_options.AllowFullRemoval)
+                    throw new Exception(Strings.Interface.InternalDeleteCountError);
+
+                sb.Append(RemoveBackupSets(backend, toremove));
             }
             finally
             {
                 if (OperationCompleted != null)
                     OperationCompleted(this, DuplicatiOperation.Remove, 100, -1, Strings.Interface.StatusCompleted, "");
             }
+
+            return sb.ToString();
         }
 
         public string RemoveOlderThan()
@@ -586,6 +599,12 @@ namespace Duplicati.Library.Main
 
                 while (entries.Count > 0 && entries[0].Time <= expires)
                 {
+                    if (entries.Count == 1 && !m_options.AllowFullRemoval)
+                    {
+                        sb.AppendLine(string.Format(Strings.Interface.NotDeletingLastFullMessage, entries[0].Time));
+                        break;
+                    }
+
                     BackupEntry be = entries[0];
                     entries.RemoveAt(0);
 
@@ -616,6 +635,8 @@ namespace Duplicati.Library.Main
                     }
                 }
 
+                if (entries.Count == 0 && toremove.Count > 0 && !m_options.AllowFullRemoval)
+                    throw new Exception(Strings.Interface.InternalDeleteCountError);
 
                 sb.Append(RemoveBackupSets(backend, toremove));
             }

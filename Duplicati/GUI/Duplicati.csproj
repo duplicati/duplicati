@@ -215,6 +215,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\DuplicatiRunner.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DuplicatiRunner.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\ListBackupFiles.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -802,6 +807,10 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\DuplicatiRunner.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DuplicatiRunner.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\ListBackupFiles.resx">
       <SubType>Designer</SubType>

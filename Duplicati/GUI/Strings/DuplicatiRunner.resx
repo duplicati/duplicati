@@ -117,100 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="BackendNotFoundError" xml:space="preserve">
-    <value>Backend not found: {0}</value>
+  <data name="CleanupError" xml:space="preserve">
+    <value>Failed during cleanup: {0}</value>
   </data>
-  <data name="BadSortingDetectedError" xml:space="preserve">
-    <value>Bad sorting of backup times detected</value>
-  </data>
-  <data name="BadVolumeSortOrder" xml:space="preserve">
-    <value>Bad sort order on volumes detected</value>
-  </data>
-  <data name="DeletingBackupSetMessage" xml:space="preserve">
-    <value>Deleting backup at {0}</value>
-  </data>
-  <data name="FailedToFindControlFilesMessage" xml:space="preserve">
-    <value>Failed to find control files in: {0}</value>
-  </data>
-  <data name="FilesAreNotForceDeletedMessage" xml:space="preserve">
-    <value>Files are not deleted, use the --force command to actually remove files</value>
-  </data>
-  <data name="InternalDeleteCountError" xml:space="preserve">
-    <value>An internal error occured, and the operation was aborted to protect the backup sets</value>
-  </data>
-  <data name="ManifestNoFilesError" xml:space="preserve">
-    <value>Invalid manifest, no files: {0}</value>
-  </data>
-  <data name="ManifestWrongCountError" xml:space="preserve">
-    <value>Invalid manifest, wrong count: {0}</value>
-  </data>
-  <data name="NotDeletingBackupSetMessage" xml:space="preserve">
-    <value>Not deleting backup at time: {0}, because later backups depend on it</value>
-  </data>
-  <data name="NotDeletingLastFullMessage" xml:space="preserve">
-    <value>The backup at time {0} is not removed because it is the last full backup, use --allow-full-removal to include this backup in the delete</value>
-  </data>
-  <data name="PartialUploadMessage" xml:space="preserve">
-    <value>Failed after uploading {0} volume(s). Error message: {1}</value>
-  </data>
-  <data name="RemovingPartialFilesMessage" xml:space="preserve">
-    <value>Removing partial file: {0}</value>
-  </data>
-  <data name="SignatureCachePathMissingError" xml:space="preserve">
-    <value>Signature cache path was not given as an argument</value>
-  </data>
-  <data name="StatusBuildingFilelist" xml:space="preserve">
-    <value>Building filelist ...</value>
-  </data>
-  <data name="StatusCompleted" xml:space="preserve">
-    <value>Completed</value>
-  </data>
-  <data name="StatusCreatingVolume" xml:space="preserve">
-    <value>Creating volume {0}</value>
-  </data>
-  <data name="StatusDownloadingContentVolume" xml:space="preserve">
-    <value>Downloading content, volume {0}</value>
-  </data>
-  <data name="StatusDownloadingSignatureVolume" xml:space="preserve">
-    <value>Downloading signatures, volume {0}</value>
-  </data>
-  <data name="StatusLoadingFilelist" xml:space="preserve">
-    <value>Loading remote filelist</value>
-  </data>
-  <data name="StatusPatching" xml:space="preserve">
-    <value>Patching restore with #{0}</value>
-  </data>
-  <data name="StatusProcessing" xml:space="preserve">
-    <value>Processing: {0}</value>
-  </data>
-  <data name="StatusReadingIncrementalData" xml:space="preserve">
-    <value>Reading incremental data ...</value>
-  </data>
-  <data name="StatusReadingIncrementalFile" xml:space="preserve">
-    <value>Reading incremental data from: {0}</value>
-  </data>
-  <data name="StatusReadingIncrementals" xml:space="preserve">
-    <value>Reading incremental data</value>
-  </data>
-  <data name="StatusReadingManifest" xml:space="preserve">
-    <value>Reading manifest file: {0}</value>
-  </data>
-  <data name="StatusReadingSignatureFile" xml:space="preserve">
-    <value>Reading signatures: {0}, vol {1}</value>
-  </data>
-  <data name="StatusStarted" xml:space="preserve">
-    <value>Started</value>
-  </data>
-  <data name="StatusUploadingContentVolume" xml:space="preserve">
-    <value>Uploading content, volume {0}</value>
-  </data>
-  <data name="StatusUploadingManifestVolume" xml:space="preserve">
-    <value>Uploading manifest, volume {0}</value>
-  </data>
-  <data name="StatusUploadingSignatureVolume" xml:space="preserve">
-    <value>Uploading signatures, volume {0}</value>
-  </data>
-  <data name="UnexpectedCompressionError" xml:space="preserve">
-    <value>Unexpected compression mode: {0}</value>
+  <data name="CleanupLogdataHeader" xml:space="preserve">
+    <value>Cleanup output:</value>
   </data>
 </root>
