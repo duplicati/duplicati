@@ -308,6 +308,13 @@ namespace Duplicati.Datamodel
                     options["disable-filetime-check"] = "";
                 if (!string.IsNullOrEmpty(this.FileTimeSeperator))
                     options["time-separator"] = this.FileTimeSeperator;
+                
+                if (!string.IsNullOrEmpty(this.FilenamePrefix))
+                    options["backup-prefix"] = this.FilenamePrefix;
+                if (this.ShortFilenames)
+                    options["short-filenames"] = "";
+                if (!string.IsNullOrEmpty(this.FileSizeLimit))
+                    options["skip-files-larger-than"] = this.FileSizeLimit;
             }
         }
     }

@@ -45,8 +45,23 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (args.Direction == System.Windows.Forms.Wizard.PageChangedDirection.Back)
                 return;
 
+            string prefix = FilePrefixEnabled.Checked ? FilePrefix.Text : "";
+            bool modified = 
+                m_wrapper.FileTimeSeperator != FileTimeSeperator.Text ||
+                    m_wrapper.FilePrefix != prefix ||
+                    m_wrapper.ShortFilenames != UseShortFilenames.Checked;
+
+            if (modified && m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Edit)
+            {
+                if (MessageBox.Show(this, Strings.GeneratedFilenameOptions.ModifyWillMakeBackupDisapearConfirmation, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    args.Cancel = true;
+                    return;
+                }
+            }
+
             m_wrapper.FileTimeSeperator = FileTimeSeperator.Text;
-            m_wrapper.FilePrefix = FilePrefixEnabled.Checked ? "" : FilePrefix.Text;
+            m_wrapper.FilePrefix = prefix;
             m_wrapper.ShortFilenames = UseShortFilenames.Checked;
 
             WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
