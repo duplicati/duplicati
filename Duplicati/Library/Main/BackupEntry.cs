@@ -23,6 +23,11 @@ using System.Text;
 
 namespace Duplicati.Library.Main
 {
+    /// <summary>
+    /// This class represents a file that is part of a backup.
+    /// As it represents manifest, signature and volume files, it has methods that
+    /// only work for one type. This class should be split into seperate classes.
+    /// </summary>
     public class BackupEntry
     {
         public enum EntryType
@@ -57,6 +62,15 @@ namespace Duplicati.Library.Main
         public List<BackupEntry> SignatureFile { get { return m_signature; } }
         public EntryType Type { get { return m_type; } }
         public int VolumeNumber { get { return m_volNumber; } }
+
+        public BackupEntry FindSignatureVolume(int volumeNumber)
+        {
+            foreach (BackupEntry bex in SignatureFile)
+                if (bex.VolumeNumber == volumeNumber)
+                    return bex;
+
+            return null;
+        }
 
         public BackupEntry(Backend.FileEntry fe, DateTime time, EntryType type, bool isFull, bool isShortName, int volNumber, string compressionMode, string encryptionMode)
         {

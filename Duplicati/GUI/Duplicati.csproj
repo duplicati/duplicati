@@ -99,6 +99,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SizeSelector.resx</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\Strings\WaitForOperation.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WaitForOperation.resx</DependentUpon>
+    </Compile>
     <Compile Include="HelperControls\ThreadPriorityPicker.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -1012,6 +1017,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Database schema\3. Default managed SSH.sql" />
+    <EmbeddedResource Include="HelperControls\Strings\WaitForOperation.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>WaitForOperation.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <None Include="Resources\Play.png" />
     <None Include="Resources\Delay.png" />
     <None Include="Resources\Pause.png" />

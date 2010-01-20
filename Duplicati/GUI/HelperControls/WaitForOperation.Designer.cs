@@ -41,6 +41,9 @@ namespace Duplicati.GUI.HelperControls
             // 
             // backgroundWorker1
             // 
+            this.backgroundWorker1.WorkerReportsProgress = true;
+            this.backgroundWorker1.WorkerSupportsCancellation = true;
+            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
             this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
             // 
             // WaitForOperation
@@ -54,6 +57,7 @@ namespace Duplicati.GUI.HelperControls
             this.Name = "WaitForOperation";
             this.ShowInTaskbar = false;
             this.Load += new System.EventHandler(this.WaitForOperation_Load);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.WaitForOperation_FormClosing);
             this.ResumeLayout(false);
 
         }

@@ -30,16 +30,21 @@ namespace Duplicati.GUI.HelperControls
     public partial class WaitForOperation : Form
     {
         private Exception m_exception;
+        private DoWorkEventHandler m_handler;
+        private bool m_useAbortCancel;
+        private object m_lock = new object();
+        private System.Threading.Thread m_workerThread = null;
 
         public WaitForOperation()
         {
             InitializeComponent();
         }
 
-        public void Setup(DoWorkEventHandler callback, string title)
+        public void Setup(DoWorkEventHandler callback, string title, bool useAbortCancel)
         {
-            backgroundWorker1.DoWork += callback;
+            m_handler = callback;
             this.Text = title;
+            m_useAbortCancel = useAbortCancel;
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -88,6 +93,50 @@ namespace Duplicati.GUI.HelperControls
                     progressBar1.Style = ProgressBarStyle.Continuous;
                     progressBar1.Value = Math.Max(0, Math.Min(progress, 100));
                 }
+            }
+        }
+
+        private void WaitForOperation_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (e.CloseReason == CloseReason.UserClosing && backgroundWorker1.IsBusy)
+            {
+                if (!backgroundWorker1.CancellationPending)
+                {
+                    if (MessageBox.Show(this, Strings.WaitForOperation.ReallyAbortQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) == DialogResult.Yes)
+                    {
+                        backgroundWorker1.CancelAsync();
+                        if (m_useAbortCancel)
+                        {
+                            lock (m_lock)
+                                if (m_workerThread != null)
+                                    m_workerThread.Abort();
+                        }
+                    }
+                }
+
+                e.Cancel = true;
+                return;
+            }
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                lock (m_lock)
+                    m_workerThread = System.Threading.Thread.CurrentThread;
+
+                m_handler.Invoke(sender, e);
+            }
+            catch(System.Threading.ThreadAbortException)
+            {
+                System.Threading.Thread.ResetAbort();
+                e.Cancel = true;
+            }
+            finally
+            {
+                lock (m_lock)
+                    m_workerThread = null;
             }
         }
     }

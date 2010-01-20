@@ -399,7 +399,9 @@ namespace Duplicati.Library.Main
                                          {
                                              OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingSignatureVolume, patchno + 1), "");
 
-                                             BackupEntry signatureVol = new BackupEntry(BackupEntry.EntryType.Signature, vol.IsFull, vol.Time, vol.VolumeNumber);
+                                             BackupEntry signatureVol = be.FindSignatureVolume(vol.VolumeNumber);
+                                             if (signatureVol == null)
+                                                 throw new Exception(string.Format(Strings.Interface.MissingSignatureFile, vol.Time, vol.VolumeNumber, vol.Filename));
                                              using (new Logging.Timer("Get " + signatureVol))
                                                  backend.Get(signatureVol, sigFile, signatureHashes == null ? null : signatureHashes[signatureVol.VolumeNumber - 1]);
 

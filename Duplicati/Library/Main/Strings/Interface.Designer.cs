@@ -142,6 +142,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The signature file for a content volume was missing, date: {0}, volumenumber: {1}, content volume filename: {2}.
+        /// </summary>
+        internal static string MissingSignatureFile {
+            get {
+                return ResourceManager.GetString("MissingSignatureFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Not deleting backup at time: {0}, because later backups depend on it.
         /// </summary>
         internal static string NotDeletingBackupSetMessage {

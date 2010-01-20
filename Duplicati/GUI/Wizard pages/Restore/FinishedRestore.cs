@@ -53,7 +53,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 try
                 {
                     m_waitdlg = new Duplicati.GUI.HelperControls.WaitForOperation();
-                    m_waitdlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestore.RestoreWaitDialogTitle);
+                    m_waitdlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestore.RestoreWaitDialogTitle, true);
                     if (m_waitdlg.ShowDialog() != DialogResult.OK)
                     {
                         if (m_waitdlg.Error != null)

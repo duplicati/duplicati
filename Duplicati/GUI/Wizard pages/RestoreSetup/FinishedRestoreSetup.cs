@@ -50,7 +50,7 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             try
             {
                 HelperControls.WaitForOperation dlg = new Duplicati.GUI.HelperControls.WaitForOperation();
-                dlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestoreSetup.RestoreWaitDialogTitle);
+                dlg.Setup(new DoWorkEventHandler(Restore), Strings.FinishedRestoreSetup.RestoreWaitDialogTitle, true);
                 if (dlg.ShowDialog() != DialogResult.OK)
                 {
                     if (dlg.Error != null)
