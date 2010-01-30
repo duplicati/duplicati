@@ -62,7 +62,7 @@ namespace Duplicati.Library.Core
             if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentUICulture, System.Globalization.DateTimeStyles.None, out t))
                 return t;
 
-            char[] seperators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'H' };
+            char[] seperators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
 
             int index = 0;
             int previndex = 0;

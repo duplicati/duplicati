@@ -98,7 +98,12 @@ namespace Duplicati.CommandLine
             if (source.Trim().ToLower() == "list")
                 Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
             else if (source.Trim().ToLower() == "list-current-files")
+            {
+                if (!EnsurePassphrase(options))
+                    return;
+
                 Console.WriteLine(string.Join("\r\n", new List<string>(Duplicati.Library.Main.Interface.ListContent(target, options)).ToArray()));
+            }
             else if (source.Trim().ToLower() == "list-actual-signature-files")
             {
                 cargs.RemoveAt(0);
@@ -109,14 +114,8 @@ namespace Duplicati.CommandLine
                     return;
                 }
 
-                if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
-                {
-                    string pwd = ReadPassphraseFromConsole(false);
-                    if (pwd == null)
-                        return;
-                    else
-                        options["passphrase"] = pwd;
-                }
+                if (!EnsurePassphrase(options))
+                    return;
 
                 List<KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string>> files = Duplicati.Library.Main.Interface.ListActualSignatureFiles(cargs[0], options);
 
@@ -210,30 +209,32 @@ namespace Duplicati.CommandLine
             }
             else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
             {
-                if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
-                {
-                    string pwd = ReadPassphraseFromConsole(false);
-                    if (pwd == null)
-                        return;
-                    else
-                        options["passphrase"] = pwd;
-                }
+                if (!EnsurePassphrase(options))
+                    return;
 
                 Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target, options));
             }
             else
             {
-                if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
-                {
-                    string pwd = ReadPassphraseFromConsole(true);
-                    if (pwd == null)
-                        return;
-                    else
-                        options["passphrase"] = pwd;
-                }
+                if (!EnsurePassphrase(options))
+                    return;
 
                 Console.WriteLine(Duplicati.Library.Main.Interface.Backup(source, target, options));
             }
+        }
+
+        private static bool EnsurePassphrase(Dictionary<string, string> options)
+        {
+            if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
+            {
+                string pwd = ReadPassphraseFromConsole(false);
+                if (pwd == null)
+                    return false;
+                else
+                    options["passphrase"] = pwd;
+            }
+
+            return true;
         }
 
         private static string ReadPassphraseFromConsole(bool confirm)
