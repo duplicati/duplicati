@@ -42,7 +42,7 @@ namespace Duplicati.Datamodel
 
         private const string DISPLAY_LANGUAGE = "Display Language";
 
-        //TODO: Deal with this on Linux
+        //This is only used on windows, on linux, it is assumed that the programs are in the path env.
         public const string PROGRAM_FILES = "%PROGRAMFILES%";
 
         public const string STARTUP_DELAY_DURATION = "Startup delay duration";
@@ -130,12 +130,14 @@ namespace Duplicati.Datamodel
             {
                 if (string.IsNullOrEmpty(m_appset[TEMP_PATH]))
                 {
-                    if (Library.Core.Utility.IsClientLinux)
-                        return "";
-                    else
-                        return "%temp%";
+#if DEBUG
+                    return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "TEMP");
+#else
+                    return System.IO.Path.GetTempPath();
+#endif
                 }
-                return m_appset[TEMP_PATH];
+                else
+                    return m_appset[TEMP_PATH];
             }
             set { m_appset[TEMP_PATH] = value; }
         }
@@ -196,12 +198,14 @@ namespace Duplicati.Datamodel
             {
                 if (string.IsNullOrEmpty(m_appset[SIGNATURE_CACHE_PATH]))
                 {
-                    if (Library.Core.Utility.IsClientLinux)
-                        return "";
-                    else
-                        return System.IO.Path.Combine("%temp%", "Duplicati Signature Cache");
+#if DEBUG
+                    return System.IO.Path.Combine(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "TEMP"), "Duplicati Signature Cache");
+#else
+                    return System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Duplicati Signature Cache");
+#endif
                 }
-                return m_appset[SIGNATURE_CACHE_PATH];
+                else
+                    return m_appset[SIGNATURE_CACHE_PATH];
             }
             set { m_appset[SIGNATURE_CACHE_PATH] = value; }
         }
