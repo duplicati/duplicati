@@ -70,6 +70,42 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible..
+        /// </summary>
+        internal static string DescriptionAcceptAnyCertificateLong {
+            get {
+                return ResourceManager.GetString("DescriptionAcceptAnyCertificateLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Accept any server certificate.
+        /// </summary>
+        internal static string DescriptionAcceptAnyCertificateShort {
+            get {
+                return ResourceManager.GetString("DescriptionAcceptAnyCertificateShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces..
+        /// </summary>
+        internal static string DescriptionAcceptHashLong {
+            get {
+                return ResourceManager.GetString("DescriptionAcceptHashLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optionally accept a known SSL certificate.
+        /// </summary>
+        internal static string DescriptionAcceptHashShort {
+            get {
+                return ResourceManager.GetString("DescriptionAcceptHashShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Using the HTTP Digest authentication method allows the user to authenticate with the server, without sending the password in clear. However, a man-in-the-middle attack is easy, because the HTTP protocol specifies a fallback to Basic authentication, which will make the client send the password to the attacker. Using this flag, the client doest not accept this, and always uses Digest authentication or fails to connect..
         /// </summary>
         internal static string DescriptionForceDigestLong {
@@ -138,6 +174,24 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string DescriptionIntegratedAuthenticationShort {
             get {
                 return ResourceManager.GetString("DescriptionIntegratedAuthenticationShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use this flag to communicate using Secure Socket Layer (SSL) over http (https)..
+        /// </summary>
+        internal static string DescriptionUseSSLLong {
+            get {
+                return ResourceManager.GetString("DescriptionUseSSLLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Instructs Duplicati to use an SSL (https) connection.
+        /// </summary>
+        internal static string DescriptionUseSSLShort {
+            get {
+                return ResourceManager.GetString("DescriptionUseSSLShort", resourceCulture);
             }
         }
         

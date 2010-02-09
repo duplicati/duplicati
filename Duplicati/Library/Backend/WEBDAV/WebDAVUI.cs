@@ -38,6 +38,11 @@ namespace Duplicati.Library.Backend
         private const string INTEGRATED_AUTHENTICATION = "Integrated Authentication";
         private const string FORCE_DIGEST_AUTHENTICATION = "Force Digest Authentication";
 
+        private const string USE_SSL = "Use SSL";
+        private const string ACCEPT_ANY_CERTIFICATE = "Accept Any Server Certificate";
+        private const string ACCEPT_SPECIFIC_CERTIFICATE = "Accept Specific Server Certificate";
+
+
         private const string HAS_WARNED_PASSWORD = "UI: Has warned password";
         private const string HAS_WARNED_USERNAME = "UI: Has warned username";
         private const string HAS_WARNED_PATH = "UI: Has warned path";
@@ -47,6 +52,8 @@ namespace Duplicati.Library.Backend
         private bool m_warnedUsername = false;
         private bool m_hasTested;
         private bool m_warnedPath;
+
+        private static System.Text.RegularExpressions.Regex HashRegEx = new System.Text.RegularExpressions.Regex("[^0-9a-fA-F]");
 
         private IDictionary<string, string> m_options;
 
@@ -91,18 +98,6 @@ namespace Duplicati.Library.Backend
 
         void WebDAVUI_PageLoad(object sender, EventArgs args)
         {
-            if (!m_options.ContainsKey(HAS_TESTED) || !bool.TryParse(m_options[HAS_TESTED], out m_hasTested))
-                m_hasTested = false;
-
-            if (!m_options.ContainsKey(HAS_WARNED_PATH) || !bool.TryParse(m_options[HAS_WARNED_PATH], out m_warnedPath))
-                m_warnedPath = false;
-
-            if (!m_options.ContainsKey(HAS_WARNED_USERNAME) || !bool.TryParse(m_options[HAS_WARNED_USERNAME], out m_warnedUsername))
-                m_warnedUsername = false;
-
-            if (!m_options.ContainsKey(HAS_WARNED_PASSWORD) || !bool.TryParse(m_options[HAS_WARNED_PASSWORD], out m_warnedPassword))
-                m_warnedPassword = false;
-
             if (m_options.ContainsKey(HOST))
                 Servername.Text = m_options[HOST];
             if (m_options.ContainsKey(FOLDER))
@@ -124,9 +119,37 @@ namespace Duplicati.Library.Backend
             if (!m_options.ContainsKey(FORCE_DIGEST_AUTHENTICATION) || !bool.TryParse(m_options[FORCE_DIGEST_AUTHENTICATION], out forceDigest))
                 forceDigest = false;
 
+            bool useSSL;
+            if (!m_options.ContainsKey(USE_SSL) || !bool.TryParse(m_options[USE_SSL], out useSSL))
+                useSSL = false;
+
+            bool acceptAnyCertificate;
+            if (!m_options.ContainsKey(ACCEPT_ANY_CERTIFICATE) || !bool.TryParse(m_options[ACCEPT_ANY_CERTIFICATE], out acceptAnyCertificate))
+                acceptAnyCertificate = false;
+
+            UseSSL.Checked = useSSL;
+            AcceptAnyHash.Checked = acceptAnyCertificate;
+            
+            if (m_options.ContainsKey(ACCEPT_SPECIFIC_CERTIFICATE))
+                SpecifiedHash.Text = m_options[ACCEPT_SPECIFIC_CERTIFICATE];
+            AcceptSpecifiedHash.Checked = !string.IsNullOrEmpty(SpecifiedHash.Text);
+
             Port.Value = port;
             UseIntegratedAuth.Checked = integratedAuth;
             DigestAuth.Checked = forceDigest;
+
+            if (!m_options.ContainsKey(HAS_TESTED) || !bool.TryParse(m_options[HAS_TESTED], out m_hasTested))
+                m_hasTested = false;
+
+            if (!m_options.ContainsKey(HAS_WARNED_PATH) || !bool.TryParse(m_options[HAS_WARNED_PATH], out m_warnedPath))
+                m_warnedPath = false;
+
+            if (!m_options.ContainsKey(HAS_WARNED_USERNAME) || !bool.TryParse(m_options[HAS_WARNED_USERNAME], out m_warnedUsername))
+                m_warnedUsername = false;
+
+            if (!m_options.ContainsKey(HAS_WARNED_PASSWORD) || !bool.TryParse(m_options[HAS_WARNED_PASSWORD], out m_warnedPassword))
+                m_warnedPassword = false;
+
         }
 
         private bool ValidateForm()
@@ -157,7 +180,7 @@ namespace Duplicati.Library.Backend
 
                 if (Password.Text.Trim().Length <= 0 && !m_warnedPassword)
                 {
-                    if (MessageBox.Show(this, Backend.CommonStrings.EmptyPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Backend.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
                     {
                         try { Password.Focus(); }
                         catch { }
@@ -165,6 +188,25 @@ namespace Duplicati.Library.Backend
                         return false;
                     }
                     m_warnedPassword = true;
+                }
+            }
+
+            if (UseSSL.Checked && AcceptSpecifiedHash.Checked)
+            {
+                if (SpecifiedHash.Text.Trim().Length == 0)
+                {
+                    MessageBox.Show(this, Strings.WebDAVUI.EmptyHashError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try { SpecifiedHash.Focus(); }
+                    catch { }
+                    return false;
+                }
+
+                if (SpecifiedHash.Text.Length % 2 > 0 || HashRegEx.Match(SpecifiedHash.Text).Success)
+                {
+                    MessageBox.Show(this, Strings.WebDAVUI.InvalidHashError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try { SpecifiedHash.Focus(); }
+                    catch { }
+                    return false;
                 }
             }
 
@@ -194,44 +236,72 @@ namespace Duplicati.Library.Backend
             }
             m_options[PORT] = ((int)Port.Value).ToString();
             m_options[FORCE_DIGEST_AUTHENTICATION] = DigestAuth.Checked.ToString();
+            
+            m_options[USE_SSL] = UseSSL.Checked.ToString();
+            m_options[ACCEPT_ANY_CERTIFICATE] = AcceptAnyHash.Checked.ToString();
+            m_options[ACCEPT_SPECIFIC_CERTIFICATE] = AcceptSpecifiedHash.Checked ? SpecifiedHash.Text : "";
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
         {
             if (ValidateForm())
             {
-                Cursor c = this.Cursor;
-                try
+                bool retry = true;
+                while (retry == true)
                 {
-                    this.Cursor = Cursors.WaitCursor;
-
-                    Save();
-                    Dictionary<string, string> options = new Dictionary<string, string>();
-                    string destination = GetConfiguration(m_options, options);
-
-                    WEBDAV webDAV = new WEBDAV(destination, options);
-                    webDAV.List();
-
-                    MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    m_hasTested = true;
-                }
-                catch (Backend.FolderMissingException)
-                {
-                    switch (MessageBox.Show(this, Strings.WebDAVUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    retry = false;
+                    Cursor c = this.Cursor;
+                    try
                     {
-                        case DialogResult.Yes:
-                            CreateFolderButton.PerformClick();
-                            TestConnection.PerformClick();
-                            return;
-                        default:
-                            return;
+                        string prevHash = SslCertificateValidator.m_lastCertificate;
+
+                        this.Cursor = Cursors.WaitCursor;
+
+                        Save();
+                        Dictionary<string, string> options = new Dictionary<string, string>();
+                        string destination = GetConfiguration(m_options, options);
+
+                        WEBDAV webDAV = new WEBDAV(destination, options);
+                        webDAV.List();
+
+                        MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        m_hasTested = true;
+                    }
+                    catch (Backend.FolderMissingException)
+                    {
+                        switch (MessageBox.Show(this, Strings.WebDAVUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                        {
+                            case DialogResult.Yes:
+                                CreateFolderButton.PerformClick();
+                                TestConnection.PerformClick();
+                                return;
+                            default:
+                                return;
+                        }
+                    }
+                    catch (SslCertificateValidator.InvalidCertificateException cex)
+                    {
+                        if (string.IsNullOrEmpty(cex.Certificate))
+                            MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        else
+                        {
+                            if (MessageBox.Show(this, string.Format(Strings.WebDAVUI.ApproveCertificateHashQuestion, cex.SslError), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                            {
+                                retry = true;
+                                AcceptSpecifiedHash.Checked = true;
+                                SpecifiedHash.Text = cex.Certificate;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    finally
+                    {
+                        this.Cursor = c;
                     }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                this.Cursor = c;
             }
         }
 
@@ -273,32 +343,47 @@ namespace Duplicati.Library.Backend
         {
             if (ValidateForm())
             {
-                try
+                bool retry = true;
+                while (retry == true)
                 {
-                    string url = "http://" + Servername.Text + ":" + Port.Value.ToString() + "/" + Path.Text;
-                    System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(url);
-                    if (UseIntegratedAuth.Checked)
-                        req.UseDefaultCredentials = true;
-                    else if (DigestAuth.Checked)
+                    retry = false;
+                    Cursor c = this.Cursor;
+                    try
                     {
-                        System.Net.CredentialCache cred = new System.Net.CredentialCache();
-                        cred.Add(new Uri(url), "Digest", new System.Net.NetworkCredential(Username.Text, Password.Text));
-                        req.Credentials = cred;
+                        this.Cursor = Cursors.WaitCursor;
+                        Save();
+
+                        Dictionary<string, string> options = new Dictionary<string, string>();
+                        string destination = GetConfiguration(m_options, options);
+
+                        WEBDAV webdav = new WEBDAV(destination, options);
+                        webdav.CreateFolder();
+
+                        MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        m_hasTested = true;
                     }
-                    else
-                        req.Credentials = new System.Net.NetworkCredential(Username.Text, Password.Text);
-
-                    req.Method = System.Net.WebRequestMethods.Http.MkCol;
-                    req.KeepAlive = false;
-                    using (req.GetResponse())
-                    { }
-
-                    MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    catch (SslCertificateValidator.InvalidCertificateException cex)
+                    {
+                        if (string.IsNullOrEmpty(cex.Certificate))
+                            MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        else
+                        {
+                            if (MessageBox.Show(this, string.Format(Strings.WebDAVUI.ApproveCertificateHashQuestion, cex.SslError), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                            {
+                                retry = true;
+                                AcceptSpecifiedHash.Checked = true;
+                                SpecifiedHash.Text = cex.Certificate;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    finally
+                    {
+                        this.Cursor = c;
+                    }
                 }
             }
         }
@@ -333,6 +418,21 @@ namespace Duplicati.Library.Backend
             if (forceDigest)
                 commandlineOptions["force-digest-authentication"] = "";
 
+            bool useSSL;
+            if (!guiOptions.ContainsKey(USE_SSL) || !bool.TryParse(guiOptions[USE_SSL], out useSSL))
+                useSSL = false;
+
+            bool acceptAnyCertificate;
+            if (!guiOptions.ContainsKey(ACCEPT_ANY_CERTIFICATE) || !bool.TryParse(guiOptions[ACCEPT_ANY_CERTIFICATE], out acceptAnyCertificate))
+                acceptAnyCertificate = false;
+
+            if (useSSL)
+                commandlineOptions["use-ssl"] = "";
+            if (acceptAnyCertificate)
+                commandlineOptions["accept-any-ssl-certificate"] = "";
+            if (guiOptions.ContainsKey(ACCEPT_SPECIFIC_CERTIFICATE))
+                commandlineOptions["accept-specified-ssl-hash"] = guiOptions[ACCEPT_SPECIFIC_CERTIFICATE];
+
             if (!guiOptions.ContainsKey(HOST))
                 throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, HOST));
 
@@ -347,6 +447,30 @@ namespace Duplicati.Library.Backend
         public static string PageDescription
         {
             get { return Strings.WebDAVUI.PageDescription; }
+        }
+
+        private void UseSSL_CheckedChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+            SSLGroup.Enabled = UseSSL.Checked;
+            if (Port.Value == 80 || Port.Value == 443)
+                Port.Value = UseSSL.Checked ? 443 : 80;
+        }
+
+        private void AcceptSpecifiedHash_CheckedChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+            SpecifiedHash.Enabled = AcceptSpecifiedHash.Checked;
+        }
+
+        private void SpecifiedHash_TextChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+        }
+
+        private void AcceptAnyHash_CheckedChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
         }
 
     }

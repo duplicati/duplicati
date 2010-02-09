@@ -44,8 +44,14 @@ namespace Duplicati.Library.Backend
             this.Password = new System.Windows.Forms.TextBox();
             this.CreateFolderButton = new System.Windows.Forms.Button();
             this.DigestAuth = new System.Windows.Forms.CheckBox();
+            this.UseSSL = new System.Windows.Forms.CheckBox();
+            this.AcceptAnyHash = new System.Windows.Forms.CheckBox();
+            this.AcceptSpecifiedHash = new System.Windows.Forms.CheckBox();
+            this.SpecifiedHash = new System.Windows.Forms.TextBox();
+            this.SSLGroup = new System.Windows.Forms.GroupBox();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
             this.PasswordSettings.SuspendLayout();
+            this.SSLGroup.SuspendLayout();
             this.SuspendLayout();
             // 
             // UseIntegratedAuth
@@ -156,10 +162,48 @@ namespace Duplicati.Library.Backend
             this.DigestAuth.UseVisualStyleBackColor = true;
             this.DigestAuth.CheckedChanged += new System.EventHandler(this.DigestAuth_CheckedChanged);
             // 
+            // UseSSL
+            // 
+            resources.ApplyResources(this.UseSSL, "UseSSL");
+            this.UseSSL.Name = "UseSSL";
+            this.UseSSL.UseVisualStyleBackColor = true;
+            this.UseSSL.CheckedChanged += new System.EventHandler(this.UseSSL_CheckedChanged);
+            // 
+            // AcceptAnyHash
+            // 
+            resources.ApplyResources(this.AcceptAnyHash, "AcceptAnyHash");
+            this.AcceptAnyHash.Name = "AcceptAnyHash";
+            this.AcceptAnyHash.UseVisualStyleBackColor = true;
+            this.AcceptAnyHash.CheckedChanged += new System.EventHandler(this.AcceptAnyHash_CheckedChanged);
+            // 
+            // AcceptSpecifiedHash
+            // 
+            resources.ApplyResources(this.AcceptSpecifiedHash, "AcceptSpecifiedHash");
+            this.AcceptSpecifiedHash.Name = "AcceptSpecifiedHash";
+            this.AcceptSpecifiedHash.UseVisualStyleBackColor = true;
+            this.AcceptSpecifiedHash.CheckedChanged += new System.EventHandler(this.AcceptSpecifiedHash_CheckedChanged);
+            // 
+            // SpecifiedHash
+            // 
+            resources.ApplyResources(this.SpecifiedHash, "SpecifiedHash");
+            this.SpecifiedHash.Name = "SpecifiedHash";
+            this.SpecifiedHash.TextChanged += new System.EventHandler(this.SpecifiedHash_TextChanged);
+            // 
+            // SSLGroup
+            // 
+            this.SSLGroup.Controls.Add(this.AcceptSpecifiedHash);
+            this.SSLGroup.Controls.Add(this.SpecifiedHash);
+            this.SSLGroup.Controls.Add(this.AcceptAnyHash);
+            resources.ApplyResources(this.SSLGroup, "SSLGroup");
+            this.SSLGroup.Name = "SSLGroup";
+            this.SSLGroup.TabStop = false;
+            // 
             // WebDAVUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.UseSSL);
+            this.Controls.Add(this.SSLGroup);
             this.Controls.Add(this.DigestAuth);
             this.Controls.Add(this.CreateFolderButton);
             this.Controls.Add(this.UseIntegratedAuth);
@@ -176,6 +220,8 @@ namespace Duplicati.Library.Backend
             ((System.ComponentModel.ISupportInitialize)(this.Port)).EndInit();
             this.PasswordSettings.ResumeLayout(false);
             this.PasswordSettings.PerformLayout();
+            this.SSLGroup.ResumeLayout(false);
+            this.SSLGroup.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -198,5 +244,10 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.TextBox Password;
         private System.Windows.Forms.Button CreateFolderButton;
         private System.Windows.Forms.CheckBox DigestAuth;
+        private System.Windows.Forms.CheckBox UseSSL;
+        private System.Windows.Forms.CheckBox AcceptAnyHash;
+        private System.Windows.Forms.CheckBox AcceptSpecifiedHash;
+        private System.Windows.Forms.TextBox SpecifiedHash;
+        private System.Windows.Forms.GroupBox SSLGroup;
     }
 }

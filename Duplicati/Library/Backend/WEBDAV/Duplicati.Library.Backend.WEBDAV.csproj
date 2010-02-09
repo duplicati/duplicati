@@ -44,6 +44,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SslCertificateValidator.cs" />
+    <Compile Include="Strings\SslCertificateValidator.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SslCertificateValidator.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\WEBDAV.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -74,6 +80,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Strings\SslCertificateValidator.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SslCertificateValidator.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Strings\WEBDAV.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>

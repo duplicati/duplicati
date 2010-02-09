@@ -22,14 +22,14 @@ namespace Duplicati.Library.Backend.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class WebDAVUI {
+    internal class SslCertificateValidator {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal WebDAVUI() {
+        internal SslCertificateValidator() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Backend.Strings.WebDAVUI", typeof(WebDAVUI).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Backend.Strings.SslCertificateValidator", typeof(SslCertificateValidator).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,56 +61,30 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?.
+        ///   Looks up a localized string similar to The SSL certificate validator was called in an incorrect order.
         /// </summary>
-        internal static string ApproveCertificateHashQuestion {
+        internal static string InvalidCallSequence {
             get {
-                return ResourceManager.GetString("ApproveCertificateHashQuestion", resourceCulture);
+                return ResourceManager.GetString("InvalidCallSequence", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The folder does not exist, do you want to create it?.
+        ///   Looks up a localized string similar to The server certificate had the error {0} and the hash {1}
+        ///Use the commandline option --accept-specified-ssl-hash={1} to accept the server certificate anyway.
         /// </summary>
-        internal static string CreateMissingFolderQuestion {
+        internal static string VerifyCertificateException {
             get {
-                return ResourceManager.GetString("CreateMissingFolderQuestion", resourceCulture);
+                return ResourceManager.GetString("VerifyCertificateException", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to You have not entered a hash string.
+        ///   Looks up a localized string similar to Failed while validating certificate hash, error message: {0}, Ssl error name: {1}.
         /// </summary>
-        internal static string EmptyHashError {
+        internal static string VerifyCertificateHashError {
             get {
-                return ResourceManager.GetString("EmptyHashError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The hash string is not valid, it must be of even length and only contain hex chars (0-9 and a-f).
-        /// </summary>
-        internal static string InvalidHashError {
-            get {
-                return ResourceManager.GetString("InvalidHashError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to On this page you can select where to store the backup data..
-        /// </summary>
-        internal static string PageDescription {
-            get {
-                return ResourceManager.GetString("PageDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Backup storage options.
-        /// </summary>
-        internal static string PageTitle {
-            get {
-                return ResourceManager.GetString("PageTitle", resourceCulture);
+                return ResourceManager.GetString("VerifyCertificateHashError", resourceCulture);
             }
         }
     }
