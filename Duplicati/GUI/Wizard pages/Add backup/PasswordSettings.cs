@@ -63,7 +63,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 return;
             }
 
-            if (!m_warnedNoPassword && !EnablePassword.Checked && m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.RestoreSetup && m_wrapper.PrimayAction != WizardSettingsWrapper.MainAction.Restore)
+            if (!m_warnedNoPassword && !EnablePassword.Checked && m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
             {
                 if (MessageBox.Show(this, Strings.PasswordSettings.NoPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
