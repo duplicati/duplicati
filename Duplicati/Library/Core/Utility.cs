@@ -106,11 +106,14 @@ namespace Duplicati.Library.Core
                 string f = AppendDirSeperator(lst.Dequeue());
                 try
                 {
+                    //TODO: We cannot guess if the folder has files that should be included,
+                    //so we have to enumerate all the files
                     foreach (string s in System.IO.Directory.GetDirectories(f))
-                        if (filter == null || filter.ShouldInclude(rootpath, AppendDirSeperator(s)))
-                            lst.Enqueue(s);
+                        lst.Enqueue(s);
 
-                    callback(rootpath, f, EnumeratedFileStatus.Folder);
+                    //TODO: If anything is included from subpaths, we should report the folder itself
+                    if (filter == null || filter.ShouldInclude(rootpath, f))
+                        callback(rootpath, f, EnumeratedFileStatus.Folder);
                 }
                 catch (System.Threading.ThreadAbortException)
                 {
