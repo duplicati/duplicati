@@ -89,7 +89,10 @@ namespace Duplicati.GUI
                 }
 
                 if (scheduleRun)
-                    Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));
+                {
+                    if (AskToResumeIfPaused())
+                        Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));
+                }
             }
             else if (m_form.CurrentPage is Wizard_pages.Restore.FinishedRestore)
             {
