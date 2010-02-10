@@ -227,9 +227,15 @@ namespace Duplicati.Library.Core
 
             return res;
         }
-
         public bool ShouldInclude(string basepath, string filename)
         {
+            IFilenameFilter dummy;
+            return ShouldInclude(basepath, filename, out dummy);
+        }
+
+        public bool ShouldInclude(string basepath, string filename, out IFilenameFilter match)
+        {
+            match = null;
             basepath = Core.Utility.AppendDirSeperator(basepath);
             if (!filename.StartsWith(basepath))
                 return false;
@@ -242,7 +248,10 @@ namespace Duplicati.Library.Core
             //Run through each filter
             foreach (IFilenameFilter filter in m_filters)
                 if (filter.Match(relpath))
+                {
+                    match = filter;
                     return filter.Include;
+                }
 
             return true;
         }

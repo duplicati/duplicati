@@ -47,6 +47,7 @@ namespace Duplicati.GUI.HelperControls
             this.label1 = new System.Windows.Forms.Label();
             this.FilenameTester = new System.Windows.Forms.TextBox();
             this.TestResults = new System.Windows.Forms.PictureBox();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.groupBox1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.TestResults)).BeginInit();
@@ -217,5 +218,6 @@ namespace Duplicati.GUI.HelperControls
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox FilenameTester;
         private System.Windows.Forms.PictureBox TestResults;
+        private System.Windows.Forms.ToolTip toolTip1;
     }
 }

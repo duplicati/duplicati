@@ -72,15 +72,16 @@ namespace Duplicati.GUI.HelperControls
         {
             if (FilenameTester.Text.Trim().Length == 0 || string.IsNullOrEmpty(m_basepath))
             {
+                SetTooltipMessage("");
                 TestResults.Visible = false;
                 return;
             }
-
 
             string filename = FilenameTester.Text;
 
             if (filename.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
             {
+                SetTooltipMessage(string.Format(Strings.FilterEditor.InvalidCharsInFilenameError, filename));
                 TestResults.Visible = false;
                 return;
             }
@@ -90,13 +91,50 @@ namespace Duplicati.GUI.HelperControls
 
             if (!filename.StartsWith(m_basepath))
             {
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FilenameIsNotInRootFolder, filename, m_basepath));
                 TestResults.Visible = false;
                 return;
             }
 
+            List<string> parentFolders = new List<string>();
+            string folder = filename;
+            while (folder.Length > m_basepath.Length)
+            {
+                folder = System.IO.Path.GetDirectoryName(folder);
+                parentFolders.Add(Duplicati.Library.Core.Utility.AppendDirSeperator(folder));
+            }
+
+            parentFolders.Reverse();
+
             Library.Core.FilenameFilter fn = new Duplicati.Library.Core.FilenameFilter(GetFilterList());
-            TestResults.Image = imageList1.Images[fn.ShouldInclude(m_basepath, filename) ? 0 : 1];
+            Library.Core.IFilenameFilter match;
+            foreach(string s in parentFolders)
+                if (!fn.ShouldInclude(m_basepath, s, out match))
+                {
+                    SetTooltipMessage(string.Format(Strings.FilterEditor.FolderIsExcluded, s, ((Library.Core.RegularExpressionFilter)match).Expression.ToString()));
+                    TestResults.Image = imageList1.Images[1];
+                    TestResults.Visible = true;
+                    return;
+                }
+
+            TestResults.Image = imageList1.Images[fn.ShouldInclude(m_basepath, filename, out match) ? 0 : 1];
+
+            if (match == null)
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsIncludedDefault, filename));
+            else if (match.Include)
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsIncluded, filename, ((Library.Core.RegularExpressionFilter)match).Expression.ToString()));
+            else
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsExcluded, filename, ((Library.Core.RegularExpressionFilter)match).Expression.ToString()));
+
             TestResults.Visible = true;
+        }
+
+        private void SetTooltipMessage(string message)
+        {
+            toolTip1.SetToolTip(FilenameTester, message);
+            toolTip1.SetToolTip(label1, message);
+            toolTip1.SetToolTip(TestResults, message);
+            toolTip1.Show(message, TestResults, 5000);
         }
 
         private void listView_SelectedIndexChanged(object sender, EventArgs e)
@@ -115,6 +153,7 @@ namespace Duplicati.GUI.HelperControls
         {
             while (listView.SelectedItems.Count > 0)
                 listView.Items.Remove(listView.SelectedItems[0]);
+            FilenameTester_TextChanged(sender, e);
         }
 
         private void EditFilterButton_Click(object sender, EventArgs e)
@@ -126,6 +165,7 @@ namespace Duplicati.GUI.HelperControls
                 {
                     listView.SelectedItems[0].Text = dlg.Filter.Value;
                     listView.SelectedItems[0].ImageIndex = dlg.Filter.Key ? 0 : 1;
+                    FilenameTester_TextChanged(sender, e);
                 }
             }
         }
@@ -139,6 +179,7 @@ namespace Duplicati.GUI.HelperControls
                 listView.Items.RemoveAt(index);
                 listView.Items.Insert(index - 1, lvi);
                 lvi.Selected = true;
+                FilenameTester_TextChanged(sender, e);
             }
         }
 
@@ -151,6 +192,7 @@ namespace Duplicati.GUI.HelperControls
                 listView.Items.RemoveAt(index);
                 listView.Items.Insert(index + 1, lvi);
                 lvi.Selected = true;
+                FilenameTester_TextChanged(sender, e);
             }
         }
 
@@ -163,6 +205,7 @@ namespace Duplicati.GUI.HelperControls
                 listView.Items.RemoveAt(index);
                 listView.Items.Insert(0, lvi);
                 lvi.Selected = true;
+                FilenameTester_TextChanged(sender, e);
             }
         }
 
@@ -175,6 +218,7 @@ namespace Duplicati.GUI.HelperControls
                 listView.Items.RemoveAt(index);
                 listView.Items.Insert(listView.Items.Count, lvi);
                 lvi.Selected = true;
+                FilenameTester_TextChanged(sender, e);
             }
         }
 
@@ -182,7 +226,10 @@ namespace Duplicati.GUI.HelperControls
         {
             FilterDialog dlg = new FilterDialog(new KeyValuePair<bool, string>(true, ""));
             if (dlg.ShowDialog(this) == DialogResult.OK)
+            {
                 listView.Items.Add(dlg.Filter.Value, dlg.Filter.Key ? 0 : 1);
+                FilenameTester_TextChanged(sender, e);
+            }
         }
 
         private void FilterEditor_Load(object sender, EventArgs e)

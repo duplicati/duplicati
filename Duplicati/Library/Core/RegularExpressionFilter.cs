@@ -48,6 +48,8 @@ namespace Duplicati.Library.Core
             m_include = include;
         }
 
+        public Regex Expression { get { return m_expression; } }
+
         #region IFilenameFilter Members
 
         public bool Include

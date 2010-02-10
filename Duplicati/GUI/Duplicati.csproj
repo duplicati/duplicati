@@ -94,6 +94,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>FilterDialog.resx</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\Strings\FilterEditor.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FilterEditor.resx</DependentUpon>
+    </Compile>
     <Compile Include="HelperControls\Strings\SizeSelector.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -1017,6 +1022,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Database schema\3. Default managed SSH.sql" />
+    <EmbeddedResource Include="HelperControls\Strings\FilterEditor.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FilterEditor.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="HelperControls\Strings\WaitForOperation.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>WaitForOperation.Designer.cs</LastGenOutput>
