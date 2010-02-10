@@ -61,11 +61,38 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?.
+        /// </summary>
+        internal static string ApproveCertificateHashQuestion {
+            get {
+                return ResourceManager.GetString("ApproveCertificateHashQuestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The folder does not exist, do you want to create it?.
         /// </summary>
         internal static string CreateMissingFolderQuestion {
             get {
                 return ResourceManager.GetString("CreateMissingFolderQuestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You have not entered a hash string.
+        /// </summary>
+        internal static string EmptyHashError {
+            get {
+                return ResourceManager.GetString("EmptyHashError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The hash string is not valid, it must be of even length and only contain hex chars (0-9 and a-f).
+        /// </summary>
+        internal static string InvalidHashError {
+            get {
+                return ResourceManager.GetString("InvalidHashError", resourceCulture);
             }
         }
         

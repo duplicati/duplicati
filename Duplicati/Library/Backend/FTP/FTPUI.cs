@@ -37,6 +37,10 @@ namespace Duplicati.Library.Backend
         private const string PORT = "Port";
         private const string PASSIVE = "Passive";
 
+        private const string USE_SSL = "Use SSL";
+        private const string ACCEPT_ANY_CERTIFICATE = "Accept Any Server Certificate";
+        private const string ACCEPT_SPECIFIC_CERTIFICATE = "Accept Specific Server Certificate";
+
         private const string HASTESTED = "UI: HasTested";
         private const string HASWARNEDPATH = "UI: HasWarnedPath";
         private const string HASWARNEDUSERNAME = "UI: HasWarnedUsername";
@@ -48,6 +52,8 @@ namespace Duplicati.Library.Backend
         private bool m_warnedPath;
 
         private IDictionary<string, string> m_options;
+
+        private static System.Text.RegularExpressions.Regex HashRegEx = new System.Text.RegularExpressions.Regex("[^0-9a-fA-F]");
 
         private FTPUI()
         {
@@ -131,6 +137,25 @@ namespace Duplicati.Library.Backend
                 m_warnedPassword = true;
             }
 
+            if (UseSSL.Checked && AcceptSpecifiedHash.Checked)
+            {
+                if (SpecifiedHash.Text.Trim().Length == 0)
+                {
+                    MessageBox.Show(this, Strings.FTPUI.EmptyHashError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try { SpecifiedHash.Focus(); }
+                    catch { }
+                    return false;
+                }
+
+                if (SpecifiedHash.Text.Length % 2 > 0 || HashRegEx.Match(SpecifiedHash.Text).Success)
+                {
+                    MessageBox.Show(this, Strings.FTPUI.InvalidHashError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try { SpecifiedHash.Focus(); }
+                    catch { }
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -147,6 +172,9 @@ namespace Duplicati.Library.Backend
             m_options[PASSWORD] = Password.Text;
             m_options[PORT] = ((int)Port.Value).ToString();
             m_options[PASSIVE] = PassiveConnection.Checked.ToString();
+            m_options[USE_SSL] = UseSSL.Checked.ToString();
+            m_options[ACCEPT_ANY_CERTIFICATE] = AcceptAnyHash.Checked.ToString();
+            m_options[ACCEPT_SPECIFIC_CERTIFICATE] = AcceptSpecifiedHash.Checked ? SpecifiedHash.Text : "";
         }
 
         private void LoadSettings()
@@ -172,6 +200,21 @@ namespace Duplicati.Library.Backend
 
             Port.Value = i;
 
+            bool useSSL;
+            if (!m_options.ContainsKey(USE_SSL) || !bool.TryParse(m_options[USE_SSL], out useSSL))
+                useSSL = false;
+
+            bool acceptAnyCertificate;
+            if (!m_options.ContainsKey(ACCEPT_ANY_CERTIFICATE) || !bool.TryParse(m_options[ACCEPT_ANY_CERTIFICATE], out acceptAnyCertificate))
+                acceptAnyCertificate = false;
+
+            UseSSL.Checked = useSSL;
+            AcceptAnyHash.Checked = acceptAnyCertificate;
+
+            if (m_options.ContainsKey(ACCEPT_SPECIFIC_CERTIFICATE))
+                SpecifiedHash.Text = m_options[ACCEPT_SPECIFIC_CERTIFICATE];
+            AcceptSpecifiedHash.Checked = !string.IsNullOrEmpty(SpecifiedHash.Text);
+
             //Set internal testing flags
             if (!m_options.ContainsKey(HASTESTED) || !bool.TryParse(m_options[HASTESTED], out m_hasTested))
                 m_hasTested = false;
@@ -187,39 +230,59 @@ namespace Duplicati.Library.Backend
         {
             if (ValidateForm())
             {
-                Cursor c = this.Cursor;
-                try
+                bool retry = true;
+                while (retry)
                 {
-                    this.Cursor = Cursors.WaitCursor;
-                    SaveSettings();
+                    retry = false;
 
-                    Dictionary<string, string> options = new Dictionary<string, string>();
-                    string hostname = GetConfiguration(m_options, options);
-                    FTP f = new FTP(hostname, options);
-                    f.List();
-
-                    MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    m_hasTested = true;
-                }
-                catch (Backend.FolderMissingException)
-                {
-                    switch (MessageBox.Show(this, Strings.FTPUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    Cursor c = this.Cursor;
+                    try
                     {
-                        case DialogResult.Yes:
-                            CreateFolderButton.PerformClick();
-                            TestConnection.PerformClick();
-                            return;
-                        default:
-                            return;
+                        this.Cursor = Cursors.WaitCursor;
+                        SaveSettings();
+
+                        Dictionary<string, string> options = new Dictionary<string, string>();
+                        string hostname = GetConfiguration(m_options, options);
+                        FTP f = new FTP(hostname, options);
+                        f.List();
+
+                        MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        m_hasTested = true;
                     }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                finally
-                {
-                    this.Cursor = c;
+                    catch (Backend.FolderMissingException)
+                    {
+                        switch (MessageBox.Show(this, Strings.FTPUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                        {
+                            case DialogResult.Yes:
+                                CreateFolderButton.PerformClick();
+                                TestConnection.PerformClick();
+                                return;
+                            default:
+                                return;
+                        }
+                    }
+                    catch (Core.SslCertificateValidator.InvalidCertificateException cex)
+                    {
+                        if (string.IsNullOrEmpty(cex.Certificate))
+                            MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        else
+                        {
+                            if (MessageBox.Show(this, string.Format(Strings.FTPUI.ApproveCertificateHashQuestion, cex.SslError), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                            {
+                                retry = true;
+                                AcceptSpecifiedHash.Checked = true;
+                                SpecifiedHash.Text = cex.Certificate;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    finally
+                    {
+                        this.Cursor = c;
+                    }
                 }
             }
         }
@@ -261,27 +324,46 @@ namespace Duplicati.Library.Backend
         {
             if (ValidateForm())
             {
-                Cursor c = this.Cursor;
-                try
+                bool retry = true;
+                while (retry)
                 {
-                    this.Cursor = Cursors.WaitCursor;
-                    SaveSettings();
+                    retry = false;
+                    Cursor c = this.Cursor;
+                    try
+                    {
+                        this.Cursor = Cursors.WaitCursor;
+                        SaveSettings();
 
-                    Dictionary<string, string> options = new Dictionary<string, string>();
-                    string hostname = GetConfiguration(m_options, options);
-                    FTP f = new FTP(hostname, options);
-                    f.CreateFolder();
+                        Dictionary<string, string> options = new Dictionary<string, string>();
+                        string hostname = GetConfiguration(m_options, options);
+                        FTP f = new FTP(hostname, options);
+                        f.CreateFolder();
 
-                    MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                finally
-                {
-                    this.Cursor = c;
+                    }
+                    catch (Core.SslCertificateValidator.InvalidCertificateException cex)
+                    {
+                        if (string.IsNullOrEmpty(cex.Certificate))
+                            MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        else
+                        {
+                            if (MessageBox.Show(this, string.Format(Strings.FTPUI.ApproveCertificateHashQuestion, cex.SslError), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                            {
+                                retry = true;
+                                AcceptSpecifiedHash.Checked = true;
+                                SpecifiedHash.Text = cex.Certificate;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    finally
+                    {
+                        this.Cursor = c;
+                    }
                 }
             }
         }
@@ -306,6 +388,21 @@ namespace Duplicati.Library.Backend
             if (!guiOptions.ContainsKey(PORT) || !int.TryParse(guiOptions[PORT], out port) || port < 0)
                 port = 21;
 
+            bool useSSL;
+            if (!guiOptions.ContainsKey(USE_SSL) || !bool.TryParse(guiOptions[USE_SSL], out useSSL))
+                useSSL = false;
+
+            bool acceptAnyCertificate;
+            if (!guiOptions.ContainsKey(ACCEPT_ANY_CERTIFICATE) || !bool.TryParse(guiOptions[ACCEPT_ANY_CERTIFICATE], out acceptAnyCertificate))
+                acceptAnyCertificate = false;
+
+            if (useSSL)
+                commandlineOptions["use-ssl"] = "";
+            if (acceptAnyCertificate)
+                commandlineOptions["accept-any-ssl-certificate"] = "";
+            if (guiOptions.ContainsKey(ACCEPT_SPECIFIC_CERTIFICATE))
+                commandlineOptions["accept-specified-ssl-hash"] = guiOptions[ACCEPT_SPECIFIC_CERTIFICATE];
+
             if (!guiOptions.ContainsKey(HOST))
                 throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, FOLDER));
 
@@ -320,6 +417,23 @@ namespace Duplicati.Library.Backend
         public static string PageDescription
         {
             get { return Strings.FTPUI.PageDescription; }
+        }
+
+        private void UseSSL_CheckedChanged(object sender, EventArgs e)
+        {
+            SSLGroup.Enabled = UseSSL.Checked;
+            m_hasTested = false;
+        }
+
+        private void AcceptSpecifiedHash_CheckedChanged(object sender, EventArgs e)
+        {
+            SpecifiedHash.Enabled = AcceptSpecifiedHash.Checked;
+            m_hasTested = false;
+        }
+
+        private void AcceptAnyHash_CheckedChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
         }
     }
 }

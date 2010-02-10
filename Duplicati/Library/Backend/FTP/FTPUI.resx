@@ -144,7 +144,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>12</value>
+    <value>14</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -171,7 +171,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>11</value>
+    <value>13</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -198,7 +198,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>6</value>
   </data>
   <data name="label4.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -225,7 +225,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>4</value>
   </data>
   <data name="label5.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -252,7 +252,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>12</value>
   </data>
   <data name="Servername.Location" type="System.Drawing.Point, System.Drawing">
     <value>96, 16</value>
@@ -273,7 +273,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Servername.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>11</value>
   </data>
   <data name="Path.Location" type="System.Drawing.Point, System.Drawing">
     <value>96, 40</value>
@@ -294,13 +294,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Path.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>10</value>
   </data>
   <data name="Username.Location" type="System.Drawing.Point, System.Drawing">
     <value>96, 64</value>
   </data>
   <data name="Username.Size" type="System.Drawing.Size, System.Drawing">
-    <value>288, 20</value>
+    <value>176, 20</value>
   </data>
   <data name="Username.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -315,7 +315,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Username.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>2</value>
   </data>
   <data name="Password.Location" type="System.Drawing.Point, System.Drawing">
     <value>96, 88</value>
@@ -324,7 +324,7 @@
     <value>*</value>
   </data>
   <data name="Password.Size" type="System.Drawing.Size, System.Drawing">
-    <value>288, 20</value>
+    <value>176, 20</value>
   </data>
   <data name="Password.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -339,7 +339,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Password.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="Port.Location" type="System.Drawing.Point, System.Drawing">
     <value>96, 112</value>
@@ -360,10 +360,10 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Port.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>9</value>
   </data>
   <data name="TestConnection.Location" type="System.Drawing.Point, System.Drawing">
-    <value>272, 160</value>
+    <value>368, 184</value>
   </data>
   <data name="TestConnection.Size" type="System.Drawing.Size, System.Drawing">
     <value>112, 24</value>
@@ -384,7 +384,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;TestConnection.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>8</value>
   </data>
   <data name="PassiveConnection.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -411,7 +411,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;PassiveConnection.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>7</value>
   </data>
   <data name="CreateFolderButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>392, 40</value>
@@ -435,7 +435,146 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;CreateFolderButton.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>5</value>
+  </data>
+  <data name="UseSSL.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="UseSSL.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="UseSSL.Location" type="System.Drawing.Point, System.Drawing">
+    <value>296, 64</value>
+  </data>
+  <data name="UseSSL.Size" type="System.Drawing.Size, System.Drawing">
+    <value>68, 17</value>
+  </data>
+  <data name="UseSSL.TabIndex" type="System.Int32, mscorlib">
+    <value>29</value>
+  </data>
+  <data name="UseSSL.Text" xml:space="preserve">
+    <value>Use SSL</value>
+  </data>
+  <data name="&gt;&gt;UseSSL.Name" xml:space="preserve">
+    <value>UseSSL</value>
+  </data>
+  <data name="&gt;&gt;UseSSL.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;UseSSL.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;UseSSL.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="AcceptSpecifiedHash.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="AcceptSpecifiedHash.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="AcceptSpecifiedHash.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 24</value>
+  </data>
+  <data name="AcceptSpecifiedHash.Size" type="System.Drawing.Size, System.Drawing">
+    <value>154, 17</value>
+  </data>
+  <data name="AcceptSpecifiedHash.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="AcceptSpecifiedHash.Text" xml:space="preserve">
+    <value>Accept this certificate hash</value>
+  </data>
+  <data name="&gt;&gt;AcceptSpecifiedHash.Name" xml:space="preserve">
+    <value>AcceptSpecifiedHash</value>
+  </data>
+  <data name="&gt;&gt;AcceptSpecifiedHash.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AcceptSpecifiedHash.Parent" xml:space="preserve">
+    <value>SSLGroup</value>
+  </data>
+  <data name="&gt;&gt;AcceptSpecifiedHash.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="SpecifiedHash.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SpecifiedHash.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 48</value>
+  </data>
+  <data name="SpecifiedHash.Size" type="System.Drawing.Size, System.Drawing">
+    <value>136, 20</value>
+  </data>
+  <data name="SpecifiedHash.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;SpecifiedHash.Name" xml:space="preserve">
+    <value>SpecifiedHash</value>
+  </data>
+  <data name="&gt;&gt;SpecifiedHash.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SpecifiedHash.Parent" xml:space="preserve">
+    <value>SSLGroup</value>
+  </data>
+  <data name="&gt;&gt;SpecifiedHash.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="AcceptAnyHash.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="AcceptAnyHash.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="AcceptAnyHash.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 80</value>
+  </data>
+  <data name="AcceptAnyHash.Size" type="System.Drawing.Size, System.Drawing">
+    <value>162, 17</value>
+  </data>
+  <data name="AcceptAnyHash.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="AcceptAnyHash.Text" xml:space="preserve">
+    <value>Accept any invalid certificate</value>
+  </data>
+  <data name="&gt;&gt;AcceptAnyHash.Name" xml:space="preserve">
+    <value>AcceptAnyHash</value>
+  </data>
+  <data name="&gt;&gt;AcceptAnyHash.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AcceptAnyHash.Parent" xml:space="preserve">
+    <value>SSLGroup</value>
+  </data>
+  <data name="&gt;&gt;AcceptAnyHash.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="SSLGroup.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="SSLGroup.Location" type="System.Drawing.Point, System.Drawing">
+    <value>288, 64</value>
+  </data>
+  <data name="SSLGroup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>192, 112</value>
+  </data>
+  <data name="SSLGroup.TabIndex" type="System.Int32, mscorlib">
+    <value>30</value>
+  </data>
+  <data name="&gt;&gt;SSLGroup.Name" xml:space="preserve">
+    <value>SSLGroup</value>
+  </data>
+  <data name="&gt;&gt;SSLGroup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SSLGroup.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;SSLGroup.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>

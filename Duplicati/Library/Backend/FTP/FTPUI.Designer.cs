@@ -42,7 +42,13 @@ namespace Duplicati.Library.Backend
             this.TestConnection = new System.Windows.Forms.Button();
             this.PassiveConnection = new System.Windows.Forms.CheckBox();
             this.CreateFolderButton = new System.Windows.Forms.Button();
+            this.UseSSL = new System.Windows.Forms.CheckBox();
+            this.SSLGroup = new System.Windows.Forms.GroupBox();
+            this.AcceptSpecifiedHash = new System.Windows.Forms.CheckBox();
+            this.SpecifiedHash = new System.Windows.Forms.TextBox();
+            this.AcceptAnyHash = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
+            this.SSLGroup.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -136,8 +142,45 @@ namespace Duplicati.Library.Backend
             this.CreateFolderButton.UseVisualStyleBackColor = true;
             this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
             // 
+            // UseSSL
+            // 
+            resources.ApplyResources(this.UseSSL, "UseSSL");
+            this.UseSSL.Name = "UseSSL";
+            this.UseSSL.UseVisualStyleBackColor = true;
+            this.UseSSL.CheckedChanged += new System.EventHandler(this.UseSSL_CheckedChanged);
+            // 
+            // SSLGroup
+            // 
+            this.SSLGroup.Controls.Add(this.AcceptSpecifiedHash);
+            this.SSLGroup.Controls.Add(this.SpecifiedHash);
+            this.SSLGroup.Controls.Add(this.AcceptAnyHash);
+            resources.ApplyResources(this.SSLGroup, "SSLGroup");
+            this.SSLGroup.Name = "SSLGroup";
+            this.SSLGroup.TabStop = false;
+            // 
+            // AcceptSpecifiedHash
+            // 
+            resources.ApplyResources(this.AcceptSpecifiedHash, "AcceptSpecifiedHash");
+            this.AcceptSpecifiedHash.Name = "AcceptSpecifiedHash";
+            this.AcceptSpecifiedHash.UseVisualStyleBackColor = true;
+            this.AcceptSpecifiedHash.CheckedChanged += new System.EventHandler(this.AcceptSpecifiedHash_CheckedChanged);
+            // 
+            // SpecifiedHash
+            // 
+            resources.ApplyResources(this.SpecifiedHash, "SpecifiedHash");
+            this.SpecifiedHash.Name = "SpecifiedHash";
+            // 
+            // AcceptAnyHash
+            // 
+            resources.ApplyResources(this.AcceptAnyHash, "AcceptAnyHash");
+            this.AcceptAnyHash.Name = "AcceptAnyHash";
+            this.AcceptAnyHash.UseVisualStyleBackColor = true;
+            this.AcceptAnyHash.CheckedChanged += new System.EventHandler(this.AcceptAnyHash_CheckedChanged);
+            // 
             // FTPUI
             // 
+            this.Controls.Add(this.UseSSL);
+            this.Controls.Add(this.SSLGroup);
             this.Controls.Add(this.Username);
             this.Controls.Add(this.Password);
             this.Controls.Add(this.label4);
@@ -155,6 +198,8 @@ namespace Duplicati.Library.Backend
             resources.ApplyResources(this, "$this");
             this.Load += new System.EventHandler(this.FTPUI_Load);
             ((System.ComponentModel.ISupportInitialize)(this.Port)).EndInit();
+            this.SSLGroup.ResumeLayout(false);
+            this.SSLGroup.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -175,5 +220,10 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Button TestConnection;
         private System.Windows.Forms.CheckBox PassiveConnection;
         private System.Windows.Forms.Button CreateFolderButton;
+        private System.Windows.Forms.CheckBox UseSSL;
+        private System.Windows.Forms.GroupBox SSLGroup;
+        private System.Windows.Forms.CheckBox AcceptSpecifiedHash;
+        private System.Windows.Forms.TextBox SpecifiedHash;
+        private System.Windows.Forms.CheckBox AcceptAnyHash;
     }
 }
