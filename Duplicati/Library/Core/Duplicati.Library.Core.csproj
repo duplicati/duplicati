@@ -54,6 +54,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegularExpressionFilter.cs" />
     <Compile Include="Sizeparser.cs" />
+    <Compile Include="SslCertificateValidator.cs" />
     <Compile Include="Strings\FilenameFilter.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -63,6 +64,11 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Sizeparser.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\SslCertificateValidator.Designer.cs">
+      <DependentUpon>SslCertificateValidator.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="Strings\TempFolder.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -99,6 +105,10 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Sizeparser.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\SslCertificateValidator.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SslCertificateValidator.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\TempFolder.resx">
       <SubType>Designer</SubType>

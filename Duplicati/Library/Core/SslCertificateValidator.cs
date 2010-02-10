@@ -4,9 +4,9 @@ using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Core
 {
-    internal class SslCertificateValidator : IDisposable
+    public class SslCertificateValidator : IDisposable
     {
         public class InvalidCertificateException : Exception
         {
@@ -26,21 +26,6 @@ namespace Duplicati.Library.Backend
 
         public SslCertificateValidator(bool acceptAll, string validHash)
         {
-            Activate(acceptAll, validHash);
-        }
-
-        private static bool m_acceptAll = false;
-        private static string m_validHash = null;
-        private static bool m_isAttached = false;
-        private static Exception m_uncastException = null;
-        private static RemoteCertificateValidationCallback m_oldCallback = null;
-        internal static string m_lastCertificate = null;
-
-        private static void Activate(bool acceptAll, string validHash)
-        {
-            if (m_isAttached)
-                throw new InvalidOperationException(Strings.SslCertificateValidator.InvalidCallSequence);
-
             m_acceptAll = acceptAll;
             m_validHash = validHash;
             m_oldCallback = System.Net.ServicePointManager.ServerCertificateValidationCallback;
@@ -49,7 +34,13 @@ namespace Duplicati.Library.Backend
             m_isAttached = true;
         }
 
-        private static void Deactivate()
+        private bool m_acceptAll = false;
+        private string m_validHash = null;
+        private bool m_isAttached = false;
+        private Exception m_uncastException = null;
+        private RemoteCertificateValidationCallback m_oldCallback = null;
+
+        private void Deactivate()
         {
             if (!m_isAttached)
                 throw new InvalidOperationException(Strings.SslCertificateValidator.InvalidCallSequence);
@@ -65,7 +56,7 @@ namespace Duplicati.Library.Backend
             }
         }
         
-        private static bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        private bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None)
                 return true;
@@ -73,12 +64,11 @@ namespace Duplicati.Library.Backend
             if (m_acceptAll)
                 return true;
 
-            m_lastCertificate = null;
+            string certHash = null;
 
             try
             {
-                string certHash = Core.Utility.ByteArrayAsHexString(cert.GetCertHash());
-                m_lastCertificate = certHash;
+                certHash = Core.Utility.ByteArrayAsHexString(cert.GetCertHash());
                 if (certHash != null && certHash.Equals(m_validHash, StringComparison.InvariantCultureIgnoreCase))
                     return true;
 
@@ -89,7 +79,7 @@ namespace Duplicati.Library.Backend
                 throw new Exception(string.Format(Strings.SslCertificateValidator.VerifyCertificateHashError, ex, sslPolicyErrors), ex);
             }
 
-            m_uncastException = new InvalidCertificateException(m_lastCertificate, sslPolicyErrors);
+            m_uncastException = new InvalidCertificateException(certHash, sslPolicyErrors);
             return false;
         }
 

@@ -253,8 +253,6 @@ namespace Duplicati.Library.Backend
                     Cursor c = this.Cursor;
                     try
                     {
-                        string prevHash = SslCertificateValidator.m_lastCertificate;
-
                         this.Cursor = Cursors.WaitCursor;
 
                         Save();
@@ -279,7 +277,7 @@ namespace Duplicati.Library.Backend
                                 return;
                         }
                     }
-                    catch (SslCertificateValidator.InvalidCertificateException cex)
+                    catch (Core.SslCertificateValidator.InvalidCertificateException cex)
                     {
                         if (string.IsNullOrEmpty(cex.Certificate))
                             MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -362,7 +360,7 @@ namespace Duplicati.Library.Backend
                         MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;
                     }
-                    catch (SslCertificateValidator.InvalidCertificateException cex)
+                    catch (Core.SslCertificateValidator.InvalidCertificateException cex)
                     {
                         if (string.IsNullOrEmpty(cex.Certificate))
                             MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);

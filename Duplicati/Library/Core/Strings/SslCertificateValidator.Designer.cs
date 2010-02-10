@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.Library.Backend.Strings {
+namespace Duplicati.Library.Core.Strings {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Backend.Strings.SslCertificateValidator", typeof(SslCertificateValidator).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Core.Strings.SslCertificateValidator", typeof(SslCertificateValidator).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

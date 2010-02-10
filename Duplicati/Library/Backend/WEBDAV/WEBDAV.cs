@@ -277,7 +277,7 @@ namespace Duplicati.Library.Backend
         private IDisposable ActivateCertificateValidator()
         {
             return m_useSSL ? 
-                new SslCertificateValidator(m_acceptAllCertificates, m_acceptCertificateHash) : 
+                new Core.SslCertificateValidator(m_acceptAllCertificates, m_acceptCertificateHash) : 
                 null;
         }
 
