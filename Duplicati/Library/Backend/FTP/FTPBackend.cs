@@ -68,10 +68,10 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            m_useSSL = m_options.ContainsKey("use-ssl");
-            m_acceptAllCertificates = m_options.ContainsKey("accept-any-ssl-certificate");
-            if (m_options.ContainsKey("accept-specified-ssl-hash"))
-                m_acceptCertificateHash = m_options["accept-specified-ssl-hash"];
+            m_useSSL = options.ContainsKey("use-ssl");
+            m_acceptAllCertificates = options.ContainsKey("accept-any-ssl-certificate");
+            if (options.ContainsKey("accept-specified-ssl-hash"))
+                m_acceptCertificateHash = options["accept-specified-ssl-hash"];
 
             m_options = options;
             m_url = url;
