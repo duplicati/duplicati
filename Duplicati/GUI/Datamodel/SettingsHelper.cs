@@ -116,7 +116,7 @@ namespace Duplicati.Datamodel
             if (InternalSettings.ContainsKey(key))
             {
                 m_col.Remove(InternalSettings[key]);
-                m_parent.DeleteObject<TBase>(InternalSettings[key]);
+                m_parent.DeleteObject(InternalSettings[key]);
             }
 
             return InternalSettings.Remove(key);
