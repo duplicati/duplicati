@@ -158,16 +158,18 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     List<FileEntry> lst = new List<FileEntry>();
-                    using (System.Net.WebResponse resp = req.GetResponse())
-                    using (System.IO.Stream rs = resp.GetResponseStream())
+                    using(System.Net.WebResponse resp = req.GetResponse())
+                    using(System.IO.Stream rs = resp.GetResponseStream())
                     using (System.IO.StreamReader sr = new System.IO.StreamReader(rs))
-                        while (sr.Peek() >= 0)
+                    { 
+                        string line;
+                        while ((line = sr.ReadLine()) != null)
                         {
-                            FileEntry f = ParseLine(sr.ReadLine());
+                            FileEntry f = ParseLine(line);
                             if (f != null)
                                 lst.Add(f);
                         }
-
+                    }
                     return lst;
                 }
                 catch (System.Net.WebException wex)

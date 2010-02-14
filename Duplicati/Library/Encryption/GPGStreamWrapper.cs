@@ -57,7 +57,7 @@ namespace Duplicati.Library.Encryption
                 if (!m_p.WaitForExit(5000))
                     throw new Exception(Strings.GPGStreamWrapper.GPGTerminateError);
 
-                if (m_p.StandardError.Peek() != -1)
+                if (!m_p.StandardError.EndOfStream)
                 {
                     string errmsg = m_p.StandardError.ReadToEnd();
                     if (errmsg.Contains("decryption failed:"))

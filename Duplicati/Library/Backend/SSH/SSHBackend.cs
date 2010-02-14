@@ -239,9 +239,18 @@ namespace Duplicati.Library.Backend
                 p.Sendline("exit");
 
                 string s;
+                bool first = true;
 
-                while ((s = p.GetNextOutputLine(5000)) != null)
+                int timeout = 30000;
+                if (m_options.ContainsKey("transfer-timeout"))
+                    timeout = m_transfer_timeout;
+                else //No overrides, pick the longest default time
+                    timeout = Math.Max(m_transfer_timeout, timeout);
+
+
+                while ((s = p.GetNextOutputLine(first ? timeout : 5000)) != null)
                 {
+                    first = false;
                     FileEntry fe = FTP.ParseLine(s.Trim());
                     if (fe != null && fe.Name != "." && fe.Name != "..")
                         files.Add(fe);
