@@ -238,21 +238,31 @@ namespace Duplicati.Library.SharpExpect
         /// <returns>The next buffered line or null</returns>
         private string GetBufferedLine(OutputSource source, int maxWaitTime)
         {
+            bool returnStdOut;
+            bool returnStdErr;
+
             lock (m_lock)
             {
                 //Check stdout
-                if ((source == OutputSource.Both || source == OutputSource.StdOut) && m_stdOut.Count > 0)
-                    return RecordInLog("O", ExtractNextLine(m_stdOut, maxWaitTime));
+                returnStdOut = ((source == OutputSource.Both || source == OutputSource.StdOut) && m_stdOut.Count > 0);
 
                 //Check stderr
-                if ((source == OutputSource.Both || source == OutputSource.StedErr) && m_stdErr.Count > 0)
-                    return RecordInLog("E", ExtractNextLine(m_stdErr, maxWaitTime));
+                returnStdErr = ((source == OutputSource.Both || source == OutputSource.StedErr) && m_stdErr.Count > 0);
 
                 //No data, so make sure the event is not set
-                m_event.Reset();
+                if (!returnStdOut && !returnStdErr)
+                {
+                    m_event.Reset();
+                    return null;
+                }
             }
 
-            //Notify that there was no waiting data
+            if (returnStdOut)
+                return RecordInLog("O", ExtractNextLine(m_stdOut, maxWaitTime));
+            if (returnStdErr)
+                return RecordInLog("E", ExtractNextLine(m_stdErr, maxWaitTime));
+
+            //Notify that there was no waiting data, we should not get here
             return null;
         }
 
