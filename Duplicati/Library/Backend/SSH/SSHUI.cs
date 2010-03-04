@@ -333,9 +333,6 @@ namespace Duplicati.Library.Backend
             if (!guiOptions.ContainsKey(PORT) || !int.TryParse(guiOptions[PORT], out port))
                 port = 22;
 
-            if (port != 22)
-                commandlineOptions["ssh-options"] += "-P " + port.ToString();
-
             if (applicationSettings.ContainsKey(APPSET_SFTP_PATH))
                 commandlineOptions["sftp-command"] = applicationSettings[APPSET_SFTP_PATH];
 
@@ -356,7 +353,7 @@ namespace Duplicati.Library.Backend
             if (!guiOptions.ContainsKey(HOST))
                 throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, HOST));
 
-            return "ssh://" + guiOptions[HOST] + "/" + (guiOptions.ContainsKey(FOLDER) ? guiOptions[FOLDER] : "");
+            return "ssh://" + guiOptions[HOST] + ":" + port.ToString() + "/" + (guiOptions.ContainsKey(FOLDER) ? guiOptions[FOLDER] : "");
         }
 
         private void UseUnmanagedSSH_CheckedChanged(object sender, EventArgs e)
