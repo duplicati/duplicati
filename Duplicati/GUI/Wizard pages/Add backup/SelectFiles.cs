@@ -198,7 +198,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             List<KeyValuePair<bool, string>> extras = new List<KeyValuePair<bool, string>>();
             foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(existingFilter))
-                if (!tf.Value.StartsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                if (!tf.Value.StartsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && !(tf.Key == false && tf.Value == ".*"))
                     extras.Add(tf);
 
             folders.Sort();
@@ -257,27 +257,29 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     string startChar = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString());
                     Dictionary<string, CheckBox> specialFolders = new Dictionary<string,CheckBox>();
 
-                    if (m_myDocuments.Substring(1).StartsWith(p))
+                    //TODO: The settings for what checkboxes were checked should be saved in the database
+                    // to avoid parsing the filters here
+                    if (GetFilterSetting(filters, p, m_myDocuments.Substring(1)))
                     {
                         specialFolders.Add(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myDocuments.Substring(p.Length) + "*"), IncludeDocuments);
                         specialFolders.Add(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myDocuments.Substring(1) + "*"), IncludeDocuments);
                     }
-                    if (m_myPictures.Substring(1).StartsWith(p))
+                    if (GetFilterSetting(filters, p, m_myPictures.Substring(1)))
                     {
                         specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myPictures.Substring(p.Length) + "*")] = IncludeImages;
                         specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myPictures.Substring(1) + "*")] = IncludeImages;
                     }
-                    if (m_myMusic.Substring(1).StartsWith(p))
+                    if (GetFilterSetting(filters, p, m_myMusic.Substring(1)))
                     {
                         specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myMusic.Substring(p.Length) + "*")] = IncludeMusic;
                         specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myMusic.Substring(1) + "*")] = IncludeMusic;
                     }
-                    if (m_desktop.Substring(1).StartsWith(p))
+                    if (GetFilterSetting(filters, p, m_desktop.Substring(1)))
                     {
                         specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_desktop.Substring(p.Length) + "*")] = IncludeDesktop;
                         specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_desktop.Substring(1) + "*")] = IncludeDesktop;
                     }
-                    if (m_appData.Substring(1).StartsWith(p))
+                    if (GetFilterSetting(filters, p, m_appData.Substring(1)))
                     {
                         specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_appData.Substring(p.Length) + "*")] = IncludeSettings;
                         specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_appData.Substring(1) + "*")] = IncludeSettings;
@@ -332,6 +334,23 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 TargetFolder_Leave(null, null);
             else
                 Rescan();
+        }
+
+        private bool GetFilterSetting(List<KeyValuePair<bool, string>> filters, string basepath, string path)
+        {
+            path = Library.Core.Utility.AppendDirSeperator(path);
+            basepath = Library.Core.Utility.AppendDirSeperator(basepath);
+            if (!path.StartsWith(basepath))
+                return false;
+
+            path = path.Substring(basepath.Length - 1);
+
+            string exp = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(path + "*");
+            foreach (KeyValuePair<bool, string> f in filters)
+                if (f.Value.Equals(exp, Library.Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                    return f.Key;
+
+            return false;
         }
 
         private void StartCalculator()
