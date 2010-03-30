@@ -216,6 +216,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f.Substring(basefolder.Length - 1) + "*")));
             }
 
+            //TODO: This does not work if the user has a weird setup, 
+            // eg. C:\A\Documents and C:\B\Documents 
+            // as the root is C:\, the last filter will exclude C:\A\ and C:\B\
+
             //Exclude everything else if they have a non-included parent
             if (hasCommonParent)
                 filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp("*")));

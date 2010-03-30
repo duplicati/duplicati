@@ -98,10 +98,15 @@ namespace Duplicati.GUI.HelperControls
 
             List<string> parentFolders = new List<string>();
             string folder = filename;
-            while (folder.Length > m_basepath.Length)
+            string folder_cmp = folder;
+            while (folder_cmp.Length > m_basepath.Length)
             {
                 folder = System.IO.Path.GetDirectoryName(folder);
-                parentFolders.Add(Duplicati.Library.Core.Utility.AppendDirSeperator(folder));
+                folder_cmp = Duplicati.Library.Core.Utility.AppendDirSeperator(folder);
+                if (!folder_cmp.Equals(m_basepath, Library.Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                    parentFolders.Add(folder_cmp);
+                else
+                    break;
             }
 
             parentFolders.Reverse();
