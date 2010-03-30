@@ -145,7 +145,9 @@ namespace Duplicati.Library.Backend
 
                     foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
                     {
-                        string name = System.Web.HttpUtility.UrlDecode(n.InnerText);
+                        //IIS uses %20 for spaces and %2B for +
+                        //Apache uses %20 for spaces and + for +
+                        string name = System.Web.HttpUtility.UrlDecode(n.InnerText.Replace("+", "%2B"));
 
                         string cmp_path;
 
@@ -283,7 +285,7 @@ namespace Duplicati.Library.Backend
 
         private System.Net.HttpWebRequest CreateRequest(string remotename)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + System.Web.HttpUtility.UrlEncode(remotename));
+            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + System.Web.HttpUtility.UrlEncode(remotename).Replace("+", "%20"));
             if (m_useIntegratedAuthentication)
                 req.UseDefaultCredentials = true;
             else if (m_forceDigestAuthentication)

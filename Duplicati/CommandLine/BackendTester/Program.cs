@@ -42,7 +42,7 @@ namespace Duplicati.CommandLine.BackendTester
         }
 
         private const string ValidFilenameChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
-        private const string ExtendedChars = "-_',=)(&%$#@!";
+        private const string ExtendedChars = "-_',=)(&%$#@! +";
 
 
         static void Main(string[] _args)
