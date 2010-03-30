@@ -45,7 +45,8 @@ namespace Duplicati.GUI
 
                     if (System.Environment.OSVersion.Platform == PlatformID.Win32NT || System.Environment.OSVersion.Platform == PlatformID.Win32Windows)
                     {
-                        if (IntPtr.Size == 8 || (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor()))
+                        //On my x64 system, 32bit appears to work correctly as 32 bit, where loading the 64bit dll fails
+                        if (IntPtr.Size == 8 /*|| (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor())*/)
                         {
                             if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
                                 assemblyPath = System.IO.Path.Combine(basePath, "win64");
