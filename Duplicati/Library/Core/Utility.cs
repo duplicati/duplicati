@@ -107,7 +107,7 @@ namespace Duplicati.Library.Core
                 try
                 {
                     foreach (string s in System.IO.Directory.GetDirectories(f))
-                        if (filter == null || filter.ShouldInclude(rootpath, s))
+                        if (filter == null || filter.ShouldInclude(rootpath, AppendDirSeperator(s)))
                             lst.Enqueue(s);
 
                      callback(rootpath, f, EnumeratedFileStatus.Folder);
