@@ -189,6 +189,9 @@ namespace Duplicati.Library.Backend
                 System.Net.FtpWebRequest req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
                 req.UseBinary = true;
+                
+                //We only depend on the ReadWriteTimeout
+                req.Timeout = System.Threading.Timeout.Infinite;
 
                 using (System.IO.Stream rs = req.GetRequestStream())
                     Core.Utility.CopyStream(input, rs, true);
@@ -208,6 +211,9 @@ namespace Duplicati.Library.Backend
                 System.Net.FtpWebRequest req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
                 req.UseBinary = true;
+
+                //We only depend on the ReadWriteTimeout
+                req.Timeout = System.Threading.Timeout.Infinite;
 
                 using (System.Net.WebResponse resp = req.GetResponse())
                 using (System.IO.Stream rs = resp.GetResponseStream())

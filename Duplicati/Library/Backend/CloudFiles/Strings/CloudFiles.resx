@@ -150,6 +150,12 @@
   <data name="ETagVerificationError" xml:space="preserve">
     <value>MD5 Hash (ETag) verification failed</value>
   </data>
+  <data name="FileDeleteError" xml:space="preserve">
+    <value />
+  </data>
+  <data name="FileUploadError" xml:space="preserve">
+    <value />
+  </data>
   <data name="NoAPIKeyError" xml:space="preserve">
     <value>No CloudFiles API Access Key given</value>
   </data>

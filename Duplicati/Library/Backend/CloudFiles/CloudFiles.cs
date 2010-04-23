@@ -185,7 +185,7 @@ namespace Duplicati.Library.Backend
             req.Method = "DELETE";
             using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
                 if ((int)resp.StatusCode >= 300)
-                    throw new WebException("Upload failed", null, WebExceptionStatus.ProtocolError , resp);
+                    throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError , resp);
                 else
                     using (resp.GetResponseStream())
                     { }
@@ -231,6 +231,13 @@ namespace Duplicati.Library.Backend
             HttpWebRequest req = CreateRequest("/" + remotename, "");
             req.Method = "GET";
 
+            //According to the MSDN docs, the timeout should only affect the 
+            // req.GetRequestStream() or req.GetResponseStream() call, but apparently
+            // it means that the entire operation on the request stream must
+            // be completed within the limit
+            //We use Infinite, and rely on the ReadWriteTimeout value instead
+            req.Timeout = System.Threading.Timeout.Infinite;
+
             using (WebResponse resp = req.GetResponse())
             using (System.IO.Stream s = resp.GetResponseStream())
             using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
@@ -249,35 +256,71 @@ namespace Duplicati.Library.Backend
             req.Method = "PUT";
             req.ContentType = "application/octet-stream";
 
+            //According to the MSDN docs, the timeout should only affect the 
+            // req.GetRequestStream() or req.GetResponseStream() call, but apparently
+            // it means that the entire operation on the request stream must
+            // be completed within the limit
+            //We use Infinite, and rely on the ReadWriteTimeout value instead
+            req.Timeout = System.Threading.Timeout.Infinite;
+
             try { req.ContentLength = stream.Length; }
             catch { }
 
-            string fileHash = null;
-
-            //TODO: It would be better if we knew the MD5 sum in advance,
-            // so we could send it to the server along with the data
-            using (System.IO.Stream s = req.GetRequestStream())
-            using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
+            //If we can pre-calculate the MD5 hash before transmission, do so
+            /*if (stream.CanSeek)
             {
-                Core.Utility.CopyStream(stream, mds);
-                fileHash = mds.GetFinalHashString();
+                System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
+                req.Headers["ETag"] = Core.Utility.ByteArrayAsHexString(md5.ComputeHash(stream)).ToLower();
+                stream.Seek(0, System.IO.SeekOrigin.Begin);
+
+                using (System.IO.Stream s = req.GetRequestStream())
+                    Core.Utility.CopyStream(stream, s);
+
+                //Reset the timeout to the default value of 100 seconds to 
+                // avoid blocking the GetResponse() call
+                req.Timeout = 100000;
+
+                //The server handles the eTag verification for us, and gives an error if the hash was a mismatch
+                using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                    if ((int)resp.StatusCode >= 300)
+                        throw new WebException(Strings.CloudFiles.FileUploadError, null, WebExceptionStatus.ProtocolError, resp);
+
             }
-
-            string md5Hash = null;
-
-            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
-                if ((int)resp.StatusCode >= 300)
-                    throw new WebException("Upload failed", null, WebExceptionStatus.ProtocolError, resp);
-                else
-                    md5Hash = resp.Headers["ETag"];
-
-            if (md5Hash == null || md5Hash.ToLower() != fileHash.ToLower())
+            else //Otherwise use a client-side calculation
+            */
+            //TODO: We cannot use the local MD5 calculation, because that could involve a throttled read,
+            // and may invoke various events
             {
-                //Remove the broken file
-                try { Delete(remotename); }
-                catch { }
+                string fileHash = null;
 
-                throw new Exception(Strings.CloudFiles.ETagVerificationError);
+                using (System.IO.Stream s = req.GetRequestStream())
+                using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
+                {
+                    Core.Utility.CopyStream(stream, mds);
+                    fileHash = mds.GetFinalHashString();
+                }
+
+                string md5Hash = null;
+
+                //Reset the timeout to the default value of 100 seconds to 
+                // avoid blocking the GetResponse() call
+                req.Timeout = 100000;
+
+                //We need to verify the eTag locally
+                using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                    if ((int)resp.StatusCode >= 300)
+                        throw new WebException(Strings.CloudFiles.FileUploadError, null, WebExceptionStatus.ProtocolError, resp);
+                    else
+                        md5Hash = resp.Headers["ETag"];
+
+                if (md5Hash == null || md5Hash.ToLower() != fileHash.ToLower())
+                {
+                    //Remove the broken file
+                    try { Delete(remotename); }
+                    catch { }
+
+                    throw new Exception(Strings.CloudFiles.ETagVerificationError);
+                }
             }
         }
 
@@ -304,6 +347,11 @@ namespace Duplicati.Library.Backend
 
             req = (HttpWebRequest)HttpWebRequest.Create(storageUrl + UrlEncode(m_path + remotename) + query);
             req.Headers.Add("X-Auth-Token", UrlEncode(authToken));
+
+            req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.KeepAlive = false;
+            req.PreAuthenticate = true;
+            req.AllowWriteStreamBuffering = false;
 
             return req;
         }

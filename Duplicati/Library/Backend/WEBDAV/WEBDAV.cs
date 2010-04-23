@@ -302,7 +302,8 @@ namespace Duplicati.Library.Backend
 			}
 
             req.KeepAlive = false;
-            req.UserAgent = "Duplicati WEBDAV Client";
+            req.UserAgent = "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            ;
 
             return req;
         }
@@ -322,6 +323,8 @@ namespace Duplicati.Library.Backend
                 System.Net.HttpWebRequest req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Http.Put;
                 req.ContentType = "application/binary";
+                //We only depend on the ReadWriteTimeout
+                req.Timeout = System.Threading.Timeout.Infinite;
 
                 try { req.ContentLength = stream.Length; }
                 catch { }
@@ -344,6 +347,8 @@ namespace Duplicati.Library.Backend
             {
                 System.Net.HttpWebRequest req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Http.Get;
+                //We only depend on the ReadWriteTimeout
+                req.Timeout = System.Threading.Timeout.Infinite;
 
                 try
                 {
