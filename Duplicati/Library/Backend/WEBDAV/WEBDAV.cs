@@ -94,7 +94,7 @@ namespace Duplicati.Library.Backend
             m_path = new Uri(m_url).PathAndQuery;
             if (m_path.IndexOf("?") > 0)
                 m_path = m_path.Substring(0, m_path.IndexOf("?"));
-            
+
             m_path = System.Web.HttpUtility.UrlDecode(m_path);
             m_rawurl = (m_useSSL ? "https://" : "http://") + u.Host + m_path;
         }

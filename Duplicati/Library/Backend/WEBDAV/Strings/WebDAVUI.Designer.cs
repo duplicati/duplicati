@@ -79,6 +79,16 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to You have not entered a folder, this will store all files in the root directory of the server.
+        ///Do you want to continue without a folder path?.
+        /// </summary>
+        internal static string EmptyFolderPathWarning {
+            get {
+                return ResourceManager.GetString("EmptyFolderPathWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You have not entered a hash string.
         /// </summary>
         internal static string EmptyHashError {
@@ -93,6 +103,16 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string InvalidHashError {
             get {
                 return ResourceManager.GetString("InvalidHashError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The folder path starts with a forward slash, which is not required and known to cause problems.
+        ///Do you want the leading slash to be removed?.
+        /// </summary>
+        internal static string LeadingSlashWarning {
+            get {
+                return ResourceManager.GetString("LeadingSlashWarning", resourceCulture);
             }
         }
         

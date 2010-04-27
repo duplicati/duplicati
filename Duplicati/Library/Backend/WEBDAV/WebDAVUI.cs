@@ -46,12 +46,14 @@ namespace Duplicati.Library.Backend
         private const string HAS_WARNED_PASSWORD = "UI: Has warned password";
         private const string HAS_WARNED_USERNAME = "UI: Has warned username";
         private const string HAS_WARNED_PATH = "UI: Has warned path";
+        private const string HAS_WARNED_LEADING_SLASH = "UI: Has warned leading slash";
         private const string HAS_TESTED = "UI: Has tested";
 
         private bool m_warnedPassword = false;
         private bool m_warnedUsername = false;
         private bool m_hasTested;
         private bool m_warnedPath;
+        private bool m_warnedLeadingSlash;
 
         private static System.Text.RegularExpressions.Regex HashRegEx = new System.Text.RegularExpressions.Regex("[^0-9a-fA-F]");
 
@@ -144,6 +146,9 @@ namespace Duplicati.Library.Backend
             if (!m_options.ContainsKey(HAS_WARNED_PATH) || !bool.TryParse(m_options[HAS_WARNED_PATH], out m_warnedPath))
                 m_warnedPath = false;
 
+            if (!m_options.ContainsKey(HAS_WARNED_LEADING_SLASH) || !bool.TryParse(m_options[HAS_WARNED_LEADING_SLASH], out m_warnedLeadingSlash))
+                m_warnedLeadingSlash = false;
+
             if (!m_options.ContainsKey(HAS_WARNED_USERNAME) || !bool.TryParse(m_options[HAS_WARNED_USERNAME], out m_warnedUsername))
                 m_warnedUsername = false;
 
@@ -161,6 +166,39 @@ namespace Duplicati.Library.Backend
                 catch { }
 
                 return false;
+            }
+
+            if (Path.Text.Trim().Length <= 0 && !m_warnedPath)
+            {
+                if (MessageBox.Show(this, Strings.WebDAVUI.EmptyFolderPathWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                {
+                    try { Path.Focus(); }
+                    catch { }
+
+                    return false;
+                }
+
+                m_warnedPath = true;
+            }
+
+            if (Path.Text.Trim().StartsWith("/") && !m_warnedLeadingSlash)
+            {
+                DialogResult res = MessageBox.Show(this, Strings.WebDAVUI.LeadingSlashWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information);
+                if (res == DialogResult.Yes)
+                {
+                    string s = Path.Text.Trim();
+                    while(s.StartsWith("/"))
+                        s = s.Substring(1);
+                    Path.Text = s;
+                }
+                else if (res == DialogResult.Cancel)
+                {
+                    return false;
+                }
+                else
+                {
+                    m_warnedLeadingSlash = true;
+                }
             }
 
             if (!UseIntegratedAuth.Checked)
@@ -218,6 +256,7 @@ namespace Duplicati.Library.Backend
             m_options.Clear();
             m_options[HAS_TESTED] = m_hasTested.ToString();
             m_options[HAS_WARNED_PATH] = m_warnedPath.ToString();
+            m_options[HAS_WARNED_LEADING_SLASH] = m_warnedLeadingSlash.ToString();
             m_options[HAS_WARNED_USERNAME] = m_warnedUsername.ToString();
             m_options[HAS_WARNED_PASSWORD] = m_warnedPassword.ToString();
 
@@ -317,6 +356,7 @@ namespace Duplicati.Library.Backend
         {
             m_hasTested = false;
             m_warnedPath = false;
+            m_warnedLeadingSlash = false;
         }
 
         private void Username_TextChanged(object sender, EventArgs e)
