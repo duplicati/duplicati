@@ -53,7 +53,12 @@
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder" Name="Programs"/>
       <Directory Id="DesktopFolder" Name="Desktop"/>
-      <Directory Id="ProgramFilesFolder">
+      <!-- 
+      <Directory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLLOCATION64" Name="Duplicati" />
+      </Directory> 
+      -->
+        <Directory Id="ProgramFilesFolder">
         <Directory Id="INSTALLLOCATION" Name="Duplicati">
           <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
           <!-- <Component Id="ProductComponent" Guid="931b7759-4503-43c0-b4cf-9cdafc349147"> -->
@@ -74,7 +79,7 @@
       <Feature Id="DuplicatiProgramFilesShortCutFeature" Title="Program Files Shortcut" Level="1" Description ="Installs a shortcut to Duplicati in the Program Files menu" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
         <ComponentRef Id="DuplicatiProgramMenuShortcutComponent"/>
       </Feature>
-      <ComponentGroupRef Id="group_DUPLICATIBIN" />
+      <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
     <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
       <ComponentRef Id="StartupMenuItem"/>
@@ -83,7 +88,7 @@
     <!-- Launch duplicati setup -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <CustomAction Id="LaunchApplication" FileKey="file_DUPLICATIBIN_5" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
+    <CustomAction Id="LaunchApplication" FileKey="FILE_DUPLICATI_MAIN_EXE" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
     
     <!-- TODO: Figure out why this does not work...
     <Property Id="WixShellExecTarget" Value="[#comp_DUPLICATIBIN_5]" />

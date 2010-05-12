@@ -22,7 +22,14 @@ del ..\Duplicati.zip
 
 cd ..\..
 
-paraffin -dir bin\Release\Duplicati -custom DUPLICATIBIN -dirref ProgramFilesFolder -ext .pdb -alias bin\Release\Duplicati -guids incBinFiles.wxs 
+REM Create version
+REM paraffin -dir bin\Release\Duplicati -groupname DUPLICATIBIN -dirref INSTALLLOCATION -ext .pdb -ext .0 -alias bin\Release\Duplicati -norootdirectory -multiple  incBinFiles.wxs 
 
-WixProjBuilder.exe WixInstaller.wixproj
+REM Update version
+if exist incBinFiles.PARAFFIN del incBinFiles.PARAFFIN
+paraffin -update incBinFiles.wxs
+if exist incBinFiles.PARAFFIN xcopy /I /Y incBinFiles.PARAFFIN incBinFiles.wxs
+if exist incBinFiles.PARAFFIN del incBinFiles.PARAFFIN
+
+WixProjBuilder.exe --wixpath="C:\Program Files (x86)\Windows Installer XML v3\bin" WixInstaller.wixproj
 pause
