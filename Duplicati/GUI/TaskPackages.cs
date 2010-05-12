@@ -33,6 +33,7 @@ namespace Duplicati.GUI
         Restore,
         ListBackups,
         ListFiles,
+        ListSourceFolders,
         RestoreSetup,
         ListActualFiles,
         ListBackupEntries
@@ -202,9 +203,9 @@ namespace Duplicati.GUI
 
     public class ListBackupEntriesTask : BackupTask
     {
-        private List<Library.Main.BackupEntry> m_backups = null;
+        private List<Library.Main.ManifestEntry> m_backups = null;
         public override DuplicityTaskType TaskType { get { return DuplicityTaskType.ListBackupEntries; } }
-        public List<Library.Main.BackupEntry> Backups { get { return m_backups; } set { m_backups = value; } }
+        public List<Library.Main.ManifestEntry> Backups { get { return m_backups; } set { m_backups = value; } }
 
         public ListBackupEntriesTask(Schedule schedule)
             : base(schedule)
@@ -312,6 +313,15 @@ namespace Duplicati.GUI
         public override string LocalPath
         {
             get { throw new NotImplementedException(); }
+        }
+    }
+
+    public class ListSourceFoldersTask : ListFilesTask
+    {
+        public override DuplicityTaskType TaskType { get { return DuplicityTaskType.ListSourceFolders; } }
+        public ListSourceFoldersTask(Schedule schedule, DateTime when)
+            : base(schedule, when)
+        {
         }
     }
 

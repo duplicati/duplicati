@@ -88,6 +88,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to When using cleanup the manifests and hashes must be verified.
+        /// </summary>
+        internal static string CannotCleanWithoutHashesError {
+            get {
+                return ResourceManager.GetString("CannotCleanWithoutHashesError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Deleting backup at {0}.
         /// </summary>
         internal static string DeletingBackupSetMessage {
@@ -124,20 +133,11 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid manifest, no files: {0}.
+        ///   Looks up a localized string similar to It is not allowed to disable manifest reading when performing a backup. Disabling manifests is only possible on restores, and it should only be used as a last resort..
         /// </summary>
-        internal static string ManifestNoFilesError {
+        internal static string ManifestsMustBeReadOnBackups {
             get {
-                return ResourceManager.GetString("ManifestNoFilesError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Invalid manifest, wrong count: {0}.
-        /// </summary>
-        internal static string ManifestWrongCountError {
-            get {
-                return ResourceManager.GetString("ManifestWrongCountError", resourceCulture);
+                return ResourceManager.GetString("ManifestsMustBeReadOnBackups", resourceCulture);
             }
         }
         
@@ -147,6 +147,15 @@ namespace Duplicati.Library.Main.Strings {
         internal static string MissingSignatureFile {
             get {
                 return ResourceManager.GetString("MissingSignatureFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No source folders specified for backup.
+        /// </summary>
+        internal static string NoSourceFoldersError {
+            get {
+                return ResourceManager.GetString("NoSourceFoldersError", resourceCulture);
             }
         }
         
@@ -169,11 +178,38 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The number of source folders in the latest backup is {0}, but the number of specified folders is now {1}. It is not allowed to change source folders for a backup..
+        /// </summary>
+        internal static string NumberOfSourceFoldersHasChangedError {
+            get {
+                return ResourceManager.GetString("NumberOfSourceFoldersHasChangedError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed after uploading {0} volume(s). Error message: {1}.
         /// </summary>
         internal static string PartialUploadMessage {
             get {
                 return ResourceManager.GetString("PartialUploadMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to read the primary manifest {0}, attempting secondary, if avalible. Error message: {1}.
+        /// </summary>
+        internal static string PrimaryManifestReadErrorLogMessage {
+            get {
+                return ResourceManager.GetString("PrimaryManifestReadErrorLogMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Secondary manifest file found: {0}, attempting read..
+        /// </summary>
+        internal static string ReadingSecondaryManifestLogMessage {
+            get {
+                return ResourceManager.GetString("ReadingSecondaryManifestLogMessage", resourceCulture);
             }
         }
         
@@ -187,11 +223,56 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to read the secondary manifest {0}. Error message: {1}.
+        /// </summary>
+        internal static string SecondaryManifestReadErrorLogMessage {
+            get {
+                return ResourceManager.GetString("SecondaryManifestReadErrorLogMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Signature cache path was not given as an argument.
         /// </summary>
         internal static string SignatureCachePathMissingError {
             get {
                 return ResourceManager.GetString("SignatureCachePathMissingError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The content volume {0} is not present in the manifest and is not used.
+        /// </summary>
+        internal static string SkippedContentVolumeLogMessage {
+            get {
+                return ResourceManager.GetString("SkippedContentVolumeLogMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The folder {0} is included multiple times.
+        /// </summary>
+        internal static string SourceDirIsIncludedMultipleTimesError {
+            get {
+                return ResourceManager.GetString("SourceDirIsIncludedMultipleTimesError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The folder {1} is a subfolder of {0}. It is not allowed to specify the same folder multiple times..
+        /// </summary>
+        internal static string SourceDirsAreRelatedError {
+            get {
+                return ResourceManager.GetString("SourceDirsAreRelatedError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The folder {0} is no longer in the source folder set. It is not allowed to change source folders for a backup..
+        /// </summary>
+        internal static string SourceFoldersHasChangedError {
+            get {
+                return ResourceManager.GetString("SourceFoldersHasChangedError", resourceCulture);
             }
         }
         

@@ -382,11 +382,11 @@ namespace Duplicati.Library.Core
         /// <returns>A human readable string representing the size</returns>
         public static string FormatSizeString(long size)
         {
-            if (size > 1024 * 1024 * 1024)
+            if (size >= 1024 * 1024 * 1024)
                 return string.Format(Strings.Utility.FormatStringGB, (double)size / (1024 * 1024 * 1024));
-            else if (size > 1024 * 1024)
+            else if (size >= 1024 * 1024)
                 return string.Format(Strings.Utility.FormatStringMB, (double)size / (1024 * 1024));
-            else if (size > 1024)
+            else if (size >= 1024)
                 return string.Format(Strings.Utility.FormatStringKB, (double)size / 1024);
             else
                 return string.Format(Strings.Utility.FormatStringB, size);
@@ -593,6 +593,16 @@ namespace Duplicati.Library.Core
 
         //Unused function, used to create a dummy thread
         private static void DummyMethod() { }
-			
+
+        /// <summary>
+        /// Gets a string comparer that matches the client filesystems case sensitivity
+        /// </summary>
+        public static StringComparer ClientFilenameStringComparer { get { return Utility.IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase; } }
+
+        /// <summary>
+        /// Gets the string comparision that matches the client filesystems case sensitivity
+        /// </summary>
+        public static StringComparison ClientFilenameStringComparision { get { return Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase; } }
+	
     }
 }

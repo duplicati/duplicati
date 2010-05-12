@@ -121,7 +121,13 @@ namespace Duplicati.Datamodel
 
             ApplicationSettings set = new ApplicationSettings(this.DataParent);
             if (!string.IsNullOrEmpty(set.TempPath))
-                options["tempdir"] = System.Environment.ExpandEnvironmentVariables(set.TempPath);
+            {
+                string tempdir = System.Environment.ExpandEnvironmentVariables(set.TempPath);
+                if (!System.IO.Directory.Exists(tempdir))
+                    System.IO.Directory.CreateDirectory(tempdir);
+
+                options["tempdir"] = tempdir;
+            }
 
             this.Extensions.GetOptions(options);
 
@@ -211,6 +217,14 @@ namespace Duplicati.Datamodel
             private const string SHORT_FILENAMES = "Short Filenames";
             private const string FILENAME_PREFIX = "Filename Prefix";
 
+            private const string SELECTFILES_VERSION = "Select Files - Version";
+            private const string SELECTFILES_USESIMPLEMODE = "Select Files - Use Simple Mode";
+            private const string SELECTFILES_INCLUDEDOCUMENTS = "Select Files - Include Documents";
+            private const string SELECTFILES_INCLUDEDESKTOP = "Select Files - Include Desktop";
+            private const string SELECTFILES_INCLUDEMUSIC = "Select Files - Include Music";
+            private const string SELECTFILES_INCLUDEIMAGES = "Select Files - Include Images";
+            private const string SELECTFILES_INCLUDEAPPDATA = "Select Files - Include AppData";
+
             private Task m_owner;
 
             public TaskExtensionWrapper(Task owner)
@@ -288,6 +302,48 @@ namespace Duplicati.Datamodel
             {
                 get { return m_owner.TaskExtensionsLookup[FILENAME_PREFIX]; }
                 set { m_owner.TaskExtensionsLookup[FILENAME_PREFIX] = value; }
+            }
+
+            public int SelectFiles_Version
+            {
+                get { return string.IsNullOrEmpty(m_owner.TaskExtensionsLookup[SELECTFILES_VERSION]) ? 1 : int.Parse(m_owner.TaskExtensionsLookup[SELECTFILES_VERSION]); }
+                set { m_owner.TaskExtensionsLookup[SELECTFILES_VERSION] = value.ToString(); }
+            }
+
+            public bool SelectFiles_UseSimpleMode
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_USESIMPLEMODE], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTFILES_USESIMPLEMODE] = value.ToString(); }
+            }
+
+            public bool SelectFiles_IncludeDocuments
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDOCUMENTS], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDOCUMENTS] = value.ToString(); }
+            }
+
+            public bool SelectFiles_IncludeDesktop
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDESKTOP], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDESKTOP] = value.ToString(); }
+            }
+
+            public bool SelectFiles_IncludeMusic
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEMUSIC], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEMUSIC] = value.ToString(); }
+            }
+
+            public bool SelectFiles_IncludeImages
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEIMAGES], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEIMAGES] = value.ToString(); }
+            }
+
+            public bool SelectFiles_IncludeAppData
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA] = value.ToString(); }
             }
 
             public void GetOptions(Dictionary<string, string> options)

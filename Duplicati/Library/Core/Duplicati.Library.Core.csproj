@@ -62,6 +62,7 @@
     <Compile Include="FileArchiveDirectory.cs" />
     <Compile Include="FilelistFilter.cs" />
     <Compile Include="FilenameFilter.cs" />
+    <Compile Include="PlugableEnumerable.cs" />
     <Compile Include="IFileArchive.cs" />
     <Compile Include="IFilenameFilter.cs" />
     <Compile Include="KeyGenerator.cs" />

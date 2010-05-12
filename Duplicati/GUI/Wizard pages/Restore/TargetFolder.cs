@@ -31,71 +31,96 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 {
     public partial class TargetFolder : WizardControl
     {
+        private WizardSettingsWrapper m_wrapper = null;
+
         public TargetFolder()
             : base(Strings.TargetFolder.PageTitle, Strings.TargetFolder.PageDescription)
         {
             InitializeComponent();
 
             base.PageLeave += new PageChangeHandler(TargetFolder_PageLeave);
+            base.PageEnter += new PageChangeHandler(TargetFolder_PageEnter);
+        }
+
+        void TargetFolder_PageEnter(object sender, PageChangedArgs args)
+        {
+            m_wrapper = new WizardSettingsWrapper(m_settings);
+            if (PartialRestore.Checked)
+                PartialRestore_CheckedChanged(null, null);
         }
 
         void TargetFolder_PageLeave(object sender, PageChangedArgs args)
         {
+            m_wrapper.RestoreTargetFolders = backupFileList.TargetFolders;
+            m_wrapper.RestoreFileSelection = backupFileList.CheckedFiles;
+
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            string targetpath = TargetPath.Text;
-
-            try
+            string[] targetpaths;
+            if (PartialRestore.Checked && backupFileList.TargetFolders.Count > 1)
             {
-                if (targetpath.Trim().Length == 0)
-                {
-                    MessageBox.Show(this, Strings.TargetFolder.NoFolderError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    args.Cancel = true;
-                    return;
-                }
-
-                if (!System.IO.Path.IsPathRooted(targetpath))
-                {
-                    MessageBox.Show(this, Strings.TargetFolder.FolderPathRelativeError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    args.Cancel = true;
-                    return;
-                }
-
-                if (!System.IO.Directory.Exists(targetpath))
-                {
-                    switch (MessageBox.Show(this, Strings.TargetFolder.CreateFolderWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                targetpaths = backupFileList.TargetFolders.ToArray();
+                for (int i = 0; i < targetpaths.Length; i++)
+                    if (string.IsNullOrEmpty(targetpaths[i]))
                     {
-                        case DialogResult.Yes:
-                            System.IO.Directory.CreateDirectory(targetpath);
-                            break;
-                        case DialogResult.Cancel:
+                        if (string.IsNullOrEmpty(TargetPath.Text) || TargetPath.Text.Trim().Length == 0)
+                        {
+                            MessageBox.Show(this, Strings.TargetFolder.NoFolderError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                             args.Cancel = true;
                             return;
+                        }
+                        targetpaths[i] = Library.Core.Utility.AppendDirSeperator(TargetPath.Text) + i.ToString();
                     }
-                }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, string.Format(Strings.TargetFolder.ValidatingFolderError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                args.Cancel = true;
-                return;
-            }
+            else
+                targetpaths = new string[] { TargetPath.Text.Trim() };
 
-            try
+            foreach (string targetpath in targetpaths)
             {
-                if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
-                    if (MessageBox.Show(this, Strings.TargetFolder.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                try
+                {
+                    if (targetpath.Trim().Length == 0)
                     {
+                        MessageBox.Show(this, Strings.TargetFolder.NoFolderError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         args.Cancel = true;
                         return;
                     }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, string.Format(Strings.TargetFolder.ValidatingFolderError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                args.Cancel = true;
-                return;
+
+                    if (!System.IO.Path.IsPathRooted(targetpath))
+                    {
+                        MessageBox.Show(this, string.Format(Strings.TargetFolder.FolderPathIsRelativeError, targetpath), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        args.Cancel = true;
+                        return;
+                    }
+
+                    if (!System.IO.Directory.Exists(targetpath))
+                    {
+                        switch (MessageBox.Show(this, string.Format(Strings.TargetFolder.CreateNewFolderWarning, targetpath), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                        {
+                            case DialogResult.Yes:
+                                System.IO.Directory.CreateDirectory(targetpath);
+                                break;
+                            case DialogResult.Cancel:
+                                args.Cancel = true;
+                                return;
+                        }
+                    }
+
+                    if (System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
+                        if (MessageBox.Show(this, string.Format(Strings.TargetFolder.FolderIsNotEmptyWarning, targetpath), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                        {
+                            args.Cancel = true;
+                            return;
+                        }
+
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, string.Format(Strings.TargetFolder.FolderValidationError, targetpath, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    args.Cancel = true;
+                    return;
+                }
             }
 
             if (PartialRestore.Checked && backupFileList.CheckedCount == 0)
@@ -105,9 +130,16 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 return;
             }
 
-            WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
-            wrapper.RestorePath = targetpath;
-            wrapper.RestoreFilter = PartialRestore.Checked ? string.Join(System.IO.Path.PathSeparator.ToString(), backupFileList.CheckedFiles.ToArray()) : "";
+            if (PartialRestore.Checked)
+            {
+                m_wrapper.RestorePath = string.Join(System.IO.Path.PathSeparator.ToString(), targetpaths);
+                m_wrapper.RestoreFilter = string.Join(System.IO.Path.PathSeparator.ToString(), backupFileList.CheckedFiles.ToArray());
+            }
+            else
+            {
+                m_wrapper.RestorePath = targetpaths[0];
+                m_wrapper.RestoreFilter = "";
+            }
             args.NextPage = new FinishedRestore();
         }
 
@@ -128,14 +160,27 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         {
             PartialSettings.Enabled = PartialRestore.Checked;
 
-            if (PartialRestore.Checked)
+            if (PartialRestore.Checked && m_wrapper != null)
             {
-                WizardSettingsWrapper wrapper = new WizardSettingsWrapper(m_settings);
-                if (wrapper.RestoreFileList == null)
-                    wrapper.RestoreFileList = new List<string>();
+                if (m_wrapper.RestoreFileList == null)
+                    m_wrapper.RestoreFileList = new List<string>();
 
-                backupFileList.LoadFileList(wrapper.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID), wrapper.RestoreTime, wrapper.RestoreFileList);
+                if (m_wrapper.RestoreTargetFolders == null)
+                    m_wrapper.RestoreTargetFolders = new List<string>();
+
+                backupFileList.LoadFileList(m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID), m_wrapper.RestoreTime, m_wrapper.RestoreFileList, m_wrapper.RestoreTargetFolders, TargetPath.Text);
             }
+        }
+
+        private void TargetPath_TextChanged(object sender, EventArgs e)
+        {
+            backupFileList.DefaultTarget = TargetPath.Text;
+        }
+
+        private void backupFileList_FileListLoaded(object sender, EventArgs e)
+        {
+            if (m_wrapper.RestoreFileSelection != null && m_wrapper.RestoreFileSelection.Count > 0)
+                backupFileList.CheckedFiles = m_wrapper.RestoreFileSelection;
         }
     }
 }

@@ -79,6 +79,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing..
+        /// </summary>
+        internal static string AllowsourcefolderchangeLong {
+            get {
+                return ResourceManager.GetString("AllowsourcefolderchangeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Skip verifying the source folders.
+        /// </summary>
+        internal static string AllowsourcefolderchangeShort {
+            get {
+                return ResourceManager.GetString("AllowsourcefolderchangeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to By supplying this option, Duplicati will transmit files, while building volumes. This can shorten the time it takes to perform a backup, but requires more diskspace..
         /// </summary>
         internal static string AsynchronousuploadLong {
@@ -169,6 +187,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option will make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery..
+        /// </summary>
+        internal static string DontreadmanifestsLong {
+            get {
+                return ResourceManager.GetString("DontreadmanifestsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An option that prevents verifying the manifests.
+        /// </summary>
+        internal static string DontreadmanifestsShort {
+            get {
+                return ResourceManager.GetString("DontreadmanifestsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Exclude files that match this filter. The filter is a &quot;file-globbing&quot; filter, much like commandline options. You can use &quot;*.txt&quot; to exclude all text files..
         /// </summary>
         internal static string ExcludeLong {
@@ -255,6 +291,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string FullifolderthanShort {
             get {
                 return ResourceManager.GetString("FullifolderthanShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to It is not allowed to change the sourcefolder or the number of source folders. If this option is enabled, the backup will become a full backup if the source folders have changed, which will then start a new chain of backups with the new folder set. If --allow-sourcefolder-change is also set, a full backup is only issued if the number of of source folders have changed.
+        /// </summary>
+        internal static string FullifsourcefolderchangedLong {
+            get {
+                return ResourceManager.GetString("FullifsourcefolderchangedLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Run a full backup if the sourcefolder has changed.
+        /// </summary>
+        internal static string FullifsourcefolderchangedShort {
+            get {
+                return ResourceManager.GetString("FullifsourcefolderchangedShort", resourceCulture);
             }
         }
         

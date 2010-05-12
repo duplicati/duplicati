@@ -71,6 +71,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The previous Duplicati setup is now restored!.
+        /// </summary>
+        internal static string SetupRestoreSuccess {
+            get {
+                return ResourceManager.GetString("SetupRestoreSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An error occured while attempting to stop the running backup: {0}.
         /// </summary>
         internal static string StopBackupError {
@@ -96,6 +105,15 @@ namespace Duplicati.GUI.Strings {
         internal static string UnableToStopBackupError {
             get {
                 return ResourceManager.GetString("UnableToStopBackupError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Duplicati Setup Wizard.
+        /// </summary>
+        internal static string WizardFormTitle {
+            get {
+                return ResourceManager.GetString("WizardFormTitle", resourceCulture);
             }
         }
     }

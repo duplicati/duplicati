@@ -44,6 +44,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             base.PageEnter += new PageChangeHandler(PasswordSettings_PageEnter);
             base.PageLeave += new PageChangeHandler(PasswordSettings_PageLeave);
+            base.PageDisplay += new PageChangeHandler(PasswordSettings_PageDisplay);
+        }
+
+        void PasswordSettings_PageDisplay(object sender, PageChangedArgs args)
+        {
+            try { Password.Focus(); }
+            catch { }
         }
 
         void PasswordSettings_PageLeave(object sender, PageChangedArgs args)

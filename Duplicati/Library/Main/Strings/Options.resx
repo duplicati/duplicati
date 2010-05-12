@@ -321,4 +321,22 @@
   <data name="AllowfullremoveShort" xml:space="preserve">
     <value>Allow removal of the all backups</value>
   </data>
+  <data name="DontreadmanifestsLong" xml:space="preserve">
+    <value>This option will make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery.</value>
+  </data>
+  <data name="DontreadmanifestsShort" xml:space="preserve">
+    <value>An option that prevents verifying the manifests</value>
+  </data>
+  <data name="AllowsourcefolderchangeLong" xml:space="preserve">
+    <value>This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing.</value>
+  </data>
+  <data name="AllowsourcefolderchangeShort" xml:space="preserve">
+    <value>Skip verifying the source folders</value>
+  </data>
+  <data name="FullifsourcefolderchangedLong" xml:space="preserve">
+    <value>It is not allowed to change the sourcefolder or the number of source folders. If this option is enabled, the backup will become a full backup if the source folders have changed, which will then start a new chain of backups with the new folder set. If --allow-sourcefolder-change is also set, a full backup is only issued if the number of of source folders have changed</value>
+  </data>
+  <data name="FullifsourcefolderchangedShort" xml:space="preserve">
+    <value>Run a full backup if the sourcefolder has changed</value>
+  </data>
 </root>

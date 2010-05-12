@@ -108,6 +108,16 @@ namespace Duplicati.GUI
                                     options["signature-control-files"] = filename;
                                 }
 
+                                options["full-if-sourcefolder-changed"] = "";
+
+                                List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
+                                string[] sourceFolders = DynamicSetupHelper.GetSourceFolders(task.Task, new ApplicationSettings(task.Task.DataParent), filters);
+
+                                if (options.ContainsKey("filter"))
+                                    filters.AddRange(Library.Core.FilenameFilter.DecodeFilter(options["filter"]));
+
+                                options["filter"] = Library.Core.FilenameFilter.EncodeAsFilter(filters);
+
                                 using (Interface i = new Interface(destination, options))
                                 {
                                     try
@@ -118,7 +128,7 @@ namespace Duplicati.GUI
                                         SetupControlInterface();
 
                                         i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
-                                        results = i.Backup(task.LocalPath);
+                                        results = i.Backup(sourceFolders);
                                     }
                                     finally
                                     {
@@ -140,10 +150,10 @@ namespace Duplicati.GUI
                     case DuplicityTaskType.ListBackups:
 
                         List<string> res = new List<string>();
-                        foreach (BackupEntry be in Interface.ParseFileList(destination, options))
+                        foreach (ManifestEntry be in Interface.ParseFileList(destination, options))
                         {
                             res.Add(be.Time.ToString());
-                            foreach (BackupEntry bei in be.Incrementals)
+                            foreach (ManifestEntry bei in be.Incrementals)
                                 res.Add(bei.Time.ToString());
                         }
 
@@ -155,10 +165,15 @@ namespace Duplicati.GUI
                     case DuplicityTaskType.ListFiles:
                         (task as ListFilesTask).Files = Interface.ListContent(destination, options);
                         break;
+                    case DuplicityTaskType.ListSourceFolders:
+                        {
+                            string[] tmp = Interface.ListSourceFolders(destination, options);
+                            (task as ListSourceFoldersTask).Files = new List<string>(tmp ?? new string[0]);
+                        }
+                        break;
                     case DuplicityTaskType.ListActualFiles:
                         (task as ListActualFilesTask).Files = Interface.ListActualSignatureFiles(destination, options);
                         break;
-
                     case DuplicityTaskType.RemoveAllButNFull:
                         results = Interface.RemoveAllButNFull(destination, options);
                         break;
@@ -182,7 +197,7 @@ namespace Duplicati.GUI
                                 if (DuplicatiProgress != null)
                                     DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
                                 i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
-                                results = i.Restore(task.LocalPath);
+                                results = i.Restore(task.LocalPath.Split(System.IO.Path.PathSeparator));
                             }
                             finally
                             {
@@ -283,7 +298,7 @@ namespace Duplicati.GUI
             return task.Backups;
         }
 
-        public List<BackupEntry> ListBackupEntries(Schedule schedule)
+        public List<ManifestEntry> ListBackupEntries(Schedule schedule)
         {
             ListBackupEntriesTask task = new ListBackupEntriesTask(schedule);
             ExecuteTask(task);
@@ -304,6 +319,15 @@ namespace Duplicati.GUI
         public IList<string> ListFiles(Schedule schedule, DateTime when)
         {
             ListFilesTask task = new ListFilesTask(schedule, when);
+            ExecuteTask(task);
+            if (task.Result.StartsWith("Error:"))
+                throw new Exception(task.Result);
+            return task.Files;
+        }
+
+        public IList<string> ListSourceFolders(Schedule schedule, DateTime when)
+        {
+            ListSourceFoldersTask task = new ListSourceFoldersTask(schedule, when);
             ExecuteTask(task);
             if (task.Result.StartsWith("Error:"))
                 throw new Exception(task.Result);

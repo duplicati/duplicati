@@ -149,6 +149,16 @@ namespace Duplicati.GUI
                         //This is non-fatal, just keep running with system default language
                     }
 
+#if DEBUG
+                //Log various information in the logfile
+                string logfile = System.IO.Path.Combine(Application.StartupPath, "Duplicati.debug.log");
+                if (System.IO.File.Exists(logfile))
+                    System.IO.File.Delete(logfile);
+                
+                Duplicati.Library.Logging.Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
+                Duplicati.Library.Logging.Log.CurrentLog = new Duplicati.Library.Logging.StreamLog(logfile);
+#endif
+
                 LiveControl = new LiveControls(new ApplicationSettings(DataConnection));
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
@@ -209,6 +219,11 @@ namespace Duplicati.GUI
                 WorkThread.Terminate(true);
             if (SingleInstance != null)
                 SingleInstance.Dispose();
+
+#if DEBUG
+            using(Duplicati.Library.Logging.Log.CurrentLog as Duplicati.Library.Logging.StreamLog)
+                Duplicati.Library.Logging.Log.CurrentLog = null;
+#endif
         }
 
         /// <summary>

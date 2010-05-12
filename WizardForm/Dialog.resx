@@ -126,7 +126,7 @@
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="_InfoLabel.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>1</value>
   </data>
   <data name="_InfoLabel.Text" xml:space="preserve">
     <value>Helptext</value>
@@ -156,7 +156,7 @@
     <value>32, 13</value>
   </data>
   <data name="_TitleLabel.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>0</value>
   </data>
   <data name="_TitleLabel.Text" xml:space="preserve">
     <value>Title</value>
@@ -226,7 +226,7 @@
     <value>80, 24</value>
   </data>
   <data name="_BackButton.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>0</value>
   </data>
   <data name="_BackButton.Text" xml:space="preserve">
     <value>&lt; Back</value>
@@ -274,7 +274,7 @@
     <value>80, 24</value>
   </data>
   <data name="_CancelButton.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+    <value>2</value>
   </data>
   <data name="_CancelButton.Text" xml:space="preserve">
     <value>Cancel</value>
@@ -301,7 +301,7 @@
     <value>506, 48</value>
   </data>
   <data name="_ButtonPanel.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="&gt;&gt;_ButtonPanel.Name" xml:space="preserve">
     <value>_ButtonPanel</value>
@@ -322,7 +322,7 @@
     <value>509, 244</value>
   </data>
   <data name="_ContentPanel.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>1</value>
   </data>
   <data name="&gt;&gt;_ContentPanel.Name" xml:space="preserve">
     <value>_ContentPanel</value>

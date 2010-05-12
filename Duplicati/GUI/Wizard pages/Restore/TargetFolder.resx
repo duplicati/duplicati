@@ -204,7 +204,7 @@
     <value>backupFileList</value>
   </data>
   <data name="&gt;&gt;backupFileList.Type" xml:space="preserve">
-    <value>Duplicati.GUI.HelperControls.BackupFileList, Duplicati, Version=1.0.0.183, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+    <value>Duplicati.GUI.HelperControls.BackupFileList, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
   <data name="&gt;&gt;backupFileList.Parent" xml:space="preserve">
     <value>PartialSettings</value>

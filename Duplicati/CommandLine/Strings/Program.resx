@@ -151,6 +151,12 @@
   <data name="IntegerParseError" xml:space="preserve">
     <value>Unable to parse "{0}" into a number</value>
   </data>
+  <data name="ModifiedFilesHeader" xml:space="preserve">
+    <value>Modified files</value>
+  </data>
+  <data name="NewFilesHeader" xml:space="preserve">
+    <value>New files</value>
+  </data>
   <data name="NewOrModifiedFilesHeader" xml:space="preserve">
     <value>New/Modified files</value>
   </data>

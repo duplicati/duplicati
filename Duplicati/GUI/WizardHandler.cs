@@ -40,7 +40,7 @@ namespace Duplicati.GUI
         public WizardHandler()
         {
             m_form = new Dialog();
-            m_form.Title = "Duplicati Setup Wizard";
+            m_form.Title = Strings.WizardHandler.WizardFormTitle;
 
             m_form.Pages.Clear();
             long count = 0;
@@ -63,6 +63,23 @@ namespace Duplicati.GUI
 
             if (wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Add || wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Edit)
             {
+                bool scheduleRun = wrapper.RunImmediately;
+
+                bool autoScheduled =
+                    wrapper.BackupTimeOffset > DateTime.Now &&
+                    !string.IsNullOrEmpty(wrapper.RepeatInterval) &&
+                    wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Add;
+
+                //Resume Duplicati if the backup is supposed to run
+                if (scheduleRun || autoScheduled)
+                {
+                    if (!AskToResumeIfPaused())
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
+                }
+                
                 Schedule schedule;
                 IDataFetcherWithRelations con = new DataFetcherNested(Program.DataConnection);
 
@@ -72,8 +89,6 @@ namespace Duplicati.GUI
                     schedule = con.GetObjectById<Schedule>(wrapper.ScheduleID);
 
                 wrapper.UpdateSchedule(schedule);
-
-                bool scheduleRun = wrapper.RunImmediately && wrapper.BackupTimeOffset > DateTime.Now;
 
                 lock (Program.MainLock)
                     con.CommitAllRecursive();
@@ -88,11 +103,11 @@ namespace Duplicati.GUI
                     Program.DataConnection.Commit(Program.DataConnection.GetObjects<ApplicationSetting>());
                 }
 
-                if (scheduleRun)
-                {
-                    if (AskToResumeIfPaused())
-                        Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));
-                }
+                //If the user has selected that the backup should run now
+                // and it is not run automatically, start it now
+                if (scheduleRun && !autoScheduled)
+                    Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));
+                
             }
             else if (m_form.CurrentPage is Wizard_pages.Restore.FinishedRestore)
             {
@@ -211,7 +226,7 @@ namespace Duplicati.GUI
             }
             else if (m_form.CurrentPage is Wizard_pages.RestoreSetup.FinishedRestoreSetup)
             {
-                MessageBox.Show(m_form as Form, "The previous Duplicati setup is now restored!", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(m_form as Form, Strings.WizardHandler.SetupRestoreSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 

@@ -56,7 +56,7 @@ namespace Duplicati.Library.Logging
         /// <param name="message">The message logged</param>
         /// <param name="type">The type of message logged</param>
         /// <param name="exception">An exception, may be null</param>
-        public void WriteMessage(string message, LogMessageType type, Exception exception)
+        public virtual void WriteMessage(string message, LogMessageType type, Exception exception)
         {
             m_stream.WriteLine(type.ToString() + ": " + message);
             if (exception != null)

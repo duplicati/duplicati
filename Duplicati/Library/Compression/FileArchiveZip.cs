@@ -35,6 +35,8 @@ namespace Duplicati.Library.Compression
         /// The archive used for read access
         /// </summary>
         private ICSharpCode.SharpZipLib.Zip.ZipFile m_zip;
+
+        private long m_headersize = 0;
 #if !SHARPZIPLIBWORKS
         private ICSharpCode.SharpZipLib.Zip.ZipOutputStream m_stream;
         private FileArchiveZip(ICSharpCode.SharpZipLib.Zip.ZipOutputStream stream)
@@ -227,15 +229,16 @@ namespace Duplicati.Library.Compression
             if (m_stream == null)
                 throw new Exception(Strings.FileArchiveZip.AttemptWriteWhileReadingError);
 #endif
-
+            string entryname = PathFromFilesystem(file);
+            m_headersize += 46 + 24 + Encoding.GetEncoding(ICSharpCode.SharpZipLib.Zip.ZipConstants.DefaultCodePage).GetByteCount(entryname);
 #if SHARPZIPLIBWORKS
             if (FileExists(file))
                 DeleteFile(file);
 
-            return new StreamWrapper(new Duplicati.Library.Core.TempFile(), PathFromFilesystem(file), m_zip);
+            return new StreamWrapper(new Duplicati.Library.Core.TempFile(), entryname, m_zip);
 #else
             //This automatically sets DateTime to now
-            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = new ICSharpCode.SharpZipLib.Zip.ZipEntry(PathFromFilesystem(file));
+            ICSharpCode.SharpZipLib.Zip.ZipEntry ze = new ICSharpCode.SharpZipLib.Zip.ZipEntry(entryname);
             
             //Encode filenames as unicode, we do this for all files, to avoid codepage issues
             ze.Flags |= (int)ICSharpCode.SharpZipLib.Zip.GeneralBitFlags.UnicodeText;
@@ -310,7 +313,10 @@ namespace Duplicati.Library.Compression
             else 
                 throw new Exception(string.Format(Strings.FileArchiveZip.FileNotFoundError, file));
         }
-        
+
+        //The 1024 is a safety margin, I have seen up to 663 bytes extra, but unfortunately not found the source
+        public long FlushBufferSize { get { return m_headersize + (long)ICSharpCode.SharpZipLib.Zip.ZipConstants.CentralHeaderBaseSize + 1024; } }
+
         #endregion
 
         #region IDisposable Members

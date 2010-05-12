@@ -121,6 +121,10 @@
     <value>No data returned</value>
     <comment>An error message displayed when no data is returned from listing the backup contents</comment>
   </data>
+  <data name="TooltipAddedFile" xml:space="preserve">
+    <value>Added file</value>
+    <comment>A tooltip displayed for an added file</comment>
+  </data>
   <data name="TooltipAddedFolder" xml:space="preserve">
     <value>Added folder</value>
     <comment>A tooltip displayed for an added folder</comment>
@@ -144,5 +148,13 @@
   <data name="TooltipExistingFolder" xml:space="preserve">
     <value>Existing folder</value>
     <comment>A tooltip displayed for an existing folder</comment>
+  </data>
+  <data name="TooltipIncompleteFile" xml:space="preserve">
+    <value>Incomplete file</value>
+    <comment>A tooltip displayed for incomplete files</comment>
+  </data>
+  <data name="TooltipModifiedFile" xml:space="preserve">
+    <value>Modified file</value>
+    <comment>A tooltip displayed for a modified file</comment>
   </data>
 </root>

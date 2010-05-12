@@ -34,8 +34,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // 
             // filterEditor1
             // 
-            this.filterEditor1.BasePath = "";
-            this.filterEditor1.Filter = "";
             resources.ApplyResources(this.filterEditor1, "filterEditor1");
             this.filterEditor1.Name = "filterEditor1";
             // 

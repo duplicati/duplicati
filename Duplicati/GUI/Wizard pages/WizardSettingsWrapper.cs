@@ -138,6 +138,15 @@ namespace Duplicati.GUI.Wizard_pages
             this.FileTimeSeperator = schedule.Task.Extensions.FileTimeSeperator;
             this.ShortFilenames = schedule.Task.Extensions.ShortFilenames;
 
+            //Handle the "Select Files" portion
+            this.SelectFilesUI.Version = schedule.Task.Extensions.SelectFiles_Version;
+            this.SelectFilesUI.UseSimpleMode = schedule.Task.Extensions.SelectFiles_UseSimpleMode;
+            this.SelectFilesUI.IncludeDocuments = schedule.Task.Extensions.SelectFiles_IncludeDocuments;
+            this.SelectFilesUI.IncludeDesktop = schedule.Task.Extensions.SelectFiles_IncludeDesktop;
+            this.SelectFilesUI.IncludeMusic = schedule.Task.Extensions.SelectFiles_IncludeMusic;
+            this.SelectFilesUI.IncludeImages = schedule.Task.Extensions.SelectFiles_IncludeImages;
+            this.SelectFilesUI.IncludeSettings = schedule.Task.Extensions.SelectFiles_IncludeAppData;
+
             this.Overrides = new Dictionary<string, string>();
             foreach (Datamodel.TaskOverride ov in schedule.Task.TaskOverrides)
                 this.Overrides[ov.Name] = ov.Value;
@@ -191,6 +200,14 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.Extensions.FilenamePrefix = this.FilePrefix;
             schedule.Task.Extensions.FileTimeSeperator = this.FileTimeSeperator;
             schedule.Task.Extensions.ShortFilenames = this.ShortFilenames;
+
+            schedule.Task.Extensions.SelectFiles_Version = this.SelectFilesUI.Version;
+            schedule.Task.Extensions.SelectFiles_UseSimpleMode = this.SelectFilesUI.UseSimpleMode;
+            schedule.Task.Extensions.SelectFiles_IncludeDocuments = this.SelectFilesUI.IncludeDocuments;
+            schedule.Task.Extensions.SelectFiles_IncludeDesktop = this.SelectFilesUI.IncludeDesktop;
+            schedule.Task.Extensions.SelectFiles_IncludeMusic = this.SelectFilesUI.IncludeMusic;
+            schedule.Task.Extensions.SelectFiles_IncludeImages = this.SelectFilesUI.IncludeImages;
+            schedule.Task.Extensions.SelectFiles_IncludeAppData = this.SelectFilesUI.IncludeSettings;
 
             //Synchronize the override collections, preserve existing items
             Dictionary<string, Datamodel.TaskOverride> ovs = new Dictionary<string, Duplicati.Datamodel.TaskOverride>();
@@ -506,12 +523,30 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
-        /// A cached list of filenames
+        /// A cached list of filenames in backup
         /// </summary>
         public List<string> RestoreFileList
         {
             get { return GetItem<List<string>>("RestoreFileList:" + this.RestoreTime.ToString(), null); }
             set { SetItem("RestoreFileList:" + this.RestoreTime.ToString(), value); }
+        }
+
+        /// <summary>
+        /// A cached list of filenames selected by the user
+        /// </summary>
+        public List<string> RestoreFileSelection
+        {
+            get { return GetItem<List<string>>("RestoreFileSelection:" + this.RestoreTime.ToString(), null); }
+            set { SetItem("RestoreFileSelection:" + this.RestoreTime.ToString(), value); }
+        }
+
+        /// <summary>
+        /// A list of restore targets
+        /// </summary>
+        public List<string> RestoreTargetFolders
+        {
+            get { return GetItem<List<string>>("RestoreTargetFolders:" + this.RestoreTime.ToString(), null); }
+            set { SetItem("RestoreTargetFolders:" + this.RestoreTime.ToString(), value); }
         }
 
         /// <summary>
@@ -590,6 +625,11 @@ namespace Duplicati.GUI.Wizard_pages
             }
             set { SetItem("Overrides", value); }
         }
+
+        /// <summary>
+        /// Gets a wrapper for the settings that are avalible on the SelectFiles UI
+        /// </summary>
+        public SelectFilesUI SelectFilesUI { get { return new SelectFilesUI(this); } }
     }
 
     /// <summary>
@@ -783,5 +823,87 @@ namespace Duplicati.GUI.Wizard_pages
             get { return m_parent.GetItem<bool>("WEBDAV:DigestAuth", false); }
             set { m_parent.SetItem("WEBDAV:DigestAuth", value); }
         }
+    }
+
+    /// <summary>
+    /// Represents settings that are required to give a consistent view of the file selection UI
+    /// </summary>
+    public class SelectFilesUI
+    {
+        private WizardSettingsWrapper m_parent;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SelectFilesUI"/> class.
+        /// </summary>
+        /// <param name="parent">The parent.</param>
+        public SelectFilesUI(WizardSettingsWrapper parent)
+        {
+            m_parent = parent;
+        }
+
+        /// <summary>
+        /// Gets or sets the version. Used to detect if the user has upgraded.
+        /// </summary>
+        /// <value>The version.</value>
+        public int Version
+        {
+            get { return m_parent.GetItem<int>("UI:SelectFiles:Version", 1); }
+            set { m_parent.SetItem("UI:SelectFiles:Version", value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the user has selected the &quot;Documents&quot; option.
+        /// </summary>
+        public bool UseSimpleMode
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectFiles:UseSimpleMode", true); }
+            set { m_parent.SetItem("UI:SelectFiles:UseSimpleMode", value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the documents folder is included.
+        /// </summary>
+        public bool IncludeDocuments
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectFiles:IncludeDocuments", true); }
+            set { m_parent.SetItem("UI:SelectFiles:IncludeDocuments", value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the music folder is included.
+        /// </summary>
+        public bool IncludeMusic
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectFiles:IncludeMusic", true); }
+            set { m_parent.SetItem("UI:SelectFiles:IncludeMusic", value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the images folder is included.
+        /// </summary>
+        public bool IncludeImages
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectFiles:IncludeImages", true); }
+            set { m_parent.SetItem("UI:SelectFiles:IncludeImages", value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the desktop folder is included.
+        /// </summary>
+        public bool IncludeDesktop
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectFiles:IncludeDesktop", true); }
+            set { m_parent.SetItem("UI:SelectFiles:IncludeDesktop", value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the settings folder is included.
+        /// </summary>
+        public bool IncludeSettings
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectFiles:IncludeSettings", true); }
+            set { m_parent.SetItem("UI:SelectFiles:IncludeSettings", value); }
+        }
+
     }
 }

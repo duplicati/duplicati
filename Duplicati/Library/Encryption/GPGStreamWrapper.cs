@@ -52,16 +52,16 @@ namespace Duplicati.Library.Encryption
                 m_basestream.Close();
 
                 if (!m_t.Join(5000))
-                    throw new Exception(Strings.GPGStreamWrapper.GPGFlushError);
+                    throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.GPGFlushError);
 
                 if (!m_p.WaitForExit(5000))
-                    throw new Exception(Strings.GPGStreamWrapper.GPGTerminateError);
+                    throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.GPGTerminateError);
 
                 if (!m_p.StandardError.EndOfStream)
                 {
                     string errmsg = m_p.StandardError.ReadToEnd();
                     if (errmsg.Contains("decryption failed:"))
-                        throw new Exception(string.Format(Strings.GPGStreamWrapper.DecryptionError, errmsg));
+                        throw new System.Security.Cryptography.CryptographicException(string.Format(Strings.GPGStreamWrapper.DecryptionError, errmsg));
                 }
 
                 m_p.Dispose();

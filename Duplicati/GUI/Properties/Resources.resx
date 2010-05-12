@@ -232,4 +232,16 @@
   <data name="ThrottleIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Throttle.ico;System.Drawing.Icon, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="AddedFile" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AddedFile.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="IncompleteFile" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IncompleteFile.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ModifiedFile" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ModifiedFile.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Trash" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Trash.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

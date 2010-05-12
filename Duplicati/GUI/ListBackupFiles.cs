@@ -33,16 +33,29 @@ namespace Duplicati.GUI
         private object m_lock = new object();
         private System.Threading.Thread m_thread = null;
 
+        private const string FOLDER_IMAGE_KEY = "folder";
+        private const string NEW_FOLDER_IMAGE_KEY = "new folder";
+        private const string REMOVED_FOLDER_IMAGE_KEY = "removed folder";
+        private const string ADDED_OR_MODIFIED_FILE_IMAGE_KEY = "added or modified file";
+        private const string CONTROL_FILE_IMAGE_KEY = "control file";
+        private const string DELETED_FILE_IMAGE_KEY = "deleted file";
+        private const string ADDED_FILE_IMAGE_KEY = "added file";
+        private const string MODIFIED_FILE_IMAGE_KEY = "modified file";
+        private const string INCOMPLETE_FILE_IMAGE_KEY = "incomplete file";
+
         public ListBackupFiles()
         {
             InitializeComponent();
 
-            imageList.Images.Add("folder", Properties.Resources.FolderOpen);
-            imageList.Images.Add("newfolder", Properties.Resources.AddedFolder);
-            imageList.Images.Add("removedfolder", Properties.Resources.DeletedFolder);
-            imageList.Images.Add("file", Properties.Resources.AddedOrModifiedFile);
-            imageList.Images.Add("controlfile", Properties.Resources.ControlFile);
-            imageList.Images.Add("deletedfile", Properties.Resources.DeletedFile);
+            imageList.Images.Add(FOLDER_IMAGE_KEY, Properties.Resources.FolderOpen);
+            imageList.Images.Add(NEW_FOLDER_IMAGE_KEY, Properties.Resources.AddedFolder);
+            imageList.Images.Add(REMOVED_FOLDER_IMAGE_KEY, Properties.Resources.DeletedFolder);
+            imageList.Images.Add(ADDED_OR_MODIFIED_FILE_IMAGE_KEY, Properties.Resources.AddedOrModifiedFile);
+            imageList.Images.Add(CONTROL_FILE_IMAGE_KEY, Properties.Resources.ControlFile);
+            imageList.Images.Add(DELETED_FILE_IMAGE_KEY, Properties.Resources.DeletedFile);
+            imageList.Images.Add(ADDED_FILE_IMAGE_KEY, Properties.Resources.AddedFile);
+            imageList.Images.Add(MODIFIED_FILE_IMAGE_KEY, Properties.Resources.ModifiedFile);
+            imageList.Images.Add(INCOMPLETE_FILE_IMAGE_KEY, Properties.Resources.IncompleteFile);
             this.Icon = Properties.Resources.TrayNormal;
         }
 
@@ -97,7 +110,10 @@ namespace Duplicati.GUI
 
                     List<string> addedfolders = new List<string>();
                     List<string> removedfolders = new List<string>();
+                    List<string> addedOrUpdatedfiles = new List<string>();
+                    List<string> updatedfiles = new List<string>();
                     List<string> addedfiles = new List<string>();
+                    List<string> incompletefiles = new List<string>();
                     List<string> deletedfiles = new List<string>();
                     List<string> controlfiles = new List<string>();
 
@@ -110,8 +126,17 @@ namespace Duplicati.GUI
                             case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFolder:
                                 removedfolders.Add(x.Value);
                                 break;
-                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.FullOrPartialFile:
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedOrUpdatedFile:
+                                addedOrUpdatedfiles.Add(x.Value);
+                                break;
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedFile:
                                 addedfiles.Add(x.Value);
+                                break;
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.UpdatedFile:
+                                updatedfiles.Add(x.Value);
+                                break;
+                            case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.IncompleteFile:
+                                incompletefiles.Add(x.Value);
                                 break;
                             case Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.ControlFile:
                                 controlfiles.Add(x.Value);
@@ -125,19 +150,28 @@ namespace Duplicati.GUI
                     addedfolders.Sort();
                     removedfolders.Sort();
                     deletedfiles.Sort();
+                    addedOrUpdatedfiles.Sort();
                     addedfiles.Sort();
+                    updatedfiles.Sort();
+                    incompletefiles.Sort();
                     controlfiles.Sort();
 
                     foreach (string s in addedfolders)
-                        AddTreeItem(s, 1);
+                        AddTreeItem(s, NEW_FOLDER_IMAGE_KEY);
                     foreach (string s in removedfolders)
-                        AddTreeItem(s, 2);
+                        AddTreeItem(s, REMOVED_FOLDER_IMAGE_KEY);
+                    foreach (string s in addedOrUpdatedfiles)
+                        AddTreeItem(s, ADDED_OR_MODIFIED_FILE_IMAGE_KEY);
                     foreach (string s in addedfiles)
-                        AddTreeItem(s, 3);
+                        AddTreeItem(s, ADDED_FILE_IMAGE_KEY);
+                    foreach (string s in updatedfiles)
+                        AddTreeItem(s, MODIFIED_FILE_IMAGE_KEY);
+                    foreach (string s in incompletefiles)
+                        AddTreeItem(s, INCOMPLETE_FILE_IMAGE_KEY);
                     foreach (string s in controlfiles)
-                        AddTreeItem(s, 4);
+                        AddTreeItem(s, CONTROL_FILE_IMAGE_KEY);
                     foreach (string s in deletedfiles)
-                        AddTreeItem(s, 5);
+                        AddTreeItem(s, DELETED_FILE_IMAGE_KEY);
                 }
                 finally
                 {
@@ -148,7 +182,7 @@ namespace Duplicati.GUI
 
         }
 
-        private void AddTreeItem(string value, int imagekey)
+        private void AddTreeItem(string value, string imagekey)
         {
             if (value.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
                 value = value.Substring(0, value.Length - 1);
@@ -168,25 +202,37 @@ namespace Duplicati.GUI
 
                 if (match == null)
                 {
-                    match = new TreeNode(items[i], i == items.Length - 1 ? imagekey : 0, i == items.Length - 1 ? imagekey : 0);
-                    switch (match.ImageIndex)
+                    match = new TreeNode(items[i]);
+                    match.ImageKey = match.SelectedImageKey = 
+                        i == items.Length - 1 ? imagekey : FOLDER_IMAGE_KEY;
+
+                    switch (match.ImageKey)
                     {
-                        case 0:
+                        case FOLDER_IMAGE_KEY:
                             match.ToolTipText = Strings.ListBackupFiles.TooltipExistingFolder;
                             break;
-                        case 1:
+                        case NEW_FOLDER_IMAGE_KEY:
                             match.ToolTipText = Strings.ListBackupFiles.TooltipAddedFolder;
                             break;
-                        case 2:
+                        case REMOVED_FOLDER_IMAGE_KEY:
                             match.ToolTipText = Strings.ListBackupFiles.TooltipDeletedFolder;
                             break;
-                        case 3:
+                        case ADDED_OR_MODIFIED_FILE_IMAGE_KEY:
                             match.ToolTipText = Strings.ListBackupFiles.TooltipAddedOrModifiedFile;
                             break;
-                        case 4:
+                        case ADDED_FILE_IMAGE_KEY:
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipAddedFile;
+                            break;
+                        case MODIFIED_FILE_IMAGE_KEY:
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipModifiedFile;
+                            break;
+                        case INCOMPLETE_FILE_IMAGE_KEY:
+                            match.ToolTipText = Strings.ListBackupFiles.TooltipIncompleteFile;
+                            break;
+                        case CONTROL_FILE_IMAGE_KEY:
                             match.ToolTipText = Strings.ListBackupFiles.TooltipControlFile;
                             break;
-                        case 5:
+                        case DELETED_FILE_IMAGE_KEY:
                             match.ToolTipText = Strings.ListBackupFiles.TooltipDeletedFile;
                             break;
                     }

@@ -29,17 +29,19 @@ namespace Duplicati.GUI.Wizard_pages
 {
     public partial class FirstLaunch : System.Windows.Forms.Wizard.WizardControl
     {
+        private bool m_isFirstShow = true;
+
         public FirstLaunch()
             : base(Strings.FirstLaunch.PageTitle, Strings.FirstLaunch.PageHelptext)
         {
             InitializeComponent();
-            base.PageDisplay += new System.Windows.Forms.Wizard.PageChangeHandler(FirstLaunch_PageDisplay);
             base.PageLeave += new System.Windows.Forms.Wizard.PageChangeHandler(FirstLaunch_PageLeave);
             base.PageEnter += new System.Windows.Forms.Wizard.PageChangeHandler(FirstLaunch_PageEnter);
         }
 
         void FirstLaunch_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
         {
+            UpdateButtonState();
             args.TreatAsLast = false;
         }
 
@@ -88,25 +90,38 @@ namespace Duplicati.GUI.Wizard_pages
 
         }
 
-        void FirstLaunch_PageDisplay(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
+        private void UpdateButtonState()
         {
-            m_owner.NextButton.Enabled =
-                CreateNew.Checked | RestoreSetup.Checked | RestoreFiles.Checked;
+            if (m_owner != null)
+            {
+                if (!m_valuesAutoLoaded && m_isFirstShow && this.Visible)
+                {
+                    CreateNew.Checked =
+                    RestoreSetup.Checked =
+                    RestoreFiles.Checked =
+                        false;
+
+                    m_isFirstShow = false;
+                }
+
+                m_owner.NextButton.Enabled =
+                    CreateNew.Checked | RestoreSetup.Checked | RestoreFiles.Checked;
+            }
         }
 
         private void CreateNew_CheckedChanged(object sender, EventArgs e)
         {
-            FirstLaunch_PageDisplay(sender, null);
+            UpdateButtonState();
         }
 
         private void RestoreSetup_CheckedChanged(object sender, EventArgs e)
         {
-            FirstLaunch_PageDisplay(sender, null);
+            UpdateButtonState();
         }
 
         private void RestoreFiles_CheckedChanged(object sender, EventArgs e)
         {
-            FirstLaunch_PageDisplay(sender, null);
+            UpdateButtonState();
         }
 
         private void RadioButton_DoubleClick(object sender, EventArgs e)

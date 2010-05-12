@@ -60,7 +60,7 @@ namespace Duplicati.GUI.HelperControls
         { 
             get 
             { 
-                return listView.SelectedItems.Count != 1 ? new DateTime() : ((Library.Main.BackupEntry)listView.SelectedItems[0].Tag).Time; 
+                return listView.SelectedItems.Count != 1 ? new DateTime() : ((Library.Main.ManifestEntry)listView.SelectedItems[0].Tag).Time; 
             } 
         }
 
@@ -107,14 +107,14 @@ namespace Duplicati.GUI.HelperControls
                     listView.BeginUpdate();
                     listView.Items.Clear();
 
-                    foreach (Library.Main.BackupEntry ef in (List<Library.Main.BackupEntry>)e.Result)
+                    foreach (Library.Main.ManifestEntry ef in (List<Library.Main.ManifestEntry>)e.Result)
                     {
                         ListViewItem n = new ListViewItem(ef.Time.ToLongDateString() + " " + ef.Time.ToLongTimeString(), 0);
                         n.Tag = ef;
                         n.ToolTipText = Strings.BackupItems.TooltipFullBackup;
                         listView.Items.Add(n);
 
-                        foreach (Library.Main.BackupEntry i in ef.Incrementals)
+                        foreach (Library.Main.ManifestEntry i in ef.Incrementals)
                         {
                             ListViewItem nn = new ListViewItem(i.Time.ToLongDateString() + " " + i.Time.ToLongTimeString(), 1);
                             nn.Tag = i;

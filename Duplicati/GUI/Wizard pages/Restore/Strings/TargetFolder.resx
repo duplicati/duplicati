@@ -117,14 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CreateFolderWarning" xml:space="preserve">
-    <value>The selected folder does not exist. Do you want to create it?</value>
+  <data name="CreateNewFolderWarning" xml:space="preserve">
+    <value>The folder {0} does not exist. Do you want to create it?</value>
   </data>
-  <data name="FolderNotEmptyWarning" xml:space="preserve">
-    <value>The selected folder is not empty. Do you want to use it anyway?</value>
+  <data name="FolderIsNotEmptyWarning" xml:space="preserve">
+    <value>The folder {0} is not empty. Do you want to use it anyway?</value>
   </data>
-  <data name="FolderPathRelativeError" xml:space="preserve">
-    <value>You must enter the full path of the folder</value>
+  <data name="FolderPathIsRelativeError" xml:space="preserve">
+    <value>You must enter the full path of the folder: {0}</value>
+  </data>
+  <data name="FolderValidationError" xml:space="preserve">
+    <value>An error occured while verifying the destination {0}.
+Please make sure it exists and is accessible.
+Error message: {1}</value>
   </data>
   <data name="NoFilesSelectedError" xml:space="preserve">
     <value>You have not selected any files to restore.</value>
@@ -137,9 +142,5 @@
   </data>
   <data name="PageTitle" xml:space="preserve">
     <value>Select restore folder</value>
-  </data>
-  <data name="ValidatingFolderError" xml:space="preserve">
-    <value>An error occured while verifying the destination. Please make sure it exists and is accessible.
-Error message: {0}</value>
   </data>
 </root>

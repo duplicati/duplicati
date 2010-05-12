@@ -115,7 +115,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             using (Library.Main.Interface i = new Duplicati.Library.Main.Interface(destination, options))
             {
                 i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress);
-                i.Restore(task.LocalPath);
+                i.Restore(task.LocalPath.Split(System.IO.Path.PathSeparator));
             }
         }
 

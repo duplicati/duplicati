@@ -169,6 +169,8 @@ namespace Duplicati.Library.Core
             return System.IO.File.GetLastWriteTime(System.IO.Path.Combine(m_folder, file));
         }
 
+        public long FlushBufferSize { get { return 0; } }
+
         #endregion
 
         #region IDisposable Members

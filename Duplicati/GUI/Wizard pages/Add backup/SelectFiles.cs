@@ -31,9 +31,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class SelectFiles : WizardControl
     {
+        private const int COLLAPSED_GROUP_SIZE = 24;
+        private const int GRID_SPACING = 8;
+
         private WorkerThread<string> m_calculator;
         private object m_lock = new object();
         private Dictionary<string, long> m_sizes;
+        private IButtonControl m_acceptButton;
 
         private WizardSettingsWrapper m_wrapper;
 
@@ -45,33 +49,30 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private string[] m_specialFolders;
 
-        private bool m_warnedFiltersChanged = true;
-
         public SelectFiles()
             : base(Strings.SelectFiles.PageTitle, Strings.SelectFiles.PageDescription)
         {
             InitializeComponent();
-            m_sizes = new Dictionary<string, long>();
+            m_sizes = new Dictionary<string, long>(Library.Core.Utility.IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase );
 
-            //TODO: If any of these variables point to the same folder, bad things will happen...
-            m_myPictures = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
-            m_myMusic = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
-            m_desktop = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
-            m_appData = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
-            m_myDocuments = Library.Core.Utility.AppendDirSeperator("!" + System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+            m_myPictures = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
+            m_myMusic = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
+            m_desktop = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+            m_appData = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            m_myDocuments = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
 
-            FolderTooltip.SetToolTip(IncludeDocuments, m_myDocuments.Substring(1));
-            FolderTooltip.SetToolTip(IncludeMusic, m_myMusic.Substring(1));
-            FolderTooltip.SetToolTip(IncludeImages, m_myPictures.Substring(1));
-            FolderTooltip.SetToolTip(IncludeDesktop, m_desktop.Substring(1));
-            FolderTooltip.SetToolTip(IncludeSettings, m_appData.Substring(1));
+            FolderTooltip.SetToolTip(IncludeDocuments, m_myDocuments);
+            FolderTooltip.SetToolTip(IncludeMusic, m_myMusic);
+            FolderTooltip.SetToolTip(IncludeImages, m_myPictures);
+            FolderTooltip.SetToolTip(IncludeDesktop, m_desktop);
+            FolderTooltip.SetToolTip(IncludeSettings, m_appData);
 
             m_specialFolders = new string[] { 
-                m_myDocuments.Substring(1), 
-                m_myMusic.Substring(1), 
-                m_myPictures.Substring(1), 
-                m_appData.Substring(1), 
-                m_desktop.Substring(1)
+                m_myDocuments, 
+                m_myMusic, 
+                m_myPictures, 
+                m_appData, 
+                m_desktop
             };
 
             base.PageEnter += new PageChangeHandler(SelectFiles_PageEnter);
@@ -80,61 +81,107 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void m_owner_Cancelled(object sender, CancelEventArgs e)
         {
-            if (m_calculator != null)
-                m_calculator.ClearQueue(true);
+            StopCalculator();
+        }
+
+        private void SaveSettings()
+        {
+            m_settings["Files:Sizes"] = m_sizes;
+            
+            m_wrapper.SelectFilesUI.Version = 2;
+            m_wrapper.SelectFilesUI.UseSimpleMode = DocumentsRadio.Checked;
+            m_wrapper.SelectFilesUI.IncludeDocuments = IncludeDocuments.Checked;
+            m_wrapper.SelectFilesUI.IncludeMusic = IncludeMusic.Checked;
+            m_wrapper.SelectFilesUI.IncludeImages = IncludeImages.Checked;
+            m_wrapper.SelectFilesUI.IncludeDesktop = IncludeDesktop.Checked;
+            m_wrapper.SelectFilesUI.IncludeSettings = IncludeSettings.Checked;
+
+            List<string> folders = new List<string>();
+            foreach (HelperControls.FolderPathEntry entry in InnerControlContainer.Controls)
+            {
+                string path = entry.SelectedPath.Trim();
+                if (!string.IsNullOrEmpty(path))
+                    folders.Add(Library.Core.Utility.AppendDirSeperator(path));
+            }
+
+            folders.Reverse();
+            m_wrapper.SourcePath = string.Join(System.IO.Path.PathSeparator.ToString(), folders.ToArray());
         }
 
         void SelectFiles_PageLeave(object sender, PageChangedArgs args)
         {
             m_owner.Cancelled -= new CancelEventHandler(m_owner_Cancelled);
-            m_settings["Files:Sizes"] = m_sizes;
-            m_settings["Files:WarnedFilters"] = m_warnedFiltersChanged;
-            
-            if (m_calculator != null)
-                m_calculator.ClearQueue(true);
+            SaveSettings();
 
             if (args.Direction == PageChangedDirection.Back)
+            {
+                StopCalculator();
                 return;
+            }
 
             if (DocumentsRadio.Checked)
             {
-                if (!m_warnedFiltersChanged)
+                if (!(IncludeDesktop.Checked || IncludeDocuments.Checked || IncludeImages.Checked || IncludeMusic.Checked || IncludeSettings.Checked))
                 {
-                    if (MessageBox.Show(this, Strings.SelectFiles.ModifiedFiltersWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
-                    {
-                        args.Cancel = true;
-                        return;
-                    }
-
-                    m_warnedFiltersChanged = true;
+                    MessageBox.Show(this, Strings.SelectFiles.NoFilesSelectedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    args.Cancel = true;
+                    return;
                 }
 
+                //Ensure that the right path is inserted at backup time
+                m_wrapper.SourcePath = "";
+            }
+            else
+            {
                 List<string> folders = new List<string>();
-                List<string> exfolders = new List<string>();
-                if (IncludeDocuments.Checked)
-                    folders.Add(m_myDocuments.Substring(1));
-                else
-                    exfolders.Add(m_myDocuments.Substring(1));
+                foreach (HelperControls.FolderPathEntry entry in InnerControlContainer.Controls)
+                {
+                    string path = entry.SelectedPath.Trim();
+                    if (!string.IsNullOrEmpty(path))
+                        folders.Add(Library.Core.Utility.AppendDirSeperator(path));
+                }
 
-                if (IncludeImages.Checked)
-                    folders.Add(m_myPictures.Substring(1));
-                else
-                    exfolders.Add(m_myPictures.Substring(1));
+                for (int i = 0; i < folders.Count; i++)
+                {
+                    while (true)
+                        if (!System.IO.Directory.Exists(folders[i]))
+                        {
+                            DialogResult res = MessageBox.Show(this, string.Format(Strings.SelectFiles.FolderDoesNotExistWarning, folders[i]), Application.ProductName, MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Warning);
+                            if (res == DialogResult.Abort)
+                            {
+                                args.Cancel = true;
+                                return;
+                            }
+                            else if (res == DialogResult.Ignore)
+                                break;
+                        }
+                        else
+                            break;
 
-                if (IncludeMusic.Checked)
-                    folders.Add(m_myMusic.Substring(1));
-                else
-                    exfolders.Add(m_myMusic.Substring(1));
+                    for (int j = i + 1; j < folders.Count; j++)
+                    {
+                        if (folders[i].Equals(folders[j], Library.Core.Utility.ClientFilenameStringComparision))
+                        {
+                            MessageBox.Show(this, string.Format(Strings.SelectFiles.DuplicateFolderError, folders[i]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            args.Cancel = true;
+                            return;
+                        }
 
-                if (IncludeDesktop.Checked)
-                    folders.Add(m_desktop.Substring(1));
-                else
-                    exfolders.Add(m_desktop.Substring(1));
+                        if (folders[i].StartsWith(folders[j]))
+                        {
+                            MessageBox.Show(this, string.Format(Strings.SelectFiles.RelatedFoldersError, folders[i], folders[j]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            args.Cancel = true;
+                            return;
+                        }
 
-                if (IncludeSettings.Checked)
-                    folders.Add(m_appData.Substring(1));
-                else
-                    exfolders.Add(m_appData.Substring(1));
+                        if (folders[j].StartsWith(folders[i]))
+                        {
+                            MessageBox.Show(this, string.Format(Strings.SelectFiles.RelatedFoldersError, folders[j], folders[i]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            args.Cancel = true;
+                            return;
+                        }
+                    }
+                }
 
                 if (folders.Count == 0)
                 {
@@ -143,89 +190,75 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     return;
                 }
 
-                //Find the most common root
-                string basefolder = folders[0];
-                bool hasCommonParent = false;
-
-                foreach (string f in folders)
-                    if (basefolder.StartsWith(f))
-                        basefolder = f;
-                    else if (!f.StartsWith(basefolder))
-                    {
-                        string[] p1 = basefolder.Split(System.IO.Path.DirectorySeparatorChar);
-                        string[] p2 = f.Split(System.IO.Path.DirectorySeparatorChar);
-
-                        int ix = 0;
-                        while (p1.Length > ix && p2.Length > ix && p1[ix] == p2[ix])
-                            ix++;
-
-                        if (ix == 0)
-                        {
-                            MessageBox.Show(this, Strings.SelectFiles.MultipleSourcesError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            args.Cancel = true;
-                            return;
-                        }
-
-                        hasCommonParent = true;
-                        basefolder = Library.Core.Utility.AppendDirSeperator(string.Join(System.IO.Path.DirectorySeparatorChar.ToString(), p1, 0, ix));
-                    }
-
-                m_wrapper.EncodedFilters = EncodeFilterString(basefolder, hasCommonParent, folders, exfolders, m_wrapper.EncodedFilters);
-                m_wrapper.SourcePath = basefolder;
-            }
-            else
-            {
-                if (!System.IO.Directory.Exists(TargetFolder.Text))
-                {
-                    MessageBox.Show(this, string.Format(Strings.SelectFiles.FolderDoesNotExistError, TargetFolder.Text), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    args.Cancel = true;
-                    return;
-                }
-
-                m_wrapper.SourcePath = TargetFolder.Text;
+                folders.Reverse();
+                m_wrapper.SourcePath = string.Join(System.IO.Path.PathSeparator.ToString(), folders.ToArray());
             }
 
-            if (m_calculator != null)
-                m_calculator.ClearQueue(true);
+            StopCalculator();
 
-            m_settings["Files:WarnedFilters"] = m_warnedFiltersChanged;
             args.NextPage = new PasswordSettings();
         }
 
-        private string EncodeFilterString(string basefolder, bool hasCommonParent, List<string> folders, List<string> exfolders, string existingFilter)
+        private void UpgradeFromVersionOne()
         {
-            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
+            //Upgrade from the previous design with one source folder and multiple filters
+            MessageBox.Show(this, Strings.SelectFiles.UpgradeWarning, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            List<KeyValuePair<bool, string>> extras = new List<KeyValuePair<bool, string>>();
-            foreach (KeyValuePair<bool, string> tf in Library.Core.FilenameFilter.DecodeFilter(existingFilter))
-                if (!tf.Value.StartsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && !(tf.Key == false && tf.Value == ".*"))
-                    extras.Add(tf);
+            string p = Library.Core.Utility.AppendDirSeperator(m_wrapper.SourcePath);
+            List<KeyValuePair<bool, string>> filters = Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters);
 
-            folders.Sort();
-            folders.Reverse();
+            //See what folders are included with the current setup
+            Library.Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(filters);
+            IncludeDocuments.Checked = filter.ShouldInclude(p, m_myDocuments);
+            IncludeImages.Checked = filter.ShouldInclude(p, m_myPictures);
+            IncludeMusic.Checked = filter.ShouldInclude(p, m_myMusic);
+            IncludeDesktop.Checked = filter.ShouldInclude(p, m_desktop);
+            IncludeSettings.Checked = filter.ShouldInclude(p, m_appData);
 
-            //Include selected folders
-            foreach (string f in folders)
-            {
-                //Exclude subfolders
-                foreach (string s in exfolders)
-                    if (s.StartsWith(f) && (basefolder == s || s.StartsWith(basefolder)))
-                        filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(basefolder.Length - 1) + "*")));
+            //Remove any filters relating to the special folders
+            for (int i = 0; i < filters.Count; i++)
+                foreach (string s in m_specialFolders)
+                    if (s.StartsWith(p))
+                    {
+                        if (filters[i].Value == Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(p.Length - 1) + "*"))
+                        {
+                            filters.RemoveAt(i);
+                            i--;
+                            break;
+                        }
+                    }
 
-                if (hasCommonParent)
-                    filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(f.Substring(basefolder.Length - 1) + "*")));
-            }
+            //Remove any "exclude all" filters
+            for (int i = 0; i < filters.Count; i++)
+                if (filters[i].Key == false && filters[i].Value == ".*")
+                {
+                    filters.RemoveAt(i);
+                    i--;
+                }
 
-            //TODO: This does not work if the user has a weird setup, 
-            // eg. C:\A\Documents and C:\B\Documents 
-            // as the root is C:\, the last filter will exclude C:\A\ and C:\B\
+            //See if there are extra filters that are not supported
+            bool unsupported = false;
+            foreach (KeyValuePair<bool, string> f in filters)
+                if (f.Value.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString())))
+                {
+                    unsupported = true;
+                    break;
+                }
 
-            //Exclude everything else if they have a non-included parent
-            if (hasCommonParent)
-                filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp("*")));
+            //If none of the special folders are included, we don't support the setup with simple mode
+            unsupported |= !(IncludeDocuments.Checked | IncludeImages.Checked | IncludeMusic.Checked | IncludeDesktop.Checked | IncludeSettings.Checked);
 
-            extras.AddRange(filters);
-            return Library.Core.FilenameFilter.EncodeAsFilter(extras);
+            InnerControlContainer.Controls.Clear();
+            AddFolderControl().SelectedPath = m_wrapper.SourcePath;
+
+            //Make sure the extra filters are not included
+            if (!unsupported)
+                m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(filters);
+
+            if (unsupported)
+                FolderRadio.Checked = true;
+            else
+                DocumentsRadio.Checked = true;
         }
 
         void SelectFiles_PageEnter(object sender, PageChangedArgs args)
@@ -235,126 +268,56 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (m_settings.ContainsKey("Files:Sizes"))
                 m_sizes = (Dictionary<string, long>)m_settings["Files:Sizes"];
-            if (m_settings.ContainsKey("Files:WarnedFilters"))
-                m_warnedFiltersChanged = (bool)m_settings["Files:WarnedFilters"];
 
             if (!m_valuesAutoLoaded)
             {
-                if (string.IsNullOrEmpty(m_wrapper.SourcePath))
+                if (m_wrapper.SelectFilesUI.Version < 2)
                 {
-                    DocumentsRadio.Checked = true;
-                    IncludeDocuments.Checked = true;
-                    IncludeImages.Checked = true;
-                    IncludeMusic.Checked = false;
-                    IncludeDesktop.Checked = true;
-                    IncludeSettings.Checked = false;
+                    //Either upgrade or fresh copy
+                    if (string.IsNullOrEmpty(m_wrapper.SourcePath))
+                    {
+                        //Set defaults
+                        DocumentsRadio.Checked = true;
+                        IncludeDocuments.Checked = true;
+                        IncludeImages.Checked = true;
+                        IncludeMusic.Checked = false;
+                        IncludeDesktop.Checked = true;
+                        IncludeSettings.Checked = false;
+
+                    }
+                    else
+                        UpgradeFromVersionOne();
                 }
                 else
                 {
-                    string p = Library.Core.Utility.AppendDirSeperator(m_wrapper.SourcePath);
-                    List<KeyValuePair<bool, string>> filters = Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters);
-
-                    bool hasCommonBase = false;
-                    List<CheckBox> included = new List<CheckBox>();
-                    List<CheckBox> excluded = new List<CheckBox>();
-
-                    string startChar = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString());
-                    Dictionary<string, CheckBox> specialFolders = new Dictionary<string,CheckBox>();
-
-                    //TODO: The settings for what checkboxes were checked should be saved in the database
-                    // to avoid parsing the filters here
-                    if (GetFilterSetting(filters, p, m_myDocuments.Substring(1)))
+                    //Multifolder version
+                    if (m_wrapper.SelectFilesUI.UseSimpleMode)
                     {
-                        specialFolders.Add(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myDocuments.Substring(p.Length) + "*"), IncludeDocuments);
-                        specialFolders.Add(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myDocuments.Substring(1) + "*"), IncludeDocuments);
-                    }
-                    if (GetFilterSetting(filters, p, m_myPictures.Substring(1)))
-                    {
-                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myPictures.Substring(p.Length) + "*")] = IncludeImages;
-                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myPictures.Substring(1) + "*")] = IncludeImages;
-                    }
-                    if (GetFilterSetting(filters, p, m_myMusic.Substring(1)))
-                    {
-                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myMusic.Substring(p.Length) + "*")] = IncludeMusic;
-                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_myMusic.Substring(1) + "*")] = IncludeMusic;
-                    }
-                    if (GetFilterSetting(filters, p, m_desktop.Substring(1)))
-                    {
-                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_desktop.Substring(p.Length) + "*")] = IncludeDesktop;
-                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_desktop.Substring(1) + "*")] = IncludeDesktop;
-                    }
-                    if (GetFilterSetting(filters, p, m_appData.Substring(1)))
-                    {
-                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_appData.Substring(p.Length) + "*")] = IncludeSettings;
-                        specialFolders[Library.Core.FilenameFilter.ConvertGlobbingToRegExp(m_appData.Substring(1) + "*")] = IncludeSettings;
-                    }
-
-                    bool unsupported = false;
-
-                    foreach (KeyValuePair<bool, string> s in filters)
-                    {
-                        hasCommonBase |= (s.Key == false && s.Value == ".*");
-
-                        if (s.Value.StartsWith(startChar))
-                        {
-                            if (specialFolders.ContainsKey(s.Value))
-                            {
-                                if (s.Key)
-                                    included.Add(specialFolders[s.Value]);
-                                else
-                                    excluded.Add(specialFolders[s.Value]);
-                            }
-                            else
-                                unsupported = true;
-                        }
-                    }
-
-                    string baseEncoded = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(p);
-                    foreach (string s in specialFolders.Keys)
-                        if (!excluded.Contains(specialFolders[s]) && s.StartsWith(baseEncoded) && !included.Contains(specialFolders[s]))
-                            included.Add(specialFolders[s]);
-
-                    TargetFolder.Text = m_wrapper.SourcePath;
-
-                    IncludeDocuments.Checked =
-                        IncludeImages.Checked =
-                        IncludeMusic.Checked =
-                        IncludeDesktop.Checked =
-                        IncludeSettings.Checked = false;
-
-                    foreach (CheckBox c in included)
-                        c.Checked = true;
-
-                    if (unsupported || included.Count == 0)
-                        FolderRadio.Checked = true;
-                    else
+                        IncludeDocuments.Checked = m_wrapper.SelectFilesUI.IncludeDocuments;
+                        IncludeImages.Checked = m_wrapper.SelectFilesUI.IncludeImages;
+                        IncludeMusic.Checked = m_wrapper.SelectFilesUI.IncludeMusic;
+                        IncludeDesktop.Checked = m_wrapper.SelectFilesUI.IncludeDesktop;
+                        IncludeSettings.Checked = m_wrapper.SelectFilesUI.IncludeSettings;
                         DocumentsRadio.Checked = true;
-
-                    m_warnedFiltersChanged = !unsupported;
+                    }
+                    else
+                    {
+                        FolderRadio.Checked = true;
+                    }
                 }
             }
 
-            if (FolderRadio.Checked)
-                TargetFolder_Leave(null, null);
-            else
-                Rescan();
-        }
+            //Always populate the list
+            InnerControlContainer.Controls.Clear();
+            if (!string.IsNullOrEmpty(m_wrapper.SourcePath))
+                foreach (string s in m_wrapper.SourcePath.Split(System.IO.Path.PathSeparator))
+                    if (!string.IsNullOrEmpty(s))
+                        AddFolderControl().SelectedPath = s;
 
-        private bool GetFilterSetting(List<KeyValuePair<bool, string>> filters, string basepath, string path)
-        {
-            path = Library.Core.Utility.AppendDirSeperator(path);
-            basepath = Library.Core.Utility.AppendDirSeperator(basepath);
-            if (!path.StartsWith(basepath))
-                return false;
+            Rescan();
 
-            path = path.Substring(basepath.Length - 1);
-
-            string exp = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(path + "*");
-            foreach (KeyValuePair<bool, string> f in filters)
-                if (f.Value.Equals(exp, Library.Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
-                    return f.Key;
-
-            return false;
+            //Make sure we resize correctly
+            TargetType_CheckedChanged(null, null);
         }
 
         private void StartCalculator()
@@ -364,6 +327,17 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 totalSize.Text = Strings.SelectFiles.CalculatingSize;
                 m_calculator = new WorkerThread<string>(CalculateFolderSize, false);
                 m_calculator.CompletedWork += new EventHandler(m_calculator_CompletedWork);
+            }
+        }
+
+        private void StopCalculator()
+        {
+            if (m_calculator != null)
+            {
+                m_calculator.ClearQueue(true);
+                m_calculator.CompletedWork -= new EventHandler(m_calculator_CompletedWork);
+                m_calculator.Terminate(false);
+                m_calculator = null;
             }
         }
 
@@ -381,39 +355,74 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 if (DocumentsRadio.Checked)
                 {
-                    if (m_sizes.ContainsKey(m_myDocuments) && IncludeDocuments.Checked)
-                        s += m_sizes[m_myDocuments];
-                    if (m_sizes.ContainsKey(m_myMusic) && IncludeMusic.Checked)
-                        s += m_sizes[m_myMusic];
-                    if (m_sizes.ContainsKey(m_myPictures) && IncludeImages.Checked)
-                        s += m_sizes[m_myPictures];
-                    if (m_sizes.ContainsKey(m_appData) && IncludeSettings.Checked)
-                        s += m_sizes[m_appData];
-                    if (m_sizes.ContainsKey(m_desktop) && IncludeDesktop.Checked)
-                        s += m_sizes[m_desktop];
+                    List<string> inclFolders = new List<string>();
+                    
+                    lock (m_lock)
+                    {
+                        if (m_sizes.ContainsKey(m_myDocuments) && IncludeDocuments.Checked)
+                            s += FindActualSize(m_myDocuments);
+                        if (m_sizes.ContainsKey(m_myMusic) && IncludeMusic.Checked)
+                            s += FindActualSize(m_myMusic);
+                        if (m_sizes.ContainsKey(m_myPictures) && IncludeImages.Checked)
+                            s += FindActualSize(m_myPictures);
+                        if (m_sizes.ContainsKey(m_appData) && IncludeSettings.Checked)
+                            s += FindActualSize(m_appData);
+                        if (m_sizes.ContainsKey(m_desktop) && IncludeDesktop.Checked)
+                            s += FindActualSize(m_desktop);
+                    }
+
                 }
                 else
-                    s = m_sizes.ContainsKey(TargetFolder.Text) ? m_sizes[TargetFolder.Text] : 0;
+                {
+                    lock(m_lock)
+                        foreach (HelperControls.FolderPathEntry entry in InnerControlContainer.Controls)
+                        {
+                            string path = entry.SelectedPath.Trim();
+
+                            if (m_sizes.ContainsKey(path))
+                            {
+                                s += m_sizes[path];
+                                entry.FolderSize = Library.Core.Utility.FormatSizeString(m_sizes[path]);
+                            }
+                        }
+                }
                 
                 if (m_calculator.CurrentTasks.Count == 0 && !m_calculator.Active)
                     totalSize.Text = string.Format(Strings.SelectFiles.FinalSizeCalculated, Library.Core.Utility.FormatSizeString(s));
                 else
                     totalSize.Text = string.Format(Strings.SelectFiles.PartialSizeCalculated, Library.Core.Utility.FormatSizeString(s));
 
-                if (m_sizes.ContainsKey(m_myMusic))
-                    myMusicSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myMusic]);
-                if (m_sizes.ContainsKey(m_myPictures))
-                    myPicturesSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myPictures]);
-                if (m_sizes.ContainsKey(m_desktop))
-                    desktopSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_desktop]);
-                if (m_sizes.ContainsKey(m_appData))
-                    appdataSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_appData]);
-                if (m_sizes.ContainsKey(m_myDocuments))
-                    myDocumentsSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[m_myDocuments]);
-
-                if (m_sizes.ContainsKey(TargetFolder.Text))
-                    customSize.Text = Library.Core.Utility.FormatSizeString(m_sizes[TargetFolder.Text]);
+                lock(m_lock)
+                {
+                    if (m_sizes.ContainsKey(m_myMusic))
+                        myMusicSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_myMusic));
+                    if (m_sizes.ContainsKey(m_myPictures))
+                        myPicturesSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_myPictures));
+                    if (m_sizes.ContainsKey(m_desktop))
+                        desktopSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_desktop));
+                    if (m_sizes.ContainsKey(m_appData))
+                        appdataSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_appData));
+                    if (m_sizes.ContainsKey(m_myDocuments))
+                        myDocumentsSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_myDocuments));
+                }
             }
+        }
+
+        /// <summary>
+        /// Calculates the size of a folder, excluding sizes of excluded folders.
+        /// This function is always called with the lock held
+        /// </summary>
+        /// <param name="path">The path to find the size for</param>
+        /// <param name="exclFolders">The list of excluded folders</param>
+        /// <returns>The size of the folder</returns>
+        private long FindActualSize(string path)
+        {
+            long size = m_sizes[path];
+            foreach (string f in m_specialFolders)
+                if (f != path && f.StartsWith(path) && m_sizes.ContainsKey(f))
+                    size -= m_sizes[f];
+
+            return size;
         }
 
         private void Rescan()
@@ -421,38 +430,69 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             lock (m_lock)
             {
                 StartCalculator();
-                if (!m_sizes.ContainsKey(m_myMusic))
-                    m_calculator.AddTask(m_myMusic);
-                if (!m_sizes.ContainsKey(m_myPictures))
-                    m_calculator.AddTask(m_myPictures);
-                if (!m_sizes.ContainsKey(m_desktop))
-                    m_calculator.AddTask(m_desktop);
-                if (!m_sizes.ContainsKey(m_appData))
-                    m_calculator.AddTask(m_appData);
-                if (!m_sizes.ContainsKey(m_myDocuments))
-                    m_calculator.AddTask(m_myDocuments);
-                
+                m_calculator.ClearQueue(true);
+
+                if (DocumentsRadio.Checked)
+                {
+                    if (!m_sizes.ContainsKey(m_myMusic))
+                        m_calculator.AddTask(m_myMusic);
+                    if (!m_sizes.ContainsKey(m_myPictures))
+                        m_calculator.AddTask(m_myPictures);
+                    if (!m_sizes.ContainsKey(m_desktop))
+                        m_calculator.AddTask(m_desktop);
+                    if (!m_sizes.ContainsKey(m_appData))
+                        m_calculator.AddTask(m_appData);
+                    if (!m_sizes.ContainsKey(m_myDocuments))
+                        m_calculator.AddTask(m_myDocuments);
+                }
+                else
+                {
+                    foreach (HelperControls.FolderPathEntry e in InnerControlContainer.Controls)
+                    {
+                        string s = e.SelectedPath.Trim();
+                        if (s.Length > 0 && !m_sizes.ContainsKey(s))
+                            m_calculator.AddTask(s);
+                    }
+                }
+
                 m_calculator_CompletedWork(null, null);
             }
-        }
 
-        private void BrowseFolderButton_Click(object sender, EventArgs e)
-        {
-            if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
-            {
-                TargetFolder.Text = folderBrowserDialog.SelectedPath;
-                TargetFolder_Leave(null, null);
-            }
         }
 
         private void TargetType_CheckedChanged(object sender, EventArgs e)
         {
             DocumentGroup.Enabled = DocumentsRadio.Checked;
             FolderGroup.Enabled = FolderRadio.Checked;
+
             if (DocumentsRadio.Checked)
-                Rescan();
+            {
+                FolderGroup.Height = COLLAPSED_GROUP_SIZE;
+                FolderGroup.Top = FolderRadio.Top = LayoutControlPanel.Height - FolderGroup.Height;
+
+                DocumentGroup.Height = LayoutControlPanel.Height - FolderGroup.Height - GRID_SPACING;
+
+                if (m_acceptButton != null)
+                {
+                    m_owner.Dialog.AcceptButton = m_acceptButton;
+                    m_acceptButton = null;
+                }
+            }
             else
-                TargetFolder_Leave(sender, e);
+            {
+                DocumentGroup.Height = COLLAPSED_GROUP_SIZE;
+                FolderGroup.Top = FolderRadio.Top = DocumentGroup.Height + GRID_SPACING;
+                FolderGroup.Height = LayoutControlPanel.Height - FolderGroup.Top;
+
+                if (m_acceptButton == null)
+                {
+                    m_acceptButton = m_owner.Dialog.AcceptButton;
+                    m_owner.Dialog.AcceptButton = null;
+                }
+            }
+
+            Rescan();
+            EnsureLastFolderEntryIsEmpty();
         }
 
         private void CalculateFolderSize(string folder)
@@ -461,60 +501,111 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 if (m_sizes.ContainsKey(folder))
                     return;
 
-            long size = 0;
-
-            Library.Core.FilenameFilter fnf = null;
-            string folderkey = folder;
-
-            //Special folders, extended logic
-            if (folder.StartsWith("!"))
-            {
-                folder = folder.Substring(1);
-                List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool,string>>();
-
-                filters.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(folder + "*")));
-
-                foreach (string s in m_specialFolders)
-                    if (s != folder && s.StartsWith(folder))
-                        filters.Add(new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s + "*")));
-
-
-                if (filters.Count > 1)
-                    fnf = new Duplicati.Library.Core.FilenameFilter(filters);
-            }
-
             //Calculate outside lock
-            size = Duplicati.Library.Core.Utility.GetDirectorySize(folder, fnf);
+            long size = Duplicati.Library.Core.Utility.GetDirectorySize(folder, null);
             lock (m_lock)
-                m_sizes[folderkey] = size;
+                m_sizes[folder] = size;
         }
 
-        private void TargetFolder_Leave(object sender, EventArgs e)
+        private void FolderPathEntry_Leave(object sender, EventArgs e)
         {
             lock (m_lock)
-                if (TargetFolder.Text.Trim().Length > 0 && !m_sizes.ContainsKey(TargetFolder.Text))
+            {
+                HelperControls.FolderPathEntry entry = (HelperControls.FolderPathEntry)sender;
+
+                string path = entry.SelectedPath.Trim();
+
+                if (path.Length > 0 && !m_sizes.ContainsKey(path))
                 {
                     StartCalculator();
-                    m_calculator.ClearQueue(true);
-                    m_calculator.AddTask(TargetFolder.Text);
+                    m_calculator.AddTask(path);
                     m_calculator_CompletedWork(null, null);
                 }
-                else if (TargetFolder.Text == "")
-                    totalSize.Text = "";
-                else if (m_sizes.ContainsKey(TargetFolder.Text))
-                {
-                    StartCalculator();
-                    m_calculator.ClearQueue(true);
+                else if (entry.SelectedPath.Trim() == "")
+                    entry.FolderSize = "";
+                else if (m_sizes.ContainsKey(path))
                     m_calculator_CompletedWork(null, null);
-                }
+            }
         }
 
         private void SelectFiles_VisibleChanged(object sender, EventArgs e)
         {
-            if (!this.Visible && m_calculator != null)
+            if (!this.Visible)
+                StopCalculator();
+
+            if (!this.Visible && m_acceptButton != null && m_owner != null)
             {
-                m_calculator.Terminate(false);
-                m_calculator = null;
+                m_owner.Dialog.AcceptButton = m_acceptButton;
+                m_acceptButton = null;
+            }
+
+        }
+
+        private HelperControls.FolderPathEntry AddFolderControl()
+        {
+            //Just use the last one if it is empty anyway
+            if (InnerControlContainer.Controls.Count > 0)
+            {
+                HelperControls.FolderPathEntry lastEntry = (HelperControls.FolderPathEntry)InnerControlContainer.Controls[0];
+                if (lastEntry.SelectedPath.Trim().Length == 0)
+                    return lastEntry;
+            }
+
+            try
+            {
+                InnerControlContainer.SuspendLayout();
+                HelperControls.FolderPathEntry entry = new Duplicati.GUI.HelperControls.FolderPathEntry();
+                entry.FolderBrowserDialog = folderBrowserDialog;
+                entry.SelectedPathChanged += new EventHandler(FolderPathEntry_SelectedPathChanged);
+                entry.DeleteButton_Clicked += new EventHandler(FolderPathEntry_DeleteButtonClicked);
+                entry.SelectedPathLeave += new EventHandler(FolderPathEntry_Leave);
+                entry.Height = entry.MinimumSize.Height + 2;
+
+                InnerControlContainer.Controls.Add(entry);
+                entry.Dock = DockStyle.Top;
+                entry.BringToFront();
+                return entry;
+            }
+            finally
+            {
+                InnerControlContainer.ResumeLayout();
+            }
+        }
+
+        void FolderPathEntry_SelectedPathChanged(object sender, EventArgs e)
+        {
+            ((HelperControls.FolderPathEntry)sender).FolderSize = Strings.SelectFiles.CalculatingSizeMarker;
+            EnsureLastFolderEntryIsEmpty();
+        }
+
+        void FolderPathEntry_DeleteButtonClicked(object sender, EventArgs e)
+        {
+            HelperControls.FolderPathEntry entry = (HelperControls.FolderPathEntry)sender;
+            InnerControlContainer.Controls.Remove(entry);
+            entry.SelectedPathChanged -= new EventHandler(FolderPathEntry_SelectedPathChanged);
+            entry.DeleteButton_Clicked -= new EventHandler(FolderPathEntry_DeleteButtonClicked);
+            entry.SelectedPathLeave -= new EventHandler(FolderPathEntry_Leave);
+            EnsureLastFolderEntryIsEmpty();
+        }
+
+        /// <summary>
+        /// Helper function that ensures that the last folder entry is always empty so the user may enter text in it
+        /// </summary>
+        private void EnsureLastFolderEntryIsEmpty()
+        {
+            if (InnerControlContainer.Controls.Count == 0)
+                AddFolderControl().Focus();
+            else
+            {
+                HelperControls.FolderPathEntry lastEntry = (HelperControls.FolderPathEntry)InnerControlContainer.Controls[0];
+                if (lastEntry.SelectedPath.Trim().Length == 0)
+                {
+                    //If we have a duplicate empty, remove the non-focused one
+                    if (InnerControlContainer.Controls.Count > 1 && ((HelperControls.FolderPathEntry)InnerControlContainer.Controls[1]).SelectedPath.Trim().Length == 0)
+                        FolderPathEntry_DeleteButtonClicked(InnerControlContainer.Controls[(lastEntry.Focused ? 0 : 1)], null);
+                }
+                else
+                    AddFolderControl();
             }
         }
     }

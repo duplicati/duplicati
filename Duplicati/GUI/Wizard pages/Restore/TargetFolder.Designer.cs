@@ -50,6 +50,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // 
             resources.ApplyResources(this.TargetPath, "TargetPath");
             this.TargetPath.Name = "TargetPath";
+            this.TargetPath.TextChanged += new System.EventHandler(this.TargetPath_TextChanged);
             // 
             // label2
             // 
@@ -65,8 +66,10 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // 
             // backupFileList
             // 
+            this.backupFileList.DefaultTarget = null;
             resources.ApplyResources(this.backupFileList, "backupFileList");
             this.backupFileList.Name = "backupFileList";
+            this.backupFileList.FileListLoaded += new System.EventHandler(this.backupFileList_FileListLoaded);
             // 
             // PartialRestore
             // 

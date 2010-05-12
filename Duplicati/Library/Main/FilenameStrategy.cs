@@ -30,6 +30,36 @@ namespace Duplicati.Library.Main
     /// </summary>
     internal class FilenameStrategy
     {
+
+        //In Duplicati 1.0 there is only one manifest file, and it is called manifest or M in short mode
+        //Issue# 58 introduced a backup manifest. Since 1.0 does not verify the manifest version number,
+        // the name manifest/M is not used, as that prevents 1.0 clients from reading the manifests and volumes.
+        //The new names are manifestA and manifestB (A/B in short mode).
+        //Future versions of Duplicati always verify the version number to avoid reading/writing data to a format 
+        // that is not supported.
+        //
+        //These are the strings that are used:
+
+        private const string MANIFEST_OLD = "manifest";
+        private const string MANIFEST_A = "manifestA";
+        private const string MANIFEST_B = "manifestB";
+
+        private const string MANIFEST_OLD_SHORT = "M";
+        private const string MANIFEST_A_SHORT = "A";
+        private const string MANIFEST_B_SHORT = "B";
+
+        private const string CONTENT = "content";
+        private const string SIGNATURE = "signature";
+        private const string FULL = "full";
+        private const string INCREMENTAL = "inc";
+
+        private const string CONTENT_SHORT = "C";
+        private const string SIGNATURE_SHORT = "S";
+        private const string FULL_SHORT = "F";
+        private const string INCREMENTAL_SHORT = "I";
+
+        private const string VOLUME = "vol";
+
         private bool m_useShortFilenames;
         private string m_timeSeperator;
         private string m_prefix;
@@ -37,14 +67,51 @@ namespace Duplicati.Library.Main
         private Regex m_filenameRegExp;
         private Regex m_shortRegExp;
 
+        /// <summary>
+        /// A cache used to ensure that filenames are consistent, 
+        /// even if the timezone changes in between filename generation
+        /// </summary>
+        private Dictionary<DateTime, string> m_timeStringCache;
+
         public FilenameStrategy(string prefix, string timeSeperator, bool useShortNames)
         {
             m_prefix = prefix;
             m_timeSeperator = timeSeperator;
             m_useShortFilenames = useShortNames;
 
-            m_shortRegExp = new Regex(@"(?<prefix>" + Regex.Escape(m_prefix) + @")\-(?<type>(C|S|M))(?<inc>(F|I))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<volumegroup>vol(?<volumenumber>\d+)\.)?(?<extension>.+)");
-            m_filenameRegExp = new Regex(@"(?<prefix>" + Regex.Escape(m_prefix) + @")\-(?<inc>(full|inc))\-(?<type>(content|signature|manifest))\.(?<time>\d{4}\-\d{2}\-\d{2}.\d{2}" + Regex.Escape(m_timeSeperator) + @"\d{2}" + Regex.Escape(m_timeSeperator) + @"\d{2}(?<timezone>([\+\-]\d{2}" + Regex.Escape(m_timeSeperator) + @"\d{2})|Z)?)\.(?<volumegroup>vol(?<volumenumber>\d+)\.)?(?<extension>.+)");
+            m_shortRegExp = new Regex(
+                string.Format(@"(?<prefix>{0})\-(?<type>({1}|{2}|{3}|{4}|{5}))(?<inc>({6}|{7}))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<volumegroup>{8}(?<volumenumber>\d+)\.)?(?<extension>.+)",
+                    Regex.Escape(m_prefix),
+                    CONTENT_SHORT,
+                    SIGNATURE_SHORT,
+                    MANIFEST_OLD_SHORT,
+                    MANIFEST_A_SHORT,
+                    MANIFEST_B_SHORT,
+                    FULL_SHORT,
+                    INCREMENTAL_SHORT,
+                    VOLUME
+                )
+            );
+            m_filenameRegExp = new Regex(
+                string.Format(@"(?<prefix>{0})\-(?<inc>({1}|{2}))\-(?<type>({3}|{4}|{5}|{6}|{7}))\.(?<time>\d{10}\-\d{11}\-\d{11}.\d{11}{9}\d{11}{9}\d{11}(?<timezone>([\+\-]\d{11}{9}\d{11})|Z)?)\.(?<volumegroup>{8}(?<volumenumber>\d+)\.)?(?<extension>.+)",
+                    Regex.Escape(m_prefix),
+                    FULL,
+                    INCREMENTAL,
+                    CONTENT,
+                    SIGNATURE,
+                    MANIFEST_OLD,
+                    MANIFEST_A,
+                    MANIFEST_B,
+                    VOLUME,
+                    Regex.Escape(timeSeperator),
+                    "{4}", //We need to insert it because it gets replaced by string.Format
+                    "{2}" //Same as above
+                )
+            );
+
+            //The short filenames are UTC so there is no timezone attached
+            if (!m_useShortFilenames)
+                m_timeStringCache = new Dictionary<DateTime, string>();
         }
 
         public FilenameStrategy(Options options)
@@ -52,49 +119,42 @@ namespace Duplicati.Library.Main
         {
         }
 
-        public string GenerateFilename(BackupEntry entry)
-        {
-            if (entry.Type == BackupEntry.EntryType.Content || entry.Type == BackupEntry.EntryType.Signature)
-                return GenerateFilename(entry.Type, entry.IsFull, entry.Time, entry.VolumeNumber);
-            else
-                return GenerateFilename(entry.Type, entry.IsFull, entry.Time);
-        }
-
-        public string GenerateFilename(BackupEntry.EntryType type, bool full, DateTime time, int volume)
-        {
-            return GenerateFilename(type, full, time) + ".vol" + volume.ToString();
-        }
-
-        public string GenerateFilename(BackupEntry.EntryType type, bool full, DateTime time)
-        {
-            return GenerateFilename(type, full, m_useShortFilenames, time);
-        }
-
-        public string GenerateFilename(BackupEntry.EntryType type, bool full, bool shortName, DateTime time)
+        public string GenerateFilename(BackupEntryBase type)
         {
             string t;
-            if (type == BackupEntry.EntryType.Manifest)
-                t = shortName ? "M" : "manifest";
-            else if (type == BackupEntry.EntryType.Content)
-                t = shortName ? "C" : "content";
-            else if (type == BackupEntry.EntryType.Signature)
-                t = shortName ? "S" : "signature";
+            if (type is ManifestEntry && ((ManifestEntry)type).IsPrimary)
+                t = m_useShortFilenames ? MANIFEST_A_SHORT : MANIFEST_A;
+            else if (type is ManifestEntry && !((ManifestEntry)type).IsPrimary)
+                t = m_useShortFilenames ? MANIFEST_B_SHORT : MANIFEST_B;
+            else if (type is ContentEntry)
+                t = m_useShortFilenames ? CONTENT_SHORT : CONTENT;
+            else if (type is SignatureEntry)
+                t = m_useShortFilenames ? SIGNATURE_SHORT : SIGNATURE;
             else
                 throw new Exception(string.Format(Strings.FilenameStrategy.InvalidEntryTypeError, type));
 
-            if (!shortName)
+            string filename;
+            if (!m_useShortFilenames)
             {
+                //Make sure the same DateTime is always the same string
+                if (!m_timeStringCache.ContainsKey(type.Time))
+                    m_timeStringCache[type.Time] = type.Time.ToString("yyyy-MM-ddTHH:mm:ssK");
 
-                string datetime = time.ToString("yyyy-MM-ddTHH:mm:ssK").Replace(":", m_timeSeperator);
-                return m_prefix + "-" + (full ? "full" : "inc") + "-" + t + "." + datetime;
+                string datetime = m_timeStringCache[type.Time].Replace(":", m_timeSeperator);
+                filename = m_prefix + "-" + (type.IsFull ? FULL : INCREMENTAL) + "-" + t + "." + datetime;
             }
             else
             {
-                return m_prefix + "-" + t + (full ? "F" : "I") + (time.ToUniversalTime().Ticks / TimeSpan.TicksPerSecond).ToString("X");
+                filename = m_prefix + "-" + t + (type.IsFull ? FULL_SHORT : INCREMENTAL_SHORT) + (type.Time.ToUniversalTime().Ticks / TimeSpan.TicksPerSecond).ToString("X");
             }
+
+            if (type is ManifestEntry)
+                return filename;
+            else
+                return filename + "." + VOLUME + ((PayloadEntryBase)type).Volumenumber.ToString();
         }
 
-        public BackupEntry DecodeFilename(Duplicati.Library.Backend.FileEntry fe)
+        public BackupEntryBase ParseFilename(Duplicati.Library.Backend.FileEntry fe)
         {
             Match m = m_filenameRegExp.Match(fe.Name);
             if (!m.Success)
@@ -104,29 +164,16 @@ namespace Duplicati.Library.Main
             if (m.Value != fe.Name)
                 return null; //Accept only full matches
 
-            BackupEntry.EntryType type;
-            if (m.Groups["type"].Value == "manifest" || m.Groups["type"].Value == "M")
-                type = BackupEntry.EntryType.Manifest;
-            else if (m.Groups["type"].Value == "content" || m.Groups["type"].Value == "C")
-                type = BackupEntry.EntryType.Content;
-            else if (m.Groups["type"].Value == "signature" || m.Groups["type"].Value == "S")
-                type = BackupEntry.EntryType.Signature;
-            else
-                return null;
-
-            bool isFull = m.Groups["inc"].Value == "full" || m.Groups["inc"].Value == "F";
+            bool isFull = m.Groups["inc"].Value == FULL || m.Groups["inc"].Value == FULL_SHORT;
             bool isShortName = m.Groups["inc"].Value.Length == 1;
+            string timeString = m.Groups["time"].Value;
             DateTime time;
             if (isShortName)
-                time = new DateTime(long.Parse(m.Groups["time"].Value, System.Globalization.NumberStyles.HexNumber) * TimeSpan.TicksPerSecond, DateTimeKind.Utc).ToLocalTime();
+                time = new DateTime(long.Parse(timeString, System.Globalization.NumberStyles.HexNumber) * TimeSpan.TicksPerSecond, DateTimeKind.Utc).ToLocalTime();
             else
-                time = DateTime.Parse(m.Groups["time"].Value.Replace(m_timeSeperator, ":"));
+                time = DateTime.Parse(timeString.Replace(m_timeSeperator, ":"));
 
             string extension = m.Groups["extension"].Value;
-            /*if (extension.StartsWith("vol"))
-                extension = extension.Substring(extension.IndexOf(".") + 1);*/
-
-            //m = m_prefixParser.Match(extension);
 
             int volNumber = -1;
             if (m.Groups["volumenumber"].Success)
@@ -142,7 +189,14 @@ namespace Duplicati.Library.Main
                 compression = compression.Substring(0, dotIndex);
             }
 
-            return new BackupEntry(fe, time, type, isFull, isShortName, volNumber, compression, encryption);
+            if (Array.IndexOf<string>(new string[] { MANIFEST_OLD , MANIFEST_OLD_SHORT ,MANIFEST_A , MANIFEST_A_SHORT, MANIFEST_B, MANIFEST_B_SHORT },  m.Groups["type"].Value) >= 0)
+                return new ManifestEntry(fe.Name, fe, time, isFull, timeString, encryption, m.Groups["type"].Value != MANIFEST_B && m.Groups["type"].Value != MANIFEST_B_SHORT);
+            else if (m.Groups["type"].Value == SIGNATURE || m.Groups["type"].Value == SIGNATURE_SHORT)
+                return new SignatureEntry(fe.Name, fe, time, isFull, timeString, encryption, compression, volNumber);
+            else if (m.Groups["type"].Value == CONTENT || m.Groups["type"].Value == CONTENT_SHORT)
+                return new ContentEntry(fe.Name, fe, time, isFull, timeString, encryption, compression, volNumber);
+            else
+                return null;
         }
 
         public bool UseShortNames { get { return m_useShortFilenames; } }

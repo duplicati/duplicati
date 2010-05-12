@@ -126,13 +126,13 @@
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="BackupFolder.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+    <value>3</value>
   </data>
   <data name="&gt;&gt;BackupFolder.Name" xml:space="preserve">
     <value>BackupFolder</value>
   </data>
   <data name="&gt;&gt;BackupFolder.Type" xml:space="preserve">
-    <value>Duplicati.GUI.HelperControls.BackupTreeView, Duplicati, Version=1.0.0.183, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+    <value>Duplicati.GUI.HelperControls.BackupTreeView, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
   <data name="&gt;&gt;BackupFolder.Parent" xml:space="preserve">
     <value>$this</value>
@@ -150,7 +150,7 @@
     <value>73, 13</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>0</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
     <value>Backup name</value>
@@ -174,7 +174,7 @@
     <value>344, 20</value>
   </data>
   <data name="BackupName.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>1</value>
   </data>
   <data name="&gt;&gt;BackupName.Name" xml:space="preserve">
     <value>BackupName</value>
@@ -198,7 +198,7 @@
     <value>187, 13</value>
   </data>
   <data name="label2.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+    <value>2</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
     <value>Place the backup in a group (optional)</value>

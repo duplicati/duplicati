@@ -126,6 +126,9 @@
   <data name="BadVolumeSortOrder" xml:space="preserve">
     <value>Bad sort order on volumes detected</value>
   </data>
+  <data name="CannotCleanWithoutHashesError" xml:space="preserve">
+    <value>When using cleanup the manifests and hashes must be verified</value>
+  </data>
   <data name="DeletingBackupSetMessage" xml:space="preserve">
     <value>Deleting backup at {0}</value>
   </data>
@@ -138,14 +141,14 @@
   <data name="InternalDeleteCountError" xml:space="preserve">
     <value>An internal error occured, and the operation was aborted to protect the backup sets</value>
   </data>
-  <data name="ManifestNoFilesError" xml:space="preserve">
-    <value>Invalid manifest, no files: {0}</value>
-  </data>
-  <data name="ManifestWrongCountError" xml:space="preserve">
-    <value>Invalid manifest, wrong count: {0}</value>
+  <data name="ManifestsMustBeReadOnBackups" xml:space="preserve">
+    <value>It is not allowed to disable manifest reading when performing a backup. Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
   </data>
   <data name="MissingSignatureFile" xml:space="preserve">
     <value>The signature file for a content volume was missing, date: {0}, volumenumber: {1}, content volume filename: {2}</value>
+  </data>
+  <data name="NoSourceFoldersError" xml:space="preserve">
+    <value>No source folders specified for backup</value>
   </data>
   <data name="NotDeletingBackupSetMessage" xml:space="preserve">
     <value>Not deleting backup at time: {0}, because later backups depend on it</value>
@@ -153,14 +156,38 @@
   <data name="NotDeletingLastFullMessage" xml:space="preserve">
     <value>The backup at time {0} is not removed because it is the last full backup, use --allow-full-removal to include this backup in the delete</value>
   </data>
+  <data name="NumberOfSourceFoldersHasChangedError" xml:space="preserve">
+    <value>The number of source folders in the latest backup is {0}, but the number of specified folders is now {1}. It is not allowed to change source folders for a backup.</value>
+  </data>
   <data name="PartialUploadMessage" xml:space="preserve">
     <value>Failed after uploading {0} volume(s). Error message: {1}</value>
+  </data>
+  <data name="PrimaryManifestReadErrorLogMessage" xml:space="preserve">
+    <value>Failed to read the primary manifest {0}, attempting secondary, if avalible. Error message: {1}</value>
+  </data>
+  <data name="ReadingSecondaryManifestLogMessage" xml:space="preserve">
+    <value>Secondary manifest file found: {0}, attempting read.</value>
   </data>
   <data name="RemovingPartialFilesMessage" xml:space="preserve">
     <value>Removing partial file: {0}</value>
   </data>
+  <data name="SecondaryManifestReadErrorLogMessage" xml:space="preserve">
+    <value>Failed to read the secondary manifest {0}. Error message: {1}</value>
+  </data>
   <data name="SignatureCachePathMissingError" xml:space="preserve">
     <value>Signature cache path was not given as an argument</value>
+  </data>
+  <data name="SkippedContentVolumeLogMessage" xml:space="preserve">
+    <value>The content volume {0} is not present in the manifest and is not used</value>
+  </data>
+  <data name="SourceDirIsIncludedMultipleTimesError" xml:space="preserve">
+    <value>The folder {0} is included multiple times</value>
+  </data>
+  <data name="SourceDirsAreRelatedError" xml:space="preserve">
+    <value>The folder {1} is a subfolder of {0}. It is not allowed to specify the same folder multiple times.</value>
+  </data>
+  <data name="SourceFoldersHasChangedError" xml:space="preserve">
+    <value>The folder {0} is no longer in the source folder set. It is not allowed to change source folders for a backup.</value>
   </data>
   <data name="StatusBuildingFilelist" xml:space="preserve">
     <value>Building filelist ...</value>

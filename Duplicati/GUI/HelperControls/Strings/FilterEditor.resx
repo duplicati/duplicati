@@ -126,8 +126,11 @@
   <data name="FileIsIncludedDefault" xml:space="preserve">
     <value>The file {0} is included because no rule matched</value>
   </data>
-  <data name="FilenameIsNotInRootFolder" xml:space="preserve">
-    <value>The filename {0} is not located in the folder {1}</value>
+  <data name="FilenameIsNotInAnyRootFolder" xml:space="preserve">
+    <value>The filename {0} is not located in any of the source folders</value>
+  </data>
+  <data name="FilepathIsNotAbsoluteError" xml:space="preserve">
+    <value>The filename {0} is not an absolute path</value>
   </data>
   <data name="FolderIsExcluded" xml:space="preserve">
     <value>The folder {0} is excluded due to rule {1}</value>

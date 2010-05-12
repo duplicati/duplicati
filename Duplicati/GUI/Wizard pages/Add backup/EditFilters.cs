@@ -60,8 +60,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            filterEditor1.BasePath = m_wrapper.SourcePath;
             filterEditor1.Filter = m_wrapper.EncodedFilters;
+
+            List<KeyValuePair<bool, string>> lst = new List<KeyValuePair<bool, string>>();
+            filterEditor1.BasePath = DynamicSetupHelper.GetSourceFolders(m_wrapper, new ApplicationSettings(m_wrapper.DataConnection), lst);
+            filterEditor1.DynamicFilter = Library.Core.FilenameFilter.EncodeAsFilter(lst);
         }
     }
 }

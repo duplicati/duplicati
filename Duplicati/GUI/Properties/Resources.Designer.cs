@@ -60,6 +60,13 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap AddedFile {
+            get {
+                object obj = ResourceManager.GetObject("AddedFile", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap AddedFolder {
             get {
                 object obj = ResourceManager.GetObject("AddedFolder", resourceCulture);
@@ -172,6 +179,13 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap IncompleteFile {
+            get {
+                object obj = ResourceManager.GetObject("IncompleteFile", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap LogMenuIcon {
             get {
                 object obj = ResourceManager.GetObject("LogMenuIcon", resourceCulture);
@@ -183,6 +197,13 @@ namespace Duplicati.GUI.Properties {
             get {
                 object obj = ResourceManager.GetObject("LogViewer", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap ModifiedFile {
+            get {
+                object obj = ResourceManager.GetObject("ModifiedFile", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         
@@ -281,6 +302,13 @@ namespace Duplicati.GUI.Properties {
             get {
                 object obj = ResourceManager.GetObject("ThrottleIcon", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap Trash {
+            get {
+                object obj = ResourceManager.GetObject("Trash", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         

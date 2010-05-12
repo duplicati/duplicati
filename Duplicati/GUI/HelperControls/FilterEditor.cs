@@ -29,35 +29,74 @@ namespace Duplicati.GUI.HelperControls
 {
     public partial class FilterEditor : UserControl
     {
-        private string m_basepath = "";
+        private string[] m_basepath;
         private string m_filter = "";
+        private string m_dynamicFilter;
 
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FilterEditor"/> class.
+        /// </summary>
         public FilterEditor()
         {
             InitializeComponent();
         }
 
-        private List<KeyValuePair<bool, string>> GetFilterList()
+        /// <summary>
+        /// Gets the current filter list.
+        /// </summary>
+        /// <param name="includeDynamicFilters">if set to <c>true</c> include dynamic filters.</param>
+        /// <returns>A list of filters</returns>
+        private List<KeyValuePair<bool, string>> GetFilterList(bool includeDynamicFilters)
         {
             List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
             foreach (ListViewItem lvi in listView.Items)
                 filters.Add(new KeyValuePair<bool, string>(lvi.ImageIndex == 0, lvi.Text));
 
+            if (includeDynamicFilters && !string.IsNullOrEmpty(m_dynamicFilter))
+            {
+                List<KeyValuePair<bool, string>> tmp = Library.Core.FilenameFilter.DecodeFilter(m_dynamicFilter);
+                tmp.AddRange(filters);
+                filters = tmp;
+            }
+
             return filters;
         }
 
+        /// <summary>
+        /// Gets or sets the filter string as displayed in the UI
+        /// </summary>
+        [DefaultValue("")]
         public string Filter
         {
-            get { return Library.Core.FilenameFilter.EncodeAsFilter(GetFilterList()); }
+            get { return Library.Core.FilenameFilter.EncodeAsFilter(GetFilterList(false)); }
             set { m_filter = value; RefreshList(); FilenameTester_TextChanged(null, null); }
         }
 
-        public string BasePath
+
+        /// <summary>
+        /// Gets or sets the dynamic filter, which is applied to the test area, but not visible in the list
+        /// </summary>
+        [DefaultValue("")]
+        public string DynamicFilter
+        {
+            get { return m_dynamicFilter; }
+            set { m_dynamicFilter = value; FilenameTester_TextChanged(null, null); }
+        }
+
+        /// <summary>
+        /// Gets or sets the list of source folders
+        /// </summary>
+        [DefaultValue(null)]
+        public string[] BasePath
         {
             get { return m_basepath; }
             set { m_basepath = value; FilenameTester_TextChanged(null, null); }
         }
 
+        /// <summary>
+        /// Refreshes the UI with the values found in the filter variable
+        /// </summary>
         private void RefreshList()
         {
             listView.Items.Clear();
@@ -68,9 +107,16 @@ namespace Duplicati.GUI.HelperControls
                 listView.Items[0].Selected = true;
         }
 
+        /// <summary>
+        /// Handles the TextChanged event of the FilenameTester control.
+        /// Used to update the status and tooltip to show if the current path is included or excluded
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void FilenameTester_TextChanged(object sender, EventArgs e)
         {
-            if (FilenameTester.Text.Trim().Length == 0 || string.IsNullOrEmpty(m_basepath))
+            //Basic sanity check
+            if (FilenameTester.Text.Trim().Length == 0 || m_basepath == null || m_basepath.Length == 0 || (m_basepath.Length == 1 && string.IsNullOrEmpty(m_basepath[0])))
             {
                 SetTooltipMessage("");
                 TestResults.Visible = false;
@@ -78,7 +124,8 @@ namespace Duplicati.GUI.HelperControls
             }
 
             string filename = FilenameTester.Text;
-
+            
+            //Prevent exceptions based on invalid input
             if (filename.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
             {
                 SetTooltipMessage(string.Format(Strings.FilterEditor.InvalidCharsInFilenameError, filename));
@@ -86,35 +133,59 @@ namespace Duplicati.GUI.HelperControls
                 return;
             }
 
-            if (!System.IO.Path.IsPathRooted(filename))
-                filename = System.IO.Path.Combine(m_basepath, filename);
-
-            if (!filename.StartsWith(m_basepath))
+            try
             {
-                SetTooltipMessage(string.Format(Strings.FilterEditor.FilenameIsNotInRootFolder, filename, m_basepath));
+                //Certain paths cause exceptions anyway
+                System.IO.Path.GetFullPath(filename);
+            }
+            catch
+            {
+                SetTooltipMessage(string.Format(Strings.FilterEditor.InvalidCharsInFilenameError, filename));
                 TestResults.Visible = false;
                 return;
             }
 
-            List<string> parentFolders = new List<string>();
-            string folder = filename;
-            string folder_cmp = folder;
-            while (folder_cmp.Length > m_basepath.Length)
+            //System.IO.Path.IsPathRooted returns true for filenames starting with a backslash on windows
+            if (System.IO.Path.GetFullPath(filename) != filename)
             {
-                folder = System.IO.Path.GetDirectoryName(folder);
-                folder_cmp = Duplicati.Library.Core.Utility.AppendDirSeperator(folder);
-                if (!folder_cmp.Equals(m_basepath, Library.Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
-                    parentFolders.Add(folder_cmp);
-                else
-                    break;
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FilepathIsNotAbsoluteError, filename));
+                TestResults.Visible = false;
+                return;
             }
 
+            //Find the source folder that matches the path entered
+            string basepath = null;
+            foreach (string s in m_basepath)
+                if (filename.StartsWith(Library.Core.Utility.AppendDirSeperator(s), Library.Core.Utility.ClientFilenameStringComparision))
+                {
+                    basepath = s;
+                    break;
+                }
+
+            if (string.IsNullOrEmpty(basepath))
+            {
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FilenameIsNotInAnyRootFolder, filename, m_basepath));
+                TestResults.Visible = false;
+                return;
+            }
+
+            //Build a list of parent folders to check
+            List<string> parentFolders = new List<string>();
+            string folder = filename;
+            while (folder.Length > basepath.Length)
+            {
+                folder = System.IO.Path.GetDirectoryName(folder);
+                parentFolders.Add(Duplicati.Library.Core.Utility.AppendDirSeperator(folder));
+            }
+
+            //Work from the source towards the path
             parentFolders.Reverse();
 
-            Library.Core.FilenameFilter fn = new Duplicati.Library.Core.FilenameFilter(GetFilterList());
+            //Test if any of the parent folders are excluded
+            Library.Core.FilenameFilter fn = new Duplicati.Library.Core.FilenameFilter(GetFilterList(true));
             Library.Core.IFilenameFilter match;
-            foreach(string s in parentFolders)
-                if (!fn.ShouldInclude(m_basepath, s, out match))
+            foreach (string s in parentFolders)
+                if (!fn.ShouldInclude(basepath, s, out match))
                 {
                     SetTooltipMessage(string.Format(Strings.FilterEditor.FolderIsExcluded, s, ((Library.Core.RegularExpressionFilter)match).Expression.ToString()));
                     TestResults.Image = imageList1.Images[1];
@@ -122,8 +193,10 @@ namespace Duplicati.GUI.HelperControls
                     return;
                 }
 
-            TestResults.Image = imageList1.Images[fn.ShouldInclude(m_basepath, filename, out match) ? 0 : 1];
+            //Update image based on the inclusion status
+            TestResults.Image = imageList1.Images[fn.ShouldInclude(basepath, filename, out match) ? 0 : 1];
 
+            //Set the tooltip to inform the user of the result
             if (match == null)
                 SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsIncludedDefault, filename));
             else if (match.Include)
@@ -134,6 +207,10 @@ namespace Duplicati.GUI.HelperControls
             TestResults.Visible = true;
         }
 
+        /// <summary>
+        /// Sets the tooltip message.
+        /// </summary>
+        /// <param name="message">The message to show as the tooltip.</param>
         private void SetTooltipMessage(string message)
         {
             toolTip1.SetToolTip(FilenameTester, message);
@@ -142,6 +219,12 @@ namespace Duplicati.GUI.HelperControls
             toolTip1.Show(message, TestResults, 5000);
         }
 
+        /// <summary>
+        /// Handles the SelectedIndexChanged event of the listView control.
+        /// Used to update the enabled state of the buttons.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void listView_SelectedIndexChanged(object sender, EventArgs e)
         {
             RemoveFilterButton.Enabled =
@@ -154,6 +237,11 @@ namespace Duplicati.GUI.HelperControls
             MoveFilterBottomButton.Enabled = listView.SelectedItems.Count == 1 && listView.SelectedItems[0].Index != listView.Items.Count - 1;
         }
 
+        /// <summary>
+        /// Handles the Click event of the RemoveFilterButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void RemoveFilterButton_Click(object sender, EventArgs e)
         {
             while (listView.SelectedItems.Count > 0)
@@ -161,6 +249,11 @@ namespace Duplicati.GUI.HelperControls
             FilenameTester_TextChanged(sender, e);
         }
 
+        /// <summary>
+        /// Handles the Click event of the EditFilterButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void EditFilterButton_Click(object sender, EventArgs e)
         {
             if (listView.SelectedItems.Count == 1)
@@ -175,6 +268,11 @@ namespace Duplicati.GUI.HelperControls
             }
         }
 
+        /// <summary>
+        /// Handles the Click event of the MoveFilterUpButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void MoveFilterUpButton_Click(object sender, EventArgs e)
         {
             if (listView.SelectedItems.Count == 1)
@@ -188,6 +286,11 @@ namespace Duplicati.GUI.HelperControls
             }
         }
 
+        /// <summary>
+        /// Handles the Click event of the MoveFilterDownButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void MoveFilterDownButton_Click(object sender, EventArgs e)
         {
             if (listView.SelectedItems.Count == 1)
@@ -201,6 +304,11 @@ namespace Duplicati.GUI.HelperControls
             }
         }
 
+        /// <summary>
+        /// Handles the Click event of the MoveFilterTopButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void MoveFilterTopButton_Click(object sender, EventArgs e)
         {
             if (listView.SelectedItems.Count == 1)
@@ -214,6 +322,11 @@ namespace Duplicati.GUI.HelperControls
             }
         }
 
+        /// <summary>
+        /// Handles the Click event of the MoveFilterBottomButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void MoveFilterBottomButton_Click(object sender, EventArgs e)
         {
             if (listView.SelectedItems.Count == 1)
@@ -227,6 +340,11 @@ namespace Duplicati.GUI.HelperControls
             }
         }
 
+        /// <summary>
+        /// Handles the Click event of the AddFilterButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void AddFilterButton_Click(object sender, EventArgs e)
         {
             FilterDialog dlg = new FilterDialog(new KeyValuePair<bool, string>(true, ""));
@@ -237,12 +355,22 @@ namespace Duplicati.GUI.HelperControls
             }
         }
 
+        /// <summary>
+        /// Handles the Load event of the FilterEditor control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void FilterEditor_Load(object sender, EventArgs e)
         {
             if (listView.Items.Count != 0)
                 listView.Items[0].Selected = true;
         }
 
+        /// <summary>
+        /// Handles the DoubleClick event of the listView control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void listView_DoubleClick(object sender, EventArgs e)
         {
             if (EditFilterButton.Enabled)

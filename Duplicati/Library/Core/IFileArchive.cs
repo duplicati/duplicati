@@ -141,5 +141,10 @@ namespace Duplicati.Library.Core
         /// <param name="file">The name of the file to examine</param>
         /// <returns>The timestamp on the file</returns>
         DateTime GetLastWriteTime(string file);
+
+        /// <summary>
+        /// The size in bytes of the buffer that will be written when flushed
+        /// </summary>
+        long FlushBufferSize { get; }
     }
 }

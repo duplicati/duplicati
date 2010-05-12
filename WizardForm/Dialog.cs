@@ -130,6 +130,7 @@ namespace System.Windows.Forms.Wizard
         {
             PageChangedArgs args = new PageChangedArgs(this, this.Pages.IndexOf(page) == this.Pages.Count - 1, m_isBack ? PageChangedDirection.Back : PageChangedDirection.Next);
 
+            page.Control.Visible = false;
             page.Enter(this, args);
 
             InfoPanel.Visible = !page.FullSize;
@@ -148,8 +149,15 @@ namespace System.Windows.Forms.Wizard
 
             UpdateButtons();
 
+            page.Control.Visible = true;
             page.Display(this, args);
 
+        }
+
+        private void RefocusElement(object sender, EventArgs e)
+        {
+            try { CurrentPage.Control.Focus(); }
+            catch { }
         }
 
         private void BackBtn_Click(object sender, EventArgs e)
@@ -178,6 +186,8 @@ namespace System.Windows.Forms.Wizard
             {
                 m_isBack = false;
             }
+
+            BeginInvoke(new EventHandler(RefocusElement), sender, e);
         }
 
         private void NextBtn_Click(object sender, EventArgs e)
@@ -225,6 +235,8 @@ namespace System.Windows.Forms.Wizard
             UpdateButtons();
 
             CurrentPage = args.NextPage;
+
+            BeginInvoke(new EventHandler(RefocusElement), sender, e);
         }
 
         private void CancelBtn_Click(object sender, EventArgs e)

@@ -31,6 +31,7 @@ namespace Duplicati.GUI.Wizard_pages
 {
     public partial class MainPage : WizardControl
     {
+        private bool m_isFirstShow = true;
         WizardSettingsWrapper m_wrapper;
 
         public MainPage()
@@ -45,7 +46,7 @@ namespace Duplicati.GUI.Wizard_pages
 
         void MainPage_PageDisplay(object sender, PageChangedArgs args)
         {
-            //Skip this, as there is only one valid option
+            //Skip this, if there is only one valid option
             if (Program.DataConnection.GetObjects<Datamodel.Schedule>().Length == 0)
             {
                 if (args.Direction == PageChangedDirection.Next)
@@ -67,6 +68,7 @@ namespace Duplicati.GUI.Wizard_pages
             m_wrapper = new WizardSettingsWrapper(m_settings);
             UpdateButtonState();
             args.TreatAsLast = false;
+
         }
 
         void MainPage_PageLeave(object sender, PageChangedArgs args)
@@ -107,7 +109,20 @@ namespace Duplicati.GUI.Wizard_pages
         private void UpdateButtonState()
         {
             if (m_owner != null)
+            {
+                if (!m_valuesAutoLoaded && m_isFirstShow && this.Visible)
+                {
+                    CreateNew.Checked =
+                    Edit.Checked =
+                    Remove.Checked =
+                    Restore.Checked =
+                    Backup.Checked =
+                        false;
+
+                    m_isFirstShow = false;
+                }
                 m_owner.NextButton.Enabled = CreateNew.Checked | Edit.Checked | Restore.Checked | Backup.Checked | Remove.Checked;
+            }
         }
 
         private void Radio_CheckedChanged(object sender, EventArgs e)

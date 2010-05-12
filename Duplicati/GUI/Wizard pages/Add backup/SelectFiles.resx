@@ -117,86 +117,18 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="label1.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 24</value>
-  </data>
-  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>87, 13</value>
-  </data>
-  <data name="label1.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="label1.Text" xml:space="preserve">
-    <value>Folder to backup</value>
-  </data>
-  <data name="&gt;&gt;label1.Name" xml:space="preserve">
-    <value>label1</value>
-  </data>
-  <data name="&gt;&gt;label1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;label1.Parent" xml:space="preserve">
-    <value>FolderGroup</value>
-  </data>
-  <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="TargetFolder.Location" type="System.Drawing.Point, System.Drawing">
-    <value>192, 24</value>
-  </data>
-  <data name="TargetFolder.Size" type="System.Drawing.Size, System.Drawing">
-    <value>208, 20</value>
-  </data>
-  <data name="TargetFolder.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;TargetFolder.Name" xml:space="preserve">
-    <value>TargetFolder</value>
-  </data>
-  <data name="&gt;&gt;TargetFolder.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;TargetFolder.Parent" xml:space="preserve">
-    <value>FolderGroup</value>
-  </data>
-  <data name="&gt;&gt;TargetFolder.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="BrowseFolderButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>400, 24</value>
-  </data>
-  <data name="BrowseFolderButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>24, 20</value>
-  </data>
-  <data name="BrowseFolderButton.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="BrowseFolderButton.Text" xml:space="preserve">
-    <value>...</value>
-  </data>
-  <data name="&gt;&gt;BrowseFolderButton.Name" xml:space="preserve">
-    <value>BrowseFolderButton</value>
-  </data>
-  <data name="&gt;&gt;BrowseFolderButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;BrowseFolderButton.Parent" xml:space="preserve">
-    <value>FolderGroup</value>
-  </data>
-  <data name="&gt;&gt;BrowseFolderButton.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
   <metadata name="folderBrowserDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="appdataSize.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="appdataSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="appdataSize.Location" type="System.Drawing.Point, System.Drawing">
     <value>392, 48</value>
   </data>
@@ -223,6 +155,9 @@
   </data>
   <data name="desktopSize.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
+  </data>
+  <data name="desktopSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="desktopSize.Location" type="System.Drawing.Point, System.Drawing">
     <value>392, 24</value>
@@ -251,6 +186,9 @@
   <data name="myMusicSize.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="myMusicSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="myMusicSize.Location" type="System.Drawing.Point, System.Drawing">
     <value>160, 72</value>
   </data>
@@ -277,6 +215,9 @@
   </data>
   <data name="myPicturesSize.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
+  </data>
+  <data name="myPicturesSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="myPicturesSize.Location" type="System.Drawing.Point, System.Drawing">
     <value>160, 48</value>
@@ -305,6 +246,9 @@
   <data name="myDocumentsSize.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="myDocumentsSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="myDocumentsSize.Location" type="System.Drawing.Point, System.Drawing">
     <value>160, 24</value>
   </data>
@@ -331,6 +275,9 @@
   </data>
   <data name="IncludeDocuments.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
+  </data>
+  <data name="IncludeDocuments.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="IncludeDocuments.Location" type="System.Drawing.Point, System.Drawing">
     <value>32, 24</value>
@@ -359,6 +306,9 @@
   <data name="IncludeSettings.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="IncludeSettings.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="IncludeSettings.Location" type="System.Drawing.Point, System.Drawing">
     <value>224, 48</value>
   </data>
@@ -385,6 +335,9 @@
   </data>
   <data name="IncludeDesktop.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
+  </data>
+  <data name="IncludeDesktop.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="IncludeDesktop.Location" type="System.Drawing.Point, System.Drawing">
     <value>224, 24</value>
@@ -413,6 +366,9 @@
   <data name="IncludeMusic.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="IncludeMusic.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="IncludeMusic.Location" type="System.Drawing.Point, System.Drawing">
     <value>32, 72</value>
   </data>
@@ -440,6 +396,9 @@
   <data name="IncludeImages.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="IncludeImages.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="IncludeImages.Location" type="System.Drawing.Point, System.Drawing">
     <value>32, 48</value>
   </data>
@@ -465,10 +424,10 @@
     <value>9</value>
   </data>
   <data name="DocumentGroup.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 8</value>
+    <value>0, 0</value>
   </data>
   <data name="DocumentGroup.Size" type="System.Drawing.Size, System.Drawing">
-    <value>448, 104</value>
+    <value>448, 96</value>
   </data>
   <data name="DocumentGroup.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -480,16 +439,19 @@
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;DocumentGroup.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>LayoutControlPanel</value>
   </data>
   <data name="&gt;&gt;DocumentGroup.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>1</value>
   </data>
   <data name="DocumentsRadio.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="DocumentsRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="DocumentsRadio.Location" type="System.Drawing.Point, System.Drawing">
-    <value>40, 8</value>
+    <value>16, 0</value>
   </data>
   <data name="DocumentsRadio.Size" type="System.Drawing.Size, System.Drawing">
     <value>94, 17</value>
@@ -507,46 +469,43 @@
     <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;DocumentsRadio.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>LayoutControlPanel</value>
   </data>
   <data name="&gt;&gt;DocumentsRadio.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="customSize.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="customSize.Location" type="System.Drawing.Point, System.Drawing">
-    <value>96, 24</value>
-  </data>
-  <data name="customSize.Size" type="System.Drawing.Size, System.Drawing">
-    <value>22, 13</value>
-  </data>
-  <data name="customSize.TabIndex" type="System.Int32, mscorlib">
-    <value>7</value>
-  </data>
-  <data name="customSize.Text" xml:space="preserve">
-    <value>(...)</value>
-  </data>
-  <data name="&gt;&gt;customSize.Name" xml:space="preserve">
-    <value>customSize</value>
-  </data>
-  <data name="&gt;&gt;customSize.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;customSize.Parent" xml:space="preserve">
-    <value>FolderGroup</value>
-  </data>
-  <data name="&gt;&gt;customSize.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="FolderGroup.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
+  <data name="InnerControlContainer.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="InnerControlContainer.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 21</value>
+  </data>
+  <data name="InnerControlContainer.Size" type="System.Drawing.Size, System.Drawing">
+    <value>432, 59</value>
+  </data>
+  <data name="InnerControlContainer.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;InnerControlContainer.Name" xml:space="preserve">
+    <value>InnerControlContainer</value>
+  </data>
+  <data name="&gt;&gt;InnerControlContainer.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;InnerControlContainer.Parent" xml:space="preserve">
+    <value>FolderGroup</value>
+  </data>
+  <data name="&gt;&gt;InnerControlContainer.ZOrder" xml:space="preserve">
+    <value>0</value>
   </data>
   <data name="FolderGroup.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 120</value>
+    <value>0, 96</value>
+  </data>
+  <data name="FolderGroup.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>8, 8, 8, 8</value>
   </data>
   <data name="FolderGroup.Size" type="System.Drawing.Size, System.Drawing">
-    <value>448, 56</value>
+    <value>448, 88</value>
   </data>
   <data name="FolderGroup.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -558,25 +517,28 @@
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;FolderGroup.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>LayoutControlPanel</value>
   </data>
   <data name="&gt;&gt;FolderGroup.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="FolderRadio.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="FolderRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="FolderRadio.Location" type="System.Drawing.Point, System.Drawing">
-    <value>40, 120</value>
+    <value>16, 96</value>
   </data>
   <data name="FolderRadio.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 17</value>
+    <value>104, 17</value>
   </data>
   <data name="FolderRadio.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
   </data>
   <data name="FolderRadio.Text" xml:space="preserve">
-    <value>A specific folder</value>
+    <value>Custom folder list</value>
   </data>
   <data name="&gt;&gt;FolderRadio.Name" xml:space="preserve">
     <value>FolderRadio</value>
@@ -585,10 +547,10 @@
     <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;FolderRadio.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>LayoutControlPanel</value>
   </data>
   <data name="&gt;&gt;FolderRadio.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="totalSize.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -596,8 +558,11 @@
   <data name="totalSize.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 8.25pt, style=Bold</value>
   </data>
+  <data name="totalSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="totalSize.Location" type="System.Drawing.Point, System.Drawing">
-    <value>40, 192</value>
+    <value>32, 200</value>
   </data>
   <data name="totalSize.Size" type="System.Drawing.Size, System.Drawing">
     <value>96, 13</value>
@@ -623,6 +588,27 @@
   <metadata name="FolderTooltip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>168, 17</value>
   </metadata>
+  <data name="LayoutControlPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 8</value>
+  </data>
+  <data name="LayoutControlPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>448, 184</value>
+  </data>
+  <data name="LayoutControlPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;LayoutControlPanel.Name" xml:space="preserve">
+    <value>LayoutControlPanel</value>
+  </data>
+  <data name="&gt;&gt;LayoutControlPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LayoutControlPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;LayoutControlPanel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>

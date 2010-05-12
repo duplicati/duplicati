@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main
         private Options m_options;
 
         //These keep track of async operations
-        private Queue<KeyValuePair<BackupEntry, string>> m_pendingOperations;
+        private Queue<KeyValuePair<BackupEntryBase, string>> m_pendingOperations;
         
         //TODO: Figure out if the linux implementation uses the pthreads model, where signals
         //are lost if there are no waiters at the signaling time
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A list of items that should be removed
         /// </summary>
-        private List<BackupEntry> m_orphans;
+        private List<BackupEntryBase> m_orphans;
 
         /// <summary>
         /// The progress reporting event
@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main
             }
 
             if (m_options.AutoCleanup)
-                m_orphans = new List<BackupEntry>();
+                m_orphans = new List<BackupEntryBase>();
 
             if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && !System.IO.Directory.Exists(m_options.SignatureCachePath))
                 System.IO.Directory.CreateDirectory(m_options.SignatureCachePath);
@@ -126,13 +126,13 @@ namespace Duplicati.Library.Main
                 //If we are using async operations, the entire class is actually threadsafe,
                 //utilizing a common exclusive lock on all operations. But the implementation does
                 //not prevent starvation, so it should not be called by multiple threads.
-                m_pendingOperations = new Queue<KeyValuePair<BackupEntry, string>>();
+                m_pendingOperations = new Queue<KeyValuePair<BackupEntryBase, string>>();
                 m_asyncWait = new System.Threading.ManualResetEvent(true);
                 m_queuelock = new object();
             }
         }
 
-        public void AddOrphan(BackupEntry entry)
+        public void AddOrphan(BackupEntryBase entry)
         {
             if (m_orphans != null)
                 m_orphans.Add(entry);
@@ -140,7 +140,7 @@ namespace Duplicati.Library.Main
                 Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.PartialFileFoundMessage, entry.Filename), Duplicati.Library.Logging.LogMessageType.Warning);
         }
 
-        public BackupEntry GetBackupSet(string timelimit)
+        public ManifestEntry GetBackupSet(string timelimit)
         {
             if (string.IsNullOrEmpty(timelimit))
                 timelimit = "now";
@@ -148,44 +148,56 @@ namespace Duplicati.Library.Main
             return GetBackupSet(Core.Timeparser.ParseTimeInterval(timelimit, DateTime.Now));
         }
 
-        public BackupEntry GetBackupSet(DateTime timelimit)
+        /// <summary>
+        /// Gets the manifest entry that represents the most recent full backup, with a list of incrementals in the chain.
+        /// </summary>
+        /// <param name="timelimit">The oldest allowed time for a backup, set to DateTime.Now to get the most recent entry</param>
+        /// <returns>The manifest entry with incrementals that contains all changes up to the timelimit</returns>
+        public ManifestEntry GetBackupSet(DateTime timelimit)
         {
-            List<BackupEntry> backups = GetBackupSets();
+            List<ManifestEntry> backups = GetBackupSets();
 
             if (backups.Count == 0)
                 throw new Exception(Strings.BackendWrapper.NoBackupsFoundError);
 
-            BackupEntry bestFit = backups[0];
-            List<BackupEntry> additions = new List<BackupEntry>();
-            foreach (BackupEntry be in backups)
-                if (be.Time < timelimit)
+            ManifestEntry bestFit = backups[0];
+            List<ManifestEntry> additions = new List<ManifestEntry>();
+            foreach (ManifestEntry be in backups)
+                if (be.Time <= timelimit)
                 {
                     bestFit = be;
                     additions.Clear();
-                    foreach (BackupEntry bex in be.Incrementals)
+                    foreach (ManifestEntry bex in be.Incrementals)
                         if (bex.Time <= timelimit)
                             additions.Add(bex);
 
                 }
 
-           if (bestFit.SignatureFile.Count == 0 || bestFit.ContentVolumes.Count == 0)
+            if (bestFit.Volumes.Count == 0)
                 throw new Exception(Strings.BackendWrapper.FilenameParseError);
-
-            bestFit.Incrementals = additions;
+            
+            bestFit.Incrementals.Clear();
+            bestFit.Incrementals.AddRange(additions);
             return bestFit;
 
         }
 
-        public List<BackupEntry> SortAndPairSets(List<Duplicati.Library.Backend.FileEntry> files)
+        /// <summary>
+        /// Parses the filelist into a list of full backups, each with a chain of incrementals attached
+        /// </summary>
+        /// <param name="files">The list of filenames found on the backend</param>
+        /// <returns>A list of full backups</returns>
+        public List<ManifestEntry> SortAndPairSets(List<Duplicati.Library.Backend.FileEntry> files)
         {
-            List<BackupEntry> incrementals = new List<BackupEntry>();
-            List<BackupEntry> fulls = new List<BackupEntry>();
-            Dictionary<string, List<BackupEntry>> signatures = new Dictionary<string, List<BackupEntry>>();
-            Dictionary<string, List<BackupEntry>> contents = new Dictionary<string, List<BackupEntry>>();
+            List<ManifestEntry> incrementals = new List<ManifestEntry>();
+            List<ManifestEntry> fulls = new List<ManifestEntry>();
+            Dictionary<string, List<SignatureEntry>> signatures = new Dictionary<string, List<SignatureEntry>>();
+            Dictionary<string, List<ContentEntry>> contents = new Dictionary<string, List<ContentEntry>>();
 
+            //First we parse all files into their respective classes
             foreach (Duplicati.Library.Backend.FileEntry fe in files)
             {
-                BackupEntry be = m_filenamestrategy.DecodeFilename(fe);
+                BackupEntryBase be = m_filenamestrategy.ParseFilename(fe);
                 if (be == null)
                     continue; //Non-duplicati files
 
@@ -202,83 +214,107 @@ namespace Duplicati.Library.Main
                         continue;
                 }
 
-                //TODO: Compression mode should not be manifest
-                if (be.CompressionMode != "manifest" && be.CompressionMode != "zip")
+                if (be is PayloadEntryBase && ((PayloadEntryBase)be).Compression != "zip")
                     continue;
 
-
-                if (be.Type == BackupEntry.EntryType.Content)
+                if (be is ManifestEntry)
                 {
-                    //TODO: The timezone may change if executed during the switch from/to daylight savings time
-                    string content = m_filenamestrategy.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
-                    if (be.EncryptionMode != null)
-                        content += "." + be.EncryptionMode;
-
-                    if (!contents.ContainsKey(content))
-                        contents[content] = new List<BackupEntry>();
-                    contents[content].Add(be);
+                    if (((ManifestEntry)be).IsFull)
+                        fulls.Add((ManifestEntry)be);
+                    else
+                        incrementals.Add((ManifestEntry)be);
                 }
-                else if (be.Type == BackupEntry.EntryType.Signature)
+                else if (be is ContentEntry)
                 {
-                    //TODO: The timezone may change if executed during the switch from/to daylight savings time
-                    string content = m_filenamestrategy.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
-                    if (be.EncryptionMode != null)
-                        content += "." + be.EncryptionMode;
-
-                    if (!signatures.ContainsKey(content))
-                        signatures[content] = new List<BackupEntry>();
-                    signatures[content].Add(be);
+                    string key = be.TimeString;
+                    if (!contents.ContainsKey(key))
+                        contents[key] = new List<ContentEntry>();
+                    contents[key].Add((ContentEntry)be);
                 }
-                else if (be.Type != BackupEntry.EntryType.Manifest)
-                    throw new Exception(string.Format(Strings.BackendWrapper.InvalidEntryTypeError, be.Type));
-                else if (be.IsFull)
-                    fulls.Add(be);
+                else if (be is SignatureEntry)
+                {
+                    string key = be.TimeString;
+                    if (!signatures.ContainsKey(key))
+                        signatures[key] = new List<SignatureEntry>();
+                    signatures[key].Add((SignatureEntry)be);
+                }
                 else
-                    incrementals.Add(be);
+                    throw new Exception(string.Format(Strings.BackendWrapper.InvalidEntryTypeError, be.GetType().FullName));
             }
 
-            fulls.Sort(new Sorter());
-            incrementals.Sort(new Sorter());
+            Sorter sortHelper = new Sorter();
+            fulls.Sort(sortHelper);
+            incrementals.Sort(sortHelper);
 
-            foreach (BackupEntry be in fulls)
+            //Pair up the manifests in primary/alternate pairs
+            foreach(List<ManifestEntry> mfl in new List<ManifestEntry>[] {fulls, incrementals})
+                for (int i = 0; i < mfl.Count - 1; i++)
+                {
+                    if (mfl[i].TimeString == mfl[i + 1].TimeString && mfl[i].IsPrimary != mfl[i + 1].IsPrimary)
+                    {
+                        if (mfl[i].IsPrimary)
+                        {
+                            mfl[i].Alternate = mfl[i + 1];
+                            mfl.RemoveAt(i + 1);
+                        }
+                        else
+                        {
+                            mfl[i + 1].Alternate = mfl[i];
+                            mfl.RemoveAt(i);
+                        }
+                    }
+                }
+
+
+            //Attach volumes to the full backups
+            for(int i = 0; i < fulls.Count; i++)
             {
-                //TODO: The timezone may change if executed during the switch from/to daylight savings time
-                string filename = m_filenamestrategy.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
-                if (be.EncryptionMode != null)
-                    filename += "." + be.EncryptionMode;
+                ManifestEntry be = fulls[i];
 
-                if (contents.ContainsKey(filename))
+                string key = be.TimeString;
+                if (contents.ContainsKey(key) && signatures.ContainsKey(key))
                 {
-                    be.ContentVolumes.AddRange(contents[filename]);
-                    contents.Remove(filename);
+                    List<SignatureEntry> signature = signatures[key];
+                    List<ContentEntry> content = contents[key];
+                    signature.Sort(sortHelper);
+                    content.Sort(sortHelper);
+
+                    int volCount = Math.Min(content.Count, signature.Count);
+
+                    for (int j = 0; j < volCount; j++)
+                        if (signature[0].Volumenumber == (j + 1) && content[0].Volumenumber == (j + 1))
+                        {
+                            be.Volumes.Add(new KeyValuePair<SignatureEntry, ContentEntry>(signature[0], content[0]));
+                            signature.RemoveAt(0);
+                            content.RemoveAt(0);
+                        }
                 }
 
-                if (signatures.ContainsKey(filename))
-                {
-                    be.SignatureFile.AddRange(signatures[filename]);
-                    signatures.Remove(filename);
-                }
+                fulls[i] = SwapManifestAlternates(be);
             }
 
 
+            //Attach volumes to the incrementals, and attach incrementals to the fulls
             int index = 0;
-            foreach (BackupEntry be in incrementals)
+            foreach (ManifestEntry be in incrementals)
             {
-                //TODO: The timezone may change if executed during the switch from/to daylight savings time
-                string filename = m_filenamestrategy.GenerateFilename(BackupEntry.EntryType.Manifest, be.IsFull, be.IsShortName, be.Time) + ".manifest";
-                if (be.EncryptionMode != null)
-                    filename += "." + be.EncryptionMode;
-
-                if (contents.ContainsKey(filename))
+                string key = be.TimeString;
+                if (contents.ContainsKey(key) && signatures.ContainsKey(key))
                 {
-                    be.ContentVolumes.AddRange(contents[filename]);
-                    contents.Remove(filename);
-                }
+                    List<SignatureEntry> signature = signatures[key];
+                    List<ContentEntry> content = contents[key];
+                    signature.Sort(sortHelper);
+                    content.Sort(sortHelper);
 
-                if (signatures.ContainsKey(filename))
-                {
-                    be.SignatureFile.AddRange(signatures[filename]);
-                    signatures.Remove(filename);
+                    int volCount = Math.Min(content.Count, signature.Count);
+
+                    for (int j = 0; j < volCount; j++)
+                        if (signature[0].Volumenumber == (j + 1) && content[0].Volumenumber == (j + 1))
+                        {
+                            be.Volumes.Add(new KeyValuePair<SignatureEntry, ContentEntry>(signature[0], content[0]));
+                            signature.RemoveAt(0);
+                            content.RemoveAt(0);
+                        }
                 }
 
                 if (index >= fulls.Count || be.Time <= fulls[index].Time)
@@ -293,40 +329,47 @@ namespace Duplicati.Library.Main
                 {
                     while (index < fulls.Count - 1 && be.Time > fulls[index + 1].Time)
                         index++;
-                    fulls[index].Incrementals.Add(be);
+                    fulls[index].Incrementals.Add(SwapManifestAlternates(be));
                 }
             }
 
-            foreach (BackupEntry be in fulls)
-            {
-                be.ContentVolumes.Sort(new Sorter());
-                be.SignatureFile.Sort(new Sorter());
-            }
+            foreach (List<ContentEntry> lb in contents.Values)
+                foreach (ContentEntry be in lb)
+                    AddOrphan(be);
 
-            foreach (BackupEntry be in incrementals)
-            {
-                be.ContentVolumes.Sort(new Sorter());
-                be.SignatureFile.Sort(new Sorter());
-            }
-
-            if (m_orphans != null)
-            {
-                foreach (List<BackupEntry> lb in contents.Values)
-                    m_orphans.AddRange(lb);
-                foreach (List<BackupEntry> lb in signatures.Values)
-                    m_orphans.AddRange(lb);
-            }
+            foreach (List<SignatureEntry> lb in signatures.Values)
+                foreach (SignatureEntry be in lb)
+                    AddOrphan(be);
 
             return fulls;
         }
 
-        public List<BackupEntry> GetBackupSets()
+        private ManifestEntry SwapManifestAlternates(ManifestEntry m)
+        {
+            if (m.Volumes.Count % 2 != 1 && m.Alternate != null)
+            {
+                m.Alternate.Incrementals.Clear();
+                m.Alternate.Incrementals.AddRange(m.Incrementals);
+                m.Alternate.Volumes.Clear();
+                m.Alternate.Volumes.AddRange(m.Volumes);
+
+                m.Incrementals.Clear();
+                m.Volumes.Clear();
+
+                m.Alternate.Alternate = m;
+                return m.Alternate;
+            }
+
+            return m;
+        }
+
+        public List<ManifestEntry> GetBackupSets()
         {
             using (new Logging.Timer("Getting and sorting filelist from " + m_backend.DisplayName))
                 return SortAndPairSets((List<Duplicati.Library.Backend.FileEntry>)ProtectedInvoke("ListInternal"));
         }
 
-        public void Put(BackupEntry remote, string filename)
+        public void Put(BackupEntryBase remote, string filename)
         {
             if (!m_options.AsynchronousUpload)
                 PutInternal(remote, filename);
@@ -334,7 +377,7 @@ namespace Duplicati.Library.Main
             {
                 lock (m_queuelock)
                 {
-                    m_pendingOperations.Enqueue(new KeyValuePair<BackupEntry, string>( remote, filename ));
+                    m_pendingOperations.Enqueue(new KeyValuePair<BackupEntryBase, string>( remote, filename ));
                     if (m_asyncWait.WaitOne(0, false))
                     {
                         m_asyncWait.Reset();
@@ -344,12 +387,12 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void Get(BackupEntry remote, string filename, string filehash)
+        public void Get(BackupEntryBase remote, string filename, string filehash)
         {
             ProtectedInvoke("GetInternal", remote, filename, filehash);
         }
 
-        public void Delete(BackupEntry remote)
+        public void Delete(BackupEntryBase remote)
         {
             ProtectedInvoke("DeleteInternal", remote);
         }
@@ -421,7 +464,7 @@ namespace Duplicati.Library.Main
 
         }
 
-        private void DeleteSignatureCacheCopy(BackupEntry entry)
+        private void DeleteSignatureCacheCopy(BackupEntryBase entry)
         {
             if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
             {
@@ -437,7 +480,7 @@ namespace Duplicati.Library.Main
             if (m_orphans == null)
                 return;
 
-            foreach (BackupEntry be in m_orphans)
+            foreach (BackupEntryBase be in m_orphans)
             {
                 Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, be.Filename), Duplicati.Library.Logging.LogMessageType.Information);
                 if (m_options.Force)
@@ -446,24 +489,18 @@ namespace Duplicati.Library.Main
                     DeleteSignatureCacheCopy(be);
                 }
 
-                foreach (BackupEntry bex in be.SignatureFile)
-                {
-                    Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Filename), Duplicati.Library.Logging.LogMessageType.Information);
-                    if (m_options.Force)
+                if (be is ManifestEntry)
+                    foreach (KeyValuePair<SignatureEntry, ContentEntry> bex in ((ManifestEntry)be).Volumes)
                     {
-                        m_backend.Delete(bex.Filename);
-                        DeleteSignatureCacheCopy(bex);
+                        Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Key.Filename), Duplicati.Library.Logging.LogMessageType.Information);
+                        Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Value.Filename), Duplicati.Library.Logging.LogMessageType.Information);
+                        if (m_options.Force)
+                        {
+                            m_backend.Delete(bex.Key.Filename);
+                            m_backend.Delete(bex.Value.Filename);
+                            DeleteSignatureCacheCopy(bex.Key);
+                        }
                     }
-                }
-                foreach (BackupEntry bex in be.ContentVolumes)
-                {
-                    Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Filename), Duplicati.Library.Logging.LogMessageType.Information);
-                    if (m_options.Force)
-                    {
-                        m_backend.Delete(bex.Filename);
-                        DeleteSignatureCacheCopy(bex);
-                    }
-                }
             }
 
             if (!m_options.Force && m_orphans.Count > 0)
@@ -496,7 +533,7 @@ namespace Duplicati.Library.Main
             throw new Exception(string.Format(Strings.BackendWrapper.FileListingError, lastEx.Message), lastEx);
         }
 
-        private void DeleteInternal(BackupEntry remote)
+        private void DeleteInternal(BackupEntryBase remote)
         {
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
@@ -523,7 +560,7 @@ namespace Duplicati.Library.Main
             if (lastEx != null)
                 throw new Exception(string.Format(Strings.BackendWrapper.FileDeleteError, lastEx.Message), lastEx);
 
-            if (remote.Type == BackupEntry.EntryType.Signature && !string.IsNullOrEmpty(m_options.SignatureCachePath))
+            if (remote is SignatureEntry && !string.IsNullOrEmpty(m_options.SignatureCachePath))
             {
                 try 
                 { 
@@ -534,7 +571,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private void GetInternal(BackupEntry remote, string filename, string filehash)
+        private void GetInternal(BackupEntryBase remote, string filename, string filehash)
         {
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
@@ -544,7 +581,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote.Type == BackupEntry.EntryType.Signature)
+                    if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                     {
                         string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
 
@@ -569,7 +606,7 @@ namespace Duplicati.Library.Main
                         if (m_backend is Backend.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
                             using (System.IO.FileStream fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, remote.Size))
+                            using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, remote.Fileentry.Size))
                             using (Core.ThrottledStream ts = new Duplicati.Library.Core.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                             {
                                 pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
@@ -588,7 +625,19 @@ namespace Duplicati.Library.Main
 
                         if (m_encryption != null)
                         {
-                            m_encryption.Decrypt(tempfile, filename);
+                            try
+                            {
+                                m_encryption.Decrypt(tempfile, filename);
+                            }
+                            catch (Exception ex)
+                            {
+                                //If we fail here, make sure that we throw a crypto exception
+                                if (ex is System.Security.Cryptography.CryptographicException)
+                                    throw;
+                                else
+                                    throw new System.Security.Cryptography.CryptographicException(ex.Message, ex);
+                            }
+
                             tempfile.Dispose(); //Remove the encrypted file
 
                             //Wrap the new file as a temp file
@@ -598,7 +647,7 @@ namespace Duplicati.Library.Main
                         if (filehash != null && Core.Utility.CalculateHash(tempfile) != filehash)
                             throw new Exception(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Core.Utility.CalculateHash(tempfile)));
 
-                        if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote.Type == BackupEntry.EntryType.Signature)
+                        if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                         {
                             string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
                             System.IO.File.Copy(tempfile, cachefilename);
@@ -636,7 +685,7 @@ namespace Duplicati.Library.Main
             m_statistics.NumberOfBytesDownloaded += new System.IO.FileInfo(filename).Length;
         }
 
-        private void PutInternal(BackupEntry remote, string filename)
+        private void PutInternal(BackupEntryBase remote, string filename)
         {
             string remotename = GenerateFilename(remote);
             m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageUploading, remotename, Core.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length));
@@ -667,7 +716,7 @@ namespace Duplicati.Library.Main
                         m_statistics.NumberOfRemoteCalls++;
                         if (m_backend is Backend.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
-#if DEBUG
+#if DEBUG_THROTTLE
                             DateTime begin = DateTime.Now;
 #endif
                             using (System.IO.FileStream fs = System.IO.File.Open(encryptedFile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
@@ -683,7 +732,7 @@ namespace Duplicati.Library.Main
                                 }
                             }
 
-#if DEBUG
+#if DEBUG_THROTTLE
                             TimeSpan duration = DateTime.Now - begin;
                             long size = new System.IO.FileInfo(encryptedFile).Length;
                             Console.WriteLine("Transferred " + Core.Utility.FormatSizeString(size) + " in " + duration.TotalSeconds.ToString() + ", yielding : " + ((size / (double)1024.0) / duration.TotalSeconds) + " kb/s");
@@ -698,7 +747,7 @@ namespace Duplicati.Library.Main
                                 ProgressEvent(50, m_statusmessage);
                         }
 
-                        if (remote.Type == BackupEntry.EntryType.Signature && !string.IsNullOrEmpty(m_options.SignatureCachePath))
+                        if (remote is SignatureEntry && !string.IsNullOrEmpty(m_options.SignatureCachePath))
                             System.IO.File.Copy(filename, System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote)), true);
 
                         success = true;
@@ -751,11 +800,11 @@ namespace Duplicati.Library.Main
             sender.WriteSpeed = m_options.MaxDownloadPrSecond;
         }
 
-        private string GenerateFilename(BackupEntry remote)
+        private string GenerateFilename(BackupEntryBase remote)
         {
             //TODO: Remember to change filename when tar is supported
             string remotename = m_filenamestrategy.GenerateFilename(remote);
-            if (remote.Type == BackupEntry.EntryType.Manifest)
+            if (remote is ManifestEntry)
                 remotename += ".manifest";
             else
                 remotename += ".zip";
@@ -780,7 +829,7 @@ namespace Duplicati.Library.Main
         {
             while (true)
             {
-                KeyValuePair<BackupEntry, string> args;
+                KeyValuePair<BackupEntryBase, string> args;
 
                 //Obtain the lock for the queue
                 lock (m_queuelock)

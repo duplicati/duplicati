@@ -23,98 +23,186 @@ using System.Text;
 
 namespace Duplicati.Library.Main
 {
+    //This file contains various classes that represents the 
+    // various types of files that exist on a backend.
+    //
+    //The classes are primarily created from the FilenameStrategy class
+
     /// <summary>
-    /// This class represents a file that is part of a backup.
-    /// As it represents manifest, signature and volume files, it has methods that
-    /// only work for one type. This class should be split into seperate classes.
+    /// Sort helper to keep the entries sorted by datetime and volumenumber
     /// </summary>
-    public class BackupEntry
-    {
-        public enum EntryType
-        {
-            Signature,
-            Content,
-            Manifest
-        }
-
-        private Duplicati.Library.Backend.FileEntry m_fileentry;
-        private DateTime m_time;
-        private List<BackupEntry> m_incrementals;
-        private EntryType m_type;
-        private List<BackupEntry> m_signature;
-        private bool m_isFull;
-        private bool m_isShortName;
-        private string m_encryptionMode;
-        private string m_compressionMode;
-        private int m_volNumber;
-        private List<BackupEntry> m_content;
-
-        public string Filename { get { return m_fileentry.Name; } }
-        public long Size { get { return m_fileentry.Size; } }
-        public Backend.FileEntry FileEntry { get { return m_fileentry; } }
-        public DateTime Time { get { return m_time; } }
-        public bool IsFull { get { return m_isFull; } }
-        public bool IsShortName { get { return m_isShortName; } }
-        public string EncryptionMode { get { return m_encryptionMode; } }
-        public string CompressionMode { get { return m_compressionMode; } }
-        public List<BackupEntry> Incrementals { get { return m_incrementals; } set { m_incrementals = value; } }
-        public List<BackupEntry> ContentVolumes { get { return m_content; } }
-        public List<BackupEntry> SignatureFile { get { return m_signature; } }
-        public EntryType Type { get { return m_type; } }
-        public int VolumeNumber { get { return m_volNumber; } }
-
-        public BackupEntry FindSignatureVolume(int volumeNumber)
-        {
-            foreach (BackupEntry bex in SignatureFile)
-                if (bex.VolumeNumber == volumeNumber)
-                    return bex;
-
-            return null;
-        }
-
-        public BackupEntry(Backend.FileEntry fe, DateTime time, EntryType type, bool isFull, bool isShortName, int volNumber, string compressionMode, string encryptionMode)
-        {
-            m_fileentry = fe;
-            m_time = time;
-            m_type = type;
-            m_isFull = isFull;
-            m_isShortName = isShortName;
-            m_compressionMode = compressionMode;
-            m_encryptionMode = encryptionMode;
-            m_volNumber = volNumber;
-            m_signature = new List<BackupEntry>();
-            m_content = new List<BackupEntry>();
-            m_incrementals = new List<BackupEntry>();
-        }
-
-        public BackupEntry(EntryType type, bool isFull, DateTime backuptime, int volume)
-        {
-            m_type = type;
-            m_isFull = isFull;
-            m_time = backuptime;
-            m_volNumber = volume;
-
-            m_signature = new List<BackupEntry>();
-            m_content = new List<BackupEntry>();
-            m_incrementals = new List<BackupEntry>();
-            m_compressionMode = "zip";
-            m_fileentry = null;
-        }
-    }
-
-    internal class Sorter : IComparer<BackupEntry>
+    internal class Sorter 
+        : IComparer<BackupEntryBase>, 
+            IComparer<ManifestEntry>, 
+            IComparer<PayloadEntryBase>, 
+            IComparer<SignatureEntry>, 
+            IComparer<ContentEntry>
     {
         #region IComparer<BackupEntry> Members
 
-        public int Compare(BackupEntry x, BackupEntry y)
+        public int Compare(BackupEntryBase x, BackupEntryBase y)
         {
             if (x.Time.Equals(y.Time))
-                return x.VolumeNumber.CompareTo(y.VolumeNumber);
+            {
+                if (x is PayloadEntryBase && y is PayloadEntryBase)
+                    return ((PayloadEntryBase)x).Volumenumber.CompareTo(((PayloadEntryBase)y).Volumenumber);
+                else
+                    return 0;
+            }
             else
                 return x.Time.CompareTo(y.Time);
         }
 
         #endregion
+
+        public int Compare(ContentEntry x, ContentEntry y) { return Compare((BackupEntryBase)x, (BackupEntryBase)y); }
+        public int Compare(SignatureEntry x, SignatureEntry y) { return Compare((BackupEntryBase)x, (BackupEntryBase)y); }
+        public int Compare(PayloadEntryBase x, PayloadEntryBase y) { return Compare((BackupEntryBase)x, (BackupEntryBase)y); }
+        public int Compare(ManifestEntry x, ManifestEntry y) { return Compare((BackupEntryBase)x, (BackupEntryBase)y); }
     }
 
+
+    /// <summary>
+    /// An abstract base class for all backup entries
+    /// </summary>
+    public abstract class BackupEntryBase
+    {
+        protected string m_filename;
+        protected Duplicati.Library.Backend.FileEntry m_fileentry;
+        protected DateTime m_time;
+        protected string m_timeString;
+        protected string m_encryption;
+        protected bool m_isFull;
+
+        /// <summary>
+        /// Gets the filename that represents this entry
+        /// </summary>
+        public string Filename { get { return m_filename; } }
+        /// <summary>
+        /// Gets the Fileentry that was parsed into this object
+        /// </summary>
+        public Backend.FileEntry Fileentry { get { return m_fileentry; } }
+        /// <summary>
+        /// Gets the backup time that this entry represents
+        /// </summary>
+        public DateTime Time { get { return m_time; } }
+        /// <summary>
+        /// Gets the string that was used to parse the date
+        /// </summary>
+        public string TimeString { get { return m_timeString; } }
+        /// <summary>
+        /// Gets the encryption mode used, or null if no encryption was applied
+        /// </summary>
+        public string EncryptionMode { get { return m_encryption; } }
+        /// <summary>
+        /// Gets a value indicating if this is a full backup entry
+        /// </summary>
+        public bool IsFull { get { return m_isFull; } }
+
+        protected BackupEntryBase(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption)
+        {
+            m_filename = filename;
+            m_fileentry = entry;
+            m_time = time;
+            m_isFull = isFull;
+            m_timeString = timeString;
+            m_encryption = encryption;
+        }
+    }
+
+    /// <summary>
+    /// A class that represents a backup set
+    /// </summary>
+    public class ManifestEntry : BackupEntryBase
+    {
+        protected List<KeyValuePair<SignatureEntry, ContentEntry>> m_volumes;
+        protected List<ManifestEntry> m_incrementals;
+        protected ManifestEntry m_alternate;
+        protected bool m_isPrimary;
+
+        /// <summary>
+        /// Gets a list of volumes that make up this backup
+        /// </summary>
+        public List<KeyValuePair<SignatureEntry, ContentEntry>> Volumes { get { return m_volumes; } }
+        /// <summary>
+        /// Gets a list of incrementals that belong to this entry
+        /// </summary>
+        public List<ManifestEntry> Incrementals { get { return m_incrementals; } }
+        /// <summary>
+        /// Gets a value indicating if this manifest is the primary one
+        /// </summary>
+        public bool IsPrimary { get { return m_isPrimary; } }
+        /// <summary>
+        /// Gets or sets the alternate manifest file, if avalible
+        /// </summary>
+        public ManifestEntry Alternate { get { return m_alternate; } set { m_alternate = value; } }
+
+        public ManifestEntry(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption, bool primary)
+            : base(filename, entry, time, isFull, timeString, encryption)
+        {
+            m_volumes = new List<KeyValuePair<SignatureEntry, ContentEntry>>();
+            m_incrementals = new List<ManifestEntry>();
+            m_isPrimary = primary;
+        }
+
+        public ManifestEntry(DateTime time, bool full, bool primary)
+            : base(null, null, time, full, null, null)
+        {
+            m_isPrimary = primary;
+        }
+    }
+
+    public abstract class PayloadEntryBase : BackupEntryBase
+    {
+        protected string m_compression;
+        protected int m_volumenumber;
+
+        /// <summary>
+        /// Gets the volumenumber of the entry
+        /// </summary>
+        public int Volumenumber { get { return m_volumenumber; } }
+        /// <summary>
+        /// Gets the compression type applied to the file
+        /// </summary>
+        public string Compression { get { return m_compression; } }
+
+        protected PayloadEntryBase(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
+            : base(filename, entry, time, isFull, timeString, encryption)
+        {
+            m_compression = compression;
+            m_volumenumber = volumenumber;
+        }
+    }
+
+    /// <summary>
+    /// A class that represents a signature entry
+    /// </summary>
+    public class SignatureEntry : PayloadEntryBase
+    {
+        public SignatureEntry(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
+            : base(filename, entry, time, isFull, timeString, encryption, compression, volumenumber)
+        {
+        }
+
+        public SignatureEntry(DateTime time, bool isFull, int volumenumber)
+            : base(null, null, time, isFull, null, null, null, volumenumber)
+        {
+        }
+    }
+
+    /// <summary>
+    /// A class that represents a content entry
+    /// </summary>
+    public class ContentEntry : PayloadEntryBase
+    {
+        public ContentEntry(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
+            : base(filename, entry, time, isFull, timeString, encryption, compression, volumenumber)
+        {
+        }
+
+        public ContentEntry(DateTime time, bool isFull, int volumenumber)
+            : base(null, null, time, isFull, null, null, null, volumenumber)
+        {
+        }
+    }
 }

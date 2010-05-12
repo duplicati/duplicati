@@ -88,11 +88,20 @@ namespace Duplicati.GUI.HelperControls.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The filename {0} is not located in the folder {1}.
+        ///   Looks up a localized string similar to The filename {0} is not located in any of the source folders.
         /// </summary>
-        internal static string FilenameIsNotInRootFolder {
+        internal static string FilenameIsNotInAnyRootFolder {
             get {
-                return ResourceManager.GetString("FilenameIsNotInRootFolder", resourceCulture);
+                return ResourceManager.GetString("FilenameIsNotInAnyRootFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The filename {0} is not an absolute path.
+        /// </summary>
+        internal static string FilepathIsNotAbsoluteError {
+            get {
+                return ResourceManager.GetString("FilepathIsNotAbsoluteError", resourceCulture);
             }
         }
         

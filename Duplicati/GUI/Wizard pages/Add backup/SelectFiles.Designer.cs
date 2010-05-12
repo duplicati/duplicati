@@ -30,9 +30,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SelectFiles));
-            this.label1 = new System.Windows.Forms.Label();
-            this.TargetFolder = new System.Windows.Forms.TextBox();
-            this.BrowseFolderButton = new System.Windows.Forms.Button();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
             this.DocumentGroup = new System.Windows.Forms.GroupBox();
             this.appdataSize = new System.Windows.Forms.Label();
@@ -47,31 +44,15 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.IncludeImages = new System.Windows.Forms.CheckBox();
             this.DocumentsRadio = new System.Windows.Forms.RadioButton();
             this.FolderGroup = new System.Windows.Forms.GroupBox();
-            this.customSize = new System.Windows.Forms.Label();
+            this.InnerControlContainer = new System.Windows.Forms.Panel();
             this.FolderRadio = new System.Windows.Forms.RadioButton();
             this.totalSize = new System.Windows.Forms.Label();
             this.FolderTooltip = new System.Windows.Forms.ToolTip(this.components);
+            this.LayoutControlPanel = new System.Windows.Forms.Panel();
             this.DocumentGroup.SuspendLayout();
             this.FolderGroup.SuspendLayout();
+            this.LayoutControlPanel.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // label1
-            // 
-            resources.ApplyResources(this.label1, "label1");
-            this.label1.Name = "label1";
-            // 
-            // TargetFolder
-            // 
-            resources.ApplyResources(this.TargetFolder, "TargetFolder");
-            this.TargetFolder.Name = "TargetFolder";
-            this.TargetFolder.Leave += new System.EventHandler(this.TargetFolder_Leave);
-            // 
-            // BrowseFolderButton
-            // 
-            resources.ApplyResources(this.BrowseFolderButton, "BrowseFolderButton");
-            this.BrowseFolderButton.Name = "BrowseFolderButton";
-            this.BrowseFolderButton.UseVisualStyleBackColor = true;
-            this.BrowseFolderButton.Click += new System.EventHandler(this.BrowseFolderButton_Click);
             // 
             // DocumentGroup
             // 
@@ -158,30 +139,26 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // DocumentsRadio
             // 
             resources.ApplyResources(this.DocumentsRadio, "DocumentsRadio");
-            this.DocumentsRadio.Checked = true;
             this.DocumentsRadio.Name = "DocumentsRadio";
-            this.DocumentsRadio.TabStop = true;
             this.DocumentsRadio.UseVisualStyleBackColor = true;
             this.DocumentsRadio.CheckedChanged += new System.EventHandler(this.TargetType_CheckedChanged);
             // 
             // FolderGroup
             // 
-            this.FolderGroup.Controls.Add(this.customSize);
-            this.FolderGroup.Controls.Add(this.BrowseFolderButton);
-            this.FolderGroup.Controls.Add(this.TargetFolder);
-            this.FolderGroup.Controls.Add(this.label1);
+            this.FolderGroup.Controls.Add(this.InnerControlContainer);
             resources.ApplyResources(this.FolderGroup, "FolderGroup");
             this.FolderGroup.Name = "FolderGroup";
             this.FolderGroup.TabStop = false;
             // 
-            // customSize
+            // InnerControlContainer
             // 
-            resources.ApplyResources(this.customSize, "customSize");
-            this.customSize.Name = "customSize";
+            resources.ApplyResources(this.InnerControlContainer, "InnerControlContainer");
+            this.InnerControlContainer.Name = "InnerControlContainer";
             // 
             // FolderRadio
             // 
             resources.ApplyResources(this.FolderRadio, "FolderRadio");
+            this.FolderRadio.Checked = true;
             this.FolderRadio.Name = "FolderRadio";
             this.FolderRadio.TabStop = true;
             this.FolderRadio.UseVisualStyleBackColor = true;
@@ -192,21 +169,28 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             resources.ApplyResources(this.totalSize, "totalSize");
             this.totalSize.Name = "totalSize";
             // 
+            // LayoutControlPanel
+            // 
+            this.LayoutControlPanel.Controls.Add(this.DocumentsRadio);
+            this.LayoutControlPanel.Controls.Add(this.DocumentGroup);
+            this.LayoutControlPanel.Controls.Add(this.FolderRadio);
+            this.LayoutControlPanel.Controls.Add(this.FolderGroup);
+            resources.ApplyResources(this.LayoutControlPanel, "LayoutControlPanel");
+            this.LayoutControlPanel.Name = "LayoutControlPanel";
+            // 
             // SelectFiles
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.totalSize);
-            this.Controls.Add(this.FolderRadio);
-            this.Controls.Add(this.FolderGroup);
-            this.Controls.Add(this.DocumentsRadio);
-            this.Controls.Add(this.DocumentGroup);
+            this.Controls.Add(this.LayoutControlPanel);
             this.Name = "SelectFiles";
             this.VisibleChanged += new System.EventHandler(this.SelectFiles_VisibleChanged);
             this.DocumentGroup.ResumeLayout(false);
             this.DocumentGroup.PerformLayout();
             this.FolderGroup.ResumeLayout(false);
-            this.FolderGroup.PerformLayout();
+            this.LayoutControlPanel.ResumeLayout(false);
+            this.LayoutControlPanel.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -214,9 +198,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         #endregion
 
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox TargetFolder;
-        private System.Windows.Forms.Button BrowseFolderButton;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
         private System.Windows.Forms.GroupBox DocumentGroup;
         private System.Windows.Forms.RadioButton DocumentsRadio;
@@ -231,9 +212,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.CheckBox IncludeMusic;
         private System.Windows.Forms.CheckBox IncludeImages;
         private System.Windows.Forms.GroupBox FolderGroup;
-        private System.Windows.Forms.Label customSize;
         private System.Windows.Forms.RadioButton FolderRadio;
         private System.Windows.Forms.Label totalSize;
         private System.Windows.Forms.ToolTip FolderTooltip;
+        private System.Windows.Forms.Panel LayoutControlPanel;
+        private System.Windows.Forms.Panel InnerControlContainer;
     }
 }

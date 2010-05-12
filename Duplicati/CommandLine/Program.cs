@@ -99,10 +99,33 @@ namespace Duplicati.CommandLine
                 Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
             else if (source.Trim().ToLower() == "list-current-files")
             {
+                cargs.RemoveAt(0);
+
+                if (cargs.Count != 1)
+                {
+                    Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                    return;
+                }
+
                 if (!EnsurePassphrase(options))
                     return;
 
                 Console.WriteLine(string.Join("\r\n", new List<string>(Duplicati.Library.Main.Interface.ListContent(target, options)).ToArray()));
+            }
+            else if (source.Trim().ToLower() == "list-source-folders")
+            {
+                cargs.RemoveAt(0);
+
+                if (cargs.Count != 1)
+                {
+                    Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                    return;
+                }
+
+                if (!EnsurePassphrase(options))
+                    return;
+
+                Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.ListSourceFolders(target, options) ?? new string[0]));
             }
             else if (source.Trim().ToLower() == "list-actual-signature-files")
             {
@@ -136,11 +159,36 @@ namespace Duplicati.CommandLine
                     if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFile)
                         Console.WriteLine(x.Value);
 
-                Console.WriteLine();
-                Console.WriteLine("* " + Strings.Program.NewOrModifiedFilesHeader + ":");
+                bool hasCombinedSignatures = false;
                 foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                    if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.FullOrPartialFile)
-                        Console.WriteLine(x.Value);
+                    if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedOrUpdatedFile)
+                    {
+                        hasCombinedSignatures = true;
+                        break;
+                    }
+
+                if (hasCombinedSignatures)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("* " + Strings.Program.NewOrModifiedFilesHeader + ":");
+                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedOrUpdatedFile)
+                            Console.WriteLine(x.Value);
+                }
+                else
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("* " + Strings.Program.NewFilesHeader + ":");
+                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedFile)
+                            Console.WriteLine(x.Value);
+
+                    Console.WriteLine();
+                    Console.WriteLine("* " + Strings.Program.ModifiedFilesHeader + ":");
+                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.UpdatedFile)
+                            Console.WriteLine(x.Value);
+                }
 
                 Console.WriteLine();
                 Console.WriteLine("* " + Strings.Program.ControlFilesHeader + ":");
@@ -212,14 +260,14 @@ namespace Duplicati.CommandLine
                 if (!EnsurePassphrase(options))
                     return;
 
-                Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target, options));
+                Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target.Split(System.IO.Path.PathSeparator), options));
             }
             else
             {
                 if (!EnsurePassphrase(options))
                     return;
 
-                Console.WriteLine(Duplicati.Library.Main.Interface.Backup(source, target, options));
+                Console.WriteLine(Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options));
             }
         }
 

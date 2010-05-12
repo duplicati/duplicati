@@ -122,6 +122,10 @@
 Do you want Duplicati to resume now so the backup can run immediately?</value>
     <comment>A question displayed if the user attempts to run a backup while Duplicati is paused</comment>
   </data>
+  <data name="SetupRestoreSuccess" xml:space="preserve">
+    <value>The previous Duplicati setup is now restored!</value>
+    <comment>A message displayed after a setup restore operation has completed</comment>
+  </data>
   <data name="StopBackupError" xml:space="preserve">
     <value>An error occured while attempting to stop the running backup: {0}</value>
     <comment>An error message displayed when attempting to stop a backup before deletion</comment>
@@ -135,5 +139,9 @@ Do you want to stop it so the delete can proceed?</value>
     <value>Duplicati attempted to stop the backup, but did not succeed.
 Press "Finish" to attempt the delete again.</value>
     <comment>An error message that is displayed if a delete operation fails due to an unstopable running backup</comment>
+  </data>
+  <data name="WizardFormTitle" xml:space="preserve">
+    <value>Duplicati Setup Wizard</value>
+    <comment>The title of the Duplicati Wizard form</comment>
   </data>
 </root>

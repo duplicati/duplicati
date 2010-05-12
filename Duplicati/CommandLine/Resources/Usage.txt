@@ -11,11 +11,17 @@ Usage:
  Cleanup (remove partial and unused files):
   Duplicati.CommandLine cleanup [options] <backend>
 
- List files (backup volumes):
+ List files (backup volume sets):
   Duplicati.CommandLine list [options] <backend>
 
- List content files (backed up files):
+ List content files (files that can be restored):
   Duplicati.CommandLine list-current-files [options] <backend>
+
+ List source folders (folders backed up from):
+  Duplicati.CommandLine list-source-folders [options] <backend>
+
+ List signature files (files in a single backup volume set):
+  Duplicati.CommandLine list-actual-signature-files [options] <backend>
 
  Purge signature cache:
   Duplicati.CommandLine purge-signature-cache [options]
@@ -27,9 +33,9 @@ Usage:
 
  A <backend> is identified by an url like ftp://host/ or ssh://server/.
  Using this system, Duplicati can detect if you want to backup or restore.
- The cleanup and delete command does not delete files, unless the --force option is specified, so you may examine what files are affected, before actually deleting the files.
+ The cleanup and delete commands do not delete files, unless the --force option is specified, so you may examine what files are affected, before actually deleting the files.
  The cleanup command should not be used unless a backup was interrupted and has left partial files. Duplicati will inform you if this happens.
- The delete commands can be used to remove backup sets when newer backups are present.
+ The delete command can be used to remove backup sets when newer backups are present.
 
 Option types:
  The following option types are avalible:
@@ -53,7 +59,7 @@ Filters:
   Duplicati uses a "first-touch" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplciati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:
     --include=*.txt --exclude=*\Thumbs.db --include=*
 
-  Even though the last filter includes everything, no files named "Thumbs.db" are included because they match the exclude rule before the include rule. Paths are evaluated as paths that are releative to folder being backed up, but including a leading slash. An example:
+  Even though the last filter includes everything, no files named "Thumbs.db" are included because they match the exclude rule before the include rule. Paths are evaluated in full, and as paths that are relative to folder being backed up, but including a leading slash. An example:
 
 {1}
   If a folder is excluded, files in that folder are always excluded, even if there are filters that include files in that folder. If a folder is included with a wildcard at the end, all files are included, if the folder is included without a wildcard, files may be excluded or included with extra rules.

@@ -54,7 +54,7 @@ namespace Duplicati.Library.Core
                 {
                     bool include = m.Groups["prefix"].Value.ToLower() == "--include=" || m.Groups["prefix"].Value.ToLower() == "--include-regexp=";
                     string cmd = m.Groups["content"].Value;
-                    if (!m.Groups["prefix"].Value.ToLower().StartsWith("--regexp"))
+                    if (!m.Groups["prefix"].Value.ToLower().EndsWith("-regexp"))
                         cmd = ConvertGlobbingToRegExp(cmd);
 
                     //It is annoying to use backslashes on windows, because they are also escape
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Core
             });
 
         /// <summary>
-        /// Most people will probably want to use fileglobbing, but RegExp's are much better.
+        /// Most people will probably want to use fileglobbing, but RegExp's are more flexible.
         /// By converting from the weak globbing to the stronger regexp, we support both.
         /// </summary>
         /// <param name="globexp"></param>
@@ -237,7 +237,7 @@ namespace Duplicati.Library.Core
         {
             match = null;
             basepath = Core.Utility.AppendDirSeperator(basepath);
-            if (!filename.StartsWith(basepath))
+            if (!filename.StartsWith(basepath, Core.Utility.ClientFilenameStringComparision))
                 return false;
 
             //All paths start with a slash, because this eases filter creation
@@ -245,9 +245,9 @@ namespace Duplicati.Library.Core
             //If the leading slash/backslash is missing, it becomes difficult to prevent partial matches.
             string relpath = filename.Substring(basepath.Length - 1);
 
-            //Run through each filter
+            //Run through each filter, test for relpath and full path
             foreach (IFilenameFilter filter in m_filters)
-                if (filter.Match(relpath))
+                if (filter.Match(relpath) || filter.Match(filename))
                 {
                     match = filter;
                     return filter.Include;

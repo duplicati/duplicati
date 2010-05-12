@@ -31,7 +31,7 @@ namespace Duplicati.GUI.Wizard_pages
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FirstLaunch));
             this.CreateNew = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.RestoreSetup = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
-            this.label1 = new System.Windows.Forms.Label();
+            this.SimpleHelpHeader = new System.Windows.Forms.Label();
             this.SetupNewBackupHelp = new System.Windows.Forms.Label();
             this.RestoreSettingsHelp = new System.Windows.Forms.Label();
             this.RestoreFilesHelp = new System.Windows.Forms.Label();
@@ -56,10 +56,10 @@ namespace Duplicati.GUI.Wizard_pages
             this.RestoreSetup.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.RestoreSetup.CheckedChanged += new System.EventHandler(this.RestoreSetup_CheckedChanged);
             // 
-            // label1
+            // SimpleHelpHeader
             // 
-            resources.ApplyResources(this.label1, "label1");
-            this.label1.Name = "label1";
+            resources.ApplyResources(this.SimpleHelpHeader, "SimpleHelpHeader");
+            this.SimpleHelpHeader.Name = "SimpleHelpHeader";
             // 
             // SetupNewBackupHelp
             // 
@@ -91,7 +91,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.Controls.Add(this.RestoreFiles);
             this.Controls.Add(this.RestoreSettingsHelp);
             this.Controls.Add(this.SetupNewBackupHelp);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.SimpleHelpHeader);
             this.Controls.Add(this.RestoreSetup);
             this.Controls.Add(this.CreateNew);
             this.Name = "FirstLaunch";
@@ -105,7 +105,7 @@ namespace Duplicati.GUI.Wizard_pages
 
         private System.Windows.Forms.Wizard.DoubleClickRadioButton CreateNew;
         private System.Windows.Forms.Wizard.DoubleClickRadioButton RestoreSetup;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label SimpleHelpHeader;
         private System.Windows.Forms.Label SetupNewBackupHelp;
         private System.Windows.Forms.Label RestoreSettingsHelp;
         private System.Windows.Forms.Label RestoreFilesHelp;

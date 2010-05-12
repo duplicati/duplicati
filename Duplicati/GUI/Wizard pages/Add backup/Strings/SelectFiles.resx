@@ -120,19 +120,18 @@
   <data name="CalculatingSize" xml:space="preserve">
     <value>Calculating size ...</value>
   </data>
+  <data name="CalculatingSizeMarker" xml:space="preserve">
+    <value>(...)</value>
+  </data>
+  <data name="DuplicateFolderError" xml:space="preserve">
+    <value>The folder "{0}" is included twice</value>
+  </data>
   <data name="FinalSizeCalculated" xml:space="preserve">
     <value>The selected items take up {0} of space</value>
   </data>
-  <data name="FolderDoesNotExistError" xml:space="preserve">
-    <value>The folder "{0}" does not exist.</value>
-  </data>
-  <data name="ModifiedFiltersWarning" xml:space="preserve">
-    <value>You have modified the filters, but selected files by groups.
-Since that feature uses filters, there is a chance that your filters
-will be removed after this.
-If you switch to using only a single folder, your filters will not be modified.
-
-Do you want to continue, and possibly lose your filter setup?</value>
+  <data name="FolderDoesNotExistWarning" xml:space="preserve">
+    <value>The folder "{0}" does not exist.
+How do you want to proceed?</value>
   </data>
   <data name="MultipleSourcesError" xml:space="preserve">
     <value>Due to your machine setup, it is not possible to backup
@@ -150,5 +149,14 @@ Try unchecking some items, and create more than one backup.</value>
   </data>
   <data name="PartialSizeCalculated" xml:space="preserve">
     <value>Calculating ... (using more than {0} of space)</value>
+  </data>
+  <data name="RelatedFoldersError" xml:space="preserve">
+    <value>The folder "{0}" is a subfolder of "{1}", which is not allowed</value>
+  </data>
+  <data name="UpgradeWarning" xml:space="preserve">
+    <value>The setup is loaded from an older version of Duplicati. 
+If you save the backup settings, the internal storage will be change to the new version.
+Please verify the content of the backup after the next run to ensure
+that it contains the files and folders that you expect.</value>
   </data>
 </root>

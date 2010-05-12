@@ -66,6 +66,7 @@
     <Compile Include="LiveControl\ExecutionStoppedException.cs" />
     <Compile Include="LiveControl\ILiveControl.cs" />
     <Compile Include="LiveControl\LiveControl.cs" />
+    <Compile Include="Manifestfile.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestoreStatistics.cs" />
@@ -90,6 +91,11 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Interface.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Manifestfile.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Manifestfile.resx</DependentUpon>
     </Compile>
     <Compile Include="Strings\Options.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -155,6 +161,10 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Interface.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Manifestfile.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Manifestfile.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\Options.resx">
       <SubType>Designer</SubType>

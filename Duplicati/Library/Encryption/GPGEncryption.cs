@@ -138,6 +138,10 @@ namespace Duplicati.Library.Encryption
             }
         }
 
+        /// <summary>
+        /// Copies the content of one stream into another, invoked as a thread
+        /// </summary>
+        /// <param name="x">An array with two stream instances</param>
         private void Runner(object x)
         {
             //Unwrap arguments and read stream
