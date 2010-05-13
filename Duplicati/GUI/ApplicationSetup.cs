@@ -187,6 +187,8 @@ namespace Duplicati.GUI
         {
             try
             {
+                this.Text = string.Format(Strings.ApplicationSetup.DialogTitle, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+
                 m_isUpdating = true;
                 RecentDuration.Value = m_settings.RecentBackupDuration;
                 GPGPath.Text = m_settings.GPGPath;

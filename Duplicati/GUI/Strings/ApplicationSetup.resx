@@ -134,6 +134,10 @@
     <value>System language, {0}</value>
     <comment>A string displayed to denote the current default language</comment>
   </data>
+  <data name="DialogTitle" xml:space="preserve">
+    <value>Duplicati Setup, version {0}</value>
+    <comment>The dialog title with version number</comment>
+  </data>
   <data name="ErrorWhileExaminingFolder" xml:space="preserve">
     <value>An exception occured while examining the folder: {0}.
 Do you want to use that folder anyway?</value>

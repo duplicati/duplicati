@@ -363,12 +363,12 @@ namespace Duplicati.GUI
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.TabStop = false;
             // 
-            // BandwidthLimit
+            // Bandwidth
             // 
             this.Bandwidth.DownloadLimit = null;
             this.Bandwidth.DownloadLimitInBytes = ((long)(0));
-            resources.ApplyResources(this.Bandwidth, "BandwidthLimit");
-            this.Bandwidth.Name = "BandwidthLimit";
+            resources.ApplyResources(this.Bandwidth, "Bandwidth");
+            this.Bandwidth.Name = "Bandwidth";
             this.Bandwidth.UploadLimit = null;
             this.Bandwidth.UploadLimitInBytes = ((long)(0));
             this.Bandwidth.DownloadLimitChanged += new System.EventHandler(this.Bandwidth_DownloadLimitChanged);
