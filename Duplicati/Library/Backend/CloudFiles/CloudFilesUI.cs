@@ -202,7 +202,7 @@ namespace Duplicati.Library.Backend
             if (!guiOptions.ContainsKey(CONTAINER_NAME))
                 throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, CONTAINER_NAME));
 
-            return "cloudfiles://" + guiOptions[CONTAINER_NAME];
+            return "cloudfiles://api.mosso.com/" + guiOptions[CONTAINER_NAME];
         }
 
         public static string PageTitle

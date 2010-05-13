@@ -61,7 +61,8 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supports connections to the CloudFiles backend. Allowed formats are &quot;cloudfiles://container/folder&quot; or &quot;cloudfiles://username:password@container/folder&quot;..
+        ///   Looks up a localized string similar to Supports connections to the CloudFiles backend. Allowed formats are &quot;cloudfiles://api.mosso.com/container/folder&quot; or &quot;cloudfiles://username:password@api.mosso.com/container/folder&quot;.
+        ///The shorter format &quot;cloudfiles://container/folder&quot; may be used as long as  the container name is a legal hostname, eg. a container name with no spaces..
         /// </summary>
         internal static string Description {
             get {

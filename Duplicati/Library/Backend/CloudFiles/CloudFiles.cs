@@ -27,10 +27,15 @@ namespace Duplicati.Library.Backend
     public class CloudFiles : IBackend, IStreamingBackend, IBackendGUI
     {
         private const string AUTH_URL = "https://api.mosso.com/auth";
+        private const string DUMMY_HOSTNAME = "api.mosso.com";
+
         private const int ITEM_LIST_LIMIT = 1000;
         private string m_username;
         private string m_password;
         private string m_path;
+
+        private string m_storageUrl = null;
+        private string m_authToken = null;
 
         public CloudFiles()
         {
@@ -74,7 +79,14 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(m_password))
                 throw new Exception(Strings.CloudFiles.NoAPIKeyError);
 
-            m_path = u.Host + u.PathAndQuery;
+            //We use the api.mosso.com hostname.
+            //This allows the use of containers that have names that are not valid hostnames, 
+            // such as container names with spaces in them
+            if (u.Host.Equals(DUMMY_HOSTNAME))
+                m_path = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+            else
+                m_path = u.Host + System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+
             if (m_path.EndsWith("/"))
                 m_path = m_path.Substring(0, m_path.Length - 1);
             if (!m_path.StartsWith("/"))
@@ -328,25 +340,26 @@ namespace Duplicati.Library.Backend
 
         private HttpWebRequest CreateRequest(string remotename, string query)
         {
-            string storageUrl;
-            string authToken;
-
-            HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(AUTH_URL);
-            req.Headers.Add("X-Auth-User", UrlEncode(m_username));
-            req.Headers.Add("X-Auth-Key", UrlEncode(m_password));
-            req.Method = "GET";
-
-            using (WebResponse resp = req.GetResponse())
+            //If this is the first call, get an authentication token
+            if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
             {
-                storageUrl = resp.Headers["X-Storage-Url"];
-                authToken = resp.Headers["X-Auth-Token"];
+                HttpWebRequest authReq = (HttpWebRequest)HttpWebRequest.Create(AUTH_URL);
+                authReq.Headers.Add("X-Auth-User", UrlEncode(m_username));
+                authReq.Headers.Add("X-Auth-Key", UrlEncode(m_password));
+                authReq.Method = "GET";
+
+                using (WebResponse resp = authReq.GetResponse())
+                {
+                    m_storageUrl = resp.Headers["X-Storage-Url"];
+                    m_authToken = resp.Headers["X-Auth-Token"];
+                }
+
+                if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
+                    throw new Exception(Strings.CloudFiles.UnexpectedResponseError);
             }
 
-            if (string.IsNullOrEmpty(authToken) || string.IsNullOrEmpty(storageUrl))
-                throw new Exception(Strings.CloudFiles.UnexpectedResponseError);
-
-            req = (HttpWebRequest)HttpWebRequest.Create(storageUrl + UrlEncode(m_path + remotename) + query);
-            req.Headers.Add("X-Auth-Token", UrlEncode(authToken));
+            HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(m_storageUrl + UrlEncode(m_path + remotename) + query);
+            req.Headers.Add("X-Auth-Token", UrlEncode(m_authToken));
 
             req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             req.KeepAlive = false;

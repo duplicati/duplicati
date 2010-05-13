@@ -118,7 +118,8 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Description" xml:space="preserve">
-    <value>Supports connections to the CloudFiles backend. Allowed formats are "cloudfiles://container/folder" or "cloudfiles://username:password@container/folder".</value>
+    <value>Supports connections to the CloudFiles backend. Allowed formats are "cloudfiles://api.mosso.com/container/folder" or "cloudfiles://username:password@api.mosso.com/container/folder".
+The shorter format "cloudfiles://container/folder" may be used as long as  the container name is a legal hostname, eg. a container name with no spaces.</value>
   </data>
   <data name="DescriptionFTPPasswordLong" xml:space="preserve">
     <value>The password used to connect to the server. This may also be supplied as the environment variable "FTP_PASSWORD".</value>
