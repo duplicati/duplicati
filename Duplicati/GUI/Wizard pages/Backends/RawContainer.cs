@@ -94,7 +94,7 @@ namespace Duplicati.GUI.Wizard_pages.Backends
                         if (p.Key.StartsWith("--"))
                             switches.Add(p.Key.Substring(2), p.Value);
 
-                    OptionGrid.Setup(m_backend.SupportedCommands, switches);
+                    OptionGrid.Setup(m_backend.SupportedCommands, null, switches);
                     m_settings["Overrides:Table"] = OptionGrid.DataSet;
                     m_settings["Overrides:Type"] = m_backend.ProtocolKey;
                 }

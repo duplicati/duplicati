@@ -47,21 +47,23 @@ namespace Duplicati.GUI.Wizard_pages
 
         public bool Unsupported { get { return m_unsupported; } }
 
-        public void Setup(IList<Library.Backend.ICommandLineArgument> switches, IDictionary<string, string> options)
+        public void Setup(IList<Library.Backend.ICommandLineArgument> switches, IList<Library.Backend.ICommandLineArgument> extras, IDictionary<string, string> options)
         {
             if (!m_unsupported)
             {
                 OverrideTable.Rows.Clear();
-                foreach (Library.Backend.ICommandLineArgument arg in switches)
-                {
-                    DataRow dr = OverrideTable.NewRow();
-                    dr["Enabled"] = options.ContainsKey(arg.Name);
-                    dr["argument"] = arg;
-                    dr["Name"] = arg.Name;
-                    if (options.ContainsKey(arg.Name))
-                        dr["Value"] = options[arg.Name];
-                    OverrideTable.Rows.Add(dr);
-                }
+                foreach (IList<Library.Backend.ICommandLineArgument> sw in new IList<Library.Backend.ICommandLineArgument>[] { switches, extras })
+                    if (sw != null)
+                        foreach (Library.Backend.ICommandLineArgument arg in sw)
+                        {
+                            DataRow dr = OverrideTable.NewRow();
+                            dr["Enabled"] = options.ContainsKey(arg.Name);
+                            dr["argument"] = arg;
+                            dr["Name"] = arg.Name;
+                            if (options.ContainsKey(arg.Name))
+                                dr["Value"] = options[arg.Name];
+                            OverrideTable.Rows.Add(dr);
+                        }
             }
         }
 

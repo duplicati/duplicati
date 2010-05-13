@@ -59,8 +59,21 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 if (!m_settings.ContainsKey("Overrides:Table"))
                 {
-                    Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
-                    OptionGrid.Setup(opt.SupportedCommands, m_wrapper.Overrides);
+                    IList<Library.Backend.ICommandLineArgument> primary = new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands;
+                    IList<Library.Backend.ICommandLineArgument> secondary = null;
+                    
+                    try
+                    {
+                        foreach (Library.Backend.IBackend b in Library.Backend.BackendLoader.LoadedBackends)
+                            if (b.ProtocolKey == m_wrapper.Backend)
+                                secondary = b.SupportedCommands;
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Strings.SettingOverrides.BackendLoadError, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+
+                    OptionGrid.Setup(primary, secondary, m_wrapper.Overrides);
 
                     m_settings["Overrides:Table"] = OptionGrid.DataSet;
                 }
