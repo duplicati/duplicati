@@ -49,6 +49,7 @@ namespace Duplicati.GUI.Wizard_pages
             //Skip this, if there is only one valid option
             if (Program.DataConnection.GetObjects<Datamodel.Schedule>().Length == 0)
             {
+                m_isFirstShow = false;
                 if (args.Direction == PageChangedDirection.Next)
                 {
                     CreateNew.Checked = true;
