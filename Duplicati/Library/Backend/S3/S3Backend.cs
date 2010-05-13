@@ -35,6 +35,8 @@ namespace Duplicati.Library.Backend
         private Affirma.ThreeSharp.CallingFormat m_format;
         private bool m_euBuckets;
 
+        private const string S3_HOST  = "s3.amazonaws.com";
+
         Dictionary<string, string> m_options;
 
         public S3()
@@ -86,9 +88,12 @@ namespace Duplicati.Library.Backend
             m_format = options.ContainsKey("s3-use-new-style") ? Affirma.ThreeSharp.CallingFormat.SUBDOMAIN : Affirma.ThreeSharp.CallingFormat.REGULAR;
             m_euBuckets = options.ContainsKey("s3-european-buckets");
 
-            if (m_host.ToLower() == "s3.amazonaws.com")
+            if (m_host.ToLower() == S3_HOST)
             {
-                m_bucket = u.PathAndQuery;
+                m_bucket = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+
+                if (m_bucket.StartsWith("/"))
+                    m_bucket = m_bucket.Substring(1);
 
                 if (m_bucket.Contains("/"))
                 {
@@ -99,27 +104,25 @@ namespace Duplicati.Library.Backend
             }
             else 
             {
-                //Vanity style, do a CNAME lookup
-                if (!m_host.ToLower().EndsWith(".s3.amazonaws.com"))
+                //If it is vanity style, do a CNAME lookup
+                if (!m_host.ToLower().EndsWith("." + S3_HOST))
                 {
                     System.Net.IPHostEntry ent = System.Net.Dns.GetHostEntry(m_host);
-                    List<string> entries = new List<string>();
-                    entries.AddRange(ent.Aliases);
-
-                    foreach (string s in entries)
-                        if (s.ToLower().EndsWith(".s3.amazonaws.com"))
+                    foreach (string s in ent.Aliases)
+                        if (s.EndsWith("." + S3_HOST, StringComparison.InvariantCultureIgnoreCase))
                         {
                             m_host = s;
                             break;
                         }
                 }
 
-                if (m_host.ToLower().EndsWith(".s3.amazonaws.com"))
+                //Subdomain type lookup
+                if (m_host.ToLower().EndsWith("." + S3_HOST))
                 {
                     m_format = Affirma.ThreeSharp.CallingFormat.SUBDOMAIN;
-                    m_bucket = m_host.Substring(0, m_host.Length - ".s3.amazonaws.com".Length);
-                    m_host = "s3.amazonaws.com";
-                    m_prefix = u.PathAndQuery;
+                    m_bucket = m_host.Substring(0, m_host.Length - ("." + S3_HOST).Length);
+                    m_host = S3_HOST;
+                    m_prefix = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
 
                     if (m_prefix.StartsWith("/"))
                         m_prefix = m_prefix.Substring(1);
@@ -139,7 +142,6 @@ namespace Duplicati.Library.Backend
 
         private List<FileEntry> List(bool isTesting)
         {
-
             try
             {
                 S3Wrapper con = CreateRequest();

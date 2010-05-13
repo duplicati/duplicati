@@ -130,7 +130,10 @@
     <value>The AWS "Access Key ID"</value>
   </data>
   <data name="Description" xml:space="preserve">
-    <value>This backend can read and write data to an Amazon S3 based backend. Allowed formats are "s3://bucketname/prefix" or "s3://aws_id:aws_key@bucketname/prefix". Note that if you AWS ID or Key contains either ":", "/" or "@" you cannot use the second form, but must supply them through arguments.</value>
+    <value>This backend can read and write data to an Amazon S3 based backend. Allowed formats are (subdomain type): "s3://bucketname.s3.amazonaws.com/prefix" or "s3://aws_id:aws_key@bucketname.s3.amazonaws.com/prefix". 
+The url suffix model is also accepted: "s3://s3.amazonaws.com/bucketname/prefix".
+Any hostname not using s3.amazonaws.com is considered a vanity style, and the bucket name is attempted extracted through CNAME lookup.
+Note that if you AWS ID or Key contains either ":", "/" or "@" you cannot supply them in the url, but must pass them through arguments.</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
     <value>Amazon S3 based</value>

@@ -33,6 +33,7 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class S3Wrapper
     {
+        private const int ITEM_LIST_LIMIT = 1000;
         private static Dictionary<string, KeyValuePair<DateTime, string>> RedirectCache = new Dictionary<string, KeyValuePair<DateTime, string>>();
 
         protected const string EU_LOCATION_CONSTRAINT = "<CreateBucketConfiguration><LocationConstraint>EU</LocationConstraint></CreateBucketConfiguration>";
@@ -138,7 +139,7 @@ namespace Duplicati.Library.Backend
             string redirUrl = GetRedirectUrl(bucketName, null);
             List<FileEntry> files = new List<FileEntry>();
 
-            //We truncate after 1000 elements, and then repeat
+            //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
             {
                 //Due to a resource leak in the S3 code, we flush it here
@@ -149,7 +150,7 @@ namespace Duplicati.Library.Backend
                     if (!string.IsNullOrEmpty(filename))
                         listRequest.QueryList.Add("marker", filename);
 
-                    listRequest.QueryList.Add("max-keys", "1000");
+                    listRequest.QueryList.Add("max-keys", ITEM_LIST_LIMIT.ToString());
                     if (!string.IsNullOrEmpty(prefix))
                         listRequest.QueryList.Add("prefix", prefix);
 

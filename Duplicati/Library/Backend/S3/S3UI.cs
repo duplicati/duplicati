@@ -38,6 +38,8 @@ namespace Duplicati.Library.Backend
         private const string PREFIX = "Prefix";
         private const string HASTESTED = "UI: HasTested";
         private const string HASCREATEDBUCKET = "UI: Has created bucket";
+        private const string HASSUGGESTEDPREFIX = "UI: Has suggested prefix";
+        private const string HASSUGGESTEDLOWERCASE = "UI: Has suggested lowercase";
 
         private const string S3_PATH = "s3.amazonaws.com";
 
@@ -46,6 +48,8 @@ namespace Duplicati.Library.Backend
         private IDictionary<string, string> m_options;
         private bool m_hasTested;
         private bool m_hasCreatedbucket = false;
+        private bool m_hasSuggestedPrefix = false;
+        private bool m_hasSuggestedLowerCase = false;
 
         public S3UI(IDictionary<string, string> options)
             : this()
@@ -91,6 +95,8 @@ namespace Duplicati.Library.Backend
             m_options.Clear();
             m_options[HASTESTED] = m_hasTested.ToString();
             m_options[HASCREATEDBUCKET] = m_hasCreatedbucket.ToString();
+            m_options[HASSUGGESTEDPREFIX] = m_hasSuggestedPrefix.ToString();
+            m_options[HASSUGGESTEDLOWERCASE] = m_hasSuggestedLowerCase.ToString();
 
             m_options[ACCESS_ID] = AWS_ID.Text;
             m_options[ACCESS_KEY] = AWS_KEY.Text;
@@ -123,6 +129,12 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(HASCREATEDBUCKET) || !bool.TryParse(m_options[HASCREATEDBUCKET], out m_hasCreatedbucket))
                 m_hasCreatedbucket = false;
+
+            if (!m_options.ContainsKey(HASSUGGESTEDPREFIX) || !bool.TryParse(m_options[HASSUGGESTEDPREFIX], out m_hasSuggestedPrefix))
+                m_hasSuggestedPrefix = false;
+
+            if (!m_options.ContainsKey(HASSUGGESTEDLOWERCASE) || !bool.TryParse(m_options[HASSUGGESTEDLOWERCASE], out m_hasSuggestedLowerCase))
+                m_hasSuggestedLowerCase = false;
         }
 
         /// <summary>
@@ -182,15 +194,15 @@ namespace Duplicati.Library.Backend
                 return false;
             }
 
-            if (!BucketName.Text.ToLower().StartsWith(AWS_ID.Text.ToLower()))
+            if (!m_hasSuggestedPrefix && !BucketName.Text.ToLower().StartsWith(AWS_ID.Text.ToLower()))
             {
                 DialogResult res = MessageBox.Show(this, Strings.S3UI.BucketnameNotPrefixedWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 if (res == DialogResult.Yes)
                     BucketName.Text = AWS_ID.Text.ToLower() + "-" + BucketName.Text;
+                else if (res == DialogResult.No)
+                    m_hasSuggestedPrefix = true;
                 else if (res == DialogResult.Cancel)
-                {
                     return false;
-                }
             }
 
             string bucketname;
@@ -207,7 +219,7 @@ namespace Duplicati.Library.Backend
                 prefix = null;
             }
 
-            if (bucketname.ToLower() != bucketname)
+            if (!m_hasSuggestedLowerCase && bucketname.ToLower() != bucketname)
             {
                 string reason = UseEuroBuckets.Checked ?
                     Strings.S3UI.EuroBucketsRequireLowerCaseError :
@@ -223,6 +235,8 @@ namespace Duplicati.Library.Backend
                 {
                     return false;
                 }
+                else if (res == DialogResult.No)
+                    m_hasSuggestedLowerCase = true;
             }
 
             if (checkForBucket)
@@ -293,6 +307,8 @@ namespace Duplicati.Library.Backend
         {
             m_hasTested = false;
             m_hasCreatedbucket = false;
+            m_hasSuggestedPrefix = false;
+            m_hasSuggestedLowerCase = false;
         }
 
         private void UseEuroBuckets_CheckedChanged(object sender, EventArgs e)
