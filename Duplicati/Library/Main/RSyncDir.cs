@@ -909,7 +909,11 @@ namespace Duplicati.Library.Main.RSync
             {
                 //If the file was partial before, mark the file as completed
                 if (startPos != 0)
-                    contentfile.WriteAllLines(COMPLETED_FILE, new PartialEntryRecord(entry.relativeName, startPos, entry.Stream.Position - startPos, entry.Stream.Length).Serialize());
+                {
+                    string[] tmplines = new PartialEntryRecord(entry.relativeName, startPos, entry.Stream.Position - startPos, entry.Stream.Length).Serialize();
+                    contentfile.WriteAllLines(COMPLETED_FILE, tmplines);
+                    signaturefile.WriteAllLines(COMPLETED_FILE, tmplines);
+                }
 
                 //Add signature AFTER content is completed.
                 //If content is present, it is restoreable, if signature is missing, file will be backed up on next run
@@ -1541,7 +1545,7 @@ namespace Duplicati.Library.Main.RSync
             string content_prefix = Core.Utility.AppendDirSeperator(CONTENT_ROOT);
             string delta_prefix = Core.Utility.AppendDirSeperator(DELTA_ROOT);
             string control_prefix = Core.Utility.AppendDirSeperator(CONTROL_ROOT);
-            Dictionary<string, string> partials = new Dictionary<string, string>();
+            Dictionary<string, bool> partials = new Dictionary<string, bool>();
 
             foreach (Core.IFileArchive arch in patches)
             {
@@ -1570,16 +1574,63 @@ namespace Duplicati.Library.Main.RSync
 
                 if (arch.FileExists(INCOMPLETE_FILE))
                 {
-                    string filename = FilenamesFromPlatformIndependant(new string[] { new PartialEntryRecord(arch.ReadAllLines(INCOMPLETE_FILE)).Filename })[0];
+                    PartialEntryRecord pre = new PartialEntryRecord(arch.ReadAllLines(INCOMPLETE_FILE));
+
+                    string filename = FilenamesFromPlatformIndependant(new string[] { pre.Filename })[0];
                     if (filename.StartsWith(content_prefix))
-                        partials.Add(filename.Substring(content_prefix.Length), null);
+                    {
+                        if (!partials.ContainsKey(filename.Substring(content_prefix.Length)))
+                            partials.Add(filename.Substring(content_prefix.Length), false);
+                    }
                     else if (filename.StartsWith(delta_prefix))
-                        partials.Add(filename.Substring(delta_prefix.Length), null);
+                    {
+                        if (!partials.ContainsKey(filename.Substring(delta_prefix.Length)))
+                            partials.Add(filename.Substring(delta_prefix.Length), false);
+                    }
+                }
+
+                if (arch.FileExists(COMPLETED_FILE))
+                {
+                    PartialEntryRecord pre = new PartialEntryRecord(arch.ReadAllLines(COMPLETED_FILE));
+
+                    string filename = FilenamesFromPlatformIndependant(new string[] { pre.Filename })[0];
+                    if (filename.StartsWith(content_prefix))
+                        partials[filename.Substring(content_prefix.Length)]= true;
+                    else if (filename.StartsWith(delta_prefix))
+                        partials[filename.Substring(delta_prefix.Length)] = true;
+
                 }
             }
 
-            foreach (string s in partials.Keys)
-                files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.IncompleteFile, s));
+            foreach (KeyValuePair<string, bool> s in partials)
+            {
+                //Index of last found file that matches
+                int lastIx = -1;
+
+                for (int i = 0; i < files.Count; i++)
+                {
+                    KeyValuePair<PatchFileType, string> px = files[i];
+                    if ((px.Key == PatchFileType.AddedFile || px.Key == PatchFileType.AddedOrUpdatedFile || px.Key == PatchFileType.UpdatedFile) && px.Value == s.Key)
+                    {
+                        //We have a new file, if one is already found, remove it
+                        if (lastIx != -1)
+                        {
+                            files.RemoveAt(lastIx);
+                            i--;
+                        }
+                        lastIx = i;
+                    }
+                }
+
+                //The file is incomplete, remove that only file entry, and insert the incomplete file entry
+                if (!s.Value)
+                {
+                    files.RemoveAt(lastIx);
+                    files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.IncompleteFile, s.Key));
+                }
+                
+                //If the file is completed, there is now only one entry left
+            }
 
             return files;
         }
