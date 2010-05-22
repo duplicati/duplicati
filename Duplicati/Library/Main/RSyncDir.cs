@@ -1625,7 +1625,8 @@ namespace Duplicati.Library.Main.RSync
                 //The file is incomplete, remove that only file entry, and insert the incomplete file entry
                 if (!s.Value)
                 {
-                    files.RemoveAt(lastIx);
+                    if (lastIx != -1)
+                        files.RemoveAt(lastIx);
                     files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.IncompleteFile, s.Key));
                 }
                 
