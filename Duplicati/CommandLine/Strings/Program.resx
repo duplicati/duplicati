@@ -163,6 +163,9 @@
   <data name="PassphraseMismatchError" xml:space="preserve">
     <value>The passphrases do not match</value>
   </data>
+  <data name="SettingDefaultTimeSeperatorWarning" xml:space="preserve">
+    <value>WARNING: Duplicati uses the character : as the time seperator as that makes the filenames easier to read. However, that character is not supported on Windows filesystems. To work around this issue, Duplicati has adjusted the timeseperator char to '. Use the commandline option --time-separator=":" to prevent this from happening.</value>
+  </data>
   <data name="SupportedBackendsHeader" xml:space="preserve">
     <value>Supported backends:</value>
   </data>
@@ -171,6 +174,12 @@
   </data>
   <data name="TimeParseError" xml:space="preserve">
     <value>Unable to parse "{0}" into a time offset: {1}</value>
+  </data>
+  <data name="UnhandledException" xml:space="preserve">
+    <value>An error occured: {0}</value>
+  </data>
+  <data name="UnhandledInnerException" xml:space="preserve">
+    <value>The inner error message is: {0}</value>
   </data>
   <data name="Usage" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Usage.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>

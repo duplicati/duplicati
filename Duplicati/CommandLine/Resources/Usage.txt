@@ -46,6 +46,12 @@ Option types:
   Enumeration: any of the listed values
   Path: the path to a folder or file
   String: any other type
+  
+Windows filenames:
+ Duplicati generates filenames with times in them, eg: 23:11:25+04:00.
+ If the remote storage machine uses Windows as the operating system, the character : is not allowed in filenames.
+ In this case you can specify the --time-separator="'" option to change the default time separator.
+ The GUI version of Duplicati uses ' as the default separator.
 
 Times:
  Duplicati uses the time system from duplicity, where times may be presented as:
@@ -56,7 +62,7 @@ Times:
 
 Filters:
  Duplicati uses filters to include and exclude files.
-  Duplicati uses a "first-touch" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplciati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:
+  Duplicati uses a "first-touch" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplicati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:
     --include=*.txt --exclude=*\Thumbs.db --include=*
 
   Even though the last filter includes everything, no files named "Thumbs.db" are included because they match the exclude rule before the include rule. Paths are evaluated in full, and as paths that are relative to folder being backed up, but including a leading slash. An example:

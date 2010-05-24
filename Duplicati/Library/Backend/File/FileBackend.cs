@@ -63,7 +63,7 @@ namespace Duplicati.Library.Backend
                     m_password = options["ftp-password"];
             }
 
-            if (!System.IO.Path.IsPathRooted(url))
+            if (!System.IO.Path.IsPathRooted(m_path))
                 m_path = System.IO.Path.GetFullPath(m_path);
 
         }

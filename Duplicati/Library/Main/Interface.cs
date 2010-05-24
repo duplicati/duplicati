@@ -94,6 +94,10 @@ namespace Duplicati.Library.Main
             if (sources == null || sources.Length == 0)
                 throw new Exception(Strings.Interface.NoSourceFoldersError);
 
+            //Make sure they all have the same format
+            for (int i = 0; i < sources.Length; i++)
+                sources[i] = Core.Utility.AppendDirSeperator(sources[i]);
+
             //Sanity check for duplicate folders and multiple inclusions of the same folder
             for (int i = 0; i < sources.Length - 1; i++)
                 for (int j = i + 1; j < sources.Length; j++)

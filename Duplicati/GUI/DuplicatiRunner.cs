@@ -224,8 +224,14 @@ namespace Duplicati.GUI
 
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
+
                 results = "Error: " + ex.ToString(); //Don't localize
 
+                while (ex.InnerException != null)
+                {
+                    ex = ex.InnerException;
+                    results += Environment.NewLine + "InnerError: " + ex.ToString(); //Don't localize
+                }
             }
 
             try

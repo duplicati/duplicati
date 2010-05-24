@@ -202,6 +202,15 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to WARNING: Duplicati uses the character : as the time seperator as that makes the filenames easier to read. However, that character is not supported on Windows filesystems. To work around this issue, Duplicati has adjusted the timeseperator char to &apos;. Use the commandline option --time-separator=&quot;:&quot; to prevent this from happening..
+        /// </summary>
+        internal static string SettingDefaultTimeSeperatorWarning {
+            get {
+                return ResourceManager.GetString("SettingDefaultTimeSeperatorWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Supported backends:.
         /// </summary>
         internal static string SupportedBackendsHeader {
@@ -229,6 +238,24 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occured: {0}.
+        /// </summary>
+        internal static string UnhandledException {
+            get {
+                return ResourceManager.GetString("UnhandledException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The inner error message is: {0}.
+        /// </summary>
+        internal static string UnhandledInnerException {
+            get {
+                return ResourceManager.GetString("UnhandledInnerException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ********** Duplicati v. {0} **********
         ///
         ///Usage:
@@ -242,11 +269,11 @@ namespace Duplicati.CommandLine.Strings {
         /// Cleanup (remove partial and unused files):
         ///  Duplicati.CommandLine cleanup [options] &lt;backend&gt;
         ///
-        /// List files (backup volumes):
+        /// List files (backup volume sets):
         ///  Duplicati.CommandLine list [options] &lt;backend&gt;
         ///
-        /// List content files (backed up files):
-        ///  Duplicati.Comm [rest of string was truncated]&quot;;.
+        /// List content files (files that can be restored):
+        ///  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string Usage {
             get {
