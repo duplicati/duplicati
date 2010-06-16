@@ -43,7 +43,12 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private List<string> m_filenamelist = null;
 
-        private static readonly byte[] PROPFIND = System.Text.Encoding.UTF8.GetBytes("<?xml version=\"1.0\"?><D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>");
+        // According to the WEBDAV standard, the "allprop" request should return all properties, however this seems to fail on some servers (box.net).
+        // I've found this description: http://www.webdav.org/specs/rfc2518.html#METHOD_PROPFIND
+        //  "An empty PROPFIND request body MUST be treated as a request for the names and values of all properties."
+        //
+        //private static readonly byte[] PROPFIND_BODY = System.Text.Encoding.UTF8.GetBytes("<?xml version=\"1.0\"?><D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>");
+        private static readonly byte[] PROPFIND_BODY = new byte[0];
 
         public WEBDAV()
         {
@@ -120,10 +125,10 @@ namespace Duplicati.Library.Backend
                 req.Method = "PROPFIND";
                 req.Headers.Add("Depth", "1");
                 req.ContentType = "text/xml";
-                req.ContentLength = PROPFIND.Length;
+                req.ContentLength = PROPFIND_BODY.Length;
 
                 using (System.IO.Stream s = req.GetRequestStream())
-                    s.Write(PROPFIND, 0, PROPFIND.Length);
+                    s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
 
                 try
                 {
