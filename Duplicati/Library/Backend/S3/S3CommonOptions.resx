@@ -231,6 +231,36 @@
   <data name="groupBox2.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Left, Right</value>
   </data>
+  <data name="UseRRS.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="UseRRS.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="UseRRS.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 48</value>
+  </data>
+  <data name="UseRRS.Size" type="System.Drawing.Size, System.Drawing">
+    <value>196, 17</value>
+  </data>
+  <data name="UseRRS.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="UseRRS.Text" xml:space="preserve">
+    <value>Use Reduced Redundancy Storage</value>
+  </data>
+  <data name="&gt;&gt;UseRRS.Name" xml:space="preserve">
+    <value>UseRRS</value>
+  </data>
+  <data name="&gt;&gt;UseRRS.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;UseRRS.Parent" xml:space="preserve">
+    <value>groupBox2</value>
+  </data>
+  <data name="&gt;&gt;UseRRS.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <data name="UseEUBuckets.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
@@ -256,13 +286,13 @@
     <value>groupBox2</value>
   </data>
   <data name="&gt;&gt;UseEUBuckets.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="groupBox2.Location" type="System.Drawing.Point, System.Drawing">
     <value>8, 176</value>
   </data>
   <data name="groupBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>246, 48</value>
+    <value>246, 73</value>
   </data>
   <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -322,7 +352,7 @@
     <value>True</value>
   </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
-    <value>265, 232</value>
+    <value>265, 257</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>S3CommonOptions</value>

@@ -40,6 +40,8 @@ namespace Duplicati.Library.Backend
             this.TestConnection = new System.Windows.Forms.Button();
             this.CreateBucket = new System.Windows.Forms.Button();
             this.AWS_ID = new System.Windows.Forms.ComboBox();
+            this.UseRRS = new System.Windows.Forms.CheckBox();
+            this.label5 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -110,10 +112,23 @@ namespace Duplicati.Library.Backend
             this.AWS_ID.SelectedIndexChanged += new System.EventHandler(this.AWS_ID_SelectedIndexChanged);
             this.AWS_ID.TextChanged += new System.EventHandler(this.AWS_ID_TextChanged);
             // 
+            // UseRRS
+            // 
+            resources.ApplyResources(this.UseRRS, "UseRRS");
+            this.UseRRS.Name = "UseRRS";
+            this.UseRRS.UseVisualStyleBackColor = true;
+            // 
+            // label5
+            // 
+            resources.ApplyResources(this.label5, "label5");
+            this.label5.Name = "label5";
+            // 
             // S3UI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.UseRRS);
             this.Controls.Add(this.AWS_ID);
             this.Controls.Add(this.CreateBucket);
             this.Controls.Add(this.TestConnection);
@@ -145,5 +160,7 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Button TestConnection;
         private System.Windows.Forms.Button CreateBucket;
         private System.Windows.Forms.ComboBox AWS_ID;
+        private System.Windows.Forms.CheckBox UseRRS;
+        private System.Windows.Forms.Label label5;
     }
 }

@@ -33,6 +33,7 @@ namespace Duplicati.Library.Backend
         private const string ACCESS_KEY = "AccessKey";
         private const string BUCKET_NAME = "Bucketname";
         private const string EUROBUCKET = "UseEuroBucket";
+        private const string RRS = "UseRRS";
         private const string SUBDOMAIN = "UseSubdomainStrategy";
         private const string SERVER_URL = "ServerUrl";
         private const string PREFIX = "Prefix";
@@ -40,6 +41,7 @@ namespace Duplicati.Library.Backend
         private const string HASCREATEDBUCKET = "UI: Has created bucket";
         private const string HASSUGGESTEDPREFIX = "UI: Has suggested prefix";
         private const string HASSUGGESTEDLOWERCASE = "UI: Has suggested lowercase";
+        private const string HASWARNEDINVALIDBUCKETNAME = "UI: Has warned invalid bucket name";
 
         private const string S3_PATH = "s3.amazonaws.com";
 
@@ -52,6 +54,7 @@ namespace Duplicati.Library.Backend
         private bool m_hasCreatedbucket = false;
         private bool m_hasSuggestedPrefix = false;
         private bool m_hasSuggestedLowerCase = false;
+        private bool m_hasWarnedInvalidBucketname = false;
 
         public S3UI(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
             : this()
@@ -108,15 +111,29 @@ namespace Duplicati.Library.Backend
             m_options[HASCREATEDBUCKET] = m_hasCreatedbucket.ToString();
             m_options[HASSUGGESTEDPREFIX] = m_hasSuggestedPrefix.ToString();
             m_options[HASSUGGESTEDLOWERCASE] = m_hasSuggestedLowerCase.ToString();
+            m_options[HASWARNEDINVALIDBUCKETNAME] = m_hasWarnedInvalidBucketname.ToString();
 
             m_options[ACCESS_ID] = AWS_ID.Text;
             m_options[ACCESS_KEY] = AWS_KEY.Text;
             m_options[BUCKET_NAME] = BucketName.Text;
             m_options[EUROBUCKET] = UseEuroBuckets.Checked.ToString();
-            string bucketname = m_options[BUCKET_NAME];
-            if (bucketname.IndexOf("/") > 0)
-                bucketname = bucketname.Substring(0, bucketname.IndexOf("/"));
-            m_options[SUBDOMAIN] = (bucketname.ToLower() == bucketname).ToString();
+            m_options[RRS] = UseRRS.Checked.ToString();
+            string bucketname = BucketName.Text;
+            int ix = bucketname.IndexOf("/");
+            if (ix > 0)
+            {
+                m_options[PREFIX] = bucketname.Substring(ix + 1);
+                m_options[BUCKET_NAME] = bucketname.Substring(0, ix);
+            }
+            else
+            {
+                m_options[PREFIX] = "";
+                m_options[BUCKET_NAME] = bucketname;
+            }
+
+            
+            bucketname = m_options[BUCKET_NAME];
+            m_options[SUBDOMAIN] = (bucketname.ToLower() == bucketname && S3.IsValidHostname(bucketname)).ToString();
         }
 
         void S3UI_Load(object sender, EventArgs args)
@@ -131,6 +148,8 @@ namespace Duplicati.Library.Backend
                 AWS_KEY.Text = m_options[ACCESS_KEY];
             if (m_options.ContainsKey(BUCKET_NAME))
                 BucketName.Text = m_options[BUCKET_NAME];
+            if (m_options.ContainsKey(PREFIX) && !string.IsNullOrEmpty(m_options[PREFIX]))
+                BucketName.Text += "/" + m_options[PREFIX];
 
             bool b;
 
@@ -146,6 +165,18 @@ namespace Duplicati.Library.Backend
             
             UseEuroBuckets.Checked = b;
 
+            if (m_options.ContainsKey(RRS))
+            {
+                if (!bool.TryParse(m_options[RRS], out b))
+                    b = false;
+            }
+            else
+            {
+                b = S3CommonOptions.ExtractDefaultRRS(m_applicationSettings);
+            }
+
+            UseRRS.Checked = b;
+
             if (!m_options.ContainsKey(HASTESTED) || !bool.TryParse(m_options[HASTESTED], out m_hasTested))
                 m_hasTested = false;
 
@@ -157,6 +188,9 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(HASSUGGESTEDLOWERCASE) || !bool.TryParse(m_options[HASSUGGESTEDLOWERCASE], out m_hasSuggestedLowerCase))
                 m_hasSuggestedLowerCase = false;
+
+            if (!m_options.ContainsKey(HASWARNEDINVALIDBUCKETNAME) || !bool.TryParse(m_options[HASWARNEDINVALIDBUCKETNAME], out m_hasWarnedInvalidBucketname))
+                m_hasWarnedInvalidBucketname = false;
         }
 
         /// <summary>
@@ -261,6 +295,22 @@ namespace Duplicati.Library.Backend
                     m_hasSuggestedLowerCase = true;
             }
 
+            if (!S3.IsValidHostname(bucketname))
+            {
+                if (UseEuroBuckets.Checked)
+                {
+                    MessageBox.Show(this, string.Format(Strings.S3UI.HostnameInvalidWithEuBucketOptionError, bucketname), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+                else
+                {
+                    if (!m_hasWarnedInvalidBucketname && MessageBox.Show(this, string.Format(Strings.S3UI.HostnameInvalidWarning, bucketname), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                        return false;
+                }
+
+                m_hasWarnedInvalidBucketname = true;
+            }
+
             if (checkForBucket)
                 return EnsureBucketForMono();
             else
@@ -331,11 +381,13 @@ namespace Duplicati.Library.Backend
             m_hasCreatedbucket = false;
             m_hasSuggestedPrefix = false;
             m_hasSuggestedLowerCase = false;
+            m_hasWarnedInvalidBucketname = false;
         }
 
         private void UseEuroBuckets_CheckedChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
+            m_hasWarnedInvalidBucketname = false;
         }
 
         private void AWS_ID_SelectedIndexChanged(object sender, EventArgs e)
@@ -353,9 +405,13 @@ namespace Duplicati.Library.Backend
 
             bool useEuroBucket;
             bool useSubDomain;
+            bool useRRS;
 
             if (!guiOptions.ContainsKey(EUROBUCKET) || !bool.TryParse(guiOptions[EUROBUCKET], out useEuroBucket))
                 useEuroBucket = false;
+
+            if (!guiOptions.ContainsKey(RRS) || !bool.TryParse(guiOptions[RRS], out useRRS))
+                useRRS = false;
 
             if (!guiOptions.ContainsKey(SUBDOMAIN) || !bool.TryParse(guiOptions[SUBDOMAIN], out useSubDomain))
                 useSubDomain = false;
@@ -374,6 +430,9 @@ namespace Duplicati.Library.Backend
                 else
                     host = S3_PATH;
             }
+
+            if (useRRS)
+                commandlineOptions[S3.RRS_OPTION] = "";
 
             if (useEuroBucket || useSubDomain)
                 return "s3://" + host + "/" + (string.IsNullOrEmpty(prefix) ? "" : prefix);

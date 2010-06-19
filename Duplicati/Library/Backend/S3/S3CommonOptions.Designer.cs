@@ -36,6 +36,7 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.UseEUBuckets = new System.Windows.Forms.CheckBox();
             this.AllowCredentialStorage = new System.Windows.Forms.CheckBox();
+            this.UseRRS = new System.Windows.Forms.CheckBox();
             this.CredentialGroup.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -73,6 +74,7 @@
             // groupBox2
             // 
             resources.ApplyResources(this.groupBox2, "groupBox2");
+            this.groupBox2.Controls.Add(this.UseRRS);
             this.groupBox2.Controls.Add(this.UseEUBuckets);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.TabStop = false;
@@ -92,6 +94,12 @@
             this.AllowCredentialStorage.UseVisualStyleBackColor = true;
             this.AllowCredentialStorage.CheckedChanged += new System.EventHandler(this.AllowCredentialStorage_CheckedChanged);
             // 
+            // UseRRS
+            // 
+            resources.ApplyResources(this.UseRRS, "UseRRS");
+            this.UseRRS.Name = "UseRRS";
+            this.UseRRS.UseVisualStyleBackColor = true;
+            // 
             // S3CommonOptions
             // 
             resources.ApplyResources(this, "$this");
@@ -99,7 +107,7 @@
             this.Controls.Add(this.AllowCredentialStorage);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.CredentialGroup);
-            this.MinimumSize = new System.Drawing.Size(265, 232);
+            this.MinimumSize = new System.Drawing.Size(265, 257);
             this.Name = "S3CommonOptions";
             this.CredentialGroup.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
@@ -118,5 +126,6 @@
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.CheckBox UseEUBuckets;
         private System.Windows.Forms.CheckBox AllowCredentialStorage;
+        private System.Windows.Forms.CheckBox UseRRS;
     }
 }

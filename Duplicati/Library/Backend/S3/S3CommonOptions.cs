@@ -32,6 +32,7 @@ namespace Duplicati.Library.Backend
         private const string ALLOW_SAVED_CREDENTIALS = "S3: Save Credentials";
         private const string SAVED_CREDENTIALS = "S3: Available Accounts";
         private const string DEFAULT_EU_BUCKET = "S3: Default Use Euro";
+        private const string DEFAULT_RRS = "S3: Default Use RRS";
 
         private const string XML_ROOT = "root";
         private const string XML_ACCOUNT = "account";
@@ -87,6 +88,7 @@ namespace Duplicati.Library.Backend
             {
                 m_settings[ALLOW_SAVED_CREDENTIALS] = AllowCredentialStorage.Checked.ToString();
                 m_settings[DEFAULT_EU_BUCKET] = UseEUBuckets.Checked.ToString();
+                m_settings[DEFAULT_RRS] = UseRRS.Checked.ToString();
 
                 Dictionary<string, string> tmp = new Dictionary<string, string>();
                 foreach (Core.ComboBoxItemPair<string> item in CredentialList.Items)
@@ -104,10 +106,13 @@ namespace Duplicati.Library.Backend
                 applicationSettings[SAVED_CREDENTIALS] = guiOptions[SAVED_CREDENTIALS];
 
             if (guiOptions.ContainsKey(DEFAULT_EU_BUCKET))
-                applicationSettings[DEFAULT_EU_BUCKET] = guiOptions.ContainsKey(DEFAULT_EU_BUCKET) ? guiOptions[DEFAULT_EU_BUCKET] : "false";
+                applicationSettings[DEFAULT_EU_BUCKET] = guiOptions[DEFAULT_EU_BUCKET];
+
+            if (guiOptions.ContainsKey(DEFAULT_RRS))
+                applicationSettings[DEFAULT_RRS] = guiOptions[DEFAULT_EU_BUCKET];
 
             if (guiOptions.ContainsKey(ALLOW_SAVED_CREDENTIALS))
-                applicationSettings[ALLOW_SAVED_CREDENTIALS] = guiOptions.ContainsKey(ALLOW_SAVED_CREDENTIALS) ? guiOptions[ALLOW_SAVED_CREDENTIALS] : "true";
+                applicationSettings[ALLOW_SAVED_CREDENTIALS] = guiOptions[ALLOW_SAVED_CREDENTIALS];
 
             return null;
         }
@@ -181,6 +186,19 @@ namespace Duplicati.Library.Backend
             string keyv;
 
             options.TryGetValue(DEFAULT_EU_BUCKET, out keyv);
+            return Core.Utility.ParseBool(keyv, false);
+        }
+
+        /// <summary>
+        /// Extracts a boolean from <paramref name="options"/> that indicates if the user wants the RRS option on when creating a new backup
+        /// </summary>
+        /// <param name="options">The list of options</param>
+        /// <returns>True if the user wants the RRS option on when creating a new backup, false otherwise</returns>
+        public static bool ExtractDefaultRRS(IDictionary<string, string> options)
+        {
+            string keyv;
+
+            options.TryGetValue(DEFAULT_RRS, out keyv);
             return Core.Utility.ParseBool(keyv, false);
         }
 

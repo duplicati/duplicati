@@ -149,6 +149,15 @@ You may enter any name you like.</value>
   <data name="EuroBucketsRequireLowerCaseError" xml:space="preserve">
     <value>The european buckets require that the bucket name is in lower case.</value>
   </data>
+  <data name="HostnameInvalidWarning" xml:space="preserve">
+    <value>The supplied bucket name, "{0}", does not appear to be a valid hostname label. 
+This may still work if the non-subdomain calling style is used, but it is not recommended.
+
+Do you want to continue anyway?</value>
+  </data>
+  <data name="HostnameInvalidWithEuBucketOptionError" xml:space="preserve">
+    <value>The EU bucket option requires that the bucket names are valid hostname labels, but the supplied bucket name, "{0}", is not a valid hostname label. Either change the bucketname or uncheck the EU bucket option.</value>
+  </data>
   <data name="MonoRequiresExistingBucket" xml:space="preserve">
     <value>A bug in Mono versions older than 2.4.3,
  prevents the backend from detecting and missing buckets.

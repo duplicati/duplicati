@@ -154,6 +154,15 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The supplied bucket name, &quot;{0}&quot;, is not a valid hostname label, and cannot be used with subdomain urls. The options --{1} or --{2} also toggle subdomain urls..
+        /// </summary>
+        internal static string InvalidHostnameForSubdomainError {
+            get {
+                return ResourceManager.GetString("InvalidHostnameForSubdomainError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No Amazon S3 secret key given.
         /// </summary>
         internal static string NoAMZKeyError {
@@ -204,6 +213,24 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string S3NewStyleDescriptionShort {
             get {
                 return ResourceManager.GetString("S3NewStyleDescriptionShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This flag toggles the use of the special RRS header. Files stored using RRS are more likely to disapear than those stored normally, but also costs less to store. See the full description here: http://aws.amazon.com/about-aws/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/.
+        /// </summary>
+        internal static string S3UseRRSDescriptionLong {
+            get {
+                return ResourceManager.GetString("S3UseRRSDescriptionLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use Reduced Redundancy Storage.
+        /// </summary>
+        internal static string S3UseRRSDescriptionShort {
+            get {
+                return ResourceManager.GetString("S3UseRRSDescriptionShort", resourceCulture);
             }
         }
         

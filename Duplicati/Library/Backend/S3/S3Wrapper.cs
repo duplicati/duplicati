@@ -39,10 +39,11 @@ namespace Duplicati.Library.Backend
 
         protected const string EU_LOCATION_CONSTRAINT = "<CreateBucketConfiguration><LocationConstraint>EU</LocationConstraint></CreateBucketConfiguration>";
         protected bool m_euBucket;
+        protected bool m_useRRS;
 		private ThreeSharpConfig m_config;
 		private ThreeSharpQuery m_service;
 
-        public S3Wrapper(string awsID, string awsKey, CallingFormat format, bool euBuckets)
+        public S3Wrapper(string awsID, string awsKey, CallingFormat format, bool euBuckets, bool useRRS)
         {
             m_config = new ThreeSharpConfig();
             m_config.AwsAccessKeyID = awsID;
@@ -51,6 +52,7 @@ namespace Duplicati.Library.Backend
 			m_config.IsSecure = false;
 
             m_euBucket = euBuckets;
+            m_useRRS = useRRS;
 
             if (euBuckets && format == CallingFormat.REGULAR)
                 throw new Exception(Strings.S3Wrapper.EuroBucketsRequireSubDomainError);
@@ -112,6 +114,8 @@ namespace Duplicati.Library.Backend
 				//objectAddRequest.ContentType = "application/octet-stream";
                 objectAddRequest.BytesTotal = source.Length; //The source length MUST be readable
                 objectAddRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
+                if (m_useRRS)
+                    objectAddRequest.Headers.Add("x-amz-storage-class", "REDUCED_REDUNDANCY");
 
                 using (ObjectAddResponse objectAddResponse = m_service.ObjectAdd(objectAddRequest))
                 { }

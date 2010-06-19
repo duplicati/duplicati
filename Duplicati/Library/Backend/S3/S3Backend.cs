@@ -27,6 +27,10 @@ namespace Duplicati.Library.Backend
 {
     public class S3 : IStreamingBackend, IBackendGUI
     {
+        public const string RRS_OPTION = "s3-use-rrs";
+        public const string EU_BUCKETS_OPTION = "s3-european-buckets";
+        public const string SUBDOMAIN_OPTION = "s3-use-new-style";
+
         private string m_awsID;
         private string m_awsKey;
         private string m_url;
@@ -35,6 +39,7 @@ namespace Duplicati.Library.Backend
         private string m_prefix;
         private Affirma.ThreeSharp.CallingFormat m_format;
         private bool m_euBuckets;
+        private bool m_useRRS;
 
         private const string S3_HOST  = "s3.amazonaws.com";
 
@@ -86,8 +91,11 @@ namespace Duplicati.Library.Backend
             m_prefix = "";
 
             m_host = u.Host;
-            m_format = options.ContainsKey("s3-use-new-style") ? Affirma.ThreeSharp.CallingFormat.SUBDOMAIN : Affirma.ThreeSharp.CallingFormat.REGULAR;
-            m_euBuckets = options.ContainsKey("s3-european-buckets");
+
+            bool use_subdomain = options.ContainsKey(SUBDOMAIN_OPTION);
+            m_euBuckets = options.ContainsKey(EU_BUCKETS_OPTION);
+            m_format = (use_subdomain || m_euBuckets) ? Affirma.ThreeSharp.CallingFormat.SUBDOMAIN : Affirma.ThreeSharp.CallingFormat.REGULAR;
+            m_useRRS = options.ContainsKey(RRS_OPTION);
 
             if (m_host.ToLower() == S3_HOST)
             {
@@ -101,7 +109,6 @@ namespace Duplicati.Library.Backend
                     m_prefix = m_bucket.Substring(m_bucket.IndexOf("/") + 1);
                     m_bucket = m_bucket.Substring(0, m_bucket.IndexOf("/"));
                 }
-
             }
             else 
             {
@@ -124,12 +131,21 @@ namespace Duplicati.Library.Backend
                     m_bucket = m_host.Substring(0, m_host.Length - ("." + S3_HOST).Length);
                     m_host = S3_HOST;
                     m_prefix = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+                    use_subdomain = true;
 
                     if (m_prefix.StartsWith("/"))
                         m_prefix = m_prefix.Substring(1);
                 }
                 else
                     throw new Exception(string.Format(Strings.S3Backend.UnableToDecodeBucketnameError, m_url));
+            }
+
+            if (!IsValidHostname(m_bucket))
+            {
+                if (use_subdomain || m_euBuckets)
+                    throw new Exception(string.Format(Strings.S3Backend.InvalidHostnameForSubdomainError, m_bucket, SUBDOMAIN_OPTION, EU_BUCKETS_OPTION));
+                else //Not specified, just switch
+                    m_format = Affirma.ThreeSharp.CallingFormat.REGULAR;
             }
 
 
@@ -180,6 +196,11 @@ namespace Duplicati.Library.Backend
 
                 throw;
             }
+        }
+
+        public static bool IsValidHostname(string bucketname)
+        {
+            return !new System.Text.RegularExpressions.Regex(@"[^\w\-]").Match(bucketname).Success;
         }
 
         #region IBackend Members
@@ -298,8 +319,9 @@ namespace Duplicati.Library.Backend
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Path, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, new string[] {"ftp-password"}, null),
                     new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.Path, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"ftp-username"}, null),
-                    new CommandLineArgument("s3-use-new-style", CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3NewStyleDescriptionShort, Strings.S3Backend.S3NewStyleDescriptionLong, "true"),
-                    new CommandLineArgument("s3-european-buckets", CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false"),
+                    new CommandLineArgument(SUBDOMAIN_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3NewStyleDescriptionShort, Strings.S3Backend.S3NewStyleDescriptionLong, "true"),
+                    new CommandLineArgument(EU_BUCKETS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false"),
+                    new CommandLineArgument(RRS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3UseRRSDescriptionShort, Strings.S3Backend.S3UseRRSDescriptionLong, "false"),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.S3Backend.FTPPasswordDescriptionShort, Strings.S3Backend.FTPPasswordDescriptionLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.DescriptionFTPUsernameShort, Strings.S3Backend.DescriptionFTPUsernameLong)
                 });
@@ -340,7 +362,7 @@ namespace Duplicati.Library.Backend
 
         private S3Wrapper CreateRequest()
         {
-            return new S3Wrapper(m_awsID, m_awsKey, m_format, m_euBuckets);
+            return new S3Wrapper(m_awsID, m_awsKey, m_format, m_euBuckets, m_useRRS);
         }
 
         private string GetFullKey(string name)
