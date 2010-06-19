@@ -157,18 +157,24 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore);
                 Password.Text = m_wrapper.BackupPassword;
 
-                for (int i = 0; i < EncryptionModule.Items.Count; i++)
-                    if (((ComboBoxItemPair<Library.Interface.IEncryption>)EncryptionModule.Items[i]).Value.FilenameExtension == m_wrapper.EncryptionModule)
-                    {
-                        EncryptionModule.SelectedIndex = i;
-                        break;
-                    }
-
                 m_settingsChanged = false;
 
                 if (Program.DataConnection.GetObjects<Schedule>().Length == 0)
                     UseSettingsAsDefault.Checked = true;
             }
+
+            bool tmp = m_settingsChanged;
+
+            for (int i = 0; i < EncryptionModule.Items.Count; i++)
+                if (((ComboBoxItemPair<Library.Interface.IEncryption>)EncryptionModule.Items[i]).Value.FilenameExtension == m_wrapper.EncryptionModule)
+                {
+                    EncryptionModule.SelectedIndex = i;
+                    break;
+                }
+
+            //Force update of UI
+            EncryptionModule_SelectedIndexChanged(EncryptionModule, null);
+            m_settingsChanged = tmp;
 
             if (m_settings.ContainsKey("Password:WarnedNoPassword"))
                 m_warnedNoPassword = (bool)m_settings["Password:WarnedNoPassword"];
@@ -216,21 +222,24 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void EncryptionModule_SelectedIndexChanged(object sender, EventArgs e)
         {
-            m_settingsChanged = true;
-
-            EncryptionControlContainer.Controls.Clear();
-            if (EncryptionModule.SelectedItem as ComboBoxItemPair<Library.Interface.IEncryption> != null)
+            if (m_wrapper != null)
             {
-                m_encryptionModule = (EncryptionModule.SelectedItem as ComboBoxItemPair<Library.Interface.IEncryption>).Value;
-                if (m_encryptionModule is Library.Interface.IEncryptionGUI && m_encryptionModule is Library.Interface.IGUIMiniControl)
+                m_settingsChanged = true;
+
+                EncryptionControlContainer.Controls.Clear();
+                if (EncryptionModule.SelectedItem as ComboBoxItemPair<Library.Interface.IEncryption> != null)
                 {
-                    Control c = (m_encryptionModule as Library.Interface.IEncryptionGUI).GetControl(m_wrapper.ApplicationSettings, m_wrapper.EncryptionSettings);
-                    c.Dock = DockStyle.Fill;
-                    EncryptionControlContainer.Controls.Add(c);
+                    m_encryptionModule = (EncryptionModule.SelectedItem as ComboBoxItemPair<Library.Interface.IEncryption>).Value;
+                    if (m_encryptionModule is Library.Interface.IEncryptionGUI && m_encryptionModule is Library.Interface.IGUIMiniControl)
+                    {
+                        Control c = (m_encryptionModule as Library.Interface.IEncryptionGUI).GetControl(m_wrapper.ApplicationSettings, m_wrapper.EncryptionSettings);
+                        c.Dock = DockStyle.Fill;
+                        EncryptionControlContainer.Controls.Add(c);
+                    }
                 }
+                else
+                    m_encryptionModule = null;
             }
-            else
-                m_encryptionModule = null;
         }
     }
 }
