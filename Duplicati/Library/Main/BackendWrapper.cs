@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The actual backend that this class is wrapping
         /// </summary>
-        private Backend.IBackend m_backend;
+        private Duplicati.Library.Interface.IBackend m_backend;
         /// <summary>
         /// The statistics gathering object
         /// </summary>
@@ -87,7 +87,17 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// If encryption is used, this is the instance that performs it
         /// </summary>
-        private Encryption.IEncryption m_encryption = null;
+        private Duplicati.Library.Interface.IEncryption m_encryption = null;
+
+        /// <summary>
+        /// The number of bytes added to a file when encrypted
+        /// </summary>
+        private long m_encryptionSizeOverhead = 0;
+
+        /// <summary>
+        /// Gets the number of bytes added to a file when encrypted and transfered
+        /// </summary>
+        public long FileSizeOverhead { get { return m_encryptionSizeOverhead; } }
 
         public BackendWrapper(CommunicationStatistics statistics, string backend, Options options)
         {
@@ -96,23 +106,18 @@ namespace Duplicati.Library.Main
 
             m_filenamestrategy = new FilenameStrategy(m_options);
 
-            m_backend = Backend.BackendLoader.GetBackend(backend, m_options.RawOptions);
+            m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(backend, m_options.RawOptions);
             if (m_backend == null)
                 throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, m_backend));
 
-            if (!options.NoEncryption)
+            if (!m_options.NoEncryption)
             {
-                if (string.IsNullOrEmpty(options.Passphrase))
+                if (string.IsNullOrEmpty(m_options.Passphrase))
                     throw new Exception(Strings.BackendWrapper.PassphraseMissingError);
 
-                if (options.GPGEncryption)
-                {
-                    if (!string.IsNullOrEmpty(options.GPGPath))
-                        Library.Encryption.GPGEncryption.PGP_PROGRAM = options.GPGPath;
-                    m_encryption = new Library.Encryption.GPGEncryption(options.Passphrase, options.GPGSignKey);
-                }
-                else
-                    m_encryption = new Library.Encryption.AESEncryption(options.Passphrase);
+                m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
+
+                m_encryptionSizeOverhead = m_encryption.SizeOverhead(m_options.VolumeSize);
             }
 
             if (m_options.AutoCleanup)
@@ -130,6 +135,83 @@ namespace Duplicati.Library.Main
                 m_asyncWait = new System.Threading.ManualResetEvent(true);
                 m_queuelock = new object();
             }
+
+            //Keep a list of all supplied options
+            Dictionary<string, string> ropts = m_options.RawOptions;
+            //Keep a list of all supported options
+            Dictionary<string, string> supportedOptions = new Dictionary<string, string>();
+
+            //There are a few internal options that are not accessible from outside, and thus not listed
+            foreach (string s in m_options.InternalOptions)
+                supportedOptions[s] = null;
+
+            //Figure out what module options are supported in the current setup
+            List<Library.Interface.ICommandLineArgument> moduleOptions = new List<Duplicati.Library.Interface.ICommandLineArgument>();
+            Dictionary<string, string> disabledModuleOptions = new Dictionary<string, string>();
+
+            foreach (KeyValuePair<bool, Library.Interface.IGenericModule> m in m_options.LoadedModules)
+                if (m.Value.SupportedCommands != null)
+                    if (m.Key)
+                        moduleOptions.AddRange(m.Value.SupportedCommands);
+                    else
+                    {
+                        foreach (Library.Interface.ICommandLineArgument c in m.Value.SupportedCommands)
+                        {
+                            disabledModuleOptions[c.Name] = m.Value.DisplayName + " (" + m.Value.Key + ")";
+
+                            if (c.Aliases != null)
+                                foreach (string s in c.Aliases)
+                                    disabledModuleOptions[s] = disabledModuleOptions[c.Name];
+                        }
+                    }
+
+            //Now run through all supported options, and look for deprecated options
+            foreach (IList<Library.Interface.ICommandLineArgument> l in new IList<Library.Interface.ICommandLineArgument>[] { 
+                m_options.SupportedCommands, 
+                m_backend.SupportedCommands, m_encryption == null ? null : m_encryption.SupportedCommands, 
+                moduleOptions,
+                DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule) })
+            {
+                if (l != null)
+                    foreach (Library.Interface.ICommandLineArgument a in l)
+                    {
+                        supportedOptions[a.Name] = null;
+                        if (a.Aliases != null)
+                            foreach (string s in a.Aliases)
+                                supportedOptions[s] = null;
+
+                        if (a.Deprecated)
+                        {
+                            List<string> aliases = new List<string>();
+                            aliases.Add(a.Name);
+                            if (a.Aliases != null)
+                                aliases.AddRange(a.Aliases);
+
+                            foreach (string s in aliases)
+                                if (ropts.ContainsKey(s))
+                                {
+                                    string optname = a.Name;
+                                    if (a.Name != s)
+                                        optname += " (" + s + ")";
+
+                                    if (m_statistics != null)
+                                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.DeprecatedOptionUsedWarning, a.Name, a.DeprecationMessage));
+                                }
+
+                        }
+                    }
+            }
+
+            //Now look for options that were supplied but not supported
+            if (m_statistics != null)
+                foreach (string s in ropts.Keys)
+                    if (!supportedOptions.ContainsKey(s))
+                        if (disabledModuleOptions.ContainsKey(s))
+                            m_statistics.LogWarning(string.Format(Strings.BackendWrapper.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]));
+                        else
+                            m_statistics.LogWarning(string.Format(Strings.BackendWrapper.UnsupportedOptionWarning, s));
+
+
         }
 
         public void AddOrphan(BackupEntryBase entry)
@@ -187,7 +269,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="files">The list of filenames found on the backend</param>
         /// <returns>A list of full backups</returns>
-        public List<ManifestEntry> SortAndPairSets(List<Duplicati.Library.Backend.FileEntry> files)
+        public List<ManifestEntry> SortAndPairSets(List<Duplicati.Library.Interface.IFileEntry> files)
         {
             List<ManifestEntry> incrementals = new List<ManifestEntry>();
             List<ManifestEntry> fulls = new List<ManifestEntry>();
@@ -195,26 +277,16 @@ namespace Duplicati.Library.Main
             Dictionary<string, List<ContentEntry>> contents = new Dictionary<string, List<ContentEntry>>();
 
             //First we parse all files into their respective classes
-            foreach (Duplicati.Library.Backend.FileEntry fe in files)
+            foreach (Duplicati.Library.Interface.IFileEntry fe in files)
             {
                 BackupEntryBase be = m_filenamestrategy.ParseFilename(fe);
                 if (be == null)
                     continue; //Non-duplicati files
 
-                //Other type file
-                if (m_options.NoEncryption != string.IsNullOrEmpty(be.EncryptionMode))
+                if (!string.IsNullOrEmpty(be.EncryptionMode) && Array.IndexOf<string>(DynamicLoader.EncryptionLoader.Keys, be.EncryptionMode) < 0)
                     continue;
 
-                if (!m_options.NoEncryption)
-                {
-                    if (m_options.GPGEncryption && be.EncryptionMode != "gpg")
-                        continue;
-
-                    if (!m_options.GPGEncryption && be.EncryptionMode != "aes")
-                        continue;
-                }
-
-                if (be is PayloadEntryBase && ((PayloadEntryBase)be).Compression != "zip")
+                if (be is PayloadEntryBase && Array.IndexOf<string>(DynamicLoader.CompressionLoader.Keys,((PayloadEntryBase)be).Compression) < 0)
                     continue;
 
                 if (be is ManifestEntry)
@@ -366,7 +438,7 @@ namespace Duplicati.Library.Main
         public List<ManifestEntry> GetBackupSets()
         {
             using (new Logging.Timer("Getting and sorting filelist from " + m_backend.DisplayName))
-                return SortAndPairSets((List<Duplicati.Library.Backend.FileEntry>)ProtectedInvoke("ListInternal"));
+                return SortAndPairSets((List<Duplicati.Library.Interface.IFileEntry>)ProtectedInvoke("ListInternal"));
         }
 
         public void Put(BackupEntryBase remote, string filename)
@@ -507,7 +579,7 @@ namespace Duplicati.Library.Main
                 Logging.Log.WriteMessage(Strings.BackendWrapper.FilesNotForceRemovedMessage, Duplicati.Library.Logging.LogMessageType.Information);
         }
 
-        private List<Duplicati.Library.Backend.FileEntry> ListInternal()
+        private List<Duplicati.Library.Interface.IFileEntry> ListInternal()
         {
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
@@ -597,13 +669,13 @@ namespace Duplicati.Library.Main
                     Core.TempFile tempfile = null;
                     try
                     {
-                        if (m_encryption != null)
+                        if (!string.IsNullOrEmpty(remote.EncryptionMode))
                             tempfile = new Duplicati.Library.Core.TempFile();
                         else
                             tempfile = new Duplicati.Library.Core.TempFile(filename);
 
                         m_statistics.NumberOfRemoteCalls++;
-                        if (m_backend is Backend.IStreamingBackend && !m_options.DisableStreamingTransfers)
+                        if (m_backend is Duplicati.Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
                             using (System.IO.FileStream fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                             using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, remote.Fileentry.Size))
@@ -611,7 +683,7 @@ namespace Duplicati.Library.Main
                             {
                                 pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
                                 ts.Callback += new Duplicati.Library.Core.ThrottledStream.ThrottledStreamCallback(ThrottledStream_Callback);
-                                ((Backend.IStreamingBackend)m_backend).Get(remote.Filename, ts);
+                                ((Duplicati.Library.Interface.IStreamingBackend)m_backend).Get(remote.Filename, ts);
                             }
                         }
                         else
@@ -623,11 +695,12 @@ namespace Duplicati.Library.Main
                                 ProgressEvent(100, m_statusmessage);
                         }
 
-                        if (m_encryption != null)
+                        if (!string.IsNullOrEmpty(remote.EncryptionMode))
                         {
                             try
                             {
-                                m_encryption.Decrypt(tempfile, filename);
+                                using(Library.Interface.IEncryption enc = DynamicLoader.EncryptionLoader.GetModule(remote.EncryptionMode, m_options.Passphrase, m_options.RawOptions))
+                                    enc.Decrypt(tempfile, filename);
                             }
                             catch (Exception ex)
                             {
@@ -714,7 +787,7 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_statistics.NumberOfRemoteCalls++;
-                        if (m_backend is Backend.IStreamingBackend && !m_options.DisableStreamingTransfers)
+                        if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
 #if DEBUG_THROTTLE
                             DateTime begin = DateTime.Now;
@@ -728,7 +801,7 @@ namespace Duplicati.Library.Main
                                 using (Core.ThrottledStream ts = new Core.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                                 {
                                     ts.Callback += new Duplicati.Library.Core.ThrottledStream.ThrottledStreamCallback(ThrottledStream_Callback);
-                                    ((Backend.IStreamingBackend)m_backend).Put(remotename, ts);
+                                    ((Library.Interface.IStreamingBackend)m_backend).Put(remotename, ts);
                                 }
                             }
 
@@ -800,14 +873,18 @@ namespace Duplicati.Library.Main
             sender.WriteSpeed = m_options.MaxDownloadPrSecond;
         }
 
+        /// <summary>
+        /// Internal helper to consistenly name remote files beyond what the filenamestrategy supports
+        /// </summary>
+        /// <param name="remote">The entry to create a filename for</param>
+        /// <returns>A filename with extensions</returns>
         private string GenerateFilename(BackupEntryBase remote)
         {
-            //TODO: Remember to change filename when tar is supported
             string remotename = m_filenamestrategy.GenerateFilename(remote);
             if (remote is ManifestEntry)
                 remotename += ".manifest";
             else
-                remotename += ".zip";
+                remotename += "." + m_options.CompressionModule;
 
             if (m_encryption != null)
                 remotename += "." + m_encryption.FilenameExtension;
@@ -864,6 +941,8 @@ namespace Duplicati.Library.Main
         {
             if (m_backend != null)
                 ProtectedInvoke("DisposeInternal");
+            if (m_encryption != null)
+                m_encryption.Dispose();
         }
 
         #endregion

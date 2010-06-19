@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
@@ -140,20 +141,20 @@ namespace Duplicati.Library.Backend
         }
 
 
-        private List<FileEntry> List(bool isTesting)
+        private List<IFileEntry> List(bool isTesting)
         {
             try
             {
                 S3Wrapper con = CreateRequest();
 
-                List<FileEntry> lst = con.ListBucket(m_bucket, m_prefix);
+                List<IFileEntry> lst = con.ListBucket(m_bucket, m_prefix);
                 for (int i = 0; i < lst.Count; i++)
                 {
-                    lst[i].Name = lst[i].Name.Substring(m_prefix.Length);
+                    ((FileEntry)lst[i]).Name = lst[i].Name.Substring(m_prefix.Length);
 
                     //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
                     if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
-                        lst[i].Name = lst[i].Name.Substring(1);
+                        ((FileEntry)lst[i]).Name = lst[i].Name.Substring(1);
                 }
                 return lst;
             }
@@ -167,15 +168,15 @@ namespace Duplicati.Library.Backend
                 //Catch "non-existing" buckets
                 if (wex != null && wex.Status == System.Net.WebExceptionStatus.ProtocolError && wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
                     if (isTesting)
-                        throw new Backend.FolderMissingException(wex);
+                        throw new Interface.FolderMissingException(wex);
                     else
-                        return new List<FileEntry>();
+                        return new List<IFileEntry>();
 
                 if (tex != null && tex.StatusCode == System.Net.HttpStatusCode.NotFound)
                     if (isTesting)
-                        throw new Backend.FolderMissingException(tex);
+                        throw new Interface.FolderMissingException(tex);
                     else
-                        return new List<FileEntry>();
+                        return new List<IFileEntry>();
 
                 throw;
             }
@@ -198,7 +199,7 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<FileEntry> List()
+        public List<IFileEntry> List()
         {
             return List(false);
         }
@@ -363,7 +364,7 @@ namespace Duplicati.Library.Backend
 
         public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
         {
-            return new S3UI(options);
+            return new S3UI(applicationSettings, options);
         }
 
         public void Leave(System.Windows.Forms.Control control)

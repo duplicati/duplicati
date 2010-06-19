@@ -93,9 +93,9 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
-      <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
-      <Name>Duplicati.Library.Backend.BackendInterface</Name>
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

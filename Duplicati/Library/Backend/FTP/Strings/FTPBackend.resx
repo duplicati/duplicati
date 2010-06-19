@@ -163,10 +163,10 @@
     <value>Use windows integrated authentication to connect to the server</value>
   </data>
   <data name="DescriptionUseSSLLong" xml:space="preserve">
-    <value>Use this flag to communicate using Secure Socket Layer (SSL) over http (https).</value>
+    <value>Use this flag to communicate using Secure Socket Layer (SSL) over ftp (ftps).</value>
   </data>
   <data name="DescriptionUseSSLShort" xml:space="preserve">
-    <value>Instructs Duplicati to use an SSL (https) connection</value>
+    <value>Instructs Duplicati to use an SSL (ftps) connection</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
     <value>FTP based</value>

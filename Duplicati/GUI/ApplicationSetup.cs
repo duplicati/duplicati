@@ -26,6 +26,8 @@ using System.Text;
 using System.Windows.Forms;
 using System.Data.LightDatamodel;
 using Duplicati.Datamodel;
+using System.Globalization;
+using Duplicati.Library.Core;
 
 namespace Duplicati.GUI
 {
@@ -39,14 +41,12 @@ namespace Duplicati.GUI
         private object m_lock = new object();
         private System.Threading.Thread m_thread = null;
         private bool m_restartCalculator = false;
-        private List<System.Globalization.CultureInfo> m_supportedLanguages;
 
         public ApplicationSetup()
         {
             InitializeComponent();
             m_connection = new DataFetcherNested(Program.DataConnection);
             m_settings = new ApplicationSettings(m_connection);
-            m_supportedLanguages = new List<System.Globalization.CultureInfo>();
 
             RecentDuration.SetIntervals(new List<KeyValuePair<string, string>>(
                 new KeyValuePair<string, string>[]
@@ -70,9 +70,7 @@ namespace Duplicati.GUI
             try
             {
                 LanguageSelection.Items.Clear();
-                LanguageSelection.Items.Add(string.Format(Strings.ApplicationSetup.DefaultLanguage, Library.Core.Utility.DefaultCulture.DisplayName));
-
-                m_supportedLanguages.Add(System.Globalization.CultureInfo.GetCultureInfo("en-us"));
+                LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(string.Format(Strings.ApplicationSetup.DefaultLanguage, Library.Core.Utility.DefaultCulture.DisplayName), Library.Core.Utility.DefaultCulture));
 
                 System.Text.RegularExpressions.Regex cix = new System.Text.RegularExpressions.Regex("[A-z][A-z](\\-[A-z][A-z])?");
 
@@ -80,14 +78,12 @@ namespace Duplicati.GUI
                     if (cix.Match(System.IO.Path.GetFileName(f)).Length == System.IO.Path.GetFileName(f).Length)
                         try 
                         {
-                            m_supportedLanguages.Add(System.Globalization.CultureInfo.GetCultureInfo(System.IO.Path.GetFileName(f)));
+                            CultureInfo ci = CultureInfo.GetCultureInfo(System.IO.Path.GetFileName(f));
+                            LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(ci.DisplayName, ci));
                         }
                         catch 
                         {
                         }
-
-                foreach (System.Globalization.CultureInfo ci in m_supportedLanguages)
-                    LanguageSelection.Items.Add(ci.DisplayName);
 
             }
             finally
@@ -95,15 +91,21 @@ namespace Duplicati.GUI
                 m_isUpdating = false;
             }
 
+            try
+            {
+                EncryptionModule.Items.Clear();
+                
+                foreach (Library.Interface.IEncryption e in Library.DynamicLoader.EncryptionLoader.Modules)
+                    EncryptionModule.Items.Add(new ComboBoxItemPair<Library.Interface.IEncryption>(e.DisplayName, e));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, string.Format(Strings.ApplicationSetup.EncryptionModuleLoadError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
             this.Icon = Properties.Resources.TrayNormal;
 
             
-        }
-
-        private void BrowseGPG_Click(object sender, EventArgs e)
-        {
-            if (BrowseGPGDialog.ShowDialog(this) == DialogResult.OK)
-                GPGPath.Text = BrowseGPGDialog.FileName;
         }
 
         private void RecentDuration_TextChanged(object sender, EventArgs e)
@@ -113,17 +115,28 @@ namespace Duplicati.GUI
             m_settings.RecentBackupDuration = RecentDuration.Value;
         }
 
-        private void GPGPath_TextChanged(object sender, EventArgs e)
-        {
-            if (m_isUpdating)
-                return;
-            m_settings.GPGPath = GPGPath.Text;
-        }
-
         private void OKBtn_Click(object sender, EventArgs e)
         {
+            foreach(TabPage tab in TabContainer.TabPages)
+                if (tab.Tag as Library.Interface.ISettingsControl != null)
+                {
+                    try
+                    {
+                        if (!(tab.Tag as Library.Interface.ISettingsControl).Validate(tab.Controls[0]))
+                            return;
 
-            m_connection.CommitRecursive(m_connection.GetObjects<ApplicationSetting>());
+                        (tab.Tag as Library.Interface.ISettingsControl).Leave(tab.Controls[0]);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Strings.ApplicationSetup.SaveExtensionError, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                }
+
+
+            //Commit all changes made to the context
+            m_connection.CommitAllRecursive();
 
             System.Globalization.CultureInfo newCI = System.Threading.Thread.CurrentThread.CurrentUICulture;
 
@@ -152,19 +165,6 @@ namespace Duplicati.GUI
             this.Close();
         }
 
-        private void BrowseSFTP_Click(object sender, EventArgs e)
-        {
-            if (BrowseSFTPDialog.ShowDialog(this) == DialogResult.OK)
-                SFTPPath.Text = BrowseSFTPDialog.FileName;
-        }
-
-        private void SFTPPath_TextChanged(object sender, EventArgs e)
-        {
-            if (m_isUpdating)
-                return;
-            m_settings.SFtpPath = SFTPPath.Text;
-        }
-
         private void RecentDuration_ValueChanged(object sender, EventArgs e)
         {
             RecentDuration_TextChanged(sender, e);
@@ -191,13 +191,33 @@ namespace Duplicati.GUI
 
                 m_isUpdating = true;
                 RecentDuration.Value = m_settings.RecentBackupDuration;
-                GPGPath.Text = m_settings.GPGPath;
-                SFTPPath.Text = m_settings.SFtpPath;
                 TempPath.Text = m_settings.TempPath;
 
                 UseCommonPassword.Checked = m_settings.UseCommonPassword;
                 CommonPassword.Text = m_settings.CommonPassword;
-                UseGPGEncryption.Checked = m_settings.CommonPasswordUseGPG;
+
+                if (EncryptionModule.Items.Count > 0)
+                {
+                    bool foundEncryption = false;
+                    int defaultIndex = 0;
+                    for (int i = 0; i < EncryptionModule.Items.Count; i++)
+                        if (((ComboBoxItemPair<Library.Interface.IEncryption>)EncryptionModule.Items[i]).Value.FilenameExtension == m_settings.CommonPasswordEncryptionModule)
+                        {
+                            foundEncryption = true;
+                            EncryptionModule.SelectedIndex = i;
+                            break;
+                        }
+                        else if (((ComboBoxItemPair<Library.Interface.IEncryption>)EncryptionModule.Items[i]).Value.FilenameExtension == "aes")
+                            defaultIndex = i;
+
+                    if (!foundEncryption)
+                        EncryptionModule.SelectedIndex = defaultIndex;
+                }
+                else
+                {
+                    PasswordDefaultsGroup.Enabled = false;
+                }
+
 
                 SignatureCacheEnabled.Checked = m_settings.SignatureCacheEnabled;
                 SignatureCachePath.Text = m_settings.SignatureCachePath;
@@ -214,17 +234,40 @@ namespace Duplicati.GUI
                 {
                     try
                     {
+                        LanguageSelection.SelectedIndex = -1;
                         System.Globalization.CultureInfo cci = System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
-                        if (m_supportedLanguages.Contains(cci))
-                            LanguageSelection.SelectedIndex = m_supportedLanguages.IndexOf(cci) + 1;
-                        else
-                            LanguageSelection.SelectedIndex = -1;
+                        for(int i = 0; i < LanguageSelection.Items.Count; i++)
+                            if (((ComboBoxItemPair<CultureInfo>)LanguageSelection.Items[i]).Value == cci)
+                            {
+                                LanguageSelection.SelectedIndex = i;
+                                break;
+                            }
                     }
                     catch
                     {
                         LanguageSelection.SelectedIndex = -1;
                     }
                 }
+
+                try
+                {
+                    foreach (Library.Interface.ISettingsControl ic in Library.DynamicLoader.SettingsControlLoader.Modules)
+                    {
+                        Control c = ic.GetControl(m_settings.CreateDetachedCopy(), Datamodel.SettingExtension.GetExtensions(m_connection, ic.Key));
+                        c.Dock = DockStyle.Fill;
+                        TabPage tab = new TabPage();
+                        tab.Text = ic.PageTitle;
+                        tab.ToolTipText = ic.PageDescription;
+                        tab.Controls.Add(c);
+                        tab.Tag = ic;
+                        TabContainer.TabPages.Add(tab);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, string.Format(Strings.ApplicationSetup.SettingControlsLoadError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
             }
             finally
             {
@@ -364,22 +407,6 @@ namespace Duplicati.GUI
                 }
         }
 
-        private void UseAESEncryption_CheckedChanged(object sender, EventArgs e)
-        {
-            if (m_isUpdating)
-                return;
-
-            m_settings.CommonPasswordUseGPG = UseGPGEncryption.Checked;
-        }
-
-        private void UseGPGEncryption_CheckedChanged(object sender, EventArgs e)
-        {
-            if (m_isUpdating)
-                return;
-
-            m_settings.CommonPasswordUseGPG = UseGPGEncryption.Checked;
-        }
-
         private void LanguageSelection_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (m_isUpdating)
@@ -388,7 +415,7 @@ namespace Duplicati.GUI
             if (LanguageSelection.SelectedIndex == 0)
                 m_settings.DisplayLanguage = "";
             else if (LanguageSelection.SelectedIndex > 0)
-                m_settings.DisplayLanguage = m_supportedLanguages[LanguageSelection.SelectedIndex - 1].Name;
+                m_settings.DisplayLanguage = ((ComboBoxItemPair<CultureInfo>)LanguageSelection.SelectedItem).Value.Name;
         }
 
         private void StartupDelayDuration_ValueChanged(object sender, EventArgs e)
@@ -423,5 +450,32 @@ namespace Duplicati.GUI
             m_settings.DownloadSpeedLimit = Bandwidth.DownloadLimit;
         }
 
+        private void EncryptionModule_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            if (EncryptionModule.SelectedItem as ComboBoxItemPair<Library.Interface.IEncryption> != null)
+                m_settings.CommonPasswordEncryptionModule = ((ComboBoxItemPair<Library.Interface.IEncryption>)EncryptionModule.SelectedItem).Value.FilenameExtension;
+
+        }
+
+        public static Dictionary<string, string> GetApplicationSettings(IDataFetcher connection)
+        {
+            Dictionary<string, string> env = new ApplicationSettings(connection).CreateDetachedCopy();
+
+            //If there are any control extensions, let them modify the environement
+            foreach (Library.Interface.ISettingsControl ic in Library.DynamicLoader.SettingsControlLoader.Modules)
+                ic.BeginEdit(env, SettingExtension.GetExtensions(connection, ic.Key));
+
+            return env;
+        }
+
+        public static void SaveExtensionSettings(IDataFetcher connection, IDictionary<string, string> env)
+        {
+            //If there are any control extensions, let them modify the environement
+            foreach (Library.Interface.ISettingsControl ic in Library.DynamicLoader.SettingsControlLoader.Modules)
+                ic.EndEdit(env, SettingExtension.GetExtensions(connection, ic.Key));
+        }
     }
 }

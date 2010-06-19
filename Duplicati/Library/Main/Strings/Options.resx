@@ -183,12 +183,6 @@
   <data name="GpgencryptionShort" xml:space="preserve">
     <value>Use GnuPG for encryption</value>
   </data>
-  <data name="GpgprogrampathLong" xml:space="preserve">
-    <value>The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program "gpg" is avalible in the system path.</value>
-  </data>
-  <data name="GpgprogrampathShort" xml:space="preserve">
-    <value>The path to GnuPG</value>
-  </data>
   <data name="IncludeLong" xml:space="preserve">
     <value>Include files that match this filter. The filter is a "file-globbing" filter, much like commandline options. You can use "*.txt" to include all text files.</value>
   </data>
@@ -226,7 +220,7 @@
     <value>Number of times to retry a failed transmission</value>
   </data>
   <data name="PassphraseLong" xml:space="preserve">
-    <value>Supply a passphrase that Duplicati will use to encrypt the backup volumes, making the unreadable without the passphrase.</value>
+    <value>Supply a passphrase that Duplicati will use to encrypt the backup volumes, making them unreadable without the passphrase. This variable can also be supplied through the environment variable PASSPHRASE.</value>
   </data>
   <data name="PassphraseShort" xml:space="preserve">
     <value>Passphrase used to encrypt backups</value>
@@ -260,12 +254,6 @@
   </data>
   <data name="SignaturecontrolfilesShort" xml:space="preserve">
     <value>A list of control files to embed in the backups</value>
-  </data>
-  <data name="SignkeyLong" xml:space="preserve">
-    <value>The GNU Privacy Guard can optionally sign volumes with a special key. This feature is not currently active in Duplicati.</value>
-  </data>
-  <data name="SignkeyShort" xml:space="preserve">
-    <value>Sign key for GnuPG</value>
   </data>
   <data name="SkipfilehashchecksLong" xml:space="preserve">
     <value>If the hash for the volume does not match, Duplicati will refuse to use the backup. Supply this flag to allow Duplicati to proceed anyway.</value>
@@ -316,7 +304,7 @@
     <value>Disables use of the streaming transfer method</value>
   </data>
   <data name="AllowfullremoveLong" xml:space="preserve">
-    <value>As a precaution, the last full backup will never be removed, even if using the --remove-all-but-n-full=0 option. Set this option to allow removing the last backup.</value>
+    <value>As a precaution, the last full backup will never be removed, even if using the "delete-all-but-n-full 0" command. Set this option to allow removing the last backup.</value>
   </data>
   <data name="AllowfullremoveShort" xml:space="preserve">
     <value>Allow removal of the all backups</value>
@@ -338,5 +326,32 @@
   </data>
   <data name="FullifsourcefolderchangedShort" xml:space="preserve">
     <value>Run a full backup if the sourcefolder has changed</value>
+  </data>
+  <data name="CompressionmoduleLong" xml:space="preserve">
+    <value>Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module.</value>
+  </data>
+  <data name="CompressionmoduleShort" xml:space="preserve">
+    <value>Select what module to use for compression</value>
+  </data>
+  <data name="EncryptionmoduleLong" xml:space="preserve">
+    <value>Duplicati supports plugable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module.</value>
+  </data>
+  <data name="EncryptionmoduleShort" xml:space="preserve">
+    <value>Select what module to use for encryption</value>
+  </data>
+  <data name="GpgencryptionDeprecated" xml:space="preserve">
+    <value>Use --encryption-module=gpg instead</value>
+  </data>
+  <data name="DisablemoduleLong" xml:space="preserve">
+    <value>Supply one or more module names, separated by commas to unload them</value>
+  </data>
+  <data name="DisablemoduleShort" xml:space="preserve">
+    <value>Disabled one or more modules</value>
+  </data>
+  <data name="EnablemoduleLong" xml:space="preserve">
+    <value>Supply one or more module names, separated by commas to load them</value>
+  </data>
+  <data name="EnablemoduleShort" xml:space="preserve">
+    <value>Enables one or more modules</value>
   </data>
 </root>

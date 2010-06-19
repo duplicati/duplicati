@@ -148,11 +148,20 @@
   <data name="ExampleWindows" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ExampleWindows.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
   </data>
+  <data name="GenericModulesHeader" xml:space="preserve">
+    <value>Supported generic modules:</value>
+  </data>
   <data name="IntegerParseError" xml:space="preserve">
     <value>Unable to parse "{0}" into a number</value>
   </data>
   <data name="ModifiedFilesHeader" xml:space="preserve">
     <value>Modified files</value>
+  </data>
+  <data name="ModuleIsLoadedAutomatically" xml:space="preserve">
+    <value>Module is loaded atomatically, use --disable-module to prevent this</value>
+  </data>
+  <data name="ModuleIsNotLoadedAutomatically" xml:space="preserve">
+    <value>Module is not loaded atomatically, use --enable-module to load it</value>
   </data>
   <data name="NewFilesHeader" xml:space="preserve">
     <value>New files</value>
@@ -168,6 +177,12 @@
   </data>
   <data name="SupportedBackendsHeader" xml:space="preserve">
     <value>Supported backends:</value>
+  </data>
+  <data name="SupportedCompressionModulesHeader" xml:space="preserve">
+    <value>Supported compression modules:</value>
+  </data>
+  <data name="SupportedEncryptionModulesHeader" xml:space="preserve">
+    <value>Supported encryption modules:</value>
   </data>
   <data name="SupportedOptionsHeader" xml:space="preserve">
     <value>Supported options:</value>

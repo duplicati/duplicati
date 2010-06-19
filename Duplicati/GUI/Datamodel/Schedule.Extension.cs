@@ -32,10 +32,6 @@ namespace Duplicati.Datamodel
             get { return this.ID > 0; }
         }
 
-        public void GetOptions(Dictionary<string, string> options)
-        {
-        }
-
         /// <summary>
         /// Gets or sets the next scheduled time.
         /// Note that this property is volatile, so

@@ -196,7 +196,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use this flag to communicate using Secure Socket Layer (SSL) over http (https)..
+        ///   Looks up a localized string similar to Use this flag to communicate using Secure Socket Layer (SSL) over ftp (ftps)..
         /// </summary>
         internal static string DescriptionUseSSLLong {
             get {
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Instructs Duplicati to use an SSL (https) connection.
+        ///   Looks up a localized string similar to Instructs Duplicati to use an SSL (ftps) connection.
         /// </summary>
         internal static string DescriptionUseSSLShort {
             get {

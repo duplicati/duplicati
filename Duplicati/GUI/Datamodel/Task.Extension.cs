@@ -27,8 +27,6 @@ namespace Duplicati.Datamodel
 {
     public partial class Task
     {
-        public const string DESTINATION_EXTENSION_KEY = "Destination";
-
         public Task()
         {
             this.AfterDataCommit += new System.Data.LightDatamodel.DataConnectionEventHandler(Task_AfterDataCommit);
@@ -45,6 +43,11 @@ namespace Duplicati.Datamodel
 
         private SettingsHelper<BackendSetting, string, string> m_backendSettings;
         private SettingsHelper<TaskExtension, string, string> m_extensionSettings;
+
+        private SettingsHelper<TaskOverride, string, string> m_taskOverrides;
+
+        private SettingsHelper<EncryptionSetting, string, string> m_encryptionSettings; 
+        private SettingsHelper<CompressionSetting, string, string> m_compressionSettings;
 
         public IDictionary<string, string> BackendSettingsLookup
         {
@@ -70,72 +73,45 @@ namespace Duplicati.Datamodel
             }
         }
 
+        public IDictionary<string, string> TaskOverridesLookup
+        {
+            get
+            {
+                //Extra check because the datamodel copies the collection between contexts... not nice
+                if (m_taskOverrides == null || m_taskOverrides.DataParent != this.DataParent || m_taskOverrides.Collection != this.TaskOverrides)
+                    m_taskOverrides = new SettingsHelper<TaskOverride, string, string>(this.DataParent, this.TaskOverrides, "Name", "Value");
+
+                return m_taskOverrides;
+            }
+        }
+
+        public IDictionary<string, string> EncryptionSettingsLookup
+        {
+            get
+            {
+                //Extra check because the datamodel copies the collection between contexts... not nice
+                if (m_encryptionSettings == null || m_encryptionSettings.DataParent != this.DataParent || m_encryptionSettings.Collection != this.EncryptionSettings)
+                    m_encryptionSettings = new SettingsHelper<EncryptionSetting, string, string>(this.DataParent, this.EncryptionSettings, "Name", "Value");
+
+                return m_encryptionSettings;
+            }
+        }
+
+        public IDictionary<string, string> CompressionSettingsLookup
+        {
+            get
+            {
+                //Extra check because the datamodel copies the collection between contexts... not nice
+                if (m_compressionSettings == null || m_compressionSettings.DataParent != this.DataParent || m_compressionSettings.Collection != this.CompressionSettings)
+                    m_compressionSettings = new SettingsHelper<CompressionSetting, string, string>(this.DataParent, this.CompressionSettings, "Name", "Value");
+
+                return m_compressionSettings;
+            }
+        }
+
         public TaskExtensionWrapper Extensions
         {
             get { return new TaskExtensionWrapper(this); }
-        }
-
-        public string GetConfiguration(Dictionary<string, string> options)
-        {
-            Library.Backend.IBackend selectedBackend = null;
-            foreach (Library.Backend.IBackend b in Library.Backend.BackendLoader.LoadedBackends)
-                if (b.ProtocolKey == this.Service)
-                {
-                    selectedBackend = b;
-                    break;
-                }
-
-            if (selectedBackend == null)
-                throw new Exception("Missing backend");
-
-            string destination;
-            if (selectedBackend is Library.Backend.IBackendGUI)
-            {
-                ApplicationSettings appset = new ApplicationSettings(this.DataParent);
-                destination = ((Library.Backend.IBackendGUI)selectedBackend).GetConfiguration(appset.CreateDetachedCopy(), BackendSettingsLookup, options);
-            }
-            else
-            {
-                //We store destination with the key "Destination" and other options with the -- prefix
-                if (!options.ContainsKey(DESTINATION_EXTENSION_KEY))
-                    throw new Exception("Invalid configuration");
-
-                destination = options[DESTINATION_EXTENSION_KEY];
-                foreach (KeyValuePair<string, string> k in this.BackendSettingsLookup)
-                    if (k.Key.StartsWith("--")) //All options are prefixed with this
-                        options[k.Key.Substring(2)] = k.Value;
-            }
-
-            if (this.Filters.Count > 0)
-                options["filter"] = this.EncodedFilter; ;
-            if (this.GPGEncryption)
-            {
-                options["gpg-encryption"] = "";
-                options["gpg-program-path"] = System.Environment.ExpandEnvironmentVariables(new ApplicationSettings(this.DataParent).GPGPath);
-            }
-
-            if (string.IsNullOrEmpty(this.Encryptionkey))
-                options.Add("no-encryption", "");
-            else
-                options.Add("passphrase", this.Encryptionkey);
-
-            ApplicationSettings set = new ApplicationSettings(this.DataParent);
-            if (!string.IsNullOrEmpty(set.TempPath))
-            {
-                string tempdir = System.Environment.ExpandEnvironmentVariables(set.TempPath);
-                if (!System.IO.Directory.Exists(tempdir))
-                    System.IO.Directory.CreateDirectory(tempdir);
-
-                options["tempdir"] = tempdir;
-            }
-
-            this.Extensions.GetOptions(options);
-
-            //Override everything set in the overrides
-            foreach (TaskOverride ov in this.TaskOverrides)
-                options[ov.Name] = ov.Value;
-
-            return destination;
         }
 
         public string EncodedFilter
@@ -344,33 +320,6 @@ namespace Duplicati.Datamodel
             {
                 get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA] = value.ToString(); }
-            }
-
-            public void GetOptions(Dictionary<string, string> options)
-            {
-                if (!string.IsNullOrEmpty(this.MaxUploadSize))
-                    options["totalsize"] = this.MaxUploadSize;
-                if (!string.IsNullOrEmpty(this.VolumeSize))
-                    options["volsize"] = this.VolumeSize;
-                if (!string.IsNullOrEmpty(this.DownloadBandwidth))
-                    options["max-download-pr-second"] = this.DownloadBandwidth;
-                if (!string.IsNullOrEmpty(this.UploadBandwidth))
-                    options["max-upload-pr-second"] = this.UploadBandwidth;
-                if (!string.IsNullOrEmpty(this.ThreadPriority))
-                    options["thread-priority"] = this.ThreadPriority;
-                if (this.AsyncTransfer)
-                    options["asynchronous-upload"] = "";
-                if (this.IgnoreTimestamps)
-                    options["disable-filetime-check"] = "";
-                if (!string.IsNullOrEmpty(this.FileTimeSeperator))
-                    options["time-separator"] = this.FileTimeSeperator;
-                
-                if (!string.IsNullOrEmpty(this.FilenamePrefix))
-                    options["backup-prefix"] = this.FilenamePrefix;
-                if (this.ShortFilenames)
-                    options["short-filenames"] = "";
-                if (!string.IsNullOrEmpty(this.FileSizeLimit))
-                    options["skip-files-larger-than"] = this.FileSizeLimit;
             }
         }
     }

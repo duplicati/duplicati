@@ -70,10 +70,10 @@ namespace Duplicati.GUI.Wizard_pages
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            Library.Backend.IBackend selectedBackend = null;
+            Library.Interface.IBackend selectedBackend = null;
             foreach (RadioButton button in BackendList.Controls)
-                if (button.Checked && button.Tag is Library.Backend.IBackend)
-                    selectedBackend = button.Tag as Library.Backend.IBackend;
+                if (button.Checked && button.Tag is Library.Interface.IBackend)
+                    selectedBackend = button.Tag as Library.Interface.IBackend;
 
             if (selectedBackend == null)
             {
@@ -88,10 +88,18 @@ namespace Duplicati.GUI.Wizard_pages
                 m_wrapper.BackendSettings.Clear();
 
             m_wrapper.Backend = selectedBackend.ProtocolKey;
-            if (selectedBackend is Library.Backend.IBackendGUI)
-                args.NextPage = new Backends.GUIContainer(selectedBackend as Library.Backend.IBackendGUI);
+
+            //Setup page to go to after the backend GUI
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
+                args.NextPage = new Add_backup.GeneratedFilenameOptions();
             else
-                args.NextPage = new Backends.RawContainer(selectedBackend);
+                args.NextPage = new Add_backup.AdvancedOptions();
+
+            //Create the appropriate GUI for the backend settings
+            if (selectedBackend is Library.Interface.IBackendGUI)
+                args.NextPage = new GUIContainer(args.NextPage, selectedBackend as Library.Interface.IGUIControl);
+            else
+                args.NextPage = new Backends.RawContainer(args.NextPage, selectedBackend, m_wrapper.BackendSettings);
         }
 
 
@@ -103,11 +111,11 @@ namespace Duplicati.GUI.Wizard_pages
             BackendList.Controls.Clear();
 
             //Sort backends by display name
-            SortedList<string, Library.Backend.IBackend> lst = new SortedList<string, Duplicati.Library.Backend.IBackend>();
-            foreach (Library.Backend.IBackend backend in Library.Backend.BackendLoader.LoadedBackends)
+            SortedList<string, Library.Interface.IBackend> lst = new SortedList<string, Duplicati.Library.Interface.IBackend>();
+            foreach (Library.Interface.IBackend backend in Library.DynamicLoader.BackendLoader.Backends)
                 lst.Add(backend.DisplayName.Trim().ToLower(), backend);
 
-            foreach (Library.Backend.IBackend backend in lst.Values)
+            foreach (Library.Interface.IBackend backend in lst.Values)
             {
                 DoubleClickRadioButton button = new DoubleClickRadioButton();
                 button.AutoSize = true;
@@ -140,10 +148,10 @@ namespace Duplicati.GUI.Wizard_pages
 
         private void Item_CheckChanged(object sender, EventArgs e)
         {
-            Library.Backend.IBackend selectedBackend = null;
+            Library.Interface.IBackend selectedBackend = null;
             foreach (RadioButton button in BackendList.Controls)
-                if (button.Checked && button.Tag is Library.Backend.IBackend)
-                    selectedBackend = button.Tag as Library.Backend.IBackend;
+                if (button.Checked && button.Tag is Library.Interface.IBackend)
+                    selectedBackend = button.Tag as Library.Interface.IBackend;
 
             m_owner.NextButton.Enabled = selectedBackend != null;
         }

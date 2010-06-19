@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main
     public abstract class BackupEntryBase
     {
         protected string m_filename;
-        protected Duplicati.Library.Backend.FileEntry m_fileentry;
+        protected Duplicati.Library.Interface.IFileEntry m_fileentry;
         protected DateTime m_time;
         protected string m_timeString;
         protected string m_encryption;
@@ -81,7 +81,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the Fileentry that was parsed into this object
         /// </summary>
-        public Backend.FileEntry Fileentry { get { return m_fileentry; } }
+        public Duplicati.Library.Interface.IFileEntry Fileentry { get { return m_fileentry; } }
         /// <summary>
         /// Gets the backup time that this entry represents
         /// </summary>
@@ -99,7 +99,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool IsFull { get { return m_isFull; } }
 
-        protected BackupEntryBase(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption)
+        protected BackupEntryBase(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, bool isFull, string timeString, string encryption)
         {
             m_filename = filename;
             m_fileentry = entry;
@@ -137,7 +137,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public ManifestEntry Alternate { get { return m_alternate; } set { m_alternate = value; } }
 
-        public ManifestEntry(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption, bool primary)
+        public ManifestEntry(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, bool isFull, string timeString, string encryption, bool primary)
             : base(filename, entry, time, isFull, timeString, encryption)
         {
             m_volumes = new List<KeyValuePair<SignatureEntry, ContentEntry>>();
@@ -166,7 +166,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public string Compression { get { return m_compression; } }
 
-        protected PayloadEntryBase(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
+        protected PayloadEntryBase(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
             : base(filename, entry, time, isFull, timeString, encryption)
         {
             m_compression = compression;
@@ -179,7 +179,7 @@ namespace Duplicati.Library.Main
     /// </summary>
     public class SignatureEntry : PayloadEntryBase
     {
-        public SignatureEntry(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
+        public SignatureEntry(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
             : base(filename, entry, time, isFull, timeString, encryption, compression, volumenumber)
         {
         }
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Main
     /// </summary>
     public class ContentEntry : PayloadEntryBase
     {
-        public ContentEntry(string filename, Backend.FileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
+        public ContentEntry(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, bool isFull, string timeString, string encryption, string compression, int volumenumber)
             : base(filename, entry, time, isFull, timeString, encryption, compression, volumenumber)
         {
         }

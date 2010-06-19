@@ -157,6 +157,15 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Supported generic modules:.
+        /// </summary>
+        internal static string GenericModulesHeader {
+            get {
+                return ResourceManager.GetString("GenericModulesHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to parse &quot;{0}&quot; into a number.
         /// </summary>
         internal static string IntegerParseError {
@@ -171,6 +180,24 @@ namespace Duplicati.CommandLine.Strings {
         internal static string ModifiedFilesHeader {
             get {
                 return ResourceManager.GetString("ModifiedFilesHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Module is loaded atomatically, use --disable-module to prevent this.
+        /// </summary>
+        internal static string ModuleIsLoadedAutomatically {
+            get {
+                return ResourceManager.GetString("ModuleIsLoadedAutomatically", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Module is not loaded atomatically, use --enable-module to load it.
+        /// </summary>
+        internal static string ModuleIsNotLoadedAutomatically {
+            get {
+                return ResourceManager.GetString("ModuleIsNotLoadedAutomatically", resourceCulture);
             }
         }
         
@@ -216,6 +243,24 @@ namespace Duplicati.CommandLine.Strings {
         internal static string SupportedBackendsHeader {
             get {
                 return ResourceManager.GetString("SupportedBackendsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supported compression modules:.
+        /// </summary>
+        internal static string SupportedCompressionModulesHeader {
+            get {
+                return ResourceManager.GetString("SupportedCompressionModulesHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supported encryption modules:.
+        /// </summary>
+        internal static string SupportedEncryptionModulesHeader {
+            get {
+                return ResourceManager.GetString("SupportedEncryptionModulesHeader", resourceCulture);
             }
         }
         

@@ -109,14 +109,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
-      <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
-      <Name>Duplicati.Library.Backend.BackendInterface</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Backend\BackendLoader\Duplicati.Library.Backend.BackendLoader.csproj">
-      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
-      <Name>Duplicati.Library.Backend.BackendLoader</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
       <Name>Duplicati.Library.Compression</Name>
@@ -125,9 +117,17 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.DynamicLoader</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj">
       <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
       <Name>Duplicati.Library.Encryption</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>

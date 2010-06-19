@@ -99,7 +99,7 @@ namespace Duplicati.GUI
                     ApplicationSettings appset = new ApplicationSettings(Program.DataConnection);
                     appset.UseCommonPassword = true;
                     appset.CommonPassword = wrapper.BackupPassword;
-                    appset.CommonPasswordUseGPG = wrapper.GPGEncryption;
+                    appset.CommonPasswordEncryptionModule = wrapper.EncryptionModule;
                     Program.DataConnection.Commit(Program.DataConnection.GetObjects<ApplicationSetting>());
                 }
 

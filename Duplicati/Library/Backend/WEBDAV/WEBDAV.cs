@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
@@ -116,7 +117,7 @@ namespace Duplicati.Library.Backend
             get { return "webdav"; }
         }
 
-        public List<FileEntry> List()
+        public List<IFileEntry> List()
         {
             using (ActivateCertificateValidator())
             {
@@ -145,7 +146,7 @@ namespace Duplicati.Library.Backend
                     System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
                     nm.AddNamespace("D", "DAV:");
 
-                    List<FileEntry> files = new List<FileEntry>();
+                    List<IFileEntry> files = new List<IFileEntry>();
                     m_filenamelist = new List<string>();
 
                     foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
@@ -208,7 +209,7 @@ namespace Duplicati.Library.Backend
                 catch (System.Net.WebException wex)
                 {
                     if (wex.Response as System.Net.HttpWebResponse != null && (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
-                        throw new Backend.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+                        throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
                     else
                         throw;
                 }

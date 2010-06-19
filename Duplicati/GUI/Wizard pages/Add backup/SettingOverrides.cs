@@ -59,18 +59,46 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 if (!m_settings.ContainsKey("Overrides:Table"))
                 {
-                    IList<Library.Backend.ICommandLineArgument> primary = new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands;
-                    IList<Library.Backend.ICommandLineArgument> secondary = null;
+                    IList<Library.Interface.ICommandLineArgument> primary = new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands;
+                    List<Library.Interface.ICommandLineArgument> secondary = new List<Library.Interface.ICommandLineArgument>();
                     
                     try
                     {
-                        foreach (Library.Backend.IBackend b in Library.Backend.BackendLoader.LoadedBackends)
-                            if (b.ProtocolKey == m_wrapper.Backend)
-                                secondary = b.SupportedCommands;
+                        secondary.AddRange(Library.DynamicLoader.BackendLoader.GetSupportedCommands(m_wrapper.Backend));
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show(this, string.Format(Strings.SettingOverrides.BackendLoadError, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+
+
+                    try
+                    {
+                        secondary.AddRange(Library.DynamicLoader.EncryptionLoader.GetSupportedCommands(m_wrapper.EncryptionModule));
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Strings.SettingOverrides.EncryptionLoadError, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+
+                    try
+                    {
+                        secondary.AddRange(Library.DynamicLoader.CompressionLoader.GetSupportedCommands(m_wrapper.CompressionModule));
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Strings.SettingOverrides.CompressionLoadError, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+
+                    try
+                    {
+                        foreach(Library.Interface.IGenericModule m in Library.DynamicLoader.GenericLoader.Modules)
+                            if (m.SupportedCommands != null)
+                                secondary.AddRange(m.SupportedCommands);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, string.Format(Strings.SettingOverrides.GenericModuleLoadError, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
 
                     OptionGrid.Setup(primary, secondary, m_wrapper.Overrides);

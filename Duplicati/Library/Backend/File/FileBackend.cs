@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
@@ -85,10 +86,10 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<FileEntry> List()
+        public List<IFileEntry> List()
         {
             string path = m_path;
-            List<FileEntry> ls = new List<FileEntry>();
+            List<IFileEntry> ls = new List<IFileEntry>();
 
             //Attempt to apply credentials
             if (!string.IsNullOrEmpty(m_username) && m_password != null)

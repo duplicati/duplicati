@@ -156,7 +156,7 @@
     <value>87, 13</value>
   </data>
   <data name="label2.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
     <value>AWS Secret Key</value>
@@ -183,7 +183,7 @@
     <value>86, 13</value>
   </data>
   <data name="label3.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>4</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
     <value>S3 Bucket name</value>
@@ -200,27 +200,6 @@
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
     <value>8</value>
   </data>
-  <data name="AWS_ID.Location" type="System.Drawing.Point, System.Drawing">
-    <value>136, 8</value>
-  </data>
-  <data name="AWS_ID.Size" type="System.Drawing.Size, System.Drawing">
-    <value>144, 20</value>
-  </data>
-  <data name="AWS_ID.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;AWS_ID.Name" xml:space="preserve">
-    <value>AWS_ID</value>
-  </data>
-  <data name="&gt;&gt;AWS_ID.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;AWS_ID.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;AWS_ID.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
   <data name="AWS_KEY.Location" type="System.Drawing.Point, System.Drawing">
     <value>136, 32</value>
   </data>
@@ -228,7 +207,7 @@
     <value>144, 20</value>
   </data>
   <data name="AWS_KEY.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
+    <value>3</value>
   </data>
   <data name="&gt;&gt;AWS_KEY.Name" xml:space="preserve">
     <value>AWS_KEY</value>
@@ -240,7 +219,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;AWS_KEY.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>7</value>
   </data>
   <data name="BucketName.Location" type="System.Drawing.Point, System.Drawing">
     <value>136, 56</value>
@@ -249,7 +228,7 @@
     <value>144, 20</value>
   </data>
   <data name="BucketName.TabIndex" type="System.Int32, mscorlib">
-    <value>6</value>
+    <value>5</value>
   </data>
   <data name="&gt;&gt;BucketName.Name" xml:space="preserve">
     <value>BucketName</value>
@@ -261,7 +240,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;BucketName.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="SignUpLink.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -273,7 +252,7 @@
     <value>151, 13</value>
   </data>
   <data name="SignUpLink.TabIndex" type="System.Int32, mscorlib">
-    <value>7</value>
+    <value>8</value>
   </data>
   <data name="SignUpLink.Text" xml:space="preserve">
     <value>Click here for the sign up page</value>
@@ -288,7 +267,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;SignUpLink.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>5</value>
   </data>
   <data name="label4.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 8.25pt, style=Italic</value>
@@ -300,7 +279,7 @@
     <value>440, 32</value>
   </data>
   <data name="label4.TabIndex" type="System.Int32, mscorlib">
-    <value>9</value>
+    <value>6</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>A bucket can be thought of as a root folder. Use / in the bucket name, to access subfolders in the bucket</value>
@@ -315,7 +294,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="UseEuroBuckets.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -327,7 +306,7 @@
     <value>176, 17</value>
   </data>
   <data name="UseEuroBuckets.TabIndex" type="System.Int32, mscorlib">
-    <value>10</value>
+    <value>7</value>
   </data>
   <data name="UseEuroBuckets.Text" xml:space="preserve">
     <value>Store files on a european server</value>
@@ -342,7 +321,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;UseEuroBuckets.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="TestConnection.Location" type="System.Drawing.Point, System.Drawing">
     <value>360, 120</value>
@@ -351,7 +330,7 @@
     <value>112, 24</value>
   </data>
   <data name="TestConnection.TabIndex" type="System.Int32, mscorlib">
-    <value>11</value>
+    <value>10</value>
   </data>
   <data name="TestConnection.Text" xml:space="preserve">
     <value>Test Connection</value>
@@ -366,7 +345,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;TestConnection.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="CreateBucket.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
@@ -379,7 +358,7 @@
     <value>112, 24</value>
   </data>
   <data name="CreateBucket.TabIndex" type="System.Int32, mscorlib">
-    <value>12</value>
+    <value>9</value>
   </data>
   <data name="CreateBucket.Text" xml:space="preserve">
     <value>Create bucket</value>
@@ -394,6 +373,27 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;CreateBucket.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="AWS_ID.Location" type="System.Drawing.Point, System.Drawing">
+    <value>136, 8</value>
+  </data>
+  <data name="AWS_ID.Size" type="System.Drawing.Size, System.Drawing">
+    <value>144, 21</value>
+  </data>
+  <data name="AWS_ID.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;AWS_ID.Name" xml:space="preserve">
+    <value>AWS_ID</value>
+  </data>
+  <data name="&gt;&gt;AWS_ID.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AWS_ID.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;AWS_ID.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">

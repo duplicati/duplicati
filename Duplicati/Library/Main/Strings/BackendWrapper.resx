@@ -168,4 +168,13 @@
   <data name="StatusMessageUploading" xml:space="preserve">
     <value>Uploading: {0} ({1})</value>
   </data>
+  <data name="DeprecatedOptionUsedWarning" xml:space="preserve">
+    <value>The option {0} is deprecated: {1}</value>
+  </data>
+  <data name="UnsupportedOptionWarning" xml:space="preserve">
+    <value>The supplied option --{0} is not supported and will be ignored</value>
+  </data>
+  <data name="UnsupportedOptionDisabledModuleWarning" xml:space="preserve">
+    <value>The option --{0} is not supported because the module {1} is not currently loaded</value>
+  </data>
 </root>

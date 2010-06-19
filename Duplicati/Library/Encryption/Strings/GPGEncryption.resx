@@ -117,7 +117,49 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Description" xml:space="preserve">
+    <value>The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is avalible on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is avalible via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch.</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>GNU Privacy Guard, external</value>
+  </data>
+  <data name="GpgencryptiondecryptionswitchesLong" xml:space="preserve">
+    <value>Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --decrypt option is always specified.</value>
+  </data>
+  <data name="GpgencryptiondecryptionswitchesShort" xml:space="preserve">
+    <value>Extra GPG commandline options for decryption</value>
+  </data>
+  <data name="GpgencryptiondisablearmorLong" xml:space="preserve">
+    <value>The GPG encryption/decryption will use the --armor option for GPG to protect the files with armor. Specify this switch to remove the --armor option.</value>
+  </data>
+  <data name="GpgencryptiondisablearmorShort" xml:space="preserve">
+    <value>Don't use GPG Armor</value>
+  </data>
+  <data name="GpgencryptionencryptionswitchesLong" xml:space="preserve">
+    <value>Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --encrypt option is always specified.</value>
+  </data>
+  <data name="GpgencryptionencryptionswitchesShort" xml:space="preserve">
+    <value>Extra GPG commandline options for encryption</value>
+  </data>
   <data name="GPGExecuteError" xml:space="preserve">
     <value>Failed to execute GPG at "{0}": {1}</value>
+  </data>
+  <data name="GpgprogrampathLong" xml:space="preserve">
+    <value>The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program "gpg" is avalible in the system path.</value>
+  </data>
+  <data name="GpgprogrampathShort" xml:space="preserve">
+    <value>The path to GnuPG</value>
+  </data>
+  <data name="SignkeyLong" xml:space="preserve">
+    <value>The GNU Privacy Guard can optionally sign volumes with a special key. This feature is not currently active in Duplicati.</value>
+  </data>
+  <data name="SignkeyShort" xml:space="preserve">
+    <value>Sign key for GnuPG</value>
+  </data>
+  <data name="GPGNotFoundWarning" xml:space="preserve">
+    <value>Duplicati was unable to verify the existence of GNU Privacy Guard.
+GPG may work regardless, if it is located in the system search path.
+If the encryption fails, no files will be backed up
+Do you want to continue anyway?</value>
   </data>
 </root>

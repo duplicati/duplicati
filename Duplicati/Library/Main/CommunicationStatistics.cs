@@ -32,6 +32,9 @@ namespace Duplicati.Library.Main
         private long m_numberOfErrors;
         private StringBuilder m_errorMessages = new StringBuilder();
 
+        private long m_numberOfWarnings;
+        private StringBuilder m_warningMessages = new StringBuilder();
+
         public long NumberOfBytesUploaded
         {
             get { return m_numberOfBytesUploaded; }
@@ -72,7 +75,21 @@ namespace Duplicati.Library.Main
                 sb.Append("****************\r\n");
             }
 
+            if (m_numberOfWarnings > 0)
+            {
+                sb.Append("NumberOfWarnings: " + m_numberOfWarnings.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+                sb.Append("****************\r\n");
+                sb.Append(m_warningMessages.ToString());
+                sb.Append("****************\r\n");
+            }
+
             return sb.ToString();
+        }
+
+        public void LogWarning(string warningMessage)
+        {
+            m_numberOfWarnings++;
+            m_warningMessages.AppendLine(warningMessage);
         }
     }
 }

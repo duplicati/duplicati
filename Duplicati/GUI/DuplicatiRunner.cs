@@ -55,14 +55,11 @@ namespace Duplicati.GUI
             Dictionary<string, string> options = new Dictionary<string,string>();
             string destination = task.GetConfiguration(options);
 
-            ApplicationSettings appSet = new ApplicationSettings(task.Schedule.DataParent);
-            if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
-                options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), task.Schedule.ID.ToString());
-
             string results = "";
 
             try
             {
+
                 switch (task.TaskType)
                 {
                     case DuplicityTaskType.FullBackup:
@@ -175,10 +172,10 @@ namespace Duplicati.GUI
                         (task as ListActualFilesTask).Files = Interface.ListActualSignatureFiles(destination, options);
                         break;
                     case DuplicityTaskType.RemoveAllButNFull:
-                        results = Interface.RemoveAllButNFull(destination, options);
+                        results = Interface.DeleteAllButNFull(destination, options);
                         break;
                     case DuplicityTaskType.RemoveOlderThan:
-                        results = Interface.RemoveOlderThan(destination, options);
+                        results = Interface.DeleteOlderThan(destination, options);
                         break;
                     case DuplicityTaskType.Restore:
                         options["file-to-restore"] = ((RestoreTask)task).SourceFiles;

@@ -59,11 +59,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FileArchiveDirectory.cs" />
+    <Compile Include="ComboBoxItemPair.cs" />
     <Compile Include="FilelistFilter.cs" />
     <Compile Include="FilenameFilter.cs" />
     <Compile Include="PlugableEnumerable.cs" />
-    <Compile Include="IFileArchive.cs" />
     <Compile Include="IFilenameFilter.cs" />
     <Compile Include="KeyGenerator.cs" />
     <Compile Include="OverrideableStream.cs" />

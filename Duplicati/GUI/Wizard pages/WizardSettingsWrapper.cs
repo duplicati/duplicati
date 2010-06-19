@@ -60,7 +60,7 @@ namespace Duplicati.GUI.Wizard_pages
             if (appset.UseCommonPassword)
             {
                 this.BackupPassword = appset.CommonPassword;
-                this.GPGEncryption = appset.CommonPasswordUseGPG;
+                this.EncryptionModule = appset.CommonPasswordEncryptionModule;
             }
 
             System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
@@ -96,6 +96,7 @@ namespace Duplicati.GUI.Wizard_pages
                             pi.SetValue(this, Convert.ChangeType(n.InnerText, pi.PropertyType), null);
                 }
 
+            this.ApplicationSettings = ApplicationSetup.GetApplicationSettings(Program.DataConnection);
         }
 
         /// <summary>
@@ -129,7 +130,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.VolumeSize = schedule.Task.Extensions.VolumeSize;
             this.ThreadPriority = schedule.Task.Extensions.ThreadPriority;
             this.AsyncTransfer = schedule.Task.Extensions.AsyncTransfer;
-            this.GPGEncryption = schedule.Task.GPGEncryption;
+            this.EncryptionModule = schedule.Task.EncryptionModule;
             this.IncludeSetup = schedule.Task.IncludeSetup;
             this.IgnoreFileTimestamps = schedule.Task.Extensions.IgnoreTimestamps;
             this.FileSizeLimit = schedule.Task.Extensions.FileSizeLimit;
@@ -147,9 +148,10 @@ namespace Duplicati.GUI.Wizard_pages
             this.SelectFilesUI.IncludeImages = schedule.Task.Extensions.SelectFiles_IncludeImages;
             this.SelectFilesUI.IncludeSettings = schedule.Task.Extensions.SelectFiles_IncludeAppData;
 
-            this.Overrides = new Dictionary<string, string>();
-            foreach (Datamodel.TaskOverride ov in schedule.Task.TaskOverrides)
-                this.Overrides[ov.Name] = ov.Value;
+            this.Overrides = new Dictionary<string, string>(schedule.Task.TaskOverridesLookup);
+            this.EncryptionSettings = new Dictionary<string, string>(schedule.Task.EncryptionSettingsLookup);
+            this.CompressionSettings = new Dictionary<string, string>(schedule.Task.CompressionSettingsLookup);
+            this.ApplicationSettings = ApplicationSetup.GetApplicationSettings(schedule.DataParent);
 
             this.PrimayAction = action;
             this.DataConnection = connection;
@@ -171,12 +173,7 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.Encryptionkey = this.BackupPassword;
 
             schedule.Task.Service = this.Backend;
-            foreach (KeyValuePair<string, string> p in this.BackendSettings)
-                schedule.Task.BackendSettingsLookup[p.Key] = p.Value;
-
-            foreach (string k in new List<string>(schedule.Task.BackendSettingsLookup.Keys))
-                if (!this.BackendSettings.ContainsKey(k))
-                    schedule.Task.BackendSettingsLookup.Remove(k);
+            SyncLookupTables(this.BackendSettings, schedule.Task.BackendSettingsLookup);
 
             schedule.When = this.BackupTimeOffset;
             schedule.Repeat = this.RepeatInterval;
@@ -192,7 +189,7 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.Extensions.ThreadPriority = this.ThreadPriority;
             schedule.Task.Extensions.AsyncTransfer = this.AsyncTransfer;
 
-            schedule.Task.GPGEncryption = this.GPGEncryption;
+            schedule.Task.EncryptionModule = this.EncryptionModule;
             schedule.Task.IncludeSetup = this.IncludeSetup;
             schedule.Task.Extensions.IgnoreTimestamps = this.IgnoreFileTimestamps;
             schedule.Task.Extensions.FileSizeLimit = this.FileSizeLimit;
@@ -209,27 +206,29 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.Extensions.SelectFiles_IncludeImages = this.SelectFilesUI.IncludeImages;
             schedule.Task.Extensions.SelectFiles_IncludeAppData = this.SelectFilesUI.IncludeSettings;
 
-            //Synchronize the override collections, preserve existing items
-            Dictionary<string, Datamodel.TaskOverride> ovs = new Dictionary<string, Duplicati.Datamodel.TaskOverride>();
-            foreach (Datamodel.TaskOverride ov in schedule.Task.TaskOverrides)
-                ovs[ov.Name] = ov;
+            SyncLookupTables(this.Overrides, schedule.Task.TaskOverridesLookup);
 
-            foreach (string s in this.Overrides.Keys)
-                if (ovs.ContainsKey(s))
-                {
-                    ovs[s].Value = this.Overrides[s];
-                    ovs.Remove(s);
-                }
-                else
-                {
-                    Datamodel.TaskOverride ov = schedule.Task.DataParent.Add<Datamodel.TaskOverride>();
-                    ov.Name = s;
-                    ov.Value = this.Overrides[s];
-                    schedule.Task.TaskOverrides.Add(ov);
-                }
+            SyncLookupTables(this.EncryptionSettings, schedule.Task.EncryptionSettingsLookup);
+            SyncLookupTables(this.CompressionSettings, schedule.Task.CompressionSettingsLookup);
 
-            foreach (Datamodel.TaskOverride ov in ovs.Values)
-                ov.DataParent.DeleteObject(ov);
+            ApplicationSetup.SaveExtensionSettings(schedule.DataParent, this.ApplicationSettings);
+        }
+
+        /// <summary>
+        /// Synchronizes two lookup tables
+        /// </summary>
+        /// <param name="source">The desired table contents</param>
+        /// <param name="target">The current table contents</param>
+        private void SyncLookupTables(IDictionary<string, string> source, IDictionary<string, string> target)
+        {
+            //TODO: Should rewrite this to use the IDictionary instances directly, 
+            // this would require a nested dataconnection for new entries
+            foreach (KeyValuePair<string, string> p in source)
+                target[p.Key] = p.Value;
+
+            foreach (string k in new List<string>(target.Keys))
+                if (!source.ContainsKey(k))
+                    target.Remove(k);
         }
 
         /// <summary>
@@ -324,13 +323,13 @@ namespace Duplicati.GUI.Wizard_pages
         /// <summary>
         /// Gets the current settings for the backend
         /// </summary>
-        public Dictionary<string, string> BackendSettings
+        public IDictionary<string, string> BackendSettings
         {
             get 
             {
-                if (GetItem<Dictionary<string, string>>("BackendSettings", null) == null)
+                if (GetItem<IDictionary<string, string>>("BackendSettings", null) == null)
                     this.BackendSettings = new Dictionary<string, string>();
-                return GetItem<Dictionary<string, string>>("BackendSettings", null); 
+                return GetItem<IDictionary<string, string>>("BackendSettings", null); 
             }
             set { SetItem("BackendSettings", value); }
         }
@@ -550,12 +549,21 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
-        /// True if the GPG encryption method is enabled
+        /// The encryption module used
         /// </summary>
-        public bool GPGEncryption
+        public string EncryptionModule
         {
-            get { return GetItem<bool>("GPGEncryption", false); }
-            set { SetItem("GPGEncryption", value); }
+            get { return GetItem<string>("EncryptionModule", "aes"); }
+            set { SetItem("EncryptionModule", value); }
+        }
+
+        /// <summary>
+        /// The compression module used
+        /// </summary>
+        public string CompressionModule
+        {
+            get { return GetItem<string>("CompressionModule", "zip"); }
+            set { SetItem("CompressionModule", value); }
         }
 
         /// <summary>
@@ -615,13 +623,13 @@ namespace Duplicati.GUI.Wizard_pages
         /// <summary>
         /// Gets all the overrides present on the task
         /// </summary>
-        public Dictionary<string, string> Overrides
+        public IDictionary<string, string> Overrides
         {
             get 
             {
-                if (GetItem<Dictionary<string, string>>("Overrides", null) == null)
+                if (GetItem<IDictionary<string, string>>("Overrides", null) == null)
                     this.Overrides = new Dictionary<string, string>();
-                return GetItem<Dictionary<string, string>>("Overrides", null); 
+                return GetItem<IDictionary<string, string>>("Overrides", null); 
             }
             set { SetItem("Overrides", value); }
         }
@@ -630,6 +638,49 @@ namespace Duplicati.GUI.Wizard_pages
         /// Gets a wrapper for the settings that are avalible on the SelectFiles UI
         /// </summary>
         public SelectFilesUI SelectFilesUI { get { return new SelectFilesUI(this); } }
+
+        /// <summary>
+        /// Gets all the encryption settings present on the task
+        /// </summary>
+        public IDictionary<string, string> EncryptionSettings
+        {
+            get
+            {
+                if (GetItem<IDictionary<string, string>>("EncryptionSettings", null) == null)
+                    this.EncryptionSettings = new Dictionary<string, string>();
+                return GetItem<IDictionary<string, string>>("EncryptionSettings", null);
+            }
+            set { SetItem("EncryptionSettings", value); }
+        }
+
+        /// <summary>
+        /// Gets all the compression settings present on the task
+        /// </summary>
+        public IDictionary<string, string> CompressionSettings
+        {
+            get
+            {
+                if (GetItem<IDictionary<string, string>>("CompressionSettings", null) == null)
+                    this.CompressionSettings = new Dictionary<string, string>();
+                return GetItem<IDictionary<string, string>>("CompressionSettings", null);
+            }
+            set { SetItem("CompressionSettings", value); }
+        }
+
+        /// <summary>
+        /// Gets the application settings
+        /// </summary>
+        public IDictionary<string, string> ApplicationSettings
+        {
+            get
+            {
+                if (GetItem<IDictionary<string, string>>("ApplicationSettings", null) == null)
+                    this.ApplicationSettings = new ApplicationSettings(this.DataConnection ?? Program.DataConnection).CreateDetachedCopy();
+                return GetItem<IDictionary<string, string>>("ApplicationSettings", null);
+            }
+            set { SetItem("ApplicationSettings", value); }
+        }
+    
     }
 
     /// <summary>

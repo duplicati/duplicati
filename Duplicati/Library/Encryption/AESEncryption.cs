@@ -20,39 +20,81 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Interface;
+using System.IO;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Encryption
 {
     /// <summary>
     /// Implements AES encryption
     /// </summary>
-    public class AESEncryption : EncryptionBase, IEncryption
+    public class AESEncryption : EncryptionBase, IEncryptionGUI, IGUIMiniControl
     {
+        #region Commandline option constants
         /// <summary>
-        /// The AES instance
+        /// The commandline switch used to specify that AES Crypt is not allowed
         /// </summary>
-        private System.Security.Cryptography.Rijndael m_instance;
+        private const string COMMAND_LINE_NO_AES_CRYPT = "aes-encryption-dont-use-aescrypt";
+        /// <summary>
+        /// The commandline switch used to specify that fallback decryption is not allowed
+        /// </summary>
+        private const string COMMAND_LINE_NO_FALLBACK = "aes-encryption-dont-allow-fallback";
+        #endregion
+
+        /// <summary>
+        /// True if AESCrypt is disabled, false otherwise
+        /// </summary>
+        private bool m_disableAESCrypt = false;
+        /// <summary>
+        /// True if fallback is allowed, false otherwise
+        /// </summary>
+        private bool m_allowFallback = true;
+        /// <summary>
+        /// The key used to encrypt the data
+        /// </summary>
+        private string m_key;
+
+        /// <summary>
+        /// Default constructor, used to read file extension and supported commands
+        /// </summary>
+        public AESEncryption()
+        {
+        }
 
         /// <summary>
         /// Constructs a new AES encryption/decyption instance
         /// </summary>
         /// <param name="key">The key used for encryption. The key gets stretched through SHA hashing to fit the key size requirements</param>
-        public AESEncryption(string key)
+        public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
-            m_instance = System.Security.Cryptography.Rijndael.Create();
-            System.Security.Cryptography.SHA256 sha = System.Security.Cryptography.SHA256.Create();
-            int len = m_instance.IV.Length + m_instance.Key.Length;
+            if (options.ContainsKey(COMMAND_LINE_NO_AES_CRYPT))
+                m_disableAESCrypt = Core.Utility.ParseBool(options[COMMAND_LINE_NO_AES_CRYPT], true);
+            if (options.ContainsKey(COMMAND_LINE_NO_FALLBACK))
+                m_allowFallback = !Core.Utility.ParseBool(options[COMMAND_LINE_NO_FALLBACK], true);
+
+            if (m_disableAESCrypt && !m_allowFallback)
+                throw new ArgumentException(string.Format(Strings.AESEncryption.OptionsAreMutuallyExclusiveError, COMMAND_LINE_NO_AES_CRYPT, COMMAND_LINE_NO_FALLBACK));
+
+            m_key = passphrase;
+        }
+
+        private System.Security.Cryptography.SymmetricAlgorithm GenerateAESEncryptor(string key)
+        {
+            SymmetricAlgorithm crypto = Rijndael.Create();
+            SHA256 sha = SHA256.Create();
+            int len = crypto.IV.Length + crypto.Key.Length;
             System.IO.MemoryStream ms = new System.IO.MemoryStream();
 
             //We stretch the key material by issuing cascading hash operations.
             //This somewhat alters the characteristics of the key, but as long
             //as the hashing is cryptographically safe and does not induce aliasing
             //with the encryption, it does not reduce the strength of the encryption
-            byte[] tmp = System.Text.Encoding.UTF8.GetBytes(key);
+            byte[] tmp = Encoding.UTF8.GetBytes(key);
             while (ms.Length < len)
             {
                 if (!sha.CanReuseTransform)
-                    sha = System.Security.Cryptography.SHA256.Create();
+                    sha = SHA256.Create();
                 sha.Initialize();
 
                 tmp = sha.ComputeHash(tmp);
@@ -60,8 +102,8 @@ namespace Duplicati.Library.Encryption
             }
 
             //TODO: Is it better to change the IV for each compressed file?
-            byte[] realkey = new byte[m_instance.Key.Length];
-            byte[] iv = new byte[m_instance.IV.Length];
+            byte[] realkey = new byte[crypto.Key.Length];
+            byte[] iv = new byte[crypto.IV.Length];
             ms.Position = 0;
             if (ms.Read(iv, 0, iv.Length) != iv.Length)
                 throw new Exception(Strings.AESEncryption.BadKeyStretchError);
@@ -69,32 +111,99 @@ namespace Duplicati.Library.Encryption
                 throw new Exception(Strings.AESEncryption.BadKeyStretchError);
             ms.Dispose();
 
-            m_instance.IV = iv;
-            m_instance.Key = realkey;
-            m_instance.Mode = System.Security.Cryptography.CipherMode.CBC;
-            m_instance.Padding = System.Security.Cryptography.PaddingMode.PKCS7;
+            crypto.IV = iv;
+            crypto.Key = realkey;
+            crypto.Mode = CipherMode.CBC;
+            crypto.Padding = PaddingMode.PKCS7;
+
+            return crypto;
         }
 
         #region IEncryption Members
 
         public override string FilenameExtension { get { return "aes"; } }
+        public override string Description { get { return string.Format(Strings.AESEncryption.Description, COMMAND_LINE_NO_AES_CRYPT); } }
+        public override string DisplayName { get { return Strings.AESEncryption.DisplayName; } }
+        protected override void Dispose(bool disposing) { m_key = null; }
 
-        public override System.IO.Stream Encrypt(System.IO.Stream input)
+        public override long SizeOverhead(long filesize)
         {
-            if (m_instance.Mode == System.Security.Cryptography.CipherMode.ECB)
-                throw new Exception(Strings.AESEncryption.UselessEncryptionError);
-
-            System.Security.Cryptography.ICryptoTransform ct = m_instance.CreateEncryptor();
-            return new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Write);
+            //If we use 1, we trigger the blocksize.
+            //As the AES algorithm does not alter the size,
+            // the results are the same as for the real size,
+            // but a single byte encryption is much faster.
+            return base.SizeOverhead(1);
         }
 
-        public override System.IO.Stream Decrypt(System.IO.Stream input)
+        public override Stream Encrypt(Stream input)
         {
-            if (m_instance.Mode == System.Security.Cryptography.CipherMode.ECB)
-                throw new Exception(Strings.AESEncryption.UselessEncryptionError);
+            if (m_disableAESCrypt)
+                return new CryptoStream(input, GenerateAESEncryptor(m_key).CreateEncryptor(), System.Security.Cryptography.CryptoStreamMode.Write);
+            else
+                return new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Encrypt);
 
-            System.Security.Cryptography.ICryptoTransform ct = m_instance.CreateDecryptor();
-            return new System.Security.Cryptography.CryptoStream(input, ct, System.Security.Cryptography.CryptoStreamMode.Read);
+        }
+
+        public override Stream Decrypt(Stream input)
+        {
+            if (m_disableAESCrypt)
+                return new System.Security.Cryptography.CryptoStream(input, GenerateAESEncryptor(m_key).CreateDecryptor(), System.Security.Cryptography.CryptoStreamMode.Read);
+
+            try
+            {
+                return new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Decrypt);
+            }
+            catch (InvalidDataException)
+            {
+                if (m_allowFallback)
+                    return new System.Security.Cryptography.CryptoStream(input, GenerateAESEncryptor(m_key).CreateDecryptor(), System.Security.Cryptography.CryptoStreamMode.Read);
+                else
+                    throw;
+            }
+        }
+
+        public override IList<ICommandLineArgument> SupportedCommands
+        {
+            get 
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument(COMMAND_LINE_NO_AES_CRYPT, CommandLineArgument.ArgumentType.Boolean, Strings.AESEncryption.AesencryptiondontallowfallbackShort, string.Format(Strings.AESEncryption.AesencryptiondontallowfallbackLong, COMMAND_LINE_NO_FALLBACK), "false"),
+                    new CommandLineArgument(COMMAND_LINE_NO_FALLBACK, CommandLineArgument.ArgumentType.Boolean, Strings.AESEncryption.AesencryptiondontuseaescryptShort, string.Format(Strings.AESEncryption.AesencryptiondontuseaescryptLong, COMMAND_LINE_NO_AES_CRYPT), "false")
+                });
+            }
+        }
+
+        #endregion
+
+        #region IGUIControl Members
+
+        public string PageTitle
+        {
+            get { return this.DisplayName; }
+        }
+
+        public string PageDescription
+        {
+            get { return this.Description; }
+        }
+
+        public System.Windows.Forms.Control GetControl(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
+        {
+            return new System.Windows.Forms.Control();
+        }
+
+        public void Leave(System.Windows.Forms.Control control)
+        {
+        }
+
+        public bool Validate(System.Windows.Forms.Control control)
+        {
+            return true;
+        }
+
+        public string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
+        {
+            return null;
         }
 
         #endregion

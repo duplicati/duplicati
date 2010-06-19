@@ -107,6 +107,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occured while loading encryption modules: {0}.
+        /// </summary>
+        internal static string EncryptionModuleLoadError {
+            get {
+                return ResourceManager.GetString("EncryptionModuleLoadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An exception occured while examining the folder: {0}.
         ///Do you want to use that folder anyway?.
         /// </summary>
@@ -141,6 +150,24 @@ namespace Duplicati.GUI.Strings {
         internal static string OperationCancelled {
             get {
                 return ResourceManager.GetString("OperationCancelled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occured while saving settings: {0}.
+        /// </summary>
+        internal static string SaveExtensionError {
+            get {
+                return ResourceManager.GetString("SaveExtensionError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occured while loading setting controls: {0}.
+        /// </summary>
+        internal static string SettingControlsLoadError {
+            get {
+                return ResourceManager.GetString("SettingControlsLoadError", resourceCulture);
             }
         }
     }

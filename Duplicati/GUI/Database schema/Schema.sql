@@ -8,7 +8,8 @@ CREATE TABLE "Task" (
     "KeepFull" INTEGER NULL,
     "KeepTime" TEXT NULL,
 	"FullAfter" TEXT NULL,
-	"GPGEncryption" BOOLEAN NULL,
+	"EncryptionModule" TEXT NULL,
+	"CompressionModule" TEXT NULL,
 	"IncludeSetup" BOOLEAN NULL
 );
 
@@ -85,5 +86,25 @@ CREATE TABLE "TaskFilter" (
     "TaskID" INTEGER NULL
 );
 
+CREATE TABLE "SettingExtension" (
+    "ID" INTEGER PRIMARY KEY,
+    "SettingKey" TEXT NULL,
+    "Name" TEXT NULL,
+    "Value" TEXT NULL
+);
 
-INSERT INTO "Version" ("Version") VALUES (3);
+CREATE TABLE "CompressionSetting" (
+    "ID" INTEGER PRIMARY KEY,
+    "TaskID" INTEGER NULL,
+    "Name" TEXT NULL,
+    "Value" TEXT NULL
+);
+
+CREATE TABLE "EncryptionSetting" (
+    "ID" INTEGER PRIMARY KEY,
+    "TaskID" INTEGER NULL,
+    "Name" TEXT NULL,
+    "Value" TEXT NULL
+);
+
+INSERT INTO "Version" ("Version") VALUES (4);

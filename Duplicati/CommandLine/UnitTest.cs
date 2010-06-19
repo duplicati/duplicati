@@ -138,10 +138,10 @@ namespace Duplicati.CommandLine
                 {
                     Console.WriteLine("Removing old backups");
                     Dictionary<string, string> tmp = new Dictionary<string, string>(options);
-                    tmp["remove-all-but-n-full"] = "0";
+                    tmp["delete-all-but-n-full"] = "0";
                     tmp["force"] = "";
                     using (new Timer("Cleaning up any existing backups")) 
-                        Console.WriteLine(Duplicati.Library.Main.Interface.RemoveAllButNFull(target, tmp));
+                        Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButNFull(target, tmp));
                 }
 
                 log.Backupset = "Backup " + folders[0];
@@ -165,8 +165,8 @@ namespace Duplicati.CommandLine
                 }
 
                 Duplicati.Library.Main.Options opts = new Duplicati.Library.Main.Options(options);
-                using (Duplicati.Library.Backend.IBackend bk = Duplicati.Library.Backend.BackendLoader.GetBackend(target, options))
-                    foreach (Duplicati.Library.Backend.FileEntry fe in bk.List())
+                using (Duplicati.Library.Interface.IBackend bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
+                    foreach (Duplicati.Library.Interface.IFileEntry fe in bk.List())
                         if (fe.Size > opts.VolumeSize)
                         {
                             string msg = string.Format("The file {0} is {1} bytes larger than allowed", fe.Name, fe.Size - opts.VolumeSize);

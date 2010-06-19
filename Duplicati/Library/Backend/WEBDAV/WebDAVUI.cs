@@ -81,7 +81,7 @@ namespace Duplicati.Library.Backend
                 return false;
 
             if (!m_hasTested)
-                switch (MessageBox.Show(this, Backend.CommonStrings.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                switch (MessageBox.Show(this, Interface.CommonStrings.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
                         TestConnection_Click(null, null);
@@ -161,7 +161,7 @@ namespace Duplicati.Library.Backend
         {
             if (Servername.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, Backend.CommonStrings.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Interface.CommonStrings.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Servername.Focus(); }
                 catch { }
 
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Backend
             {
                 if (Username.Text.Trim().Length <= 0 && !m_warnedUsername)
                 {
-                    if (MessageBox.Show(this, Backend.CommonStrings.EmptyUsernameWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Interface.CommonStrings.EmptyUsernameWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
                     {
                         try { Username.Focus(); }
                         catch { }
@@ -218,7 +218,7 @@ namespace Duplicati.Library.Backend
 
                 if (Password.Text.Trim().Length <= 0 && !m_warnedPassword)
                 {
-                    if (MessageBox.Show(this, Backend.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
                     {
                         try { Password.Focus(); }
                         catch { }
@@ -301,10 +301,10 @@ namespace Duplicati.Library.Backend
                         WEBDAV webDAV = new WEBDAV(destination, options);
                         webDAV.List();
 
-                        MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;
                     }
-                    catch (Backend.FolderMissingException)
+                    catch (Interface.FolderMissingException)
                     {
                         switch (MessageBox.Show(this, Strings.WebDAVUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                         {
@@ -319,7 +319,7 @@ namespace Duplicati.Library.Backend
                     catch (Core.SslCertificateValidator.InvalidCertificateException cex)
                     {
                         if (string.IsNullOrEmpty(cex.Certificate))
-                            MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         else
                         {
                             if (MessageBox.Show(this, string.Format(Strings.WebDAVUI.ApproveCertificateHashQuestion, cex.SslError), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
@@ -332,7 +332,7 @@ namespace Duplicati.Library.Backend
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     finally
                     {
@@ -397,13 +397,13 @@ namespace Duplicati.Library.Backend
                         WEBDAV webdav = new WEBDAV(destination, options);
                         webdav.CreateFolder();
 
-                        MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;
                     }
                     catch (Core.SslCertificateValidator.InvalidCertificateException cex)
                     {
                         if (string.IsNullOrEmpty(cex.Certificate))
-                            MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, cex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         else
                         {
                             if (MessageBox.Show(this, string.Format(Strings.WebDAVUI.ApproveCertificateHashQuestion, cex.SslError), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
@@ -416,7 +416,7 @@ namespace Duplicati.Library.Backend
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     finally
                     {
@@ -472,7 +472,7 @@ namespace Duplicati.Library.Backend
                 commandlineOptions["accept-specified-ssl-hash"] = guiOptions[ACCEPT_SPECIFIC_CERTIFICATE];
 
             if (!guiOptions.ContainsKey(HOST))
-                throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, HOST));
+                throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, HOST));
 
             return "webdav://" + guiOptions[HOST] + ":" + port.ToString() + "/" + (guiOptions.ContainsKey(FOLDER) ? guiOptions[FOLDER] : "");
         }

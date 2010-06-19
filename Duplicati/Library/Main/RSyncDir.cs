@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main.RSync
             /// <summary>
             /// The archive to wrap
             /// </summary>
-            private Core.IFileArchive m_archive;
+            private Library.Interface.ICompression m_archive;
 
             /// <summary>
             /// The prefix to append to request
@@ -89,7 +89,7 @@ namespace Duplicati.Library.Main.RSync
             /// </summary>
             /// <param name="arch">The archive to wrap</param>
             /// <param name="prefix">The prefix to use</param>
-            public ArchiveWrapper(Core.IFileArchive arch, string prefix)
+            public ArchiveWrapper(Library.Interface.ICompression arch, string prefix)
             {
                 m_archive = arch;
                 m_prefix = prefix;
@@ -149,7 +149,7 @@ namespace Duplicati.Library.Main.RSync
 
             public System.IO.FileStream Stream { get { return m_fs; } }
 
-            public void DumpSignature(Core.IFileArchive signatureArchive)
+            public void DumpSignature(Library.Interface.ICompression signatureArchive)
             {
                 //Add signature AFTER content.
                 //If content is present, it is restoreable, if signature is missing, file will be backed up on next run
@@ -361,7 +361,7 @@ namespace Duplicati.Library.Main.RSync
         /// <summary>
         /// A list of patch files for removal
         /// </summary>
-        private List<Core.IFileArchive> m_patches;
+        private List<Library.Interface.ICompression> m_patches;
 
         /// <summary>
         /// A leftover file that is partially written, used when creating backups
@@ -385,7 +385,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="stat">The status report object</param>
         /// <param name="filter">An optional filter that controls what files to include</param>
         /// <param name="patches">A list of signature archives to read</param>
-        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter, List<Core.IFileArchive> patches)
+        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter, List<Library.Interface.ICompression> patches)
             : this(sourcefolder, stat, filter)
         {
             string[] prefixes = new string[] {
@@ -396,7 +396,7 @@ namespace Duplicati.Library.Main.RSync
 
             m_patches = patches;
 
-            foreach (Core.IFileArchive z in patches)
+            foreach (Library.Interface.ICompression z in patches)
             {
                 if (z.FileExists(DELETED_FILES))
                     foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(DELETED_FILES)))
@@ -448,7 +448,7 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="signatures">An archive where signatures can be put into</param>
         /// <param name="content">An archive where content can be put into</param>
-        public void CreatePatch(Core.IFileArchive signatures, Core.IFileArchive content)
+        public void CreatePatch(Library.Interface.ICompression signatures, Library.Interface.ICompression content)
         {
             InitiateMultiPassDiff(false);
             MakeMultiPassDiff(signatures, content, long.MaxValue);
@@ -595,7 +595,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="contentfile">The content archive file</param>
         /// <param name="volumesize">The max volume size</param>
         /// <returns>True if the volume is completed, false otherwise</returns>
-        public bool FinalizeMultiPass(Core.IFileArchive signaturefile, Core.IFileArchive contentfile, long volumesize)
+        public bool FinalizeMultiPass(Library.Interface.ICompression signaturefile, Library.Interface.ICompression contentfile, long volumesize)
         {
             if (!m_finalized)
             {
@@ -656,7 +656,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="volumesize">The max size of this volume</param>
         /// <param name="remainingSize">The max remaining size of arhive space</param>
         /// <returns>False if there are still files to process, true if all files are processed</returns>
-        public bool MakeMultiPassDiff(Core.IFileArchive signaturefile, Core.IFileArchive contentfile, long volumesize)
+        public bool MakeMultiPassDiff(Library.Interface.ICompression signaturefile, Library.Interface.ICompression contentfile, long volumesize)
         {
             if (m_unproccesed == null)
                 throw new Exception(Strings.RSyncDir.MultipassUsageError);
@@ -765,7 +765,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="s">The full name of the file</param>
         /// <param name="signaturefile">The signature archive file</param>
         /// <returns>The signature stream if the file is new or modified, null if the file has not been modified</returns>
-        private System.IO.Stream ProccessDiff(System.IO.FileStream fs, string s, Core.IFileArchive signaturefile)
+        private System.IO.Stream ProccessDiff(System.IO.FileStream fs, string s, Library.Interface.ICompression signaturefile)
         {
             string relpath = GetRelativeName(s);
 
@@ -817,7 +817,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="signaturefile">The signature stream to add</param>
         /// <param name="volumesize">The max size of the volume</param>
         /// <returns>The current size of the content archive</returns>
-        private long AddFileToCompression(System.IO.FileStream fs, string s, System.IO.Stream signature, Core.IFileArchive contentfile, Core.IFileArchive signaturefile, long volumesize)
+        private long AddFileToCompression(System.IO.FileStream fs, string s, System.IO.Stream signature, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize)
         {
             fs.Position = 0;
             signature.Position = 0;
@@ -884,7 +884,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="signaturefile">The signature archive file</param>
         /// <param name="volumesize">The max allowed volumesize</param>
         /// <returns>The partial file entry if the volume size was exceeded. Returns null if the file was written entirely.</returns>
-        private PartialFileEntry WritePossiblePartial(PartialFileEntry entry, Core.IFileArchive contentfile, Core.IFileArchive signaturefile, long volumesize)
+        private PartialFileEntry WritePossiblePartial(PartialFileEntry entry, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize)
         {
             long startPos = entry.Stream.Position;
 
@@ -934,7 +934,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="contentfile">The content archive file</param>
         /// <param name="volumesize">The max allowed volumesize</param>
         /// <returns>The partial file entry if the volume size was exceeded. Returns null if the file was written entirely.</returns>
-        private PartialFileEntry WritePossiblePartialInternal(PartialFileEntry entry, Core.IFileArchive contentfile, long volumesize)
+        private PartialFileEntry WritePossiblePartialInternal(PartialFileEntry entry, Library.Interface.ICompression contentfile, long volumesize)
         {
             //append chuncks of 1kb, checking on the total size after each write
             byte[] tmp = new byte[1024];
@@ -960,11 +960,11 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="destination">The destination to restore to</param>
         /// <param name="patches">The list of patches (content files) to process</param>
-        public void Restore(string[] destination, List<Core.IFileArchive> patches)
+        public void Restore(string[] destination, List<Library.Interface.ICompression> patches)
         {
             if (patches != null)
             {
-                foreach (Core.IFileArchive s in patches)
+                foreach (Library.Interface.ICompression s in patches)
                     Patch(destination, s);
 
                 FinalizeRestore();
@@ -1090,7 +1090,7 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="destination">The destination that contains the previous version of the data</param>
         /// <param name="patch">The content file that the destination is patched with</param>
-        public void Patch(string[] destination, Core.IFileArchive patch)
+        public void Patch(string[] destination, Library.Interface.ICompression patch)
         {
             if (m_partialDeltas == null)
                 m_partialDeltas = new Dictionary<string, Duplicati.Library.Core.TempFile>();
@@ -1323,7 +1323,7 @@ namespace Duplicati.Library.Main.RSync
         {
             if (m_patches != null)
             {
-                foreach (Core.IFileArchive arc in m_patches)
+                foreach (Library.Interface.ICompression arc in m_patches)
                     try { arc.Dispose(); }
                     catch { }
                 m_patches = null;
@@ -1520,9 +1520,9 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="patch">The signature volume to read</param>
         /// <returns>A list of file or folder names and their types</returns>
-        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(Core.IFileArchive patch)
+        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(Library.Interface.ICompression patch)
         {
-            List<Core.IFileArchive> patches = new List<Duplicati.Library.Core.IFileArchive>();
+            List<Library.Interface.ICompression> patches = new List<Library.Interface.ICompression>();
             patches.Add(patch);
             return ListPatchFiles(patches);
         }
@@ -1532,7 +1532,7 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="patchs">The signature volumes to read</param>
         /// <returns>A list of file or folder names and their types</returns>
-        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(List<Core.IFileArchive> patches)
+        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(List<Library.Interface.ICompression> patches)
         {
             List<KeyValuePair<PatchFileType, string>> files = new List<KeyValuePair<PatchFileType, string>>();
 
@@ -1547,7 +1547,7 @@ namespace Duplicati.Library.Main.RSync
             string control_prefix = Core.Utility.AppendDirSeperator(CONTROL_ROOT);
             Dictionary<string, bool> partials = new Dictionary<string, bool>();
 
-            foreach (Core.IFileArchive arch in patches)
+            foreach (Library.Interface.ICompression arch in patches)
             {
                 if (arch.FileExists(DELETED_FILES))
                     foreach (string s in FilenamesFromPlatformIndependant(arch.ReadAllLines(DELETED_FILES)))

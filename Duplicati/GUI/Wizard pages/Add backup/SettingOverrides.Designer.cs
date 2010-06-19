@@ -36,7 +36,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.ValueDataColumn = new System.Data.DataColumn();
             this.argumentDataColumn = new System.Data.DataColumn();
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.OptionGrid = new Duplicati.GUI.Wizard_pages.CommandLineOptionGrid();
+            this.OptionGrid = new Duplicati.GUI.HelperControls.CommandLineOptionGrid();
             ((System.ComponentModel.ISupportInitialize)(this.BaseDataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OverrideTable)).BeginInit();
             this.SuspendLayout();
@@ -109,6 +109,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Data.DataColumn ValueDataColumn;
         private System.Data.DataColumn argumentDataColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
-        private CommandLineOptionGrid OptionGrid;
+        private HelperControls.CommandLineOptionGrid OptionGrid;
     }
 }

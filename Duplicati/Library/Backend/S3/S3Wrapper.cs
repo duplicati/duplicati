@@ -24,6 +24,7 @@ using Affirma.ThreeSharp;
 using Affirma.ThreeSharp.Query;
 using Affirma.ThreeSharp.Model;
 using System.Xml;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
@@ -131,13 +132,13 @@ namespace Duplicati.Library.Backend
 
         }
 
-        public virtual List<FileEntry> ListBucket(string bucketName, string prefix)
+        public virtual List<IFileEntry> ListBucket(string bucketName, string prefix)
         {
             bool isTruncated = true;
             string filename = null;
 
             string redirUrl = GetRedirectUrl(bucketName, null);
-            List<FileEntry> files = new List<FileEntry>();
+            List<IFileEntry> files = new List<IFileEntry>();
 
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)

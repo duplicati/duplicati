@@ -603,6 +603,39 @@ namespace Duplicati.Library.Core
         /// Gets the string comparision that matches the client filesystems case sensitivity
         /// </summary>
         public static StringComparison ClientFilenameStringComparision { get { return Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase; } }
-	
+
+        /// <summary>
+        /// Searches the system paths for the file specified
+        /// </summary>
+        /// <param name="filename">The file to locate</param>
+        /// <returns>The full path to the file, or null if the file was not found</returns>
+        public static string LocateFileInSystemPath(string filename)
+        {
+            try
+            {
+                if (System.IO.Path.IsPathRooted(filename))
+                    return System.IO.File.Exists(filename) ? filename : null;
+
+                try { filename = System.IO.Path.GetFileName(filename); }
+                catch { }
+
+                string homedir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + System.IO.Path.PathSeparator.ToString();
+
+                //Look in application base folder and all system path folders
+                foreach (string s in (homedir + Environment.GetEnvironmentVariable("PATH")).Split(System.IO.Path.PathSeparator))
+                    if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
+                        try
+                        {
+                            foreach (string sx in System.IO.Directory.GetFiles(Environment.ExpandEnvironmentVariables(s), filename))
+                                return sx;
+                        }
+                        catch 
+                        { }
+            }
+            catch 
+            { }
+
+            return null;
+        }
     }
 }

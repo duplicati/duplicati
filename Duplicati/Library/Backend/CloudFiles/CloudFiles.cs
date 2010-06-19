@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Net;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
@@ -105,9 +106,9 @@ namespace Duplicati.Library.Backend
             get { return "cloudfiles"; }
         }
 
-        public List<FileEntry> List()
+        public List<IFileEntry> List()
         {
-            List<FileEntry> files = new List<FileEntry>();
+            List<IFileEntry> files = new List<IFileEntry>();
             string extraUrl = "?format=xml&limit=" + ITEM_LIST_LIMIT.ToString();
             string markerUrl = "";
 

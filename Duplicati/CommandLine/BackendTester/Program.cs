@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Duplicati.Library.Backend;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -65,12 +65,12 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
                 Console.WriteLine("Example: ftp://user:pass@server/folder");
                 Console.WriteLine();
-                Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.Backend.BackendLoader.Backends));
+                Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.DynamicLoader.BackendLoader.Keys));
 
                 Console.WriteLine();
                 List<string> lines = new List<string>();
-                foreach (Library.Backend.ICommandLineArgument arg in SupportedCommands)
-                    Library.Backend.CommandLineArgument.PrintArgument(lines, arg);
+                foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
+                    Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
 
                 foreach (string s in lines)
                     Console.WriteLine(s);
@@ -99,17 +99,17 @@ namespace Duplicati.CommandLine.BackendTester
             else
                 allowedChars += ExtendedChars;
 
-            Library.Backend.IBackend backend = Library.Backend.BackendLoader.GetBackend(args[0], options);
+            Library.Interface.IBackend backend = Library.DynamicLoader.BackendLoader.GetBackend(args[0], options);
             if (backend == null)
             {
                 Console.WriteLine("Unsupported backend");
                 Console.WriteLine();
-                Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.Backend.BackendLoader.Backends));
+                Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.DynamicLoader.BackendLoader.Keys));
                 return false;
             }
 
-            List<Library.Backend.FileEntry> curlist = backend.List();
-            foreach (Library.Backend.FileEntry fe in curlist)
+            List<Library.Interface.IFileEntry> curlist = backend.List();
+            foreach (Library.Interface.IFileEntry fe in curlist)
                 if (!fe.IsFolder)
                 {
                     if (options.ContainsKey("auto-clean") && first)
@@ -190,11 +190,11 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Core.Utility.FormatSizeString(new System.IO.FileInfo(System.IO.Path.Combine(tf, i.ToString())).Length));
                     try 
                     {
-                        if (backend is Library.Backend.IStreamingBackend && !disableStreaming)
+                        if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
                         {
                             using (System.IO.FileStream fs = new System.IO.FileStream(System.IO.Path.Combine(tf, i.ToString()), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                             using (NonSeekableStream nss = new NonSeekableStream(fs))
-                                (backend as Library.Backend.IStreamingBackend).Put(files[i].filename, nss);
+                                (backend as Library.Interface.IStreamingBackend).Put(files[i].filename, nss);
                         }
                         else
                             backend.Put(files[i].filename, System.IO.Path.Combine(tf, i.ToString())); 
@@ -209,7 +209,7 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine("Verifying file list ...");
 
                 curlist = backend.List();
-                foreach (Library.Backend.FileEntry fe in curlist)
+                foreach (Library.Interface.IFileEntry fe in curlist)
                     if (!fe.IsFolder)
                     {
                         bool found = false;
@@ -241,11 +241,11 @@ namespace Duplicati.CommandLine.BackendTester
                         Console.Write("Downloading file {0} ... ", i);
                         try 
                         {
-                            if (backend is Library.Backend.IStreamingBackend && !disableStreaming)
+                            if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
                             {
                                 using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                 using (NonSeekableStream nss = new NonSeekableStream(fs))
-                                    (backend as Library.Backend.IStreamingBackend).Get(files[i].filename, nss);
+                                    (backend as Library.Interface.IStreamingBackend).Get(files[i].filename, nss);
                             }
                             else
                                 backend.Get(files[i].filename, cf); 
@@ -277,7 +277,7 @@ namespace Duplicati.CommandLine.BackendTester
                     }
 
                 curlist = backend.List();
-                foreach (Library.Backend.FileEntry fe in curlist)
+                foreach (Library.Interface.IFileEntry fe in curlist)
                     if (!fe.IsFolder)
                     {
                         Console.WriteLine("*** Remote folder contains {0} after cleanup", fe.Name);

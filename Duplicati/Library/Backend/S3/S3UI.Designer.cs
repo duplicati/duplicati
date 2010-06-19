@@ -32,7 +32,6 @@ namespace Duplicati.Library.Backend
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.AWS_ID = new System.Windows.Forms.TextBox();
             this.AWS_KEY = new System.Windows.Forms.TextBox();
             this.BucketName = new System.Windows.Forms.TextBox();
             this.SignUpLink = new System.Windows.Forms.LinkLabel();
@@ -40,6 +39,7 @@ namespace Duplicati.Library.Backend
             this.UseEuroBuckets = new System.Windows.Forms.CheckBox();
             this.TestConnection = new System.Windows.Forms.Button();
             this.CreateBucket = new System.Windows.Forms.Button();
+            this.AWS_ID = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // label1
@@ -56,12 +56,6 @@ namespace Duplicati.Library.Backend
             // 
             resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            // 
-            // AWS_ID
-            // 
-            resources.ApplyResources(this.AWS_ID, "AWS_ID");
-            this.AWS_ID.Name = "AWS_ID";
-            this.AWS_ID.TextChanged += new System.EventHandler(this.AWS_ID_TextChanged);
             // 
             // AWS_KEY
             // 
@@ -108,10 +102,19 @@ namespace Duplicati.Library.Backend
             this.CreateBucket.UseVisualStyleBackColor = true;
             this.CreateBucket.Click += new System.EventHandler(this.CreateBucket_Click);
             // 
+            // AWS_ID
+            // 
+            this.AWS_ID.FormattingEnabled = true;
+            resources.ApplyResources(this.AWS_ID, "AWS_ID");
+            this.AWS_ID.Name = "AWS_ID";
+            this.AWS_ID.SelectedIndexChanged += new System.EventHandler(this.AWS_ID_SelectedIndexChanged);
+            this.AWS_ID.TextChanged += new System.EventHandler(this.AWS_ID_TextChanged);
+            // 
             // S3UI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.AWS_ID);
             this.Controls.Add(this.CreateBucket);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.UseEuroBuckets);
@@ -119,7 +122,6 @@ namespace Duplicati.Library.Backend
             this.Controls.Add(this.SignUpLink);
             this.Controls.Add(this.BucketName);
             this.Controls.Add(this.AWS_KEY);
-            this.Controls.Add(this.AWS_ID);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -135,7 +137,6 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox AWS_ID;
         private System.Windows.Forms.TextBox AWS_KEY;
         private System.Windows.Forms.TextBox BucketName;
         private System.Windows.Forms.LinkLabel SignUpLink;
@@ -143,5 +144,6 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.CheckBox UseEuroBuckets;
         private System.Windows.Forms.Button TestConnection;
         private System.Windows.Forms.Button CreateBucket;
+        private System.Windows.Forms.ComboBox AWS_ID;
     }
 }

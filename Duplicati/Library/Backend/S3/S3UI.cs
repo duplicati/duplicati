@@ -46,15 +46,18 @@ namespace Duplicati.Library.Backend
         
         private const string LOGIN_PAGE = "http://aws.amazon.com/s3";
         private IDictionary<string, string> m_options;
+        private IDictionary<string, string> m_applicationSettings;
+
         private bool m_hasTested;
         private bool m_hasCreatedbucket = false;
         private bool m_hasSuggestedPrefix = false;
         private bool m_hasSuggestedLowerCase = false;
 
-        public S3UI(IDictionary<string, string> options)
+        public S3UI(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
             : this()
         {
             m_options = options;
+            m_applicationSettings = applicationSettings;
         }
 
         private S3UI()
@@ -73,7 +76,7 @@ namespace Duplicati.Library.Backend
                 return false;
 
             if (!m_hasTested)
-                switch (MessageBox.Show(this, Backend.CommonStrings.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                switch (MessageBox.Show(this, Interface.CommonStrings.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
                         TestConnection_Click(null, null);
@@ -87,6 +90,14 @@ namespace Duplicati.Library.Backend
                 }
 
             Save();
+
+            Dictionary<string, string> tmp = new Dictionary<string, string>();
+            foreach (Core.ComboBoxItemPair<string> x in AWS_ID.Items)
+                tmp[x.ToString()] = x.Value;
+
+            tmp[AWS_ID.Text] = AWS_KEY.Text;
+            S3CommonOptions.EncodeAccounts(tmp, m_applicationSettings);
+
             return true;
         }
 
@@ -106,11 +117,14 @@ namespace Duplicati.Library.Backend
             if (bucketname.IndexOf("/") > 0)
                 bucketname = bucketname.Substring(0, bucketname.IndexOf("/"));
             m_options[SUBDOMAIN] = (bucketname.ToLower() == bucketname).ToString();
-
         }
 
         void S3UI_Load(object sender, EventArgs args)
         {
+            AWS_ID.Items.Clear();
+            foreach (KeyValuePair<string, string> x in S3CommonOptions.ExtractAccounts(m_applicationSettings))
+                AWS_ID.Items.Add(new Core.ComboBoxItemPair<string>(x.Key, x.Value));
+
             if (m_options.ContainsKey(ACCESS_ID))
                 AWS_ID.Text = m_options[ACCESS_ID];
             if (m_options.ContainsKey(ACCESS_KEY))
@@ -119,8 +133,16 @@ namespace Duplicati.Library.Backend
                 BucketName.Text = m_options[BUCKET_NAME];
 
             bool b;
-            if (!m_options.ContainsKey(EUROBUCKET) || !bool.TryParse(m_options[EUROBUCKET], out b))
-                b = false;
+
+            if (m_options.ContainsKey(EUROBUCKET))
+            {
+                if (!bool.TryParse(m_options[EUROBUCKET], out b))
+                    b = false;
+            }
+            else
+            {
+                b = S3CommonOptions.ExtractDefaultEUBuckets(m_applicationSettings);
+            }
             
             UseEuroBuckets.Checked = b;
 
@@ -167,7 +189,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
 
@@ -266,11 +288,11 @@ namespace Duplicati.Library.Backend
                     S3 s3 = new S3(destination, options);
                     s3.Test();
 
-                    MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                     m_hasCreatedbucket = true; //If the test succeeds, the bucket exists
                 }
-                catch (Backend.FolderMissingException)
+                catch (Interface.FolderMissingException)
                 {
                     switch (MessageBox.Show(this, Strings.S3UI.CreateMissingBucket, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                     {
@@ -284,7 +306,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {
@@ -316,6 +338,12 @@ namespace Duplicati.Library.Backend
             m_hasTested = false;
         }
 
+        private void AWS_ID_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (AWS_ID.SelectedItem as Core.ComboBoxItemPair<string> != null)
+                AWS_KEY.Text = (AWS_ID.SelectedItem as Core.ComboBoxItemPair<string>).Value;
+        }
+
         public static string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
             if (guiOptions.ContainsKey(ACCESS_ID) && !string.IsNullOrEmpty(guiOptions[ACCESS_ID]))
@@ -333,7 +361,7 @@ namespace Duplicati.Library.Backend
                 useSubDomain = false;
 
             if (!guiOptions.ContainsKey(BUCKET_NAME))
-                throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, BUCKET_NAME));
+                throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, BUCKET_NAME));
 
             string bucketName = guiOptions[BUCKET_NAME];
             string host = guiOptions.ContainsKey(SERVER_URL) ? guiOptions[SERVER_URL] : "";
@@ -379,18 +407,19 @@ namespace Duplicati.Library.Backend
                     S3 s3 = new S3(destination, options);
                     s3.CreateFolder();
 
-                    MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                     m_hasCreatedbucket = true;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 }
                 this.Cursor = c;
             }
 
         }
+
     }
 }

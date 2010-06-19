@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main
 {
@@ -36,6 +37,8 @@ namespace Duplicati.Library.Main
 
         private Dictionary<string, string> m_options;
 
+        private List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
+
         public Options(Dictionary<string, string> options)
         {
             m_options = options;
@@ -43,56 +46,76 @@ namespace Duplicati.Library.Main
 
         public Dictionary<string, string> RawOptions { get { return m_options; } }
 
-        public IList<Backend.ICommandLineArgument> SupportedCommands
+        /// <summary>
+        /// Returns a list of strings that are not supported on the commandline as options, but used internally
+        /// </summary>
+        public string[] InternalOptions
         {
             get
             {
-                return new List<Backend.ICommandLineArgument>(new Backend.ICommandLineArgument[] {
-                    new Backend.CommandLineArgument("full", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullShort, Strings.Options.FullLong),
-                    new Backend.CommandLineArgument("volsize", Backend.CommandLineArgument.ArgumentType.Size, Strings.Options.VolsizeShort, Strings.Options.VolsizeLong, "5mb"),
-                    new Backend.CommandLineArgument("totalsize", Backend.CommandLineArgument.ArgumentType.Size, Strings.Options.TotalsizeShort, Strings.Options.TotalsizeLong),
-                    new Backend.CommandLineArgument("auto-cleanup", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong),
-                    new Backend.CommandLineArgument("full-if-older-than", Backend.CommandLineArgument.ArgumentType.Timespan, Strings.Options.FullifolderthanShort, Strings.Options.FullifolderthanLong),
-                    new Backend.CommandLineArgument("allow-full-remove", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremoveShort, Strings.Options.AllowfullremoveLong),
+                return new string[] {
+                    "restore",
+                    "delete-older-than",
+                    "delete-all-but-n-full"
+                };
+            }
+        }
 
-                    new Backend.CommandLineArgument("signature-control-files", Backend.CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecontrolfilesShort, Strings.Options.SignaturecontrolfilesLong),
-                    new Backend.CommandLineArgument("signature-cache-path", Backend.CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecachepathShort, Strings.Options.SignaturecachepathLong),
-                    new Backend.CommandLineArgument("skip-file-hash-checks", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipfilehashchecksShort, Strings.Options.SkipfilehashchecksLong),
-                    new Backend.CommandLineArgument("dont-read-manifests", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontreadmanifestsShort, Strings.Options.DontreadmanifestsLong),
-                    new Backend.CommandLineArgument("file-to-restore", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.FiletorestoreShort, Strings.Options.FiletorestoreLong),
-                    new Backend.CommandLineArgument("restore-time", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.RestoretimeShort, Strings.Options.RestoretimeLong, "now"),
+        public IList<ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument("full", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullShort, Strings.Options.FullLong),
+                    new CommandLineArgument("volsize", CommandLineArgument.ArgumentType.Size, Strings.Options.VolsizeShort, Strings.Options.VolsizeLong, "5mb"),
+                    new CommandLineArgument("totalsize", CommandLineArgument.ArgumentType.Size, Strings.Options.TotalsizeShort, Strings.Options.TotalsizeLong),
+                    new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong),
+                    new CommandLineArgument("full-if-older-than", CommandLineArgument.ArgumentType.Timespan, Strings.Options.FullifolderthanShort, Strings.Options.FullifolderthanLong),
+                    new CommandLineArgument("allow-full-remove", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremoveShort, Strings.Options.AllowfullremoveLong),
 
-                    new Backend.CommandLineArgument("disable-filetime-check", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong),
-                    new Backend.CommandLineArgument("force", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
-                    new Backend.CommandLineArgument("tempdir", Backend.CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong),
-                    new Backend.CommandLineArgument("thread-priority", Backend.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"high", "abovenormal", "normal", "belownormal", "low", "idle" }),
+                    new CommandLineArgument("signature-control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecontrolfilesShort, Strings.Options.SignaturecontrolfilesLong),
+                    new CommandLineArgument("signature-cache-path", CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecachepathShort, Strings.Options.SignaturecachepathLong),
+                    new CommandLineArgument("skip-file-hash-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipfilehashchecksShort, Strings.Options.SkipfilehashchecksLong),
+                    new CommandLineArgument("dont-read-manifests", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontreadmanifestsShort, Strings.Options.DontreadmanifestsLong),
+                    new CommandLineArgument("file-to-restore", CommandLineArgument.ArgumentType.String, Strings.Options.FiletorestoreShort, Strings.Options.FiletorestoreLong),
+                    new CommandLineArgument("restore-time", CommandLineArgument.ArgumentType.String, Strings.Options.RestoretimeShort, Strings.Options.RestoretimeLong, "now"),
 
-                    new Backend.CommandLineArgument("backup-prefix", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.BackupprefixShort, Strings.Options.BackupprefixLong, "duplicati"),
-                    new Backend.CommandLineArgument("time-separator", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.TimeseparatorShort, Strings.Options.TimeseparatorLong, ":", new string[] {"time-seperator"}),
-                    new Backend.CommandLineArgument("short-filenames", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.ShortfilenamesShort, Strings.Options.ShortfilenamesLong),
+                    new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.String, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong),
+                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
+                    new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong),
+                    new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"high", "abovenormal", "normal", "belownormal", "low", "idle" }),
 
-                    new Backend.CommandLineArgument("include", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.IncludeShort, Strings.Options.IncludeLong),
-                    new Backend.CommandLineArgument("exclude", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.ExcludeShort, Strings.Options.ExcludeLong),
-                    new Backend.CommandLineArgument("include-regexp", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.IncluderegexpShort, Strings.Options.IncluderegexpLong),
-                    new Backend.CommandLineArgument("exclude-regexp", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.ExcluderegexpShort, Strings.Options.ExcluderegexpLong),
+                    new CommandLineArgument("backup-prefix", CommandLineArgument.ArgumentType.String, Strings.Options.BackupprefixShort, Strings.Options.BackupprefixLong, "duplicati"),
+                    new CommandLineArgument("time-separator", CommandLineArgument.ArgumentType.String, Strings.Options.TimeseparatorShort, Strings.Options.TimeseparatorLong, ":", new string[] {"time-seperator"}),
+                    new CommandLineArgument("short-filenames", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ShortfilenamesShort, Strings.Options.ShortfilenamesLong),
 
-                    new Backend.CommandLineArgument("passphrase", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),
-                    new Backend.CommandLineArgument("gpg-encryption", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.GpgencryptionShort, Strings.Options.GpgencryptionLong),
-                    new Backend.CommandLineArgument("gpg-program-path", Backend.CommandLineArgument.ArgumentType.Path, Strings.Options.GpgprogrampathShort, Strings.Options.GpgprogrampathLong, "gpg"),
-                    new Backend.CommandLineArgument("sign-key", Backend.CommandLineArgument.ArgumentType.String, Strings.Options.SignkeyShort, Strings.Options.SignkeyLong),
-                    new Backend.CommandLineArgument("no-encryption", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoencryptionShort, Strings.Options.NoencryptionLong),
+                    new CommandLineArgument("include", CommandLineArgument.ArgumentType.String, Strings.Options.IncludeShort, Strings.Options.IncludeLong),
+                    new CommandLineArgument("exclude", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludeShort, Strings.Options.ExcludeLong),
+                    new CommandLineArgument("include-regexp", CommandLineArgument.ArgumentType.String, Strings.Options.IncluderegexpShort, Strings.Options.IncluderegexpLong),
+                    new CommandLineArgument("exclude-regexp", CommandLineArgument.ArgumentType.String, Strings.Options.ExcluderegexpShort, Strings.Options.ExcluderegexpLong),
 
-                    new Backend.CommandLineArgument("number-of-retries", Backend.CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, "5"),
-                    new Backend.CommandLineArgument("retry-delay", Backend.CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, "10s"),
-                    new Backend.CommandLineArgument("asynchronous-upload", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false"),
-                    new Backend.CommandLineArgument("disable-streaming-transfers", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
+                    new CommandLineArgument("passphrase", CommandLineArgument.ArgumentType.String, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),
+                    new CommandLineArgument("gpg-encryption", CommandLineArgument.ArgumentType.Boolean, Strings.Options.GpgencryptionShort, Strings.Options.GpgencryptionLong, "false", null, null, Strings.Options.GpgencryptionDeprecated),
+                    new CommandLineArgument("no-encryption", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoencryptionShort, Strings.Options.NoencryptionLong, "false"),
 
-                    new Backend.CommandLineArgument("max-upload-pr-second", Backend.CommandLineArgument.ArgumentType.Size, Strings.Options.MaxuploadprsecondShort, Strings.Options.MaxuploadprsecondLong),
-                    new Backend.CommandLineArgument("max-download-pr-second", Backend.CommandLineArgument.ArgumentType.Size, Strings.Options.MaxdownloadprsecondShort, Strings.Options.MaxdownloadprsecondLong),
-                    new Backend.CommandLineArgument("skip-files-larger-than", Backend.CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
+                    new CommandLineArgument("number-of-retries", CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, "5"),
+                    new CommandLineArgument("retry-delay", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, "10s"),
+                    new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false"),
+                    new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
+
+                    new CommandLineArgument("max-upload-pr-second", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxuploadprsecondShort, Strings.Options.MaxuploadprsecondLong),
+                    new CommandLineArgument("max-download-pr-second", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxdownloadprsecondShort, Strings.Options.MaxdownloadprsecondLong),
+                    new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
                     
-                    new Backend.CommandLineArgument("allow-sourcefolder-change", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsourcefolderchangeShort, Strings.Options.AllowsourcefolderchangeLong, "false"),
-                    new Backend.CommandLineArgument("full-if-sourcefolder-changed", Backend.CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullifsourcefolderchangedShort, Strings.Options.FullifsourcefolderchangedLong, "false"),
+                    new CommandLineArgument("allow-sourcefolder-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsourcefolderchangeShort, Strings.Options.AllowsourcefolderchangeLong, "false"),
+                    new CommandLineArgument("full-if-sourcefolder-changed", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullifsourcefolderchangedShort, Strings.Options.FullifsourcefolderchangedLong, "false"),
+
+                    new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
+                    new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
+
+                    new CommandLineArgument("enable-module", CommandLineArgument.ArgumentType.String, Strings.Options.EnablemoduleShort, Strings.Options.EnablemoduleLong),
+                    new CommandLineArgument("disable-module", CommandLineArgument.ArgumentType.String, Strings.Options.DisablemoduleShort, Strings.Options.DisablemoduleLong),
+
                 });
             }
         }
@@ -344,12 +367,12 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("remove-all-but-n-full") || string.IsNullOrEmpty(m_options["remove-all-but-n-full"]))
-                    throw new Exception("No count given for \"Remove All But N Full\"");
+                if (!m_options.ContainsKey("delete-all-but-n-full") || string.IsNullOrEmpty(m_options["delete-all-but-n-full"]))
+                    throw new Exception("No count given for \"Delete All But N Full\"");
 
-                int x = int.Parse(m_options["remove-all-but-n-full"]);
-                if (x <= 0)
-                    throw new Exception("Invalid count for remove-all-but-n-full, must be greater than zero");
+                int x = int.Parse(m_options["delete-all-but-n-full"]);
+                if (x < 0)
+                    throw new Exception("Invalid count for delete-all-but-n-full, must be greater than zero");
 
                 return x;
             }
@@ -362,10 +385,10 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("remove-older-than"))
-                    throw new Exception("No count given for \"Remove Older Than\"");
+                if (!m_options.ContainsKey("delete-older-than"))
+                    throw new Exception("No count given for \"Delete Older Than\"");
 
-                return Core.Timeparser.ParseTimeInterval(m_options["remove-older-than"], DateTime.Now, true);
+                return Core.Timeparser.ParseTimeInterval(m_options["delete-older-than"], DateTime.Now, true);
             }
         }
 
@@ -384,45 +407,54 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets GnuPG program path
-        /// </summary>
-        public string GPGPath
-        {
-            get
-            {
-                if (!m_options.ContainsKey("gpg-program-path") || string.IsNullOrEmpty(m_options["gpg-program-path"]))
-                    return "gpg";
-                else
-                    return m_options["gpg-program-path"];
-            }
-        }
-
-        /// <summary>
-        /// Gets the GPG sign key
-        /// </summary>
-        public string GPGSignKey
-        {
-            get
-            {
-                if (!m_options.ContainsKey("sign-key") || string.IsNullOrEmpty(m_options["sign-key"]))
-                    return null;
-                else
-                    return m_options["sign-key"];
-            }
-        }
-
-        /// <summary>
         /// A value indicating if backups are not encrypted
         /// </summary>
         public bool NoEncryption { get { return GetBool("no-encryption"); } }
 
         /// <summary>
-        /// A value indicating if GPG encryption is used
+        /// Gets the module used for encryption
         /// </summary>
-        public bool GPGEncryption 
+        public string EncryptionModule
+        {
+            get
+            {
+                //Disabled?
+                if (NoEncryption)
+                    return null;
+
+                //Specified?
+                if (m_options.ContainsKey("encryption-module"))
+                    return m_options["encryption-module"];
+
+                //Default, support the deprecated --gpg-encryption flag
+                if (GPGEncryption)
+                    return "gpg";
+                else
+                    return "aes";
+            }
+        }
+
+        /// <summary>
+        /// [DEPRECATED] A value indicating if GPG encryption is used
+        /// </summary>
+        private bool GPGEncryption 
         { 
             get { return GetBool("gpg-encryption"); }
             set { m_options["gpg-encryption"] = value.ToString(); }
+        }
+
+        /// <summary>
+        /// Gets the module used for compression
+        /// </summary>
+        public string CompressionModule
+        {
+            get
+            {
+                if (m_options.ContainsKey("compression-module"))
+                    return m_options["compression-module"];
+                else
+                    return "zip";
+            }
         }
 
 
@@ -522,6 +554,39 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool AllowFullRemoval { get { return GetBool("allow-full-removal"); } }
 
+
+        /// <summary>
+        /// Gets a list of modules that should be loaded
+        /// </summary>
+        public string[] EnableModules
+        {
+            get
+            {
+                if (m_options.ContainsKey("enable-module"))
+                    return m_options["enable-module"].Trim().ToLower().Split(',');
+                else
+                    return new string[0];
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of modules that should not be loaded
+        /// </summary>
+        public string[] DisableModules
+        {
+            get
+            {
+                if (m_options.ContainsKey("disable-module"))
+                    return m_options["disable-module"].Trim().ToLower().Split(',');
+                else
+                    return new string[0];
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of modules, the key indicates if they are loaded 
+        /// </summary>
+        public List<KeyValuePair<bool, Library.Interface.IGenericModule>> LoadedModules { get { return m_loadedModules; } }
 
         private bool GetBool(string name)
         {

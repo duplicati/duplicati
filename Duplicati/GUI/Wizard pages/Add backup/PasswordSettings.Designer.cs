@@ -32,19 +32,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.EnablePassword = new System.Windows.Forms.CheckBox();
             this.Password = new System.Windows.Forms.TextBox();
             this.PasswordHelptext = new System.Windows.Forms.Label();
-            this.PasswordGeneratorSettings = new System.Windows.Forms.GroupBox();
-            this.PasswordCharacterSet = new System.Windows.Forms.ComboBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.GeneratePassword = new System.Windows.Forms.Button();
-            this.PassphraseLength = new System.Windows.Forms.NumericUpDown();
-            this.label2 = new System.Windows.Forms.Label();
             this.UseSettingsAsDefault = new System.Windows.Forms.CheckBox();
-            this.EncryptionMethod = new System.Windows.Forms.GroupBox();
-            this.UseGPGEncryption = new System.Windows.Forms.RadioButton();
-            this.UseAESEncryption = new System.Windows.Forms.RadioButton();
-            this.PasswordGeneratorSettings.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.PassphraseLength)).BeginInit();
-            this.EncryptionMethod.SuspendLayout();
+            this.label1 = new System.Windows.Forms.Label();
+            this.EncryptionModule = new System.Windows.Forms.ComboBox();
+            this.GeneratePasswordButton = new System.Windows.Forms.Button();
+            this.EncryptionControlContainer = new System.Windows.Forms.Panel();
             this.SuspendLayout();
             // 
             // EnablePassword
@@ -67,115 +59,49 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             resources.ApplyResources(this.PasswordHelptext, "PasswordHelptext");
             this.PasswordHelptext.Name = "PasswordHelptext";
             // 
-            // PasswordGeneratorSettings
-            // 
-            this.PasswordGeneratorSettings.Controls.Add(this.PasswordCharacterSet);
-            this.PasswordGeneratorSettings.Controls.Add(this.label3);
-            this.PasswordGeneratorSettings.Controls.Add(this.GeneratePassword);
-            this.PasswordGeneratorSettings.Controls.Add(this.PassphraseLength);
-            this.PasswordGeneratorSettings.Controls.Add(this.label2);
-            resources.ApplyResources(this.PasswordGeneratorSettings, "PasswordGeneratorSettings");
-            this.PasswordGeneratorSettings.Name = "PasswordGeneratorSettings";
-            this.PasswordGeneratorSettings.TabStop = false;
-            // 
-            // PasswordCharacterSet
-            // 
-            resources.ApplyResources(this.PasswordCharacterSet, "PasswordCharacterSet");
-            this.PasswordCharacterSet.FormattingEnabled = true;
-            this.PasswordCharacterSet.Items.AddRange(new object[] {
-            resources.GetString("PasswordCharacterSet.Items"),
-            resources.GetString("PasswordCharacterSet.Items1"),
-            resources.GetString("PasswordCharacterSet.Items2"),
-            resources.GetString("PasswordCharacterSet.Items3"),
-            resources.GetString("PasswordCharacterSet.Items4"),
-            resources.GetString("PasswordCharacterSet.Items5"),
-            resources.GetString("PasswordCharacterSet.Items6"),
-            resources.GetString("PasswordCharacterSet.Items7")});
-            this.PasswordCharacterSet.Name = "PasswordCharacterSet";
-            // 
-            // label3
-            // 
-            resources.ApplyResources(this.label3, "label3");
-            this.label3.Name = "label3";
-            // 
-            // GeneratePassword
-            // 
-            resources.ApplyResources(this.GeneratePassword, "GeneratePassword");
-            this.GeneratePassword.Name = "GeneratePassword";
-            this.GeneratePassword.UseVisualStyleBackColor = true;
-            this.GeneratePassword.Click += new System.EventHandler(this.GeneratePassword_Click);
-            // 
-            // PassphraseLength
-            // 
-            resources.ApplyResources(this.PassphraseLength, "PassphraseLength");
-            this.PassphraseLength.Maximum = new decimal(new int[] {
-            64,
-            0,
-            0,
-            0});
-            this.PassphraseLength.Minimum = new decimal(new int[] {
-            8,
-            0,
-            0,
-            0});
-            this.PassphraseLength.Name = "PassphraseLength";
-            this.PassphraseLength.Value = new decimal(new int[] {
-            12,
-            0,
-            0,
-            0});
-            // 
-            // label2
-            // 
-            resources.ApplyResources(this.label2, "label2");
-            this.label2.Name = "label2";
-            // 
             // UseSettingsAsDefault
             // 
             resources.ApplyResources(this.UseSettingsAsDefault, "UseSettingsAsDefault");
             this.UseSettingsAsDefault.Name = "UseSettingsAsDefault";
             this.UseSettingsAsDefault.UseVisualStyleBackColor = true;
             // 
-            // EncryptionMethod
+            // label1
             // 
-            this.EncryptionMethod.Controls.Add(this.UseGPGEncryption);
-            this.EncryptionMethod.Controls.Add(this.UseAESEncryption);
-            resources.ApplyResources(this.EncryptionMethod, "EncryptionMethod");
-            this.EncryptionMethod.Name = "EncryptionMethod";
-            this.EncryptionMethod.TabStop = false;
+            resources.ApplyResources(this.label1, "label1");
+            this.label1.Name = "label1";
             // 
-            // UseGPGEncryption
+            // EncryptionModule
             // 
-            resources.ApplyResources(this.UseGPGEncryption, "UseGPGEncryption");
-            this.UseGPGEncryption.Name = "UseGPGEncryption";
-            this.UseGPGEncryption.UseVisualStyleBackColor = true;
-            this.UseGPGEncryption.CheckedChanged += new System.EventHandler(this.UseGPGEncryption_CheckedChanged);
+            this.EncryptionModule.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.EncryptionModule.FormattingEnabled = true;
+            resources.ApplyResources(this.EncryptionModule, "EncryptionModule");
+            this.EncryptionModule.Name = "EncryptionModule";
+            this.EncryptionModule.SelectedIndexChanged += new System.EventHandler(this.EncryptionModule_SelectedIndexChanged);
             // 
-            // UseAESEncryption
+            // GeneratePasswordButton
             // 
-            resources.ApplyResources(this.UseAESEncryption, "UseAESEncryption");
-            this.UseAESEncryption.Checked = true;
-            this.UseAESEncryption.Name = "UseAESEncryption";
-            this.UseAESEncryption.TabStop = true;
-            this.UseAESEncryption.UseVisualStyleBackColor = true;
-            this.UseAESEncryption.CheckedChanged += new System.EventHandler(this.UseAESEncryption_CheckedChanged);
+            resources.ApplyResources(this.GeneratePasswordButton, "GeneratePasswordButton");
+            this.GeneratePasswordButton.Name = "GeneratePasswordButton";
+            this.GeneratePasswordButton.UseVisualStyleBackColor = true;
+            // 
+            // EncryptionControlContainer
+            // 
+            resources.ApplyResources(this.EncryptionControlContainer, "EncryptionControlContainer");
+            this.EncryptionControlContainer.Name = "EncryptionControlContainer";
             // 
             // PasswordSettings
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.EncryptionMethod);
+            this.Controls.Add(this.EncryptionControlContainer);
+            this.Controls.Add(this.GeneratePasswordButton);
+            this.Controls.Add(this.EncryptionModule);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.UseSettingsAsDefault);
-            this.Controls.Add(this.PasswordGeneratorSettings);
             this.Controls.Add(this.PasswordHelptext);
             this.Controls.Add(this.Password);
             this.Controls.Add(this.EnablePassword);
             this.Name = "PasswordSettings";
-            this.PasswordGeneratorSettings.ResumeLayout(false);
-            this.PasswordGeneratorSettings.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.PassphraseLength)).EndInit();
-            this.EncryptionMethod.ResumeLayout(false);
-            this.EncryptionMethod.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -186,15 +112,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.CheckBox EnablePassword;
         private System.Windows.Forms.TextBox Password;
         private System.Windows.Forms.Label PasswordHelptext;
-        private System.Windows.Forms.GroupBox PasswordGeneratorSettings;
-        private System.Windows.Forms.Button GeneratePassword;
-        private System.Windows.Forms.NumericUpDown PassphraseLength;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.ComboBox PasswordCharacterSet;
-        private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox UseSettingsAsDefault;
-        private System.Windows.Forms.GroupBox EncryptionMethod;
-        private System.Windows.Forms.RadioButton UseGPGEncryption;
-        private System.Windows.Forms.RadioButton UseAESEncryption;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.ComboBox EncryptionModule;
+        private System.Windows.Forms.Button GeneratePasswordButton;
+        private System.Windows.Forms.Panel EncryptionControlContainer;
     }
 }

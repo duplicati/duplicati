@@ -146,7 +146,7 @@ namespace Duplicati.Library.Main
 
                     using (Core.TempFolder tempfolder = new Duplicati.Library.Core.TempFolder())
                     {
-                        List<Core.IFileArchive> patches = new List<Duplicati.Library.Core.IFileArchive>();
+                        List<Library.Interface.ICompression> patches = new List<Duplicati.Library.Interface.ICompression>();
                         if (!full)
                         {
                             m_incrementalFraction = INCREMENAL_COST;
@@ -242,11 +242,11 @@ namespace Duplicati.Library.Main
 
                                     CheckLiveControl();
 
-                                    using (Compression.FileArchiveZip signaturearchive = Duplicati.Library.Compression.FileArchiveZip.CreateArchive(signaturefile))
-                                    using (Compression.FileArchiveZip contentarchive = Duplicati.Library.Compression.FileArchiveZip.CreateArchive(contentfile))
+                                    using (Library.Interface.ICompression signaturearchive = DynamicLoader.CompressionLoader.GetModule(m_options.CompressionModule, signaturefile, m_options.RawOptions))
+                                    using (Library.Interface.ICompression contentarchive = DynamicLoader.CompressionLoader.GetModule(m_options.CompressionModule, contentfile, m_options.RawOptions))
                                     {
                                         //If we are all out, stop now, this may cause incomplete partial files
-                                        if (m_options.MaxSize - totalsize < contentarchive.FlushBufferSize)
+                                        if (m_options.MaxSize - totalsize < (contentarchive.FlushBufferSize + backend.FileSizeOverhead))
                                             break;
 
                                         //Add signature files to archive
@@ -259,9 +259,9 @@ namespace Duplicati.Library.Main
                                         //Only add control files to the very first volume
                                         controlfiles.Clear();
 
-                                        done = dir.MakeMultiPassDiff(signaturearchive, contentarchive, Math.Min(m_options.VolumeSize, m_options.MaxSize - totalsize));
+                                        done = dir.MakeMultiPassDiff(signaturearchive, contentarchive, (Math.Min(m_options.VolumeSize, m_options.MaxSize - totalsize)) - backend.FileSizeOverhead);
 
-                                        //TODO: This is not the correct size
+                                        //TODO: This is not the correct size, we need to account for file size overhead as well
                                         totalsize += signaturearchive.Size;
                                         totalsize += contentarchive.Size;
 
@@ -517,7 +517,7 @@ namespace Duplicati.Library.Main
                                              using (new Logging.Timer("Get " + signatureVol.Filename))
                                                  backend.Get(signatureVol, sigFile, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[signatureVol.Volumenumber - 1]);
 
-                                             using (Core.IFileArchive patch = new Compression.FileArchiveZip(sigFile))
+                                             using (Library.Interface.ICompression patch = DynamicLoader.CompressionLoader.GetModule(signatureVol.Compression, sigFile, m_options.RawOptions))
                                              {
                                                  foreach(KeyValuePair<RSync.RSyncDir.PatchFileType, string> k in sync.ListPatchFiles(patch))
                                                      if (filter.ShouldInclude("", System.IO.Path.DirectorySeparatorChar.ToString() + k.Value))
@@ -541,8 +541,8 @@ namespace Duplicati.Library.Main
 
                                     OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
                                     
-                                    using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + target))
-                                    using(Core.IFileArchive patch = new Compression.FileArchiveZip(patchzip))
+                                    using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
+                                    using (Library.Interface.ICompression patch = DynamicLoader.CompressionLoader.GetModule(contentVol.Compression, patchzip, m_options.RawOptions))
                                         sync.Patch(target, patch);
                                 }
                                 patchno++;
@@ -619,7 +619,7 @@ namespace Duplicati.Library.Main
                                 using (new Logging.Timer("Get " + be.Volumes[0].Key.Filename))
                                     backend.Get(be.Volumes[0].Key, z, mf.SignatureHashes == null ? null : mf.SignatureHashes[0]);
                                 
-                                using(Compression.FileArchiveZip fz = new Duplicati.Library.Compression.FileArchiveZip(z))
+                                using(Library.Interface.ICompression fz = DynamicLoader.CompressionLoader.GetModule(be.Volumes[0].Key.Compression, z, m_options.RawOptions))
                                 {
                                     bool any = false;
                                     foreach (string f in fz.ListFiles(prefix))
@@ -654,7 +654,7 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
-        public string RemoveAllButNFull()
+        public string DeleteAllButNFull()
         {
             int x = Math.Max(0, m_options.RemoveAllButNFull);
 
@@ -699,7 +699,7 @@ namespace Duplicati.Library.Main
             return sb.ToString();
         }
 
-        public string RemoveOlderThan()
+        public string DeleteOlderThan()
         {
             StringBuilder sb = new StringBuilder();
 
@@ -799,7 +799,7 @@ namespace Duplicati.Library.Main
             SetupCommonOptions();
 
             List<string> res = new List<string>();
-            Duplicati.Library.Backend.IBackend i = new Duplicati.Library.Backend.BackendLoader(m_backend, m_options.RawOptions);
+            Duplicati.Library.Interface.IBackend i = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
 
             if (i == null)
                 throw new Exception(string.Format(Strings.Interface.BackendNotFoundError, m_backend));
@@ -808,7 +808,7 @@ namespace Duplicati.Library.Main
                 OperationStarted(this, DuplicatiOperation.List, 0, -1, Strings.Interface.StatusStarted, "");
 
             using(i)
-                foreach (Duplicati.Library.Backend.FileEntry fe in i.List())
+                foreach (Duplicati.Library.Interface.IFileEntry fe in i.List())
                     res.Add(fe.Name);
 
             if (OperationCompleted != null)
@@ -885,7 +885,7 @@ namespace Duplicati.Library.Main
                 entries.Add(bestFit);
                 entries.AddRange(bestFit.Incrementals);
 
-                List<Core.IFileArchive> patches = FindPatches(backend, entries, basefolder);
+                List<Library.Interface.ICompression> patches = FindPatches(backend, entries, basefolder);
 
                 using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { basefolder }, rs, filter, patches))
                     res = dir.UnmatchedFiles();
@@ -933,6 +933,16 @@ namespace Duplicati.Library.Main
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
                 System.Threading.Thread.CurrentThread.Priority = Core.Utility.ParsePriority(m_options.ThreadPriority);
+
+            //Load all generic modules
+            m_options.LoadedModules.Clear();
+
+            foreach (Library.Interface.IGenericModule m in DynamicLoader.GenericLoader.Modules)
+                m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(Array.IndexOf<string>(m_options.DisableModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(m_options.EnableModules, m.Key.ToLower()) >= 0), m));
+
+            foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
+                if (mx.Key)
+                    mx.Value.Configure(m_options.RawOptions);
         }
 
         /// <summary>
@@ -942,9 +952,9 @@ namespace Duplicati.Library.Main
         /// <param name="entries">The flattened list of manifests</param>
         /// <param name="tempfolder">The tempfolder set for this operation</param>
         /// <returns>A list of file archives</returns>
-        private List<Core.IFileArchive> FindPatches(BackendWrapper backend, List<ManifestEntry> entries, string tempfolder)
+        private List<Library.Interface.ICompression> FindPatches(BackendWrapper backend, List<ManifestEntry> entries, string tempfolder)
         {
-            List<Core.IFileArchive> patches = new List<Core.IFileArchive>();
+            List<Library.Interface.ICompression> patches = new List<Library.Interface.ICompression>();
 
             using (new Logging.Timer("Reading incremental data"))
             {
@@ -1003,7 +1013,7 @@ namespace Duplicati.Library.Main
                         using (new Logging.Timer("Get " + bes.Key.Filename))
                             backend.Get(bes.Key, filename, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[bes.Key.Volumenumber - 1]);
 
-                        patches.Add(new Compression.FileArchiveZip(filename));
+                        patches.Add(DynamicLoader.CompressionLoader.GetModule(bes.Key.Compression, filename, m_options.RawOptions));
                     }
                 }
             }
@@ -1037,7 +1047,7 @@ namespace Duplicati.Library.Main
 
                 using (Core.TempFolder folder = new Duplicati.Library.Core.TempFolder())
                 {
-                    List<Core.IFileArchive> patches = FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder);
+                    List<Library.Interface.ICompression> patches = FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder);
                     using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { folder }, new CommunicationStatistics(), null))
                         return dir.ListPatchFiles(patches);
                 }
@@ -1050,7 +1060,7 @@ namespace Duplicati.Library.Main
             FilenameStrategy cachenames = BackendWrapper.CreateCacheFilenameStrategy();
             foreach (string s in Core.Utility.EnumerateFiles(folder))
             {
-                BackupEntryBase e = cachenames.ParseFilename(new Duplicati.Library.Backend.FileEntry(System.IO.Path.GetFileName(s)));
+                BackupEntryBase e = cachenames.ParseFilename(new Duplicati.Library.Interface.FileEntry(System.IO.Path.GetFileName(s)));
                 if (e is SignatureEntry)
                 {
                     try { System.IO.File.Delete(s); }
@@ -1103,16 +1113,16 @@ namespace Duplicati.Library.Main
                 return i.ListSourceFolders();
         }
 
-        public static string RemoveAllButNFull(string target, Dictionary<string, string> options)
+        public static string DeleteAllButNFull(string target, Dictionary<string, string> options)
         {
             using (Interface i = new Interface(target, options))
-                return i.RemoveAllButNFull();
+                return i.DeleteAllButNFull();
         }
 
-        public static string RemoveOlderThan(string target, Dictionary<string, string> options)
+        public static string DeleteOlderThan(string target, Dictionary<string, string> options)
         {
             using (Interface i = new Interface(target, options))
-                return i.RemoveOlderThan();
+                return i.DeleteOlderThan();
         }
 
         public static string Cleanup(string target, Dictionary<string, string> options)

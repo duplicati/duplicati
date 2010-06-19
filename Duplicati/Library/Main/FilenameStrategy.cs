@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main
                 return filename + "." + VOLUME + ((PayloadEntryBase)type).Volumenumber.ToString();
         }
 
-        public BackupEntryBase ParseFilename(Duplicati.Library.Backend.FileEntry fe)
+        public BackupEntryBase ParseFilename(Duplicati.Library.Interface.IFileEntry fe)
         {
             Match m = m_filenameRegExp.Match(fe.Name);
             if (!m.Success)

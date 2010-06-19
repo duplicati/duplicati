@@ -121,6 +121,10 @@
   <data name="label1.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="label1.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
     <value>8, 48</value>
@@ -145,58 +149,6 @@
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
     <value>5</value>
-  </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="GPGPath.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
-  </data>
-  <data name="GPGPath.Location" type="System.Drawing.Point, System.Drawing">
-    <value>128, 24</value>
-  </data>
-  <data name="GPGPath.Size" type="System.Drawing.Size, System.Drawing">
-    <value>276, 20</value>
-  </data>
-  <data name="GPGPath.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;GPGPath.Name" xml:space="preserve">
-    <value>GPGPath</value>
-  </data>
-  <data name="&gt;&gt;GPGPath.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;GPGPath.Parent" xml:space="preserve">
-    <value>groupBox2</value>
-  </data>
-  <data name="&gt;&gt;GPGPath.ZOrder" xml:space="preserve">
-    <value>12</value>
-  </data>
-  <data name="label2.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 24</value>
-  </data>
-  <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>54, 13</value>
-  </data>
-  <data name="label2.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="label2.Text" xml:space="preserve">
-    <value>GPG path</value>
-  </data>
-  <data name="&gt;&gt;label2.Name" xml:space="preserve">
-    <value>label2</value>
-  </data>
-  <data name="&gt;&gt;label2.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;label2.Parent" xml:space="preserve">
-    <value>groupBox2</value>
-  </data>
-  <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>13</value>
   </data>
   <data name="StartupDelayDuration.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Right</value>
@@ -224,6 +176,9 @@
   </data>
   <data name="label7.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
+  </data>
+  <data name="label7.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="label7.Location" type="System.Drawing.Point, System.Drawing">
     <value>8, 72</value>
@@ -275,6 +230,9 @@
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
+  </data>
+  <data name="label3.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
     <value>8, 24</value>
@@ -354,8 +312,11 @@
   <data name="CacheSizeLabel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="CacheSizeLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="CacheSizeLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>128, 128</value>
+    <value>128, 80</value>
   </data>
   <data name="CacheSizeLabel.Size" type="System.Drawing.Size, System.Drawing">
     <value>125, 13</value>
@@ -378,8 +339,11 @@
   <data name="&gt;&gt;CacheSizeLabel.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
+  <data name="ClearCacheButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="ClearCacheButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>336, 120</value>
+    <value>336, 72</value>
   </data>
   <data name="ClearCacheButton.Size" type="System.Drawing.Size, System.Drawing">
     <value>88, 23</value>
@@ -405,8 +369,11 @@
   <data name="SignatureCacheEnabled.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="SignatureCacheEnabled.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="SignatureCacheEnabled.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 96</value>
+    <value>8, 48</value>
   </data>
   <data name="SignatureCacheEnabled.Size" type="System.Drawing.Size, System.Drawing">
     <value>104, 17</value>
@@ -432,8 +399,11 @@
   <data name="SignatureCachePathBrowse.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
   </data>
+  <data name="SignatureCachePathBrowse.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="SignatureCachePathBrowse.Location" type="System.Drawing.Point, System.Drawing">
-    <value>404, 96</value>
+    <value>404, 48</value>
   </data>
   <data name="SignatureCachePathBrowse.Size" type="System.Drawing.Size, System.Drawing">
     <value>24, 20</value>
@@ -460,7 +430,7 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="SignatureCachePath.Location" type="System.Drawing.Point, System.Drawing">
-    <value>128, 96</value>
+    <value>128, 48</value>
   </data>
   <data name="SignatureCachePath.Size" type="System.Drawing.Size, System.Drawing">
     <value>276, 20</value>
@@ -483,8 +453,11 @@
   <data name="TempPathBrowse.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
   </data>
+  <data name="TempPathBrowse.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="TempPathBrowse.Location" type="System.Drawing.Point, System.Drawing">
-    <value>404, 72</value>
+    <value>404, 24</value>
   </data>
   <data name="TempPathBrowse.Size" type="System.Drawing.Size, System.Drawing">
     <value>24, 20</value>
@@ -511,7 +484,7 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="TempPath.Location" type="System.Drawing.Point, System.Drawing">
-    <value>128, 72</value>
+    <value>128, 24</value>
   </data>
   <data name="TempPath.Size" type="System.Drawing.Size, System.Drawing">
     <value>276, 20</value>
@@ -534,8 +507,11 @@
   <data name="label4.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="label4.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 72</value>
+    <value>8, 24</value>
   </data>
   <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
     <value>86, 13</value>
@@ -558,111 +534,6 @@
   <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
     <value>7</value>
   </data>
-  <data name="BrowseSFTP.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Right</value>
-  </data>
-  <data name="BrowseSFTP.Location" type="System.Drawing.Point, System.Drawing">
-    <value>404, 48</value>
-  </data>
-  <data name="BrowseSFTP.Size" type="System.Drawing.Size, System.Drawing">
-    <value>24, 20</value>
-  </data>
-  <data name="BrowseSFTP.TabIndex" type="System.Int32, mscorlib">
-    <value>16</value>
-  </data>
-  <data name="BrowseSFTP.Text" xml:space="preserve">
-    <value>...</value>
-  </data>
-  <data name="&gt;&gt;BrowseSFTP.Name" xml:space="preserve">
-    <value>BrowseSFTP</value>
-  </data>
-  <data name="&gt;&gt;BrowseSFTP.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;BrowseSFTP.Parent" xml:space="preserve">
-    <value>groupBox2</value>
-  </data>
-  <data name="&gt;&gt;BrowseSFTP.ZOrder" xml:space="preserve">
-    <value>8</value>
-  </data>
-  <data name="SFTPPath.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
-  </data>
-  <data name="SFTPPath.Location" type="System.Drawing.Point, System.Drawing">
-    <value>128, 48</value>
-  </data>
-  <data name="SFTPPath.Size" type="System.Drawing.Size, System.Drawing">
-    <value>276, 20</value>
-  </data>
-  <data name="SFTPPath.TabIndex" type="System.Int32, mscorlib">
-    <value>15</value>
-  </data>
-  <data name="&gt;&gt;SFTPPath.Name" xml:space="preserve">
-    <value>SFTPPath</value>
-  </data>
-  <data name="&gt;&gt;SFTPPath.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SFTPPath.Parent" xml:space="preserve">
-    <value>groupBox2</value>
-  </data>
-  <data name="&gt;&gt;SFTPPath.ZOrder" xml:space="preserve">
-    <value>9</value>
-  </data>
-  <data name="label6.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="label6.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 48</value>
-  </data>
-  <data name="label6.Size" type="System.Drawing.Size, System.Drawing">
-    <value>48, 13</value>
-  </data>
-  <data name="label6.TabIndex" type="System.Int32, mscorlib">
-    <value>14</value>
-  </data>
-  <data name="label6.Text" xml:space="preserve">
-    <value>sftp path</value>
-  </data>
-  <data name="&gt;&gt;label6.Name" xml:space="preserve">
-    <value>label6</value>
-  </data>
-  <data name="&gt;&gt;label6.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;label6.Parent" xml:space="preserve">
-    <value>groupBox2</value>
-  </data>
-  <data name="&gt;&gt;label6.ZOrder" xml:space="preserve">
-    <value>10</value>
-  </data>
-  <data name="BrowsePGP.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Right</value>
-  </data>
-  <data name="BrowsePGP.Location" type="System.Drawing.Point, System.Drawing">
-    <value>404, 24</value>
-  </data>
-  <data name="BrowsePGP.Size" type="System.Drawing.Size, System.Drawing">
-    <value>24, 20</value>
-  </data>
-  <data name="BrowsePGP.TabIndex" type="System.Int32, mscorlib">
-    <value>8</value>
-  </data>
-  <data name="BrowsePGP.Text" xml:space="preserve">
-    <value>...</value>
-  </data>
-  <data name="&gt;&gt;BrowsePGP.Name" xml:space="preserve">
-    <value>BrowsePGP</value>
-  </data>
-  <data name="&gt;&gt;BrowsePGP.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;BrowsePGP.Parent" xml:space="preserve">
-    <value>groupBox2</value>
-  </data>
-  <data name="&gt;&gt;BrowsePGP.ZOrder" xml:space="preserve">
-    <value>11</value>
-  </data>
   <data name="groupBox2.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Top</value>
   </data>
@@ -670,7 +541,7 @@
     <value>3, 123</value>
   </data>
   <data name="groupBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>439, 152</value>
+    <value>439, 101</value>
   </data>
   <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -692,6 +563,9 @@
   </data>
   <data name="OKBtn.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom</value>
+  </data>
+  <data name="OKBtn.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="OKBtn.Location" type="System.Drawing.Point, System.Drawing">
     <value>142, 8</value>
@@ -720,6 +594,9 @@
   <data name="CancelBtn.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom</value>
   </data>
+  <data name="CancelBtn.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="CancelBtn.Location" type="System.Drawing.Point, System.Drawing">
     <value>230, 8</value>
   </data>
@@ -744,89 +621,44 @@
   <data name="&gt;&gt;CancelBtn.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <metadata name="BrowseGPGDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>17, 17</value>
-  </metadata>
-  <data name="BrowseGPGDialog.Filter" xml:space="preserve">
-    <value>Executables (*.exe)|*.exe|All files (*.*)|*.*</value>
-  </data>
-  <data name="BrowseGPGDialog.Title" xml:space="preserve">
-    <value>Select the GNU Privacy Guard executable</value>
-  </data>
-  <metadata name="BrowseSFTPDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>147, 17</value>
-  </metadata>
-  <data name="BrowseSFTPDialog.Filter" xml:space="preserve">
-    <value>Executables (*.exe)|*.exe|All files (*.*)|*.*</value>
-  </data>
-  <data name="BrowseSFTPDialog.Title" xml:space="preserve">
-    <value>Select the SFTP executable</value>
-  </data>
   <metadata name="BrowseTempPath.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>415, 17</value>
   </metadata>
-  <data name="UseGPGEncryption.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
+  <data name="EncryptionModule.Location" type="System.Drawing.Point, System.Drawing">
+    <value>128, 32</value>
   </data>
-  <data name="UseGPGEncryption.Location" type="System.Drawing.Point, System.Drawing">
-    <value>136, 24</value>
+  <data name="EncryptionModule.Size" type="System.Drawing.Size, System.Drawing">
+    <value>192, 21</value>
   </data>
-  <data name="UseGPGEncryption.Size" type="System.Drawing.Size, System.Drawing">
-    <value>165, 17</value>
+  <data name="EncryptionModule.TabIndex" type="System.Int32, mscorlib">
+    <value>10</value>
   </data>
-  <data name="UseGPGEncryption.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+  <data name="&gt;&gt;EncryptionModule.Name" xml:space="preserve">
+    <value>EncryptionModule</value>
   </data>
-  <data name="UseGPGEncryption.Text" xml:space="preserve">
-    <value>GNU Privacy Guard (external)</value>
+  <data name="&gt;&gt;EncryptionModule.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;UseGPGEncryption.Name" xml:space="preserve">
-    <value>UseGPGEncryption</value>
+  <data name="&gt;&gt;EncryptionModule.Parent" xml:space="preserve">
+    <value>PasswordPanel</value>
   </data>
-  <data name="&gt;&gt;UseGPGEncryption.Type" xml:space="preserve">
-    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;UseGPGEncryption.Parent" xml:space="preserve">
-    <value>EncryptionMethod</value>
-  </data>
-  <data name="&gt;&gt;UseGPGEncryption.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;EncryptionModule.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="UseAESEncryption.AutoSize" type="System.Boolean, mscorlib">
+  <data name="EncryptionMethod.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="UseAESEncryption.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 24</value>
-  </data>
-  <data name="UseAESEncryption.Size" type="System.Drawing.Size, System.Drawing">
-    <value>85, 17</value>
-  </data>
-  <data name="UseAESEncryption.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="UseAESEncryption.Text" xml:space="preserve">
-    <value>AES (built-in)</value>
-  </data>
-  <data name="&gt;&gt;UseAESEncryption.Name" xml:space="preserve">
-    <value>UseAESEncryption</value>
-  </data>
-  <data name="&gt;&gt;UseAESEncryption.Type" xml:space="preserve">
-    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;UseAESEncryption.Parent" xml:space="preserve">
-    <value>EncryptionMethod</value>
-  </data>
-  <data name="&gt;&gt;UseAESEncryption.ZOrder" xml:space="preserve">
-    <value>1</value>
+  <data name="EncryptionMethod.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="EncryptionMethod.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 40</value>
+    <value>24, 32</value>
   </data>
   <data name="EncryptionMethod.Size" type="System.Drawing.Size, System.Drawing">
-    <value>392, 48</value>
+    <value>95, 13</value>
   </data>
   <data name="EncryptionMethod.TabIndex" type="System.Int32, mscorlib">
-    <value>8</value>
+    <value>9</value>
   </data>
   <data name="EncryptionMethod.Text" xml:space="preserve">
     <value>Encryption method</value>
@@ -835,16 +667,19 @@
     <value>EncryptionMethod</value>
   </data>
   <data name="&gt;&gt;EncryptionMethod.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;EncryptionMethod.Parent" xml:space="preserve">
     <value>PasswordPanel</value>
   </data>
   <data name="&gt;&gt;EncryptionMethod.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="label5.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
+  </data>
+  <data name="label5.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
     <value>24, 8</value>
@@ -868,13 +703,13 @@
     <value>PasswordPanel</value>
   </data>
   <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="CommonPassword.Location" type="System.Drawing.Point, System.Drawing">
-    <value>120, 8</value>
+    <value>128, 8</value>
   </data>
   <data name="CommonPassword.Size" type="System.Drawing.Size, System.Drawing">
-    <value>296, 20</value>
+    <value>288, 20</value>
   </data>
   <data name="CommonPassword.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -889,7 +724,7 @@
     <value>PasswordPanel</value>
   </data>
   <data name="&gt;&gt;CommonPassword.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="PasswordPanel.Location" type="System.Drawing.Point, System.Drawing">
     <value>8, 40</value>
@@ -907,13 +742,16 @@
     <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;PasswordPanel.Parent" xml:space="preserve">
-    <value>groupBox3</value>
+    <value>PasswordDefaultsGroup</value>
   </data>
   <data name="&gt;&gt;PasswordPanel.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <data name="UseCommonPassword.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
+  </data>
+  <data name="UseCommonPassword.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="UseCommonPassword.Location" type="System.Drawing.Point, System.Drawing">
     <value>16, 24</value>
@@ -934,36 +772,36 @@
     <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;UseCommonPassword.Parent" xml:space="preserve">
-    <value>groupBox3</value>
+    <value>PasswordDefaultsGroup</value>
   </data>
   <data name="&gt;&gt;UseCommonPassword.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <data name="groupBox3.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+  <data name="PasswordDefaultsGroup.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Top</value>
   </data>
-  <data name="groupBox3.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="PasswordDefaultsGroup.Location" type="System.Drawing.Point, System.Drawing">
     <value>3, 107</value>
   </data>
-  <data name="groupBox3.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="PasswordDefaultsGroup.Size" type="System.Drawing.Size, System.Drawing">
     <value>439, 144</value>
   </data>
-  <data name="groupBox3.TabIndex" type="System.Int32, mscorlib">
+  <data name="PasswordDefaultsGroup.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
   </data>
-  <data name="groupBox3.Text" xml:space="preserve">
+  <data name="PasswordDefaultsGroup.Text" xml:space="preserve">
     <value>Password settings applied to new backups</value>
   </data>
-  <data name="&gt;&gt;groupBox3.Name" xml:space="preserve">
-    <value>groupBox3</value>
+  <data name="&gt;&gt;PasswordDefaultsGroup.Name" xml:space="preserve">
+    <value>PasswordDefaultsGroup</value>
   </data>
-  <data name="&gt;&gt;groupBox3.Type" xml:space="preserve">
+  <data name="&gt;&gt;PasswordDefaultsGroup.Type" xml:space="preserve">
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;groupBox3.Parent" xml:space="preserve">
+  <data name="&gt;&gt;PasswordDefaultsGroup.Parent" xml:space="preserve">
     <value>tabPage1</value>
   </data>
-  <data name="&gt;&gt;groupBox3.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;PasswordDefaultsGroup.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="BrowseSignatureCachePath.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -994,7 +832,7 @@
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;tabPage1.Parent" xml:space="preserve">
-    <value>tabControl1</value>
+    <value>TabContainer</value>
   </data>
   <data name="&gt;&gt;tabPage1.ZOrder" xml:space="preserve">
     <value>0</value>
@@ -1075,7 +913,7 @@
     <value>3, 3, 3, 3</value>
   </data>
   <data name="tabPage2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>445, 317</value>
+    <value>445, 277</value>
   </data>
   <data name="tabPage2.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -1090,34 +928,34 @@
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;tabPage2.Parent" xml:space="preserve">
-    <value>tabControl1</value>
+    <value>TabContainer</value>
   </data>
   <data name="&gt;&gt;tabPage2.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <data name="tabControl1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+  <data name="TabContainer.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Fill</value>
   </data>
-  <data name="tabControl1.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="TabContainer.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 0</value>
   </data>
-  <data name="tabControl1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>453, 343</value>
+  <data name="TabContainer.Size" type="System.Drawing.Size, System.Drawing">
+    <value>453, 303</value>
   </data>
-  <data name="tabControl1.TabIndex" type="System.Int32, mscorlib">
+  <data name="TabContainer.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
   </data>
-  <data name="&gt;&gt;tabControl1.Name" xml:space="preserve">
-    <value>tabControl1</value>
+  <data name="&gt;&gt;TabContainer.Name" xml:space="preserve">
+    <value>TabContainer</value>
   </data>
-  <data name="&gt;&gt;tabControl1.Type" xml:space="preserve">
+  <data name="&gt;&gt;TabContainer.Type" xml:space="preserve">
     <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;tabControl1.Parent" xml:space="preserve">
+  <data name="&gt;&gt;TabContainer.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;tabControl1.ZOrder" xml:space="preserve">
-    <value>1</value>
+  <data name="&gt;&gt;TabContainer.ZOrder" xml:space="preserve">
+    <value>0</value>
   </data>
   <data name="panel1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Bottom</value>
@@ -1141,7 +979,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;panel1.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
@@ -1655,23 +1493,14 @@
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAA==
 </value>
   </data>
+  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
     <value>Duplicati setup</value>
-  </data>
-  <data name="&gt;&gt;BrowseGPGDialog.Name" xml:space="preserve">
-    <value>BrowseGPGDialog</value>
-  </data>
-  <data name="&gt;&gt;BrowseGPGDialog.Type" xml:space="preserve">
-    <value>System.Windows.Forms.OpenFileDialog, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;BrowseSFTPDialog.Name" xml:space="preserve">
-    <value>BrowseSFTPDialog</value>
-  </data>
-  <data name="&gt;&gt;BrowseSFTPDialog.Type" xml:space="preserve">
-    <value>System.Windows.Forms.OpenFileDialog, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;BrowseTempPath.Name" xml:space="preserve">
     <value>BrowseTempPath</value>

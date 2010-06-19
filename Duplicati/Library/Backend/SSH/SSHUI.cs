@@ -42,10 +42,6 @@ namespace Duplicati.Library.Backend
         private const string HAS_TESTED = "UI: Has tested";
         private const string HAS_WARNED_NO_SFTP = "UI: Has warned SFTP";
 
-
-        //The name of the setting that contains the SFTP path
-        private const string APPSET_SFTP_PATH = "SFTP Path";
-
         private bool m_warnedPath = false;
         private bool m_hasTested = false;
         private bool m_warnedNoSFTP = false;
@@ -76,7 +72,7 @@ namespace Duplicati.Library.Backend
                 return false;
 
             if (!m_hasTested)
-                switch (MessageBox.Show(this, Backend.CommonStrings.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                switch (MessageBox.Show(this, Interface.CommonStrings.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
                         TestConnection_Click(null, null);
@@ -122,8 +118,13 @@ namespace Duplicati.Library.Backend
                 port = 22;
             if (!m_options.ContainsKey(DEBUG_ENABLED) || !bool.TryParse(m_options[DEBUG_ENABLED], out debug))
                 debug = false;
+
             if (!m_options.ContainsKey(USE_UNMANAGED_SSH) || !bool.TryParse(m_options[USE_UNMANAGED_SSH], out useUnmanaged))
+            {
                 useUnmanaged = false;
+                if (m_applicationSettings.ContainsKey(SSHCommonOptions.DEFAULT_MANAGED))
+                    useUnmanaged = !Core.Utility.ParseBool(m_applicationSettings[SSHCommonOptions.DEFAULT_MANAGED], true);
+            }
 
             if (m_options.ContainsKey(HOST))
                 Servername.Text = m_options[HOST];
@@ -173,10 +174,10 @@ namespace Duplicati.Library.Backend
                     SSH ssh = new SSH(destination, options);
                     ssh.List();
 
-                    MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
-                catch (Backend.FolderMissingException)
+                catch (Interface.FolderMissingException)
                 {
                     switch (MessageBox.Show(this, Strings.SSHUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                     {
@@ -190,7 +191,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {
@@ -203,7 +204,7 @@ namespace Duplicati.Library.Backend
         {
             if (Servername.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, Backend.CommonStrings.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Interface.CommonStrings.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Servername.Focus(); }
                 catch { }
 
@@ -212,7 +213,7 @@ namespace Duplicati.Library.Backend
 
             if (Username.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, Backend.CommonStrings.EmptyUsernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Interface.CommonStrings.EmptyUsernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Username.Focus(); }
                 catch { }
 
@@ -221,7 +222,7 @@ namespace Duplicati.Library.Backend
 
             if (Password.Text.Trim().Length <= 0 && UsePassword.Checked)
             {
-                MessageBox.Show(this, Backend.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Password.Focus(); }
                 catch { }
 
@@ -241,7 +242,7 @@ namespace Duplicati.Library.Backend
 
             if (!m_warnedPath && Path.Text.Trim().Length == 0)
             {
-                if (MessageBox.Show(this, Backend.CommonStrings.DefaultDirectoryWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
+                if (MessageBox.Show(this, Interface.CommonStrings.DefaultDirectoryWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
                 {
                     return false;
                 }
@@ -251,8 +252,8 @@ namespace Duplicati.Library.Backend
             if (!m_warnedNoSFTP && UseUnmanagedSSH.Checked)
             {
                 string sftpPath = "";
-                if (m_applicationSettings.ContainsKey(APPSET_SFTP_PATH))
-                    sftpPath = m_applicationSettings[APPSET_SFTP_PATH];
+                if (m_applicationSettings.ContainsKey(SSHCommonOptions.SFTP_PATH))
+                    sftpPath = m_applicationSettings[SSHCommonOptions.SFTP_PATH];
 
                 System.IO.FileInfo fi = null;
                 try { fi = new System.IO.FileInfo(System.Environment.ExpandEnvironmentVariables(sftpPath)); }
@@ -333,8 +334,8 @@ namespace Duplicati.Library.Backend
             if (!guiOptions.ContainsKey(PORT) || !int.TryParse(guiOptions[PORT], out port))
                 port = 22;
 
-            if (applicationSettings.ContainsKey(APPSET_SFTP_PATH))
-                commandlineOptions["sftp-command"] = applicationSettings[APPSET_SFTP_PATH];
+            if (applicationSettings.ContainsKey(SSHCommonOptions.SFTP_PATH))
+                commandlineOptions[SSH.SFTP_PATH_OPTION] = applicationSettings[SSHCommonOptions.SFTP_PATH];
 
             bool debug;
             if (!guiOptions.ContainsKey(DEBUG_ENABLED) || !bool.TryParse(guiOptions[DEBUG_ENABLED], out debug))
@@ -348,10 +349,10 @@ namespace Duplicati.Library.Backend
                 useUnmanaged = false;
 
             if (useUnmanaged)
-                commandlineOptions["use-sftp-application"] = "";
+                commandlineOptions[SSH.USE_UNMANAGED_OPTION] = "";
 
             if (!guiOptions.ContainsKey(HOST))
-                throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, HOST));
+                throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, HOST));
 
             return "ssh://" + guiOptions[HOST] + ":" + port.ToString() + "/" + (guiOptions.ContainsKey(FOLDER) ? guiOptions[FOLDER] : "");
         }
@@ -379,12 +380,12 @@ namespace Duplicati.Library.Backend
                     SSH ssh = new SSH(destination, options);
                     ssh.CreateFolder();
 
-                    MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {

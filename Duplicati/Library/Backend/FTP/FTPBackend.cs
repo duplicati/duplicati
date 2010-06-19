@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
@@ -147,7 +148,7 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<FileEntry> List()
+        public List<IFileEntry> List()
         {
             using (ActivateCertificateValidator())
             {
@@ -157,7 +158,7 @@ namespace Duplicati.Library.Backend
 
                 try
                 {
-                    List<FileEntry> lst = new List<FileEntry>();
+                    List<IFileEntry> lst = new List<IFileEntry>();
                     using(System.Net.WebResponse resp = req.GetResponse())
                     using(System.IO.Stream rs = resp.GetResponseStream())
                     using(System.IO.StreamReader sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
@@ -175,7 +176,7 @@ namespace Duplicati.Library.Backend
                 catch (System.Net.WebException wex)
                 {
                     if (wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
-                        throw new Backend.FolderMissingException(string.Format(Strings.FTPBackend.MissingFolderError, req.RequestUri.PathAndQuery, wex.Message), wex);
+                        throw new Interface.FolderMissingException(string.Format(Strings.FTPBackend.MissingFolderError, req.RequestUri.PathAndQuery, wex.Message), wex);
                     else
                         throw;
                 }

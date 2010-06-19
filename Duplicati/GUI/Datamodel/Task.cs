@@ -38,7 +38,7 @@ namespace Duplicati.Datamodel
 
 #region " private members "
 
-		[AutoIncrement, PrimaryKey, Relation("LogTask", typeof(Log), "TaskID", false), Relation("TaskFilterTask", typeof(TaskFilter), "TaskID", false), Relation("BackendSettingTask", typeof(BackendSetting), "TaskID", false), Relation("TaskExtensionTask", typeof(TaskExtension), "TaskID", false), Relation("TaskOverrideTask", typeof(TaskOverride), "TaskID", false), DatabaseField("ID")]
+		[AutoIncrement, PrimaryKey, Relation("LogTask", typeof(Log), "TaskID", false), Relation("TaskFilterTask", typeof(TaskFilter), "TaskID", false), Relation("BackendSettingTask", typeof(BackendSetting), "TaskID", false), Relation("TaskExtensionTask", typeof(TaskExtension), "TaskID", false), Relation("TaskOverrideTask", typeof(TaskOverride), "TaskID", false), Relation("CompressionSettingTask", typeof(CompressionSetting), "TaskID", false), Relation("EncryptionSettingTask", typeof(EncryptionSetting), "TaskID", false), DatabaseField("ID")]
 		private System.Int64 m_ID = long.MinValue;
 		[DatabaseField("Service")]
 		private System.String m_Service = "";
@@ -56,10 +56,12 @@ namespace Duplicati.Datamodel
 		private System.String m_KeepTime = "";
 		[DatabaseField("FullAfter")]
 		private System.String m_FullAfter = "";
-		[DatabaseField("GPGEncryption")]
-		private System.Boolean m_GPGEncryption = false;
 		[DatabaseField("IncludeSetup")]
 		private System.Boolean m_IncludeSetup = false;
+		[DatabaseField("EncryptionModule")]
+		private System.String m_EncryptionModule = "";
+		[DatabaseField("CompressionModule")]
+		private System.String m_CompressionModule = "";
 #endregion
 
 #region " properties "
@@ -118,16 +120,22 @@ namespace Duplicati.Datamodel
 			set{object oldvalue = m_FullAfter;OnBeforeDataChange(this, "FullAfter", oldvalue, value);m_FullAfter = value;OnAfterDataChange(this, "FullAfter", oldvalue, value);}
 		}
 
-		public System.Boolean GPGEncryption
-		{
-			get{return m_GPGEncryption;}
-			set{object oldvalue = m_GPGEncryption;OnBeforeDataChange(this, "GPGEncryption", oldvalue, value);m_GPGEncryption = value;OnAfterDataChange(this, "GPGEncryption", oldvalue, value);}
-		}
-
 		public System.Boolean IncludeSetup
 		{
 			get{return m_IncludeSetup;}
 			set{object oldvalue = m_IncludeSetup;OnBeforeDataChange(this, "IncludeSetup", oldvalue, value);m_IncludeSetup = value;OnAfterDataChange(this, "IncludeSetup", oldvalue, value);}
+		}
+
+		public System.String EncryptionModule
+		{
+			get{return m_EncryptionModule;}
+			set{object oldvalue = m_EncryptionModule;OnBeforeDataChange(this, "EncryptionModule", oldvalue, value);m_EncryptionModule = value;OnAfterDataChange(this, "EncryptionModule", oldvalue, value);}
+		}
+
+		public System.String CompressionModule
+		{
+			get{return m_CompressionModule;}
+			set{object oldvalue = m_CompressionModule;OnBeforeDataChange(this, "CompressionModule", oldvalue, value);m_CompressionModule = value;OnAfterDataChange(this, "CompressionModule", oldvalue, value);}
 		}
 
 #endregion
@@ -183,6 +191,24 @@ namespace Duplicati.Datamodel
 			get
 			{
 				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<TaskOverride>("TaskOverrideTask", this);
+			}
+		}
+
+		[Affects(typeof(CompressionSetting))]
+		public System.Collections.Generic.IList<CompressionSetting> CompressionSettings
+		{
+			get
+			{
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<CompressionSetting>("CompressionSettingTask", this);
+			}
+		}
+
+		[Affects(typeof(EncryptionSetting))]
+		public System.Collections.Generic.IList<EncryptionSetting> EncryptionSettings
+		{
+			get
+			{
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<EncryptionSetting>("EncryptionSettingTask", this);
 			}
 		}
 

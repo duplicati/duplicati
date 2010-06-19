@@ -69,6 +69,13 @@
     <Compile Include="SharpExpectProcess.cs" />
     <Compile Include="SSHBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SSHCommonOptions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="SSHCommonOptions.Designer.cs">
+      <DependentUpon>SSHCommonOptions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SSHSettingsControl.cs" />
     <Compile Include="SSHUI.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -86,6 +93,16 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SSHBackend.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\SSHCommonOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SSHCommonOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\SSHSettingsControl.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SSHSettingsControl.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\SSHUI.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -97,9 +114,9 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
-      <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
-      <Name>Duplicati.Library.Backend.BackendInterface</Name>
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
     <ProjectReference Include="..\FTP\Duplicati.Library.Backend.FTP.csproj">
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
@@ -111,6 +128,9 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="SSHCommonOptions.resx">
+      <DependentUpon>SSHCommonOptions.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="SSHUI.resx">
       <DependentUpon>SSHUI.cs</DependentUpon>
     </EmbeddedResource>
@@ -123,6 +143,14 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>SSHBackend.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\SSHCommonOptions.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SSHCommonOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\SSHSettingsControl.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SSHSettingsControl.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\SSHUI.resx">
       <Generator>ResXFileCodeGenerator</Generator>

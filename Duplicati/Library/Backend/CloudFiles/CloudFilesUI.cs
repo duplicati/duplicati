@@ -61,7 +61,7 @@ namespace Duplicati.Library.Backend
                 return false;
 
             if (!m_hasTested)
-                switch (MessageBox.Show(this, Backend.CommonStrings.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                switch (MessageBox.Show(this, Interface.CommonStrings.ConfirmTestConnectionQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
                         TestConnection_Click(null, null);
@@ -146,10 +146,10 @@ namespace Duplicati.Library.Backend
                     CloudFiles cf = new CloudFiles(destination, options);
                     cf.Test();
 
-                    MessageBox.Show(this, Backend.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
-                catch (Backend.FolderMissingException)
+                catch (Interface.FolderMissingException)
                 {
                     switch (MessageBox.Show(this, Strings.CloudFilesUI.CreateMissingBucket, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                     {
@@ -163,7 +163,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {
@@ -200,7 +200,7 @@ namespace Duplicati.Library.Backend
                 commandlineOptions["cloudfiles-accesskey"] = guiOptions[ACCESS_KEY];
 
             if (!guiOptions.ContainsKey(CONTAINER_NAME))
-                throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, CONTAINER_NAME));
+                throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, CONTAINER_NAME));
 
             return "cloudfiles://api.mosso.com/" + guiOptions[CONTAINER_NAME];
         }
@@ -231,12 +231,12 @@ namespace Duplicati.Library.Backend
                     CloudFiles cf = new CloudFiles(destination, options);
                     cf.CreateFolder();
 
-                    MessageBox.Show(this, Backend.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, string.Format(Backend.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Interface.CommonStrings.ConnectionFailure, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 }
                 this.Cursor = c;

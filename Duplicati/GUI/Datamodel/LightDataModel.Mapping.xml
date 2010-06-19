@@ -107,8 +107,8 @@
         </Column>
         <Column>
           <Typename>System.Boolean</Typename>
-          <Name>GPGEncryption</Name>
-          <Fieldname>GPGEncryption</Fieldname>
+          <Name>IncludeSetup</Name>
+          <Fieldname>IncludeSetup</Fieldname>
           <Autonumber>false</Autonumber>
           <PrimaryKey>false</PrimaryKey>
           <IgnoreWithSelect>false</IgnoreWithSelect>
@@ -117,9 +117,20 @@
           <Index>false</Index>
         </Column>
         <Column>
-          <Typename>System.Boolean</Typename>
-          <Name>IncludeSetup</Name>
-          <Fieldname>IncludeSetup</Fieldname>
+          <Typename>System.String</Typename>
+          <Name>EncryptionModule</Name>
+          <Fieldname>EncryptionModule</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>CompressionModule</Name>
+          <Fieldname>CompressionModule</Fieldname>
           <Autonumber>false</Autonumber>
           <PrimaryKey>false</PrimaryKey>
           <IgnoreWithSelect>false</IgnoreWithSelect>
@@ -767,6 +778,187 @@
           <ReverseDatabasefield>ID</ReverseDatabasefield>
           <ReversePropertyname>TaskOverrides</ReversePropertyname>
           <Tablename>TaskOverride</Tablename>
+        </Relation>
+      </Relations>
+    </Table>
+    <Table>
+      <Name>SettingExtension</Name>
+      <Classname>SettingExtension</Classname>
+      <PrimaryKey>ID</PrimaryKey>
+      <Columns>
+        <Column>
+          <Typename>System.Int64</Typename>
+          <Name>ID</Name>
+          <Fieldname>ID</Fieldname>
+          <Autonumber>true</Autonumber>
+          <PrimaryKey>true</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>true</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>SettingKey</Name>
+          <Fieldname>SettingKey</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>Name</Name>
+          <Fieldname>Name</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>Value</Name>
+          <Fieldname>Value</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+      </Columns>
+      <Ignore>false</Ignore>
+      <Relations />
+    </Table>
+    <Table>
+      <Name>CompressionSetting</Name>
+      <Classname>CompressionSetting</Classname>
+      <PrimaryKey>ID</PrimaryKey>
+      <Columns>
+        <Column>
+          <Typename>System.Int64</Typename>
+          <Name>ID</Name>
+          <Fieldname>ID</Fieldname>
+          <Autonumber>true</Autonumber>
+          <PrimaryKey>true</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>true</Index>
+        </Column>
+        <Column>
+          <Typename>System.Int64</Typename>
+          <Name>TaskID</Name>
+          <Fieldname>TaskID</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>Name</Name>
+          <Fieldname>Name</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>Value</Name>
+          <Fieldname>Value</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+      </Columns>
+      <Ignore>false</Ignore>
+      <Relations>
+        <Relation>
+          <Name>CompressionSettingTask</Name>
+          <Databasefield>TaskID</Databasefield>
+          <Propertyname>Task</Propertyname>
+          <Type>OneToMany</Type>
+          <ReverseTablename>Task</ReverseTablename>
+          <ReverseDatabasefield>ID</ReverseDatabasefield>
+          <ReversePropertyname>CompressionSettings</ReversePropertyname>
+          <Tablename>CompressionSetting</Tablename>
+        </Relation>
+      </Relations>
+    </Table>
+    <Table>
+      <Name>EncryptionSetting</Name>
+      <Classname>EncryptionSetting</Classname>
+      <PrimaryKey>ID</PrimaryKey>
+      <Columns>
+        <Column>
+          <Typename>System.Int64</Typename>
+          <Name>ID</Name>
+          <Fieldname>ID</Fieldname>
+          <Autonumber>true</Autonumber>
+          <PrimaryKey>true</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>true</Index>
+        </Column>
+        <Column>
+          <Typename>System.Int64</Typename>
+          <Name>TaskID</Name>
+          <Fieldname>TaskID</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>Name</Name>
+          <Fieldname>Name</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+        <Column>
+          <Typename>System.String</Typename>
+          <Name>Value</Name>
+          <Fieldname>Value</Fieldname>
+          <Autonumber>false</Autonumber>
+          <PrimaryKey>false</PrimaryKey>
+          <IgnoreWithSelect>false</IgnoreWithSelect>
+          <IgnoreWithUpdate>false</IgnoreWithUpdate>
+          <IgnoreWithInsert>false</IgnoreWithInsert>
+          <Index>false</Index>
+        </Column>
+      </Columns>
+      <Ignore>false</Ignore>
+      <Relations>
+        <Relation>
+          <Name>EncryptionSettingTask</Name>
+          <Databasefield>TaskID</Databasefield>
+          <Propertyname>Task</Propertyname>
+          <Type>OneToMany</Type>
+          <ReverseTablename>Task</ReverseTablename>
+          <ReverseDatabasefield>ID</ReverseDatabasefield>
+          <ReversePropertyname>EncryptionSettings</ReversePropertyname>
+          <Tablename>EncryptionSetting</Tablename>
         </Relation>
       </Relations>
     </Table>

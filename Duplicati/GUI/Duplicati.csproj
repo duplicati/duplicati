@@ -388,22 +388,28 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ThrottleOptions.resx</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Backends\GUIContainer.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Wizard pages\Backends\GUIContainer.Designer.cs">
-      <DependentUpon>GUIContainer.cs</DependentUpon>
-    </Compile>
     <Compile Include="Wizard pages\Backends\RawContainer.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Wizard pages\Backends\RawContainer.Designer.cs">
       <DependentUpon>RawContainer.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\CommandLineOptionGrid.cs">
+    <Compile Include="Wizard pages\GUIContainer.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Wizard pages\CommandLineOptionGrid.Designer.cs">
+    <Compile Include="Wizard pages\GUIContainer.Designer.cs">
+      <DependentUpon>GUIContainer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wizard pages\GridContainer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wizard pages\GridContainer.Designer.cs">
+      <DependentUpon>GridContainer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\CommandLineOptionGrid.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="HelperControls\CommandLineOptionGrid.Designer.cs">
       <DependentUpon>CommandLineOptionGrid.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Delete backup\Strings\DeleteFinished.Designer.cs">
@@ -532,7 +538,7 @@
     <Compile Include="Wizard pages\SelectBackup.Designer.cs">
       <DependentUpon>SelectBackup.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Strings\CommandLineOptionsGrid.Designer.cs">
+    <Compile Include="HelperControls\Strings\CommandLineOptionsGrid.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>CommandLineOptionsGrid.resx</DependentUpon>
@@ -583,14 +589,6 @@
       <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
       <Name>Duplicati.CommandLine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\BackendInterface\Duplicati.Library.Backend.BackendInterface.csproj">
-      <Project>{994F3D0A-E91E-4EEE-80EE-064485E09909}</Project>
-      <Name>Duplicati.Library.Backend.BackendInterface</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\BackendLoader\Duplicati.Library.Backend.BackendLoader.csproj">
-      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
-      <Name>Duplicati.Library.Backend.BackendLoader</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
       <Name>Duplicati.Library.Backend.CloudFiles</Name>
@@ -615,9 +613,25 @@
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
       <Name>Duplicati.Library.Backend.WEBDAV</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
+      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
+      <Name>Duplicati.Library.Compression</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Core\Duplicati.Library.Core.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.DynamicLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
+      <Name>Duplicati.Library.Encryption</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Logging\Duplicati.Library.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
@@ -950,13 +964,13 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ThrottleOptions.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\GUIContainer.resx">
+    <EmbeddedResource Include="Wizard pages\GUIContainer.resx">
       <DependentUpon>GUIContainer.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
-      <DependentUpon>RawContainer.cs</DependentUpon>
+    <EmbeddedResource Include="Wizard pages\GridContainer.resx">
+      <DependentUpon>GridContainer.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\CommandLineOptionGrid.resx">
+    <EmbeddedResource Include="HelperControls\CommandLineOptionGrid.resx">
       <DependentUpon>CommandLineOptionGrid.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Delete backup\Strings\DeleteFinished.resx">
@@ -989,7 +1003,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>RunNowFinished.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Strings\CommandLineOptionsGrid.resx">
+    <EmbeddedResource Include="HelperControls\Strings\CommandLineOptionsGrid.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>CommandLineOptionsGrid.Designer.cs</LastGenOutput>
     </EmbeddedResource>
@@ -1078,6 +1092,10 @@
     <EmbeddedResource Include="Strings\DynamicSetupHelper.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>DynamicSetupHelper.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Database schema\4. Support for setting controls.sql" />
+    <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
+      <DependentUpon>RawContainer.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Resources\Play.png" />
     <None Include="Resources\Delay.png" />

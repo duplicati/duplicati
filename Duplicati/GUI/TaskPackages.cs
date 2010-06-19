@@ -89,10 +89,174 @@ namespace Duplicati.GUI
         }
 
         public abstract string LocalPath { get; }
+
         public virtual string GetConfiguration(Dictionary<string, string> options)
         {
-            this.Schedule.GetOptions(options);
-            return this.Task.GetConfiguration(options);
+            //Schedule settings have lowest priority, because there is currently no setup
+            SetupSchedule(options);
+
+            //Now setup the environment
+            ApplicationSettings appSet = new ApplicationSettings(this.Task.DataParent);
+
+            if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
+                options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), this.Task.Schedule.ID.ToString());
+
+            if (!string.IsNullOrEmpty(appSet.TempPath))
+            {
+                string tempdir = System.Environment.ExpandEnvironmentVariables(appSet.TempPath);
+                if (!System.IO.Directory.Exists(tempdir))
+                    System.IO.Directory.CreateDirectory(tempdir);
+
+                options["tempdir"] = tempdir;
+            }
+
+            Dictionary<string, string> env = appSet.CreateDetachedCopy();
+
+            //If there are any control extensions, let them modify the environement
+            foreach (Library.Interface.ISettingsControl ic in Library.DynamicLoader.SettingsControlLoader.Modules)
+                ic.GetConfiguration(env, SettingExtension.GetExtensions(this.Task.Schedule.DataParent, ic.Key), options);
+
+            //Setup encryption module
+            SetupEncryptionModule(env, this.Task.EncryptionSettingsLookup, options);
+
+            //Setup compression module
+            SetupCompressionModule(env, this.Task.CompressionSettingsLookup, options);
+
+            //Next is the actual backend setup
+            string destination = SetupBackend(env, options);
+
+            //Setup any task options
+            SetupTask(options);
+
+            //Setup any task extension options
+            SetupTaskExtensions(options);
+
+            //Override everything set in the overrides, this is placed last so it cannot be overriden elsewhere
+            foreach (TaskOverride ov in this.Task.TaskOverrides)
+                options[ov.Name] = ov.Value;
+
+            return destination;
+        }
+
+        protected virtual void SetupEncryptionModule(Dictionary<string, string> env, IDictionary<string, string> guiOptions, Dictionary<string, string> options)
+        {
+            foreach (Library.Interface.IEncryption e in Library.DynamicLoader.EncryptionLoader.Modules)
+                if (e.FilenameExtension == this.Task.EncryptionModule)
+                {
+                    if (e is Library.Interface.IEncryptionGUI)
+                    {
+                        (e as Library.Interface.IEncryptionGUI).GetConfiguration(env, guiOptions, options);
+                    }
+                    else
+                    {
+                        foreach (string k in guiOptions.Keys)
+                            if (k.StartsWith("--"))
+                                options[k.Substring(2)] = guiOptions[k];
+                    }
+
+                    return;
+                }
+        }
+
+        protected virtual void SetupCompressionModule(Dictionary<string, string> env, IDictionary<string, string> guiOptions, Dictionary<string, string> options)
+        {
+            foreach (Library.Interface.ICompression e in Library.DynamicLoader.CompressionLoader.Modules)
+                if (e.FilenameExtension == this.Task.CompressionModule)
+                {
+                    if (e is Library.Interface.ICompressionGUI)
+                    {
+                        (e as Library.Interface.ICompressionGUI).GetConfiguration(env, guiOptions, options);
+                    }
+                    else
+                    {
+                        foreach (string k in guiOptions.Keys)
+                            if (k.StartsWith("--"))
+                                options[k.Substring(2)] = guiOptions[k];
+                    }
+
+                    return;
+                }
+        }
+
+        protected virtual void SetupSchedule(Dictionary<string, string> options)
+        {
+        }
+
+        protected virtual void SetupTask(Dictionary<string, string> options)
+        {
+            if (this.Task.Filters.Count > 0)
+                options["filter"] = this.Task.EncodedFilter; ;
+
+            if (!string.IsNullOrEmpty(this.Task.EncryptionModule))
+                options["encryption-module"] = this.Task.EncryptionModule;
+
+            if (string.IsNullOrEmpty(this.Task.Encryptionkey))
+                options.Add("no-encryption", "");
+            else
+                options.Add("passphrase", this.Task.Encryptionkey);
+        }
+
+        protected virtual void SetupTaskExtensions(Dictionary<string, string> options)
+        {
+            Datamodel.Task.TaskExtensionWrapper ext = this.Task.Extensions;
+
+            if (!string.IsNullOrEmpty(ext.MaxUploadSize))
+                options["totalsize"] = ext.MaxUploadSize;
+            if (!string.IsNullOrEmpty(ext.VolumeSize))
+                options["volsize"] = ext.VolumeSize;
+            if (!string.IsNullOrEmpty(ext.DownloadBandwidth))
+                options["max-download-pr-second"] = ext.DownloadBandwidth;
+            if (!string.IsNullOrEmpty(ext.UploadBandwidth))
+                options["max-upload-pr-second"] = ext.UploadBandwidth;
+            if (!string.IsNullOrEmpty(ext.ThreadPriority))
+                options["thread-priority"] = ext.ThreadPriority;
+            if (ext.AsyncTransfer)
+                options["asynchronous-upload"] = "";
+            if (ext.IgnoreTimestamps)
+                options["disable-filetime-check"] = "";
+            if (!string.IsNullOrEmpty(ext.FileTimeSeperator))
+                options["time-separator"] = ext.FileTimeSeperator;
+
+            if (!string.IsNullOrEmpty(ext.FilenamePrefix))
+                options["backup-prefix"] = ext.FilenamePrefix;
+            if (ext.ShortFilenames)
+                options["short-filenames"] = "";
+            if (!string.IsNullOrEmpty(ext.FileSizeLimit))
+                options["skip-files-larger-than"] = ext.FileSizeLimit;
+        }
+
+        protected virtual string SetupBackend(Dictionary<string, string> environment, Dictionary<string, string> options)
+        {
+            Library.Interface.IBackend selectedBackend = null;
+            foreach (Library.Interface.IBackend b in Library.DynamicLoader.BackendLoader.Backends)
+                if (b.ProtocolKey == this.Task.Service)
+                {
+                    selectedBackend = b;
+                    break;
+                }
+
+            if (selectedBackend == null)
+                throw new Exception("Missing backend");
+
+            string destination;
+            if (selectedBackend is Library.Interface.IBackendGUI)
+            {
+                //Simply invoke the backends setup function
+                destination = ((Library.Interface.IBackendGUI)selectedBackend).GetConfiguration(environment, this.Task.BackendSettingsLookup, options);
+            }
+            else
+            {
+                //We store destination with the key "Destination" and other options with the -- prefix
+                if (!options.ContainsKey(Duplicati.GUI.Wizard_pages.GridContainer.DESTINATION_EXTENSION_KEY))
+                    throw new Exception("Invalid configuration");
+
+                destination = options[Duplicati.GUI.Wizard_pages.GridContainer.DESTINATION_EXTENSION_KEY];
+                foreach (KeyValuePair<string, string> k in this.Task.BackendSettingsLookup)
+                    if (k.Key.StartsWith("--")) //All options are prefixed with this
+                        options[k.Key.Substring(2)] = k.Value;
+            }
+
+            return destination;
         }
 
         public string Result
@@ -536,7 +700,7 @@ namespace Duplicati.GUI
         {
             string destination = base.GetConfiguration(options);
 
-            options.Add("remove-all-but-n-full", this.FullCount.ToString());
+            options.Add("delete-all-but-n-full", this.FullCount.ToString());
             options.Add("force", "");
             if (!options.ContainsKey("number-of-retries"))
                 options["number-of-retries"] = "2";
@@ -583,7 +747,7 @@ namespace Duplicati.GUI
         {
             string destination = base.GetConfiguration(options);
 
-            options.Add("remove-older-than", this.Older);
+            options.Add("delete-older-than", this.Older);
             options.Add("force", "");
             if (!options.ContainsKey("number-of-retries"))
                 options["number-of-retries"] = "2";
@@ -596,4 +760,6 @@ namespace Duplicati.GUI
             get { throw new NotImplementedException(); }
         }
     }
+
+
 }

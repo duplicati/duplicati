@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to As a precaution, the last full backup will never be removed, even if using the --remove-all-but-n-full=0 option. Set this option to allow removing the last backup..
+        ///   Looks up a localized string similar to As a precaution, the last full backup will never be removed, even if using the &quot;delete-all-but-n-full 0&quot; command. Set this option to allow removing the last backup..
         /// </summary>
         internal static string AllowfullremoveLong {
             get {
@@ -151,6 +151,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module..
+        /// </summary>
+        internal static string CompressionmoduleLong {
+            get {
+                return ResourceManager.GetString("CompressionmoduleLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select what module to use for compression.
+        /// </summary>
+        internal static string CompressionmoduleShort {
+            get {
+                return ResourceManager.GetString("CompressionmoduleShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won&apos;t work correctly unless this flag is set..
         /// </summary>
         internal static string DisablefiletimecheckLong {
@@ -165,6 +183,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string DisablefiletimecheckShort {
             get {
                 return ResourceManager.GetString("DisablefiletimecheckShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supply one or more module names, separated by commas to unload them.
+        /// </summary>
+        internal static string DisablemoduleLong {
+            get {
+                return ResourceManager.GetString("DisablemoduleLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disabled one or more modules.
+        /// </summary>
+        internal static string DisablemoduleShort {
+            get {
+                return ResourceManager.GetString("DisablemoduleShort", resourceCulture);
             }
         }
         
@@ -201,6 +237,42 @@ namespace Duplicati.Library.Main.Strings {
         internal static string DontreadmanifestsShort {
             get {
                 return ResourceManager.GetString("DontreadmanifestsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supply one or more module names, separated by commas to load them.
+        /// </summary>
+        internal static string EnablemoduleLong {
+            get {
+                return ResourceManager.GetString("EnablemoduleLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enables one or more modules.
+        /// </summary>
+        internal static string EnablemoduleShort {
+            get {
+                return ResourceManager.GetString("EnablemoduleShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Duplicati supports plugable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module..
+        /// </summary>
+        internal static string EncryptionmoduleLong {
+            get {
+                return ResourceManager.GetString("EncryptionmoduleLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select what module to use for encryption.
+        /// </summary>
+        internal static string EncryptionmoduleShort {
+            get {
+                return ResourceManager.GetString("EncryptionmoduleShort", resourceCulture);
             }
         }
         
@@ -331,6 +403,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use --encryption-module=gpg instead.
+        /// </summary>
+        internal static string GpgencryptionDeprecated {
+            get {
+                return ResourceManager.GetString("GpgencryptionDeprecated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to By default, Duplicati will use the AES encryption algorithm to encrypt the backup volumes, setting this flag makes Duplicati use the GNU Privacy Guard instead. GnuPG must be installed on the machine for this to work..
         /// </summary>
         internal static string GpgencryptionLong {
@@ -345,24 +426,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string GpgencryptionShort {
             get {
                 return ResourceManager.GetString("GpgencryptionShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program &quot;gpg&quot; is avalible in the system path..
-        /// </summary>
-        internal static string GpgprogrampathLong {
-            get {
-                return ResourceManager.GetString("GpgprogrampathLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The path to GnuPG.
-        /// </summary>
-        internal static string GpgprogrampathShort {
-            get {
-                return ResourceManager.GetString("GpgprogrampathShort", resourceCulture);
             }
         }
         
@@ -475,7 +538,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supply a passphrase that Duplicati will use to encrypt the backup volumes, making the unreadable without the passphrase..
+        ///   Looks up a localized string similar to Supply a passphrase that Duplicati will use to encrypt the backup volumes, making them unreadable without the passphrase. This variable can also be supplied through the environment variable PASSPHRASE..
         /// </summary>
         internal static string PassphraseLong {
             get {
@@ -579,24 +642,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string SignaturecontrolfilesShort {
             get {
                 return ResourceManager.GetString("SignaturecontrolfilesShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The GNU Privacy Guard can optionally sign volumes with a special key. This feature is not currently active in Duplicati..
-        /// </summary>
-        internal static string SignkeyLong {
-            get {
-                return ResourceManager.GetString("SignkeyLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Sign key for GnuPG.
-        /// </summary>
-        internal static string SignkeyShort {
-            get {
-                return ResourceManager.GetString("SignkeyShort", resourceCulture);
             }
         }
         

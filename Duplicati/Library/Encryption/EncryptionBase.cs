@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Encryption
 {
@@ -30,7 +31,11 @@ namespace Duplicati.Library.Encryption
     {
         #region IEncryption Members
 
+        public abstract IList<ICommandLineArgument> SupportedCommands { get; }
         public abstract string FilenameExtension { get; }
+        public abstract string DisplayName { get; }
+        public abstract string Description { get; }
+        protected abstract void Dispose(bool disposing);
 
         public virtual void Encrypt(string inputfile, string outputfile)
         {
@@ -56,6 +61,30 @@ namespace Duplicati.Library.Encryption
 
         public abstract System.IO.Stream Decrypt(System.IO.Stream input);
 
+        public virtual long SizeOverhead(long filesize)
+        {
+            using (Core.TempFile t1 = new Duplicati.Library.Core.TempFile())
+            using (Core.TempFile t2 = new Duplicati.Library.Core.TempFile())
+            {
+                using (System.IO.Stream s1 = System.IO.File.Create(t1))
+                {
+                    long bytesleft = filesize;
+                    byte[] buf = new byte[1024];
+                    Random rnd = new Random();
+                    while (bytesleft > 0)
+                    {
+                        rnd.NextBytes(buf);
+                        s1.Write(buf, 0, (int)Math.Min(buf.Length, bytesleft));
+                        bytesleft -= buf.Length;
+                    }
+                }
+
+                Encrypt(t1, t2);
+
+                return Math.Max(0, new System.IO.FileInfo(t2).Length - filesize);
+            }
+        }
+
         public virtual void Decrypt(System.IO.Stream input, System.IO.Stream output)
         {
             try
@@ -68,6 +97,15 @@ namespace Duplicati.Library.Encryption
                 //Better error message than "Padding is invalid and cannot be removed" :)
                 throw new System.Security.Cryptography.CryptographicException(string.Format(Strings.EncryptionBase.DecryptionError, cex.Message), cex);
             }
+        }
+
+        #endregion
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
 
         #endregion

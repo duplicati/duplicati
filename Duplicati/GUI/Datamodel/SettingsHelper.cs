@@ -71,7 +71,7 @@ namespace Duplicati.Datamodel
         public PropertyInfo KeyField { get { return m_keyfield; } }
         public PropertyInfo ValueField { get { return m_valuefield; } }
 
-        private Dictionary<TKey, TBase> InternalSettings
+        protected Dictionary<TKey, TBase> InternalSettings
         {
             get
             {
@@ -90,7 +90,7 @@ namespace Duplicati.Datamodel
 
         #region IDictionary<TKey, TValue> Members
 
-        public void Add(TKey key, TValue value)
+        public virtual void Add(TKey key, TValue value)
         {
             TBase item = Activator.CreateInstance<TBase>();
             m_keyfield.SetValue(item, key, null);
@@ -153,24 +153,27 @@ namespace Duplicati.Datamodel
         {
             get
             {
-                if (InternalSettings.ContainsKey(key))
-                    return (TValue)m_valuefield.GetValue(InternalSettings[key], null);
+                TBase tmp;
+                if (InternalSettings.TryGetValue(key, out tmp))
+                    return (TValue)m_valuefield.GetValue(tmp, null);
                 else
                     return default(TValue);
             }
             set
             {
-                if (value == null && InternalSettings.ContainsKey(key))
+                bool exists = InternalSettings.ContainsKey(key);
+
+                if (value == null && exists)
                 {
                     //Remove
                     this.Remove(key);
                 }
-                else if (value != null && !InternalSettings.ContainsKey(key))
+                else if (value != null && !exists)
                 {
                     //Add
                     this.Add(key, value);
                 }
-                else if (value != null && InternalSettings.ContainsKey(key))
+                else if (value != null && exists)
                 {
                     //Update
                     m_valuefield.SetValue(InternalSettings[key], value, null);
@@ -186,7 +189,7 @@ namespace Duplicati.Datamodel
 
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            throw new Exception("The method or operation is not implemented.");
+            this.Add(item.Key, item.Value);
         }
 
         public void Clear()
@@ -203,7 +206,16 @@ namespace Duplicati.Datamodel
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            throw new Exception("The method or operation is not implemented.");
+            if (!InternalSettings.ContainsKey(item.Key))
+                return false;
+
+            TValue v = this[item.Key];
+            if (v == null && item.Value == null)
+                return true;
+            else if (v == null)
+                return false;
+            else
+                return v.Equals(item.Value);
         }
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
@@ -223,7 +235,10 @@ namespace Duplicati.Datamodel
 
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            throw new Exception("The method or operation is not implemented.");
+            if (!this.Contains(item))
+                return false;
+            
+            return this.Remove(item.Key);
         }
 
         #endregion

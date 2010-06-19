@@ -70,6 +70,33 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occured while loading compression settings: {0}.
+        /// </summary>
+        internal static string CompressionLoadError {
+            get {
+                return ResourceManager.GetString("CompressionLoadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occured while loading encryption settings: {1}.
+        /// </summary>
+        internal static string EncryptionLoadError {
+            get {
+                return ResourceManager.GetString("EncryptionLoadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occured while loading generic module settings: {0}.
+        /// </summary>
+        internal static string GenericModuleLoadError {
+            get {
+                return ResourceManager.GetString("GenericModuleLoadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!.
         /// </summary>
         internal static string PageDescription {

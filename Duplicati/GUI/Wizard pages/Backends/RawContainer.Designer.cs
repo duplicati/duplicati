@@ -32,8 +32,11 @@
             this.label1 = new System.Windows.Forms.Label();
             this.Destination = new System.Windows.Forms.TextBox();
             this.ProtocolKey = new System.Windows.Forms.TextBox();
-            this.OptionGrid = new Duplicati.GUI.Wizard_pages.CommandLineOptionGrid();
             this.SuspendLayout();
+            // 
+            // OptionGrid
+            // 
+            resources.ApplyResources(this.OptionGrid, "OptionGrid");
             // 
             // label1
             // 
@@ -51,20 +54,18 @@
             this.ProtocolKey.Name = "ProtocolKey";
             this.ProtocolKey.ReadOnly = true;
             // 
-            // OptionGrid
-            // 
-            resources.ApplyResources(this.OptionGrid, "OptionGrid");
-            this.OptionGrid.Name = "OptionGrid";
-            // 
             // RawContainer
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.OptionGrid);
             this.Controls.Add(this.Destination);
             this.Controls.Add(this.ProtocolKey);
             this.Controls.Add(this.label1);
             this.Name = "RawContainer";
+            this.Controls.SetChildIndex(this.label1, 0);
+            this.Controls.SetChildIndex(this.ProtocolKey, 0);
+            this.Controls.SetChildIndex(this.Destination, 0);
+            this.Controls.SetChildIndex(this.OptionGrid, 0);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -75,6 +76,5 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox Destination;
         private System.Windows.Forms.TextBox ProtocolKey;
-        private CommandLineOptionGrid OptionGrid;
     }
 }

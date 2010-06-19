@@ -34,7 +34,7 @@ namespace Duplicati.CommandLine.Decrypter
                 return;
             }
 
-            AESEncryption c = new AESEncryption(args[0]);
+            AESEncryption c = new AESEncryption(args[0], new Dictionary<string,string>());
             c.Decrypt(args[1], args[2]);
         }
     }

@@ -29,12 +29,10 @@ namespace Duplicati.Datamodel
         private SettingsHelper<ApplicationSetting, string, string> m_appset;
 
         private const string RECENT_DURATION = "Recent duration";
-        private const string PGP_PATH = "PGP path";
-        private const string SFTP_PATH = "SFTP Path";
         private const string TEMP_PATH = "Temp Path";
 
         private const string USE_COMMON_PASSWORD = "Use common password";
-        private const string COMMON_PASSWORD_USE_GPG = "Use PGP with common password";
+        private const string COMMON_PASSWORD_ENCRYPTION_MODULE = "Encryption module used with common password";
         private const string COMMON_PASSWORD = "Common password";
 
         private const string SIGNATURE_CACHE_PATH = "Signature Cache Path";
@@ -74,51 +72,17 @@ namespace Duplicati.Datamodel
         }
 
         /// <summary>
+        /// Gets a reference to the internal options
+        /// </summary>
+        public IDictionary<string, string> RawOptions { get { return m_appset; } }
+
+        /// <summary>
         /// Gets or sets the amount of time a log entry will be visible in the list of recent backups
         /// </summary>
         public string RecentBackupDuration
         {
             get { return string.IsNullOrEmpty(m_appset[RECENT_DURATION]) ? "2W" : m_appset[RECENT_DURATION]; }
             set { m_appset[RECENT_DURATION] = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the path to PGP. May contain environment variables
-        /// </summary>
-        public string GPGPath
-        {
-            get 
-            { 
-                if (string.IsNullOrEmpty(m_appset[PGP_PATH]))
-                {
-                    if (Library.Core.Utility.IsClientLinux)
-                        return "gpg";
-                    else
-                        return System.IO.Path.Combine(PROGRAM_FILES, "GNU\\GnuPG\\gpg.exe");
-                }
-
-                return m_appset[PGP_PATH];
-            }
-            set { m_appset[PGP_PATH] = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the path to SFtp. May contain environment variables
-        /// </summary>
-        public string SFtpPath
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_appset[SFTP_PATH]))
-                {
-                    if (Library.Core.Utility.IsClientLinux)
-                        return "sftp";
-                    else
-                        return System.IO.Path.Combine(PROGRAM_FILES, "putty\\psftp.exe");
-                }
-                return m_appset[SFTP_PATH];
-            }
-            set { m_appset[SFTP_PATH] = value; }
         }
 
         /// <summary>
@@ -150,7 +114,10 @@ namespace Duplicati.Datamodel
             get
             {
                 bool res;
-                if (bool.TryParse(m_appset[USE_COMMON_PASSWORD], out res))
+                string tmp;
+                m_appset.TryGetValue(USE_COMMON_PASSWORD, out tmp);
+
+                if (bool.TryParse(tmp, out res))
                     return res;
                 else
                     return false;
@@ -159,19 +126,17 @@ namespace Duplicati.Datamodel
         }
 
         /// <summary>
-        /// Gets or sets a value indicating if GPG should be used to encrypt passwords
+        /// Gets or sets the encryption module used as default
         /// </summary>
-        public bool CommonPasswordUseGPG
+        public string CommonPasswordEncryptionModule
         {
             get
             {
-                bool res;
-                if (bool.TryParse(m_appset[COMMON_PASSWORD_USE_GPG], out res))
-                    return res;
-                else
-                    return false;
+                string res;
+                m_appset.TryGetValue(COMMON_PASSWORD_ENCRYPTION_MODULE, out res);
+                return string.IsNullOrEmpty(res) ? "aes" : res;
             }
-            set { m_appset[COMMON_PASSWORD_USE_GPG] = value.ToString(); }
+            set { m_appset[COMMON_PASSWORD_ENCRYPTION_MODULE] = value; }
         }
 
         /// <summary>
@@ -181,10 +146,9 @@ namespace Duplicati.Datamodel
         {
             get
             {
-                if (string.IsNullOrEmpty(m_appset[COMMON_PASSWORD]))
-                    return "";
-                else
-                    return m_appset[COMMON_PASSWORD];
+                string res;
+                m_appset.TryGetValue(COMMON_PASSWORD, out res);
+                return string.IsNullOrEmpty(res) ? "" : res;
             }
             set { m_appset[COMMON_PASSWORD] = value; }
         }

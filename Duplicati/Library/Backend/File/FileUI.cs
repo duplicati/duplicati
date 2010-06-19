@@ -220,7 +220,7 @@ namespace Duplicati.Library.Backend
                 commandlineOptions["ftp-password"] = guiOptions[PASSWORD];
 
             if (!guiOptions.ContainsKey(DESTINATION_FOLDER))
-                throw new Exception(string.Format(Backend.CommonStrings.ConfigurationIsMissingItemError, DESTINATION_FOLDER));
+                throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, DESTINATION_FOLDER));
 
             return "file://" + guiOptions[DESTINATION_FOLDER];
         }
