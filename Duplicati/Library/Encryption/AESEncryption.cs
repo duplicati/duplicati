@@ -156,7 +156,10 @@ namespace Duplicati.Library.Encryption
             catch (InvalidDataException)
             {
                 if (m_allowFallback)
+                {
+                    input.Seek(0, SeekOrigin.Begin);
                     return new System.Security.Cryptography.CryptoStream(input, GenerateAESEncryptor(m_key).CreateDecryptor(), System.Security.Cryptography.CryptoStreamMode.Read);
+                }
                 else
                     throw;
             }
