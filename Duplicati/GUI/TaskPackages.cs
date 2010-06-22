@@ -264,6 +264,38 @@ namespace Duplicati.GUI
             get { return m_result; }
             set { m_result = value; }
         }
+
+        protected virtual void WriteLogMessage(string action, string subaction, string data, bool commit)
+        {
+            lock (Program.MainLock)
+            {
+                System.Data.LightDatamodel.IDataFetcher con = this.Task.DataParent;
+                Log l = con.Add<Log>();
+                LogBlob lb = con.Add<LogBlob>();
+                lb.StringData = data;
+
+                l.Blob = lb;
+                this.Task.Logs.Add(l);
+
+                //Keep some of the data in an easy to read manner
+                DuplicatiOutputParser.ParseData(l);
+                l.Action = action;
+                l.SubAction = subaction;
+                l.BeginTime = m_beginTime;
+                l.EndTime = DateTime.Now;
+
+                //Find logs that are no longer displayed, and delete them
+                foreach (Log x in con.GetObjects<Log>("EndTime < ?", Library.Core.Timeparser.ParseTimeInterval(new ApplicationSettings(con).RecentBackupDuration, DateTime.Now, true)))
+                {
+                    if (x.Blob != null) //Load the blob part if required
+                        con.DeleteObject(x.Blob);
+                    con.DeleteObject(x);
+                }
+
+                if (commit)
+                    (con as System.Data.LightDatamodel.IDataFetcherWithRelations).CommitAllRecursive();
+            }
+        }
     }
 
     public abstract class FullOrIncrementalTask : BackupTask
@@ -276,26 +308,7 @@ namespace Duplicati.GUI
 
         protected void DoneEvent(IDuplicityTask task, string output)
         {
-            lock (Program.MainLock)
-            {
-                Log l = this.Task.DataParent.Add<Log>();
-                LogBlob lb = this.Task.DataParent.Add<LogBlob>();
-                lb.StringData = output;
-
-                l.Blob = lb;
-                this.Task.Logs.Add(l);
-
-                //Keep some of the data in an easy to read manner
-                DuplicatiOutputParser.ParseData(l);
-                l.SubAction = "Primary";
-                l.Action = "Backup";
-                l.BeginTime = m_beginTime;
-                l.EndTime = DateTime.Now;
-
-                (this.Task.DataParent as System.Data.LightDatamodel.IDataFetcherCached).CommitAll();
-                if (this.Task.DataParent != Program.DataConnection)
-                    Program.DataConnection.CommitAll();
-            }
+            WriteLogMessage("Backup", "Primary", output, true);
         }
 
         public override string GetConfiguration(Dictionary<string, string> options)
@@ -610,25 +623,7 @@ namespace Duplicati.GUI
 
         void DoneEvent(IDuplicityTask owner, string output)
         {
-            lock (Program.MainLock)
-            {
-                Log l = this.Task.DataParent.Add<Log>();
-                LogBlob lb = this.Task.DataParent.Add<LogBlob>();
-                lb.StringData = output;
-
-                l.Blob = lb;
-                this.Task.Logs.Add(l);
-
-                //Keep some of the data in an easy to read manner
-                DuplicatiOutputParser.ParseData(l);
-                l.SubAction = "Primary";
-                l.Action = "Restore";
-                l.BeginTime = m_beginTime;
-                l.EndTime = DateTime.Now;
-
-                (this.Task.DataParent as System.Data.LightDatamodel.IDataFetcherCached).CommitAll();
-                Program.DataConnection.CommitAll();
-            }
+            WriteLogMessage("Restore", "Primary", output, true);
         }
 
         public override string LocalPath
@@ -666,26 +661,7 @@ namespace Duplicati.GUI
 
         void DoneEvent(IDuplicityTask owner, string output)
         {
-            lock (Program.MainLock)
-            {
-                Log l = this.Task.DataParent.Add<Log>();
-                LogBlob lb = this.Task.DataParent.Add<LogBlob>();
-                lb.StringData = output;
-
-                l.Blob = lb;
-                this.Task.Logs.Add(l);
-
-                //Keep some of the data in an easy to read manner
-                DuplicatiOutputParser.ParseData(l);
-                l.SubAction = "Cleanup";
-                l.Action = "Backup";
-                l.BeginTime = m_beginTime;
-                l.EndTime = DateTime.Now;
-
-                (this.Task.DataParent as System.Data.LightDatamodel.IDataFetcherCached).CommitAll();
-                if (this.Task.DataParent != Program.DataConnection)
-                    Program.DataConnection.CommitAll();
-            }            
+            WriteLogMessage("Backup", "Cleanup", output, false);
         }
 
         public override string LocalPath
@@ -725,22 +701,7 @@ namespace Duplicati.GUI
 
         void DoneEvent(IDuplicityTask owner, string output)
         {
-            lock (Program.MainLock)
-            {
-                Log l = this.Task.DataParent.Add<Log>();
-                LogBlob lb = this.Task.DataParent.Add<LogBlob>();
-                lb.StringData = output;
-
-                l.Blob = lb;
-                this.Task.Logs.Add(l);
-
-                //Keep some of the data in an easy to read manner
-                DuplicatiOutputParser.ParseData(l);
-                l.SubAction = "Cleanup";
-                l.Action = "Backup";
-                l.BeginTime = m_beginTime;
-                l.EndTime = DateTime.Now;
-            }
+            WriteLogMessage("Backup", "Cleanup", output, false);
         }
 
         public override string GetConfiguration(Dictionary<string, string> options)

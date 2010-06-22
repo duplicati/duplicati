@@ -216,13 +216,48 @@ namespace Duplicati.GUI
                     }
                 }
 
-                List<IDataClass> items = new List<IDataClass>();
-                IList<Duplicati.Datamodel.Log> tmp = schedule.Task.Logs;
-                items.AddRange(Program.DataConnection.FindObjectRelations(schedule));
-                foreach(IDataClass o in items)
-                    Program.DataConnection.DeleteObject(o);
+                //Prior to deleting we need to make sure all relations are loaded
+                Queue<object> unvisited = new Queue<object>();
+                Dictionary<object, object> visited = new Dictionary<object, object>();
 
-                Program.DataConnection.Commit(items.ToArray());
+                //Set up a transaction we can safely work on
+                System.Data.LightDatamodel.DataFetcherNested con = new DataFetcherNested(Program.DataConnection);
+
+                //Load the schedule in the transaction context
+                object entryItem = con.GetObjectById<Schedule>(schedule.ID);
+                unvisited.Enqueue(entryItem);
+                visited[entryItem] = null;
+
+                //Traverse the object relations
+                while (unvisited.Count > 0)
+                {
+                    object x = unvisited.Dequeue();
+                    foreach (System.Reflection.PropertyInfo pi in x.GetType().GetProperties())
+                    {
+                        if (pi.PropertyType != typeof(string) && (typeof(System.Data.LightDatamodel.IDataClass).IsAssignableFrom(pi.PropertyType) || typeof(System.Collections.IEnumerable).IsAssignableFrom(pi.PropertyType)))
+                            try 
+                            { 
+                                object tmp = pi.GetValue(x, null);
+                                foreach(object i in tmp as System.Collections.IEnumerable ?? new object[] { tmp })
+                                if (i as IDataClass != null && !visited.ContainsKey(i))
+                                {
+                                    visited[i] = null;
+                                    unvisited.Enqueue(i);
+                                }
+                            }
+                            catch 
+                            { 
+                                //TODO: Perhaps log this?
+                            }
+                    }
+                }
+
+                //Remove all entries visited
+                foreach(IDataClass o in visited.Keys)
+                    con.DeleteObject(o);
+
+                //Persist to database
+                con.CommitAllRecursive();
             }
             else if (m_form.CurrentPage is Wizard_pages.RestoreSetup.FinishedRestoreSetup)
             {
