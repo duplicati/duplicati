@@ -30,6 +30,7 @@ namespace Duplicati.Library.Backend
         private string m_url;
         private string m_path;
         private string m_rawurl;
+        private string m_rawurlPort;
         Dictionary<string, string> m_options;
         private bool m_useIntegratedAuthentication = false;
         private bool m_forceDigestAuthentication = false;
@@ -102,7 +103,8 @@ namespace Duplicati.Library.Backend
                 m_path = m_path.Substring(0, m_path.IndexOf("?"));
 
             m_path = System.Web.HttpUtility.UrlDecode(m_path);
-            m_rawurl = (m_useSSL ? "https://" : "http://") + u.Host + m_path;
+            m_rawurl = (m_useSSL ? "https://" : "http://") + u.Port + m_path;
+            m_rawurlPort = (m_useSSL ? "https://" : "http://") + u.Host + ":" + u.Port + m_path;
         }
 
         #region IBackend Members
@@ -161,6 +163,8 @@ namespace Duplicati.Library.Backend
                             cmp_path = m_url;
                         else if (name.StartsWith(m_rawurl))
                             cmp_path = m_rawurl;
+                        else if (name.StartsWith(m_rawurlPort))
+                            cmp_path = m_rawurlPort;
                         else if (name.StartsWith(m_path))
                             cmp_path = m_path;
                         else
