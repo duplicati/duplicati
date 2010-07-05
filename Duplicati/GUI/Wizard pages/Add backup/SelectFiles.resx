@@ -474,6 +474,9 @@
   <data name="&gt;&gt;DocumentsRadio.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
+  <data name="InnerControlContainer.AutoScroll" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
   <data name="InnerControlContainer.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Fill</value>
   </data>
