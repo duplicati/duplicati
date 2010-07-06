@@ -144,6 +144,13 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap donate_button {
+            get {
+                object obj = ResourceManager.GetObject("donate_button", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap Duplicati {
             get {
                 object obj = ResourceManager.GetObject("Duplicati", resourceCulture);

@@ -135,5 +135,15 @@ namespace Duplicati.GUI.Wizard_pages
         {
             m_owner.NextButton.PerformClick();
         }
+
+        private void donate_clicked(object sender, EventArgs e)
+        {
+            Duplicati.GUI.UrlUtillity.OpenUrl("https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&lc=DK&bn=PP%2dDonationsBF&charset=UTF%2d8");
+        }
+
+        private void donate_link_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            donate_clicked(sender, e);
+        }
     }
 }

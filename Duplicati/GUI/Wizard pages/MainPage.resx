@@ -121,6 +121,10 @@
   <data name="label1.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="label1.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
     <value>32, 8</value>
@@ -144,22 +148,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="Backup.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="Backup.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 152</value>
-  </data>
-  <data name="Backup.Size" type="System.Drawing.Size, System.Drawing">
-    <value>150, 17</value>
-  </data>
-  <data name="Backup.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="Backup.Text" xml:space="preserve">
-    <value>Run a backup immediately</value>
+    <value>2</value>
   </data>
   <data name="&gt;&gt;Backup.Name" xml:space="preserve">
     <value>Backup</value>
@@ -173,21 +162,6 @@
   <data name="&gt;&gt;Backup.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="Remove.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="Remove.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 72</value>
-  </data>
-  <data name="Remove.Size" type="System.Drawing.Size, System.Drawing">
-    <value>157, 17</value>
-  </data>
-  <data name="Remove.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="Remove.Text" xml:space="preserve">
-    <value>Remove an existing backup</value>
-  </data>
   <data name="&gt;&gt;Remove.Name" xml:space="preserve">
     <value>Remove</value>
   </data>
@@ -199,21 +173,6 @@
   </data>
   <data name="&gt;&gt;Remove.ZOrder" xml:space="preserve">
     <value>1</value>
-  </data>
-  <data name="Restore.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="Restore.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 120</value>
-  </data>
-  <data name="Restore.Size" type="System.Drawing.Size, System.Drawing">
-    <value>154, 17</value>
-  </data>
-  <data name="Restore.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="Restore.Text" xml:space="preserve">
-    <value>Restore files from a backup</value>
   </data>
   <data name="&gt;&gt;Restore.Name" xml:space="preserve">
     <value>Restore</value>
@@ -227,21 +186,6 @@
   <data name="&gt;&gt;Restore.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
-  <data name="Edit.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="Edit.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 40</value>
-  </data>
-  <data name="Edit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>135, 17</value>
-  </data>
-  <data name="Edit.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="Edit.Text" xml:space="preserve">
-    <value>Edit an existing backup</value>
-  </data>
   <data name="&gt;&gt;Edit.Name" xml:space="preserve">
     <value>Edit</value>
   </data>
@@ -253,21 +197,6 @@
   </data>
   <data name="&gt;&gt;Edit.ZOrder" xml:space="preserve">
     <value>3</value>
-  </data>
-  <data name="CreateNew.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="CreateNew.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 8</value>
-  </data>
-  <data name="CreateNew.Size" type="System.Drawing.Size, System.Drawing">
-    <value>141, 17</value>
-  </data>
-  <data name="CreateNew.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="CreateNew.Text" xml:space="preserve">
-    <value>Schedule a new backup</value>
   </data>
   <data name="&gt;&gt;CreateNew.Name" xml:space="preserve">
     <value>CreateNew</value>
@@ -300,8 +229,242 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;panel1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="Backup.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Backup.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Backup.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 152</value>
+  </data>
+  <data name="Backup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>150, 17</value>
+  </data>
+  <data name="Backup.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="Backup.Text" xml:space="preserve">
+    <value>Run a backup immediately</value>
+  </data>
+  <data name="&gt;&gt;Backup.Name" xml:space="preserve">
+    <value>Backup</value>
+  </data>
+  <data name="&gt;&gt;Backup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;Backup.Parent" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;Backup.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
+  <data name="Remove.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Remove.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Remove.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 72</value>
+  </data>
+  <data name="Remove.Size" type="System.Drawing.Size, System.Drawing">
+    <value>157, 17</value>
+  </data>
+  <data name="Remove.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="Remove.Text" xml:space="preserve">
+    <value>Remove an existing backup</value>
+  </data>
+  <data name="&gt;&gt;Remove.Name" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="&gt;&gt;Remove.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;Remove.Parent" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;Remove.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="Restore.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Restore.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Restore.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 120</value>
+  </data>
+  <data name="Restore.Size" type="System.Drawing.Size, System.Drawing">
+    <value>154, 17</value>
+  </data>
+  <data name="Restore.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="Restore.Text" xml:space="preserve">
+    <value>Restore files from a backup</value>
+  </data>
+  <data name="&gt;&gt;Restore.Name" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="&gt;&gt;Restore.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;Restore.Parent" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;Restore.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="Edit.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Edit.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Edit.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 40</value>
+  </data>
+  <data name="Edit.Size" type="System.Drawing.Size, System.Drawing">
+    <value>135, 17</value>
+  </data>
+  <data name="Edit.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="Edit.Text" xml:space="preserve">
+    <value>Edit an existing backup</value>
+  </data>
+  <data name="&gt;&gt;Edit.Name" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="&gt;&gt;Edit.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;Edit.Parent" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;Edit.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="CreateNew.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="CreateNew.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="CreateNew.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 8</value>
+  </data>
+  <data name="CreateNew.Size" type="System.Drawing.Size, System.Drawing">
+    <value>141, 17</value>
+  </data>
+  <data name="CreateNew.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="CreateNew.Text" xml:space="preserve">
+    <value>Schedule a new backup</value>
+  </data>
+  <data name="&gt;&gt;CreateNew.Name" xml:space="preserve">
+    <value>CreateNew</value>
+  </data>
+  <data name="&gt;&gt;CreateNew.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.DoubleClickRadioButton, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+  <data name="&gt;&gt;CreateNew.Parent" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;CreateNew.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <data name="donate_link.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="donate_link.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 56</value>
+  </data>
+  <data name="donate_link.Size" type="System.Drawing.Size, System.Drawing">
+    <value>88, 13</value>
+  </data>
+  <data name="donate_link.TabIndex" type="System.Int32, mscorlib">
+    <value>7</value>
+  </data>
+  <data name="donate_link.Text" xml:space="preserve">
+    <value>Support Duplicati</value>
+  </data>
+  <data name="donate_link.ToolTip" xml:space="preserve">
+    <value>Show your appreciation by donating, any amount is accepted</value>
+  </data>
+  <data name="&gt;&gt;donate_link.Name" xml:space="preserve">
+    <value>donate_link</value>
+  </data>
+  <data name="&gt;&gt;donate_link.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LinkLabel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;donate_link.Parent" xml:space="preserve">
+    <value>donate_panel</value>
+  </data>
+  <data name="&gt;&gt;donate_link.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="donate_button.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="donate_button.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="donate_button.Size" type="System.Drawing.Size, System.Drawing">
+    <value>124, 48</value>
+  </data>
+  <data name="donate_button.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="donate_button.ToolTip" xml:space="preserve">
+    <value>Show your appreciation by donating, any amount is accepted</value>
+  </data>
+  <data name="&gt;&gt;donate_button.Name" xml:space="preserve">
+    <value>donate_button</value>
+  </data>
+  <data name="&gt;&gt;donate_button.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;donate_button.Parent" xml:space="preserve">
+    <value>donate_panel</value>
+  </data>
+  <data name="&gt;&gt;donate_button.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="donate_panel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>344, 48</value>
+  </data>
+  <data name="donate_panel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>128, 80</value>
+  </data>
+  <data name="donate_panel.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;donate_panel.Name" xml:space="preserve">
+    <value>donate_panel</value>
+  </data>
+  <data name="&gt;&gt;donate_panel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;donate_panel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;donate_panel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
@@ -310,6 +473,12 @@
   </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
     <value>506, 242</value>
+  </data>
+  <data name="&gt;&gt;toolTip.Name" xml:space="preserve">
+    <value>toolTip</value>
+  </data>
+  <data name="&gt;&gt;toolTip.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>MainPage</value>

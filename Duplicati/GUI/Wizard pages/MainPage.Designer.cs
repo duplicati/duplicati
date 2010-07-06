@@ -28,6 +28,7 @@ namespace Duplicati.GUI.Wizard_pages
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainPage));
             this.label1 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
@@ -36,7 +37,13 @@ namespace Duplicati.GUI.Wizard_pages
             this.Restore = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.Edit = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
             this.CreateNew = new System.Windows.Forms.Wizard.DoubleClickRadioButton();
+            this.donate_panel = new System.Windows.Forms.Panel();
+            this.donate_button = new System.Windows.Forms.PictureBox();
+            this.donate_link = new System.Windows.Forms.LinkLabel();
+            this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.panel1.SuspendLayout();
+            this.donate_panel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.donate_button)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -99,15 +106,44 @@ namespace Duplicati.GUI.Wizard_pages
             this.CreateNew.DoubleClick += new System.EventHandler(this.RadioButton_DoubleClick);
             this.CreateNew.CheckedChanged += new System.EventHandler(this.Radio_CheckedChanged);
             // 
+            // donate_panel
+            // 
+            this.donate_panel.Controls.Add(this.donate_link);
+            this.donate_panel.Controls.Add(this.donate_button);
+            resources.ApplyResources(this.donate_panel, "donate_panel");
+            this.donate_panel.Name = "donate_panel";
+            // 
+            // donate_button
+            // 
+            this.donate_button.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.donate_button.Image = global::Duplicati.GUI.Properties.Resources.donate_button;
+            resources.ApplyResources(this.donate_button, "donate_button");
+            this.donate_button.Name = "donate_button";
+            this.donate_button.TabStop = false;
+            this.toolTip.SetToolTip(this.donate_button, resources.GetString("donate_button.ToolTip"));
+            this.donate_button.Click += new System.EventHandler(this.donate_clicked);
+            // 
+            // donate_link
+            // 
+            resources.ApplyResources(this.donate_link, "donate_link");
+            this.donate_link.Name = "donate_link";
+            this.donate_link.TabStop = true;
+            this.toolTip.SetToolTip(this.donate_link, resources.GetString("donate_link.ToolTip"));
+            this.donate_link.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.donate_link_LinkClicked);
+            // 
             // MainPage
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.donate_panel);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.label1);
             this.Name = "MainPage";
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
+            this.donate_panel.ResumeLayout(false);
+            this.donate_panel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.donate_button)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -122,5 +158,9 @@ namespace Duplicati.GUI.Wizard_pages
         private System.Windows.Forms.Wizard.DoubleClickRadioButton CreateNew;
         private System.Windows.Forms.Wizard.DoubleClickRadioButton Backup;
         private System.Windows.Forms.Wizard.DoubleClickRadioButton Remove;
+        private System.Windows.Forms.Panel donate_panel;
+        private System.Windows.Forms.PictureBox donate_button;
+        private System.Windows.Forms.LinkLabel donate_link;
+        private System.Windows.Forms.ToolTip toolTip;
     }
 }

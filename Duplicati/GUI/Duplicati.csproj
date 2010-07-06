@@ -1114,6 +1114,8 @@
     <None Include="Resources\ModifiedFile.png" />
     <None Include="Resources\IncompleteFile.png" />
     <None Include="Resources\Trash.png" />
+    <None Include="Resources\paypal_logo.gif" />
+    <None Include="Resources\donate_button.gif" />
     <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
