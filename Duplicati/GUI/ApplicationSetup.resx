@@ -148,13 +148,40 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
+  </data>
+  <data name="HideDonateButton.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="HideDonateButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 96</value>
+  </data>
+  <data name="HideDonateButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>253, 17</value>
+  </data>
+  <data name="HideDonateButton.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="HideDonateButton.Text" xml:space="preserve">
+    <value>Hide the donate button on the main wizard page</value>
+  </data>
+  <data name="&gt;&gt;HideDonateButton.Name" xml:space="preserve">
+    <value>HideDonateButton</value>
+  </data>
+  <data name="&gt;&gt;HideDonateButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;HideDonateButton.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;HideDonateButton.ZOrder" xml:space="preserve">
+    <value>0</value>
   </data>
   <data name="StartupDelayDuration.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Right</value>
+    <value>Top, Right</value>
   </data>
   <data name="StartupDelayDuration.Location" type="System.Drawing.Point, System.Drawing">
-    <value>208, 72</value>
+    <value>208, 71</value>
   </data>
   <data name="StartupDelayDuration.Size" type="System.Drawing.Size, System.Drawing">
     <value>221, 21</value>
@@ -172,7 +199,7 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;StartupDelayDuration.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="label7.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -202,13 +229,13 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;label7.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="LanguageSelection.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Right</value>
+    <value>Top, Right</value>
   </data>
   <data name="LanguageSelection.Location" type="System.Drawing.Point, System.Drawing">
-    <value>208, 24</value>
+    <value>208, 23</value>
   </data>
   <data name="LanguageSelection.Size" type="System.Drawing.Size, System.Drawing">
     <value>223, 21</value>
@@ -226,7 +253,7 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;LanguageSelection.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -256,13 +283,13 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="RecentDuration.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Right</value>
+    <value>Top, Right</value>
   </data>
   <data name="RecentDuration.Location" type="System.Drawing.Point, System.Drawing">
-    <value>208, 48</value>
+    <value>208, 47</value>
   </data>
   <data name="RecentDuration.Size" type="System.Drawing.Size, System.Drawing">
     <value>221, 21</value>
@@ -280,7 +307,7 @@
     <value>groupBox1</value>
   </data>
   <data name="&gt;&gt;RecentDuration.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>5</value>
   </data>
   <data name="groupBox1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Top</value>
@@ -289,7 +316,7 @@
     <value>3, 3</value>
   </data>
   <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>439, 104</value>
+    <value>439, 125</value>
   </data>
   <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -730,7 +757,7 @@
     <value>8, 40</value>
   </data>
   <data name="PasswordPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>424, 96</value>
+    <value>424, 64</value>
   </data>
   <data name="PasswordPanel.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -781,10 +808,10 @@
     <value>Top</value>
   </data>
   <data name="PasswordDefaultsGroup.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 107</value>
+    <value>3, 128</value>
   </data>
   <data name="PasswordDefaultsGroup.Size" type="System.Drawing.Size, System.Drawing">
-    <value>439, 144</value>
+    <value>439, 117</value>
   </data>
   <data name="PasswordDefaultsGroup.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -817,7 +844,7 @@
     <value>3, 3, 3, 3</value>
   </data>
   <data name="tabPage1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>445, 317</value>
+    <value>445, 277</value>
   </data>
   <data name="tabPage1.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -1492,9 +1519,6 @@
         qn+qqqp/qqqqf6qqqn+qqqp/qqqqf6qqqn+pqal/m5ubZGBgYA0AAAAAgAEAAAAAAAAAAAAAAAAAAAAA
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAA==
 </value>
-  </data>
-  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>

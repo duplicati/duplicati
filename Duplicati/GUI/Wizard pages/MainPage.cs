@@ -39,6 +39,8 @@ namespace Duplicati.GUI.Wizard_pages
         {
             InitializeComponent();
 
+            donate_panel.Visible = !new ApplicationSettings(Program.DataConnection).HideDonateButton;
+
             base.PageEnter += new PageChangeHandler(MainPage_PageEnter);
             base.PageLeave += new PageChangeHandler(MainPage_PageLeave);
             base.PageDisplay += new PageChangeHandler(MainPage_PageDisplay);

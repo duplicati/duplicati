@@ -40,13 +40,12 @@ namespace Duplicati.Datamodel
 
         private const string DISPLAY_LANGUAGE = "Display Language";
 
-        //This is only used on windows, on linux, it is assumed that the programs are in the path env.
-        public const string PROGRAM_FILES = "%PROGRAMFILES%";
+        private const string STARTUP_DELAY_DURATION = "Startup delay duration";
+        private const string THREAD_PRIORITY_OVERRIDE = "Thread priority override";
+        private const string UPLOAD_SPEED_LIMIT = "Upload speed limit";
+        private const string DOWNLOAD_SPEED_LIMIT = "Download speed limit";
 
-        public const string STARTUP_DELAY_DURATION = "Startup delay duration";
-        public const string THREAD_PRIORITY_OVERRIDE = "Thread priority override";
-        public const string UPLOAD_SPEED_LIMIT = "Upload speed limit";
-        public const string DOWNLOAD_SPEED_LIMIT = "Download speed limit";
+        private const string HIDE_DONATE_BUTTON = "Hide donate button";
 
         public ApplicationSettings(IDataFetcher dataparent)
         {
@@ -253,5 +252,19 @@ namespace Duplicati.Datamodel
             set { m_appset[UPLOAD_SPEED_LIMIT] = value == null ? "" : value; }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating if the donate button in Duplicati should be hidden
+        /// </summary>
+        public bool HideDonateButton
+        {
+            get
+            {
+                string tmp;
+                m_appset.TryGetValue(HIDE_DONATE_BUTTON, out tmp);
+
+                return Duplicati.Library.Core.Utility.ParseBool(tmp, false);
+            }
+            set { m_appset[HIDE_DONATE_BUTTON] = value.ToString(); }
+        }
     }
 }

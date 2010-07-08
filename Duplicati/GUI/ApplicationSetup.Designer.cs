@@ -31,9 +31,12 @@ namespace Duplicati.GUI
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ApplicationSetup));
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.HideDonateButton = new System.Windows.Forms.CheckBox();
+            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.label7 = new System.Windows.Forms.Label();
             this.LanguageSelection = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -59,11 +62,9 @@ namespace Duplicati.GUI
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.Bandwidth = new Duplicati.GUI.HelperControls.BandwidthLimit();
             this.ThreadPriorityPicker = new Duplicati.GUI.HelperControls.ThreadPriorityPicker();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.PasswordDefaultsGroup.SuspendLayout();
@@ -82,6 +83,7 @@ namespace Duplicati.GUI
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.HideDonateButton);
             this.groupBox1.Controls.Add(this.StartupDelayDuration);
             this.groupBox1.Controls.Add(this.label7);
             this.groupBox1.Controls.Add(this.LanguageSelection);
@@ -91,6 +93,20 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.groupBox1, "groupBox1");
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.TabStop = false;
+            // 
+            // HideDonateButton
+            // 
+            resources.ApplyResources(this.HideDonateButton, "HideDonateButton");
+            this.HideDonateButton.Name = "HideDonateButton";
+            this.HideDonateButton.UseVisualStyleBackColor = true;
+            this.HideDonateButton.CheckedChanged += new System.EventHandler(this.HideDonateButton_CheckedChanged);
+            // 
+            // StartupDelayDuration
+            // 
+            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
+            this.StartupDelayDuration.Name = "StartupDelayDuration";
+            this.StartupDelayDuration.Value = "";
+            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
             // 
             // label7
             // 
@@ -109,6 +125,13 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
+            // 
+            // RecentDuration
+            // 
+            resources.ApplyResources(this.RecentDuration, "RecentDuration");
+            this.RecentDuration.Name = "RecentDuration";
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
             // 
             // groupBox2
             // 
@@ -276,27 +299,6 @@ namespace Duplicati.GUI
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.TabStop = false;
             // 
-            // panel1
-            // 
-            this.panel1.Controls.Add(this.OKBtn);
-            this.panel1.Controls.Add(this.CancelBtn);
-            resources.ApplyResources(this.panel1, "panel1");
-            this.panel1.Name = "panel1";
-            // 
-            // StartupDelayDuration
-            // 
-            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
-            this.StartupDelayDuration.Name = "StartupDelayDuration";
-            this.StartupDelayDuration.Value = "";
-            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
-            // 
-            // RecentDuration
-            // 
-            resources.ApplyResources(this.RecentDuration, "RecentDuration");
-            this.RecentDuration.Name = "RecentDuration";
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
-            // 
             // Bandwidth
             // 
             this.Bandwidth.DownloadLimit = null;
@@ -313,6 +315,13 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.ThreadPriorityPicker, "ThreadPriorityPicker");
             this.ThreadPriorityPicker.Name = "ThreadPriorityPicker";
             this.ThreadPriorityPicker.SelectedPriorityChanged += new System.EventHandler(this.ThreadPriorityPicker_SelectedPriorityChanged);
+            // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.OKBtn);
+            this.panel1.Controls.Add(this.CancelBtn);
+            resources.ApplyResources(this.panel1, "panel1");
+            this.panel1.Name = "panel1";
             // 
             // ApplicationSetup
             // 
@@ -381,5 +390,6 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label EncryptionMethod;
         private System.Windows.Forms.ComboBox EncryptionModule;
+        private System.Windows.Forms.CheckBox HideDonateButton;
     }
 }

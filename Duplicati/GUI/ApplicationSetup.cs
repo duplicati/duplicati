@@ -228,6 +228,8 @@ namespace Duplicati.GUI
                 Bandwidth.UploadLimit = m_settings.UploadSpeedLimit;
                 Bandwidth.DownloadLimit = m_settings.DownloadSpeedLimit;
 
+                HideDonateButton.Checked = m_settings.HideDonateButton;
+
                 if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
                     LanguageSelection.SelectedIndex = 0;
                 else
@@ -476,6 +478,14 @@ namespace Duplicati.GUI
             //If there are any control extensions, let them modify the environement
             foreach (Library.Interface.ISettingsControl ic in Library.DynamicLoader.SettingsControlLoader.Modules)
                 ic.EndEdit(env, SettingExtension.GetExtensions(connection, ic.Key));
+        }
+
+        private void HideDonateButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            m_settings.HideDonateButton = HideDonateButton.Checked;
         }
     }
 }
