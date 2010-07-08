@@ -313,11 +313,7 @@ namespace Duplicati.GUI
 
         public override string GetConfiguration(Dictionary<string, string> options)
         {
-            string destination = base.GetConfiguration(options);
-            if (!string.IsNullOrEmpty(this.Task.Signaturekey))
-                options.Add("sign-key", this.Task.Signaturekey);
-            
-            return destination;
+            return base.GetConfiguration(options);
         }
 
         public override string LocalPath

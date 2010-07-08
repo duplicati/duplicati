@@ -44,8 +44,6 @@ namespace Duplicati.Datamodel
 		private System.String m_Service = "";
 		[DatabaseField("Encryptionkey")]
 		private System.String m_Encryptionkey = "";
-		[DatabaseField("Signaturekey")]
-		private System.String m_Signaturekey = "";
 		[DatabaseField("SourcePath")]
 		private System.String m_SourcePath = "";
 		[Relation("TaskSchedule", typeof(Schedule), "ID"), DatabaseField("ScheduleID")]
@@ -82,12 +80,6 @@ namespace Duplicati.Datamodel
 		{
 			get{return m_Encryptionkey;}
 			set{object oldvalue = m_Encryptionkey;OnBeforeDataChange(this, "Encryptionkey", oldvalue, value);m_Encryptionkey = value;OnAfterDataChange(this, "Encryptionkey", oldvalue, value);}
-		}
-
-		public System.String Signaturekey
-		{
-			get{return m_Signaturekey;}
-			set{object oldvalue = m_Signaturekey;OnBeforeDataChange(this, "Signaturekey", oldvalue, value);m_Signaturekey = value;OnAfterDataChange(this, "Signaturekey", oldvalue, value);}
 		}
 
 		public System.String SourcePath

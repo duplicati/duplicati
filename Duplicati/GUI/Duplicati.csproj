@@ -1106,6 +1106,7 @@
     <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
       <DependentUpon>RawContainer.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Database schema\5.Remove signaturekey.sql" />
     <None Include="Resources\Play.png" />
     <None Include="Resources\Delay.png" />
     <None Include="Resources\Pause.png" />

@@ -41,17 +41,6 @@
         </Column>
         <Column>
           <Typename>System.String</Typename>
-          <Name>Signaturekey</Name>
-          <Fieldname>Signaturekey</Fieldname>
-          <Autonumber>false</Autonumber>
-          <PrimaryKey>false</PrimaryKey>
-          <IgnoreWithSelect>false</IgnoreWithSelect>
-          <IgnoreWithUpdate>false</IgnoreWithUpdate>
-          <IgnoreWithInsert>false</IgnoreWithInsert>
-          <Index>false</Index>
-        </Column>
-        <Column>
-          <Typename>System.String</Typename>
           <Name>SourcePath</Name>
           <Fieldname>SourcePath</Fieldname>
           <Autonumber>false</Autonumber>

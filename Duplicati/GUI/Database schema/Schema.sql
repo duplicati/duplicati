@@ -3,7 +3,6 @@ CREATE TABLE "Task" (
     "ScheduleID" INTEGER NULL,
     "Service" TEXT NULL,
     "Encryptionkey" TEXT NULL,
-    "Signaturekey" TEXT NULL,
     "SourcePath" TEXT NULL,
     "KeepFull" INTEGER NULL,
     "KeepTime" TEXT NULL,
@@ -107,4 +106,4 @@ CREATE TABLE "EncryptionSetting" (
     "Value" TEXT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (4);
+INSERT INTO "Version" ("Version") VALUES (5);
