@@ -54,7 +54,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         void AdvancedOptions_PageLeave(object sender, PageChangedArgs args)
         {
             m_settings["Advanced:When"] = SelectWhen.Checked;
-            m_settings["Advanced:Incremental"] = SelectIncremental.Checked;
+            m_settings["Advanced:Incremental"] = SelectCleanup.Checked;
             m_settings["Advanced:Throttle"] = ThrottleOptions.Checked;
             m_settings["Advanced:Filters"] = EditFilters.Checked;
             m_settings["Advanced:Filenames"] = EditVolumeFilenames.Checked;
@@ -65,20 +65,26 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             m_wrapper.IncludeSetup = IncludeDuplicatiSetup.Checked;
 
+
+            List<IWizardControl> pages = new List<IWizardControl>();
             if (SelectWhen.Checked)
-                args.NextPage = new Wizard_pages.Add_backup.SelectWhen();
-            else if (SelectIncremental.Checked)
-                args.NextPage = new Wizard_pages.Add_backup.IncrementalSettings();
-            else if (ThrottleOptions.Checked)
-                args.NextPage = new Wizard_pages.Add_backup.ThrottleOptions();
-            else if (EditFilters.Checked)
-                args.NextPage = new Wizard_pages.Add_backup.EditFilters();
-            else if (EditVolumeFilenames.Checked)
-                args.NextPage = new Wizard_pages.Add_backup.GeneratedFilenameOptions();
-            else if (EditOverrides.Checked)
-                args.NextPage = new Wizard_pages.Add_backup.SettingOverrides();
-            else
-                args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
+                pages.Add(new Wizard_pages.Add_backup.SelectWhen());
+            if (SelectCleanup.Checked)
+                pages.Add(new Wizard_pages.Add_backup.CleanupSettings());
+            if (ThrottleOptions.Checked)
+                pages.Add(new Wizard_pages.Add_backup.ThrottleOptions());
+            if (EditFilters.Checked)
+                pages.Add(new Wizard_pages.Add_backup.EditFilters());
+            if (EditVolumeFilenames.Checked)
+                pages.Add(new Wizard_pages.Add_backup.GeneratedFilenameOptions());
+            if (EditOverrides.Checked)
+                pages.Add(new Wizard_pages.Add_backup.SettingOverrides());
+            
+            pages.Add(new Wizard_pages.Add_backup.FinishedAdd());
+
+            m_owner.Pages.Clear();
+            m_owner.Pages.AddRange(pages);
+            args.NextPage = pages[0];
         }
     }
 }

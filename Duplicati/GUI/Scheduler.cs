@@ -125,6 +125,39 @@ namespace Duplicati.GUI
         }
 
         /// <summary>
+        /// Returns the next valid date, given the start and the interval
+        /// </summary>
+        /// <param name="start">The starting time</param>
+        /// <param name="repetition">The repetition interval</param>
+        /// <param name="allowedDays">The days the backup is allowed to run</param>
+        /// <returns>The next valid date, or throws an exception if no such date can be found</returns>
+        public static DateTime GetNextValidTime(DateTime start, string repetition, DayOfWeek[] allowedDays)
+        {
+            DateTime res = start;
+
+            int i = 50000;
+
+            while (!IsDateAllowed(res, allowedDays) && i-- > 0)
+                res = Timeparser.ParseTimeInterval(repetition, res);
+
+            if (!IsDateAllowed(res, allowedDays))
+            {
+                StringBuilder sb = new StringBuilder();
+                if (allowedDays != null)
+                    foreach (DayOfWeek w in allowedDays)
+                    {
+                        if (sb.Length != 0)
+                            sb.Append(", ");
+                        sb.Append(w.ToString());
+                    }
+
+                throw new Exception(string.Format(Strings.Scheduler.InvalidTimeSetupError, start, repetition, sb.ToString()));
+            }
+
+            return res;
+        }
+
+        /// <summary>
         /// The actual scheduling procedure
         /// </summary>
         private void Runner()
@@ -143,22 +176,38 @@ namespace Duplicati.GUI
                     {
                         DateTime start = sc.NextScheduledTime;
 
+                        try { start = GetNextValidTime(sc.NextScheduledTime, sc.Repeat, sc.AllowedWeekdays); }
+                        catch { } //TODO: Report this somehow
+
+                        //If time is exceeded, run it now
                         if (start <= DateTime.Now)
                         {
-                            //Time exceeded, run it now
-                            m_worker.AddTask(new IncrementalBackupTask(sc));
+                            //See if it is already queued
+                            List<IDuplicityTask> tmplst = m_worker.CurrentTasks;
+                            if (m_worker.CurrentTask != null)
+                                tmplst.Add(m_worker.CurrentTask);
+
+                            bool found = false;
+                            foreach (IDuplicityTask t in tmplst)
+                                if (t != null && t is IncrementalBackupTask && ((IncrementalBackupTask)t).Schedule.ID == sc.ID)
+                                {
+                                    found = true;
+                                    break;
+                                }
+
+                            //If it is not already in queue, put it there
+                            if (!found)
+                                m_worker.AddTask(new IncrementalBackupTask(sc));
 
                             //Caluclate next time, by adding the interval to the start until we have
                             // passed the current date and time
                             //TODO: Make this more efficient
-                            int i = 0;
-                            while (start <= DateTime.Now && i++ < 50000)
-                                try
-                                {
-                                    start = Timeparser.ParseTimeInterval(sc.Repeat, start);
-                                }
+                            int i = 50000;
+                            while (start <= DateTime.Now && i-- > 0)
+                                try { start = GetNextValidTime(Timeparser.ParseTimeInterval(sc.Repeat, start), sc.Repeat, sc.AllowedWeekdays); }
                                 catch
                                 {
+                                    //TODO: Report this somehow
                                     continue;
                                 }
 
@@ -205,6 +254,20 @@ namespace Duplicati.GUI
                 // never use waittime = 0
                 m_event.WaitOne(Math.Max(100, waittime), false);
             }
+        }
+
+        /// <summary>
+        /// Returns true if the time is at an allowed weekday, false otherwise
+        /// </summary>
+        /// <param name="time">The time to evaluate</param>
+        /// <param name="allowedDays">The allowed days</param>
+        /// <returns>True if the backup is allowed to run, false otherwise</returns>
+        private static bool IsDateAllowed(DateTime time, DayOfWeek[] allowedDays)
+        {
+            if (allowedDays == null || allowedDays.Length == 0)
+                return true;
+            else
+                return Array.IndexOf<DayOfWeek>(allowedDays, time.DayOfWeek) >= 0; 
         }
 
     }

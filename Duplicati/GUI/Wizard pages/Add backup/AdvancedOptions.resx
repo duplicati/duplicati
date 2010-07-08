@@ -146,31 +146,31 @@
   <data name="&gt;&gt;SelectWhen.ZOrder" xml:space="preserve">
     <value>6</value>
   </data>
-  <data name="SelectIncremental.AutoSize" type="System.Boolean, mscorlib">
+  <data name="SelectCleanup.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="SelectIncremental.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="SelectCleanup.Location" type="System.Drawing.Point, System.Drawing">
     <value>32, 40</value>
   </data>
-  <data name="SelectIncremental.Size" type="System.Drawing.Size, System.Drawing">
-    <value>439, 17</value>
+  <data name="SelectCleanup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>196, 17</value>
   </data>
-  <data name="SelectIncremental.TabIndex" type="System.Int32, mscorlib">
+  <data name="SelectCleanup.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
   </data>
-  <data name="SelectIncremental.Text" xml:space="preserve">
-    <value>Select how often a full backup should be performed, and when old backups are deleted</value>
+  <data name="SelectCleanup.Text" xml:space="preserve">
+    <value>Select when to remove old backups</value>
   </data>
-  <data name="&gt;&gt;SelectIncremental.Name" xml:space="preserve">
-    <value>SelectIncremental</value>
+  <data name="&gt;&gt;SelectCleanup.Name" xml:space="preserve">
+    <value>SelectCleanup</value>
   </data>
-  <data name="&gt;&gt;SelectIncremental.Type" xml:space="preserve">
+  <data name="&gt;&gt;SelectCleanup.Type" xml:space="preserve">
     <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;SelectIncremental.Parent" xml:space="preserve">
+  <data name="&gt;&gt;SelectCleanup.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;SelectIncremental.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;SelectCleanup.ZOrder" xml:space="preserve">
     <value>5</value>
   </data>
   <data name="ThrottleOptions.AutoSize" type="System.Boolean, mscorlib">

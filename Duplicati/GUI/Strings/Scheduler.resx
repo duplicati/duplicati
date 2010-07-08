@@ -117,49 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="FullDurationShorterThanScheduleDurationError" xml:space="preserve">
-    <value>The interval between each full backup must be larger than the schedule interval.</value>
-  </data>
-  <data name="NoScheduleWarning" xml:space="preserve">
-    <value>You have selected not to run the backup automatically.
-This means that you have to remember to manually start the backup periodically.
-
-Are you sure this is what you want?</value>
-  </data>
-  <data name="OnlyFullBackupsWarning" xml:space="preserve">
-    <value>You have selected to only produce full backups.
-This may take up a lot of space on the backend.
-
-Are you sure this is what you want?</value>
-  </data>
-  <data name="OnlyIncrementalBackupsWarning" xml:space="preserve">
-    <value>You have selected to only produce incremental backups.
-This may result in very lengthy restore operations, and increases the probability of a restore failure.
-
-Are you sure this is what you want?</value>
-  </data>
-  <data name="PageDescription" xml:space="preserve">
-    <value>On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.</value>
-  </data>
-  <data name="PageTitle" xml:space="preserve">
-    <value>Select when the backup should run</value>
-  </data>
-  <data name="TimeIsInThePastWarning" xml:space="preserve">
-    <value>The time you entered is in the past.</value>
-  </data>
-  <data name="TimeOccursShortlyWarning" xml:space="preserve">
-    <value>The time you entered will occur shortly.</value>
-  </data>
-  <data name="TooManyIncrementalsWarning" xml:space="preserve">
-    <value>The settings you have selected will result in {0} incremental backups being created between each full backup.
-This can result in very lengthy restore operations, and increases the probability of a restore failure.
-
-Do you want to keep these settings?</value>
-  </data>
-  <data name="TooShortFullDurationError" xml:space="preserve">
-    <value>The interval between full backups must be more than {0} minutes.</value>
-  </data>
-  <data name="TooShortScheduleDurationError" xml:space="preserve">
-    <value>The schedule interval must be more than {0} minutes.</value>
+  <data name="InvalidTimeSetupError" xml:space="preserve">
+    <value>Unable to find a valid date, given the start date {0}, the repetition interval {1} and the allowed days {2}</value>
   </data>
 </root>

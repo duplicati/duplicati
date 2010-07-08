@@ -66,6 +66,71 @@ namespace Duplicati.Datamodel
                 ((System.Data.LightDatamodel.IDataFetcherWithRelations)this.DataParent).CommitRecursiveWithRelations(this);
             }
         }
+
+        /// <summary>
+        /// Gets or sets the schedule allowed weekdays,
+        /// this is a parser/wrapper for the Weekdays string
+        /// </summary>
+        public DayOfWeek[] AllowedWeekdays
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(this.Weekdays))
+                    return null;
+                else
+                {
+                    string[] names = System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedDayNames;
+                    List<DayOfWeek> l = new List<DayOfWeek>();
+                    foreach(string s in this.Weekdays.Split(','))
+                    {
+                        int x = -1;
+                        for(int i = 0; i < names.Length; i++)
+                            if (s.Trim().Equals(names[i], StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                x = i;
+                                break;
+                            }
+                        
+                        if (x >= 0 && !l.Contains((DayOfWeek)x))
+                            l.Add((DayOfWeek)x);
+                    }
+
+                    l.Sort();
+                    return l.ToArray();
+                }
+            }
+            set
+            {
+                if (value == null || value.Length == 0)
+                    this.Weekdays = null;
+                else
+                {
+                    //Filter duplicates
+                    List<DayOfWeek> l = new List<DayOfWeek>();
+                    foreach (DayOfWeek d in value)
+                        if (!l.Contains(d))
+                            l.Add(d);
+
+                    //If all is selected, don't store
+                    if (l.Count == 7)
+                        this.Weekdays = null;
+                    else
+                    {
+                        l.Sort();
+
+                        StringBuilder sb = new StringBuilder();
+                        foreach (DayOfWeek d in l)
+                        {
+                            if (sb.Length != 0)
+                                sb.Append(",");
+                            sb.Append(System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedDayNames[(int)d]);
+                        }
+
+                        this.Weekdays = sb.ToString();
+                    }
+                }
+            }
+        }
         
     }
 }

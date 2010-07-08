@@ -121,6 +121,7 @@ namespace Duplicati.GUI.Wizard_pages
 
             this.BackupTimeOffset = schedule.When;
             this.RepeatInterval = schedule.Repeat;
+            this.AllowedWeekdays = schedule.AllowedWeekdays;
             this.FullBackupInterval = schedule.Task.FullAfter;
             this.MaxFullBackups = (int)schedule.Task.KeepFull;
             this.BackupExpireInterval = schedule.Task.KeepTime;
@@ -177,6 +178,7 @@ namespace Duplicati.GUI.Wizard_pages
 
             schedule.When = this.BackupTimeOffset;
             schedule.Repeat = this.RepeatInterval;
+            schedule.AllowedWeekdays = this.AllowedWeekdays;
             schedule.Task.FullAfter = this.FullBackupInterval;
             schedule.Task.KeepFull = this.MaxFullBackups;
             
@@ -375,6 +377,15 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get { return GetItem<string>("RepeatInterval", ""); }
             set { SetItem("RepeatInterval", value); }
+        }
+
+        /// <summary>
+        /// The weekdays at which a backup is allowed to run
+        /// </summary>
+        public DayOfWeek[] AllowedWeekdays
+        {
+            get { return GetItem<DayOfWeek[]>("AllowedWeekdays", null); }
+            set { SetItem("AllowedWeekdays", value); }
         }
 
         /// <summary>

@@ -279,6 +279,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Program.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\Scheduler.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Scheduler.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\ServiceStatus.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -423,11 +428,11 @@
     <Compile Include="Wizard pages\RestoreSetup\FinishedRestoreSetup.Designer.cs">
       <DependentUpon>FinishedRestoreSetup.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Add backup\IncrementalSettings.cs">
+    <Compile Include="Wizard pages\Add backup\CleanupSettings.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Wizard pages\Add backup\IncrementalSettings.Designer.cs">
-      <DependentUpon>IncrementalSettings.cs</DependentUpon>
+    <Compile Include="Wizard pages\Add backup\CleanupSettings.Designer.cs">
+      <DependentUpon>CleanupSettings.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Add backup\PasswordSettings.cs">
       <SubType>UserControl</SubType>
@@ -704,9 +709,9 @@
       <SubType>Designer</SubType>
       <DependentUpon>FinishedAdd.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Add backup\IncrementalSettings.resx">
+    <EmbeddedResource Include="Wizard pages\Add backup\CleanupSettings.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>IncrementalSettings.cs</DependentUpon>
+      <DependentUpon>CleanupSettings.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\PasswordSettings.resx">
       <SubType>Designer</SubType>
@@ -1094,6 +1099,10 @@
       <LastGenOutput>DynamicSetupHelper.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Database schema\4. Support for setting controls.sql" />
+    <EmbeddedResource Include="Strings\Scheduler.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Scheduler.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
       <DependentUpon>RawContainer.cs</DependentUpon>
     </EmbeddedResource>

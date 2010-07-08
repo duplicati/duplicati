@@ -117,43 +117,26 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="RepeatInterval.Location" type="System.Drawing.Point, System.Drawing">
-    <value>144, 24</value>
-  </data>
-  <data name="RepeatInterval.Size" type="System.Drawing.Size, System.Drawing">
-    <value>221, 21</value>
-  </data>
   <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="RepeatInterval.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;RepeatInterval.Name" xml:space="preserve">
-    <value>RepeatInterval</value>
-  </data>
-  <data name="&gt;&gt;RepeatInterval.Type" xml:space="preserve">
-    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.0.183, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
-  </data>
-  <data name="&gt;&gt;RepeatInterval.Parent" xml:space="preserve">
-    <value>groupBox1</value>
-  </data>
-  <data name="&gt;&gt;RepeatInterval.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="label2.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 24</value>
+    <value>16, 48</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>69, 13</value>
+    <value>42, 13</value>
   </data>
   <data name="label2.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>Repeat each</value>
+    <value>Interval</value>
   </data>
   <data name="&gt;&gt;label2.Name" xml:space="preserve">
     <value>label2</value>
@@ -162,61 +145,13 @@
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;label2.Parent" xml:space="preserve">
-    <value>groupBox1</value>
+    <value>ScheduleGroup</value>
   </data>
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 40</value>
-  </data>
-  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>448, 56</value>
-  </data>
-  <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
-    <value>groupBox1</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="EnableRepeat.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="EnableRepeat.Location" type="System.Drawing.Point, System.Drawing">
-    <value>40, 40</value>
-  </data>
-  <data name="EnableRepeat.Size" type="System.Drawing.Size, System.Drawing">
-    <value>160, 17</value>
-  </data>
-  <data name="EnableRepeat.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="EnableRepeat.Text" xml:space="preserve">
-    <value>Repeat the backup regularly</value>
-  </data>
-  <data name="&gt;&gt;EnableRepeat.Name" xml:space="preserve">
-    <value>EnableRepeat</value>
-  </data>
-  <data name="&gt;&gt;EnableRepeat.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EnableRepeat.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;EnableRepeat.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="OffsetTime.Location" type="System.Drawing.Point, System.Drawing">
-    <value>312, 8</value>
+    <value>368, 24</value>
   </data>
   <data name="OffsetTime.Size" type="System.Drawing.Size, System.Drawing">
     <value>80, 20</value>
@@ -231,13 +166,13 @@
     <value>System.Windows.Forms.DateTimePicker, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;OffsetTime.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>ScheduleGroup</value>
   </data>
   <data name="&gt;&gt;OffsetTime.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>4</value>
   </data>
   <data name="OffsetDate.Location" type="System.Drawing.Point, System.Drawing">
-    <value>176, 8</value>
+    <value>232, 24</value>
   </data>
   <data name="OffsetDate.Size" type="System.Drawing.Size, System.Drawing">
     <value>128, 20</value>
@@ -252,16 +187,19 @@
     <value>System.Windows.Forms.DateTimePicker, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;OffsetDate.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>ScheduleGroup</value>
   </data>
   <data name="&gt;&gt;OffsetDate.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>5</value>
   </data>
   <data name="label1.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="label1.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 8</value>
+    <value>16, 24</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
     <value>137, 13</value>
@@ -279,10 +217,700 @@
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;label1.Parent" xml:space="preserve">
-    <value>$this</value>
+    <value>ScheduleGroup</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="Day7Label.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Day7Label.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Day7Label.Location" type="System.Drawing.Point, System.Drawing">
+    <value>192, 0</value>
+  </data>
+  <data name="Day7Label.Size" type="System.Drawing.Size, System.Drawing">
+    <value>26, 13</value>
+  </data>
+  <data name="Day7Label.TabIndex" type="System.Int32, mscorlib">
+    <value>28</value>
+  </data>
+  <data name="Day7Label.Text" xml:space="preserve">
+    <value>Sun</value>
+  </data>
+  <data name="&gt;&gt;Day7Label.Name" xml:space="preserve">
+    <value>Day7Label</value>
+  </data>
+  <data name="&gt;&gt;Day7Label.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Day7Label.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Day7Label.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="Day6Label.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Day6Label.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Day6Label.Location" type="System.Drawing.Point, System.Drawing">
+    <value>160, 0</value>
+  </data>
+  <data name="Day6Label.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 13</value>
+  </data>
+  <data name="Day6Label.TabIndex" type="System.Int32, mscorlib">
+    <value>27</value>
+  </data>
+  <data name="Day6Label.Text" xml:space="preserve">
+    <value>Sat</value>
+  </data>
+  <data name="&gt;&gt;Day6Label.Name" xml:space="preserve">
+    <value>Day6Label</value>
+  </data>
+  <data name="&gt;&gt;Day6Label.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Day6Label.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Day6Label.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="Day5Label.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Day5Label.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Day5Label.Location" type="System.Drawing.Point, System.Drawing">
+    <value>136, 0</value>
+  </data>
+  <data name="Day5Label.Size" type="System.Drawing.Size, System.Drawing">
+    <value>18, 13</value>
+  </data>
+  <data name="Day5Label.TabIndex" type="System.Int32, mscorlib">
+    <value>26</value>
+  </data>
+  <data name="Day5Label.Text" xml:space="preserve">
+    <value>Fri</value>
+  </data>
+  <data name="&gt;&gt;Day5Label.Name" xml:space="preserve">
+    <value>Day5Label</value>
+  </data>
+  <data name="&gt;&gt;Day5Label.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Day5Label.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Day5Label.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="Day4Label.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Day4Label.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Day4Label.Location" type="System.Drawing.Point, System.Drawing">
+    <value>96, 0</value>
+  </data>
+  <data name="Day4Label.Size" type="System.Drawing.Size, System.Drawing">
+    <value>26, 13</value>
+  </data>
+  <data name="Day4Label.TabIndex" type="System.Int32, mscorlib">
+    <value>25</value>
+  </data>
+  <data name="Day4Label.Text" xml:space="preserve">
+    <value>Thu</value>
+  </data>
+  <data name="&gt;&gt;Day4Label.Name" xml:space="preserve">
+    <value>Day4Label</value>
+  </data>
+  <data name="&gt;&gt;Day4Label.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Day4Label.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Day4Label.ZOrder" xml:space="preserve">
     <value>3</value>
+  </data>
+  <data name="Day3Label.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Day3Label.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Day3Label.Location" type="System.Drawing.Point, System.Drawing">
+    <value>64, 0</value>
+  </data>
+  <data name="Day3Label.Size" type="System.Drawing.Size, System.Drawing">
+    <value>30, 13</value>
+  </data>
+  <data name="Day3Label.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="Day3Label.Text" xml:space="preserve">
+    <value>Wen</value>
+  </data>
+  <data name="&gt;&gt;Day3Label.Name" xml:space="preserve">
+    <value>Day3Label</value>
+  </data>
+  <data name="&gt;&gt;Day3Label.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Day3Label.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Day3Label.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="Sunday.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Sunday.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Sunday.Location" type="System.Drawing.Point, System.Drawing">
+    <value>200, 16</value>
+  </data>
+  <data name="Sunday.Size" type="System.Drawing.Size, System.Drawing">
+    <value>15, 14</value>
+  </data>
+  <data name="Sunday.TabIndex" type="System.Int32, mscorlib">
+    <value>23</value>
+  </data>
+  <data name="&gt;&gt;Sunday.Name" xml:space="preserve">
+    <value>Sunday</value>
+  </data>
+  <data name="&gt;&gt;Sunday.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Sunday.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Sunday.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="Saturday.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Saturday.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Saturday.Location" type="System.Drawing.Point, System.Drawing">
+    <value>168, 16</value>
+  </data>
+  <data name="Saturday.Size" type="System.Drawing.Size, System.Drawing">
+    <value>15, 14</value>
+  </data>
+  <data name="Saturday.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
+  </data>
+  <data name="&gt;&gt;Saturday.Name" xml:space="preserve">
+    <value>Saturday</value>
+  </data>
+  <data name="&gt;&gt;Saturday.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Saturday.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Saturday.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="Friday.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Friday.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Friday.Location" type="System.Drawing.Point, System.Drawing">
+    <value>136, 16</value>
+  </data>
+  <data name="Friday.Size" type="System.Drawing.Size, System.Drawing">
+    <value>15, 14</value>
+  </data>
+  <data name="Friday.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="&gt;&gt;Friday.Name" xml:space="preserve">
+    <value>Friday</value>
+  </data>
+  <data name="&gt;&gt;Friday.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Friday.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Friday.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="Wednesday.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Wednesday.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Wednesday.Location" type="System.Drawing.Point, System.Drawing">
+    <value>72, 16</value>
+  </data>
+  <data name="Wednesday.Size" type="System.Drawing.Size, System.Drawing">
+    <value>15, 14</value>
+  </data>
+  <data name="Wednesday.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="&gt;&gt;Wednesday.Name" xml:space="preserve">
+    <value>Wednesday</value>
+  </data>
+  <data name="&gt;&gt;Wednesday.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Wednesday.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Wednesday.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="Thursday.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Thursday.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Thursday.Location" type="System.Drawing.Point, System.Drawing">
+    <value>104, 16</value>
+  </data>
+  <data name="Thursday.Size" type="System.Drawing.Size, System.Drawing">
+    <value>15, 14</value>
+  </data>
+  <data name="Thursday.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="&gt;&gt;Thursday.Name" xml:space="preserve">
+    <value>Thursday</value>
+  </data>
+  <data name="&gt;&gt;Thursday.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Thursday.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Thursday.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="Day2Label.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Day2Label.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Day2Label.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 0</value>
+  </data>
+  <data name="Day2Label.Size" type="System.Drawing.Size, System.Drawing">
+    <value>26, 13</value>
+  </data>
+  <data name="Day2Label.TabIndex" type="System.Int32, mscorlib">
+    <value>18</value>
+  </data>
+  <data name="Day2Label.Text" xml:space="preserve">
+    <value>Tue</value>
+  </data>
+  <data name="&gt;&gt;Day2Label.Name" xml:space="preserve">
+    <value>Day2Label</value>
+  </data>
+  <data name="&gt;&gt;Day2Label.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Day2Label.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Day2Label.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="Day1Label.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Day1Label.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Day1Label.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="Day1Label.Size" type="System.Drawing.Size, System.Drawing">
+    <value>28, 13</value>
+  </data>
+  <data name="Day1Label.TabIndex" type="System.Int32, mscorlib">
+    <value>17</value>
+  </data>
+  <data name="Day1Label.Text" xml:space="preserve">
+    <value>Mon</value>
+  </data>
+  <data name="&gt;&gt;Day1Label.Name" xml:space="preserve">
+    <value>Day1Label</value>
+  </data>
+  <data name="&gt;&gt;Day1Label.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Day1Label.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Day1Label.ZOrder" xml:space="preserve">
+    <value>11</value>
+  </data>
+  <data name="Tuesday.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Tuesday.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Tuesday.Location" type="System.Drawing.Point, System.Drawing">
+    <value>40, 16</value>
+  </data>
+  <data name="Tuesday.Size" type="System.Drawing.Size, System.Drawing">
+    <value>15, 14</value>
+  </data>
+  <data name="Tuesday.TabIndex" type="System.Int32, mscorlib">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;Tuesday.Name" xml:space="preserve">
+    <value>Tuesday</value>
+  </data>
+  <data name="&gt;&gt;Tuesday.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Tuesday.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Tuesday.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="Monday.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Monday.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Monday.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 16</value>
+  </data>
+  <data name="Monday.Size" type="System.Drawing.Size, System.Drawing">
+    <value>15, 14</value>
+  </data>
+  <data name="Monday.TabIndex" type="System.Int32, mscorlib">
+    <value>10</value>
+  </data>
+  <data name="&gt;&gt;Monday.Name" xml:space="preserve">
+    <value>Monday</value>
+  </data>
+  <data name="&gt;&gt;Monday.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Monday.Parent" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;Monday.ZOrder" xml:space="preserve">
+    <value>13</value>
+  </data>
+  <data name="AllowedDaysPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>232, 70</value>
+  </data>
+  <data name="AllowedDaysPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>224, 32</value>
+  </data>
+  <data name="AllowedDaysPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>29</value>
+  </data>
+  <data name="&gt;&gt;AllowedDaysPanel.Name" xml:space="preserve">
+    <value>AllowedDaysPanel</value>
+  </data>
+  <data name="&gt;&gt;AllowedDaysPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AllowedDaysPanel.Parent" xml:space="preserve">
+    <value>ScheduleGroup</value>
+  </data>
+  <data name="&gt;&gt;AllowedDaysPanel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label3.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label3.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 80</value>
+  </data>
+  <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>69, 13</value>
+  </data>
+  <data name="label3.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="label3.Text" xml:space="preserve">
+    <value>Allowed days</value>
+  </data>
+  <data name="&gt;&gt;label3.Name" xml:space="preserve">
+    <value>label3</value>
+  </data>
+  <data name="&gt;&gt;label3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label3.Parent" xml:space="preserve">
+    <value>ScheduleGroup</value>
+  </data>
+  <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="RepeatInterval.Location" type="System.Drawing.Point, System.Drawing">
+    <value>232, 48</value>
+  </data>
+  <data name="RepeatInterval.Size" type="System.Drawing.Size, System.Drawing">
+    <value>221, 21</value>
+  </data>
+  <data name="RepeatInterval.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;RepeatInterval.Name" xml:space="preserve">
+    <value>RepeatInterval</value>
+  </data>
+  <data name="&gt;&gt;RepeatInterval.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;RepeatInterval.Parent" xml:space="preserve">
+    <value>ScheduleGroup</value>
+  </data>
+  <data name="&gt;&gt;RepeatInterval.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="ScheduleGroup.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 24</value>
+  </data>
+  <data name="ScheduleGroup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>472, 104</value>
+  </data>
+  <data name="ScheduleGroup.TabIndex" type="System.Int32, mscorlib">
+    <value>8</value>
+  </data>
+  <data name="&gt;&gt;ScheduleGroup.Name" xml:space="preserve">
+    <value>ScheduleGroup</value>
+  </data>
+  <data name="&gt;&gt;ScheduleGroup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ScheduleGroup.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ScheduleGroup.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="NoScheduleRadio.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="NoScheduleRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="NoScheduleRadio.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 0</value>
+  </data>
+  <data name="NoScheduleRadio.Size" type="System.Drawing.Size, System.Drawing">
+    <value>383, 17</value>
+  </data>
+  <data name="NoScheduleRadio.TabIndex" type="System.Int32, mscorlib">
+    <value>17</value>
+  </data>
+  <data name="NoScheduleRadio.Text" xml:space="preserve">
+    <value>Never run automatically, only run when I manually start it (not recommended)</value>
+  </data>
+  <data name="&gt;&gt;NoScheduleRadio.Name" xml:space="preserve">
+    <value>NoScheduleRadio</value>
+  </data>
+  <data name="&gt;&gt;NoScheduleRadio.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;NoScheduleRadio.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;NoScheduleRadio.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="ScheduleRadio.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="ScheduleRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="ScheduleRadio.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 24</value>
+  </data>
+  <data name="ScheduleRadio.Size" type="System.Drawing.Size, System.Drawing">
+    <value>254, 17</value>
+  </data>
+  <data name="ScheduleRadio.TabIndex" type="System.Int32, mscorlib">
+    <value>18</value>
+  </data>
+  <data name="ScheduleRadio.Text" xml:space="preserve">
+    <value>Run backup at specified interval (recommended)</value>
+  </data>
+  <data name="&gt;&gt;ScheduleRadio.Name" xml:space="preserve">
+    <value>ScheduleRadio</value>
+  </data>
+  <data name="&gt;&gt;ScheduleRadio.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ScheduleRadio.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;ScheduleRadio.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="AlwaysFullRadio.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="AlwaysFullRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="AlwaysFullRadio.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 64</value>
+  </data>
+  <data name="AlwaysFullRadio.Size" type="System.Drawing.Size, System.Drawing">
+    <value>344, 17</value>
+  </data>
+  <data name="AlwaysFullRadio.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="AlwaysFullRadio.Text" xml:space="preserve">
+    <value>Always perform a full backup, never incremental (not recommended)</value>
+  </data>
+  <data name="&gt;&gt;AlwaysFullRadio.Name" xml:space="preserve">
+    <value>AlwaysFullRadio</value>
+  </data>
+  <data name="&gt;&gt;AlwaysFullRadio.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;AlwaysFullRadio.Parent" xml:space="preserve">
+    <value>FullStrategyPanel</value>
+  </data>
+  <data name="&gt;&gt;AlwaysFullRadio.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="NeverFullRadio.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="NeverFullRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="NeverFullRadio.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 40</value>
+  </data>
+  <data name="NeverFullRadio.Size" type="System.Drawing.Size, System.Drawing">
+    <value>350, 17</value>
+  </data>
+  <data name="NeverFullRadio.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="NeverFullRadio.Text" xml:space="preserve">
+    <value>Always perform an incremental backup, never full (not recommended)</value>
+  </data>
+  <data name="&gt;&gt;NeverFullRadio.Name" xml:space="preserve">
+    <value>NeverFullRadio</value>
+  </data>
+  <data name="&gt;&gt;NeverFullRadio.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;NeverFullRadio.Parent" xml:space="preserve">
+    <value>FullStrategyPanel</value>
+  </data>
+  <data name="&gt;&gt;NeverFullRadio.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="IncrementalPeriodRadio.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="IncrementalPeriodRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="IncrementalPeriodRadio.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 16</value>
+  </data>
+  <data name="IncrementalPeriodRadio.Size" type="System.Drawing.Size, System.Drawing">
+    <value>201, 17</value>
+  </data>
+  <data name="IncrementalPeriodRadio.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="IncrementalPeriodRadio.Text" xml:space="preserve">
+    <value>Incremental, then full after this period:</value>
+  </data>
+  <data name="&gt;&gt;IncrementalPeriodRadio.Name" xml:space="preserve">
+    <value>IncrementalPeriodRadio</value>
+  </data>
+  <data name="&gt;&gt;IncrementalPeriodRadio.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IncrementalPeriodRadio.Parent" xml:space="preserve">
+    <value>FullStrategyPanel</value>
+  </data>
+  <data name="&gt;&gt;IncrementalPeriodRadio.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="FullDuration.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="FullDuration.Location" type="System.Drawing.Point, System.Drawing">
+    <value>232, 16</value>
+  </data>
+  <data name="FullDuration.Size" type="System.Drawing.Size, System.Drawing">
+    <value>221, 21</value>
+  </data>
+  <data name="FullDuration.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;FullDuration.Name" xml:space="preserve">
+    <value>FullDuration</value>
+  </data>
+  <data name="&gt;&gt;FullDuration.Type" xml:space="preserve">
+    <value>Duplicati.GUI.HelperControls.DurationEditor, Duplicati, Version=1.0.1.276, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
+  </data>
+  <data name="&gt;&gt;FullDuration.Parent" xml:space="preserve">
+    <value>FullStrategyPanel</value>
+  </data>
+  <data name="&gt;&gt;FullDuration.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="FullStrategyPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 136</value>
+  </data>
+  <data name="FullStrategyPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>472, 88</value>
+  </data>
+  <data name="FullStrategyPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="FullStrategyPanel.Text" xml:space="preserve">
+    <value>Full / Incremental strategy</value>
+  </data>
+  <data name="&gt;&gt;FullStrategyPanel.Name" xml:space="preserve">
+    <value>FullStrategyPanel</value>
+  </data>
+  <data name="&gt;&gt;FullStrategyPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FullStrategyPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;FullStrategyPanel.ZOrder" xml:space="preserve">
+    <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>

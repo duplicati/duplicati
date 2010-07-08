@@ -1,6 +1,6 @@
 namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
-    partial class IncrementalSettings
+    partial class CleanupSettings
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,49 +28,15 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(IncrementalSettings));
-            this.FullBackups = new System.Windows.Forms.CheckBox();
-            this.FullSettings = new System.Windows.Forms.GroupBox();
-            this.FullDuration = new Duplicati.GUI.HelperControls.DurationEditor();
-            this.label2 = new System.Windows.Forms.Label();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CleanupSettings));
             this.EnableFullBackupClean = new System.Windows.Forms.CheckBox();
             this.CleanFullBackupCount = new System.Windows.Forms.NumericUpDown();
             this.CleanFullBackupHelptext = new System.Windows.Forms.Label();
             this.EnableCleanupDuration = new System.Windows.Forms.CheckBox();
             this.CleanupDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.IgnoreTimestamps = new System.Windows.Forms.CheckBox();
-            this.FullSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.CleanFullBackupCount)).BeginInit();
             this.SuspendLayout();
-            // 
-            // FullBackups
-            // 
-            resources.ApplyResources(this.FullBackups, "FullBackups");
-            this.FullBackups.Checked = true;
-            this.FullBackups.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.FullBackups.Name = "FullBackups";
-            this.FullBackups.UseVisualStyleBackColor = true;
-            this.FullBackups.CheckedChanged += new System.EventHandler(this.FullBackups_CheckedChanged);
-            // 
-            // FullSettings
-            // 
-            this.FullSettings.Controls.Add(this.FullDuration);
-            this.FullSettings.Controls.Add(this.label2);
-            resources.ApplyResources(this.FullSettings, "FullSettings");
-            this.FullSettings.Name = "FullSettings";
-            this.FullSettings.TabStop = false;
-            // 
-            // FullDuration
-            // 
-            resources.ApplyResources(this.FullDuration, "FullDuration");
-            this.FullDuration.Name = "FullDuration";
-            this.FullDuration.Value = "";
-            this.FullDuration.ValueChanged += new System.EventHandler(this.FullDuration_ValueChanged);
-            // 
-            // label2
-            // 
-            resources.ApplyResources(this.label2, "label2");
-            this.label2.Name = "label2";
             // 
             // EnableFullBackupClean
             // 
@@ -132,12 +98,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.CleanFullBackupHelptext);
             this.Controls.Add(this.CleanFullBackupCount);
             this.Controls.Add(this.EnableFullBackupClean);
-            this.Controls.Add(this.FullBackups);
-            this.Controls.Add(this.FullSettings);
             this.Name = "IncrementalSettings";
-            this.Load += new System.EventHandler(this.IncrementalSettings_Load);
-            this.FullSettings.ResumeLayout(false);
-            this.FullSettings.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.CleanFullBackupCount)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -146,10 +107,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         #endregion
 
-        private System.Windows.Forms.CheckBox FullBackups;
-        private System.Windows.Forms.GroupBox FullSettings;
-        private System.Windows.Forms.Label label2;
-        private Duplicati.GUI.HelperControls.DurationEditor FullDuration;
         private System.Windows.Forms.CheckBox EnableFullBackupClean;
         private System.Windows.Forms.NumericUpDown CleanFullBackupCount;
         private System.Windows.Forms.Label CleanFullBackupHelptext;

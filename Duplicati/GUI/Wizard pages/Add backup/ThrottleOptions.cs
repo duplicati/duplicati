@@ -123,14 +123,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 "" :
                 ThreadPriorityPicker.SelectedPriority.Value.ToString();
 
-            if ((bool)m_settings["Advanced:Filters"])
-                args.NextPage = new Wizard_pages.Add_backup.EditFilters();
-            else if ((bool)m_settings["Advanced:Filenames"])
-                args.NextPage = new Wizard_pages.Add_backup.GeneratedFilenameOptions();
-            else if ((bool)m_settings["Advanced:Overrides"])
-                args.NextPage = new Wizard_pages.Add_backup.SettingOverrides();
-            else
-                args.NextPage = new FinishedAdd();
+            //Don't set args.NextPage, it runs on a list
         }
 
         private void BackupLimitEnabled_CheckedChanged(object sender, EventArgs e)

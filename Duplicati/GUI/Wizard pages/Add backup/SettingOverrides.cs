@@ -48,7 +48,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!OptionGrid.Unsupported)
                 m_wrapper.Overrides = OptionGrid.GetConfiguration();
-            args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
+
+            //Don't set args.NextPage, it runs on a list
         }
 
         void SettingOverrides_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)

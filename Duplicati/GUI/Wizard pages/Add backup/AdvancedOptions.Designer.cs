@@ -30,7 +30,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AdvancedOptions));
             this.SelectWhen = new System.Windows.Forms.CheckBox();
-            this.SelectIncremental = new System.Windows.Forms.CheckBox();
+            this.SelectCleanup = new System.Windows.Forms.CheckBox();
             this.ThrottleOptions = new System.Windows.Forms.CheckBox();
             this.EditFilters = new System.Windows.Forms.CheckBox();
             this.IncludeDuplicatiSetup = new System.Windows.Forms.CheckBox();
@@ -44,11 +44,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.SelectWhen.Name = "SelectWhen";
             this.SelectWhen.UseVisualStyleBackColor = true;
             // 
-            // SelectIncremental
+            // SelectCleanup
             // 
-            resources.ApplyResources(this.SelectIncremental, "SelectIncremental");
-            this.SelectIncremental.Name = "SelectIncremental";
-            this.SelectIncremental.UseVisualStyleBackColor = true;
+            resources.ApplyResources(this.SelectCleanup, "SelectCleanup");
+            this.SelectCleanup.Name = "SelectCleanup";
+            this.SelectCleanup.UseVisualStyleBackColor = true;
             // 
             // ThrottleOptions
             // 
@@ -91,7 +91,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.IncludeDuplicatiSetup);
             this.Controls.Add(this.EditFilters);
             this.Controls.Add(this.ThrottleOptions);
-            this.Controls.Add(this.SelectIncremental);
+            this.Controls.Add(this.SelectCleanup);
             this.Controls.Add(this.SelectWhen);
             this.Name = "AdvancedOptions";
             this.ResumeLayout(false);
@@ -102,7 +102,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         #endregion
 
         private System.Windows.Forms.CheckBox SelectWhen;
-        private System.Windows.Forms.CheckBox SelectIncremental;
+        private System.Windows.Forms.CheckBox SelectCleanup;
         private System.Windows.Forms.CheckBox ThrottleOptions;
         private System.Windows.Forms.CheckBox EditFilters;
         private System.Windows.Forms.CheckBox IncludeDuplicatiSetup;

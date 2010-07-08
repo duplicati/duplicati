@@ -338,7 +338,7 @@ namespace Duplicati.GUI
         public override string GetConfiguration(Dictionary<string, string> options)
         {
             string destination = base.GetConfiguration(options);
-            options.Add("full", "");
+            options["full"] = "";
             return destination;
         }
 

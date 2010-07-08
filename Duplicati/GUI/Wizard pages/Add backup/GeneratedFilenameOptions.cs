@@ -74,11 +74,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 wrapper.UpdateSchedule(s);
                 args.NextPage = new Restore.SelectBackup();
             }
-            else if ((bool)m_settings["Advanced:Overrides"])
-                args.NextPage = new Wizard_pages.Add_backup.SettingOverrides();
             else
-                args.NextPage = new Wizard_pages.Add_backup.FinishedAdd();
-
+            {
+                //Don't set args.NextPage, it runs on a list
+            }
         }
 
         void GeneratedFilenameOptions_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)
