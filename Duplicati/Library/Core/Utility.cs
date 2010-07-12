@@ -519,7 +519,7 @@ namespace Duplicati.Library.Core
         	    if (Environment.OSVersion.Platform == PlatformID.Unix)
 					return true;
 #else
-        	    if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.OSVersion.Platform == PlatformID.MacOSX)
+        	    if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
 					return true;
 #endif
 				return false;

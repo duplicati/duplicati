@@ -38,6 +38,9 @@ namespace Duplicati.GUI.Wizard_pages.RunNow
             : base(Strings.RunNowFinished.PageTitle, Strings.RunNowFinished.PageDescription)
         {
             InitializeComponent();
+
+            MonoSupport.FixTextBoxes(this);
+            
             base.PageEnter += new PageChangeHandler(RunNowFinished_PageEnter);
             base.PageLeave += new PageChangeHandler(RunNowFinished_PageLeave);
         }

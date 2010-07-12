@@ -38,6 +38,8 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
         {
             InitializeComponent();
 
+            MonoSupport.FixTextBoxes(this);
+
             base.PageEnter += new PageChangeHandler(FinishedRestoreSetup_PageEnter);
             base.PageLeave += new PageChangeHandler(FinishedRestoreSetup_PageLeave);
         }
