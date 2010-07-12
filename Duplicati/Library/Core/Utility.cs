@@ -516,10 +516,10 @@ namespace Duplicati.Library.Core
 			get 
 			{
 #if __MonoCS__
-        	    if (Environment.OSVersion.Platform == PlatformID.Unix)
+        	    if (Environment.OSVersion.Platform == PlatformID.Unix || (int)Environment.OSVersion.Platform == 6)
 					return true;
 #else
-        	    if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
+                if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
 					return true;
 #endif
 				return false;
