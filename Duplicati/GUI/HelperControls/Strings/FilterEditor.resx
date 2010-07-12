@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ExcludeFolderBrowseTitle" xml:space="preserve">
+    <value>Choose the folder to add for exclusion</value>
+  </data>
   <data name="FileIsExcluded" xml:space="preserve">
     <value>The file {0} is excluded due to rule {1}</value>
   </data>
@@ -134,6 +137,9 @@
   </data>
   <data name="FolderIsExcluded" xml:space="preserve">
     <value>The folder {0} is excluded due to rule {1}</value>
+  </data>
+  <data name="IncludeFolderBrowseTitle" xml:space="preserve">
+    <value>Choose the folder to add for inclusion</value>
   </data>
   <data name="InvalidCharsInFilenameError" xml:space="preserve">
     <value>The filename {0} has invalid characters</value>

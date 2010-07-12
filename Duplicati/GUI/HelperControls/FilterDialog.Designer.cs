@@ -36,6 +36,13 @@ namespace Duplicati.GUI.HelperControls
             this.OKBtn = new System.Windows.Forms.Button();
             this.CancelBtn = new System.Windows.Forms.Button();
             this.IsRegExp = new System.Windows.Forms.CheckBox();
+            this.BrowseFolderButton = new System.Windows.Forms.Button();
+            this.BrowseFileButton = new System.Windows.Forms.Button();
+            this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+            this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            this.HelpLink = new System.Windows.Forms.LinkLabel();
+            this.HelpImage = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.HelpImage)).BeginInit();
             this.SuspendLayout();
             // 
             // Inclusive
@@ -84,12 +91,57 @@ namespace Duplicati.GUI.HelperControls
             this.IsRegExp.Name = "IsRegExp";
             this.IsRegExp.UseVisualStyleBackColor = true;
             // 
+            // BrowseFolderButton
+            // 
+            resources.ApplyResources(this.BrowseFolderButton, "BrowseFolderButton");
+            this.BrowseFolderButton.Image = global::Duplicati.GUI.Properties.Resources.FolderOpen;
+            this.BrowseFolderButton.Name = "BrowseFolderButton";
+            this.BrowseFolderButton.UseVisualStyleBackColor = true;
+            this.BrowseFolderButton.Click += new System.EventHandler(this.BrowseFolderButton_Click);
+            // 
+            // BrowseFileButton
+            // 
+            resources.ApplyResources(this.BrowseFileButton, "BrowseFileButton");
+            this.BrowseFileButton.Name = "BrowseFileButton";
+            this.BrowseFileButton.UseVisualStyleBackColor = true;
+            this.BrowseFileButton.Click += new System.EventHandler(this.BrowseFileButton_Click);
+            // 
+            // folderBrowserDialog
+            // 
+            resources.ApplyResources(this.folderBrowserDialog, "folderBrowserDialog");
+            this.folderBrowserDialog.ShowNewFolderButton = false;
+            // 
+            // openFileDialog
+            // 
+            resources.ApplyResources(this.openFileDialog, "openFileDialog");
+            this.openFileDialog.SupportMultiDottedExtensions = true;
+            // 
+            // HelpLink
+            // 
+            resources.ApplyResources(this.HelpLink, "HelpLink");
+            this.HelpLink.Name = "HelpLink";
+            this.HelpLink.TabStop = true;
+            this.HelpLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HelpLink_LinkClicked);
+            // 
+            // HelpImage
+            // 
+            this.HelpImage.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.HelpImage.Image = global::Duplicati.GUI.Properties.Resources.help;
+            resources.ApplyResources(this.HelpImage, "HelpImage");
+            this.HelpImage.Name = "HelpImage";
+            this.HelpImage.TabStop = false;
+            this.HelpImage.Click += new System.EventHandler(this.HelpImage_Click);
+            // 
             // FilterDialog
             // 
             this.AcceptButton = this.OKBtn;
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
+            this.Controls.Add(this.HelpImage);
+            this.Controls.Add(this.HelpLink);
+            this.Controls.Add(this.BrowseFileButton);
+            this.Controls.Add(this.BrowseFolderButton);
             this.Controls.Add(this.FilterText);
             this.Controls.Add(this.IsRegExp);
             this.Controls.Add(this.CancelBtn);
@@ -100,6 +152,7 @@ namespace Duplicati.GUI.HelperControls
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "FilterDialog";
             this.Load += new System.EventHandler(this.FilterDialog_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.HelpImage)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -114,5 +167,11 @@ namespace Duplicati.GUI.HelperControls
         private System.Windows.Forms.Button OKBtn;
         private System.Windows.Forms.Button CancelBtn;
         private System.Windows.Forms.CheckBox IsRegExp;
+        private System.Windows.Forms.Button BrowseFolderButton;
+        private System.Windows.Forms.Button BrowseFileButton;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
+        private System.Windows.Forms.OpenFileDialog openFileDialog;
+        private System.Windows.Forms.LinkLabel HelpLink;
+        private System.Windows.Forms.PictureBox HelpImage;
     }
 }

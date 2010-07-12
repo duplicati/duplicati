@@ -27,6 +27,9 @@ using System.Windows.Forms;
 
 namespace Duplicati.GUI.HelperControls
 {
+    /// <summary>
+    /// The filter editor is used to graphically edit a set of rules for including or excluding files and folders
+    /// </summary>
     public partial class FilterEditor : UserControl
     {
         private string[] m_basepath;
@@ -188,13 +191,13 @@ namespace Duplicati.GUI.HelperControls
                 if (!fn.ShouldInclude(basepath, s, out match))
                 {
                     SetTooltipMessage(string.Format(Strings.FilterEditor.FolderIsExcluded, s, ((Library.Core.RegularExpressionFilter)match).Expression.ToString()));
-                    TestResults.Image = imageList1.Images[1];
+                    TestResults.Image = imageList.Images[1];
                     TestResults.Visible = true;
                     return;
                 }
 
             //Update image based on the inclusion status
-            TestResults.Image = imageList1.Images[fn.ShouldInclude(basepath, filename, out match) ? 0 : 1];
+            TestResults.Image = imageList.Images[fn.ShouldInclude(basepath, filename, out match) ? 0 : 1];
 
             //Set the tooltip to inform the user of the result
             if (match == null)
@@ -213,10 +216,10 @@ namespace Duplicati.GUI.HelperControls
         /// <param name="message">The message to show as the tooltip.</param>
         private void SetTooltipMessage(string message)
         {
-            toolTip1.SetToolTip(FilenameTester, message);
-            toolTip1.SetToolTip(label1, message);
-            toolTip1.SetToolTip(TestResults, message);
-            toolTip1.Show(message, TestResults, 5000);
+            toolTip.SetToolTip(FilenameTester, message);
+            toolTip.SetToolTip(label1, message);
+            toolTip.SetToolTip(TestResults, message);
+            toolTip.Show(message, TestResults, 5000);
         }
 
         /// <summary>
@@ -375,6 +378,47 @@ namespace Duplicati.GUI.HelperControls
         {
             if (EditFilterButton.Enabled)
                 EditFilterButton.PerformClick();
+        }
+
+        /// <summary>
+        /// Handles the Click event of the help button
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+        private void HelpButton_Click(object sender, EventArgs e)
+        {
+            UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
+        }
+
+
+        /// <summary>
+        /// Handles the Click event of the IncludeFolderButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+        private void IncludeFolderButton_Click(object sender, EventArgs e)
+        {
+            folderBrowserDialog.Description = Strings.FilterEditor.IncludeFolderBrowseTitle;
+            if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                listView.Items.Add(Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeperator(folderBrowserDialog.SelectedPath)), 0);
+                FilenameTester_TextChanged(sender, e);
+            }
+        }
+
+        /// <summary>
+        /// Handles the Click event of the ExcludeFolderButton control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+        private void ExcludeFolderButton_Click(object sender, EventArgs e)
+        {
+            folderBrowserDialog.Description = Strings.FilterEditor.ExcludeFolderBrowseTitle;
+            if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                listView.Items.Add(Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeperator(folderBrowserDialog.SelectedPath)), 1);
+                FilenameTester_TextChanged(sender, e);
+            }
         }
     }
 }

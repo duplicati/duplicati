@@ -61,6 +61,15 @@ namespace Duplicati.GUI.HelperControls.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Choose the folder to add for exclusion.
+        /// </summary>
+        internal static string ExcludeFolderBrowseTitle {
+            get {
+                return ResourceManager.GetString("ExcludeFolderBrowseTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The file {0} is excluded due to rule {1}.
         /// </summary>
         internal static string FileIsExcluded {
@@ -111,6 +120,15 @@ namespace Duplicati.GUI.HelperControls.Strings {
         internal static string FolderIsExcluded {
             get {
                 return ResourceManager.GetString("FolderIsExcluded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose the folder to add for inclusion.
+        /// </summary>
+        internal static string IncludeFolderBrowseTitle {
+            get {
+                return ResourceManager.GetString("IncludeFolderBrowseTitle", resourceCulture);
             }
         }
         

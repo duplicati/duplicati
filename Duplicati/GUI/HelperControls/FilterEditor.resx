@@ -135,35 +135,35 @@
   <data name="listView.Size" type="System.Drawing.Size, System.Drawing">
     <value>498, 164</value>
   </data>
-  <metadata name="imageList1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+  <metadata name="imageList.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>20, 17</value>
   </metadata>
-  <data name="imageList1.ImageStream" mimetype="application/x-microsoft.net.object.binary.base64">
+  <data name="imageList.ImageStream" mimetype="application/x-microsoft.net.object.binary.base64">
     <value>
         AAEAAAD/////AQAAAAAAAAAMAgAAAFdTeXN0ZW0uV2luZG93cy5Gb3JtcywgVmVyc2lvbj0yLjAuMC4w
         LCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWI3N2E1YzU2MTkzNGUwODkFAQAAACZTeXN0
-        ZW0uV2luZG93cy5Gb3Jtcy5JbWFnZUxpc3RTdHJlYW1lcgEAAAAERGF0YQcCAgAAAAkDAAAADwMAAAC8
-        BAAAAk1TRnQBSQFMAgEBAgEAARQBAAEUAQABEAEAARABAAT/ASEBAAj/AUIBTQE2BwABNgMAASgDAAFA
-        AwABEAMAAQEBAAEgBgABEP8AKwADEwEaASwCKwFDASwCKwFDASwCKwFD8AABVQJCAbIBVwHiAYwB/wFW
-        AeEBiQH/AUgByAFwAf/wAAFVAkIBsgFLAdQBawH/AUIBywFSAf8BSAHJAXAB//AAAVUCQgGyAVMB2gF1
-        Af8BQwHMAVQB/wFIAcoBcAH/8AABVQJCAbIBXwHjAYEB/wFPAdQBYQH/AUkBywFxAf/gAAE+AaQBPAH+
-        AVIB0wF3Af8BUgHUAXkB/wFTAdQBeQH/AVIB0wF4Af8BawHqAYQB/wFeAd8BcQH/AVwB4wGQAf8BSQHK
-        AW8B/wFHAcgBbgH/AUYBxgFsAf8BRgHFAWwB/wMwAUwMAAFIAkMBhAJOAdMB/wJQAdQB/wJSAdQB/wJT
-        AdMB/wJSAdAB/wJPAcwB/wJLAccB/wJHAcMB/wJFAcIB/wJFAcIB/wI0AagB/5AAAUEBqQFBAf4BZwHa
-        AXoB/wFwAeQBgQH/AXYB7AGGAf8BeQHwAYoB/wF2Ae8BhwH/AW0B6gGBAf8BYAHhAXQB/wFTAdcBZQH/
-        AUcBzgFYAf8BQgHLAVIB/wFVAeABhwH/AzABTAwAAUgCQwGEAmAB1wH/AmcB1gH/AnMB5AH/AnsB7gH/
-        AnsB8AH/Am8B6QH/AlwB3AH/AkwB0AH/AkcBzAH/AkcBzAH/Aj4BtwH/kAABQQGqAUEB/gFgAdYBgQH/
-        AWgB3wGFAf8BbwHnAY0B/wF0Ae4BkwH/AXkB7wGKAf8BdwHwAYgB/wFvAewBhgH/AWQB5wGCAf8BWQHe
-        AXsB/wFPAdcBcAH/AVYB4QGKAf8DMAFMDAABSAJDAYQCYQHaAf8CaAHdAf8CcgHoAf8CeAHwAf8CeAHy
-        Af8CbwHsAf8CYAHiAf8CUgHYAf8CTQHUAf8CTQHUAf8CPgG3Af+QAAFWAkIBsQFVAkEBtQFVAkEBtQFV
-        AkEBtQFXAUEBJwHoAXQB7QGTAf8BeQHvAYkB/wFVAdYBgQH/AVUCQQG1AVUCQQG1AVUCQQG1AVUCQQG1
-        AxgBIQwAAy0BRgFVAkEBtQFVAkEBtQFVAkEBtQFVAkEBtQFVAkEBtQFVAkEBtQFVAkEBtQFVAkEBtQFV
-        AkEBtQFVAkEBtQFWAUABQgG0oAABVQJCAbIBbQHlAYsB/wF0AegBgwH/AVUB1gGBAf/wAAFVAkIBsgFk
-        AdsBgQH/AWsB3gGAAf8BVAHVAX0B//AAAVUCQgGyAVsB0gF8Af8BYAHTAXMB/wFTAdQBewH/8AABVAJE
-        AasBNgG5ATsB/wE2AbgBOwH/ATQBtQE3Af//AP8A2gABQgFNAT4HAAE+AwABKAMAAUADAAEQAwABAQEA
-        AQEFAAGAFwAD/wEABP8EAAH8AT8C/wQAAfwBPwL/BAAB/AE/Av8EAAH8AT8C/wQAAfwBPwL/BAABwAEB
-        AcABAwQAAcABAQHAAQMEAAHAAQEBwAEDBAABwAEBAcABAwQAAfwBPwL/BAAB/AE/Av8EAAH8AT8C/wQA
-        AfwBPwL/BAAE/wQABP8EAAs=
+        ZW0uV2luZG93cy5Gb3Jtcy5JbWFnZUxpc3RTdHJlYW1lcgEAAAAERGF0YQcCAgAAAAkDAAAADwMAAAC2
+        BAAAAk1TRnQBSQFMAgEBAgEAASQBAAEkAQABEAEAARABAAT/ASEBAAj/AUIBTQE2BwABNgMAASgDAAFA
+        AwABEAMAAQEBAAEgBgABEP8AKwADEwEaASwCKwFDASwCKwFDASwCKwFD8AABVQJQAbIBVQHiAYwB/wFU
+        AeEBiQH/AUYByAFuAf/wAAFVAlABsgFJAdQBaQH/AUABywFQAf8BRgHJAW4B//AAAVUCUAGyAVEB2gFz
+        Af8BQQHMAVIB/wFGAcoBbgH/8AABVQJQAbIBXQHjAYEB/wFNAdQBXwH/AUcBywFvAf/gAAE+AaABPAH+
+        AVAB0wF1Af8BUAHUAXcB/wFRAdQBdwH/AVAB0wF2Af8BaQHqAYQB/wFcAd8BbwH/AVoB4wGQAf8BRwHK
+        AW0B/wFFAcgBbAH/AUQBxgFqAf8BRAHFAWoB/wMwAUwMAANIAYQCTAHTAf8CTgHUAf8CUAHUAf8CUQHT
+        Af8CUAHQAf8CTQHMAf8CSQHHAf8CRQHDAf8CQwHCAf8CQwHCAf8CMgGoAf+QAAFBAaUBQQH+AWUB2gF4
+        Af8BbgHkAYEB/wF0AewBhgH/AXcB8AGKAf8BdAHvAYcB/wFrAeoBgQH/AV4B4QFyAf8BUQHXAWMB/wFF
+        Ac4BVgH/AUABywFQAf8BUwHgAYcB/wMwAUwMAANIAYQCXgHXAf8CZQHWAf8CcQHkAf8CeQHuAf8CeQHw
+        Af8CbQHpAf8CWgHcAf8CSgHQAf8CRQHMAf8CRQHMAf8CPAG3Af+QAAFBAaYBQQH+AV4B1gGBAf8BZgHf
+        AYUB/wFtAecBjQH/AXIB7gGTAf8BdwHvAYoB/wF1AfABiAH/AW0B7AGGAf8BYgHnAYIB/wFXAd4BeQH/
+        AU0B1wFuAf8BVAHhAYoB/wMwAUwMAANIAYQCXwHaAf8CZgHdAf8CcAHoAf8CdgHwAf8CdgHyAf8CbQHs
+        Af8CXgHiAf8CUAHYAf8CSwHUAf8CSwHUAf8CPAG3Af+QAAFWAlEBsQFVAlABtQFVAlABtQFVAlABtQFX
+        AUoBOQHoAXIB7QGTAf8BdwHvAYkB/wFTAdYBgQH/AVUCUAG1AVUCUAG1AVUCUAG1AVUCUAG1AxgBIQwA
+        Ay0BRgFVAlABtQFVAlABtQFVAlABtQFVAlABtQFVAlABtQFVAlABtQFVAlABtQFVAlABtQFVAlABtQFV
+        AlABtQFWAVABUQG0oAABVQJQAbIBawHlAYsB/wFyAegBgwH/AVMB1gGBAf/wAAFVAlABsgFiAdsBgQH/
+        AWkB3gGAAf8BUgHVAXsB//AAAVUCUAGyAVkB0gF6Af8BXgHTAXEB/wFRAdQBeQH/8AABVAJRAasBNAG5
+        ATkB/wE0AbgBOQH/ATIBtQE1Af//AP8A2gABQgFNAT4HAAE+AwABKAMAAUADAAEQAwABAQEAAQEFAAGA
+        FwAD/wEABP8EAAH8AT8C/wQAAfwBPwL/BAAB/AE/Av8EAAH8AT8C/wQAAfwBPwL/BAABwAEBAcABAwQA
+        AcABAQHAAQMEAAHAAQEBwAEDBAABwAEBAcABAwQAAfwBPwL/BAAB/AE/Av8EAAH8AT8C/wQAAfwBPwL/
+        BAAE/wQABP8EAAs=
 </value>
   </data>
   <data name="listView.TabIndex" type="System.Int32, mscorlib">
@@ -184,6 +184,147 @@
   <metadata name="toolStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>3, 16</value>
   </metadata>
+  <data name="toolStrip1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 16</value>
+  </data>
+  <data name="toolStrip1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>498, 25</value>
+  </data>
+  <data name="toolStrip1.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="toolStrip1.Text" xml:space="preserve">
+    <value>toolStrip1</value>
+  </data>
+  <data name="&gt;&gt;toolStrip1.Name" xml:space="preserve">
+    <value>toolStrip1</value>
+  </data>
+  <data name="&gt;&gt;toolStrip1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStrip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStrip1.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;toolStrip1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>504, 208</value>
+  </data>
+  <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="groupBox1.Text" xml:space="preserve">
+    <value>Filters</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="toolStripSeparator1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
+  </data>
+  <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
+  </data>
+  <data name="label1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Bottom, Left</value>
+  </data>
+  <data name="label1.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label1.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 216</value>
+  </data>
+  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>79, 13</value>
+  </data>
+  <data name="label1.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="label1.Text" xml:space="preserve">
+    <value>Test a filename</value>
+  </data>
+  <data name="&gt;&gt;label1.Name" xml:space="preserve">
+    <value>label1</value>
+  </data>
+  <data name="&gt;&gt;label1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="FilenameTester.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Bottom, Left, Right</value>
+  </data>
+  <data name="FilenameTester.Location" type="System.Drawing.Point, System.Drawing">
+    <value>96, 216</value>
+  </data>
+  <data name="FilenameTester.Size" type="System.Drawing.Size, System.Drawing">
+    <value>376, 20</value>
+  </data>
+  <data name="FilenameTester.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;FilenameTester.Name" xml:space="preserve">
+    <value>FilenameTester</value>
+  </data>
+  <data name="&gt;&gt;FilenameTester.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FilenameTester.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;FilenameTester.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>130, 17</value>
+  </metadata>
+  <data name="TestResults.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Bottom, Right</value>
+  </data>
+  <data name="TestResults.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="TestResults.Location" type="System.Drawing.Point, System.Drawing">
+    <value>480, 216</value>
+  </data>
+  <data name="TestResults.Size" type="System.Drawing.Size, System.Drawing">
+    <value>16, 16</value>
+  </data>
+  <data name="TestResults.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;TestResults.Name" xml:space="preserve">
+    <value>TestResults</value>
+  </data>
+  <data name="&gt;&gt;TestResults.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;TestResults.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;TestResults.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <data name="AddFilterButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
@@ -269,9 +410,6 @@
   <data name="EditFilterButton.ToolTipText" xml:space="preserve">
     <value>Edit the selected filter</value>
   </data>
-  <data name="toolStripSeparator1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>6, 25</value>
-  </data>
   <data name="MoveFilterUpButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
@@ -326,9 +464,6 @@
   </data>
   <data name="MoveFilterDownButton.ToolTipText" xml:space="preserve">
     <value>Move the selected filter down</value>
-  </data>
-  <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>6, 25</value>
   </data>
   <data name="MoveFilterTopButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -386,134 +521,50 @@
   <data name="MoveFilterBottomButton.ToolTipText" xml:space="preserve">
     <value>Move the selected filter to the bottom</value>
   </data>
-  <data name="toolStrip1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>3, 16</value>
+  <data name="HelpButton.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
   </data>
-  <data name="toolStrip1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>498, 25</value>
+  <data name="HelpButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>79, 22</value>
   </data>
-  <data name="toolStrip1.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+  <data name="HelpButton.Text" xml:space="preserve">
+    <value>Filter help</value>
   </data>
-  <data name="toolStrip1.Text" xml:space="preserve">
-    <value>toolStrip1</value>
+  <data name="HelpButton.TextImageRelation" type="System.Windows.Forms.TextImageRelation, System.Windows.Forms">
+    <value>TextBeforeImage</value>
   </data>
-  <data name="&gt;&gt;toolStrip1.Name" xml:space="preserve">
-    <value>toolStrip1</value>
+  <data name="HelpButton.ToolTipText" xml:space="preserve">
+    <value>Opens the Duplicati Filter usage Wiki page</value>
   </data>
-  <data name="&gt;&gt;toolStrip1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ToolStrip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="IncludeFolderButton.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
   </data>
-  <data name="&gt;&gt;toolStrip1.Parent" xml:space="preserve">
-    <value>groupBox1</value>
+  <data name="IncludeFolderButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
   </data>
-  <data name="&gt;&gt;toolStrip1.ZOrder" xml:space="preserve">
-    <value>1</value>
+  <data name="IncludeFolderButton.Text" xml:space="preserve">
+    <value>toolStripButton1</value>
   </data>
-  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
+  <data name="IncludeFolderButton.ToolTipText" xml:space="preserve">
+    <value>Adds an included folder to the list</value>
   </data>
-  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>504, 208</value>
+  <data name="ExcludeFolderButton.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
   </data>
-  <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+  <data name="ExcludeFolderButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
   </data>
-  <data name="groupBox1.Text" xml:space="preserve">
-    <value>Filters</value>
+  <data name="ExcludeFolderButton.Text" xml:space="preserve">
+    <value>toolStripButton2</value>
   </data>
-  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
-    <value>groupBox1</value>
+  <data name="ExcludeFolderButton.ToolTipText" xml:space="preserve">
+    <value>Adds an excluded folder to the list</value>
   </data>
-  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="toolStripSeparator3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
   </data>
-  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="label1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Left</value>
-  </data>
-  <data name="label1.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 216</value>
-  </data>
-  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>79, 13</value>
-  </data>
-  <data name="label1.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="label1.Text" xml:space="preserve">
-    <value>Test a filename</value>
-  </data>
-  <data name="&gt;&gt;label1.Name" xml:space="preserve">
-    <value>label1</value>
-  </data>
-  <data name="&gt;&gt;label1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;label1.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="FilenameTester.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Left, Right</value>
-  </data>
-  <data name="FilenameTester.Location" type="System.Drawing.Point, System.Drawing">
-    <value>96, 216</value>
-  </data>
-  <data name="FilenameTester.Size" type="System.Drawing.Size, System.Drawing">
-    <value>376, 20</value>
-  </data>
-  <data name="FilenameTester.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;FilenameTester.Name" xml:space="preserve">
-    <value>FilenameTester</value>
-  </data>
-  <data name="&gt;&gt;FilenameTester.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;FilenameTester.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;FilenameTester.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="TestResults.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Right</value>
-  </data>
-  <data name="TestResults.Location" type="System.Drawing.Point, System.Drawing">
-    <value>480, 216</value>
-  </data>
-  <data name="TestResults.Size" type="System.Drawing.Size, System.Drawing">
-    <value>16, 16</value>
-  </data>
-  <data name="TestResults.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;TestResults.Name" xml:space="preserve">
-    <value>TestResults</value>
-  </data>
-  <data name="&gt;&gt;TestResults.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;TestResults.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;TestResults.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>130, 17</value>
+  <metadata name="folderBrowserDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>227, 17</value>
   </metadata>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
@@ -530,11 +581,29 @@
   <data name="&gt;&gt;columnHeader1.Type" xml:space="preserve">
     <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;imageList1.Name" xml:space="preserve">
-    <value>imageList1</value>
+  <data name="&gt;&gt;imageList.Name" xml:space="preserve">
+    <value>imageList</value>
   </data>
-  <data name="&gt;&gt;imageList1.Type" xml:space="preserve">
+  <data name="&gt;&gt;imageList.Type" xml:space="preserve">
     <value>System.Windows.Forms.ImageList, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator1.Name" xml:space="preserve">
+    <value>toolStripSeparator1</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator2.Name" xml:space="preserve">
+    <value>toolStripSeparator2</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolTip.Name" xml:space="preserve">
+    <value>toolTip</value>
+  </data>
+  <data name="&gt;&gt;toolTip.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;AddFilterButton.Name" xml:space="preserve">
     <value>AddFilterButton</value>
@@ -554,12 +623,6 @@
   <data name="&gt;&gt;EditFilterButton.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;toolStripSeparator1.Name" xml:space="preserve">
-    <value>toolStripSeparator1</value>
-  </data>
-  <data name="&gt;&gt;toolStripSeparator1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="&gt;&gt;MoveFilterUpButton.Name" xml:space="preserve">
     <value>MoveFilterUpButton</value>
   </data>
@@ -571,12 +634,6 @@
   </data>
   <data name="&gt;&gt;MoveFilterDownButton.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;toolStripSeparator2.Name" xml:space="preserve">
-    <value>toolStripSeparator2</value>
-  </data>
-  <data name="&gt;&gt;toolStripSeparator2.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;MoveFilterTopButton.Name" xml:space="preserve">
     <value>MoveFilterTopButton</value>
@@ -590,11 +647,35 @@
   <data name="&gt;&gt;MoveFilterBottomButton.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;toolTip1.Name" xml:space="preserve">
-    <value>toolTip1</value>
+  <data name="&gt;&gt;HelpButton.Name" xml:space="preserve">
+    <value>HelpButton</value>
   </data>
-  <data name="&gt;&gt;toolTip1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="&gt;&gt;HelpButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IncludeFolderButton.Name" xml:space="preserve">
+    <value>IncludeFolderButton</value>
+  </data>
+  <data name="&gt;&gt;IncludeFolderButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ExcludeFolderButton.Name" xml:space="preserve">
+    <value>ExcludeFolderButton</value>
+  </data>
+  <data name="&gt;&gt;ExcludeFolderButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator3.Name" xml:space="preserve">
+    <value>toolStripSeparator3</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;folderBrowserDialog.Name" xml:space="preserve">
+    <value>folderBrowserDialog</value>
+  </data>
+  <data name="&gt;&gt;folderBrowserDialog.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FolderBrowserDialog, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>FilterEditor</value>

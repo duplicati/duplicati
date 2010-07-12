@@ -83,5 +83,33 @@ namespace Duplicati.GUI.HelperControls
             catch { }
 
         }
+
+        private void BrowseFolderButton_Click(object sender, EventArgs e)
+        {
+            if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
+                if (IsRegExp.Checked)
+                    FilterText.Text = Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeperator(folderBrowserDialog.SelectedPath));
+                else
+                    FilterText.Text = Duplicati.Library.Core.Utility.AppendDirSeperator(folderBrowserDialog.SelectedPath);
+        }
+
+        private void BrowseFileButton_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog.ShowDialog(this) == DialogResult.OK)
+                if (IsRegExp.Checked)
+                    FilterText.Text = Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(openFileDialog.FileName);
+                else
+                    FilterText.Text = openFileDialog.FileName;
+        }
+
+        private void HelpImage_Click(object sender, EventArgs e)
+        {
+            UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
+        }
+
+        private void HelpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            HelpImage_Click(sender, e);
+        }
     }
 }
