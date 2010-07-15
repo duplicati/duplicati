@@ -37,7 +37,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private WizardSettingsWrapper m_wrapper;
 
         public CleanupSettings()
-            : base(Strings.IncrementalSettings.PageTitle, Strings.IncrementalSettings.PageDescription)
+            : base(Strings.CleanupSettings.PageTitle, Strings.CleanupSettings.PageDescription)
         {
             InitializeComponent();
 
@@ -65,7 +65,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 {
                     if (Timeparser.ParseTimeSpan(CleanupDuration.Value).TotalDays < 1)
                     {
-                        MessageBox.Show(this, Strings.IncrementalSettings.TooShortCleanupDurationDay , Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(this, Strings.CleanupSettings.TooShortCleanupDurationDay, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         args.Cancel = true;
                         return;
                     }
@@ -80,7 +80,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             if (!m_warnedClean && !(EnableCleanupDuration.Checked || EnableFullBackupClean.Checked))
             {
-                if (MessageBox.Show(this, Strings.IncrementalSettings.DisabledCleanupWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                if (MessageBox.Show(this, Strings.CleanupSettings.DisabledCleanupWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
                     args.Cancel = true;
                     return;

@@ -359,10 +359,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>GeneratedFilenameOptions.resx</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Add backup\Strings\IncrementalSettings.Designer.cs">
+    <Compile Include="Wizard pages\Add backup\Strings\CleanupSettings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>IncrementalSettings.resx</DependentUpon>
+      <DependentUpon>CleanupSettings.resx</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Add backup\Strings\PasswordSettings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -935,10 +935,10 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>GeneratedFilenameOptions.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Add backup\Strings\IncrementalSettings.resx">
+    <EmbeddedResource Include="Wizard pages\Add backup\Strings\CleanupSettings.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>IncrementalSettings.Designer.cs</LastGenOutput>
+      <LastGenOutput>CleanupSettings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\Strings\PasswordSettings.resx">
       <SubType>Designer</SubType>

@@ -22,14 +22,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class IncrementalSettings {
+    internal class CleanupSettings {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal IncrementalSettings() {
+        internal CleanupSettings() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Wizard_pages.Add_backup.Strings.IncrementalSettings", typeof(IncrementalSettings).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.GUI.Wizard_pages.Add_backup.Strings.CleanupSettings", typeof(CleanupSettings).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -72,18 +72,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.
-        ///Disabling full backups may result in a very lengthy restoration process, and may cause a restore to fault.
-        ///Do you want to continue without full backups?.
-        /// </summary>
-        internal static string DisabledFullBackupsWarning {
-            get {
-                return ResourceManager.GetString("DisabledFullBackupsWarning", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to To avoid large backups, Duplicati can back up only files that have changed. Each backup is much smaller, but all files are still avalible..
+        ///   Looks up a localized string similar to To ensure that backups do not grow indefinately, Duplicati can automatically remove old backups..
         /// </summary>
         internal static string PageDescription {
             get {
@@ -92,7 +81,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Select incremental options.
+        ///   Looks up a localized string similar to Select cleanup options.
         /// </summary>
         internal static string PageTitle {
             get {

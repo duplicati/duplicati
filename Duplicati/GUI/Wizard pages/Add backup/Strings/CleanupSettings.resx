@@ -122,16 +122,11 @@
 Disabling backup cleanup may result in storage space being exhausted.
 Do you want to continue without backup removal backups?</value>
   </data>
-  <data name="DisabledFullBackupsWarning" xml:space="preserve">
-    <value>You have disabled full backups. Incremental backups are faster, but rely on the presence of a full backup.
-Disabling full backups may result in a very lengthy restoration process, and may cause a restore to fault.
-Do you want to continue without full backups?</value>
-  </data>
   <data name="PageDescription" xml:space="preserve">
-    <value>To avoid large backups, Duplicati can back up only files that have changed. Each backup is much smaller, but all files are still avalible.</value>
+    <value>To ensure that backups do not grow indefinately, Duplicati can automatically remove old backups.</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
-    <value>Select incremental options</value>
+    <value>Select cleanup options</value>
   </data>
   <data name="TooShortCleanupDurationDay" xml:space="preserve">
     <value>The cleanup duration entered is less than 1 day. This will give very poor system performance.</value>
