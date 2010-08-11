@@ -25,11 +25,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Duplicati.Compression")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Compression implementation for Duplicati")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati.Compression")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

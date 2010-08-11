@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
 [assembly: AssemblyProduct("Duplicati.SharpRSync")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

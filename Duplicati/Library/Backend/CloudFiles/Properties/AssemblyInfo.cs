@@ -24,12 +24,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Duplicati.Library.Backend.CloudFiles")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("CloudFiles")]
+[assembly: AssemblyDescription("A CloudFiles backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
-[assembly: AssemblyProduct("Duplicati.Library.Backend.CloudFiles")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2009")]
+[assembly: AssemblyProduct("Duplicati.Backend.CloudFiles")]
+[assembly: AssemblyCopyright("Copyright © HexaD 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -25,11 +25,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("S3")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("An Amazon S3 backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
-[assembly: AssemblyProduct("S3")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
+[assembly: AssemblyProduct("Duplicati.Backend.S3")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

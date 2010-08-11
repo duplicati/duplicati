@@ -25,11 +25,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Duplicati.Library.Backend.WEBDAV")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A WEBDAV backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
-[assembly: AssemblyProduct("Duplicati.Library.Backend.WEBDAV")]
-[assembly: AssemblyCopyright("Copyright © HexaD 2009")]
+[assembly: AssemblyProduct("Duplicati.Backend.WEBDAV")]
+[assembly: AssemblyCopyright("Copyright © HexaD 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

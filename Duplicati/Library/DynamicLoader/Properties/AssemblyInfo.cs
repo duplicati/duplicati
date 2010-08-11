@@ -24,12 +24,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("BackendLoader")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("DynamicLoader")]
+[assembly: AssemblyDescription("A module for dynamically loading external dll's")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]
-[assembly: AssemblyProduct("BackendLoader")]
-[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2009")]
+[assembly: AssemblyProduct("Duplicati.DynamicLoader")]
+[assembly: AssemblyCopyright("LGPL, Copyright © HexaD 2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
