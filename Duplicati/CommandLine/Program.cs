@@ -109,6 +109,13 @@ namespace Duplicati.CommandLine
                     }
                 }
 
+                foreach(string internaloption in Library.Main.Options.InternalOptions)
+                    if (options.ContainsKey(internaloption))
+                    {
+                        Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
+                        return;
+                    }
+
                 if (source.Trim().ToLower() == "list")
                     Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
                 else if (source.Trim().ToLower() == "list-current-files")

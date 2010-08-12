@@ -154,6 +154,9 @@
   <data name="IntegerParseError" xml:space="preserve">
     <value>Unable to parse "{0}" into a number</value>
   </data>
+  <data name="InternalOptionUsedError" xml:space="preserve">
+    <value>The option --{0} was supplied, but it is reserved for internal use and may not be set on the commandline</value>
+  </data>
   <data name="ModifiedFilesHeader" xml:space="preserve">
     <value>Modified files</value>
   </data>

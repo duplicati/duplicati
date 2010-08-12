@@ -379,6 +379,11 @@ namespace Duplicati.Library.Main.RSync
         private List<string> m_folders_to_delete;
 
         /// <summary>
+        /// The snapshot control that guards this backup
+        /// </summary>
+        private Snapshots.ISnapshotService m_snapshot;
+
+        /// <summary>
         /// Initializes a RSyncDir instance, binds it to the source folder, and reads in the supplied patches
         /// </summary>
         /// <param name="sourcefolder">The folders to create a backup from</param>
@@ -461,6 +466,16 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="full">True if the set is a full backup, false if it is incremental</param>
         public void InitiateMultiPassDiff(bool full)
         {
+            InitiateMultiPassDiff(full, Options.SnapShotMode.Auto);
+        }
+
+        /// <summary>
+        /// Initiates creating a content/signature pair.
+        /// </summary>
+        /// <param name="full">True if the set is a full backup, false if it is incremental</param>
+        /// <param name="snapshotPolicy">The snapshot policy to apply</param>
+        public void InitiateMultiPassDiff(bool full, Options.SnapShotMode snapshotPolicy)
+        {
             if (full)
             {
                 m_oldFolders = new Dictionary<string, string>();
@@ -474,13 +489,32 @@ namespace Duplicati.Library.Main.RSync
             m_deletedfolders = new List<string>();
             m_lastPartialFile = null;
 
-            m_unproccesed = new PathCollector();
+            try
+            {
+                if (snapshotPolicy != Options.SnapShotMode.Off)
+                    m_snapshot = Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(m_sourcefolder);
+            }
+            catch (Exception ex)
+            {
+                if (snapshotPolicy == Options.SnapShotMode.Required)
+                    throw;
+                else if (snapshotPolicy == Options.SnapShotMode.On)
+                {
+                    if (m_stat != null)
+                        m_stat.LogWarning(string.Format(Strings.RSyncDir.SnapshotFailedError, ex.ToString()));
+                }
+            }
+
+            //Failsafe, just use a plain implementation
+            if (m_snapshot == null)
+                m_snapshot = new Duplicati.Library.Snapshots.NoSnapshot(m_sourcefolder);
+
+
             //TODO: Figure out how to make this faster, but still random
             //Perhaps use itterative callbacks, with random recurse or itterate on each folder
             //... we need to know the total length to provide a progress bar... :(
-
-            foreach(string s in m_sourcefolder)
-                Core.Utility.EnumerateFileSystemEntries(s, m_filter, new Duplicati.Library.Core.Utility.EnumerationCallbackDelegate(m_unproccesed.Callback));
+            m_unproccesed = new PathCollector();
+            m_snapshot.EnumerateFilesAndFolders(m_filter, m_unproccesed.Callback);
 
             m_totalfiles = m_unproccesed.Files.Count;
             m_isfirstmultipass = true;
@@ -713,7 +747,8 @@ namespace Duplicati.Library.Main.RSync
                         string relpath = GetRelativeName(s);
                         if (m_oldSignatures.ContainsKey(relpath))
                         {
-                            if (System.IO.File.GetLastWriteTime(s) < m_oldSignatures[relpath].GetLastWriteTime(relpath))
+                            DateTime lastWrite = m_snapshot.GetLastWriteTime(s);
+                            if (lastWrite < m_oldSignatures[relpath].GetLastWriteTime(relpath))
                             {
                                 m_oldSignatures.Remove(relpath);
                                 m_examinedfiles++;
@@ -726,7 +761,7 @@ namespace Duplicati.Library.Main.RSync
                         m_unproccesed.FilesWithError.Add(s);
                     else
                     {
-                        using (System.IO.FileStream fs = System.IO.File.Open(s, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        using (System.IO.Stream fs = m_snapshot.OpenRead(s))
                         {
                             if (fs.Length > m_maxFileSize)
                                 m_unproccesed.FilesTooLarge.Add(s);
@@ -765,7 +800,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="s">The full name of the file</param>
         /// <param name="signaturefile">The signature archive file</param>
         /// <returns>The signature stream if the file is new or modified, null if the file has not been modified</returns>
-        private System.IO.Stream ProccessDiff(System.IO.FileStream fs, string s, Library.Interface.ICompression signaturefile)
+        private System.IO.Stream ProccessDiff(System.IO.Stream fs, string s, Library.Interface.ICompression signaturefile)
         {
             string relpath = GetRelativeName(s);
 
@@ -817,7 +852,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="signaturefile">The signature stream to add</param>
         /// <param name="volumesize">The max size of the volume</param>
         /// <returns>The current size of the content archive</returns>
-        private long AddFileToCompression(System.IO.FileStream fs, string s, System.IO.Stream signature, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize)
+        private long AddFileToCompression(System.IO.Stream fs, string s, System.IO.Stream signature, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize)
         {
             fs.Position = 0;
             signature.Position = 0;
@@ -1354,94 +1389,23 @@ namespace Duplicati.Library.Main.RSync
                 bs.SizeOfModifiedFiles = m_diffedfilessize;
                 bs.SizeOfAddedFiles = m_addedfilessize;
                 bs.SizeOfExaminedFiles = m_examinedfilesize;
-                bs.UnprocessedFiles = m_unproccesed.Files.Count;
+                if (m_unproccesed != null && m_unproccesed.Files != null)
+                    bs.UnprocessedFiles = m_unproccesed.Files.Count;
                 bs.AddedFolders = m_newfolders.Count;
+            }
+
+            if (m_snapshot != null)
+            {
+                m_snapshot.Dispose();
+                m_snapshot = null;
             }
 
         }
 
         #endregion
 
-
-        /*
         /// <summary>
-        /// Will update all files in basefolder with the changes recorded in updatefolder.
-        /// Only handles signature folders
-        /// </summary>
-        /// <param name="basefolder">The folder to update</param>
-        /// <param name="updatefolder">The updates to merge into the basefolder</param>
-        public static void MergeSignatures(string basefolder, string updatefolder)
-        {
-            basefolder = Core.Utility.AppendDirSeperator(basefolder);
-            updatefolder = Core.Utility.AppendDirSeperator(updatefolder);
-
-            Dictionary<string, string> deletedfiles = new Dictionary<string, string>();
-            if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, DELETED_FILES)))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES))))
-                    deletedfiles.Add(s, s);
-
-            if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FILES))))
-                    System.IO.File.Delete(System.IO.Path.Combine(System.IO.Path.Combine(basefolder, SIGNATURE_ROOT), s));
-
-            Dictionary<string, string> addedfolders = new Dictionary<string, string>();
-            if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, ADDED_FOLDERS)))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS))))
-                    addedfolders.Add(s, s);
-
-            Dictionary<string, string> deletedfolders = new Dictionary<string, string>();
-            if (System.IO.File.Exists(System.IO.Path.Combine(basefolder, DELETED_FOLDERS)))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS))))
-                    deletedfolders.Add(s,s );
-
-            if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS)))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FOLDERS))))
-                {
-                    if (addedfolders.ContainsKey(s))
-                        addedfolders.Remove(s);
-                    deletedfolders[s] = s;
-                }
-
-            if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, ADDED_FOLDERS)))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, ADDED_FOLDERS))))
-                    addedfolders[s] = s;
-
-            List<string> updates = Core.Utility.EnumerateFiles(System.IO.Path.Combine(updatefolder, SIGNATURE_ROOT));
-            foreach(string s in updates)
-            {
-                string relpath = s.Substring(updatefolder.Length);
-                string target = System.IO.Path.Combine(basefolder, relpath);
-
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
-
-                System.IO.File.Copy(s, target, true);
-                //If they are created again
-                relpath = relpath.Substring(SIGNATURE_ROOT.Length + 1);
-                if (deletedfiles.ContainsKey(relpath))
-                    deletedfiles.Remove(relpath);
-            }
-
-            List<string> delfiles = new List<string>(deletedfiles.Values);
-            if (System.IO.File.Exists(System.IO.Path.Combine(updatefolder, DELETED_FILES)))
-                foreach (string s in FilenamesFromPlatformIndependant(System.IO.File.ReadAllLines(System.IO.Path.Combine(updatefolder, DELETED_FILES))))
-                    if (!delfiles.Contains(s))
-                        delfiles.Add(s);
-
-            if (!System.IO.Directory.Exists(basefolder))
-                System.IO.Directory.CreateDirectory(basefolder);
-
-            List<string> dfo = new List<string>(deletedfolders.Values);
-            List<string> dfi = new List<string>(deletedfiles.Values);
-            List<string> afo = new List<string>(addedfolders.Values);
-
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FOLDERS), FilenamesToPlatformIndependant(dfo.ToArray()));
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, DELETED_FILES), FilenamesToPlatformIndependant(dfi.ToArray()));
-            System.IO.File.WriteAllLines(System.IO.Path.Combine(basefolder, ADDED_FOLDERS), FilenamesToPlatformIndependant(afo.ToArray()));
-        }*/
-
-        /// <summary>
-        /// Converts all filenames to use / as the dir seperator
+        /// Converts all filenames to use / as the dir separator
         /// </summary>
         /// <param name="filenames">The list of filenames to modify</param>
         /// <returns>A modified list of filenames</returns>

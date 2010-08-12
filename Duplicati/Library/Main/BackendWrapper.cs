@@ -41,7 +41,9 @@ namespace Duplicati.Library.Main
         /// </summary>
         private Options m_options;
 
-        //These keep track of async operations
+        /// <summary>
+        /// A list of pending async operations
+        /// </summary>
         private Queue<KeyValuePair<BackupEntryBase, string>> m_pendingOperations;
         
         //TODO: Figure out if the linux implementation uses the pthreads model, where signals
@@ -135,83 +137,6 @@ namespace Duplicati.Library.Main
                 m_asyncWait = new System.Threading.ManualResetEvent(true);
                 m_queuelock = new object();
             }
-
-            //Keep a list of all supplied options
-            Dictionary<string, string> ropts = m_options.RawOptions;
-            //Keep a list of all supported options
-            Dictionary<string, string> supportedOptions = new Dictionary<string, string>();
-
-            //There are a few internal options that are not accessible from outside, and thus not listed
-            foreach (string s in m_options.InternalOptions)
-                supportedOptions[s] = null;
-
-            //Figure out what module options are supported in the current setup
-            List<Library.Interface.ICommandLineArgument> moduleOptions = new List<Duplicati.Library.Interface.ICommandLineArgument>();
-            Dictionary<string, string> disabledModuleOptions = new Dictionary<string, string>();
-
-            foreach (KeyValuePair<bool, Library.Interface.IGenericModule> m in m_options.LoadedModules)
-                if (m.Value.SupportedCommands != null)
-                    if (m.Key)
-                        moduleOptions.AddRange(m.Value.SupportedCommands);
-                    else
-                    {
-                        foreach (Library.Interface.ICommandLineArgument c in m.Value.SupportedCommands)
-                        {
-                            disabledModuleOptions[c.Name] = m.Value.DisplayName + " (" + m.Value.Key + ")";
-
-                            if (c.Aliases != null)
-                                foreach (string s in c.Aliases)
-                                    disabledModuleOptions[s] = disabledModuleOptions[c.Name];
-                        }
-                    }
-
-            //Now run through all supported options, and look for deprecated options
-            foreach (IList<Library.Interface.ICommandLineArgument> l in new IList<Library.Interface.ICommandLineArgument>[] { 
-                m_options.SupportedCommands, 
-                m_backend.SupportedCommands, m_encryption == null ? null : m_encryption.SupportedCommands, 
-                moduleOptions,
-                DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule) })
-            {
-                if (l != null)
-                    foreach (Library.Interface.ICommandLineArgument a in l)
-                    {
-                        supportedOptions[a.Name] = null;
-                        if (a.Aliases != null)
-                            foreach (string s in a.Aliases)
-                                supportedOptions[s] = null;
-
-                        if (a.Deprecated)
-                        {
-                            List<string> aliases = new List<string>();
-                            aliases.Add(a.Name);
-                            if (a.Aliases != null)
-                                aliases.AddRange(a.Aliases);
-
-                            foreach (string s in aliases)
-                                if (ropts.ContainsKey(s))
-                                {
-                                    string optname = a.Name;
-                                    if (a.Name != s)
-                                        optname += " (" + s + ")";
-
-                                    if (m_statistics != null)
-                                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.DeprecatedOptionUsedWarning, a.Name, a.DeprecationMessage));
-                                }
-
-                        }
-                    }
-            }
-
-            //Now look for options that were supplied but not supported
-            if (m_statistics != null)
-                foreach (string s in ropts.Keys)
-                    if (!supportedOptions.ContainsKey(s))
-                        if (disabledModuleOptions.ContainsKey(s))
-                            m_statistics.LogWarning(string.Format(Strings.BackendWrapper.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]));
-                        else
-                            m_statistics.LogWarning(string.Format(Strings.BackendWrapper.UnsupportedOptionWarning, s));
-
-
         }
 
         public void AddOrphan(BackupEntryBase entry)

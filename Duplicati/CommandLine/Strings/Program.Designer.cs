@@ -175,6 +175,15 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The option --{0} was supplied, but it is reserved for internal use and may not be set on the commandline.
+        /// </summary>
+        internal static string InternalOptionUsedError {
+            get {
+                return ResourceManager.GetString("InternalOptionUsedError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Modified files.
         /// </summary>
         internal static string ModifiedFilesHeader {

@@ -31,6 +31,29 @@ namespace Duplicati.Library.Main
     public class Options
     {
         /// <summary>
+        /// An enumeration that describes the supported snapshot modes
+        /// </summary>
+        public enum SnapShotMode
+        {
+            /// <summary>
+            /// A snapshot is created if possible, but silently ignored if it fails to start
+            /// </summary>
+            Auto,
+            /// <summary>
+            /// A snapshot is created if possible, but an error is logged if it fails to start
+            /// </summary>
+            On,
+            /// <summary>
+            /// Snapshots are deactivated
+            /// </summary>
+            Off,
+            /// <summary>
+            /// A snapshot is created, and the backup is aborted if it fails
+            /// </summary>
+            Required
+        }
+
+        /// <summary>
         /// Lock that protects the options collection
         /// </summary>
         private object m_lock = new object();
@@ -49,7 +72,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Returns a list of strings that are not supported on the commandline as options, but used internally
         /// </summary>
-        public string[] InternalOptions
+        public static string[] InternalOptions
         {
             get
             {
@@ -109,6 +132,8 @@ namespace Duplicati.Library.Main
                     
                     new CommandLineArgument("allow-sourcefolder-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsourcefolderchangeShort, Strings.Options.AllowsourcefolderchangeLong, "false"),
                     new CommandLineArgument("full-if-sourcefolder-changed", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullifsourcefolderchangedShort, Strings.Options.FullifsourcefolderchangedLong, "false"),
+
+                    new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
                     new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
@@ -583,6 +608,25 @@ namespace Duplicati.Library.Main
             }
         }
 
+        public SnapShotMode SnapShotStrategy
+        {
+            get
+            {
+                string strategy;
+                if (!m_options.TryGetValue("snapshot-policy", out strategy))
+                    strategy = "";
+
+                if (string.Equals(strategy, "on", StringComparison.InvariantCultureIgnoreCase))
+                    return SnapShotMode.On;
+                else if (string.Equals(strategy, "off", StringComparison.InvariantCultureIgnoreCase))
+                    return SnapShotMode.Off;
+                else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
+                    return SnapShotMode.Required;
+                else
+                    return SnapShotMode.Off;
+            }
+        }
+
         /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 
         /// </summary>
@@ -593,20 +637,7 @@ namespace Duplicati.Library.Main
             if (!m_options.ContainsKey(name))
                 return false;
             else
-            {
-                string v = m_options[name];
-                if (string.IsNullOrEmpty(v))
-                    return true;
-                else
-                {
-                    v = v.ToLower().Trim();
-                    if (v == "false" || v == "no" || v == "off" || v == "0")
-                        return false;
-                    else
-                        return true;
-                }
-
-            }
+                return Core.Utility.ParseBool(m_options[name], true);
         }
 
     }

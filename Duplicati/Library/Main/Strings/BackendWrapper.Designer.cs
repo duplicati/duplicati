@@ -70,15 +70,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The option {0} is deprecated: {1}.
-        /// </summary>
-        internal static string DeprecatedOptionUsedWarning {
-            get {
-                return ResourceManager.GetString("DeprecatedOptionUsedWarning", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Failed to delete file: {0}.
         /// </summary>
         internal static string FileDeleteError {
@@ -219,24 +210,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string StatusMessageUploading {
             get {
                 return ResourceManager.GetString("StatusMessageUploading", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The option --{0} is not supported because the module {1} is not currently loaded.
-        /// </summary>
-        internal static string UnsupportedOptionDisabledModuleWarning {
-            get {
-                return ResourceManager.GetString("UnsupportedOptionDisabledModuleWarning", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The supplied option --{0} is not supported and will be ignored.
-        /// </summary>
-        internal static string UnsupportedOptionWarning {
-            get {
-                return ResourceManager.GetString("UnsupportedOptionWarning", resourceCulture);
             }
         }
     }

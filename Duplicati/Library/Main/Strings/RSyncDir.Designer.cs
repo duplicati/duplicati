@@ -221,5 +221,14 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("RestoreFolderMissingError", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to create a snapshot: {0}.
+        /// </summary>
+        internal static string SnapshotFailedError {
+            get {
+                return ResourceManager.GetString("SnapshotFailedError", resourceCulture);
+            }
+        }
     }
 }

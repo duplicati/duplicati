@@ -132,6 +132,12 @@
   <data name="DeletingBackupSetMessage" xml:space="preserve">
     <value>Deleting backup at {0}</value>
   </data>
+  <data name="DeprecatedOptionUsedWarning" xml:space="preserve">
+    <value>The option {0} is deprecated: {1}</value>
+  </data>
+  <data name="DuplicateOptionNameWarning" xml:space="preserve">
+    <value>The option --{0} exists more than once, please report this to the developers</value>
+  </data>
   <data name="FailedToFindControlFilesMessage" xml:space="preserve">
     <value>Failed to find control files in: {0}</value>
   </data>
@@ -242,5 +248,29 @@
   </data>
   <data name="UnexpectedCompressionError" xml:space="preserve">
     <value>Unexpected compression mode: {0}</value>
+  </data>
+  <data name="UnsupportedBooleanValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to "true"</value>
+  </data>
+  <data name="UnsupportedEnumerationValue" xml:space="preserve">
+    <value>The option --{0} does not support the value "{1}", supported values are: {2}</value>
+  </data>
+  <data name="UnsupportedIntegerValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid integer</value>
+  </data>
+  <data name="UnsupportedOptionDisabledModuleWarning" xml:space="preserve">
+    <value>The option --{0} is not supported because the module {1} is not currently loaded</value>
+  </data>
+  <data name="UnsupportedOptionWarning" xml:space="preserve">
+    <value>The supplied option --{0} is not supported and will be ignored</value>
+  </data>
+  <data name="UnsupportedPathValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid path</value>
+  </data>
+  <data name="UnsupportedSizeValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid size</value>
+  </data>
+  <data name="UnsupportedTimeValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid time</value>
   </data>
 </root>

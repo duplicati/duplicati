@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main
         {
             BackupStatistics bs = new BackupStatistics();
 
-            SetupCommonOptions();
+            SetupCommonOptions(bs);
             BackendWrapper backend = null;
             long volumesUploaded = 0;
 
@@ -229,7 +229,7 @@ namespace Duplicati.Library.Main
                             dir.DisableFiletimeCheck = m_options.DisableFiletimeCheck;
                             dir.MaxFileSize = m_options.SkipFilesLargerThan;
                             using (new Logging.Timer("Initiating multipass"))
-                                dir.InitiateMultiPassDiff(full);
+                                dir.InitiateMultiPassDiff(full, m_options.SnapShotStrategy);
 
                             bool done = false;
                             while (!done && totalsize < m_options.MaxSize)
@@ -424,8 +424,8 @@ namespace Duplicati.Library.Main
 
         public string Restore(string[] target)
         {
-            SetupCommonOptions();
             RestoreStatistics rs = new RestoreStatistics();
+            SetupCommonOptions(rs);
 
             m_progress = 0;
             BackendWrapper backend = null;
@@ -580,8 +580,8 @@ namespace Duplicati.Library.Main
         /// <returns>A restore report</returns>
         public string RestoreControlFiles(string target)
         {
-            SetupCommonOptions();
             RestoreStatistics rs = new RestoreStatistics();
+            SetupCommonOptions(rs);
 
             BackendWrapper backend = null;
 
@@ -796,7 +796,7 @@ namespace Duplicati.Library.Main
 
         public string[] List()
         {
-            SetupCommonOptions();
+            SetupCommonOptions(null);
 
             List<string> res = new List<string>();
             Duplicati.Library.Interface.IBackend i = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
@@ -865,8 +865,8 @@ namespace Duplicati.Library.Main
 
         public IList<string> ListContent()
         {
-            SetupCommonOptions();
             RestoreStatistics rs = new RestoreStatistics();
+            SetupCommonOptions(rs);
 
             Core.FilenameFilter filter = m_options.Filter;
             DateTime timelimit = m_options.RestoreTime;
@@ -899,8 +899,8 @@ namespace Duplicati.Library.Main
 
         public string[] ListSourceFolders()
         {
-            SetupCommonOptions();
             RestoreStatistics rs = new RestoreStatistics();
+            SetupCommonOptions(rs);
 
             Core.FilenameFilter filter = m_options.Filter;
             DateTime timelimit = m_options.RestoreTime;
@@ -926,7 +926,7 @@ namespace Duplicati.Library.Main
         }
 
 
-        private void SetupCommonOptions()
+        private void SetupCommonOptions(CommunicationStatistics stats)
         {
             if (!string.IsNullOrEmpty(m_options.TempDir))
                 Core.TempFolder.SystemTempPath = m_options.TempDir;
@@ -939,6 +939,8 @@ namespace Duplicati.Library.Main
 
             foreach (Library.Interface.IGenericModule m in DynamicLoader.GenericLoader.Modules)
                 m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(Array.IndexOf<string>(m_options.DisableModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(m_options.EnableModules, m.Key.ToLower()) >= 0), m));
+
+            ValidateOptions(stats);
 
             foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                 if (mx.Key)
@@ -1055,6 +1057,170 @@ namespace Duplicati.Library.Main
 
         }
 
+        /// <summary>
+        /// This function will examine all options passed on the commandline, and test for unsupported or deprecated values.
+        /// Any errors will be logged into the statistics module.
+        /// </summary>
+        /// <param name="options">The commandline options given</param>
+        /// <param name="backend">The backend url</param>
+        /// <param name="stats">The statistics into which warnings are written</param>
+        private void ValidateOptions(CommunicationStatistics stats)
+        {
+            //No point in going through with this if we can't report
+            if (stats == null)
+                return;
+
+            //Keep a list of all supplied options
+            Dictionary<string, string> ropts = m_options.RawOptions;
+            
+            //Keep a list of all supported options
+            Dictionary<string, Library.Interface.ICommandLineArgument> supportedOptions = new Dictionary<string, Library.Interface.ICommandLineArgument>();
+
+            //There are a few internal options that are not accessible from outside, and thus not listed
+            foreach (string s in Options.InternalOptions)
+                supportedOptions[s] = null;
+
+            //Figure out what module options are supported in the current setup
+            List<Library.Interface.ICommandLineArgument> moduleOptions = new List<Duplicati.Library.Interface.ICommandLineArgument>();
+            Dictionary<string, string> disabledModuleOptions = new Dictionary<string, string>();
+
+            foreach (KeyValuePair<bool, Library.Interface.IGenericModule> m in m_options.LoadedModules)
+                if (m.Value.SupportedCommands != null)
+                    if (m.Key)
+                        moduleOptions.AddRange(m.Value.SupportedCommands);
+                    else
+                    {
+                        foreach (Library.Interface.ICommandLineArgument c in m.Value.SupportedCommands)
+                        {
+                            disabledModuleOptions[c.Name] = m.Value.DisplayName + " (" + m.Value.Key + ")";
+
+                            if (c.Aliases != null)
+                                foreach (string s in c.Aliases)
+                                    disabledModuleOptions[s] = disabledModuleOptions[c.Name];
+                        }
+                    }
+
+            //Now run through all supported options, and look for deprecated options
+            foreach (IList<Library.Interface.ICommandLineArgument> l in new IList<Library.Interface.ICommandLineArgument>[] { 
+                m_options.SupportedCommands, 
+                DynamicLoader.BackendLoader.GetSupportedCommands(m_backend), 
+                m_options.NoEncryption ? null : DynamicLoader.EncryptionLoader.GetSupportedCommands(m_options.EncryptionModule),
+                moduleOptions,
+                DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule) })
+            {
+                if (l != null)
+                    foreach (Library.Interface.ICommandLineArgument a in l)
+                    {
+                        if (supportedOptions.ContainsKey(a.Name))
+                            stats.LogWarning(string.Format(Strings.Interface.DuplicateOptionNameWarning, a.Name));
+
+                        supportedOptions[a.Name] = a;
+
+                        if (a.Aliases != null)
+                            foreach (string s in a.Aliases)
+                            {
+                                if (supportedOptions.ContainsKey(s))
+                                    stats.LogWarning(string.Format(Strings.Interface.DuplicateOptionNameWarning, s));
+
+                                supportedOptions[s] = a;
+                            }
+
+                        if (a.Deprecated)
+                        {
+                            List<string> aliases = new List<string>();
+                            aliases.Add(a.Name);
+                            if (a.Aliases != null)
+                                aliases.AddRange(a.Aliases);
+
+                            foreach (string s in aliases)
+                                if (ropts.ContainsKey(s))
+                                {
+                                    string optname = a.Name;
+                                    if (a.Name != s)
+                                        optname += " (" + s + ")";
+
+                                    stats.LogWarning(string.Format(Strings.Interface.DeprecatedOptionUsedWarning, optname, a.DeprecationMessage));
+                                }
+
+                        }
+                    }
+            }
+
+            //Now look for options that were supplied but not supported
+            foreach (string s in ropts.Keys)
+                if (!supportedOptions.ContainsKey(s))
+                    if (disabledModuleOptions.ContainsKey(s))
+                        stats.LogWarning(string.Format(Strings.Interface.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]));
+                    else
+                        stats.LogWarning(string.Format(Strings.Interface.UnsupportedOptionWarning, s));
+
+            //Look at the value supplied for each argument and see if is valid according to its type
+            foreach (string s in ropts.Keys)
+            {
+                Library.Interface.ICommandLineArgument arg;
+                if (supportedOptions.TryGetValue(s, out arg) && arg != null)
+                {
+                    string argvalue = ropts[s];
+                    if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration)
+                    {
+                        bool found = false;
+                        foreach (string v in arg.ValidValues ?? new string[0])
+                            if (string.Equals(v, argvalue, StringComparison.CurrentCultureIgnoreCase))
+                            {
+                                found = true;
+                                break;
+                            }
+
+                        if (!found)
+                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedEnumerationValue, s, argvalue, string.Join(",", arg.ValidValues ?? new string[0])));
+
+                    }
+                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
+                    {
+                        if (!string.IsNullOrEmpty(argvalue) && Core.Utility.ParseBool(argvalue, true) != Core.Utility.ParseBool(argvalue, false))
+                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedBooleanValue, s, argvalue));
+                    }
+                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
+                    {
+                        long l;
+                        if (!long.TryParse(argvalue, out l))
+                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedIntegerValue, s, argvalue));
+                    }
+                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path)
+                    {
+                        foreach (string p in argvalue.Split(System.IO.Path.DirectorySeparatorChar))
+                            if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+                            {
+                                stats.LogWarning(string.Format(Strings.Interface.UnsupportedPathValue, s, p));
+                            }
+                    }
+                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Size)
+                    {
+                        try
+                        {
+                            Core.Sizeparser.ParseSize(argvalue);
+                        }
+                        catch
+                        {
+                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedSizeValue, s, argvalue));
+                        }
+                    }
+                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan)
+                    {
+                        try
+                        {
+                            Core.Timeparser.ParseTimeSpan(argvalue);
+                        }
+                        catch
+                        {
+                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedTimeValue, s, argvalue));
+                        }
+                    }
+                }
+            }
+        }
+
+        #region Static interface
         public static void RemoveSignatureFiles(string folder)
         {
             FilenameStrategy cachenames = BackendWrapper.CreateCacheFilenameStrategy();
@@ -1151,6 +1317,7 @@ namespace Duplicati.Library.Main
             using (Interface i = new Interface(target, options))
                 return i.ListActualSignatureFiles();
         }
+        #endregion
 
         #region IDisposable Members
 

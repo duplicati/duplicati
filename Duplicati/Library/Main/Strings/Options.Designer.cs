@@ -682,6 +682,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This settings controls the usage of snapshots, which allows Duplicati to backup files that are locked by other programs. If this is set to &quot;off&quot;, Duplicati will not attempt to create a disk snapshot. Setting this to &quot;auto&quot; makes Duplicati attempt to create a snapshot, and fail silently if that was not allowed or supported. A setting of &quot;on&quot; will also make Duplicati attempt to create a snapshot, but will produce a warning message in the log if it fails. Setting it to &quot;required&quot; will make Duplicati abort the  [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string SnapshotpolicyLong {
+            get {
+                return ResourceManager.GetString("SnapshotpolicyLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the use of disk snapshots.
+        /// </summary>
+        internal static string SnapshotpolicyShort {
+            get {
+                return ResourceManager.GetString("SnapshotpolicyShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicati will use the system default temporary folder. This option can be used to supply an alternative folder for temporary storage..
         /// </summary>
         internal static string TempdirLong {

@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
+    <AssemblyName>Duplicati.Library.Snapshots</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AlphaFS, Version=1.0.9155.0, Culture=neutral, PublicKeyToken=4b76c8c88cc75802, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\thirdparty\alphavss\Bin\AlphaFS.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS.Common, Version=1.0.9156.0, Culture=neutral, PublicKeyToken=3033cf2dbd31cad3, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\thirdparty\alphavss\Bin\AlphaVSS.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ISnapshotService.cs" />
+    <Compile Include="LinuxSnapshot.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="NoSnapshot.cs" />
+    <Compile Include="Strings\LinuxSnapshot.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>LinuxSnapshot.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\WinNativeMethod.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WinNativeMethod.resx</DependentUpon>
+    </Compile>
+    <Compile Include="SnapshotUtility.cs" />
+    <Compile Include="WindowsSnapshot.cs" />
+    <Compile Include="WinNativeMethods.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Duplicati.Library.Core.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Duplicati.snk" />
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2003.x64.dll">
+      <Link>alphavss\AlphaVSS.Win2003.x64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2003.x86.dll">
+      <Link>alphavss\AlphaVSS.Win2003.x86.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2008.x64.dll">
+      <Link>alphavss\AlphaVSS.Win2008.x64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.Win2008.x86.dll">
+      <Link>alphavss\AlphaVSS.Win2008.x86.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.WinXP.x64.dll">
+      <Link>alphavss\AlphaVSS.WinXP.x64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\..\thirdparty\alphavss\platform\AlphaVSS.WinXP.x86.dll">
+      <Link>alphavss\AlphaVSS.WinXP.x86.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="lvm-scripts\create-lvm-snapshot.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="lvm-scripts\find-volume.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="lvm-scripts\remove-lvm-snapshot.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Strings\LinuxSnapshot.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>LinuxSnapshot.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\WinNativeMethod.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>WinNativeMethod.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

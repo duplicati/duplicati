@@ -106,6 +106,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The option {0} is deprecated: {1}.
+        /// </summary>
+        internal static string DeprecatedOptionUsedWarning {
+            get {
+                return ResourceManager.GetString("DeprecatedOptionUsedWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The option --{0} exists more than once, please report this to the developers.
+        /// </summary>
+        internal static string DuplicateOptionNameWarning {
+            get {
+                return ResourceManager.GetString("DuplicateOptionNameWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to find control files in: {0}.
         /// </summary>
         internal static string FailedToFindControlFilesMessage {
@@ -435,6 +453,78 @@ namespace Duplicati.Library.Main.Strings {
         internal static string UnexpectedCompressionError {
             get {
                 return ResourceManager.GetString("UnexpectedCompressionError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The value &quot;{1}&quot; supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to &quot;true&quot;.
+        /// </summary>
+        internal static string UnsupportedBooleanValue {
+            get {
+                return ResourceManager.GetString("UnsupportedBooleanValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The option --{0} does not support the value &quot;{1}&quot;, supported values are: {2}.
+        /// </summary>
+        internal static string UnsupportedEnumerationValue {
+            get {
+                return ResourceManager.GetString("UnsupportedEnumerationValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The value &quot;{1}&quot; supplied to --{0} does not represent a valid integer.
+        /// </summary>
+        internal static string UnsupportedIntegerValue {
+            get {
+                return ResourceManager.GetString("UnsupportedIntegerValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The option --{0} is not supported because the module {1} is not currently loaded.
+        /// </summary>
+        internal static string UnsupportedOptionDisabledModuleWarning {
+            get {
+                return ResourceManager.GetString("UnsupportedOptionDisabledModuleWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The supplied option --{0} is not supported and will be ignored.
+        /// </summary>
+        internal static string UnsupportedOptionWarning {
+            get {
+                return ResourceManager.GetString("UnsupportedOptionWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The value &quot;{1}&quot; supplied to --{0} does not represent a valid path.
+        /// </summary>
+        internal static string UnsupportedPathValue {
+            get {
+                return ResourceManager.GetString("UnsupportedPathValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The value &quot;{1}&quot; supplied to --{0} does not represent a valid size.
+        /// </summary>
+        internal static string UnsupportedSizeValue {
+            get {
+                return ResourceManager.GetString("UnsupportedSizeValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The value &quot;{1}&quot; supplied to --{0} does not represent a valid time.
+        /// </summary>
+        internal static string UnsupportedTimeValue {
+            get {
+                return ResourceManager.GetString("UnsupportedTimeValue", resourceCulture);
             }
         }
     }

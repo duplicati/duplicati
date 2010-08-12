@@ -86,6 +86,13 @@ namespace Duplicati.Library.Core
         }
 
         /// <summary>
+        /// A callback delegate used for applying alternate enumeration of filesystems
+        /// </summary>
+        /// <param name="path">The path to return data from</param>
+        /// <returns>A list of paths</returns>
+        public delegate string[] FileSystemInteraction(string path);
+
+        /// <summary>
         /// Returns a list of all files found in the given folder.
         /// The search is recursive.
         /// </summary>
@@ -94,6 +101,21 @@ namespace Duplicati.Library.Core
         /// <param name="callback">The function to call with the filenames</param>
         /// <returns>A list of the full filenames</returns>
         public static void EnumerateFileSystemEntries(string rootpath, FilenameFilter filter, EnumerationCallbackDelegate callback)
+        {
+            EnumerateFileSystemEntries(rootpath, filter, callback, new FileSystemInteraction(System.IO.Directory.GetDirectories), new FileSystemInteraction(System.IO.Directory.GetFiles));
+        }
+
+        /// <summary>
+        /// Returns a list of all files found in the given folder.
+        /// The search is recursive.
+        /// </summary>
+        /// <param name="rootpath">The folder to look in</param>
+        /// <param name="filter">An optional filter to apply to the filenames</param>
+        /// <param name="callback">The function to call with the filenames</param>
+        /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
+        /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
+        /// <returns>A list of the full filenames</returns>
+        public static void EnumerateFileSystemEntries(string rootpath, FilenameFilter filter, EnumerationCallbackDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
         {
             if (!System.IO.Directory.Exists(rootpath))
                 return;
@@ -106,7 +128,7 @@ namespace Duplicati.Library.Core
                 string f = AppendDirSeperator(lst.Dequeue());
                 try
                 {
-                    foreach (string s in System.IO.Directory.GetDirectories(f))
+                    foreach (string s in folderList(f))
                         if (filter == null || filter.ShouldInclude(rootpath, AppendDirSeperator(s)))
                             lst.Enqueue(s);
 
@@ -123,7 +145,7 @@ namespace Duplicati.Library.Core
 
                 try
                 {
-                    foreach (string s in System.IO.Directory.GetFiles(f))
+                    foreach (string s in fileList(f))
                         if (filter == null || filter.ShouldInclude(rootpath, s))
                             callback(rootpath, s, EnumeratedFileStatus.File);
                 }
