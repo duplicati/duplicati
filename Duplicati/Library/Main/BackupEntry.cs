@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool IsPrimary { get { return m_isPrimary; } }
         /// <summary>
-        /// Gets or sets the alternate manifest file, if avalible
+        /// Gets or sets the alternate manifest file, if available
         /// </summary>
         public ManifestEntry Alternate { get { return m_alternate; } set { m_alternate = value; } }
 

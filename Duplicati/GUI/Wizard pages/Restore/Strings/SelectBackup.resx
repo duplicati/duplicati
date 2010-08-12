@@ -121,7 +121,7 @@
     <value>You must select the backup to restore</value>
   </data>
   <data name="PageDescription" xml:space="preserve">
-    <value>The list below shows all the avalible backups. Select one to restore</value>
+    <value>The list below shows all the available backups. Select one to restore</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
     <value>Select the backup to restore</value>

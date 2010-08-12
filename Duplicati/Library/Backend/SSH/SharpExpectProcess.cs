@@ -139,8 +139,8 @@ namespace Duplicati.Library.SharpExpect
         /// Returns the next output line from the selected source but does not remove it
         /// </summary>
         /// <param name="source">A value indicating what streams to examine for data</param>
-        /// <param name="maxWaitTime">The maximum number of milliseconds to wait for a line to be recieved</param>
-        /// <returns>The next output line from the selected source but does not remove it, returns null if no data is avalible</returns>
+        /// <param name="maxWaitTime">The maximum number of milliseconds to wait for a line to be received</param>
+        /// <returns>The next output line from the selected source but does not remove it, returns null if no data is available</returns>
         public string PeekNextOutputLine(OutputSource source, int maxWaitTime)
         {
             //Is there buffered output?

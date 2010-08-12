@@ -157,7 +157,7 @@
     <value>Supplies the username used to connect to the server</value>
   </data>
   <data name="DescriptionIntegratedAuthenticationLong" xml:space="preserve">
-    <value>If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only avalible with windows servers and clients.</value>
+    <value>If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only available with windows servers and clients.</value>
   </data>
   <data name="DescriptionIntegratedAuthenticationShort" xml:space="preserve">
     <value>Use windows integrated authentication to connect to the server</value>

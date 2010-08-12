@@ -49,14 +49,14 @@ namespace FreshKeeper
             }
 
             FreshKeeper keeper = new FreshKeeper();
-            keeper.UpdateAvalible += new FreshKeeper.UpdateAvalibleEvent(UpdateAvalible);
+            keeper.Updateavailable += new FreshKeeper.UpdateavailableEvent(Updateavailable);
             keeper.UpdateError += new FreshKeeper.UpdateErrorEvent(ErrorOccured);
             keeper.CheckForUpdates(true);
 
             return 0;
         }
 
-        private static void UpdateAvalible(FreshKeeper keeper, Update update)
+        private static void Updateavailable(FreshKeeper keeper, Update update)
         {
             ShowUpdateDetails frm = new ShowUpdateDetails();
             //frm.SetUpdate(update);

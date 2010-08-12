@@ -214,7 +214,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to read the primary manifest {0}, attempting secondary, if avalible. Error message: {1}.
+        ///   Looks up a localized string similar to Failed to read the primary manifest {0}, attempting secondary, if available. Error message: {1}.
         /// </summary>
         internal static string PrimaryManifestReadErrorLogMessage {
             get {

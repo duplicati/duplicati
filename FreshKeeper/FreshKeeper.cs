@@ -48,7 +48,7 @@ namespace FreshKeeper
         /// </summary>
         /// <param name="sender">The event sender</param>
         /// <param name="update">The update found</param>
-        public delegate void UpdateAvalibleEvent(FreshKeeper sender, Update update);
+        public delegate void UpdateavailableEvent(FreshKeeper sender, Update update);
 
         /// <summary>
         /// The event type used to signal an error
@@ -58,9 +58,9 @@ namespace FreshKeeper
         public delegate void UpdateErrorEvent(FreshKeeper sender, Exception ex);
 
         /// <summary>
-        /// An event that is raised when an update is avalible
+        /// An event that is raised when an update is available
         /// </summary>
-        public UpdateAvalibleEvent UpdateAvalible;
+        public UpdateavailableEvent Updateavailable;
 
         /// <summary>
         /// An event that is raised when an error occurs while checking for updates
@@ -68,7 +68,7 @@ namespace FreshKeeper
         public UpdateErrorEvent UpdateError;
 
         /// <summary>
-        /// The list of avalible updates
+        /// The list of available updates
         /// </summary>
         private List<Update> m_updates = null;
 
@@ -181,8 +181,8 @@ namespace FreshKeeper
                         newest = u;
 
                 if (newest.Version > m_config.LocalVersion)
-                    if (UpdateAvalible != null)
-                        UpdateAvalible(this, newest);
+                    if (Updateavailable != null)
+                        Updateavailable(this, newest);
             }
             catch (Exception ex)
             {

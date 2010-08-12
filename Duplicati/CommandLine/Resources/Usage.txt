@@ -38,7 +38,7 @@ Usage:
  The delete command can be used to remove backup sets when newer backups are present.
 
 Option types:
- The following option types are avalible:
+ The following option types are available:
   Integer: a numerical value
   Boolean: a truth value, --force and --force=true are equivalent. --force=false is the oposite
   Timespan: a time in the special time format

@@ -86,11 +86,11 @@ namespace Duplicati.Library.SharpRSync
 
 
         /// <summary>
-        /// Gets the number of avalible bytes in the given buffer
+        /// Gets the number of available bytes in the given buffer
         /// </summary>
         /// <param name="ix">The index for the buffer</param>
-        /// <returns>The number of avalible bytes in the buffer</returns>
-        private int GetAvalible(int ix)
+        /// <returns>The number of available bytes in the buffer</returns>
+        private int Getavailable(int ix)
         {
             if (ix == 0)
                 return BUFFER_SIZE - m_tailIndex;
@@ -120,7 +120,7 @@ namespace Duplicati.Library.SharpRSync
 
             while (total > count)
             {
-                int availible = GetAvalible(ix);
+                int availible = Getavailable(ix);
                 int diff = (int)Math.Min(availible, total - count);
                 total -= diff;
                 b += diff;
@@ -137,13 +137,13 @@ namespace Duplicati.Library.SharpRSync
 
             while (count > 0)
             {
-                int avalible = (int)Math.Min(GetAvalible(ix) - b, count);
+                int available = (int)Math.Min(Getavailable(ix) - b, count);
                 if (ix == 0)
                     b += m_tailIndex;
-                Array.Copy(m_buffers[ix], b, buf, offset, avalible);
+                Array.Copy(m_buffers[ix], b, buf, offset, available);
 
-                count -= avalible;
-                offset += avalible;
+                count -= available;
+                offset += available;
                 ix++;
                 b = 0;
             }
@@ -176,11 +176,11 @@ namespace Duplicati.Library.SharpRSync
             int b = m_tailIndex;
             while (count > 0)
             {
-                int avalible = (int)Math.Min(GetAvalible(ix), count);
-                Array.Copy(m_buffers[ix], b, buf, offset, avalible);
+                int available = (int)Math.Min(Getavailable(ix), count);
+                Array.Copy(m_buffers[ix], b, buf, offset, available);
 
-                count -= avalible;
-                offset += avalible;
+                count -= available;
+                offset += available;
                 ix++;
                 b = 0;
             }
@@ -242,9 +242,9 @@ namespace Duplicati.Library.SharpRSync
             if (index < 0)
                 throw new ArgumentOutOfRangeException(Strings.RollingBuffer.NegativeIndexError);
 
-            while (GetAvalible(ix) <= index)
+            while (Getavailable(ix) <= index)
             {
-                index -= GetAvalible(ix);
+                index -= Getavailable(ix);
                 ix++;
             }
 

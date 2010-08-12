@@ -70,7 +70,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The list below shows all the avalible backups. Select one to restore.
+        ///   Looks up a localized string similar to The list below shows all the available backups. Select one to restore.
         /// </summary>
         internal static string PageDescription {
             get {

@@ -61,7 +61,7 @@ namespace Duplicati.Library.Encryption.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is avalible on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is avalible via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch..
+        ///   Looks up a localized string similar to The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch..
         /// </summary>
         internal static string Description {
             get {
@@ -154,7 +154,7 @@ namespace Duplicati.Library.Encryption.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program &quot;gpg&quot; is avalible in the system path..
+        ///   Looks up a localized string similar to The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program &quot;gpg&quot; is available in the system path..
         /// </summary>
         internal static string GpgprogrampathLong {
             get {

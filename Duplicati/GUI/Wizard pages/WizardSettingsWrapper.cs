@@ -25,7 +25,7 @@ using Duplicati.Datamodel;
 namespace Duplicati.GUI.Wizard_pages
 {
     /// <summary>
-    /// This class wraps all settings avalible in the wizard pages
+    /// This class wraps all settings available in the wizard pages
     /// </summary>
     public class WizardSettingsWrapper
     {
@@ -646,7 +646,7 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
-        /// Gets a wrapper for the settings that are avalible on the SelectFiles UI
+        /// Gets a wrapper for the settings that are available on the SelectFiles UI
         /// </summary>
         public SelectFilesUI SelectFilesUI { get { return new SelectFilesUI(this); } }
 

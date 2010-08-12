@@ -26,7 +26,7 @@ namespace System.Windows.Forms.Wizard
 {
     /// <summary>
     /// Class to support double-click enabled radio buttons, which are common in wizards,
-    /// but unavalible in standard .Net.
+    /// but unavailable in standard .Net.
     /// </summary>
     public class DoubleClickRadioButton : RadioButton
     {

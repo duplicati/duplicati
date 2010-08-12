@@ -120,8 +120,8 @@
   <data name="ErrorStatusDisplay" xml:space="preserve">
     <value>Error: {0}</value>
   </data>
-  <data name="NoDataRecieved" xml:space="preserve">
-    <value>No data recieved</value>
+  <data name="NoDataReceived" xml:space="preserve">
+    <value>No data received</value>
   </data>
   <data name="OperationCancelled" xml:space="preserve">
     <value>Cancelled</value>

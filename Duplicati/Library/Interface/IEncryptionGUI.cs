@@ -25,7 +25,7 @@ namespace Duplicati.Library.Interface
 {
     /// <summary>
     /// An interface used to provide a custom usercontrol for an encryption module.
-    /// The control is displayed on the passphrase selection page, and thus has limited space avalible.
+    /// The control is displayed on the passphrase selection page, and thus has limited space available.
     /// If this interface is not implemented, a default options grid will be displayed.
     /// To prevent options from being displayed, implement this interface, and return an empty control in the <see cref="GetControl"/> method.
     /// </summary>

@@ -178,7 +178,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only avalible with windows servers and clients..
+        ///   Looks up a localized string similar to If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only available with windows servers and clients..
         /// </summary>
         internal static string DescriptionIntegratedAuthenticationLong {
             get {

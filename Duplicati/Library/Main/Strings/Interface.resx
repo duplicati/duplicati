@@ -169,7 +169,7 @@
     <value>Failed after uploading {0} volume(s). Error message: {1}</value>
   </data>
   <data name="PrimaryManifestReadErrorLogMessage" xml:space="preserve">
-    <value>Failed to read the primary manifest {0}, attempting secondary, if avalible. Error message: {1}</value>
+    <value>Failed to read the primary manifest {0}, attempting secondary, if available. Error message: {1}</value>
   </data>
   <data name="ReadingSecondaryManifestLogMessage" xml:space="preserve">
     <value>Secondary manifest file found: {0}, attempting read.</value>

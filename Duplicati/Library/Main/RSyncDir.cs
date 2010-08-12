@@ -1313,7 +1313,7 @@ namespace Duplicati.Library.Main.RSync
                                 Core.Utility.CopyStream(s2, st);
                         }
 
-                        //We can't process it until it is recieved completely
+                        //We can't process it until it is received completely
                         if (pex != fe)
                             continue;
 

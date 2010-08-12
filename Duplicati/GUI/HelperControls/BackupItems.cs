@@ -86,7 +86,7 @@ namespace Duplicati.GUI.HelperControls
                 if (ex == null && e.Cancelled)
                     ex = new Exception(Strings.BackupItems.OperationCancelled);
                 else if (ex == null && e.Result == null)
-                    ex = new Exception(Strings.BackupItems.NoDataRecieved);
+                    ex = new Exception(Strings.BackupItems.NoDataReceived);
 
                 progressBar.Visible = false;
                 WaitPanel.Visible = true;

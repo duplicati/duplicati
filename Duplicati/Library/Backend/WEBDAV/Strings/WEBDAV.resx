@@ -139,7 +139,7 @@
     <value>Supplies the username used to connect to the server</value>
   </data>
   <data name="DescriptionIntegratedAuthenticationLong" xml:space="preserve">
-    <value>If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only avalible with windows servers and clients.</value>
+    <value>If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only available with windows servers and clients.</value>
   </data>
   <data name="DescriptionIntegratedAuthenticationShort" xml:space="preserve">
     <value>Use windows integrated authentication to connect to the server</value>
@@ -152,7 +152,7 @@
   </data>
   <data name="SeenThenNotFoundError" xml:space="preserve">
     <value>When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.
-This can be because the file is deleted or unavalible, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.
+This can be because the file is deleted or unavailable, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.
 Error message: {4}</value>
   </data>
   <data name="DescriptionAcceptAnyCertificateLong" xml:space="preserve">

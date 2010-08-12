@@ -26,7 +26,7 @@ namespace Duplicati.Library.Interface
 {
     /// <summary>
     /// The interface used to display a GUI wizard page for the user.
-    /// If the backed should be avalible from the GUI, this interface must be implemented,
+    /// If the backed should be available from the GUI, this interface must be implemented,
     /// otherwise a generic interface is displayed, listing the commandline options.
     /// </summary>
     public interface IBackendGUI : IBackend, IGUIControl

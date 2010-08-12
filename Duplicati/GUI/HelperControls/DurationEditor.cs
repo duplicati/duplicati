@@ -39,7 +39,7 @@ namespace Duplicati.GUI.HelperControls
         public event EventHandler ValueChanged;
 
         /// <summary>
-        /// Sets the avalible intervals
+        /// Sets the available intervals
         /// </summary>
         /// <param name="values">A dictionary where the key is the string to display and the value is the duplicity time string</param>
         public void SetIntervals(List<KeyValuePair<string, string>> values)
