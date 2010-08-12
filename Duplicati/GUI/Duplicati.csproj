@@ -302,6 +302,7 @@
     <Compile Include="ThrottleControl.Designer.cs">
       <DependentUpon>ThrottleControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="TrayIconWrapper.cs" />
     <Compile Include="UrlUtillity.cs" />
     <Compile Include="Wizard pages\Add backup\AdvancedOptions.cs">
       <SubType>UserControl</SubType>

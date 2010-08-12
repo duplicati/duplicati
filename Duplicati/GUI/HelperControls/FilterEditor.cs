@@ -219,7 +219,8 @@ namespace Duplicati.GUI.HelperControls
             toolTip.SetToolTip(FilenameTester, message);
             toolTip.SetToolTip(label1, message);
             toolTip.SetToolTip(TestResults, message);
-            toolTip.Show(message, TestResults, 5000);
+            if (TestResults != null && this.Visible)
+                toolTip.Show(message, TestResults, 5000);
         }
 
         /// <summary>

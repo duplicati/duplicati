@@ -37,6 +37,8 @@ namespace Duplicati.GUI
 
         private delegate void EmptyDelegate();
 
+        private TrayIconWrapper m_trayicon;
+
         public string[] InitialArguments
         {
             get;
@@ -46,6 +48,11 @@ namespace Duplicati.GUI
         public MainForm()
         {
             InitializeComponent();
+
+            m_trayicon = new TrayIconWrapper(this);
+            m_trayicon.MouseClick += new MouseEventHandler(TrayIcon_MouseClick);
+            m_trayicon.MouseDoubleClick += new MouseEventHandler(TrayIcon_MouseDoubleClick);
+            m_trayicon.ContextMenuStrip = TrayMenu;
 
             Program.LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
             Program.WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
@@ -67,8 +74,8 @@ namespace Duplicati.GUI
                     pauseToolStripMenuItem.Text = Strings.Common.MenuResume;
                     pauseToolStripMenuItem.Checked = true;
 
-                    TrayIcon.Icon = Program.WorkThread.Active ? Properties.Resources.TrayWorkingPause : Properties.Resources.TrayNormalPause;
-                    TrayIcon.Text = Strings.MainForm.TrayStatusPause;
+                    m_trayicon.Icon = Program.WorkThread.Active ? Properties.Resources.TrayWorkingPause : Properties.Resources.TrayNormalPause;
+                    m_trayicon.Text = Strings.MainForm.TrayStatusPause;
                     break;
                 case LiveControls.LiveControlState.Running:
                     //Restore the icon and tooltip
@@ -85,11 +92,11 @@ namespace Duplicati.GUI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            TrayIcon.Icon = Properties.Resources.TrayNormal;
-            TrayIcon.Text = Strings.MainForm.TrayStatusReady;
+            m_trayicon.Icon = Properties.Resources.TrayNormal;
+            m_trayicon.Text = Strings.MainForm.TrayStatusReady;
 
             LiveControl_StateChanged(Program.LiveControl, null);
-            TrayIcon.Visible = true;
+            m_trayicon.Visible = true;
 
             long count = 0;
             lock (Program.MainLock)
@@ -150,8 +157,8 @@ namespace Duplicati.GUI
                 return;
             }
 
-            TrayIcon.Icon = Properties.Resources.TrayWorking;
-            TrayIcon.Text = string.Format(Strings.MainForm.TrayStatusRunning, Program.WorkThread.CurrentTask == null ? "" : Program.WorkThread.CurrentTask.Schedule.Name);
+            m_trayicon.Icon = Properties.Resources.TrayWorking;
+            m_trayicon.Text = string.Format(Strings.MainForm.TrayStatusRunning, Program.WorkThread.CurrentTask == null ? "" : Program.WorkThread.CurrentTask.Schedule.Name);
             stopToolStripMenuItem.Enabled = true;
         }
 
@@ -165,8 +172,8 @@ namespace Duplicati.GUI
 
             if (Program.LiveControl.State != LiveControls.LiveControlState.Paused)
             {
-                TrayIcon.Icon = Properties.Resources.TrayNormal;
-                TrayIcon.Text = Strings.MainForm.TrayStatusReady;
+                m_trayicon.Icon = Properties.Resources.TrayNormal;
+                m_trayicon.Text = Strings.MainForm.TrayStatusReady;
             }
 
             stopToolStripMenuItem.Enabled = false;
@@ -179,7 +186,7 @@ namespace Duplicati.GUI
 
             Program.LiveControl.Pause();
             Program.Runner.Stop();
-            Application.Exit();
+            m_trayicon.Exit();
         }
 
         private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -249,7 +256,8 @@ namespace Duplicati.GUI
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            TrayIcon.Visible = false;
+            m_trayicon.Visible = false;
+			m_trayicon.Exit();
             Program.LiveControl.StateChanged -= new EventHandler(LiveControl_StateChanged);
             Program.WorkThread.StartingWork -= new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
@@ -304,6 +312,11 @@ namespace Duplicati.GUI
             }
 
             return false;
+        }
+
+        public void Run()
+        {
+            m_trayicon.Run();
         }
     }
 }
