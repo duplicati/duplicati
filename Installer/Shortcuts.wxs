@@ -21,7 +21,7 @@
                     Type="string"
                     KeyPath="yes" />
           </RegistryKey>
-          <RemoveFolder Id="MaestroProgramMenuLocation" On="uninstall" />
+          <RemoveFolder Id="DuplicatiProgramMenuLocation" On="uninstall" />
         </Component>
       </Directory>
     </DirectoryRef>
