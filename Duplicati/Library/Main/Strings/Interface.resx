@@ -192,6 +192,9 @@
   <data name="SourceDirsAreRelatedError" xml:space="preserve">
     <value>The folder {1} is a subfolder of {0}. It is not allowed to specify the same folder multiple times.</value>
   </data>
+  <data name="SourceFolderIsMissingError" xml:space="preserve">
+    <value>The source folder {0} does not exist, aborting backup</value>
+  </data>
   <data name="SourceFoldersHasChangedError" xml:space="preserve">
     <value>The folder {0} is no longer in the source folder set. It is not allowed to change source folders for a backup.</value>
   </data>

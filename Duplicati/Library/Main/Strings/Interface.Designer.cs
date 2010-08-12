@@ -286,6 +286,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The source folder {0} does not exist, aborting backup.
+        /// </summary>
+        internal static string SourceFolderIsMissingError {
+            get {
+                return ResourceManager.GetString("SourceFolderIsMissingError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The folder {0} is no longer in the source folder set. It is not allowed to change source folders for a backup..
         /// </summary>
         internal static string SourceFoldersHasChangedError {
