@@ -1107,7 +1107,7 @@ namespace Duplicati.Library.Main
             //Now run through all supported options, and look for deprecated options
             foreach (IList<Library.Interface.ICommandLineArgument> l in new IList<Library.Interface.ICommandLineArgument>[] { 
                 m_options.SupportedCommands, 
-                DynamicLoader.BackendLoader.GetSupportedCommands(m_backend), 
+                DynamicLoader.BackendLoader.GetSupportedCommands(new Uri(m_backend).Scheme.ToLower()), 
                 m_options.NoEncryption ? null : DynamicLoader.EncryptionLoader.GetSupportedCommands(m_options.EncryptionModule),
                 moduleOptions,
                 DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule) })
