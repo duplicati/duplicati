@@ -70,15 +70,15 @@ namespace Duplicati.GUI
             this.backupTasks = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.pauseBackupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pausePeriodMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.PauseDuration05Menu = new System.Windows.Forms.ToolStripMenuItem();
+            this.PauseDuration15Menu = new System.Windows.Forms.ToolStripMenuItem();
+            this.PauseDuration30Menu = new System.Windows.Forms.ToolStripMenuItem();
+            this.PauseDuration60Menu = new System.Windows.Forms.ToolStripMenuItem();
             this.stopBackupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ShowAdvanced = new System.Windows.Forms.Button();
             this.CurrentStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.PauseDuration05Menu = new System.Windows.Forms.ToolStripMenuItem();
-            this.PauseDuration15Menu = new System.Windows.Forms.ToolStripMenuItem();
-            this.PauseDuration30Menu = new System.Windows.Forms.ToolStripMenuItem();
-            this.PauseDuration60Menu = new System.Windows.Forms.ToolStripMenuItem();
             this.advancedPanel.SuspendLayout();
             this.simplePanel.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
@@ -241,30 +241,6 @@ namespace Duplicati.GUI
             this.pausePeriodMenuItem.Name = "pausePeriodMenuItem";
             resources.ApplyResources(this.pausePeriodMenuItem, "pausePeriodMenuItem");
             // 
-            // stopBackupToolStripMenuItem
-            // 
-            this.stopBackupToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Stop;
-            this.stopBackupToolStripMenuItem.Name = "stopBackupToolStripMenuItem";
-            resources.ApplyResources(this.stopBackupToolStripMenuItem, "stopBackupToolStripMenuItem");
-            this.stopBackupToolStripMenuItem.Click += new System.EventHandler(this.stopBackupToolStripMenuItem_Click);
-            // 
-            // ShowAdvanced
-            // 
-            resources.ApplyResources(this.ShowAdvanced, "ShowAdvanced");
-            this.ShowAdvanced.Name = "ShowAdvanced";
-            this.ShowAdvanced.UseVisualStyleBackColor = true;
-            this.ShowAdvanced.Click += new System.EventHandler(this.ShowAdvanced_Click);
-            // 
-            // CurrentStatus
-            // 
-            resources.ApplyResources(this.CurrentStatus, "CurrentStatus");
-            this.CurrentStatus.Name = "CurrentStatus";
-            // 
-            // label1
-            // 
-            resources.ApplyResources(this.label1, "label1");
-            this.label1.Name = "label1";
-            // 
             // PauseDuration05Menu
             // 
             this.PauseDuration05Menu.Image = global::Duplicati.GUI.Properties.Resources.Clock05;
@@ -296,6 +272,30 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.PauseDuration60Menu, "PauseDuration60Menu");
             this.PauseDuration60Menu.Tag = "1h";
             this.PauseDuration60Menu.Click += new System.EventHandler(this.PauseDurationMenu_Click);
+            // 
+            // stopBackupToolStripMenuItem
+            // 
+            this.stopBackupToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Stop;
+            this.stopBackupToolStripMenuItem.Name = "stopBackupToolStripMenuItem";
+            resources.ApplyResources(this.stopBackupToolStripMenuItem, "stopBackupToolStripMenuItem");
+            this.stopBackupToolStripMenuItem.Click += new System.EventHandler(this.stopBackupToolStripMenuItem_Click);
+            // 
+            // ShowAdvanced
+            // 
+            resources.ApplyResources(this.ShowAdvanced, "ShowAdvanced");
+            this.ShowAdvanced.Name = "ShowAdvanced";
+            this.ShowAdvanced.UseVisualStyleBackColor = true;
+            this.ShowAdvanced.Click += new System.EventHandler(this.ShowAdvanced_Click);
+            // 
+            // CurrentStatus
+            // 
+            resources.ApplyResources(this.CurrentStatus, "CurrentStatus");
+            this.CurrentStatus.Name = "CurrentStatus";
+            // 
+            // label1
+            // 
+            resources.ApplyResources(this.label1, "label1");
+            this.label1.Name = "label1";
             // 
             // ServiceStatus
             // 
