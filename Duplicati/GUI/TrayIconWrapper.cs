@@ -77,6 +77,8 @@ namespace Duplicati.GUI
     /// </summary>
     public class TrayIconWrapper
     {
+        private static readonly Version MIN_GTK_VERSION = new Version(2, 0);
+
         #region Private instance variables
         /// <summary>
         /// The MWF NotifyIcon instance
@@ -400,19 +402,19 @@ namespace Duplicati.GUI
                     if (m_gtkasm != null && m_gdkasm != null)
                     {
                         //Make sure we have Gtk 2.0 or better
-                        if (m_gtkasm.GetName().Version < new Version(2, 0))
-                            throw new Exception("Too old gtk: " + m_gtkasm.GetName().Version.ToString());
+                        if (m_gtkasm.GetName().Version < MIN_GTK_VERSION)
+                            throw new Exception(string.Format(Strings.TrayIconWrapper.GtkTooOldError, m_gtkasm.GetName().Version.ToString(), MIN_GTK_VERSION));
                         if (m_gdkasm.GetName().Version < new Version(2, 0))
-                            throw new Exception("Too old gdk: " + m_gtkasm.GetName().Version.ToString());
+                            throw new Exception(string.Format(Strings.TrayIconWrapper.GtkTooOldError, m_gdkasm.GetName().Version.ToString(), MIN_GTK_VERSION));
 
                         PrepareGtkIcon();
                     }
                     else
-                        throw new Exception("Unable to locate gtk assemblies");
+                        throw new Exception(Strings.TrayIconWrapper.GtkNotFoundError);
                 }
                 catch(Exception ex)
                 {
-                    MessageBox.Show(ex.ToString());
+                    MessageBox.Show(string.Format(Strings.TrayIconWrapper.GtkLoadError, ex.ToString()), Application.ProductName,  MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     //We failed to load the gtk libraries, this should be logged
                 }
             }

@@ -295,6 +295,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>TaskType.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\TrayIconWrapper.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TrayIconWrapper.resx</DependentUpon>
+    </Compile>
     <Compile Include="TaskPackages.cs" />
     <Compile Include="ThrottleControl.cs">
       <SubType>Form</SubType>
@@ -1108,6 +1113,10 @@
     <EmbeddedResource Include="Strings\Scheduler.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Scheduler.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\TrayIconWrapper.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>TrayIconWrapper.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
       <DependentUpon>RawContainer.cs</DependentUpon>
