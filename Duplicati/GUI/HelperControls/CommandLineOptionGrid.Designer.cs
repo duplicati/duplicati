@@ -41,6 +41,7 @@
             this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.valueDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.argumentDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.validatedDataColumn = new System.Data.DataColumn();
             ((System.ComponentModel.ISupportInitialize)(this.BaseDataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OverrideTable)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OptionsGrid)).BeginInit();
@@ -63,7 +64,8 @@
             this.EnabledDataColumn,
             this.NameDataColumn,
             this.ValueDataColumn,
-            this.argumentDataColumn});
+            this.argumentDataColumn,
+            this.validatedDataColumn});
             this.OverrideTable.TableName = "OverrideTable";
             // 
             // EnabledDataColumn
@@ -106,6 +108,7 @@
             this.OptionsGrid.Name = "OptionsGrid";
             this.OptionsGrid.RowHeadersVisible = false;
             this.OptionsGrid.RowEnter += new System.Windows.Forms.DataGridViewCellEventHandler(this.OptionsGrid_RowEnter);
+            this.OptionsGrid.RowValidating += new System.Windows.Forms.DataGridViewCellCancelEventHandler(this.OptionsGrid_RowValidating);
             this.OptionsGrid.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.OptionsGrid_CellEndEdit);
             // 
             // enabledDataGridViewCheckBoxColumn
@@ -132,6 +135,13 @@
             this.argumentDataGridViewTextBoxColumn.DataPropertyName = "argument";
             resources.ApplyResources(this.argumentDataGridViewTextBoxColumn, "argumentDataGridViewTextBoxColumn");
             this.argumentDataGridViewTextBoxColumn.Name = "argumentDataGridViewTextBoxColumn";
+            // 
+            // validatedDataColumn
+            // 
+            this.validatedDataColumn.AllowDBNull = false;
+            this.validatedDataColumn.ColumnName = "validated";
+            this.validatedDataColumn.DataType = typeof(bool);
+            this.validatedDataColumn.DefaultValue = false;
             // 
             // CommandLineOptionGrid
             // 
@@ -161,5 +171,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn nameDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn valueDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn argumentDataGridViewTextBoxColumn;
+        private System.Data.DataColumn validatedDataColumn;
     }
 }

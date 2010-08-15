@@ -59,6 +59,7 @@ namespace Duplicati.GUI.HelperControls
                             DataRow dr = OverrideTable.NewRow();
                             dr["Enabled"] = options.ContainsKey(arg.Name);
                             dr["argument"] = arg;
+                            dr["validated"] = false;
                             dr["Name"] = arg.Name;
                             if (options.ContainsKey(arg.Name))
                                 dr["Value"] = options[arg.Name];
@@ -73,7 +74,7 @@ namespace Duplicati.GUI.HelperControls
             if (!m_unsupported)
                 foreach (DataRow dr in OverrideTable.Rows)
                     if ((bool)dr["Enabled"])
-                        opts.Add((string)dr["Name"], (string)dr["Value"]);
+                        opts.Add((string)dr["Name"], (string)(dr["Value"] == DBNull.Value ? "" : dr["Value"] ?? ""));
 
             return opts;
         }
@@ -103,10 +104,29 @@ namespace Duplicati.GUI.HelperControls
 
         private void OptionsGrid_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
+            DataRow r = OverrideTable.Rows[e.RowIndex];
+
             if (e.ColumnIndex != 0)
-            {
-                DataRow r = OverrideTable.Rows[e.RowIndex];
                 r["Enabled"] = r["Value"] != DBNull.Value;
+
+            r["validated"] = false;
+        }
+
+        private void OptionsGrid_RowValidating(object sender, DataGridViewCellCancelEventArgs e)
+        {
+            DataRow r = OverrideTable.Rows[e.RowIndex];
+            if ((bool)r["Enabled"] && !(bool)r["validated"])
+            {
+                Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument)r["argument"];
+                string optionvalue = (string)(r["Value"] == DBNull.Value ? "" : r["Value"] ?? "");
+
+                string validationMessage = Duplicati.Library.Main.Interface.ValidateOptionValue(arg, arg.Name, optionvalue);
+                if (validationMessage != null)
+                    if (MessageBox.Show(this, validationMessage, Application.ProductName, MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.Cancel)
+                        e.Cancel = true;
+
+                if (!e.Cancel)
+                    r["validated"] = true;
             }
         }
     }

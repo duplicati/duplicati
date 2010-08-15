@@ -1164,67 +1164,81 @@ namespace Duplicati.Library.Main
                 Library.Interface.ICommandLineArgument arg;
                 if (supportedOptions.TryGetValue(s, out arg) && arg != null)
                 {
-                    string argvalue = ropts[s];
-                    if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration)
-                    {
-                        bool found = false;
-                        foreach (string v in arg.ValidValues ?? new string[0])
-                            if (string.Equals(v, argvalue, StringComparison.CurrentCultureIgnoreCase))
-                            {
-                                found = true;
-                                break;
-                            }
-
-                        if (!found)
-                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedEnumerationValue, s, argvalue, string.Join(",", arg.ValidValues ?? new string[0])));
-
-                    }
-                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
-                    {
-                        if (!string.IsNullOrEmpty(argvalue) && Core.Utility.ParseBool(argvalue, true) != Core.Utility.ParseBool(argvalue, false))
-                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedBooleanValue, s, argvalue));
-                    }
-                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
-                    {
-                        long l;
-                        if (!long.TryParse(argvalue, out l))
-                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedIntegerValue, s, argvalue));
-                    }
-                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path)
-                    {
-                        foreach (string p in argvalue.Split(System.IO.Path.DirectorySeparatorChar))
-                            if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
-                            {
-                                stats.LogWarning(string.Format(Strings.Interface.UnsupportedPathValue, s, p));
-                            }
-                    }
-                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Size)
-                    {
-                        try
-                        {
-                            Core.Sizeparser.ParseSize(argvalue);
-                        }
-                        catch
-                        {
-                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedSizeValue, s, argvalue));
-                        }
-                    }
-                    else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan)
-                    {
-                        try
-                        {
-                            Core.Timeparser.ParseTimeSpan(argvalue);
-                        }
-                        catch
-                        {
-                            stats.LogWarning(string.Format(Strings.Interface.UnsupportedTimeValue, s, argvalue));
-                        }
-                    }
+                    string validationMessage = ValidateOptionValue(arg, s, ropts[s]);
+                    if (validationMessage != null)
+                        stats.LogWarning(validationMessage);
                 }
             }
         }
 
         #region Static interface
+
+        /// <summary>
+        /// Checks if the value passed to an option is actually valid.
+        /// </summary>
+        /// <param name="arg">The argument being validated</param>
+        /// <param name="optionname">The name of the option to validate</param>
+        /// <param name="value">The value to check</param>
+        /// <returns>Null if no errors are found, an error message otherwise</returns>
+        public static string ValidateOptionValue(Library.Interface.ICommandLineArgument arg, string optionname, string value)
+        {
+            if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration)
+            {
+                bool found = false;
+                foreach (string v in arg.ValidValues ?? new string[0])
+                    if (string.Equals(v, value, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        found = true;
+                        break;
+                    }
+
+                if (!found)
+                    return string.Format(Strings.Interface.UnsupportedEnumerationValue, optionname, value, string.Join(", ", arg.ValidValues ?? new string[0]));
+
+            }
+            else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
+            {
+                if (!string.IsNullOrEmpty(value) && Core.Utility.ParseBool(value, true) != Core.Utility.ParseBool(value, false))
+                    return string.Format(Strings.Interface.UnsupportedBooleanValue, optionname, value);
+            }
+            else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
+            {
+                long l;
+                if (!long.TryParse(value, out l))
+                    return string.Format(Strings.Interface.UnsupportedIntegerValue, optionname, value);
+            }
+            else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path)
+            {
+                foreach (string p in value.Split(System.IO.Path.DirectorySeparatorChar))
+                    if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+                        return string.Format(Strings.Interface.UnsupportedPathValue, optionname, p);
+            }
+            else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Size)
+            {
+                try
+                {
+                    Core.Sizeparser.ParseSize(value);
+                }
+                catch
+                {
+                    return string.Format(Strings.Interface.UnsupportedSizeValue, optionname, value);
+                }
+            }
+            else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan)
+            {
+                try
+                {
+                    Core.Timeparser.ParseTimeSpan(value);
+                }
+                catch
+                {
+                    return string.Format(Strings.Interface.UnsupportedTimeValue, optionname, value);
+                }
+            }
+
+            return null;
+        }
+
         public static void RemoveSignatureFiles(string folder)
         {
             FilenameStrategy cachenames = BackendWrapper.CreateCacheFilenameStrategy();
