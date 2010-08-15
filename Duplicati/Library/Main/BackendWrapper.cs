@@ -763,7 +763,7 @@ namespace Duplicati.Library.Main
                 } while (!success && retries > 0);
 
                 if (!success)
-                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError, lastEx == null ? "<null>" : lastEx.Message));
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError, lastEx == null ? "<null>" : lastEx.Message), lastEx);
 
                 m_statistics.NumberOfBytesUploaded += new System.IO.FileInfo(filename).Length;
             }

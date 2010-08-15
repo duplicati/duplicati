@@ -202,6 +202,11 @@ namespace Duplicati.CommandLine.BackendTester
                     catch (Exception ex)
                     {
                         Console.WriteLine("Failed to upload file {0}, error message: {1}", i, ex.ToString());
+                        while (ex.InnerException != null)
+                        {
+                            ex = ex.InnerException;
+                            Console.WriteLine(string.Format("  Inner exception: {0}", ex.ToString()));
+                        }
                     }
                     Console.WriteLine(" done!");
                 }
