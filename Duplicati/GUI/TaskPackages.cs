@@ -185,7 +185,7 @@ namespace Duplicati.GUI
         protected virtual void SetupTask(Dictionary<string, string> options)
         {
             if (this.Task.Filters.Count > 0)
-                options["filter"] = this.Task.EncodedFilter; ;
+                options["filter"] = this.Task.EncodedFilter;
 
             if (!string.IsNullOrEmpty(this.Task.EncryptionModule))
                 options["encryption-module"] = this.Task.EncryptionModule;
@@ -365,7 +365,6 @@ namespace Duplicati.GUI
         public override string GetConfiguration(Dictionary<string, string> options)
         {
             string destination = base.GetConfiguration(options);
-            options.Add("incremental", "");
 
             if (!string.IsNullOrEmpty(this.FullAfter))
                 options.Add("full-if-older-than", this.FullAfter);

@@ -79,19 +79,21 @@ namespace Duplicati.Library.DynamicLoader
             /// <summary>
             /// Gets the supported commands for a certain key
             /// </summary>
-            /// <param name="key">The key to find commands for</param>
+            /// <param name="url">The key to find commands for</param>
             /// <returns>The supported commands or null if the key was not found</returns>
-            public IList<ICommandLineArgument> GetSupportedCommands(string key)
+            public IList<ICommandLineArgument> GetSupportedCommands(string url)
             {
-                if (string.IsNullOrEmpty(key))
-                    throw new ArgumentNullException("key");
+                if (string.IsNullOrEmpty(url))
+                    throw new ArgumentNullException("url");
+
+                string scheme = new Uri(url).Scheme.ToLower();
 
                 LoadInterfaces();
 
                 lock (m_lock)
                 {
                     IBackend b;
-                    if (m_interfaces.TryGetValue(key, out b) && b != null)
+                    if (m_interfaces.TryGetValue(scheme, out b) && b != null)
                         return b.SupportedCommands;
                     else
                         return null;

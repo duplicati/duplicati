@@ -79,7 +79,8 @@ namespace Duplicati.Library.Main
                 return new string[] {
                     "restore",
                     "delete-older-than",
-                    "delete-all-but-n-full"
+                    "delete-all-but-n-full",
+                    "filter"
                 };
             }
         }
