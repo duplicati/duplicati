@@ -26,9 +26,6 @@ using Duplicati.Datamodel;
 
 namespace Duplicati.GUI
 {
-    /// <summary>
-    /// Root object for the application, gives access to the scheduler, the runner, the database and the TrayIcon
-    /// </summary>
     static class Program
     {
         /// <summary>
@@ -175,7 +172,8 @@ namespace Duplicati.GUI
 
                 DisplayHelper = new MainForm();
                 DisplayHelper.InitialArguments = args;
-                DisplayHelper.Run();
+
+                Application.Run(DisplayHelper);
             }
             catch (Exception ex)
             {
@@ -278,11 +276,6 @@ namespace Duplicati.GUI
         }
 
 
-        /// <summary>
-        /// Eventhandler that ensures that any write to a scheduled backup is reflected immediately
-        /// </summary>
-        /// <param name="sender">An unused sender object</param>
-        /// <param name="action">The action that cause the event</param>
         private static void DataConnection_AfterDataConnection(object sender, DataActions action)
         {
             if (action == DataActions.Insert || action == DataActions.Update)

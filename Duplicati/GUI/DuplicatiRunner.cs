@@ -216,6 +216,7 @@ namespace Duplicati.GUI
             }
             catch (Exception ex)
             {
+                //TODO: Extract ex.Message and save it in seperate field in the database
                 if (ex is System.Threading.ThreadAbortException)
                     System.Threading.Thread.ResetAbort();
 
