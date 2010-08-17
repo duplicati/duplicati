@@ -95,7 +95,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("totalsize", CommandLineArgument.ArgumentType.Size, Strings.Options.TotalsizeShort, Strings.Options.TotalsizeLong),
                     new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong),
                     new CommandLineArgument("full-if-older-than", CommandLineArgument.ArgumentType.Timespan, Strings.Options.FullifolderthanShort, Strings.Options.FullifolderthanLong),
-                    new CommandLineArgument("allow-full-remove", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremoveShort, Strings.Options.AllowfullremoveLong),
+                    new CommandLineArgument("allow-full-removal", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremoveShort, Strings.Options.AllowfullremoveLong),
 
                     new CommandLineArgument("signature-control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecontrolfilesShort, Strings.Options.SignaturecontrolfilesLong),
                     new CommandLineArgument("signature-cache-path", CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecachepathShort, Strings.Options.SignaturecachepathLong),
@@ -124,7 +124,11 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("number-of-retries", CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, "5"),
                     new CommandLineArgument("retry-delay", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, "10s"),
+                    
                     new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false"),
+                    new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "2"),
+                    new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong),
+
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
 
                     new CommandLineArgument("max-upload-pr-second", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxuploadprsecondShort, Strings.Options.MaxuploadprsecondLong),
@@ -625,6 +629,43 @@ namespace Duplicati.Library.Main
                     return SnapShotMode.Required;
                 else
                     return SnapShotMode.Off;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of volumes to create ahead of time when using async transfers,
+        /// a value of zero indicates no limit
+        /// </summary>
+        public long AsynchronousUploadLimit
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("asynchronous-upload-limit", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return 2;
+                else
+                    return long.Parse(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the temporary folder to use for asyncronous transfers
+        /// </summary>
+        public string AsynchronousUploadFolder
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("asynchronous-upload-folder", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return this.TempDir ?? Core.TempFolder.SystemTempPath;
+                else
+                    return value;
             }
         }
 

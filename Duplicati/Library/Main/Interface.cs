@@ -235,12 +235,14 @@ namespace Duplicati.Library.Main
                             using (new Logging.Timer("Initiating multipass"))
                                 dir.InitiateMultiPassDiff(full, m_options.SnapShotStrategy);
 
+                            string tempVolumeFolder = m_options.AsynchronousUpload ? m_options.AsynchronousUploadFolder : m_options.TempDir;
+
                             bool done = false;
                             while (!done && totalsize < m_options.MaxSize)
                             {
                                 using (new Logging.Timer("Multipass " + (vol + 1).ToString()))
-                                using (Core.TempFile signaturefile = new Duplicati.Library.Core.TempFile())
-                                using (Core.TempFile contentfile = new Duplicati.Library.Core.TempFile())
+                                using (Core.TempFile signaturefile = new Duplicati.Library.Core.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
+                                using (Core.TempFile contentfile = new Duplicati.Library.Core.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
                                 {
                                     OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusCreatingVolume, vol + 1), "");
 

@@ -45,11 +45,17 @@ namespace Duplicati.Library.Main
         /// A list of pending async operations
         /// </summary>
         private Queue<KeyValuePair<BackupEntryBase, string>> m_pendingOperations;
-        
-        //TODO: Figure out if the linux implementation uses the pthreads model, where signals
-        //are lost if there are no waiters at the signaling time
-        private System.Threading.ManualResetEvent m_asyncWait;
-        
+
+        /// <summary>
+        /// This event is set when the async worker thread is not running
+        /// </summary>
+        private System.Threading.ManualResetEvent m_asyncThreadRunning;
+
+        /// <summary>
+        /// This event is set after an item has been removed from the queue
+        /// </summary>
+        private System.Threading.AutoResetEvent m_asyncItemProcessed;
+
         /// <summary>
         /// The lock for items in the processing queue
         /// </summary>
@@ -134,7 +140,8 @@ namespace Duplicati.Library.Main
                 //utilizing a common exclusive lock on all operations. But the implementation does
                 //not prevent starvation, so it should not be called by multiple threads.
                 m_pendingOperations = new Queue<KeyValuePair<BackupEntryBase, string>>();
-                m_asyncWait = new System.Threading.ManualResetEvent(true);
+                m_asyncThreadRunning = new System.Threading.ManualResetEvent(true);
+                m_asyncItemProcessed = new System.Threading.AutoResetEvent(false);
                 m_queuelock = new object();
             }
         }
@@ -372,14 +379,29 @@ namespace Duplicati.Library.Main
                 PutInternal(remote, filename);
             else
             {
+                bool waitForCompletion;
+
                 lock (m_queuelock)
                 {
                     m_pendingOperations.Enqueue(new KeyValuePair<BackupEntryBase, string>( remote, filename ));
-                    if (m_asyncWait.WaitOne(0, false))
+                    if (m_asyncThreadRunning.WaitOne(0, false))
                     {
-                        m_asyncWait.Reset();
+                        m_asyncThreadRunning.Reset();
                         System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(ProcessQueue));
                     }
+
+                    m_asyncItemProcessed.Reset();
+
+                    //The *3 is there because a volume consists of 3 files (signature, content and manifest)
+                    waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * 3);
+                }
+
+                while (waitForCompletion)
+                {
+                    m_asyncItemProcessed.WaitOne();
+
+                    lock (m_queuelock)
+                        waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * 3);
                 }
             }
         }
@@ -434,7 +456,7 @@ namespace Duplicati.Library.Main
                     lock (m_queuelock)
                     {
                         //If the lock is free, just run, but keep the lock
-                        if (m_asyncWait.WaitOne(0, false))
+                        if (m_asyncThreadRunning.WaitOne(0, false))
                         {
                             try
                             {
@@ -454,7 +476,7 @@ namespace Duplicati.Library.Main
                     //Otherwise, wait for the worker to signal completion
                     //We wait without holding the lock, because the worker cannot signal completion while
                     //we hold the lock
-                    m_asyncWait.WaitOne();
+                    m_asyncThreadRunning.WaitOne();
                     //Now re-acquire the lock, and re-check the state of the event
                 }
             }
@@ -839,15 +861,21 @@ namespace Duplicati.Library.Main
                     if (m_pendingOperations.Count == 0)
                     {
                         //Signal that we are done
-                        m_asyncWait.Set();
+                        m_asyncThreadRunning.Set();
                         return;
                     }
                     else
-                        args = m_pendingOperations.Dequeue();
+                        args = m_pendingOperations.Peek();
 
                 }
 
                 PutInternal(args.Key, args.Value);
+
+                lock (m_queuelock)
+                {
+                    m_pendingOperations.Dequeue();
+                    m_asyncItemProcessed.Set();
+                }
             }
         }
 

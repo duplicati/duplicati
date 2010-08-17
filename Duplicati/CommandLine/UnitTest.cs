@@ -140,6 +140,8 @@ namespace Duplicati.CommandLine
                     Dictionary<string, string> tmp = new Dictionary<string, string>(options);
                     tmp["delete-all-but-n-full"] = "0";
                     tmp["force"] = "";
+                    tmp["allow-full-removal"] = "";
+
                     using (new Timer("Cleaning up any existing backups")) 
                         Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButNFull(target, tmp));
                 }
