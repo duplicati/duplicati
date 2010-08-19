@@ -783,6 +783,9 @@ namespace Duplicati.Library.Main
                 if (m_options.Force)
                 {
                     //Delete manifest
+                    if (me.Alternate != null)
+                        backend.Delete(me.Alternate);
+
                     backend.Delete(me);
 
                     foreach (KeyValuePair<SignatureEntry, ContentEntry> kx in me.Volumes)
