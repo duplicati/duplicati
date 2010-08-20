@@ -361,7 +361,7 @@
     <value>Controls the use of disk snapshots</value>
   </data>
   <data name="AsynchronousuploadfolderLong" xml:space="preserve">
-    <value>The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes</value>
+    <value>The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes, despite the name, this also works for synchronous runs</value>
   </data>
   <data name="AsynchronousuploadfolderShort" xml:space="preserve">
     <value>The path where ready volumes are placed until uploaded</value>

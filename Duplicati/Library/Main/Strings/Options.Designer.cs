@@ -97,7 +97,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes.
+        ///   Looks up a localized string similar to The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes, despite the name, this also works for synchronous runs.
         /// </summary>
         internal static string AsynchronousuploadfolderLong {
             get {
