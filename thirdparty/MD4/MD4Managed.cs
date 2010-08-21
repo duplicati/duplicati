@@ -5,7 +5,7 @@
 //	Sebastien Pouliot (sebastien@ximian.com)
 //
 // (C) 2003 Motus Technologies Inc. (http://www.motus.com)
-// Copyright (C) 2004-2005 Novell, Inc (http://www.novell.com)
+// Copyright (C) 2004-2005,2010 Novell, Inc (http://www.novell.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -29,7 +29,7 @@
 
 using System;
 
-namespace System.Security.Cryptography
+namespace Mono.Security.Cryptography
 {
 
     // References:
@@ -109,7 +109,7 @@ namespace System.Security.Cryptography
                 for (i = partLen; i + 63 < cbSize; i += 64)
                 {
                     // MD4Transform (context->state, &input[i]);
-                    MD4Transform(state, array, i);
+                    MD4Transform(state, array, ibStart + i);
                 }
 
                 index = 0;

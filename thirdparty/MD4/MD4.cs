@@ -31,7 +31,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace System.Security.Cryptography
+namespace Mono.Security.Cryptography
 {
 
     public abstract class MD4 : HashAlgorithm
