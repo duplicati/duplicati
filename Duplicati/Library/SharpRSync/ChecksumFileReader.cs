@@ -63,10 +63,7 @@ namespace Duplicati.Library.SharpRSync
         /// <param name="input">The stream to read from</param>
         public ChecksumFileReader(System.IO.Stream input)
         {
-            m_hashAlgorithm = System.Security.Cryptography.HashAlgorithm.Create("MD4"); 
-            if (m_hashAlgorithm == null)
-                m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
-
+            m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
             m_hashAlgorithm.Initialize();
 
             //Read and verify that the file header is valid
@@ -206,11 +203,7 @@ namespace Duplicati.Library.SharpRSync
             
             //At this point we know that the weak hash matches something, so we have to calculate the strong hash
             if (!m_hashAlgorithm.CanReuseTransform)
-            {
-                m_hashAlgorithm = System.Security.Cryptography.HashAlgorithm.Create("MD4");
-                if (m_hashAlgorithm == null)
-                    m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
-            }
+                m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
             byte[] hash = m_hashAlgorithm.ComputeHash(data, offset, length);
 
             //Pad with zeros if needed

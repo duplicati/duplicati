@@ -49,9 +49,7 @@ namespace Duplicati.Library.SharpRSync
             m_blocklen = blocklength;
             m_stronglen = stronglength;
             m_outstream = outputstream;
-            m_hashAlgorithm = System.Security.Cryptography.HashAlgorithm.Create("MD4");
-            if (m_hashAlgorithm == null)
-                m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
+            m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
 
             m_hashAlgorithm.Initialize();
 
@@ -78,11 +76,7 @@ namespace Duplicati.Library.SharpRSync
         public void AddChunk(byte[] buffer, int index, int count)
         {
             if (!m_hashAlgorithm.CanReuseTransform)
-            {
-                m_hashAlgorithm = System.Security.Cryptography.HashAlgorithm.Create("MD4");
-                if (m_hashAlgorithm == null)
-                    m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
-            }
+                m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
 
             m_outstream.Write(RDiffBinary.FixEndian(BitConverter.GetBytes(Adler32Checksum.Calculate(buffer, index, count))), 0, 4);
             m_outstream.Write(m_hashAlgorithm.ComputeHash(buffer, index, count), 0, m_stronglen);
