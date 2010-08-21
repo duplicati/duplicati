@@ -28,8 +28,19 @@ namespace Duplicati.Library.SharpRSync
     /// </summary>
     public class DeltaFile
     {
+        /// <summary>
+        /// The size of the internal buffer used to read in data
+        /// </summary>
+        private const int BUFFER_SIZE = 100 * 1024;
 
-        ChecksumFile m_checksum;
+        /// <summary>
+        /// The ChecksumFileReader used to perform signature lookups
+        /// </summary>
+        ChecksumFileReader m_checksum;
+
+        /// <summary>
+        /// The possibly modified input data
+        /// </summary>
         System.IO.Stream m_inputStream;
 
         /// <summary>
@@ -37,7 +48,7 @@ namespace Duplicati.Library.SharpRSync
         /// This instance can be used to create a new DeltaFile
         /// </summary>
         /// <param name="checksum">The checksum to use</param>
-        public DeltaFile(ChecksumFile checksum)
+        public DeltaFile(ChecksumFileReader checksum)
         {
             m_checksum = checksum;
         }
@@ -61,6 +72,7 @@ namespace Duplicati.Library.SharpRSync
         /// <param name="output">The stream to write the patched data to. Must not point to the same resource as the basefile.</param>
         public void PatchFile(System.IO.Stream basefile, System.IO.Stream output)
         {
+            //Validate the file header
             byte[] sig = new byte[4];
             if (Utility.ForceStreamRead(m_inputStream, sig, 4) != 4)
                 throw new Exception(Strings.DeltaFile.EndofstreamBeforeSignatureError);
@@ -136,134 +148,181 @@ namespace Duplicati.Library.SharpRSync
         /// <param name="output">The stream to write the delta to</param>
         public void GenerateDeltaFile(System.IO.Stream input, System.IO.Stream output)
         {
-            RollingBuffer buffer = new RollingBuffer(input);
             output.Write(RDiffBinary.DELTA_MAGIC, 0, RDiffBinary.DELTA_MAGIC.Length);
-            Adler32Checksum adler = new Adler32Checksum(buffer, m_checksum.BlockLength);
-            System.Security.Cryptography.HashAlgorithm md4 = System.Security.Cryptography.MD4.Create("MD4");
-            md4.Initialize();
 
-            byte[] md4buffer = new byte[m_checksum.BlockLength];
+            int blocklength = m_checksum.BlockLength;
+            int buffersize = BUFFER_SIZE;
 
-            long unmatched = 0;
+            //If we have some insanely large blocks, try to handle them nicely anyway
+            if (blocklength > BUFFER_SIZE / 2)
+                buffersize = blocklength * 4;
+
+            //The number of matched bytes
             long matched = 0;
+            //The first matched byte
             long matched_offset = 0;
+            //The index of the next expected block
             long next_match_key = 0;
 
-            do
+            //The number of unmatched bytes
+            int unmatched = 0;
+            //The index of the first unmatched byte
+            int unmatched_offset = 0;
+
+            //Keep a local copy of the lookup table
+            bool[] weakLookup = m_checksum.WeakLookup;
+
+            //We use statically allocated buffers, and we need two buffers
+            // to prevent Array.Copy from allocating a temp buffer
+            byte[] working_data = new byte[BUFFER_SIZE];
+            byte[] temp_work = new byte[BUFFER_SIZE];
+            byte[] md4buf = new byte[blocklength];
+
+            //Read the initial buffer block
+            int buffer_len = Utility.ForceStreamRead(input, working_data);
+            int buffer_index = 0;
+            blocklength = Math.Min(blocklength, buffer_len);
+
+            //Setup the initial checksum
+            uint weakChecksum = Adler32Checksum.Calculate(working_data, 0, blocklength);
+
+            long indexMatched;
+            bool force_buffer_refill = false;
+
+            while (blocklength > 0)
             {
-                bool foundMatch = false;
-                List<KeyValuePair<int, byte[]>> strong = m_checksum.FindChunk(adler.Checksum);
-                
-                //No weak matches :(
-                if (strong == null || strong.Count == 0)
-                    unmatched++;
-                else
+                //Check if the block matches somewhere
+                indexMatched = m_checksum.LookupChunck(weakChecksum, working_data, buffer_index, blocklength, next_match_key);
+
+                if (indexMatched >= 0)
                 {
-                    //A weak match, check for MD4 matches
-                    byte[] tmp;
-                    if (buffer.Count < m_checksum.BlockLength)
-                        tmp = buffer.GetHead(buffer.Count);
-                    else
+                    //We have a match, flush unmatched
+                    if (unmatched > 0)
                     {
-                        buffer.GetHead(md4buffer, 0, md4buffer.Length);
-                        tmp = md4buffer;
+                        WriteLiteral(working_data, unmatched_offset, unmatched, output);
+                        unmatched = 0;
                     }
 
-                    //If there are two identical blocks, we try the next first as that produces the smallest delta file
-                    //NOTE: RDiff does not seem to have this optimization
-                    if (matched > 0 && strong[0].Key != next_match_key)
-                        foreach (KeyValuePair<int, byte[]> k in strong)
-                            if (k.Key == next_match_key)
-                            {
-                                strong.Remove(k);
-                                strong.Insert(0, k);
-                                break;
-                            }
-
-                    foreach (KeyValuePair<int, byte[]> k in strong)
+                    //First match
+                    if (matched == 0)
                     {
-                        if (!md4.CanReuseTransform)
-                            md4 = System.Security.Cryptography.MD4.Create("MD4");
-                        md4.Initialize();
+                        matched_offset = indexMatched * blocklength;
+                    }
+                    else if (indexMatched != next_match_key)
+                    {
+                        //Subsequent match, but the sequence does not fit
+                        WriteCopy(matched_offset, matched, output);
 
-                        tmp = md4.ComputeHash(tmp);
-                        bool matches = true;
-                        for(int i = 0; i < m_checksum.StrongLength; i++)
-                            if (tmp[i] != k.Value[i])
-                            {
-                                matches = false;
-                                break;
-                            }
+                        //Pretend this was the fist
+                        matched = 0;
+                        matched_offset = indexMatched * blocklength;
+                    }
 
-                        if (matches)
+                    //If the next block matches this signature, we can write larger
+                    // copy instructions and thus safe space
+                    next_match_key = indexMatched + 1;
+
+                    //Adjust the counters
+                    matched += blocklength;
+                    buffer_index += blocklength;
+                    blocklength = Math.Min(blocklength, buffer_len - buffer_index);
+
+                    //Reset the checksum to fit the new block
+                    weakChecksum = Adler32Checksum.Calculate(working_data, buffer_index, blocklength);
+                }
+                else
+                {
+                    //No match, flush accumulated matches, if any
+                    if (matched > 0)
+                    {
+                        //Send the matching bytes as a copy
+                        WriteCopy(matched_offset, matched, output);
+                        matched = 0;
+                        matched_offset = 0;
+
+                        //We do not immediately start tapping the unmatched bytes, 
+                        // because the buffer may be nearly empty, and we 
+                        // want to gather as many unmatched bytes as possible
+                        // to avoid the instruction overhead in the file
+                        force_buffer_refill = true;
+                    }
+                    else
+                    {
+                        int lastPossible = buffer_len - blocklength;
+                        if (unmatched == 0)
+                            unmatched_offset = buffer_index;
+
+                        //Local speedup for long non-matching regions
+                        for (/* buffer_index = buffer_index */; buffer_index < lastPossible; buffer_index++)
                         {
-                            //Send leading bytes as a literal block
-                            if (unmatched > 0)
-                            {
-                                WriteLiteral(buffer.GetTail(unmatched), output);
-                                buffer.DropTail(unmatched);
-                                unmatched = 0;
-                            }
-                            
-                            if (matched == 0)
-                                matched_offset = k.Key * m_checksum.BlockLength;
-                            else if (k.Key != next_match_key)
-                            {
-                                WriteCopy(matched_offset, matched, output);
-                                matched = 0;
-                                matched_offset = k.Key * m_checksum.BlockLength;
-                            }
+                            weakChecksum = Adler32Checksum.Roll(working_data[buffer_index], working_data[buffer_index + blocklength], weakChecksum, blocklength);
+                            if (weakLookup[weakChecksum >> 16])
+                                break;
+                        }
 
-                            next_match_key = k.Key + 1;
-                            
+                        unmatched = buffer_index - unmatched_offset;
 
-                            matched += buffer.Count;
-                            foundMatch = true;
-                            buffer.DropTail(buffer.Count);
-                            break;
+                        //If this is the last block, claim the remaining bytes as unmatched
+                        if (temp_work == null)
+                        {
+                            unmatched += blocklength;
+                            blocklength = 0;
                         }
                     }
                 }
 
-                //If this byte was not matched, and we have queued up matches,
-                // flush them now
-                if (!foundMatch && matched > 0)
+                //If we are out of buffer, try to load some more
+                if (force_buffer_refill || buffer_len - buffer_index <= m_checksum.BlockLength)
                 {
-                    //Send the matching bytes as a copy
-                    WriteCopy(matched_offset, matched, output);
-                    matched = 0;
-                    matched_offset = 0;
+                    //Prevent continous refill
+                    force_buffer_refill = false;
+
+                    //If we have read the last bytes already, then just skip this
+                    if (temp_work != null)
+                    {
+                        int remaining_bytes = buffer_len - buffer_index;
+                        Array.Copy(working_data, buffer_index, temp_work, 0, remaining_bytes);
+
+                        int tempread = Utility.ForceStreamRead(input, temp_work, remaining_bytes, temp_work.Length - remaining_bytes);
+
+                        if (tempread > 0)
+                        {
+                            //We are about to discard some data, if it is unmatched, write it to stream
+                            if (unmatched > 0)
+                            {
+                                WriteLiteral(working_data, unmatched_offset, unmatched, output);
+                                unmatched = 0;
+                            }
+
+                            //Now swap the arrays
+                            byte[] tmp = working_data;
+                            working_data = temp_work;
+                            temp_work = tmp;
+
+                            buffer_index = 0;
+                            buffer_len = remaining_bytes + tempread;
+                        }
+                        else
+                        {
+                            //Mark as done
+                            temp_work = null;
+
+                            //The last round has a smaller block length
+                            blocklength = remaining_bytes;
+                        }
+                    }
                 }
+            }
 
-                //Avoid keeping too large blocks in memory.
-                //This gives an overhead of app. 3 bytes pr. 2Kb data
-                if (unmatched >= m_checksum.BlockLength + 1)
-                {
-                    WriteLiteral(buffer.GetTail(unmatched - 1), output);
-                    buffer.DropTail(unmatched - 1);
-                    unmatched = 1;
-                }
-
-            } while ( buffer.Count == 0 ? adler.Reset() : adler.Rollbuffer());
-
-            //If it is still in the buffer, it was not matched
-            unmatched = buffer.Count;
-
+            //There cannot be both matched and unmatched bytes written
             if (matched > 0 && unmatched > 0)
                 throw new Exception(Strings.DeltaFile.InternalBufferError);
 
             if (matched > 0)
-            {
-                //Send the matching bytes as a copy
                 WriteCopy(matched_offset, matched, output);
-            }
 
-            //Any trailing bytes are treated as a literal
             if (unmatched > 0)
-            {
-                WriteLiteral(buffer.GetTail(unmatched), output);
-                buffer.DropTail(unmatched);
-            }
+                WriteLiteral(working_data, unmatched_offset, unmatched, output);
 
             output.WriteByte((byte)RDiffBinary.EndCommand);
             output.Flush();
@@ -274,13 +333,12 @@ namespace Duplicati.Library.SharpRSync
         /// </summary>
         /// <param name="data">The literal data to write</param>
         /// <param name="output">The output delta stream</param>
-        private void WriteLiteral(byte[] data, System.IO.Stream output)
+        private void WriteLiteral(byte[] data, int offset, int count, System.IO.Stream output)
         {
-            output.WriteByte((byte)RDiffBinary.FindLiteralDeltaCommand(data.Length));
-            byte[] len = RDiffBinary.EncodeLength(data.Length);
+            output.WriteByte((byte)RDiffBinary.FindLiteralDeltaCommand(count));
+            byte[] len = RDiffBinary.EncodeLength(count);
             output.Write(len, 0, len.Length);
-            
-            output.Write(data, 0, data.Length);
+            output.Write(data, offset, count);
         }
 
         /// <summary>

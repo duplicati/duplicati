@@ -154,7 +154,7 @@ namespace Duplicati.Library.SharpRSync
         /// </summary>
         /// <param name="size">The number that is to be encoded</param>
         /// <returns>The literal delta command</returns>
-        public static LiteralDeltaCommand FindLiteralDeltaCommand(int size)
+        public static LiteralDeltaCommand FindLiteralDeltaCommand(long size)
         {
             switch (FindLength(size))
             {

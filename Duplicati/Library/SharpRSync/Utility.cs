@@ -32,12 +32,43 @@ namespace Duplicati.Library.SharpRSync
         /// </summary>
         /// <param name="stream">The stream to read</param>
         /// <param name="buf">The buffer to read into</param>
+        /// <returns>The actual number of bytes read</returns>
+        public static int ForceStreamRead(System.IO.Stream stream, byte[] buf)
+        {
+            return ForceStreamRead(stream, buf, 0, buf.Length);
+        }
+
+        /// <summary>
+        /// Some streams can return a number that is less than the requested number of bytes.
+        /// This is usually due to fragmentation, and is solved by issuing a new read.
+        /// This function wraps that functionality.
+        /// </summary>
+        /// <param name="stream">The stream to read</param>
+        /// <param name="buf">The buffer to read into</param>
         /// <param name="count">The amout of bytes to read</param>
         /// <returns>The actual number of bytes read</returns>
         public static int ForceStreamRead(System.IO.Stream stream, byte[] buf, int count)
         {
+            return ForceStreamRead(stream, buf, 0, count);
+        }
+
+        /// <summary>
+        /// Some streams can return a number that is less than the requested number of bytes.
+        /// This is usually due to fragmentation, and is solved by issuing a new read.
+        /// This function wraps that functionality.
+        /// </summary>
+        /// <param name="stream">The stream to read</param>
+        /// <param name="buf">The buffer to read into</param>
+        /// <param name="index">The index into which the writing starts</param>
+        /// <param name="count">The amout of bytes to read</param>
+        /// <returns>The actual number of bytes read</returns>
+        public static int ForceStreamRead(System.IO.Stream stream, byte[] buf, int index, int count)
+        {
+            //Non fragmenting streams skip here
+            if (stream is System.IO.FileStream || stream is System.IO.MemoryStream)
+                return stream.Read(buf, index, count);
+
             int a;
-            int index = 0;
             do
             {
                 a = stream.Read(buf, index, count);

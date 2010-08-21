@@ -117,28 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="EndofstreamBeforeSignatureError" xml:space="preserve">
-    <value>End of stream occured while reading initial 4 bytes of signature file</value>
+  <data name="ErrorOccurred" xml:space="preserve">
+    <value>An error occurred: {0}</value>
   </data>
-  <data name="EndofstreamInBlocksizeError" xml:space="preserve">
-    <value>End of stream occured while reading blocksize in signature file</value>
-  </data>
-  <data name="EndofstreamInStronglenError" xml:space="preserve">
-    <value>End of stream occured while reading stronglen in signature file</value>
-  </data>
-  <data name="EndofstreamInStrongSignatureError" xml:space="preserve">
-    <value>End of stream occured while reading strong signature from signature file</value>
-  </data>
-  <data name="InvalidBlocksizeError" xml:space="preserve">
-    <value>Blocklen in signature file was: {0}, which does not seem correct</value>
-  </data>
-  <data name="InvalidSignatureHeaderError" xml:space="preserve">
-    <value>Signature stream did not have the correct start marker</value>
-  </data>
-  <data name="InvalidStrongsizeError" xml:space="preserve">
-    <value>Stronglen in signature file was: {0}, which does not seem correct</value>
-  </data>
-  <data name="InvalidFilesizeError" xml:space="preserve">
-    <value>The size of the signature file is invalid</value>
+  <data name="UsageMessage" xml:space="preserve">
+    <value>Usage:
+  {0} signature &lt;input-file&gt; &lt;signature-file&gt;
+  {0} delta &lt;signature-file&gt; &lt;input-file&gt; &lt;delta-file&gt;
+  {0} patch &lt;base-file&gt; &lt;delta-file&gt; &lt;output-file&gt;</value>
   </data>
 </root>

@@ -19,6 +19,8 @@
     </UpgradeBackupLocation>
     <TargetFrameworkSubset>
     </TargetFrameworkSubset>
+    <StartupObject>
+    </StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -66,11 +68,12 @@
       <Link>MD4Managed.cs</Link>
     </Compile>
     <Compile Include="Adler32Checksum.cs" />
-    <Compile Include="ChecksumFile.cs" />
+    <Compile Include="ChecksumFileReader.cs" />
+    <Compile Include="ChecksumFileWriter.cs" />
     <Compile Include="DeltaFile.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RDiffBinary.cs" />
-    <Compile Include="RollingBuffer.cs" />
     <Compile Include="Interface.cs" />
     <Compile Include="Strings\ChecksumFile.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -81,6 +84,11 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>DeltaFile.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Program.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Program.resx</DependentUpon>
     </Compile>
     <Compile Include="Strings\RDiffBinary.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -97,6 +105,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Utility.resx</DependentUpon>
     </Compile>
+    <Compile Include="UnitTest.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +122,10 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>DeltaFile.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Program.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Program.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\RDiffBinary.resx">
       <SubType>Designer</SubType>

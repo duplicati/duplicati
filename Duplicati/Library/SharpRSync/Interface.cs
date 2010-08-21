@@ -29,6 +29,7 @@ namespace Duplicati.Library.SharpRSync
     /// </summary>
     public class Interface
     {
+
         /// <summary>
         /// Generates a signature, and writes it to the stream
         /// </summary>
@@ -36,9 +37,8 @@ namespace Duplicati.Library.SharpRSync
         /// <param name="output">The stream to write the signature into</param>
         public static void GenerateSignature(Stream input, Stream output)
         {
-            SharpRSync.ChecksumFile cs = new Duplicati.Library.SharpRSync.ChecksumFile();
+            SharpRSync.ChecksumFileWriter cs = new Duplicati.Library.SharpRSync.ChecksumFileWriter(output);
             cs.AddStream(input);
-            cs.Save(output);
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Duplicati.Library.SharpRSync
         /// <param name="output">The delta output</param>
         public static void GenerateDelta(Stream signature, Stream input, Stream output)
         {
-            SharpRSync.ChecksumFile cs = new Duplicati.Library.SharpRSync.ChecksumFile(signature);
+            SharpRSync.ChecksumFileReader cs = new Duplicati.Library.SharpRSync.ChecksumFileReader(signature);
             SharpRSync.DeltaFile df = new Duplicati.Library.SharpRSync.DeltaFile(cs);
             df.GenerateDeltaFile(input, output);
         }
