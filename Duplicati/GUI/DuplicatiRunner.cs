@@ -41,6 +41,9 @@ namespace Duplicati.GUI
         public delegate void DuplicatiRunnerProgress(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress);
         public event DuplicatiRunnerProgress DuplicatiProgress;
 
+        private const int PERCENT_PR_EXTRA_OPERATION = 2;
+        private int m_extraOperations = 0;
+
         private DuplicatiOperation m_lastPGOperation;
         private int m_lastPGProgress;
         private int m_lastPGSubprogress;
@@ -68,6 +71,10 @@ namespace Duplicati.GUI
                             //Activate auto-cleanup
                             options["auto-cleanup"] = "";
                             options["force"] = "";
+                            if (task.Schedule.Task.KeepFull > 0)
+                                m_extraOperations++;
+                           if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
+                               m_extraOperations++;
 
                             Library.Core.TempFolder tf = null;
                             try
@@ -238,6 +245,14 @@ namespace Duplicati.GUI
                 {
                     if (task.Schedule.Task.KeepFull > 0)
                     {
+                        m_lastPGProgress = 100;
+                        m_lastPGmessage = Strings.DuplicatiRunner.CleaningUpMessage;
+                        m_lastPGSubmessage = "";
+                        m_lastPGSubprogress = -1;
+
+                        ReinvokeLastProgressEvent();
+                        m_extraOperations--;
+
                         RemoveAllButNFullTask tmpTask = new RemoveAllButNFullTask(task.Schedule, (int)task.Schedule.Task.KeepFull);
                         ExecuteTask(tmpTask);
                         results += Environment.NewLine + Strings.DuplicatiRunner.CleanupLogdataHeader + Environment.NewLine + tmpTask.Result;
@@ -245,10 +260,24 @@ namespace Duplicati.GUI
 
                     if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
                     {
+                        m_lastPGProgress = 100;
+                        m_lastPGmessage = Strings.DuplicatiRunner.CleaningUpMessage;
+                        m_lastPGSubmessage = "";
+                        m_lastPGSubprogress = -1;
+
+                        ReinvokeLastProgressEvent();
+                        m_extraOperations--;
+
                         RemoveOlderThanTask tmpTask = new RemoveOlderThanTask(task.Schedule, task.Schedule.Task.KeepTime);
                         ExecuteTask(tmpTask);
                         results += Environment.NewLine + Strings.DuplicatiRunner.CleanupLogdataHeader + Environment.NewLine + tmpTask.Result;
                     }
+
+                    if (task.Schedule.Task.KeepFull > 0 || !string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
+                        ReinvokeLastProgressEvent();
+
+                    if (DuplicatiProgress != null)
+                        DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                 }
             }
             catch (Exception ex)
@@ -270,6 +299,10 @@ namespace Duplicati.GUI
             m_lastPGSubprogress = subprogress;
             m_lastPGmessage = message;
             m_lastPGSubmessage = submessage;
+
+            //If there are extra operations, reserve some space for it by reducing the displayed progress
+            if (m_extraOperations > 0)
+                progress = (int)((m_lastPGProgress / 100.0) * (100 - (m_extraOperations * PERCENT_PR_EXTRA_OPERATION)));
 
             if (DuplicatiProgress != null)
                 try { DuplicatiProgress(operation, RunnerState.Running, message, submessage, progress, subprogress); }

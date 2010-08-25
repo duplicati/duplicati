@@ -47,19 +47,44 @@ namespace Duplicati.Library.Main
         private Queue<KeyValuePair<BackupEntryBase, string>> m_pendingOperations;
 
         /// <summary>
-        /// This event is set when the async worker thread is not running
-        /// </summary>
-        private System.Threading.ManualResetEvent m_asyncThreadRunning;
-
-        /// <summary>
         /// This event is set after an item has been removed from the queue
         /// </summary>
         private System.Threading.AutoResetEvent m_asyncItemProcessed;
 
         /// <summary>
+        /// This event is set after an item has been placed into the queue
+        /// </summary>
+        private System.Threading.AutoResetEvent m_asyncItemReady;
+
+        /// <summary>
+        /// A flag used to signal the termination of the async thread
+        /// </summary>
+        private volatile bool m_asyncTerminate = false;
+
+        /// <summary>
         /// The lock for items in the processing queue
         /// </summary>
         private object m_queuelock;
+
+        /// <summary>
+        /// A value describing if the backend wrapper is performing asynchronous operations
+        /// </summary>
+        private bool m_async;
+
+        /// <summary>
+        /// The thread performing asynchronous operations
+        /// </summary>
+        private System.Threading.Thread m_workerThread;
+
+        /// <summary>
+        /// The exception, if any, encountered by the worker thread
+        /// </summary>
+        private Exception m_workerException;
+
+        /// <summary>
+        /// The number of manifests uploaded asynchronously
+        /// </summary>
+        private int m_manifestUploads = 0;
 
         /// <summary>
         /// Temporary variable for progress reporting 
@@ -91,6 +116,11 @@ namespace Duplicati.Library.Main
         /// The progress reporting event
         /// </summary>
         public event RSync.RSyncDir.ProgressEventDelegate ProgressEvent;
+
+        /// <summary>
+        /// An event that is raised after an async item has been uploaded, used to pause the uploads
+        /// </summary>
+        public event EventHandler AsyncItemProcessedEvent;
 
         /// <summary>
         /// If encryption is used, this is the instance that performs it
@@ -134,15 +164,19 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && !System.IO.Directory.Exists(m_options.SignatureCachePath))
                 System.IO.Directory.CreateDirectory(m_options.SignatureCachePath);
 
-            if (m_options.AsynchronousUpload)
+            m_async = m_options.AsynchronousUpload;
+            if (m_async)
             {
                 //If we are using async operations, the entire class is actually threadsafe,
                 //utilizing a common exclusive lock on all operations. But the implementation does
                 //not prevent starvation, so it should not be called by multiple threads.
                 m_pendingOperations = new Queue<KeyValuePair<BackupEntryBase, string>>();
-                m_asyncThreadRunning = new System.Threading.ManualResetEvent(true);
                 m_asyncItemProcessed = new System.Threading.AutoResetEvent(false);
+                m_asyncItemReady = new System.Threading.AutoResetEvent(false);
+                m_workerThread = new System.Threading.Thread(ProcessQueue);
+                m_workerThread.Name = "AsyncUploaderThread";
                 m_queuelock = new object();
+                m_workerThread.Start();
             }
         }
 
@@ -375,7 +409,7 @@ namespace Duplicati.Library.Main
 
         public void Put(BackupEntryBase remote, string filename)
         {
-            if (!m_options.AsynchronousUpload)
+            if (!m_async)
                 PutInternal(remote, filename);
             else
             {
@@ -383,14 +417,11 @@ namespace Duplicati.Library.Main
 
                 lock (m_queuelock)
                 {
-                    m_pendingOperations.Enqueue(new KeyValuePair<BackupEntryBase, string>( remote, filename ));
-                    if (m_asyncThreadRunning.WaitOne(0, false))
-                    {
-                        m_asyncThreadRunning.Reset();
-                        System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(ProcessQueue));
-                    }
+                    if (m_workerException != null)
+                        throw m_workerException;
 
-                    m_asyncItemProcessed.Reset();
+                    m_pendingOperations.Enqueue(new KeyValuePair<BackupEntryBase, string>( remote, filename ));
+                    m_asyncItemReady.Set();
 
                     //The *3 is there because a volume consists of 3 files (signature, content and manifest)
                     waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * 3);
@@ -398,10 +429,15 @@ namespace Duplicati.Library.Main
 
                 while (waitForCompletion)
                 {
-                    m_asyncItemProcessed.WaitOne();
+                    m_asyncItemProcessed.WaitOne(1000 * 5, false);
 
                     lock (m_queuelock)
+                    {
+                        if (m_workerException != null)
+                            throw m_workerException;
+
                         waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * 3);
+                    }
                 }
             }
         }
@@ -433,7 +469,7 @@ namespace Duplicati.Library.Main
 
 
             //If the code is not async, just invoke it
-            if (!m_options.AsynchronousUpload)
+            if (!m_async)
             {
                 try
                 {
@@ -456,7 +492,7 @@ namespace Duplicati.Library.Main
                     lock (m_queuelock)
                     {
                         //If the lock is free, just run, but keep the lock
-                        if (m_asyncThreadRunning.WaitOne(0, false))
+                        if (m_workerThread == null || !m_workerThread.IsAlive || m_pendingOperations.Count == 0)
                         {
                             try
                             {
@@ -476,7 +512,7 @@ namespace Duplicati.Library.Main
                     //Otherwise, wait for the worker to signal completion
                     //We wait without holding the lock, because the worker cannot signal completion while
                     //we hold the lock
-                    m_asyncThreadRunning.WaitOne();
+                    m_workerThread.Join(1000);
                     //Now re-acquire the lock, and re-check the state of the event
                 }
             }
@@ -635,10 +671,10 @@ namespace Duplicati.Library.Main
                         }
                         else
                         {
-                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
+                            if (!m_async && ProgressEvent != null)
                                 ProgressEvent(50, m_statusmessage);
                             m_backend.Get(remote.Filename, tempfile);
-                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
+                            if (!m_async && ProgressEvent != null)
                                 ProgressEvent(100, m_statusmessage);
                         }
 
@@ -741,9 +777,8 @@ namespace Duplicati.Library.Main
 #endif
                             using (System.IO.FileStream fs = System.IO.File.Open(encryptedFile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                             using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, fs.Length))
-                            {
-                                if (!m_options.AsynchronousUpload)
-                                    pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
+                            {   
+                                pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
 
                                 using (Core.ThrottledStream ts = new Core.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                                 {
@@ -760,18 +795,35 @@ namespace Duplicati.Library.Main
                         }
                         else
                         {
-                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
+                            if (ProgressEvent != null)
                                 ProgressEvent(50, m_statusmessage);
                             m_backend.Put(remotename, encryptedFile);
-                            if (!m_options.AsynchronousUpload && ProgressEvent != null)
+                            if (ProgressEvent != null)
                                 ProgressEvent(50, m_statusmessage);
                         }
 
                         if (remote is SignatureEntry && !string.IsNullOrEmpty(m_options.SignatureCachePath))
                             System.IO.File.Copy(filename, System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote)), true);
 
+                        if (remote is ManifestEntry)
+                        {
+                            if (m_queuelock != null)
+                            {
+                                lock (m_queuelock)
+                                    m_manifestUploads++;
+                            }
+                            else
+                                m_manifestUploads++;
+                        }
+
                         success = true;
                         lastEx = null;
+                    }
+                    catch (System.Threading.ThreadAbortException tex)
+                    {
+                        //Do not retry after we are aborted
+                        lastEx = tex;
+                        break;
                     }
                     catch (Exception ex)
                     {
@@ -806,6 +858,15 @@ namespace Duplicati.Library.Main
                         System.IO.File.Delete(encryptedFile);
                 }
                 catch { }
+
+                try
+                {
+                    if (ProgressEvent != null)
+                        ProgressEvent(-1, "");
+                }
+                catch
+                {
+                }
             }
 
         }
@@ -851,32 +912,151 @@ namespace Duplicati.Library.Main
         /// <param name="dummy">Unused required parameter</param>
         private void ProcessQueue(object dummy)
         {
-            while (true)
+            try
             {
-                KeyValuePair<BackupEntryBase, string> args;
-
-                //Obtain the lock for the queue
                 lock (m_queuelock)
+                    m_workerException = null;
+
+                while (!m_asyncTerminate)
                 {
-                    if (m_pendingOperations.Count == 0)
+                    KeyValuePair<BackupEntryBase, string> args = new KeyValuePair<BackupEntryBase,string>(null, null);
+
+                    while (args.Key == null)
                     {
-                        //Signal that we are done
-                        m_asyncThreadRunning.Set();
-                        return;
+                        if (m_asyncTerminate)
+                            return;
+
+                        //Obtain the lock for the queue
+                        lock (m_queuelock)
+                            if (m_pendingOperations.Count > 0)
+                                args = m_pendingOperations.Peek();
+
+                        if (args.Key == null)
+                            m_asyncItemReady.WaitOne(1000, false);
                     }
-                    else
-                        args = m_pendingOperations.Peek();
 
+                    //Pause if requested
+                    if (AsyncItemProcessedEvent != null)
+                        AsyncItemProcessedEvent(this, null);
+
+                    PutInternal(args.Key, args.Value);
+
+                    lock (m_queuelock)
+                    {
+                        m_pendingOperations.Dequeue();
+                        m_asyncItemProcessed.Set();
+                    }
                 }
-
-                PutInternal(args.Key, args.Value);
-
+            }
+            catch (Exception ex)
+            {
                 lock (m_queuelock)
                 {
-                    m_pendingOperations.Dequeue();
+                    m_workerException = ex;
                     m_asyncItemProcessed.Set();
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the number of uploads performed asynchronously
+        /// </summary>
+        public int ManifestUploads 
+        { 
+            get 
+            {
+                if (m_queuelock != null)
+                {
+                    lock (m_queuelock)
+                        return m_manifestUploads;
+                }
+                else
+                    return m_manifestUploads;
+            } 
+        }
+
+        /// <summary>
+        /// This function attemtps to forcefully abort all ongoing async operations
+        /// </summary>
+        public void AbortAll()
+        {
+            //If we are not running async, just return
+            if (!m_async)
+                return;
+
+            List<KeyValuePair<BackupEntryBase, string>> pending = new List<KeyValuePair<BackupEntryBase, string>>();
+
+            m_asyncTerminate = true;
+            
+            if (m_workerThread != null && m_workerThread.IsAlive)
+                m_workerThread.Join(1000);
+
+
+            lock (m_queuelock)
+            {
+                if (m_workerThread != null && m_workerThread.IsAlive)
+                    m_workerThread.Abort();
+
+                //Extract all unprocessed items
+                while (m_pendingOperations.Count > 0)
+                    pending.Add(m_pendingOperations.Dequeue());
+            }
+
+            //Clean up all temporary files from pending operations
+            foreach (KeyValuePair<BackupEntryBase, string> p in pending)
+                try
+                {
+                    if (System.IO.File.Exists(p.Value))
+                        System.IO.File.Delete(p.Value);
+                }
+                catch { }
+
+        }
+
+        /// <summary>
+        /// This function suspends the calling thread until the 
+        /// ongoing transfer has completed, then disables asynchronous
+        /// transfers and returns the non-transferred items
+        /// </summary>
+        public List<KeyValuePair<BackupEntryBase, string>> ExtractPendingUploads()
+        {
+            List<KeyValuePair<BackupEntryBase, string>> work = null;
+
+            while (true)
+            {
+                lock (m_queuelock)
+                {
+                    if (m_workerException != null)
+                        throw m_workerException;
+
+                    //On the first run, we empty the queue and signal the stop
+                    if (work == null)
+                    {
+                        m_asyncTerminate = true;
+
+                        work = new List<KeyValuePair<BackupEntryBase, string>>();
+                        if (m_pendingOperations.Count > 1)
+                        {
+                            while (m_pendingOperations.Count != 0)
+                                work.Add(m_pendingOperations.Dequeue());
+
+                            //The top entry is being completed by the thread
+                            m_pendingOperations.Enqueue(work[0]);
+                            work.RemoveAt(0);
+                        }
+                    }
+
+                    //When the thread completes, disable asynchronous transfers and return the unfinished work
+                    if (m_workerThread == null || !m_workerThread.IsAlive)
+                    {
+                        m_async = false;
+                        return work;
+                    }
+                }
+
+                m_workerThread.Join(1000 * 5);
+            }
+
         }
 
         private void DisposeInternal()
@@ -892,6 +1072,9 @@ namespace Duplicati.Library.Main
         
         public void Dispose()
         {
+            if (m_async && m_queuelock != null)
+                AbortAll();
+
             if (m_backend != null)
                 ProtectedInvoke("DisposeInternal");
             if (m_encryption != null)

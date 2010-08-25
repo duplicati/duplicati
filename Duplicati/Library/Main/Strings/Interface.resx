@@ -249,6 +249,9 @@
   <data name="StatusUploadingSignatureVolume" xml:space="preserve">
     <value>Uploading signatures, volume {0}</value>
   </data>
+  <data name="StatusWaitingForUpload" xml:space="preserve">
+    <value>Waiting for upload to complete ...</value>
+  </data>
   <data name="UnexpectedCompressionError" xml:space="preserve">
     <value>Unexpected compression mode: {0}</value>
   </data>

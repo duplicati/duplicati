@@ -35,16 +35,49 @@ namespace Duplicati.Library.Main
 
     public class Interface : IDisposable, LiveControl.ILiveControl
     {
-        //The amount of progressbar allocated for reading incremental data
-        private const double INCREMENAL_COST = 0.15;
+        /// <summary>
+        /// The amount of progressbar allocated for reading incremental data
+        /// </summary>
+        private const double INCREMENAL_COST = 0.10;
+        /// <summary>
+        /// The amount of progressbar allocated for uploading async volumes
+        /// </summary>
+        private const double ASYNC_RESERVED = 0.10;
 
         private string m_backend;
         private Options m_options;
 
+        /// <summary>
+        /// The amount of progressbar allocated for reading incremental data
+        /// </summary>
         private double m_incrementalFraction = INCREMENAL_COST;
+        /// <summary>
+        /// The amount of progressbar allocated for uploading the remaining volumes in asynchronous mode
+        /// </summary>
+        private double m_asyncReserved = 0.0;
+        /// <summary>
+        /// The current overall progress without taking the reserved amounts into account
+        /// </summary>
         private double m_progress = 0.0;
 
         private string m_lastProgressMessage = "";
+
+        /// <summary>
+        /// A flag toggling if the upload progress is reported, 
+        /// used to prevent showing the progress bar when performing
+        /// ansynchronous uploads
+        /// </summary>
+        private bool m_allowUploadProgress = true;
+        /// <summary>
+        /// When allowing the upload progress to be reported,
+        /// there can be a flicker because the upload progresses,
+        /// before the flag is disabled again. This value
+        /// is set to DateTime.Now.AddSeconds(1) before
+        /// entering a potentially blocking operation, which
+        /// allows the progress to be reported if the call blocks,
+        /// but prevents flicker from non-blocking calls.
+        /// </summary>
+        private DateTime m_allowUploadProgressAfter = DateTime.Now;
 
         public event OperationProgressEvent OperationStarted;
         public event OperationProgressEvent OperationCompleted;
@@ -86,7 +119,6 @@ namespace Duplicati.Library.Main
 
             SetupCommonOptions(bs);
             BackendWrapper backend = null;
-            long volumesUploaded = 0;
 
             if (m_options.DontReadManifests)
                 throw new Exception(Strings.Interface.ManifestsMustBeReadOnBackups);
@@ -111,6 +143,12 @@ namespace Duplicati.Library.Main
                         throw new Exception(string.Format(Strings.Interface.SourceDirsAreRelatedError, sources[i], sources[j]));
             }
 
+            if (m_options.AsynchronousUpload)
+            {
+                m_asyncReserved = ASYNC_RESERVED;
+                m_allowUploadProgress = false;
+            }
+
             using (new Logging.Timer("Backup from " + string.Join(";", sources) + " to " + m_backend))
             {
                 try
@@ -125,6 +163,7 @@ namespace Duplicati.Library.Main
 
                     backend = new BackendWrapper(bs, m_backend, m_options);
                     backend.ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(BackupTransfer_ProgressEvent);
+                    backend.AsyncItemProcessedEvent += new EventHandler(backend_AsyncItemProcessedEvent);
 
                     m_progress = 0.0;
 
@@ -277,7 +316,14 @@ namespace Duplicati.Library.Main
 
                                     }
 
-                                    OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingContentVolume, vol + 1), "");
+                                    if (m_options.AsynchronousUpload)
+                                    {
+                                        m_lastProgressMessage = Strings.Interface.StatusWaitingForUpload;
+                                        m_allowUploadProgress = true;
+                                        m_allowUploadProgressAfter = DateTime.Now.AddSeconds(1);
+                                    }
+                                    else
+                                        OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingContentVolume, vol + 1), "");
 
                                     //Last check before we upload, we do not interrupt transfers
                                     CheckLiveControl();
@@ -290,7 +336,8 @@ namespace Duplicati.Library.Main
                                     using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
                                         backend.Put(new ContentEntry(backuptime, full, vol + 1), contentfile);
 
-                                    OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
+                                    if (!m_options.AsynchronousUpload)
+                                        OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
                                     
                                     manifest.SignatureHashes.Add(Core.Utility.CalculateHash(signaturefile));
                                     using (new Logging.Timer("Writing remote signatures"))
@@ -305,33 +352,109 @@ namespace Duplicati.Library.Main
                                 {
                                     manifest.Save(mf);
 
-                                    OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingManifestVolume, vol + 1), "");
+                                    if (!m_options.AsynchronousUpload)
+                                        OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingManifestVolume, vol + 1), "");
 
                                     //Alternate primary/secondary
                                     backend.Put(new ManifestEntry(backuptime, full, manifest.SignatureHashes.Count % 2 != 0), mf);
                                 }
 
-                                //A control for partial uploads
-                                volumesUploaded++;
+                                if (m_options.AsynchronousUpload)
+                                    m_allowUploadProgress = false;
 
                                 //The file volume counter
                                 vol++;
+                            }
+                        }
+
+                        //If we are running asynchronous, we now enter the end-game
+                        if (m_options.AsynchronousUpload)
+                        {
+                            m_lastProgressMessage = Strings.Interface.StatusWaitingForUpload;
+                            m_allowUploadProgress = true;
+                            m_allowUploadProgressAfter = DateTime.Now;
+
+                            //Before we clear the temp folder, we need to ensure that all volumes are uploaded.
+                            //To allow the UI to show some progress while uploading, we perform the remaining 
+                            // uploads synchronous
+                            List<KeyValuePair<BackupEntryBase, string>> pendingUploads = backend.ExtractPendingUploads();
+
+                            //Figure out what volume number we are at
+                            foreach (KeyValuePair<BackupEntryBase, string> p in pendingUploads)
+                                if (p.Key is ManifestEntry)
+                                    vol--;
+
+                            double unitcost = m_asyncReserved / pendingUploads.Count;
+
+                            //The upload each remaining volume in order
+                            foreach (KeyValuePair<BackupEntryBase, string> p in pendingUploads)
+                            {
+                                string msg;
+                                if (p.Key is ManifestEntry)
+                                {
+                                    vol++;
+                                    msg = string.Format(Strings.Interface.StatusUploadingManifestVolume, vol);
+                                }
+                                else if (p.Key is SignatureEntry)
+                                    msg = string.Format(Strings.Interface.StatusUploadingSignatureVolume, ((SignatureEntry)p.Key).Volumenumber);
+                                else if (p.Key is ContentEntry)
+                                {
+                                    msg = string.Format(Strings.Interface.StatusUploadingContentVolume, ((ContentEntry)p.Key).Volumenumber);
+
+                                    //We allow a stop or pause request here
+                                    CheckLiveControl();
+                                }
+                                else
+                                    throw new InvalidOperationException();
+
+                                OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, msg, "");
+                                backend.Put(p.Key, p.Value);
+                                m_asyncReserved -= unitcost;
+                                m_progress += unitcost;
+
+                                
                             }
                         }
                     }
                 }
                 catch(Exception ex)
                 {
-                    if (volumesUploaded == 0)
+                        //If this is a controlled user-requested stop, wait for the current upload to complete
+                    if (backend != null && ex is LiveControl.ExecutionStoppedException)
+                    {
+                        try
+                        {
+                            if (m_options.AsynchronousUpload)
+                            {
+                                m_lastProgressMessage = Strings.Interface.StatusWaitingForUpload;
+                                m_allowUploadProgress = true;
+                                m_allowUploadProgressAfter = DateTime.Now;
+
+                                //Wait for the current upload to complete and then delete all remaining temporary files
+                                foreach (KeyValuePair<BackupEntryBase, string> p in backend.ExtractPendingUploads())
+                                    try
+                                    {
+                                        if (System.IO.File.Exists(p.Value))
+                                            System.IO.File.Delete(p.Value);
+                                    }
+                                    catch { } //Better to delete as many as possible rather than choke on a single file
+                            }
+
+                        }
+                        catch { } //We already have an exception, just go with that
+                    }
+
+                    if (backend == null || backend.ManifestUploads == 0)
                         throw; //This also activates "finally", unlike in other languages...
 
-                    bs.LogError(string.Format(Strings.Interface.PartialUploadMessage, volumesUploaded, ex.Message));
+                    bs.LogError(string.Format(Strings.Interface.PartialUploadMessage, backend.ManifestUploads, ex.Message));
                 }
                 finally
                 {
                     m_progress = 100.0;
                     if (backend != null)
-                        backend.Dispose();
+                        try { backend.Dispose(); }
+                        catch { }
 
                     if (OperationCompleted != null)
                         OperationCompleted(this, DuplicatiOperation.Backup, 100, -1, Strings.Interface.StatusCompleted, "");
@@ -345,13 +468,25 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Event handler that is activated when an asynchronous upload is about to being,
+        /// used to pause uploads if the user has requested a pause
+        /// </summary>
+        /// <param name="sender">Unused sender argument</param>
+        /// <param name="e">Unused event argument</param>
+        private void backend_AsyncItemProcessedEvent(object sender, EventArgs e)
+        {
+            m_liveControl.PauseIfRequested();
+        }
+
+        /// <summary>
         /// Event handler for reporting upload/download progress
         /// </summary>
         /// <param name="progress">The upload/download progress in percent</param>
         /// <param name="filename">The name of the file being transfered</param>
         private void BackupTransfer_ProgressEvent(int progress, string filename)
         {
-            OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), progress, m_lastProgressMessage, filename);
+            if (m_allowUploadProgress && DateTime.Now > m_allowUploadProgressAfter)
+                OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), progress, m_lastProgressMessage, filename);
         }
 
         /// <summary>
@@ -362,6 +497,7 @@ namespace Duplicati.Library.Main
         private void BackupRSyncDir_ProgressEvent(int progress, string filename)
         {
             m_progress = ((1.0 - m_incrementalFraction) * (progress / (double)100.0)) + m_incrementalFraction;
+            m_progress *= (1.0 - m_asyncReserved);
             
             OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusProcessing, filename), "");
 
