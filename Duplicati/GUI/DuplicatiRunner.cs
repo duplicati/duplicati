@@ -62,7 +62,6 @@ namespace Duplicati.GUI
 
             try
             {
-
                 switch (task.TaskType)
                 {
                     case DuplicityTaskType.FullBackup:

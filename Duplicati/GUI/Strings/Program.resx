@@ -149,11 +149,11 @@ Error message: {0}</value>
   </data>
   <data name="TerminateForExitQuestion" xml:space="preserve">
     <value>Duplicati is attempting to quit, but a backup is running.
-Do you want Duplicati to wait a little to see if the backup responds to the stop command?</value>
+Do you want Duplicati to continue waiting for the backup to stop?</value>
     <comment>A question displayed to the user after a exit has been issued, but the backup fails to respond to the stop command within a short period</comment>
   </data>
   <data name="WrongSQLiteVersion" xml:space="preserve">
-    <value>Wrong version of SQLite detected ({0}), must be {1} or higher</value>
+    <value>Unsupported version of SQLite detected ({0}), must be {1} or higher</value>
     <comment>An error message displayed when the wrong version of SQLite is detected</comment>
   </data>
 </root>

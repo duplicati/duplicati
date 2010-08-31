@@ -79,7 +79,7 @@ namespace Duplicati.GUI
         /// </summary>
         /// <param name="appname">The application name</param>
         public SingleInstance(string appname)
-            : this(appname, System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData))
+            : this(appname, System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), appname))
         { }
 
         /// <summary>
@@ -89,11 +89,10 @@ namespace Duplicati.GUI
         /// <param name="basefolder">The folder in which the control file structure is placed</param>
         public SingleInstance(string appname, string basefolder)
         {
-            m_controldir = System.IO.Path.Combine(basefolder, appname);
-            if (!System.IO.Directory.Exists(m_controldir))
-                System.IO.Directory.CreateDirectory(m_controldir);
+            if (!System.IO.Directory.Exists(basefolder))
+                System.IO.Directory.CreateDirectory(basefolder);
 
-            m_controldir = System.IO.Path.Combine(m_controldir, CONTROL_DIR);
+            m_controldir = System.IO.Path.Combine(basefolder, CONTROL_DIR);
             if (!System.IO.Directory.Exists(m_controldir))
                 System.IO.Directory.CreateDirectory(m_controldir);
 

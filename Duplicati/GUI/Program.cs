@@ -29,6 +29,16 @@ namespace Duplicati.GUI
     static class Program
     {
         /// <summary>
+        /// The name of the environment variable that holds the path to the data folder used by Duplicati
+        /// </summary>
+        public const string DATAFOLDER_ENV_NAME = "DUPLICATI_HOME";
+
+        /// <summary>
+        /// Gets the folder where Duplicati data is stored
+        /// </summary>
+        public static string DATAFOLDER { get { return Library.Core.Utility.AppendDirSeperator(Environment.ExpandEnvironmentVariables("%" + "DUPLICATI_HOME" + "%").TrimStart('"').TrimEnd('"')); } } 
+
+        /// <summary>
         /// This is the only access to the database
         /// </summary>
         public static IDataFetcherWithRelations DataConnection;
@@ -82,17 +92,38 @@ namespace Duplicati.GUI
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            //Set the %DUPLICATI_HOME% env variable, if it is not already set
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DUPLICATI_HOME")))
+            {
+#if DEBUG
+                //debug mode uses a lock file located in the app folder
+                Environment.SetEnvironmentVariable("DUPLICATI_HOME", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+#else
+                bool portableMode = false;
+                if (args != null)
+                    foreach (string s in args)
+                        if (s.Equals("--portable-mode", StringComparison.InvariantCultureIgnoreCase))
+                            portableMode = true;
+
+                if (portableMode)
+                {
+                    //Portable mode uses a data folder in the application home dir
+                    Environment.SetEnvironmentVariable("DUPLICATI_HOME", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "data"));
+                }
+                else
+                {
+                    //Normal release mode uses the systems "Application Data" folder
+                    Environment.SetEnvironmentVariable("DUPLICATI_HOME", System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName));
+                }
+#endif
+            }
+
             try
             {
                 try
                 {
-#if DEBUG
-                    //debug mode uses a lock file located in the app folder
-                    SingleInstance = new SingleInstance(Application.ProductName, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
-#else
-                    //release mode uses the systems "Application Data" folder
-                    SingleInstance = new SingleInstance(Application.ProductName);
-#endif
+                    //This will also create Program.DATAFOLDER if it does not exist
+                    SingleInstance = new SingleInstance(Application.ProductName, Program.DATAFOLDER);
                 }
                 catch (Exception ex)
                 {
@@ -107,11 +138,7 @@ namespace Duplicati.GUI
                     return;
                 }
 
-#if DEBUG
-                DatabasePath = System.IO.Path.Combine(Application.StartupPath, "Duplicati.sqlite");
-#else
-                DatabasePath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName), "Duplicati.sqlite");
-#endif
+                DatabasePath = System.IO.Path.Combine(Program.DATAFOLDER, "Duplicati.sqlite");
                 Version sqliteVersion = new Version((string)SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
                 if (sqliteVersion < new Version(3, 6, 3))
                 {

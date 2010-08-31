@@ -160,13 +160,7 @@ namespace Duplicati.Datamodel
             get
             {
                 if (string.IsNullOrEmpty(m_appset[SIGNATURE_CACHE_PATH]))
-                {
-#if DEBUG
-                    return System.IO.Path.Combine(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "TEMP"), "Duplicati Signature Cache");
-#else
-                    return System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Duplicati Signature Cache");
-#endif
-                }
+                    return System.IO.Path.Combine(Environment.ExpandEnvironmentVariables("%DUPLICATI_HOME%").TrimStart('"').TrimEnd('"'), "Signature Cache");
                 else
                     return m_appset[SIGNATURE_CACHE_PATH];
             }
