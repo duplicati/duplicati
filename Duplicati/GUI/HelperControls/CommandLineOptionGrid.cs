@@ -43,6 +43,8 @@ namespace Duplicati.GUI.HelperControls
                 MessageBox.Show(this, Strings.CommandLineOptionsGrid.PageNotSupportedWarning, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 m_unsupported = true;
             }
+
+            MonoSupport.FixTextBoxes(this);
         }
 
         public bool Unsupported { get { return m_unsupported; } }
@@ -99,7 +101,11 @@ namespace Duplicati.GUI.HelperControls
             DataRow r = OverrideTable.Rows[e.RowIndex];
             Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument)r["argument"];
 
-            InfoLabel.Text = string.Format(Strings.CommandLineOptionsGrid.InfoLabelFormat, arg.Typename, arg.ShortDescription, arg.LongDescription);
+            string typename = arg.Typename;
+            if (arg.ValidValues != null && arg.ValidValues.Length > 0)
+                typename += ": " + string.Join(", ", arg.ValidValues);
+
+            InfoLabel.Text = string.Format(Strings.CommandLineOptionsGrid.InfoLabelFormat, typename, arg.ShortDescription, arg.LongDescription);
         }
 
         private void OptionsGrid_CellEndEdit(object sender, DataGridViewCellEventArgs e)

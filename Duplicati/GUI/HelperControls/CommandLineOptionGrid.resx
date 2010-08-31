@@ -117,45 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="InfoLabel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
-    <value>Bottom</value>
-  </data>
-  <data name="InfoLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="InfoLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 151</value>
-  </data>
-  <data name="InfoLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>471, 64</value>
-  </data>
-  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="InfoLabel.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="InfoLabel.Text" xml:space="preserve">
-    <value>Description panel</value>
-  </data>
-  <data name="&gt;&gt;InfoLabel.Name" xml:space="preserve">
-    <value>InfoLabel</value>
-  </data>
-  <data name="&gt;&gt;InfoLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;InfoLabel.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;InfoLabel.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
   <metadata name="BaseDataSet.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
   <data name="enabledDataGridViewCheckBoxColumn.HeaderText" xml:space="preserve">
     <value>Enabled</value>
   </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="enabledDataGridViewCheckBoxColumn.Width" type="System.Int32, mscorlib">
     <value>50</value>
   </data>
@@ -180,14 +148,16 @@
   <data name="argumentDataGridViewTextBoxColumn.Width" type="System.Int32, mscorlib">
     <value>5</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="OptionsGrid.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Fill</value>
   </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="OptionsGrid.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="OptionsGrid.Size" type="System.Drawing.Size, System.Drawing">
-    <value>471, 151</value>
+    <value>471, 152</value>
   </data>
   <data name="OptionsGrid.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -203,6 +173,36 @@
   </data>
   <data name="&gt;&gt;OptionsGrid.ZOrder" xml:space="preserve">
     <value>0</value>
+  </data>
+  <data name="InfoLabel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Bottom</value>
+  </data>
+  <data name="InfoLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 152</value>
+  </data>
+  <data name="InfoLabel.Multiline" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="InfoLabel.ScrollBars" type="System.Windows.Forms.ScrollBars, System.Windows.Forms">
+    <value>Vertical</value>
+  </data>
+  <data name="InfoLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>471, 63</value>
+  </data>
+  <data name="InfoLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;InfoLabel.Name" xml:space="preserve">
+    <value>InfoLabel</value>
+  </data>
+  <data name="&gt;&gt;InfoLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;InfoLabel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;InfoLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
@@ -249,6 +249,12 @@
   <data name="&gt;&gt;argumentDataColumn.Type" xml:space="preserve">
     <value>System.Data.DataColumn, System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="&gt;&gt;validatedDataColumn.Name" xml:space="preserve">
+    <value>validatedDataColumn</value>
+  </data>
+  <data name="&gt;&gt;validatedDataColumn.Type" xml:space="preserve">
+    <value>System.Data.DataColumn, System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="&gt;&gt;enabledDataGridViewCheckBoxColumn.Name" xml:space="preserve">
     <value>enabledDataGridViewCheckBoxColumn</value>
   </data>
@@ -272,12 +278,6 @@
   </data>
   <data name="&gt;&gt;argumentDataGridViewTextBoxColumn.Type" xml:space="preserve">
     <value>System.Windows.Forms.DataGridViewTextBoxColumn, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;validatedDataColumn.Name" xml:space="preserve">
-    <value>validatedDataColumn</value>
-  </data>
-  <data name="&gt;&gt;validatedDataColumn.Type" xml:space="preserve">
-    <value>System.Data.DataColumn, System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>CommandLineOptionGrid</value>

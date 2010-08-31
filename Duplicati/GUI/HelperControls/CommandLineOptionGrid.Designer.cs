@@ -29,28 +29,23 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CommandLineOptionGrid));
-            this.InfoLabel = new System.Windows.Forms.Label();
             this.BaseDataSet = new System.Data.DataSet();
             this.OverrideTable = new System.Data.DataTable();
             this.EnabledDataColumn = new System.Data.DataColumn();
             this.NameDataColumn = new System.Data.DataColumn();
             this.ValueDataColumn = new System.Data.DataColumn();
             this.argumentDataColumn = new System.Data.DataColumn();
+            this.validatedDataColumn = new System.Data.DataColumn();
             this.OptionsGrid = new System.Windows.Forms.DataGridView();
             this.enabledDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.valueDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.argumentDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.validatedDataColumn = new System.Data.DataColumn();
+            this.InfoLabel = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.BaseDataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OverrideTable)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OptionsGrid)).BeginInit();
             this.SuspendLayout();
-            // 
-            // InfoLabel
-            // 
-            resources.ApplyResources(this.InfoLabel, "InfoLabel");
-            this.InfoLabel.Name = "InfoLabel";
             // 
             // BaseDataSet
             // 
@@ -89,6 +84,13 @@
             this.argumentDataColumn.Caption = "argument";
             this.argumentDataColumn.ColumnName = "argument";
             this.argumentDataColumn.DataType = typeof(object);
+            // 
+            // validatedDataColumn
+            // 
+            this.validatedDataColumn.AllowDBNull = false;
+            this.validatedDataColumn.ColumnName = "validated";
+            this.validatedDataColumn.DataType = typeof(bool);
+            this.validatedDataColumn.DefaultValue = false;
             // 
             // OptionsGrid
             // 
@@ -136,12 +138,12 @@
             resources.ApplyResources(this.argumentDataGridViewTextBoxColumn, "argumentDataGridViewTextBoxColumn");
             this.argumentDataGridViewTextBoxColumn.Name = "argumentDataGridViewTextBoxColumn";
             // 
-            // validatedDataColumn
+            // InfoLabel
             // 
-            this.validatedDataColumn.AllowDBNull = false;
-            this.validatedDataColumn.ColumnName = "validated";
-            this.validatedDataColumn.DataType = typeof(bool);
-            this.validatedDataColumn.DefaultValue = false;
+            this.InfoLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            resources.ApplyResources(this.InfoLabel, "InfoLabel");
+            this.InfoLabel.Name = "InfoLabel";
+            this.InfoLabel.ReadOnly = true;
             // 
             // CommandLineOptionGrid
             // 
@@ -154,12 +156,12 @@
             ((System.ComponentModel.ISupportInitialize)(this.OverrideTable)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.OptionsGrid)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Label InfoLabel;
         private System.Data.DataSet BaseDataSet;
         private System.Data.DataTable OverrideTable;
         private System.Data.DataColumn EnabledDataColumn;
@@ -172,5 +174,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn valueDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn argumentDataGridViewTextBoxColumn;
         private System.Data.DataColumn validatedDataColumn;
+        private System.Windows.Forms.TextBox InfoLabel;
     }
 }
