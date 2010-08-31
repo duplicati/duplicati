@@ -122,7 +122,7 @@
   </data>
   <data name="MissingSCPWarning" xml:space="preserve">
     <value>Duplicati was unable to verify the existence of the sftp program.
-sfpt may work regardless, if it is located in the system search path.
+sftp may work regardless, if it is located in the system search path.
 
 Do you want to continue anyway?</value>
   </data>

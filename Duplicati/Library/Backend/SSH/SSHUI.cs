@@ -344,12 +344,13 @@ namespace Duplicati.Library.Backend
             if (debug)
                 commandlineOptions["debug-to-console"] = "";
 
-            bool useUnmanaged;
-            if (!guiOptions.ContainsKey(USE_UNMANAGED_SSH) || !bool.TryParse(guiOptions[USE_UNMANAGED_SSH], out useUnmanaged))
-                useUnmanaged = false;
+            bool useUnmanaged = guiOptions.ContainsKey(USE_UNMANAGED_SSH) ? Core.Utility.ParseBool(guiOptions[USE_UNMANAGED_SSH], false) : false;
 
             if (useUnmanaged)
+            {
                 commandlineOptions[SSH.USE_UNMANAGED_OPTION] = "";
+                commandlineOptions["disable-streaming-transfers"] = "";
+            }
 
             if (!guiOptions.ContainsKey(HOST))
                 throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, HOST));
