@@ -1180,7 +1180,7 @@ namespace Duplicati.Library.Main.RSync
                             m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFolderWriteTime, t.Key, ex.Message));
                         }
 
-            m_folderTimeStamps = null;
+            m_folderTimestamps = null;
         }
 
         /// <summary>
