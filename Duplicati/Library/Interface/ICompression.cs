@@ -113,6 +113,14 @@ namespace Duplicati.Library.Interface
         System.IO.Stream CreateFile(string file);
 
         /// <summary>
+        /// Creates a file in the archive
+        /// </summary>
+        /// <param name="file">The file to create</param>
+        /// <param name="lastWrite">The time the file was last written</param>
+        /// <returns>A stream with the data to write into the file</returns>
+        System.IO.Stream CreateFile(string file, DateTime lastWrite);
+
+        /// <summary>
         /// Deletes the named directory, if it is empty
         /// </summary>
         /// <param name="file">The directory to remove</param>

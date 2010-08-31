@@ -174,4 +174,12 @@
   <data name="SnapshotFailedError" xml:space="preserve">
     <value>Failed to create a snapshot: {0}</value>
   </data>
+  <data name="FailedToSetFileWriteTime" xml:space="preserve">
+    <value>Failed to set the write time for the file: {0}.
+Error message: {1}</value>
+  </data>
+  <data name="FailedToSetFolderWriteTime" xml:space="preserve">
+    <value>Failed to set the write time for the folder: {0}.
+Error message: {1}</value>
+  </data>
 </root>

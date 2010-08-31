@@ -166,10 +166,27 @@ namespace Duplicati.Library.Compression
         /// Creates a new empty file
         /// </summary>
         /// <param name="file">The name of the file to create</param>
+        /// <param name="lastWrite">The time the file was last written</param>
         /// <returns>The stream used to access the file</returns>
         public System.IO.Stream CreateFile(string file)
         {
-            return System.IO.File.Create(System.IO.Path.Combine(m_folder, file));
+            return CreateFile(file, DateTime.Now);
+        }
+
+        /// <summary>
+        /// Creates a new empty file
+        /// </summary>
+        /// <param name="file">The name of the file to create</param>
+        /// <param name="lastWrite">The time the file was last written</param>
+        /// <returns>The stream used to access the file</returns>
+        public System.IO.Stream CreateFile(string file, DateTime lastWrite)
+        {
+            string path = System.IO.Path.Combine(m_folder, file);
+            System.IO.Stream res = System.IO.File.Create(path);
+
+            //TODO: This should actually be set when closing the stream
+            System.IO.File.SetLastWriteTime(path, lastWrite);
+            return res;
         }
 
         /// <summary>

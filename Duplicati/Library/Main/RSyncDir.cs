@@ -30,6 +30,11 @@ namespace Duplicati.Library.Main.RSync
     public class RSyncDir : IDisposable
     {
         /// <summary>
+        /// This is the time offset for all timestamps (unix style)
+        /// </summary>
+        private static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
+
+        /// <summary>
         /// The possible filetypes in an archive
         /// </summary>
         public enum PatchFileType
@@ -85,14 +90,21 @@ namespace Duplicati.Library.Main.RSync
             private string m_prefix;
 
             /// <summary>
+            /// A value indicating if the archive dates are in UTC format
+            /// </summary>
+            private bool m_isDateInUtc;
+
+            /// <summary>
             /// Constructs a new ArchiveWrapper with a given prefix
             /// </summary>
             /// <param name="arch">The archive to wrap</param>
+            /// <param name="isUtc">A value indicating if the dates are in UTC format</param>
             /// <param name="prefix">The prefix to use</param>
             public ArchiveWrapper(Library.Interface.ICompression arch, string prefix)
             {
                 m_archive = arch;
                 m_prefix = prefix;
+                m_isDateInUtc = arch.FileExists(UTC_TIME_MARKER);
             }
 
             /// <summary>
@@ -106,13 +118,16 @@ namespace Duplicati.Library.Main.RSync
             }
 
             /// <summary>
-            /// Gets the last time the file was modified
+            /// Gets the last time the file was modified, in UTC format
             /// </summary>
             /// <param name="relpath"The path to the file, excluding the prefix></param>
             /// <returns>The last time the file was modified</returns>
             internal DateTime GetLastWriteTime(string relpath)
             {
-                return m_archive.GetLastWriteTime(System.IO.Path.Combine(m_prefix, relpath));
+                DateTime t = m_archive.GetLastWriteTime(System.IO.Path.Combine(m_prefix, relpath));
+                if (!m_isDateInUtc)
+                    t = t.ToUniversalTime();
+                return t;
             }
         }
 
@@ -126,8 +141,9 @@ namespace Duplicati.Library.Main.RSync
             private System.IO.FileStream m_fs;
             private System.IO.Stream m_signatureStream;
             private string m_signaturePath;
+            private DateTime m_lastWrite;
 
-            public PartialFileEntry(string filename, string relname, long position, System.IO.Stream signatureFile, string signaturePath)
+            public PartialFileEntry(string filename, string relname, long position, System.IO.Stream signatureFile, string signaturePath, DateTime lastWrite)
             {
                 m_fs = System.IO.File.OpenRead(filename);
                 m_fs.Position = position;
@@ -135,9 +151,10 @@ namespace Duplicati.Library.Main.RSync
                 this.tempfile = null;
                 this.m_signatureStream = signatureFile;
                 this.m_signaturePath = signaturePath;
+                this.m_lastWrite = lastWrite;
             }
 
-            public PartialFileEntry(Core.TempFile tempfile, string relname, long position, System.IO.Stream signatureFile, string signaturePath)
+            public PartialFileEntry(Core.TempFile tempfile, string relname, long position, System.IO.Stream signatureFile, string signaturePath, DateTime lastWrite)
             {
                 m_fs = System.IO.File.OpenRead(tempfile);
                 m_fs.Position = position;
@@ -145,9 +162,11 @@ namespace Duplicati.Library.Main.RSync
                 this.tempfile = tempfile;
                 this.m_signatureStream = signatureFile;
                 this.m_signaturePath = signaturePath;
+                this.m_lastWrite = lastWrite;
             }
 
             public System.IO.FileStream Stream { get { return m_fs; } }
+            public DateTime LastWriteTime { get { return m_lastWrite; } }
 
             public void DumpSignature(Library.Interface.ICompression signatureArchive)
             {
@@ -156,14 +175,14 @@ namespace Duplicati.Library.Main.RSync
                 //If signature is present, but not content, the entire differential sequence will be unable to recover the file
 
                 using (m_signatureStream)
-                using (System.IO.Stream s3 = signatureArchive.CreateFile(this.m_signaturePath))
+                using (System.IO.Stream s3 = signatureArchive.CreateFile(this.m_signaturePath, m_lastWrite))
                     Core.Utility.CopyStream(m_signatureStream, s3, true);
                 
                 m_signatureStream = null;
             }
 
             /// <summary>
-            /// Gets a value representing a rough estimate of how many bytes this partial entry will use when written to the datastream.s
+            /// Gets a value representing a rough estimate of how many bytes this partial entry will use when written to the datastream.
             /// </summary>
             public long ExtraSize { get { return relativeName.Length + 100; } }
 
@@ -246,9 +265,12 @@ namespace Duplicati.Library.Main.RSync
         internal static readonly string DELETED_FOLDERS = "deleted_folders.txt";
 
         internal static readonly string ADDED_FOLDERS = "added_folders.txt";
+        internal static readonly string ADDED_FOLDERS_TIMESTAMPS = "added_folders_timestamps.txt";
         internal static readonly string INCOMPLETE_FILE = "incomplete_file.txt";
         internal static readonly string COMPLETED_FILE = "completed_file.txt";
-
+        internal static readonly string UTC_TIME_MARKER = "utc-times";
+        internal static readonly string UPDATED_FOLDERS = "updated_folders.txt";
+        internal static readonly string UPDATED_FOLDERS_TIMESTAMPS = "updated_folders_timestamps.txt";
 
         public delegate void ProgressEventDelegate(int progress, string filename);
         public event ProgressEventDelegate ProgressEvent;
@@ -268,7 +290,7 @@ namespace Duplicati.Library.Main.RSync
         /// <summary>
         /// This is a list of existing folders.
         /// </summary>
-        private Dictionary<string, string> m_oldFolders;
+        private Dictionary<string, DateTime> m_oldFolders;
 
         /// <summary>
         /// This is the list of added files
@@ -285,7 +307,11 @@ namespace Duplicati.Library.Main.RSync
         /// <summary>
         /// This is the list of added folders
         /// </summary>
-        private List<string> m_newfolders;
+        private List<KeyValuePair<string, DateTime>> m_newfolders;
+        /// <summary>
+        /// This is the list of updated folders
+        /// </summary>
+        private List<KeyValuePair<string, DateTime>> m_updatedfolders;
         /// <summary>
         /// This is the list of deleted folders
         /// </summary>
@@ -374,6 +400,11 @@ namespace Duplicati.Library.Main.RSync
         private Dictionary<string, Core.TempFile> m_partialDeltas;
 
         /// <summary>
+        /// A list of timestamps to be assigned to the folders during restore finalization
+        /// </summary>
+        private Dictionary<string, DateTime> m_folderTimestamps;
+
+        /// <summary>
         /// A list of folders that should be deleted after the current restore operation has completed
         /// </summary>
         private List<string> m_folders_to_delete;
@@ -418,8 +449,37 @@ namespace Duplicati.Library.Main.RSync
                             m_oldFolders.Remove(s);
 
                 if (z.FileExists(ADDED_FOLDERS))
-                    foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(ADDED_FOLDERS)))
-                        m_oldFolders[s] = s;
+                {
+                    DateTime t = z.GetLastWriteTime(ADDED_FOLDERS).ToUniversalTime();
+                    string[] filenames = FilenamesFromPlatformIndependant(z.ReadAllLines(ADDED_FOLDERS));
+
+                    if (z.FileExists(ADDED_FOLDERS_TIMESTAMPS))
+                    {
+                        string[] timestamps = z.ReadAllLines(ADDED_FOLDERS_TIMESTAMPS);
+                        long l;
+                        for(int i = 0; i < Math.Min(filenames.Length, timestamps.Length); i++)
+                            if (long.TryParse(timestamps[i], out l))
+                                m_oldFolders[filenames[i]] = EPOCH.AddSeconds(l);
+                            else
+                                m_oldFolders[filenames[i]] = t;
+                    }
+                    else
+                    {
+                        foreach (string s in filenames)
+                            m_oldFolders[s] = t;
+                    }
+                }
+
+                if (z.FileExists(UPDATED_FOLDERS) && z.FileExists(UPDATED_FOLDERS_TIMESTAMPS))
+                {
+                    string[] filenames = FilenamesFromPlatformIndependant(z.ReadAllLines(UPDATED_FOLDERS));
+                    string[] timestamps = z.ReadAllLines(UPDATED_FOLDERS_TIMESTAMPS);
+                    long l;
+
+                    for (int i = 0; i < Math.Min(filenames.Length, timestamps.Length); i++)
+                        if (long.TryParse(timestamps[i], out l))
+                            m_oldFolders[filenames[i]] = EPOCH.AddSeconds(l);
+                }
             }
         }
 
@@ -433,7 +493,7 @@ namespace Duplicati.Library.Main.RSync
         {
             m_filter = filter;
             m_oldSignatures = new Dictionary<string, ArchiveWrapper>();
-            m_oldFolders = new Dictionary<string, string>();
+            m_oldFolders = new Dictionary<string, DateTime>();
             for (int i = 0; i < sourcefolder.Length; i++)
             {
                 if (!System.IO.Path.IsPathRooted(sourcefolder[i]))
@@ -478,14 +538,15 @@ namespace Duplicati.Library.Main.RSync
         {
             if (full)
             {
-                m_oldFolders = new Dictionary<string, string>();
+                m_oldFolders = new Dictionary<string, DateTime>();
                 m_oldSignatures = new Dictionary<string, ArchiveWrapper>();
             }
 
             m_newfiles = new Dictionary<string, string>();
             m_modifiedFiles = new Dictionary<string, string>();
             m_deletedfiles = new List<string>();
-            m_newfolders = new List<string>();
+            m_newfolders = new List<KeyValuePair<string, DateTime>>();
+            m_updatedfolders = new List<KeyValuePair<string, DateTime>>();
             m_deletedfolders = new List<string>();
             m_lastPartialFile = null;
 
@@ -525,10 +586,19 @@ namespace Duplicati.Library.Main.RSync
                 string relpath = GetRelativeName(s);
                 if (relpath.Trim().Length != 0)
                 {
+                    DateTime lastWrite = Directory.GetLastWriteTimeUtc(s);
+
+                    //Cut off as we only have seconds stored
+                    lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second);
+
                     if (!m_oldFolders.ContainsKey(relpath))
-                        m_newfolders.Add(relpath);
+                        m_newfolders.Add(new KeyValuePair<string, DateTime>(relpath, lastWrite));
                     else
+                    {
+                        if (m_oldFolders[relpath] != lastWrite)
+                            m_updatedfolders.Add(new KeyValuePair<string,DateTime>(relpath, lastWrite));
                         m_oldFolders.Remove(relpath);
+                    }
                 }
             }
 
@@ -698,6 +768,10 @@ namespace Duplicati.Library.Main.RSync
             Random r = new Random();
             long totalSize = 0;
 
+            //Insert the marker file
+            contentfile.CreateFile(UTC_TIME_MARKER).Dispose();
+            signaturefile.CreateFile(UTC_TIME_MARKER).Dispose();
+
             if (m_isfirstmultipass)
             {
                 //We write these files to the very first volume
@@ -709,8 +783,39 @@ namespace Duplicati.Library.Main.RSync
 
                 if (m_newfolders.Count > 0)
                 {
-                    signaturefile.WriteAllLines(ADDED_FOLDERS, m_newfolders.ToArray());
-                    contentfile.WriteAllLines(ADDED_FOLDERS, m_newfolders.ToArray());
+                    string[] folders = new string[m_newfolders.Count];
+                    string[] timestamps = new string[m_newfolders.Count];
+
+                    for (int i = 0; i < m_newfolders.Count; i++)
+                    {
+                        folders[i] = m_newfolders[i].Key;
+                        timestamps[i] = ((long)((m_newfolders[i].Value - EPOCH).TotalSeconds)).ToString();
+                    }
+
+                    folders = FilenamesToPlatformIndependant(folders);
+
+                    signaturefile.WriteAllLines(ADDED_FOLDERS, folders);
+                    signaturefile.WriteAllLines(ADDED_FOLDERS_TIMESTAMPS, timestamps);
+                    contentfile.WriteAllLines(ADDED_FOLDERS, folders);
+                    contentfile.WriteAllLines(ADDED_FOLDERS_TIMESTAMPS, timestamps);
+                }
+
+                if (m_updatedfolders.Count > 0)
+                {
+                    string[] folders = new string[m_updatedfolders.Count];
+                    string[] timestamps = new string[m_updatedfolders.Count];
+                    for (int i = 0; i < m_updatedfolders.Count; i++)
+                    {
+                        folders[i] = m_updatedfolders[i].Key;
+                        timestamps[i] = ((long)((m_updatedfolders[i].Value - EPOCH).TotalSeconds)).ToString();
+                    }
+
+                    folders = FilenamesToPlatformIndependant(folders);
+
+                    signaturefile.WriteAllLines(UPDATED_FOLDERS, folders);
+                    signaturefile.WriteAllLines(UPDATED_FOLDERS_TIMESTAMPS, timestamps);
+                    contentfile.WriteAllLines(UPDATED_FOLDERS, folders);
+                    contentfile.WriteAllLines(UPDATED_FOLDERS_TIMESTAMPS, timestamps);
                 }
 
                 m_isfirstmultipass = false;
@@ -747,7 +852,11 @@ namespace Duplicati.Library.Main.RSync
                         string relpath = GetRelativeName(s);
                         if (m_oldSignatures.ContainsKey(relpath))
                         {
-                            DateTime lastWrite = m_snapshot.GetLastWriteTime(s);
+                            DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
+
+                            //Cut off as we only preserve precision in seconds
+                            lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second);
+
                             if (lastWrite < m_oldSignatures[relpath].GetLastWriteTime(relpath))
                             {
                                 m_oldSignatures.Remove(relpath);
@@ -763,6 +872,11 @@ namespace Duplicati.Library.Main.RSync
                     {
                         using (System.IO.Stream fs = m_snapshot.OpenRead(s))
                         {
+                            DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
+                            
+                            //Cut off as we only preserve precision in seconds
+                            lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second);
+
                             if (fs.Length > m_maxFileSize)
                                 m_unproccesed.FilesTooLarge.Add(s);
                             else
@@ -773,7 +887,7 @@ namespace Duplicati.Library.Main.RSync
 
                                 System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
                                 if (signature != null)
-                                    totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile, volumesize);
+                                    totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile, volumesize, lastWrite);
                             }
                         }
                     }
@@ -851,8 +965,9 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="contentfile">The content archive file</param>
         /// <param name="signaturefile">The signature stream to add</param>
         /// <param name="volumesize">The max size of the volume</param>
+        /// <param name="lastWrite">The time the source file was last written</param>
         /// <returns>The current size of the content archive</returns>
-        private long AddFileToCompression(System.IO.Stream fs, string s, System.IO.Stream signature, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize)
+        private long AddFileToCompression(System.IO.Stream fs, string s, System.IO.Stream signature, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize, DateTime lastWrite)
         {
             fs.Position = 0;
             signature.Position = 0;
@@ -875,7 +990,7 @@ namespace Duplicati.Library.Main.RSync
                         using (System.IO.FileStream s3 = System.IO.File.Create(deltaTemp))
                             SharpRSync.Interface.GenerateDelta(sigfs, fs, s3);
 
-                        m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(deltaTemp, target, 0, signature, signaturepath), contentfile, signaturefile, volumesize);
+                        m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(deltaTemp, target, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
                     }
                     catch
                     {
@@ -898,7 +1013,7 @@ namespace Duplicati.Library.Main.RSync
                 string signaturepath = System.IO.Path.Combine(CONTENT_SIGNATURE_ROOT, relpath);
                 string target = System.IO.Path.Combine(CONTENT_ROOT, relpath);
 
-                m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(s, target, 0, signature, signaturepath), contentfile, signaturefile, volumesize);
+                m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(s, target, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
                 
                 m_addedfiles++;
                 m_addedfilessize += fs.Length;
@@ -973,7 +1088,7 @@ namespace Duplicati.Library.Main.RSync
         {
             //append chuncks of 1kb, checking on the total size after each write
             byte[] tmp = new byte[1024];
-            using (System.IO.Stream s3 = contentfile.CreateFile(entry.relativeName))
+            using (System.IO.Stream s3 = contentfile.CreateFile(entry.relativeName, entry.LastWriteTime))
             {
                 int a;
                 while ((a = entry.Stream.Read(tmp, 0, tmp.Length)) != 0)
@@ -1055,6 +1170,17 @@ namespace Duplicati.Library.Main.RSync
                 }
                 m_partialDeltas = null;
             }
+
+            if (m_folderTimestamps != null)
+                foreach (KeyValuePair<string, DateTime> t in m_folderTimestamps)
+                    if (System.IO.Directory.Exists(t.Key))
+                        try { System.IO.Directory.SetLastWriteTimeUtc(t.Key, t.Value); }
+                        catch (Exception ex)
+                        {
+                            m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFolderWriteTime, t.Key, ex.Message));
+                        }
+
+            m_folderTimeStamps = null;
         }
 
         /// <summary>
@@ -1130,8 +1256,13 @@ namespace Duplicati.Library.Main.RSync
             if (m_partialDeltas == null)
                 m_partialDeltas = new Dictionary<string, Duplicati.Library.Core.TempFile>();
 
+            if (m_folderTimestamps == null)
+                m_folderTimestamps = new Dictionary<string, DateTime>();
+
             for (int i = 0; i < destination.Length; i++)
                 destination[i] = Core.Utility.AppendDirSeperator(destination[i]);
+
+            bool isUtc = patch.FileExists(UTC_TIME_MARKER);
 
             //Set up the filter system to avoid dealing with filtered items
             FilterHelper fh = new FilterHelper(this, destination, m_filter);
@@ -1202,6 +1333,28 @@ namespace Duplicati.Library.Main.RSync
                 }
             }
 
+            if (patch.FileExists(ADDED_FOLDERS_TIMESTAMPS))
+            {
+                //These times are always utc
+                string[] folders = FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS));
+                string[] timestamps = patch.ReadAllLines(ADDED_FOLDERS_TIMESTAMPS);
+
+                for (int i = 0; i < folders.Length; i++)
+                    m_folderTimestamps[RSyncDir.GetFullPathFromRelname(destination, folders[i])] = EPOCH.AddSeconds(long.Parse(timestamps[i]));
+            }
+
+            if (patch.FileExists(UPDATED_FOLDERS) && patch.FileExists(UPDATED_FOLDERS_TIMESTAMPS))
+            {
+                //These times are always utc
+                string[] folders = FilenamesFromPlatformIndependant(patch.ReadAllLines(UPDATED_FOLDERS));
+                string[] timestamps = patch.ReadAllLines(UPDATED_FOLDERS_TIMESTAMPS);
+                long l;
+
+                for (int i = 0; i < folders.Length; i++)
+                    if (long.TryParse(timestamps[i], out l))
+                        m_folderTimestamps[RSyncDir.GetFullPathFromRelname(destination, folders[i])] = EPOCH.AddSeconds(l);
+            }
+
             PartialEntryRecord pe = null;
             if (patch.FileExists(INCOMPLETE_FILE))
                 pe = new PartialEntryRecord(patch.ReadAllLines(INCOMPLETE_FILE));
@@ -1260,6 +1413,18 @@ namespace Duplicati.Library.Main.RSync
                             System.IO.File.Move(partialFile, target);
                             partialFile.Dispose();
                             m_partialDeltas.Remove(s);
+                        }
+                    }
+
+                    if (File.Exists(target))
+                    {
+                        DateTime t = patch.GetLastWriteTime(s);
+                        if (!isUtc)
+                            t = t.ToUniversalTime();
+                        try { File.SetLastWriteTimeUtc(target, t); }
+                        catch (Exception ex)
+                        {
+                            m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message));
                         }
                     }
                 }
@@ -1337,6 +1502,19 @@ namespace Duplicati.Library.Main.RSync
                         System.IO.File.Delete(target);
                         System.IO.File.Move(tempfile, target);
                     }
+
+                    if (File.Exists(target))
+                    {
+                        DateTime t = patch.GetLastWriteTime(s);
+                        if (!isUtc)
+                            t = t.ToUniversalTime();
+                        
+                        try { File.SetLastWriteTimeUtc(target, t); }
+                        catch (Exception ex)
+                        {
+                            m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message));
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1347,7 +1525,6 @@ namespace Duplicati.Library.Main.RSync
                     try { System.IO.File.Delete(target); }
                     catch { }
                 }
-
             }
         }
 

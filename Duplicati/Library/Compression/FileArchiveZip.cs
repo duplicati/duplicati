@@ -332,6 +332,17 @@ namespace Duplicati.Library.Compression
         /// <returns>A writeable stream for the file contents</returns>
         public System.IO.Stream CreateFile(string file)
         {
+            return CreateFile(file, DateTime.Now);
+        }
+
+        /// <summary>
+        /// Creates a file in the archive and returns a writeable stream
+        /// </summary>
+        /// <param name="file">The name of the file to create</param>
+        /// <param name="lastWrite">The time the file was last written</param>
+        /// <returns>A writeable stream for the file contents</returns>
+        public System.IO.Stream CreateFile(string file, DateTime lastWrite)
+        {
 #if !SHARPZIPLIBWORKS
             if (m_stream == null)
                 throw new Exception(Strings.FileArchiveZip.AttemptWriteWhileReadingError);
@@ -344,8 +355,8 @@ namespace Duplicati.Library.Compression
 
             return new StreamWrapper(new Duplicati.Library.Core.TempFile(), entryname, m_zip);
 #else
-            //This automatically sets DateTime to now
             ICSharpCode.SharpZipLib.Zip.ZipEntry ze = new ICSharpCode.SharpZipLib.Zip.ZipEntry(entryname);
+            ze.DateTime = lastWrite;
             
             //Encode filenames as unicode, we do this for all files, to avoid codepage issues
             ze.Flags |= (int)ICSharpCode.SharpZipLib.Zip.GeneralBitFlags.UnicodeText;
@@ -439,7 +450,7 @@ namespace Duplicati.Library.Compression
         {
 #if !SHARPZIPLIBWORKS
             if (m_zip == null)
-                throw new Exception(Strings.FileArchiveZip.AttemptReadWhileWritingError);
+                throw new Exception(Strings.FileArchiveZip.AttemptWriteWhileReadingError);
 #endif
             if (GetEntry(file) != null)
                 return GetEntry(file).DateTime;
