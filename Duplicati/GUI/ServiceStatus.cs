@@ -51,6 +51,7 @@ namespace Duplicati.GUI
             Program.Scheduler.NewSchedule += new EventHandler(Scheduler_NewSchedule);
             Program.Runner.DuplicatiProgress += new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
             Program.LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
+            Program.DataConnection.AfterDataConnection += new System.Data.LightDatamodel.DataConnectionEventHandler(DataConnection_AfterDataConnection);
 
             LiveControl_StateChanged(null, null);
 
@@ -61,6 +62,13 @@ namespace Duplicati.GUI
 
             if (Program.WorkThread.CurrentTask != null)
                 Program.Runner.ReinvokeLastProgressEvent();
+        }
+
+        private delegate void EmptyDelegate();
+        private void DataConnection_AfterDataConnection(object sender, System.Data.LightDatamodel.DataActions action)
+        {
+            if (action != System.Data.LightDatamodel.DataActions.Fetch)
+                this.BeginInvoke(new EmptyDelegate(BuildRecent));
         }
 
         void LiveControl_StateChanged(object sender, EventArgs e)
@@ -136,6 +144,7 @@ namespace Duplicati.GUI
 
         void ServiceStatus_FormClosed(object sender, FormClosedEventArgs e)
         {
+            Program.DataConnection.AfterDataConnection -= new System.Data.LightDatamodel.DataConnectionEventHandler(DataConnection_AfterDataConnection);
             Program.WorkThread.StartingWork -= new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
             Program.WorkThread.AddedWork -= new EventHandler(WorkThread_AddedWork);
@@ -220,7 +229,6 @@ namespace Duplicati.GUI
             this.Top = Screen.PrimaryScreen.WorkingArea.Height - this.Height;
             this.Left = Screen.PrimaryScreen.WorkingArea.Width - this.Width;
         }
-
 
         private void BuildRecent()
         {
