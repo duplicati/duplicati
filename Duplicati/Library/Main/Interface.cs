@@ -197,8 +197,12 @@ namespace Duplicati.Library.Main
                             entries.Add(backupsets[backupsets.Count - 1]);
                             entries.AddRange(backupsets[backupsets.Count - 1].Incrementals);
 
+                            //Check before we start the download
+                            CheckLiveControl();
                             patches = FindPatches(backend, entries, tempfolder);
 
+                            //Check before we start the download
+                            CheckLiveControl();
                             Manifestfile latest = GetManifest(backend, backupsets[0]);
 
                             //Manifest version 1 does not support multiple folders
@@ -1136,7 +1140,6 @@ namespace Duplicati.Library.Main
                 {
                     m_progress += unitCost;
 
-
                     OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, be.Time.ToShortDateString() + " " + be.Time.ToShortTimeString()), "");
 
                     Manifestfile manifest = GetManifest(backend, be);
@@ -1156,6 +1159,9 @@ namespace Duplicati.Library.Main
                         OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingSignatureFile, be.Time.ToShortDateString() + " " + be.Time.ToShortTimeString(), bes.Key.Volumenumber), "");
 
                         string filename = System.IO.Path.Combine(tempfolder, "patch-" + patches.Count.ToString() + ".zip");
+
+                        //Check just before we download stuff
+                        CheckLiveControl();
 
                         using (new Logging.Timer("Get " + bes.Key.Filename))
                             backend.Get(bes.Key, filename, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[bes.Key.Volumenumber - 1]);

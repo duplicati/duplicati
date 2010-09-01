@@ -179,6 +179,15 @@ namespace Duplicati.GUI
 
             Program.LiveControl.Pause();
             Program.Runner.Stop();
+
+            TrayIcon.Visible = false;
+            if (StatusDialog != null && StatusDialog.Visible)
+                StatusDialog.Close();
+            if (WizardDialog != null && WizardDialog.Visible)
+                WizardDialog.Close();
+
+            EnsureBackupIsTerminated();
+
             Application.Exit();
         }
 
@@ -304,6 +313,62 @@ namespace Duplicati.GUI
             }
 
             return false;
+        }
+
+        private void EnsureBackupIsTerminated()
+        {
+            if (Program.Runner != null && Program.WorkThread != null && Program.WorkThread.Active)
+            {
+                //Make sure no new items can enter the queue
+                if (Program.Scheduler != null)
+                    Program.Scheduler.Terminate(true);
+
+                //We want no new items to enter the queue
+                Program.WorkThread.Terminate(false);
+
+                Program.Runner.Pause();
+                if (!Program.Runner.IsStopRequested)
+                    Program.Runner.Stop();
+
+                //Wait 15 seconds to see if the stop works
+                for (int i = 0; i < 15; i++)
+                {
+                    Program.WorkThread.Join(1000);
+                    Application.DoEvents();
+                    if (!Program.WorkThread.Active)
+                        break;
+                }
+
+                while (Program.WorkThread.Active)
+                {
+                    //Ask the user if we should abort
+                    if (MessageBox.Show(Strings.Program.TerminateForExitQuestion, Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                    {
+                        //Abort the thread
+                        Program.Runner.Terminate();
+                        
+                        //Give last 5 second chance to write the remaining data
+                        int i = 5;
+                        while (i > 0 && !Program.WorkThread.Join(1000))
+                        {
+                            //The Join call blocks the main thread, so let pending events through
+                            Application.DoEvents();
+                            i--;
+                        }
+                        break;
+                    }
+
+                    //Wait 18 * 10 seconds = 3 minutes before asking again
+                    for (int i = 0; i < 18; i++)
+                    {
+                        Program.WorkThread.Join(1000 * 10);
+                        Application.DoEvents();
+
+                        if (!Program.WorkThread.Active)
+                            break;
+                    }
+                }
+            }
         }
     }
 }

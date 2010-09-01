@@ -574,6 +574,11 @@ namespace Duplicati.Library.Main
                     m_statistics.NumberOfRemoteCalls++;
                     return m_backend.List();
                 }
+                catch (System.Threading.ThreadAbortException tex)
+                {
+                    lastEx = tex;
+                    retries = 0;
+                }
                 catch (Exception ex)
                 {
                     lastEx = ex;
@@ -600,6 +605,11 @@ namespace Duplicati.Library.Main
                     m_statistics.NumberOfRemoteCalls++;
                     m_backend.Delete(remote.Filename);
                     lastEx = null;
+                }
+                catch (System.Threading.ThreadAbortException tex)
+                {
+                    lastEx = tex;
+                    retries = 0;
                 }
                 catch (Exception ex)
                 {
@@ -682,7 +692,7 @@ namespace Duplicati.Library.Main
                         {
                             try
                             {
-                                using(Library.Interface.IEncryption enc = DynamicLoader.EncryptionLoader.GetModule(remote.EncryptionMode, m_options.Passphrase, m_options.RawOptions))
+                                using (Library.Interface.IEncryption enc = DynamicLoader.EncryptionLoader.GetModule(remote.EncryptionMode, m_options.Passphrase, m_options.RawOptions))
                                     enc.Decrypt(tempfile, filename);
                             }
                             catch (Exception ex)
@@ -723,6 +733,11 @@ namespace Duplicati.Library.Main
                         {
                         }
                     }
+                }
+                catch (System.Threading.ThreadAbortException tex)
+                {
+                    lastEx = tex;
+                    retries = 0;
                 }
                 catch (Exception ex)
                 {
@@ -821,9 +836,8 @@ namespace Duplicati.Library.Main
                     }
                     catch (System.Threading.ThreadAbortException tex)
                     {
-                        //Do not retry after we are aborted
                         lastEx = tex;
-                        break;
+                        retries = 0;
                     }
                     catch (Exception ex)
                     {

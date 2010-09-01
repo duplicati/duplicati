@@ -273,6 +273,11 @@ namespace Duplicati.GUI
                 (m_form as Form).ShowDialog();
         }
 
+        public void Close()
+        {
+            if ((m_form as Form).Visible)
+                (m_form as Form).Close();
+        }
 
         private bool AskToResumeIfPaused()
         {

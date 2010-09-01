@@ -1558,17 +1558,26 @@ namespace Duplicati.Library.Main.RSync
             {
                 BackupStatistics bs = m_stat as BackupStatistics;
 
-                bs.DeletedFiles = m_deletedfiles.Count;
-                bs.DeletedFolders = m_deletedfolders.Count;
-                bs.ModifiedFiles = m_diffedfiles;
-                bs.AddedFiles = m_addedfiles;
-                bs.ExaminedFiles = m_examinedfiles;
-                bs.SizeOfModifiedFiles = m_diffedfilessize;
-                bs.SizeOfAddedFiles = m_addedfilessize;
-                bs.SizeOfExaminedFiles = m_examinedfilesize;
+                if (m_deletedfiles != null)
+                    bs.DeletedFiles = m_deletedfiles.Count;
+                if (m_deletedfolders != null)
+                    bs.DeletedFolders = m_deletedfolders.Count;
+                if (m_diffedfiles != null)
+                    bs.ModifiedFiles = m_diffedfiles;
+                if (m_addedfiles != null)
+                    bs.AddedFiles = m_addedfiles;
+                if (m_examinedfiles != null)
+                    bs.ExaminedFiles = m_examinedfiles;
+                if (m_diffedfilessize != null)
+                    bs.SizeOfModifiedFiles = m_diffedfilessize;
+                if (m_addedfilessize != null)
+                    bs.SizeOfAddedFiles = m_addedfilessize;
+                if (m_examinedfilesize != null)
+                    bs.SizeOfExaminedFiles = m_examinedfilesize;
                 if (m_unproccesed != null && m_unproccesed.Files != null)
                     bs.UnprocessedFiles = m_unproccesed.Files.Count;
-                bs.AddedFolders = m_newfolders.Count;
+                if (m_newfolders != null)
+                    bs.AddedFolders = m_newfolders.Count;
             }
 
             if (m_snapshot != null)

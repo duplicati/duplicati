@@ -59,6 +59,7 @@ namespace Duplicati.GUI
             string destination = task.GetConfiguration(options);
 
             string results = "";
+            bool isAbortException = false;
 
             try
             {
@@ -224,7 +225,12 @@ namespace Duplicati.GUI
             {
                 //TODO: Extract ex.Message and save it in seperate field in the database
                 if (ex is System.Threading.ThreadAbortException)
+                {
+                    isAbortException = true;
                     System.Threading.Thread.ResetAbort();
+                }
+                else if (ex is Library.Main.LiveControl.ExecutionStoppedException)
+                    isAbortException = true;
 
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
@@ -240,7 +246,7 @@ namespace Duplicati.GUI
 
             try
             {
-                if (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup)
+                if (!isAbortException && (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup))
                 {
                     if (task.Schedule.Task.KeepFull > 0)
                     {

@@ -207,38 +207,6 @@ namespace Duplicati.GUI
                 MessageBox.Show(string.Format(Strings.Program.SeriousError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
-            if (Runner != null && WorkThread != null && WorkThread.Active)
-            {
-                Runner.Pause();
-                if (!Runner.IsStopRequested)
-                    Runner.Stop();
-
-                //Wait 10 seconds to see if the stop works
-                for (int i = 0; i < 10; i++)
-                {
-                    System.Threading.Thread.Sleep(1000);
-                    if (!WorkThread.Active)
-                        break;
-                }
-
-                while (WorkThread.Active)
-                {
-                    if (MessageBox.Show(Strings.Program.TerminateForExitQuestion, Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
-                    {
-                        Runner.Terminate();
-                        System.Threading.Thread.Sleep(500);
-                        break;
-                    }
-
-                    //Wait 18 * 10 seconds = 3 minutes before asking again
-                    for (int i = 0; i < 18; i++)
-                    {
-                        System.Threading.Thread.Sleep(1000 * 10);
-                        if (!WorkThread.Active)
-                            break;
-                    }
-                }
-            }
 
             if (Scheduler != null)
                 Scheduler.Terminate(true);

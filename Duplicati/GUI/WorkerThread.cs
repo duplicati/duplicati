@@ -295,5 +295,17 @@ namespace Duplicati.GUI
             m_state = RunState.Paused;
             m_event.Set();
         }
+
+        /// <summary>
+        /// Waits the specified number of milliseconds for the thread to terminate
+        /// </summary>
+        /// <param name="millisecondTimeout">The number of milliseconds to wait</param>
+        /// <returns>True if the thread is terminated, false if a timeout occured</returns>
+        public bool Join(int millisecondTimeout)
+        {
+            if (m_thread != null)
+                return m_thread.Join(millisecondTimeout);
+            return true;
+        }
     }
 }
