@@ -37,6 +37,19 @@ namespace Duplicati.CommandLine
 
                 Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
 
+                //If we are on Windows, append the bundled "win-tools" programs to the search path
+                //We add it last, to allow the user to override with other versions
+                if (!Library.Core.Utility.IsClientLinux)
+                {
+                    Environment.SetEnvironmentVariable("PATH",
+                        Environment.GetEnvironmentVariable("PATH") +
+                        System.IO.Path.PathSeparator.ToString() +
+                        System.IO.Path.Combine(
+                            System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                            "win-tools")
+                    );
+                }
+
 #if DEBUG
                 if (cargs.Count > 1 && cargs[0].ToLower() == "unittest")
                 {

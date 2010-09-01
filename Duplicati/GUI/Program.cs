@@ -92,6 +92,19 @@ namespace Duplicati.GUI
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            //If we are on Windows, append the bundled "win-tools" programs to the search path
+            //We add it last, to allow the user to override with other versions
+            if (!Library.Core.Utility.IsClientLinux)
+            {
+                Environment.SetEnvironmentVariable("PATH",
+                    Environment.GetEnvironmentVariable("PATH") +
+                    System.IO.Path.PathSeparator.ToString() +
+                    System.IO.Path.Combine(
+                        System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                        "win-tools")
+                );
+            }
+
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DUPLICATI_HOME")))
             {

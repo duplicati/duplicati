@@ -136,6 +136,18 @@
     <None Include="Resources\Usage.txt" />
     <None Include="Resources\ExampleLinux.txt" />
     <None Include="Resources\ExampleWindows.txt" />
+    <Content Include="..\..\thirdparty\gpg\gpg.exe">
+      <Link>win-tools\gpg.exe</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gpg\iconv.dll">
+      <Link>win-tools\iconv.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\Putty\pscp.exe">
+      <Link>win-tools\pscp.exe</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="TrayWarning.ico" />
   </ItemGroup>
   <ItemGroup>
