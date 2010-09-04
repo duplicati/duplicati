@@ -133,6 +133,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A hash check failed, this is an indication of a corrupt file: {0}.
+        /// </summary>
+        internal static string FileHashFailure {
+            get {
+                return ResourceManager.GetString("FileHashFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Files are not deleted, use the --force command to actually remove files.
         /// </summary>
         internal static string FilesAreNotForceDeletedMessage {

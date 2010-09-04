@@ -733,10 +733,7 @@ namespace Duplicati.Library.Main.RSync
                         //The +100 is a safety margin
                         stringsize += System.Text.Encoding.UTF8.GetByteCount(DELETED_FILES) + 100;
                         if (contentfile.Size + contentfile.FlushBufferSize + stringsize > volumesize)
-                        {
-                            m_deletedfiles.Clear();
                             return false; //The followup cannot fit in the volume, so we make a full new volume
-                        }
 
                         signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
                         contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());

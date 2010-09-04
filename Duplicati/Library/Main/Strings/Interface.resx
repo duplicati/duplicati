@@ -141,6 +141,9 @@
   <data name="FailedToFindControlFilesMessage" xml:space="preserve">
     <value>Failed to find control files in: {0}</value>
   </data>
+  <data name="FileHashFailure" xml:space="preserve">
+    <value>A hash check failed, this is an indication of a corrupt file: {0}</value>
+  </data>
   <data name="FilesAreNotForceDeletedMessage" xml:space="preserve">
     <value>Files are not deleted, use the --force command to actually remove files</value>
   </data>

@@ -199,7 +199,7 @@ namespace Duplicati.Library.Main
 
                             //Check before we start the download
                             CheckLiveControl();
-                            patches = FindPatches(backend, entries, tempfolder);
+                            patches = FindPatches(backend, entries, tempfolder, true, bs);
 
                             //Check before we start the download
                             CheckLiveControl();
@@ -639,12 +639,10 @@ namespace Duplicati.Library.Main
                                 if (manifest.ContentHashes != null && contentVol.Volumenumber > manifest.ContentHashes.Count)
                                 {
                                     Logging.Log.WriteMessage(string.Format(Strings.Interface.SkippedContentVolumeLogMessage, contentVol.Volumenumber), Duplicati.Library.Logging.LogMessageType.Warning);
+                                    rs.LogWarning(string.Format(Strings.Interface.SkippedContentVolumeLogMessage, contentVol.Volumenumber));
                                     patchno++;
-                                    continue; //TODO: Report this
+                                    continue;
                                 }
-
-                                if (vol.Value.Compression != "zip")
-                                    throw new Exception(string.Format(Strings.Interface.UnexpectedCompressionError, contentVol.Compression));
 
                                 using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
                                 {
@@ -660,20 +658,29 @@ namespace Duplicati.Library.Main
                                          {
                                              OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingSignatureVolume, patchno + 1), "");
 
-                                             using (new Logging.Timer("Get " + signatureVol.Filename))
-                                                 backend.Get(signatureVol, sigFile, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[signatureVol.Volumenumber - 1]);
-
-                                             using (Library.Interface.ICompression patch = DynamicLoader.CompressionLoader.GetModule(signatureVol.Compression, sigFile, m_options.RawOptions))
+                                             try
                                              {
-                                                 foreach(KeyValuePair<RSync.RSyncDir.PatchFileType, string> k in sync.ListPatchFiles(patch))
-                                                     if (filter.ShouldInclude("", System.IO.Path.DirectorySeparatorChar.ToString() + k.Value))
-                                                     {
-                                                         //TODO: Perhaps a bit much to download the content archive
-                                                         // if the file is only marked for deletion?
-                                                         hasFiles = true; 
-                                                         break;
-                                                     }
+                                                 using (new Logging.Timer("Get " + signatureVol.Filename))
+                                                     backend.Get(signatureVol, sigFile, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[signatureVol.Volumenumber - 1]);
                                              }
+                                             catch (BackendWrapper.HashMismathcException hme)
+                                             {
+                                                 hasFiles = true;
+                                                 rs.LogError(string.Format(Strings.Interface.FileHashFailure, hme.Message));
+                                             }
+
+                                             if (!hasFiles)
+                                                 using (Library.Interface.ICompression patch = DynamicLoader.CompressionLoader.GetModule(signatureVol.Compression, sigFile, m_options.RawOptions))
+                                                 {
+                                                     foreach(KeyValuePair<RSync.RSyncDir.PatchFileType, string> k in sync.ListPatchFiles(patch))
+                                                         if (filter.ShouldInclude("", System.IO.Path.DirectorySeparatorChar.ToString() + k.Value))
+                                                         {
+                                                             //TODO: Perhaps a bit much to download the content archive
+                                                             // if the file is only marked for deletion?
+                                                             hasFiles = true; 
+                                                             break;
+                                                         }
+                                                 }
                                          }
 
                                          if (!hasFiles)
@@ -1034,7 +1041,7 @@ namespace Duplicati.Library.Main
                 entries.Add(bestFit);
                 entries.AddRange(bestFit.Incrementals);
 
-                List<Library.Interface.ICompression> patches = FindPatches(backend, entries, basefolder);
+                List<Library.Interface.ICompression> patches = FindPatches(backend, entries, basefolder, false, rs);
 
                 using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { basefolder }, rs, filter, patches))
                     res = dir.UnmatchedFiles();
@@ -1102,8 +1109,9 @@ namespace Duplicati.Library.Main
         /// <param name="backend">The backend to read from</param>
         /// <param name="entries">The flattened list of manifests</param>
         /// <param name="tempfolder">The tempfolder set for this operation</param>
+        /// <param name="allowHashFail">True to ignore files with failed hash signature</param>
         /// <returns>A list of file archives</returns>
-        private List<Library.Interface.ICompression> FindPatches(BackendWrapper backend, List<ManifestEntry> entries, string tempfolder)
+        private List<Library.Interface.ICompression> FindPatches(BackendWrapper backend, List<ManifestEntry> entries, string tempfolder, bool allowHashFail, CommunicationStatistics stat)
         {
             List<Library.Interface.ICompression> patches = new List<Library.Interface.ICompression>();
 
@@ -1162,9 +1170,22 @@ namespace Duplicati.Library.Main
 
                         //Check just before we download stuff
                         CheckLiveControl();
-
-                        using (new Logging.Timer("Get " + bes.Key.Filename))
-                            backend.Get(bes.Key, filename, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[bes.Key.Volumenumber - 1]);
+                        try
+                        {
+                            using (new Logging.Timer("Get " + bes.Key.Filename))
+                                backend.Get(bes.Key, filename, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[bes.Key.Volumenumber - 1]);
+                        }
+                        catch (BackendWrapper.HashMismathcException hme)
+                        {
+                            if (allowHashFail)
+                            {
+                                if (stat != null)
+                                    stat.LogError(string.Format(Strings.Interface.FileHashFailure, hme.Message));
+                                continue;
+                            }
+                            else
+                                throw;
+                        }
 
                         patches.Add(DynamicLoader.CompressionLoader.GetModule(bes.Key.Compression, filename, m_options.RawOptions));
                     }
@@ -1200,7 +1221,7 @@ namespace Duplicati.Library.Main
 
                 using (Core.TempFolder folder = new Duplicati.Library.Core.TempFolder())
                 {
-                    List<Library.Interface.ICompression> patches = FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder);
+                    List<Library.Interface.ICompression> patches = FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder, false, null);
                     using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { folder }, new CommunicationStatistics(), null))
                         return dir.ListPatchFiles(patches);
                 }

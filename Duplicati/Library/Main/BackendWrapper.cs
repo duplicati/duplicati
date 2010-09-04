@@ -137,6 +137,36 @@ namespace Duplicati.Library.Main
         /// </summary>
         public long FileSizeOverhead { get { return m_encryptionSizeOverhead; } }
 
+        /// <summary>
+        /// Class to represent hash failures
+        /// </summary>
+        public class HashMismathcException : Exception
+        {
+            /// <summary>
+            /// Default constructor, sets a generic string as the message
+            /// </summary>
+            public HashMismathcException() : base() { }
+
+            /// <summary>
+            /// Constructor with non-default message
+            /// </summary>
+            /// <param name="message">The exception message</param>
+            public HashMismathcException(string message) : base(message) { }
+
+            /// <summary>
+            /// Constructor with non-default message and inner exception details
+            /// </summary>
+            /// <param name="message">The exception message</param>
+            /// <param name="innerException">The exception that caused this exception</param>
+            public HashMismathcException(string message, Exception innerException) : base(message, innerException) { }
+        }
+
+        /// <summary>
+        /// Constructs a new BackendWrapper
+        /// </summary>
+        /// <param name="statistics">The statistics logging module, may be null</param>
+        /// <param name="backend">The url to the backend to wrap</param>
+        /// <param name="options">A set of backend options</param>
         public BackendWrapper(CommunicationStatistics statistics, string backend, Options options)
         {
             m_statistics = statistics;
@@ -574,10 +604,9 @@ namespace Duplicati.Library.Main
                     m_statistics.NumberOfRemoteCalls++;
                     return m_backend.List();
                 }
-                catch (System.Threading.ThreadAbortException tex)
+                catch (System.Threading.ThreadAbortException)
                 {
-                    lastEx = tex;
-                    retries = 0;
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -606,10 +635,9 @@ namespace Duplicati.Library.Main
                     m_backend.Delete(remote.Filename);
                     lastEx = null;
                 }
-                catch (System.Threading.ThreadAbortException tex)
+                catch (System.Threading.ThreadAbortException)
                 {
-                    lastEx = tex;
-                    retries = 0;
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -711,7 +739,7 @@ namespace Duplicati.Library.Main
                         }
 
                         if (filehash != null && Core.Utility.CalculateHash(tempfile) != filehash)
-                            throw new Exception(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Core.Utility.CalculateHash(tempfile)));
+                            throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Core.Utility.CalculateHash(tempfile)));
 
                         if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                         {
@@ -734,10 +762,9 @@ namespace Duplicati.Library.Main
                         }
                     }
                 }
-                catch (System.Threading.ThreadAbortException tex)
+                catch (System.Threading.ThreadAbortException)
                 {
-                    lastEx = tex;
-                    retries = 0;
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -751,7 +778,10 @@ namespace Duplicati.Library.Main
             } while (lastEx != null && retries > 0);
 
             if (lastEx != null)
-                throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError, lastEx.Message), lastEx);
+                if (lastEx is HashMismathcException)
+                    throw lastEx;
+                else
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError, lastEx.Message), lastEx);
 
             m_statistics.NumberOfBytesDownloaded += new System.IO.FileInfo(filename).Length;
         }
@@ -834,10 +864,9 @@ namespace Duplicati.Library.Main
                         success = true;
                         lastEx = null;
                     }
-                    catch (System.Threading.ThreadAbortException tex)
+                    catch (System.Threading.ThreadAbortException)
                     {
-                        lastEx = tex;
-                        retries = 0;
+                        throw;
                     }
                     catch (Exception ex)
                     {
