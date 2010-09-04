@@ -31,11 +31,16 @@ namespace Duplicati.CommandLine
             {
                 List<string> cargs = new List<string>(args);
                 string filter = Duplicati.Library.Core.FilenameFilter.EncodeAsFilter(Duplicati.Library.Core.FilenameFilter.ParseCommandLine(cargs, true));
-
-                if (!string.IsNullOrEmpty(filter))
-                    cargs.Add(filter);
-
                 Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
+
+                foreach (string internaloption in Library.Main.Options.InternalOptions)
+                    if (options.ContainsKey(internaloption))
+                    {
+                        Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
+                        return;
+                    }
+
+                options["filter"] = filter;
 
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions
@@ -121,13 +126,6 @@ namespace Duplicati.CommandLine
                         options["time-separator"] = "'";
                     }
                 }
-
-                foreach(string internaloption in Library.Main.Options.InternalOptions)
-                    if (options.ContainsKey(internaloption))
-                    {
-                        Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
-                        return;
-                    }
 
                 if (source.Trim().ToLower() == "list")
                     Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
