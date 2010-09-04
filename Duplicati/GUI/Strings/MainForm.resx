@@ -121,6 +121,19 @@
     <value>A backup is currently running, do you want to stop the backup so Duplicati can exit?</value>
     <comment>A question displayed when the user attempts to exit Duplicati while a backup is running</comment>
   </data>
+  <data name="MultipleNamedBackupsFound" xml:space="preserve">
+    <value>The backup named "{0}" was found {1} times</value>
+    <comment>An error message displayed when invoking a backup from the commandline, and the named backup is found multiple times</comment>
+  </data>
+  <data name="NamedBackupNotFound" xml:space="preserve">
+    <value>The backup named "{0}" was not found</value>
+    <comment>An error message displayed when invoking a backup from the commandline, and the named backup is not found</comment>
+  </data>
+  <data name="TerminateForExitQuestion" xml:space="preserve">
+    <value>Duplicati is attempting to quit, but a backup is running.
+Do you want Duplicati to continue waiting for the backup to stop?</value>
+    <comment>A question displayed to the user after a exit has been issued, but the backup fails to respond to the stop command within a short period</comment>
+  </data>
   <data name="TrayStatusPause" xml:space="preserve">
     <value>Duplicati is currently paused</value>
     <comment>A status message displayed when Duplicati is in Pause mode</comment>

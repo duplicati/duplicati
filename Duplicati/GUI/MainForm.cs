@@ -289,12 +289,12 @@ namespace Duplicati.GUI
                 Datamodel.Schedule[] schedules = Program.DataConnection.GetObjects<Datamodel.Schedule>("Name LIKE ?", args[1].Trim());
                 if (schedules == null || schedules.Length == 0)
                 {
-                    MessageBox.Show(string.Format(Strings.Program.NamedBackupNotFound, args[1]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(string.Format(Strings.MainForm.NamedBackupNotFound, args[1]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return false;
                 }
                 else if (schedules.Length > 1)
                 {
-                    MessageBox.Show(string.Format(Strings.Program.MultipleNamedBackupsFound, args[1], schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(string.Format(Strings.MainForm.MultipleNamedBackupsFound, args[1], schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return false;
                 }
 
@@ -342,7 +342,7 @@ namespace Duplicati.GUI
                 while (Program.WorkThread.Active)
                 {
                     //Ask the user if we should abort
-                    if (MessageBox.Show(Strings.Program.TerminateForExitQuestion, Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                    if (MessageBox.Show(Strings.MainForm.TerminateForExitQuestion, Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
                     {
                         //Abort the thread
                         Program.Runner.Terminate();

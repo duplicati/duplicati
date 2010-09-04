@@ -130,14 +130,6 @@ Error message: {0}</value>
     <value>Failed to set the user interface language: {0}</value>
     <comment>An error message displayed if the language cannot be selected</comment>
   </data>
-  <data name="MultipleNamedBackupsFound" xml:space="preserve">
-    <value>The backup named "{0}" was found {1} times</value>
-    <comment>An error message displayed when invoking a backup from the commandline, and the named backup is found multiple times</comment>
-  </data>
-  <data name="NamedBackupNotFound" xml:space="preserve">
-    <value>The backup named "{0}" was not found</value>
-    <comment>An error message displayed when invoking a backup from the commandline, and the named backup is not found</comment>
-  </data>
   <data name="SeriousError" xml:space="preserve">
     <value>A serious error occured in Duplicati: {0}</value>
     <comment>Duplicati crashes</comment>
@@ -146,11 +138,6 @@ Error message: {0}</value>
     <value>Unable to start up, perhaps another process is already running?
 Error message: {0}</value>
     <comment>An error message displayed when Duplicati startup fails</comment>
-  </data>
-  <data name="TerminateForExitQuestion" xml:space="preserve">
-    <value>Duplicati is attempting to quit, but a backup is running.
-Do you want Duplicati to continue waiting for the backup to stop?</value>
-    <comment>A question displayed to the user after a exit has been issued, but the backup fails to respond to the stop command within a short period</comment>
   </data>
   <data name="WrongSQLiteVersion" xml:space="preserve">
     <value>Unsupported version of SQLite detected ({0}), must be {1} or higher</value>

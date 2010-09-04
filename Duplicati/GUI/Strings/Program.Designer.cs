@@ -89,24 +89,6 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The backup named &quot;{0}&quot; was found {1} times.
-        /// </summary>
-        internal static string MultipleNamedBackupsFound {
-            get {
-                return ResourceManager.GetString("MultipleNamedBackupsFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The backup named &quot;{0}&quot; was not found.
-        /// </summary>
-        internal static string NamedBackupNotFound {
-            get {
-                return ResourceManager.GetString("NamedBackupNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to A serious error occured in Duplicati: {0}.
         /// </summary>
         internal static string SeriousError {
@@ -122,16 +104,6 @@ namespace Duplicati.GUI.Strings {
         internal static string StartupFailure {
             get {
                 return ResourceManager.GetString("StartupFailure", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Duplicati is attempting to quit, but a backup is running.
-        ///Do you want Duplicati to continue waiting for the backup to stop?.
-        /// </summary>
-        internal static string TerminateForExitQuestion {
-            get {
-                return ResourceManager.GetString("TerminateForExitQuestion", resourceCulture);
             }
         }
         
