@@ -31,7 +31,7 @@ namespace Duplicati.Library.Backend
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SSHUI));
             this.TestConnection = new System.Windows.Forms.Button();
             this.Port = new System.Windows.Forms.NumericUpDown();
-            this.Password = new System.Windows.Forms.TextBox();
+            this.Password = new Duplicati.Winforms.Controls.PasswordControl();
             this.Username = new System.Windows.Forms.TextBox();
             this.Path = new System.Windows.Forms.TextBox();
             this.Servername = new System.Windows.Forms.TextBox();
@@ -177,7 +177,7 @@ namespace Duplicati.Library.Backend
 
         private System.Windows.Forms.Button TestConnection;
         private System.Windows.Forms.NumericUpDown Port;
-        private System.Windows.Forms.TextBox Password;
+        private Duplicati.Winforms.Controls.PasswordControl Password;
         private System.Windows.Forms.TextBox Username;
         private System.Windows.Forms.TextBox Path;
         private System.Windows.Forms.TextBox Servername;

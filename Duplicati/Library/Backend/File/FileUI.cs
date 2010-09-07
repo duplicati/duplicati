@@ -179,6 +179,8 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey(PASSWORD))
                 Password.Text = m_options[PASSWORD];
 
+            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(Password.Text);
+
             if (!m_options.ContainsKey(CHECKED_EMPTY) || !bool.TryParse(m_options[CHECKED_EMPTY], out m_hasCheckedEmpty))
                 m_hasCheckedEmpty = false;
         }

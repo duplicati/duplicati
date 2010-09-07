@@ -34,7 +34,6 @@ namespace Duplicati.Library.Backend
         private const string CONTAINER_NAME = "Container name";
         private const string HASTESTED = "UI: Has tested";
 
-        //TODO: Change this
         private const string LOGIN_PAGE = "https://www.rackspacecloud.com/signup";
         private IDictionary<string, string> m_options;
         private bool m_hasTested;
@@ -83,20 +82,21 @@ namespace Duplicati.Library.Backend
             m_options.Clear();
             m_options[HASTESTED] = m_hasTested.ToString();
 
-            m_options[USERNAME] = AWS_ID.Text;
-            m_options[ACCESS_KEY] = AWS_KEY.Text;
+            m_options[USERNAME] = Username.Text;
+            m_options[ACCESS_KEY] = API_KEY.Text;
             m_options[CONTAINER_NAME] = BucketName.Text;
         }
 
         void CloudFilesUI_Load(object sender, EventArgs args)
         {
             if (m_options.ContainsKey(USERNAME))
-                AWS_ID.Text = m_options[USERNAME];
+                Username.Text = m_options[USERNAME];
             if (m_options.ContainsKey(ACCESS_KEY))
-                AWS_KEY.Text = m_options[ACCESS_KEY];
+                API_KEY.Text = m_options[ACCESS_KEY];
             if (m_options.ContainsKey(CONTAINER_NAME))
                 BucketName.Text = m_options[CONTAINER_NAME];
 
+            API_KEY.AskToEnterNewPassword = !string.IsNullOrEmpty(API_KEY.Text);
 
             if (!m_options.ContainsKey(HASTESTED) || !bool.TryParse(m_options[HASTESTED], out m_hasTested))
                 m_hasTested = false;
@@ -104,13 +104,13 @@ namespace Duplicati.Library.Backend
 
         private bool ValidateForm(bool checkForBucket)
         {
-            if (AWS_ID.Text.Trim().Length <= 0)
+            if (Username.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Strings.CloudFilesUI.EmptyAWSIDError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
 
-            if (AWS_KEY.Text.Trim().Length <= 0)
+            if (API_KEY.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Strings.CloudFilesUI.EmptyAWSKeyError , Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
@@ -172,12 +172,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private void AWS_ID_TextChanged(object sender, EventArgs e)
+        private void Username_TextChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
         }
 
-        private void AWS_KEY_TextChanged(object sender, EventArgs e)
+        private void API_KEY_TextChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
         }
@@ -215,7 +215,7 @@ namespace Duplicati.Library.Backend
             get { return Strings.CloudFilesUI.PageDescription; }
         }
 
-        private void CreateBucket_Click(object sender, EventArgs e)
+        private void CreateContainer_Click(object sender, EventArgs e)
         {
             if (ValidateForm(false))
             {

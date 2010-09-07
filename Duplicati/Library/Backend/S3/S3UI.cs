@@ -151,6 +151,8 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey(PREFIX) && !string.IsNullOrEmpty(m_options[PREFIX]))
                 BucketName.Text += "/" + m_options[PREFIX];
 
+            AWS_KEY.AskToEnterNewPassword = !string.IsNullOrEmpty(AWS_KEY.Text);
+
             bool b;
 
             if (m_options.ContainsKey(EUROBUCKET))

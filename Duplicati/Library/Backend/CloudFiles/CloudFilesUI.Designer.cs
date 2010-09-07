@@ -32,8 +32,8 @@ namespace Duplicati.Library.Backend
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.AWS_ID = new System.Windows.Forms.TextBox();
-            this.AWS_KEY = new System.Windows.Forms.TextBox();
+            this.Username = new System.Windows.Forms.TextBox();
+            this.API_KEY = new Duplicati.Winforms.Controls.PasswordControl();
             this.BucketName = new System.Windows.Forms.TextBox();
             this.SignUpLink = new System.Windows.Forms.LinkLabel();
             this.label4 = new System.Windows.Forms.Label();
@@ -58,15 +58,19 @@ namespace Duplicati.Library.Backend
             // 
             // AWS_ID
             // 
-            resources.ApplyResources(this.AWS_ID, "AWS_ID");
-            this.AWS_ID.Name = "AWS_ID";
-            this.AWS_ID.TextChanged += new System.EventHandler(this.AWS_ID_TextChanged);
+            resources.ApplyResources(this.Username, "AWS_ID");
+            this.Username.Name = "AWS_ID";
+            this.Username.TextChanged += new System.EventHandler(this.Username_TextChanged);
             // 
             // AWS_KEY
             // 
-            resources.ApplyResources(this.AWS_KEY, "AWS_KEY");
-            this.AWS_KEY.Name = "AWS_KEY";
-            this.AWS_KEY.TextChanged += new System.EventHandler(this.AWS_KEY_TextChanged);
+            this.API_KEY.AskToEnterNewPassword = false;
+            this.API_KEY.IsPasswordVisible = false;
+            resources.ApplyResources(this.API_KEY, "AWS_KEY");
+            this.API_KEY.MaximumSize = new System.Drawing.Size(5000, 20);
+            this.API_KEY.MinimumSize = new System.Drawing.Size(150, 20);
+            this.API_KEY.Name = "AWS_KEY";
+            this.API_KEY.TextChanged += new System.EventHandler(this.API_KEY_TextChanged);
             // 
             // BucketName
             // 
@@ -98,7 +102,7 @@ namespace Duplicati.Library.Backend
             resources.ApplyResources(this.CreateContainer, "CreateContainer");
             this.CreateContainer.Name = "CreateContainer";
             this.CreateContainer.UseVisualStyleBackColor = true;
-            this.CreateContainer.Click += new System.EventHandler(this.CreateBucket_Click);
+            this.CreateContainer.Click += new System.EventHandler(this.CreateContainer_Click);
             // 
             // CloudFilesUI
             // 
@@ -109,8 +113,8 @@ namespace Duplicati.Library.Backend
             this.Controls.Add(this.label4);
             this.Controls.Add(this.SignUpLink);
             this.Controls.Add(this.BucketName);
-            this.Controls.Add(this.AWS_KEY);
-            this.Controls.Add(this.AWS_ID);
+            this.Controls.Add(this.API_KEY);
+            this.Controls.Add(this.Username);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -126,8 +130,8 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox AWS_ID;
-        private System.Windows.Forms.TextBox AWS_KEY;
+        private System.Windows.Forms.TextBox Username;
+        private Duplicati.Winforms.Controls.PasswordControl API_KEY;
         private System.Windows.Forms.TextBox BucketName;
         private System.Windows.Forms.LinkLabel SignUpLink;
         private System.Windows.Forms.Label label4;

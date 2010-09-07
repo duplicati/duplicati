@@ -195,6 +195,7 @@ namespace Duplicati.GUI
 
                 UseCommonPassword.Checked = m_settings.UseCommonPassword;
                 CommonPassword.Text = m_settings.CommonPassword;
+                CommonPassword.AskToEnterNewPassword = !string.IsNullOrEmpty(CommonPassword.Text);
 
                 if (EncryptionModule.Items.Count > 0)
                 {
@@ -274,7 +275,7 @@ namespace Duplicati.GUI
                 TabContainer.TabPages.Remove(LicenseTab);
                 TabContainer.TabPages.Insert(TabContainer.TabPages.Count, LicenseTab);
 
-                string licensePath = System.IO.Path.Combine(Application.StartupPath, "licenses");
+                string licensePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "licenses");
                 List<Duplicati.License.LicenseEntry> licenses = Duplicati.License.LicenseReader.ReadLicenses(licensePath);
                 licenses.Insert(0, new Duplicati.License.LicenseEntry("Duplicati", System.IO.Path.Combine(licensePath, "duplicati-url.txt"), System.IO.Path.Combine(licensePath, "license.txt")));
                 licenses.Insert(0, new Duplicati.License.LicenseEntry("Acknowledgements", System.IO.Path.Combine(licensePath, "duplicati-url.txt"), System.IO.Path.Combine(licensePath, "acknowledgements.txt")));

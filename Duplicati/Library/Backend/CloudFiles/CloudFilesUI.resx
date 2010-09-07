@@ -204,7 +204,7 @@
     <value>144, 8</value>
   </data>
   <data name="AWS_ID.Size" type="System.Drawing.Size, System.Drawing">
-    <value>144, 20</value>
+    <value>152, 20</value>
   </data>
   <data name="AWS_ID.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -225,7 +225,7 @@
     <value>144, 32</value>
   </data>
   <data name="AWS_KEY.Size" type="System.Drawing.Size, System.Drawing">
-    <value>144, 20</value>
+    <value>150, 20</value>
   </data>
   <data name="AWS_KEY.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -234,7 +234,7 @@
     <value>AWS_KEY</value>
   </data>
   <data name="&gt;&gt;AWS_KEY.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>Duplicati.Winforms.Controls.PasswordControl, Duplicati.Winforms.Controls, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
   <data name="&gt;&gt;AWS_KEY.Parent" xml:space="preserve">
     <value>$this</value>
@@ -246,7 +246,7 @@
     <value>144, 56</value>
   </data>
   <data name="BucketName.Size" type="System.Drawing.Size, System.Drawing">
-    <value>144, 20</value>
+    <value>152, 20</value>
   </data>
   <data name="BucketName.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>

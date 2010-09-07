@@ -1,22 +1,19 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{BAE27510-8B5D-44B2-B33E-372A98908041}</ProjectGuid>
+    <ProjectGuid>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.Library.Backend</RootNamespace>
-    <AssemblyName>Duplicati.Library.Backend.WEBDAV</AssemblyName>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>2.0</OldToolsVersion>
+    <RootNamespace>Duplicati.Winforms.Controls</RootNamespace>
+    <AssemblyName>Duplicati.Winforms.Controls</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <TargetFrameworkSubset>
-    </TargetFrameworkSubset>
+    <FileAlignment>512</FileAlignment>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -55,62 +52,49 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Strings\WEBDAV.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>WEBDAV.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\WebDAVUI.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>WebDAVUI.resx</DependentUpon>
-    </Compile>
-    <Compile Include="WEBDAV.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WebDAVUI.cs">
+    <Compile Include="PasswordControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="WebDAVUI.designer.cs">
-      <DependentUpon>WebDAVUI.cs</DependentUpon>
+    <Compile Include="PasswordControl.Designer.cs">
+      <DependentUpon>PasswordControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\PasswordControl.Designer.cs">
+      <DependentUpon>PasswordControl.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
-      <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
-      <Name>Duplicati.Winforms.Controls</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Core\Duplicati.Library.Core.csproj">
-      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
-      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
-      <Name>Duplicati.Library.Interface</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Strings\WEBDAV.resx">
-      <SubType>Designer</SubType>
+    <EmbeddedResource Include="PasswordControl.resx">
+      <DependentUpon>PasswordControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>WEBDAV.Designer.cs</LastGenOutput>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Strings\WebDAVUI.resx">
+    <EmbeddedResource Include="Strings\PasswordControl.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>WebDAVUI.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="WebDAVUI.resx">
-      <DependentUpon>WebDAVUI.cs</DependentUpon>
+      <LastGenOutput>PasswordControl.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="Duplicati.snk" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="Resources\ldots.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

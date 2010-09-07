@@ -660,6 +660,10 @@
       <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
       <Name>Duplicati.License</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
+      <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
+      <Name>Duplicati.Winforms.Controls</Name>
+    </ProjectReference>
     <ProjectReference Include="Datamodel\Datamodel.csproj">
       <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
       <Name>Datamodel</Name>
@@ -1144,6 +1148,7 @@
     <None Include="Resources\Trash.png" />
     <None Include="Resources\donate_button.gif" />
     <None Include="Resources\help.png" />
+    <None Include="Resources\Wizard.png" />
     <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

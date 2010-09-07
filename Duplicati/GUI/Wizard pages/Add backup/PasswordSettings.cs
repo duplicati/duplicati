@@ -35,6 +35,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private bool m_warnedNoPassword = false;
         private bool m_warnedChanged = false;
         private bool m_settingsChanged = false;
+        private bool m_hasGeneratedNewPassword = false;
+
         private WizardSettingsWrapper m_wrapper;
         private Library.Interface.IEncryption m_encryptionModule;
 
@@ -62,7 +64,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void PasswordSettings_PageDisplay(object sender, PageChangedArgs args)
         {
-            try { Password.Focus(); }
+            try 
+            {
+                if (Password.AskToEnterNewPassword)
+                    m_owner.NextButton.Focus();
+                else
+                    Password.Focus(); 
+            }
             catch { }
         }
 
@@ -71,6 +79,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
             m_settings["Password:WarnedChanged"] = m_warnedChanged;
             m_settings["Password:SettingsChanged"] = m_settingsChanged;
+            m_settings["Password:NewPasswordGenerated"] = m_hasGeneratedNewPassword;
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
@@ -123,9 +132,22 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_warnedChanged = true;
             }
 
+            if (m_hasGeneratedNewPassword)
+            {
+                if (MessageBox.Show(this, Strings.PasswordSettings.NewGeneratedPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                {
+                    args.Cancel = true;
+                    return;
+                }
+
+                m_hasGeneratedNewPassword = false;
+            }
+
             m_settings["Password:SettingsChanged"] = m_settingsChanged;
             m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
             m_settings["Password:WarnedChanged"] = m_warnedChanged;
+            m_settings["Password:NewPasswordGenerated"] = m_hasGeneratedNewPassword;
+
             m_wrapper.BackupPassword = EnablePassword.Checked ? Password.Text : "";
 
             m_wrapper.EncryptionModule = m_encryptionModule == null ? null : m_encryptionModule.FilenameExtension;
@@ -157,6 +179,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore);
                 Password.Text = m_wrapper.BackupPassword;
 
+                Password.AskToEnterNewPassword = !string.IsNullOrEmpty(m_wrapper.BackupPassword);
+
                 m_settingsChanged = false;
 
                 if (Program.DataConnection.GetObjects<Schedule>().Length == 0)
@@ -182,6 +206,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_warnedChanged = (bool)m_settings["Password:WarnedChanged"];
             if (m_settings.ContainsKey("Password:SettingsChanged"))
                 m_settingsChanged = (bool)m_settings["Password:SettingsChanged"];
+            if (m_settings.ContainsKey("Password:NewPasswordGenerated"))
+                m_hasGeneratedNewPassword = (bool)m_settings["Password:NewPasswordGenerated"];
 
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
             {
@@ -191,8 +217,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 EnablePassword.Text = Strings.PasswordSettings.EnablePasswordRestoreText;
                 EncryptionModule.Top = PasswordHelptext.Top;
-
-
             }
         }
 
@@ -201,12 +225,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             Password.Enabled = EncryptionModule.Enabled = GeneratePasswordButton.Enabled = EncryptionControlContainer.Enabled = EnablePassword.Checked;
             m_warnedNoPassword = false;
             m_settingsChanged = true;
-        }
-
-        private void Password_TextChanged(object sender, EventArgs e)
-        {
-            m_settingsChanged = true;
-            m_warnedNoPassword = false;
         }
 
         public override string HelpText
@@ -240,6 +258,27 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 else
                     m_encryptionModule = null;
             }
+        }
+
+        private void Password_TextChanged(object sender, EventArgs e)
+        {
+            m_settingsChanged = true;
+            m_warnedNoPassword = false;
+        }
+
+        private void GeneratePasswordButton_Click(object sender, EventArgs e)
+        {
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Edit && Password.AskToEnterNewPassword)
+            {
+                if (MessageBox.Show(this, Strings.PasswordSettings.ChangePasswordQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
+                    return;
+            }
+
+            Password.AskToEnterNewPassword = false;
+            Password.IsPasswordVisible = true;
+
+            m_hasGeneratedNewPassword = true;
+            Password.Text = Duplicati.Library.Core.KeyGenerator.GenerateKey(10, 24);
         }
     }
 }

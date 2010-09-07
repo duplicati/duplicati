@@ -41,7 +41,7 @@ namespace Duplicati.Library.Backend
             this.label5 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.PasswordSettings = new System.Windows.Forms.GroupBox();
-            this.Password = new System.Windows.Forms.TextBox();
+            this.Password = new Duplicati.Winforms.Controls.PasswordControl();
             this.CreateFolderButton = new System.Windows.Forms.Button();
             this.DigestAuth = new System.Windows.Forms.CheckBox();
             this.UseSSL = new System.Windows.Forms.CheckBox();
@@ -241,7 +241,7 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.GroupBox PasswordSettings;
-        private System.Windows.Forms.TextBox Password;
+        private Duplicati.Winforms.Controls.PasswordControl Password;
         private System.Windows.Forms.Button CreateFolderButton;
         private System.Windows.Forms.CheckBox DigestAuth;
         private System.Windows.Forms.CheckBox UseSSL;

@@ -51,7 +51,8 @@ namespace Duplicati.GUI
         /// <summary>
         /// Ensures that the database is up to date
         /// </summary>
-        /// <param name="connection"></param>
+        /// <param name="connection">The database connection to use</param>
+        /// <param name="sourcefile">The file the database is placed in</param>
         public static void UpgradeDatebase(IDbConnection connection, string sourcefile)
         {
             //Shorthand for current assembly
@@ -143,7 +144,7 @@ namespace Duplicati.GUI
                     //Keep a backup
                     System.IO.File.Copy(sourcefile, backupfile, false);
 
-                    int newversion = -1;
+                    int newversion = dbversion;
                     foreach (int key in upgrades.Keys)
                     {
                         //TODO: Find a better way to split SQL statements, as there may be embedded semicolons

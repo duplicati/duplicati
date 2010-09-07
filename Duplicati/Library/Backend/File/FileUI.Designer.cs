@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend
             this.TargetDrive = new System.Windows.Forms.ComboBox();
             this.BrowseTargetFolder = new System.Windows.Forms.Button();
             this.Credentials = new System.Windows.Forms.GroupBox();
-            this.Password = new System.Windows.Forms.TextBox();
+            this.Password = new Duplicati.Winforms.Controls.PasswordControl();
             this.Username = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
@@ -161,7 +161,7 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.ComboBox TargetDrive;
         private System.Windows.Forms.Button BrowseTargetFolder;
         private System.Windows.Forms.GroupBox Credentials;
-        private System.Windows.Forms.TextBox Password;
+        private Duplicati.Winforms.Controls.PasswordControl Password;
         private System.Windows.Forms.TextBox Username;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;

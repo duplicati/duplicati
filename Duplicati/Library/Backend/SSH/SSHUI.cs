@@ -135,6 +135,9 @@ namespace Duplicati.Library.Backend
             UsePassword.Checked = !passwordless;
             if (m_options.ContainsKey(PASSWORD))
                 Password.Text = m_options[PASSWORD];
+
+            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(Password.Text);
+            
             Port.Value = port;
             GenerateDebugOutput.Checked = debug;
             UseUnmanagedSSH.Checked = useUnmanaged;

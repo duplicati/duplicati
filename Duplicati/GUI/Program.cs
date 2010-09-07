@@ -34,9 +34,14 @@ namespace Duplicati.GUI
         public const string DATAFOLDER_ENV_NAME = "DUPLICATI_HOME";
 
         /// <summary>
+        /// The environment variable that holdes the database key used to encrypt the SQLite database
+        /// </summary>
+        public const string DB_KEY_ENV_NAME = "DUPLICATI_DB_KEY";
+
+        /// <summary>
         /// Gets the folder where Duplicati data is stored
         /// </summary>
-        public static string DATAFOLDER { get { return Library.Core.Utility.AppendDirSeperator(Environment.ExpandEnvironmentVariables("%" + "DUPLICATI_HOME" + "%").TrimStart('"').TrimEnd('"')); } } 
+        public static string DATAFOLDER { get { return Library.Core.Utility.AppendDirSeperator(Environment.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } } 
 
         /// <summary>
         /// This is the only access to the database
@@ -105,28 +110,51 @@ namespace Duplicati.GUI
                 );
             }
 
+            //If we are on windows we encrypt the database by default
+            //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
+            //Linux users can use an encrypted home folder, or install a SQLite library with encryption support
+            if (!Library.Core.Utility.IsClientLinux && string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME)))
+            {
+                //Note that the password here is a default password and public knowledge
+                //
+                //The purpose of this is to prevent casual read of the database, as well
+                // as protect from harddisk string scans, not to protect from determined
+                // attacks.
+                //
+                //If you desire better security, start Duplicati once with the commandline option
+                // --unencrypted-database to decrypt the database.
+                //Then set the environment variable DUPLICATI_DB_KEY to the desired key, 
+                // and run Duplicati again without the --unencrypted-database option 
+                // to re-encrypt it with the new key
+                //
+                //If you change the key, please note that you need to supply the same
+                // key when restoring the setup, as the setup being backed up will
+                // be encrypted as well.
+                Environment.SetEnvironmentVariable(DB_KEY_ENV_NAME, "Duplicati_Key_42");
+            }
+
+
+            //Find commandline options here for handling special startup cases
+            Dictionary<string, string> commandlineOptions = CommandLine.CommandLineParser.ExtractOptions(new List<string>(args));
+
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DUPLICATI_HOME")))
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
             {
 #if DEBUG
                 //debug mode uses a lock file located in the app folder
-                Environment.SetEnvironmentVariable("DUPLICATI_HOME", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+                Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 #else
-                bool portableMode = false;
-                if (args != null)
-                    foreach (string s in args)
-                        if (s.Equals("--portable-mode", StringComparison.InvariantCultureIgnoreCase))
-                            portableMode = true;
+                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Core.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
 
                 if (portableMode)
                 {
                     //Portable mode uses a data folder in the application home dir
-                    Environment.SetEnvironmentVariable("DUPLICATI_HOME", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "data"));
+                    Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "data"));
                 }
                 else
                 {
                     //Normal release mode uses the systems "Application Data" folder
-                    Environment.SetEnvironmentVariable("DUPLICATI_HOME", System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName));
+                    Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Application.ProductName));
                 }
 #endif
             }
@@ -151,7 +179,6 @@ namespace Duplicati.GUI
                     return;
                 }
 
-                DatabasePath = System.IO.Path.Combine(Program.DATAFOLDER, "Duplicati.sqlite");
                 Version sqliteVersion = new Version((string)SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
                 if (sqliteVersion < new Version(3, 6, 3))
                 {
@@ -160,21 +187,38 @@ namespace Duplicati.GUI
                     return;
                 }
 
+                //Create the connection instance
                 System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType);
 
                 try
                 {
+                    DatabasePath = System.IO.Path.Combine(Program.DATAFOLDER, "Duplicati.sqlite"); 
                     if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
                         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
 
-                    //This also opens the db for us :)
+#if DEBUG
+                    //Default is to no use encryption for debugging
+                    bool noDbEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
+#else
+                    bool noDbEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
+#endif
+                    con.ConnectionString = "Data Source=" + DatabasePath;
+
+                    //Attempt to open the database
+                    OpenDatabase(con, Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME), noDbEncryption);
+
                     DatabaseUpgrader.UpgradeDatebase(con, DatabasePath);
                 }
                 catch (Exception ex)
                 {
+                    //Unwrap the reflection exceptions
+                    if (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
+                        ex = ex.InnerException;
+
                     MessageBox.Show(string.Format(Strings.Program.DatabaseOpenError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
+
                 DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
 
                 if (!string.IsNullOrEmpty(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage))
@@ -290,7 +334,6 @@ namespace Duplicati.GUI
                 Scheduler.Reschedule();
         }
 
-       
         /// <summary>
         /// Returns a localized name for a task type
         /// </summary>
@@ -322,6 +365,60 @@ namespace Duplicati.GUI
                     return Strings.TaskType.RestoreSetup;
                 default:
                     return type.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Helper method with logic to handle opening a database in possibly encrypted format
+        /// </summary>
+        /// <param name="con">The SQLite connection object</param>
+        /// <param name="password">The password used for encryption</param>
+        /// <param name="noEncryption">A flag indicating that the database should not be encrypted</param>
+        private static void OpenDatabase(System.Data.IDbConnection con, string password, bool noEncryption)
+        {
+            System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
+            string attemptedPassword;
+
+            if (noEncryption || string.IsNullOrEmpty(password))
+                attemptedPassword = null; //No encryption specified, attempt to open without
+            else
+                attemptedPassword = password; //Encryption specified, attempt to open with
+
+            setPwdMethod.Invoke(con, new object[] { attemptedPassword });
+
+            try
+            {
+                //Attempt to open in preferred state
+                con.Open();
+            }
+            catch
+            {
+                try
+                {
+                    //We can't try anything else without a password
+                    if (string.IsNullOrEmpty(password))
+                        throw; 
+
+                    //Open failed, now try the reverse
+                    if (attemptedPassword == null)
+                        attemptedPassword = password;
+                    else
+                        attemptedPassword = null;
+
+                    setPwdMethod.Invoke(con, new object[] { attemptedPassword });
+                    con.Open();
+                }
+                catch
+                {
+                }
+
+                //If the db is not open now, it won't open
+                if (con.State != System.Data.ConnectionState.Open)
+                    throw; //Report original error
+
+                //The open method succeeded with the non-default method, now change the password
+                System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new Type[] { typeof(string) });
+                changePwdMethod.Invoke(con, new object[] { noEncryption ? null : password });
             }
         }
     }

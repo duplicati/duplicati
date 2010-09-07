@@ -108,7 +108,9 @@ namespace Duplicati.Library.Backend
                 Username.Text = m_options[USERNAME];
             if (m_options.ContainsKey(PASSWORD))
                 Password.Text = m_options[PASSWORD];
-            
+
+            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(Password.Text);
+
             int port;
             if (!m_options.ContainsKey(PORT) || !int.TryParse(m_options[PORT], out port))
                 port = 80;

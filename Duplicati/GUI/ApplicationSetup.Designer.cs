@@ -53,7 +53,7 @@ namespace Duplicati.GUI
             this.EncryptionModule = new System.Windows.Forms.ComboBox();
             this.EncryptionMethod = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
-            this.CommonPassword = new System.Windows.Forms.TextBox();
+            this.CommonPassword = new Duplicati.Winforms.Controls.PasswordControl();
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
@@ -262,7 +262,6 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.CommonPassword, "CommonPassword");
             this.CommonPassword.Name = "CommonPassword";
             this.toolTip.SetToolTip(this.CommonPassword, resources.GetString("CommonPassword.ToolTip"));
-            this.CommonPassword.UseSystemPasswordChar = true;
             this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
             // 
             // UseCommonPassword
@@ -442,7 +441,7 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.FolderBrowserDialog BrowseTempPath;
         private System.Windows.Forms.GroupBox PasswordDefaultsGroup;
-        private System.Windows.Forms.TextBox CommonPassword;
+        private Duplicati.Winforms.Controls.PasswordControl CommonPassword;
         private System.Windows.Forms.CheckBox UseCommonPassword;
         private System.Windows.Forms.Panel PasswordPanel;
         private System.Windows.Forms.Label label5;

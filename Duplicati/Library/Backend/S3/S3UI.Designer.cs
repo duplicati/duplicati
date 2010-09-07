@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.AWS_KEY = new System.Windows.Forms.TextBox();
+            this.AWS_KEY = new Duplicati.Winforms.Controls.PasswordControl();
             this.BucketName = new System.Windows.Forms.TextBox();
             this.SignUpLink = new System.Windows.Forms.LinkLabel();
             this.label4 = new System.Windows.Forms.Label();
@@ -61,7 +61,11 @@ namespace Duplicati.Library.Backend
             // 
             // AWS_KEY
             // 
+            this.AWS_KEY.AskToEnterNewPassword = false;
+            this.AWS_KEY.IsPasswordVisible = false;
             resources.ApplyResources(this.AWS_KEY, "AWS_KEY");
+            this.AWS_KEY.MaximumSize = new System.Drawing.Size(5000, 20);
+            this.AWS_KEY.MinimumSize = new System.Drawing.Size(150, 20);
             this.AWS_KEY.Name = "AWS_KEY";
             this.AWS_KEY.TextChanged += new System.EventHandler(this.AWS_KEY_TextChanged);
             // 
@@ -152,7 +156,7 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox AWS_KEY;
+        private Duplicati.Winforms.Controls.PasswordControl AWS_KEY;
         private System.Windows.Forms.TextBox BucketName;
         private System.Windows.Forms.LinkLabel SignUpLink;
         private System.Windows.Forms.Label label4;
