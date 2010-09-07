@@ -1,3 +1,29 @@
+NOTE: The SharpZipLib uses GPL, but has the following
+text in the ReadMe.rtf file:
+
+License 
+The software is released under the GPL with an exception 
+which allows linking with non GPL programs. 
+The exception to the GPL is as follows: 
+
+Linking this library statically or dynamically with other
+modules is making a combined work based on this library. 
+Thus, the terms and conditions of the GNU General Public 
+License cover the whole combination. 
+
+As a special exception, the copyright holders of this 
+library give you permission to link this library with 
+independent modules to produce an executable, regardless 
+of the license terms of these independent modules, and to 
+copy and distribute the resulting executable under terms 
+of your choice, provided that you also meet, for each 
+linked independent module, the terms and conditions of 
+the license of that module. An independent module is a 
+module which is not derived from or based on this library. 
+
+
+
+
 		    GNU GENERAL PUBLIC LICENSE
 		       Version 2, June 1991
 
