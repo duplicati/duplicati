@@ -270,6 +270,19 @@ namespace Duplicati.GUI
                     MessageBox.Show(this, string.Format(Strings.ApplicationSetup.SettingControlsLoadError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
 
+                //Place the license page last
+                TabContainer.TabPages.Remove(LicenseTab);
+                TabContainer.TabPages.Insert(TabContainer.TabPages.Count, LicenseTab);
+
+                string licensePath = System.IO.Path.Combine(Application.StartupPath, "licenses");
+                List<Duplicati.License.LicenseEntry> licenses = Duplicati.License.LicenseReader.ReadLicenses(licensePath);
+                licenses.Insert(0, new Duplicati.License.LicenseEntry("Duplicati", System.IO.Path.Combine(licensePath, "duplicati-url.txt"), System.IO.Path.Combine(licensePath, "license.txt")));
+                licenses.Insert(0, new Duplicati.License.LicenseEntry("Acknowledgements", System.IO.Path.Combine(licensePath, "duplicati-url.txt"), System.IO.Path.Combine(licensePath, "acknowledgements.txt")));
+
+                LicenseSections.Items.Clear();
+                LicenseSections.Items.AddRange(licenses.ToArray());
+                LicenseSections.SelectedIndex = -1;
+                LicenseSections.SelectedIndex = 0;
             }
             finally
             {
@@ -486,6 +499,26 @@ namespace Duplicati.GUI
                 return;
 
             m_settings.HideDonateButton = HideDonateButton.Checked;
+        }
+
+        private void LicenseSections_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (LicenseSections.SelectedItem as Duplicati.License.LicenseEntry != null)
+            {
+                Duplicati.License.LicenseEntry l = LicenseSections.SelectedItem as Duplicati.License.LicenseEntry;
+                LicenseText.Text = l.License;
+                LicenseLink.Visible = !string.IsNullOrEmpty(l.Url);
+            }
+        }
+
+        private void LicenseLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            if (LicenseSections.SelectedItem as Duplicati.License.LicenseEntry != null)
+            {
+                Duplicati.License.LicenseEntry l = LicenseSections.SelectedItem as Duplicati.License.LicenseEntry;
+                if (!string.IsNullOrEmpty(l.Url))
+                    UrlUtillity.OpenUrl(l.Url);
+            }
         }
     }
 }

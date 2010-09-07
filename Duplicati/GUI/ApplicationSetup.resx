@@ -138,6 +138,12 @@
   <data name="label1.Text" xml:space="preserve">
     <value>Time a log is shown in recent backups</value>
   </data>
+  <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>902, 17</value>
+  </metadata>
+  <data name="label1.ToolTip" xml:space="preserve">
+    <value>Select the time a backup is displayed in the log window after completion</value>
+  </data>
   <data name="&gt;&gt;label1.Name" xml:space="preserve">
     <value>label1</value>
   </data>
@@ -153,6 +159,9 @@
   <data name="HideDonateButton.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="HideDonateButton.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="HideDonateButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>8, 96</value>
   </data>
@@ -164,6 +173,9 @@
   </data>
   <data name="HideDonateButton.Text" xml:space="preserve">
     <value>Hide the donate button on the main wizard page</value>
+  </data>
+  <data name="HideDonateButton.ToolTip" xml:space="preserve">
+    <value>Check this box to prevent the display of the donation button in the wizard</value>
   </data>
   <data name="&gt;&gt;HideDonateButton.Name" xml:space="preserve">
     <value>HideDonateButton</value>
@@ -188,6 +200,9 @@
   </data>
   <data name="StartupDelayDuration.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
+  </data>
+  <data name="StartupDelayDuration.ToolTip" xml:space="preserve">
+    <value>Select the amount of time Duplicat is paused after startup</value>
   </data>
   <data name="&gt;&gt;StartupDelayDuration.Name" xml:space="preserve">
     <value>StartupDelayDuration</value>
@@ -219,6 +234,9 @@
   <data name="label7.Text" xml:space="preserve">
     <value>Period to pause duplicati after startup</value>
   </data>
+  <data name="label7.ToolTip" xml:space="preserve">
+    <value>Select the amount of time Duplicat is paused after startup</value>
+  </data>
   <data name="&gt;&gt;label7.Name" xml:space="preserve">
     <value>label7</value>
   </data>
@@ -242,6 +260,9 @@
   </data>
   <data name="LanguageSelection.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
+  </data>
+  <data name="LanguageSelection.ToolTip" xml:space="preserve">
+    <value>Choose the language for the user interface (requires restart)</value>
   </data>
   <data name="&gt;&gt;LanguageSelection.Name" xml:space="preserve">
     <value>LanguageSelection</value>
@@ -273,6 +294,9 @@
   <data name="label3.Text" xml:space="preserve">
     <value>User interface language</value>
   </data>
+  <data name="label3.ToolTip" xml:space="preserve">
+    <value>Choose the language for the user interface (requires restart)</value>
+  </data>
   <data name="&gt;&gt;label3.Name" xml:space="preserve">
     <value>label3</value>
   </data>
@@ -296,6 +320,9 @@
   </data>
   <data name="RecentDuration.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
+  </data>
+  <data name="RecentDuration.ToolTip" xml:space="preserve">
+    <value>Select the time a backup is displayed in the log window after completion</value>
   </data>
   <data name="&gt;&gt;RecentDuration.Name" xml:space="preserve">
     <value>RecentDuration</value>
@@ -331,7 +358,7 @@
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
-    <value>tabPage1</value>
+    <value>BasicTab</value>
   </data>
   <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
     <value>1</value>
@@ -353,6 +380,9 @@
   </data>
   <data name="CacheSizeLabel.Text" xml:space="preserve">
     <value>Calculating cache size ...</value>
+  </data>
+  <data name="CacheSizeLabel.ToolTip" xml:space="preserve">
+    <value>The size of the current cache folder</value>
   </data>
   <data name="&gt;&gt;CacheSizeLabel.Name" xml:space="preserve">
     <value>CacheSizeLabel</value>
@@ -380,6 +410,9 @@
   </data>
   <data name="ClearCacheButton.Text" xml:space="preserve">
     <value>Clear cache</value>
+  </data>
+  <data name="ClearCacheButton.ToolTip" xml:space="preserve">
+    <value>Clear any signature files stored in cache, they will be re-downloaded the next time the backup is activated</value>
   </data>
   <data name="&gt;&gt;ClearCacheButton.Name" xml:space="preserve">
     <value>ClearCacheButton</value>
@@ -411,6 +444,9 @@
   <data name="SignatureCacheEnabled.Text" xml:space="preserve">
     <value>Signature cache</value>
   </data>
+  <data name="SignatureCacheEnabled.ToolTip" xml:space="preserve">
+    <value>A signature cache limits the amount of data Duplicati needs to download by keeping a copy on the machine, enabling this feature makes the backups faster</value>
+  </data>
   <data name="&gt;&gt;SignatureCacheEnabled.Name" xml:space="preserve">
     <value>SignatureCacheEnabled</value>
   </data>
@@ -440,6 +476,9 @@
   </data>
   <data name="SignatureCachePathBrowse.Text" xml:space="preserve">
     <value>...</value>
+  </data>
+  <data name="SignatureCachePathBrowse.ToolTip" xml:space="preserve">
+    <value>Browse for the signature cache folder</value>
   </data>
   <data name="&gt;&gt;SignatureCachePathBrowse.Name" xml:space="preserve">
     <value>SignatureCachePathBrowse</value>
@@ -495,6 +534,9 @@
   <data name="TempPathBrowse.Text" xml:space="preserve">
     <value>...</value>
   </data>
+  <data name="TempPathBrowse.ToolTip" xml:space="preserve">
+    <value>Browse for the temporary folder</value>
+  </data>
   <data name="&gt;&gt;TempPathBrowse.Name" xml:space="preserve">
     <value>TempPathBrowse</value>
   </data>
@@ -518,6 +560,9 @@
   </data>
   <data name="TempPath.TabIndex" type="System.Int32, mscorlib">
     <value>21</value>
+  </data>
+  <data name="TempPath.ToolTip" xml:space="preserve">
+    <value>Enter the path where Duplicati stores temporary files</value>
   </data>
   <data name="&gt;&gt;TempPath.Name" xml:space="preserve">
     <value>TempPath</value>
@@ -548,6 +593,9 @@
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>Temporary folder</value>
+  </data>
+  <data name="label4.ToolTip" xml:space="preserve">
+    <value>Enter the path where Duplicati stores temporary files</value>
   </data>
   <data name="&gt;&gt;label4.Name" xml:space="preserve">
     <value>label4</value>
@@ -583,7 +631,7 @@
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;groupBox2.Parent" xml:space="preserve">
-    <value>tabPage2</value>
+    <value>AdvancedTab</value>
   </data>
   <data name="&gt;&gt;groupBox2.ZOrder" xml:space="preserve">
     <value>0</value>
@@ -660,6 +708,9 @@
   <data name="EncryptionModule.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
   </data>
+  <data name="EncryptionModule.ToolTip" xml:space="preserve">
+    <value>Choose the default encryption module to use for new backups</value>
+  </data>
   <data name="&gt;&gt;EncryptionModule.Name" xml:space="preserve">
     <value>EncryptionModule</value>
   </data>
@@ -689,6 +740,9 @@
   </data>
   <data name="EncryptionMethod.Text" xml:space="preserve">
     <value>Encryption method</value>
+  </data>
+  <data name="EncryptionMethod.ToolTip" xml:space="preserve">
+    <value>Choose the default encryption module to use for new backups</value>
   </data>
   <data name="&gt;&gt;EncryptionMethod.Name" xml:space="preserve">
     <value>EncryptionMethod</value>
@@ -720,6 +774,9 @@
   <data name="label5.Text" xml:space="preserve">
     <value>Password</value>
   </data>
+  <data name="label5.ToolTip" xml:space="preserve">
+    <value>Enter the default password to apply to new backups</value>
+  </data>
   <data name="&gt;&gt;label5.Name" xml:space="preserve">
     <value>label5</value>
   </data>
@@ -740,6 +797,9 @@
   </data>
   <data name="CommonPassword.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
+  </data>
+  <data name="CommonPassword.ToolTip" xml:space="preserve">
+    <value>Enter the default password to apply to new backups</value>
   </data>
   <data name="&gt;&gt;CommonPassword.Name" xml:space="preserve">
     <value>CommonPassword</value>
@@ -792,6 +852,9 @@
   <data name="UseCommonPassword.Text" xml:space="preserve">
     <value>Use a password to protect backups</value>
   </data>
+  <data name="UseCommonPassword.ToolTip" xml:space="preserve">
+    <value>Enable this to use the same password for multiple backups</value>
+  </data>
   <data name="&gt;&gt;UseCommonPassword.Name" xml:space="preserve">
     <value>UseCommonPassword</value>
   </data>
@@ -826,7 +889,7 @@
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;PasswordDefaultsGroup.Parent" xml:space="preserve">
-    <value>tabPage1</value>
+    <value>BasicTab</value>
   </data>
   <data name="&gt;&gt;PasswordDefaultsGroup.ZOrder" xml:space="preserve">
     <value>0</value>
@@ -837,31 +900,31 @@
   <metadata name="CacheSizeCalculator.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>741, 17</value>
   </metadata>
-  <data name="tabPage1.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="BasicTab.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 22</value>
   </data>
-  <data name="tabPage1.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+  <data name="BasicTab.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 3, 3, 3</value>
   </data>
-  <data name="tabPage1.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="BasicTab.Size" type="System.Drawing.Size, System.Drawing">
     <value>445, 277</value>
   </data>
-  <data name="tabPage1.TabIndex" type="System.Int32, mscorlib">
+  <data name="BasicTab.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
   </data>
-  <data name="tabPage1.Text" xml:space="preserve">
+  <data name="BasicTab.Text" xml:space="preserve">
     <value>Basic</value>
   </data>
-  <data name="&gt;&gt;tabPage1.Name" xml:space="preserve">
-    <value>tabPage1</value>
+  <data name="&gt;&gt;BasicTab.Name" xml:space="preserve">
+    <value>BasicTab</value>
   </data>
-  <data name="&gt;&gt;tabPage1.Type" xml:space="preserve">
+  <data name="&gt;&gt;BasicTab.Type" xml:space="preserve">
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;tabPage1.Parent" xml:space="preserve">
+  <data name="&gt;&gt;BasicTab.Parent" xml:space="preserve">
     <value>TabContainer</value>
   </data>
-  <data name="&gt;&gt;tabPage1.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;BasicTab.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <data name="Bandwidth.Location" type="System.Drawing.Point, System.Drawing">
@@ -872,6 +935,9 @@
   </data>
   <data name="Bandwidth.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
+  </data>
+  <data name="Bandwidth.ToolTip" xml:space="preserve">
+    <value>Set the initial bandwidth limits to use in Duplicati</value>
   </data>
   <data name="&gt;&gt;Bandwidth.Name" xml:space="preserve">
     <value>Bandwidth</value>
@@ -893,6 +959,9 @@
   </data>
   <data name="ThreadPriorityPicker.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
+  </data>
+  <data name="ThreadPriorityPicker.ToolTip" xml:space="preserve">
+    <value>Set the initial thread priority to be used by Duplicati</value>
   </data>
   <data name="&gt;&gt;ThreadPriorityPicker.Name" xml:space="preserve">
     <value>ThreadPriorityPicker</value>
@@ -928,37 +997,214 @@
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;groupBox4.Parent" xml:space="preserve">
-    <value>tabPage2</value>
+    <value>AdvancedTab</value>
   </data>
   <data name="&gt;&gt;groupBox4.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <data name="tabPage2.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="AdvancedTab.Location" type="System.Drawing.Point, System.Drawing">
     <value>4, 22</value>
   </data>
-  <data name="tabPage2.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+  <data name="AdvancedTab.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 3, 3, 3</value>
   </data>
-  <data name="tabPage2.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="AdvancedTab.Size" type="System.Drawing.Size, System.Drawing">
     <value>445, 277</value>
   </data>
-  <data name="tabPage2.TabIndex" type="System.Int32, mscorlib">
+  <data name="AdvancedTab.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
   </data>
-  <data name="tabPage2.Text" xml:space="preserve">
+  <data name="AdvancedTab.Text" xml:space="preserve">
     <value>Advanced</value>
   </data>
-  <data name="&gt;&gt;tabPage2.Name" xml:space="preserve">
-    <value>tabPage2</value>
+  <data name="&gt;&gt;AdvancedTab.Name" xml:space="preserve">
+    <value>AdvancedTab</value>
   </data>
-  <data name="&gt;&gt;tabPage2.Type" xml:space="preserve">
+  <data name="&gt;&gt;AdvancedTab.Type" xml:space="preserve">
     <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;tabPage2.Parent" xml:space="preserve">
+  <data name="&gt;&gt;AdvancedTab.Parent" xml:space="preserve">
     <value>TabContainer</value>
   </data>
-  <data name="&gt;&gt;tabPage2.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;AdvancedTab.ZOrder" xml:space="preserve">
     <value>1</value>
+  </data>
+  <data name="LicenseLink.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="LicenseLink.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="LicenseLink.Location" type="System.Drawing.Point, System.Drawing">
+    <value>368, 8</value>
+  </data>
+  <data name="LicenseLink.Size" type="System.Drawing.Size, System.Drawing">
+    <value>59, 13</value>
+  </data>
+  <data name="LicenseLink.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="LicenseLink.Text" xml:space="preserve">
+    <value>Homepage</value>
+  </data>
+  <data name="LicenseLink.ToolTip" xml:space="preserve">
+    <value>Click to go to the homepage of the currently selected section</value>
+  </data>
+  <data name="&gt;&gt;LicenseLink.Name" xml:space="preserve">
+    <value>LicenseLink</value>
+  </data>
+  <data name="&gt;&gt;LicenseLink.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LinkLabel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LicenseLink.Parent" xml:space="preserve">
+    <value>LicenseTab</value>
+  </data>
+  <data name="&gt;&gt;LicenseLink.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label6.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label6.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="label6.Location" type="System.Drawing.Point, System.Drawing">
+    <value>152, 8</value>
+  </data>
+  <data name="label6.Size" type="System.Drawing.Size, System.Drawing">
+    <value>44, 13</value>
+  </data>
+  <data name="label6.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="label6.Text" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="&gt;&gt;label6.Name" xml:space="preserve">
+    <value>label6</value>
+  </data>
+  <data name="&gt;&gt;label6.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label6.Parent" xml:space="preserve">
+    <value>LicenseTab</value>
+  </data>
+  <data name="&gt;&gt;label6.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="LicenseText.Location" type="System.Drawing.Point, System.Drawing">
+    <value>152, 24</value>
+  </data>
+  <data name="LicenseText.MaxLength" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="LicenseText.Multiline" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="LicenseText.ScrollBars" type="System.Windows.Forms.ScrollBars, System.Windows.Forms">
+    <value>Both</value>
+  </data>
+  <data name="LicenseText.Size" type="System.Drawing.Size, System.Drawing">
+    <value>280, 240</value>
+  </data>
+  <data name="LicenseText.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="LicenseText.WordWrap" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="&gt;&gt;LicenseText.Name" xml:space="preserve">
+    <value>LicenseText</value>
+  </data>
+  <data name="&gt;&gt;LicenseText.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LicenseText.Parent" xml:space="preserve">
+    <value>LicenseTab</value>
+  </data>
+  <data name="&gt;&gt;LicenseText.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="label2.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label2.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 8</value>
+  </data>
+  <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>48, 13</value>
+  </data>
+  <data name="label2.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="label2.Text" xml:space="preserve">
+    <value>Sections</value>
+  </data>
+  <data name="&gt;&gt;label2.Name" xml:space="preserve">
+    <value>label2</value>
+  </data>
+  <data name="&gt;&gt;label2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label2.Parent" xml:space="preserve">
+    <value>LicenseTab</value>
+  </data>
+  <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="LicenseSections.IntegralHeight" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="LicenseSections.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 24</value>
+  </data>
+  <data name="LicenseSections.Size" type="System.Drawing.Size, System.Drawing">
+    <value>136, 240</value>
+  </data>
+  <data name="LicenseSections.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="LicenseSections.ToolTip" xml:space="preserve">
+    <value>Lists the available license sections</value>
+  </data>
+  <data name="&gt;&gt;LicenseSections.Name" xml:space="preserve">
+    <value>LicenseSections</value>
+  </data>
+  <data name="&gt;&gt;LicenseSections.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LicenseSections.Parent" xml:space="preserve">
+    <value>LicenseTab</value>
+  </data>
+  <data name="&gt;&gt;LicenseSections.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="LicenseTab.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <data name="LicenseTab.Size" type="System.Drawing.Size, System.Drawing">
+    <value>445, 277</value>
+  </data>
+  <data name="LicenseTab.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="LicenseTab.Text" xml:space="preserve">
+    <value>License</value>
+  </data>
+  <data name="&gt;&gt;LicenseTab.Name" xml:space="preserve">
+    <value>LicenseTab</value>
+  </data>
+  <data name="&gt;&gt;LicenseTab.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LicenseTab.Parent" xml:space="preserve">
+    <value>TabContainer</value>
+  </data>
+  <data name="&gt;&gt;LicenseTab.ZOrder" xml:space="preserve">
+    <value>2</value>
   </data>
   <data name="TabContainer.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Fill</value>
@@ -1543,6 +1789,12 @@
   </data>
   <data name="&gt;&gt;CacheSizeCalculator.Type" xml:space="preserve">
     <value>System.ComponentModel.BackgroundWorker, System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolTip.Name" xml:space="preserve">
+    <value>toolTip</value>
+  </data>
+  <data name="&gt;&gt;toolTip.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>ApplicationSetup</value>

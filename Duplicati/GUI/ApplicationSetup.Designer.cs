@@ -28,15 +28,14 @@ namespace Duplicati.GUI
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ApplicationSetup));
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.HideDonateButton = new System.Windows.Forms.CheckBox();
-            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.label7 = new System.Windows.Forms.Label();
             this.LanguageSelection = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -59,27 +58,38 @@ namespace Duplicati.GUI
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
             this.TabContainer = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.BasicTab = new System.Windows.Forms.TabPage();
+            this.AdvancedTab = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.LicenseTab = new System.Windows.Forms.TabPage();
+            this.LicenseSections = new System.Windows.Forms.ListBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.LicenseText = new System.Windows.Forms.TextBox();
+            this.label6 = new System.Windows.Forms.Label();
+            this.LicenseLink = new System.Windows.Forms.LinkLabel();
+            this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.Bandwidth = new Duplicati.GUI.HelperControls.BandwidthLimit();
             this.ThreadPriorityPicker = new Duplicati.GUI.HelperControls.ThreadPriorityPicker();
-            this.panel1 = new System.Windows.Forms.Panel();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.PasswordDefaultsGroup.SuspendLayout();
             this.PasswordPanel.SuspendLayout();
             this.TabContainer.SuspendLayout();
-            this.tabPage1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
+            this.BasicTab.SuspendLayout();
+            this.AdvancedTab.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.panel1.SuspendLayout();
+            this.LicenseTab.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
             // 
             resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
+            this.toolTip.SetToolTip(this.label1, resources.GetString("label1.ToolTip"));
             // 
             // groupBox1
             // 
@@ -98,20 +108,15 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.HideDonateButton, "HideDonateButton");
             this.HideDonateButton.Name = "HideDonateButton";
+            this.toolTip.SetToolTip(this.HideDonateButton, resources.GetString("HideDonateButton.ToolTip"));
             this.HideDonateButton.UseVisualStyleBackColor = true;
             this.HideDonateButton.CheckedChanged += new System.EventHandler(this.HideDonateButton_CheckedChanged);
-            // 
-            // StartupDelayDuration
-            // 
-            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
-            this.StartupDelayDuration.Name = "StartupDelayDuration";
-            this.StartupDelayDuration.Value = "";
-            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
             // 
             // label7
             // 
             resources.ApplyResources(this.label7, "label7");
             this.label7.Name = "label7";
+            this.toolTip.SetToolTip(this.label7, resources.GetString("label7.ToolTip"));
             // 
             // LanguageSelection
             // 
@@ -119,19 +124,14 @@ namespace Duplicati.GUI
             this.LanguageSelection.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.LanguageSelection.FormattingEnabled = true;
             this.LanguageSelection.Name = "LanguageSelection";
+            this.toolTip.SetToolTip(this.LanguageSelection, resources.GetString("LanguageSelection.ToolTip"));
             this.LanguageSelection.SelectedIndexChanged += new System.EventHandler(this.LanguageSelection_SelectedIndexChanged);
             // 
             // label3
             // 
             resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            // 
-            // RecentDuration
-            // 
-            resources.ApplyResources(this.RecentDuration, "RecentDuration");
-            this.RecentDuration.Name = "RecentDuration";
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
+            this.toolTip.SetToolTip(this.label3, resources.GetString("label3.ToolTip"));
             // 
             // groupBox2
             // 
@@ -151,11 +151,13 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.CacheSizeLabel, "CacheSizeLabel");
             this.CacheSizeLabel.Name = "CacheSizeLabel";
+            this.toolTip.SetToolTip(this.CacheSizeLabel, resources.GetString("CacheSizeLabel.ToolTip"));
             // 
             // ClearCacheButton
             // 
             resources.ApplyResources(this.ClearCacheButton, "ClearCacheButton");
             this.ClearCacheButton.Name = "ClearCacheButton";
+            this.toolTip.SetToolTip(this.ClearCacheButton, resources.GetString("ClearCacheButton.ToolTip"));
             this.ClearCacheButton.UseVisualStyleBackColor = true;
             this.ClearCacheButton.Click += new System.EventHandler(this.ClearCacheButton_Click);
             // 
@@ -163,6 +165,7 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.SignatureCacheEnabled, "SignatureCacheEnabled");
             this.SignatureCacheEnabled.Name = "SignatureCacheEnabled";
+            this.toolTip.SetToolTip(this.SignatureCacheEnabled, resources.GetString("SignatureCacheEnabled.ToolTip"));
             this.SignatureCacheEnabled.UseVisualStyleBackColor = true;
             this.SignatureCacheEnabled.CheckedChanged += new System.EventHandler(this.SignatureCacheEnabled_CheckedChanged);
             // 
@@ -170,6 +173,7 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.SignatureCachePathBrowse, "SignatureCachePathBrowse");
             this.SignatureCachePathBrowse.Name = "SignatureCachePathBrowse";
+            this.toolTip.SetToolTip(this.SignatureCachePathBrowse, resources.GetString("SignatureCachePathBrowse.ToolTip"));
             this.SignatureCachePathBrowse.UseVisualStyleBackColor = true;
             this.SignatureCachePathBrowse.Click += new System.EventHandler(this.SignatureCachePathBrowse_Click);
             // 
@@ -183,6 +187,7 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.TempPathBrowse, "TempPathBrowse");
             this.TempPathBrowse.Name = "TempPathBrowse";
+            this.toolTip.SetToolTip(this.TempPathBrowse, resources.GetString("TempPathBrowse.ToolTip"));
             this.TempPathBrowse.UseVisualStyleBackColor = true;
             this.TempPathBrowse.Click += new System.EventHandler(this.TempPathBrowse_Click);
             // 
@@ -190,12 +195,14 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.TempPath, "TempPath");
             this.TempPath.Name = "TempPath";
+            this.toolTip.SetToolTip(this.TempPath, resources.GetString("TempPath.ToolTip"));
             this.TempPath.TextChanged += new System.EventHandler(this.TempPath_TextChanged);
             // 
             // label4
             // 
             resources.ApplyResources(this.label4, "label4");
             this.label4.Name = "label4";
+            this.toolTip.SetToolTip(this.label4, resources.GetString("label4.ToolTip"));
             // 
             // OKBtn
             // 
@@ -234,6 +241,7 @@ namespace Duplicati.GUI
             this.EncryptionModule.FormattingEnabled = true;
             resources.ApplyResources(this.EncryptionModule, "EncryptionModule");
             this.EncryptionModule.Name = "EncryptionModule";
+            this.toolTip.SetToolTip(this.EncryptionModule, resources.GetString("EncryptionModule.ToolTip"));
             this.EncryptionModule.SelectedIndexChanged += new System.EventHandler(this.EncryptionModule_SelectedIndexChanged);
             this.EncryptionModule.TextChanged += new System.EventHandler(this.EncryptionModule_SelectedIndexChanged);
             // 
@@ -241,16 +249,19 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.EncryptionMethod, "EncryptionMethod");
             this.EncryptionMethod.Name = "EncryptionMethod";
+            this.toolTip.SetToolTip(this.EncryptionMethod, resources.GetString("EncryptionMethod.ToolTip"));
             // 
             // label5
             // 
             resources.ApplyResources(this.label5, "label5");
             this.label5.Name = "label5";
+            this.toolTip.SetToolTip(this.label5, resources.GetString("label5.ToolTip"));
             // 
             // CommonPassword
             // 
             resources.ApplyResources(this.CommonPassword, "CommonPassword");
             this.CommonPassword.Name = "CommonPassword";
+            this.toolTip.SetToolTip(this.CommonPassword, resources.GetString("CommonPassword.ToolTip"));
             this.CommonPassword.UseSystemPasswordChar = true;
             this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
             // 
@@ -258,6 +269,7 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.UseCommonPassword, "UseCommonPassword");
             this.UseCommonPassword.Name = "UseCommonPassword";
+            this.toolTip.SetToolTip(this.UseCommonPassword, resources.GetString("UseCommonPassword.ToolTip"));
             this.UseCommonPassword.UseVisualStyleBackColor = true;
             this.UseCommonPassword.CheckedChanged += new System.EventHandler(this.UseCommonPassword_CheckedChanged);
             // 
@@ -269,27 +281,28 @@ namespace Duplicati.GUI
             // 
             // TabContainer
             // 
-            this.TabContainer.Controls.Add(this.tabPage1);
-            this.TabContainer.Controls.Add(this.tabPage2);
+            this.TabContainer.Controls.Add(this.BasicTab);
+            this.TabContainer.Controls.Add(this.AdvancedTab);
+            this.TabContainer.Controls.Add(this.LicenseTab);
             resources.ApplyResources(this.TabContainer, "TabContainer");
             this.TabContainer.Name = "TabContainer";
             this.TabContainer.SelectedIndex = 0;
             // 
-            // tabPage1
+            // BasicTab
             // 
-            this.tabPage1.Controls.Add(this.PasswordDefaultsGroup);
-            this.tabPage1.Controls.Add(this.groupBox1);
-            resources.ApplyResources(this.tabPage1, "tabPage1");
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.UseVisualStyleBackColor = true;
+            this.BasicTab.Controls.Add(this.PasswordDefaultsGroup);
+            this.BasicTab.Controls.Add(this.groupBox1);
+            resources.ApplyResources(this.BasicTab, "BasicTab");
+            this.BasicTab.Name = "BasicTab";
+            this.BasicTab.UseVisualStyleBackColor = true;
             // 
-            // tabPage2
+            // AdvancedTab
             // 
-            this.tabPage2.Controls.Add(this.groupBox2);
-            this.tabPage2.Controls.Add(this.groupBox4);
-            resources.ApplyResources(this.tabPage2, "tabPage2");
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.UseVisualStyleBackColor = true;
+            this.AdvancedTab.Controls.Add(this.groupBox2);
+            this.AdvancedTab.Controls.Add(this.groupBox4);
+            resources.ApplyResources(this.AdvancedTab, "AdvancedTab");
+            this.AdvancedTab.Name = "AdvancedTab";
+            this.AdvancedTab.UseVisualStyleBackColor = true;
             // 
             // groupBox4
             // 
@@ -299,12 +312,79 @@ namespace Duplicati.GUI
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.TabStop = false;
             // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.OKBtn);
+            this.panel1.Controls.Add(this.CancelBtn);
+            resources.ApplyResources(this.panel1, "panel1");
+            this.panel1.Name = "panel1";
+            // 
+            // LicenseTab
+            // 
+            this.LicenseTab.Controls.Add(this.LicenseLink);
+            this.LicenseTab.Controls.Add(this.label6);
+            this.LicenseTab.Controls.Add(this.LicenseText);
+            this.LicenseTab.Controls.Add(this.label2);
+            this.LicenseTab.Controls.Add(this.LicenseSections);
+            resources.ApplyResources(this.LicenseTab, "LicenseTab");
+            this.LicenseTab.Name = "LicenseTab";
+            this.LicenseTab.UseVisualStyleBackColor = true;
+            // 
+            // LicenseSections
+            // 
+            this.LicenseSections.FormattingEnabled = true;
+            resources.ApplyResources(this.LicenseSections, "LicenseSections");
+            this.LicenseSections.Name = "LicenseSections";
+            this.toolTip.SetToolTip(this.LicenseSections, resources.GetString("LicenseSections.ToolTip"));
+            this.LicenseSections.SelectedIndexChanged += new System.EventHandler(this.LicenseSections_SelectedIndexChanged);
+            // 
+            // label2
+            // 
+            resources.ApplyResources(this.label2, "label2");
+            this.label2.Name = "label2";
+            // 
+            // LicenseText
+            // 
+            resources.ApplyResources(this.LicenseText, "LicenseText");
+            this.LicenseText.Name = "LicenseText";
+            this.LicenseText.ReadOnly = true;
+            // 
+            // label6
+            // 
+            resources.ApplyResources(this.label6, "label6");
+            this.label6.Name = "label6";
+            // 
+            // LicenseLink
+            // 
+            resources.ApplyResources(this.LicenseLink, "LicenseLink");
+            this.LicenseLink.Name = "LicenseLink";
+            this.LicenseLink.TabStop = true;
+            this.toolTip.SetToolTip(this.LicenseLink, resources.GetString("LicenseLink.ToolTip"));
+            this.LicenseLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.LicenseLink_LinkClicked);
+            // 
+            // StartupDelayDuration
+            // 
+            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
+            this.StartupDelayDuration.Name = "StartupDelayDuration";
+            this.toolTip.SetToolTip(this.StartupDelayDuration, resources.GetString("StartupDelayDuration.ToolTip"));
+            this.StartupDelayDuration.Value = "";
+            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
+            // 
+            // RecentDuration
+            // 
+            resources.ApplyResources(this.RecentDuration, "RecentDuration");
+            this.RecentDuration.Name = "RecentDuration";
+            this.toolTip.SetToolTip(this.RecentDuration, resources.GetString("RecentDuration.ToolTip"));
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
+            // 
             // Bandwidth
             // 
             this.Bandwidth.DownloadLimit = null;
             this.Bandwidth.DownloadLimitInBytes = ((long)(0));
             resources.ApplyResources(this.Bandwidth, "Bandwidth");
             this.Bandwidth.Name = "Bandwidth";
+            this.toolTip.SetToolTip(this.Bandwidth, resources.GetString("Bandwidth.ToolTip"));
             this.Bandwidth.UploadLimit = null;
             this.Bandwidth.UploadLimitInBytes = ((long)(0));
             this.Bandwidth.DownloadLimitChanged += new System.EventHandler(this.Bandwidth_DownloadLimitChanged);
@@ -314,14 +394,8 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.ThreadPriorityPicker, "ThreadPriorityPicker");
             this.ThreadPriorityPicker.Name = "ThreadPriorityPicker";
+            this.toolTip.SetToolTip(this.ThreadPriorityPicker, resources.GetString("ThreadPriorityPicker.ToolTip"));
             this.ThreadPriorityPicker.SelectedPriorityChanged += new System.EventHandler(this.ThreadPriorityPicker_SelectedPriorityChanged);
-            // 
-            // panel1
-            // 
-            this.panel1.Controls.Add(this.OKBtn);
-            this.panel1.Controls.Add(this.CancelBtn);
-            resources.ApplyResources(this.panel1, "panel1");
-            this.panel1.Name = "panel1";
             // 
             // ApplicationSetup
             // 
@@ -345,10 +419,12 @@ namespace Duplicati.GUI
             this.PasswordPanel.ResumeLayout(false);
             this.PasswordPanel.PerformLayout();
             this.TabContainer.ResumeLayout(false);
-            this.tabPage1.ResumeLayout(false);
-            this.tabPage2.ResumeLayout(false);
+            this.BasicTab.ResumeLayout(false);
+            this.AdvancedTab.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
+            this.LicenseTab.ResumeLayout(false);
+            this.LicenseTab.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -382,8 +458,8 @@ namespace Duplicati.GUI
         private Duplicati.GUI.HelperControls.DurationEditor StartupDelayDuration;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TabControl TabContainer;
-        private System.Windows.Forms.TabPage tabPage1;
-        private System.Windows.Forms.TabPage tabPage2;
+        private System.Windows.Forms.TabPage BasicTab;
+        private System.Windows.Forms.TabPage AdvancedTab;
         private System.Windows.Forms.GroupBox groupBox4;
         private Duplicati.GUI.HelperControls.BandwidthLimit Bandwidth;
         private Duplicati.GUI.HelperControls.ThreadPriorityPicker ThreadPriorityPicker;
@@ -391,5 +467,12 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Label EncryptionMethod;
         private System.Windows.Forms.ComboBox EncryptionModule;
         private System.Windows.Forms.CheckBox HideDonateButton;
+        private System.Windows.Forms.TabPage LicenseTab;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.ListBox LicenseSections;
+        private System.Windows.Forms.ToolTip toolTip;
+        private System.Windows.Forms.LinkLabel LicenseLink;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.TextBox LicenseText;
     }
 }

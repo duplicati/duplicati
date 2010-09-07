@@ -656,6 +656,10 @@
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</Project>
       <Name>Duplicati.Library.Snapshots</Name>
     </ProjectReference>
+    <ProjectReference Include="..\License\Duplicati.License.csproj">
+      <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
+      <Name>Duplicati.License</Name>
+    </ProjectReference>
     <ProjectReference Include="Datamodel\Datamodel.csproj">
       <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
       <Name>Datamodel</Name>

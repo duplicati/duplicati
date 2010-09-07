@@ -24,7 +24,7 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Duplicati")]
+[assembly: AssemblyTitle("Duplicati.Library.Snapshots")]
 [assembly: AssemblyDescription("A disk snapshot implementation for Duplicati")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HexaD")]

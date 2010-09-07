@@ -127,6 +127,10 @@
       <Project>{47FE73E1-0832-44F7-96B9-2580273206C3}</Project>
       <Name>Duplicati.Library.SharpRSync</Name>
     </ProjectReference>
+    <ProjectReference Include="..\License\Duplicati.License.csproj">
+      <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
+      <Name>Duplicati.License</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />

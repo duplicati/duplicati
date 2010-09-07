@@ -1,0 +1,21 @@
+﻿Duplicati is an Open Source project, 
+originally written and maintained by
+Kenneth Skovhede
+
+You can reach the author at opensource@hexad.dk.
+
+Programming:
+  Kenneth Skovhede
+Artwork:
+  Kenneth Skovhede
+
+Translations:
+  Gabriell Hahmann - Brazilian, pt-BR
+
+A special thanks to the many users
+who continues to report problems
+and ask for new features.
+
+The licenses of the thirdparty libraries used 
+by Duplicati can be seen in the list to the
+left.

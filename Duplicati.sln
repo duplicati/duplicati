@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.DynamicLo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Snapshots", "Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.License", "Duplicati\License\Duplicati.License.csproj", "{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -397,6 +399,21 @@ Global
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Test|Mixed Platforms.Build.0 = Release|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACE}.Test|x86.ActiveCfg = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Release|x86.ActiveCfg = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Test|Any CPU.ActiveCfg = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Test|Any CPU.Build.0 = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Test|Mixed Platforms.Build.0 = Release|Any CPU
+		{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}.Test|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
