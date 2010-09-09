@@ -217,10 +217,10 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         public class PartialEntryRecord
         {
-            public string Filename { get; set; }
-            public long StartOffset { get; set; }
-            public long Length { get; set; }
-            public long TotalFileSize { get; set; }
+            public string Filename;
+            public long StartOffset;
+            public long Length;
+            public long TotalFileSize;
 
             public PartialEntryRecord(string[] items)
             {
@@ -1559,18 +1559,12 @@ namespace Duplicati.Library.Main.RSync
                     bs.DeletedFiles = m_deletedfiles.Count;
                 if (m_deletedfolders != null)
                     bs.DeletedFolders = m_deletedfolders.Count;
-                if (m_diffedfiles != null)
-                    bs.ModifiedFiles = m_diffedfiles;
-                if (m_addedfiles != null)
-                    bs.AddedFiles = m_addedfiles;
-                if (m_examinedfiles != null)
-                    bs.ExaminedFiles = m_examinedfiles;
-                if (m_diffedfilessize != null)
-                    bs.SizeOfModifiedFiles = m_diffedfilessize;
-                if (m_addedfilessize != null)
-                    bs.SizeOfAddedFiles = m_addedfilessize;
-                if (m_examinedfilesize != null)
-                    bs.SizeOfExaminedFiles = m_examinedfilesize;
+                bs.ModifiedFiles = m_diffedfiles;
+                bs.AddedFiles = m_addedfiles;
+                bs.ExaminedFiles = m_examinedfiles;
+                bs.SizeOfModifiedFiles = m_diffedfilessize;
+                bs.SizeOfAddedFiles = m_addedfilessize;
+                bs.SizeOfExaminedFiles = m_examinedfilesize;
                 if (m_unproccesed != null && m_unproccesed.Files != null)
                     bs.UnprocessedFiles = m_unproccesed.Files.Count;
                 if (m_newfolders != null)

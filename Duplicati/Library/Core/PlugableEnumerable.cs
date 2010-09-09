@@ -35,20 +35,47 @@ namespace Duplicati.Library.Core
     /// <typeparam name="T">The type of enumerable to filter</typeparam>
     public class PlugableEnumerable<T> : IEnumerable<T>
     {
+		/// <summary>
+		///The predicate used to filter the list 
+		/// </summary>
+		private Predicate<T> m_predicate;
+		
+		/// <summary>
+		///The conversion function 
+		/// </summary>
+		private Func<T, T> m_converter;
+		
+		/// <summary>
+		///The list being wrapped 
+		/// </summary>
+		private IEnumerable<T> m_wrappedList;
+		
         /// <summary>
         /// An optional call back function that determines if an element is visible or not
         /// </summary>
-        public Predicate<T> Predicate { get; set; }
+        public Predicate<T> Predicate 
+		{ 
+			get { return m_predicate; }
+			set { m_predicate = value; }
+		}
 
         /// <summary>
         /// An optional callback method that converts the element returned by the Current method of the enumerator
         /// </summary>
-        public Func<T, T> Converter { get; set; }
+        public Func<T, T> Converter 
+		{ 
+			get { return m_converter; }
+			set { m_converter = value; }
+		}
 
         /// <summary>
         /// The inner list being wrapped
         /// </summary>
-        public IEnumerable<T> WrappedList { get; set; }
+        public IEnumerable<T> WrappedList 
+		{ 
+			get { return m_wrappedList; }
+			set { m_wrappedList = value; }
+		}
 
         /// <summary>
         /// Constructs a new filtered enumeration

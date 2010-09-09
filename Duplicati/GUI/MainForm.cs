@@ -36,11 +36,13 @@ namespace Duplicati.GUI
         private WizardHandler WizardDialog;
 
         private delegate void EmptyDelegate();
+		
+		private string[] m_initialArguments;
 
         public string[] InitialArguments
         {
-            get;
-            set;
+            get { return m_initialArguments; }
+            set { m_initialArguments = value; }
         }
 
         public MainForm()

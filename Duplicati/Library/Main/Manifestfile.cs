@@ -29,25 +29,62 @@ namespace Duplicati.Library.Main
     /// </summary>
     public class Manifestfile
     {
+		/// <summary>
+		///The list of signature hashes 
+		/// </summary>
+		private List<string> m_signatureHashes;
+		
+		/// <summary>
+		///The list of content hashes 
+		/// </summary>
+		private List<string> m_contentHashes;
+		
+		/// <summary>
+		///The list of source dirs 
+		/// </summary>
+		private string[] m_sourceDirs;
+		
+		/// <summary>
+		///The manifest file version 
+		/// </summary>
+		private int m_version;
+		
+		
         /// <summary>
         /// The list of signature hashes
         /// </summary>
-        public List<string> SignatureHashes { get; set; }
+        public List<string> SignatureHashes 
+		{ 
+			get { return m_signatureHashes; }
+			set { m_signatureHashes = value; }
+		}
 
         /// <summary>
         /// The list of content hashes
         /// </summary>
-        public List<string> ContentHashes { get; set; }
+        public List<string> ContentHashes 
+		{ 
+			get { return m_contentHashes; }
+			set { m_contentHashes = value; }
+		}
 
         /// <summary>
         /// The list of source dirs, where the backups are created from
         /// </summary>
-        public string[] SourceDirs { get; set; }
+        public string[] SourceDirs 
+		{ 
+			get { return m_sourceDirs; }
+			set { m_sourceDirs = value; }
+		}
 
         /// <summary>
-        /// Gets the manifest file version
+        /// Gets or sets the manifest file version
         /// </summary>
-        public int Version { get; set; }
+        public int Version 
+		{ 
+			get { return m_version; }
+			set { m_version = value; }
+		}
 
         /// <summary>
         /// The largest supported version

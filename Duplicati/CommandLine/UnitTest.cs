@@ -38,7 +38,14 @@ namespace Duplicati.CommandLine
         /// </summary>
         private class LogHelper : StreamLog
         {
-            public string Backupset { get; set; }
+			private string m_backupset;
+			
+            public string Backupset 
+			{ 
+				get { return m_backupset; }
+				set { m_backupset = value; }
+			}
+			
             public LogHelper(string file)
                 : base(file)
             {
