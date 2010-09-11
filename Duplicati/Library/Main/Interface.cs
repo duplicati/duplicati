@@ -451,7 +451,7 @@ namespace Duplicati.Library.Main
                     if (backend == null || backend.ManifestUploads == 0)
                         throw; //This also activates "finally", unlike in other languages...
 
-                    bs.LogError(string.Format(Strings.Interface.PartialUploadMessage, backend.ManifestUploads, ex.Message));
+                    bs.LogError(string.Format(Strings.Interface.PartialUploadMessage, backend.ManifestUploads, ex.Message), ex);
                 }
                 finally
                 {
@@ -639,7 +639,7 @@ namespace Duplicati.Library.Main
                                 if (manifest.ContentHashes != null && contentVol.Volumenumber > manifest.ContentHashes.Count)
                                 {
                                     Logging.Log.WriteMessage(string.Format(Strings.Interface.SkippedContentVolumeLogMessage, contentVol.Volumenumber), Duplicati.Library.Logging.LogMessageType.Warning);
-                                    rs.LogWarning(string.Format(Strings.Interface.SkippedContentVolumeLogMessage, contentVol.Volumenumber));
+                                    rs.LogWarning(string.Format(Strings.Interface.SkippedContentVolumeLogMessage, contentVol.Volumenumber), null);
                                     patchno++;
                                     continue;
                                 }
@@ -666,7 +666,7 @@ namespace Duplicati.Library.Main
                                              catch (BackendWrapper.HashMismathcException hme)
                                              {
                                                  hasFiles = true;
-                                                 rs.LogError(string.Format(Strings.Interface.FileHashFailure, hme.Message));
+                                                 rs.LogError(string.Format(Strings.Interface.FileHashFailure, hme.Message), hme);
                                              }
 
                                              if (!hasFiles)
@@ -786,7 +786,7 @@ namespace Duplicati.Library.Main
                                     if (any)
                                         break;
 
-                                    rs.LogError(string.Format(Strings.Interface.FailedToFindControlFilesMessage, be.Volumes[0].Key.Filename));
+                                    rs.LogError(string.Format(Strings.Interface.FailedToFindControlFilesMessage, be.Volumes[0].Key.Filename), null);
                                 }
                             }
                     }
@@ -1180,7 +1180,7 @@ namespace Duplicati.Library.Main
                             if (allowHashFail)
                             {
                                 if (stat != null)
-                                    stat.LogError(string.Format(Strings.Interface.FileHashFailure, hme.Message));
+                                    stat.LogError(string.Format(Strings.Interface.FileHashFailure, hme.Message), hme);
                                 continue;
                             }
                             else
@@ -1284,7 +1284,7 @@ namespace Duplicati.Library.Main
                     foreach (Library.Interface.ICommandLineArgument a in l)
                     {
                         if (supportedOptions.ContainsKey(a.Name))
-                            stats.LogWarning(string.Format(Strings.Interface.DuplicateOptionNameWarning, a.Name));
+                            stats.LogWarning(string.Format(Strings.Interface.DuplicateOptionNameWarning, a.Name), null);
 
                         supportedOptions[a.Name] = a;
 
@@ -1292,7 +1292,7 @@ namespace Duplicati.Library.Main
                             foreach (string s in a.Aliases)
                             {
                                 if (supportedOptions.ContainsKey(s))
-                                    stats.LogWarning(string.Format(Strings.Interface.DuplicateOptionNameWarning, s));
+                                    stats.LogWarning(string.Format(Strings.Interface.DuplicateOptionNameWarning, s), null);
 
                                 supportedOptions[s] = a;
                             }
@@ -1311,7 +1311,7 @@ namespace Duplicati.Library.Main
                                     if (a.Name != s)
                                         optname += " (" + s + ")";
 
-                                    stats.LogWarning(string.Format(Strings.Interface.DeprecatedOptionUsedWarning, optname, a.DeprecationMessage));
+                                    stats.LogWarning(string.Format(Strings.Interface.DeprecatedOptionUsedWarning, optname, a.DeprecationMessage), null);
                                 }
 
                         }
@@ -1322,9 +1322,9 @@ namespace Duplicati.Library.Main
             foreach (string s in ropts.Keys)
                 if (!supportedOptions.ContainsKey(s))
                     if (disabledModuleOptions.ContainsKey(s))
-                        stats.LogWarning(string.Format(Strings.Interface.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]));
+                        stats.LogWarning(string.Format(Strings.Interface.UnsupportedOptionDisabledModuleWarning, s, disabledModuleOptions[s]), null);
                     else
-                        stats.LogWarning(string.Format(Strings.Interface.UnsupportedOptionWarning, s));
+                        stats.LogWarning(string.Format(Strings.Interface.UnsupportedOptionWarning, s), null);
 
             //Look at the value supplied for each argument and see if is valid according to its type
             foreach (string s in ropts.Keys)
@@ -1334,7 +1334,7 @@ namespace Duplicati.Library.Main
                 {
                     string validationMessage = ValidateOptionValue(arg, s, ropts[s]);
                     if (validationMessage != null)
-                        stats.LogWarning(validationMessage);
+                        stats.LogWarning(validationMessage, null);
                 }
             }
         }

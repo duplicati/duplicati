@@ -562,7 +562,7 @@ namespace Duplicati.Library.Main.RSync
                 else if (snapshotPolicy == Options.SnapShotMode.On)
                 {
                     if (m_stat != null)
-                        m_stat.LogWarning(string.Format(Strings.RSyncDir.SnapshotFailedError, ex.ToString()));
+                        m_stat.LogWarning(string.Format(Strings.RSyncDir.SnapshotFailedError, ex.ToString()), null);
                 }
             }
 
@@ -722,7 +722,7 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError(string.Format(Strings.RSyncDir.DeletedFilenameError, s, sourcefolder));
+                                m_stat.LogError(string.Format(Strings.RSyncDir.DeletedFilenameError, s, sourcefolder), ex);
                             Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.DeletedFilenameError, s, sourcefolder), Duplicati.Library.Logging.LogMessageType.Error, ex);
                             m_unproccesed.FilesWithError.Add(s);
                         }
@@ -892,7 +892,7 @@ namespace Duplicati.Library.Main.RSync
                 catch (Exception ex)
                 {
                     if (m_stat != null)
-                        m_stat.LogError(string.Format(Strings.RSyncDir.FileProcessError, s, ex.Message));
+                        m_stat.LogError(string.Format(Strings.RSyncDir.FileProcessError, s, ex.Message), ex);
                     Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.FileProcessError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
                     m_unproccesed.FilesWithError.Add(s);
                 }
@@ -1143,7 +1143,7 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError(string.Format(Strings.RSyncDir.DeleteFolderError, s, ex.Message));
+                                m_stat.LogError(string.Format(Strings.RSyncDir.DeleteFolderError, s, ex.Message), ex);
                             Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.DeleteFolderError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                     else
@@ -1167,7 +1167,7 @@ namespace Duplicati.Library.Main.RSync
                         string logmessage = string.Format(Strings.RSyncDir.PartialLeftoverDeleteError, tf.Key, ex.Message);
                         Logging.Log.WriteMessage(logmessage, Duplicati.Library.Logging.LogMessageType.Error, ex);
                         if (m_stat != null)
-                            m_stat.LogError(logmessage);
+                            m_stat.LogError(logmessage, ex);
                     }
                 }
                 m_partialDeltas = null;
@@ -1179,7 +1179,7 @@ namespace Duplicati.Library.Main.RSync
                         try { System.IO.Directory.SetLastWriteTimeUtc(t.Key, t.Value); }
                         catch (Exception ex)
                         {
-                            m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFolderWriteTime, t.Key, ex.Message));
+                            m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFolderWriteTime, t.Key, ex.Message), ex);
                         }
 
             m_folderTimestamps = null;
@@ -1291,7 +1291,7 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError(string.Format(Strings.RSyncDir.DeleteFileError, s, ex.Message));
+                                m_stat.LogError(string.Format(Strings.RSyncDir.DeleteFileError, s, ex.Message), ex);
                             Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.DeleteFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                     }
@@ -1339,7 +1339,7 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogError(string.Format(Strings.RSyncDir.CreateFolderError, s, ex.Message));
+                                m_stat.LogError(string.Format(Strings.RSyncDir.CreateFolderError, s, ex.Message), ex);
                             Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.CreateFolderError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                         }
                 }
@@ -1443,14 +1443,14 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message));
+                                m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message), ex);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     if (m_stat != null)
-                        m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message));
+                        m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), ex);
                     Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
                 }
 
@@ -1539,14 +1539,14 @@ namespace Duplicati.Library.Main.RSync
                         catch (Exception ex)
                         {
                             if (m_stat != null)
-                                m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message));
+                                m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message), ex);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     if (m_stat != null)
-                        m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message));
+                        m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), ex);
                     Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
 
                     try { System.IO.File.Delete(target); }

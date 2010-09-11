@@ -611,7 +611,7 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message);
+                    m_statistics.LogError(ex.Message, ex);
 
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -642,7 +642,7 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message);
+                    m_statistics.LogError(ex.Message, ex);
 
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -769,7 +769,7 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message);
+                    m_statistics.LogError(ex.Message, ex);
 
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -871,7 +871,7 @@ namespace Duplicati.Library.Main
                     catch (Exception ex)
                     {
                         lastEx = ex;
-                        m_statistics.LogError(ex.Message);
+                        m_statistics.LogError(ex.Message, ex);
 
                         retries--;
                         if (retries > 0 && m_options.RetryDelay.Ticks > 0)

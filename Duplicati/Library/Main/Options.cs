@@ -146,6 +146,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("enable-module", CommandLineArgument.ArgumentType.String, Strings.Options.EnablemoduleShort, Strings.Options.EnablemoduleLong),
                     new CommandLineArgument("disable-module", CommandLineArgument.ArgumentType.String, Strings.Options.DisablemoduleShort, Strings.Options.DisablemoduleLong),
 
+                    new CommandLineArgument("debug-output", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugoutputShort, Strings.Options.DebugoutputLong),
                 });
             }
         }
@@ -583,6 +584,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if the backup is a full backup
         /// </summary>
         public bool AllowFullRemoval { get { return GetBool("allow-full-removal"); } }
+
+        /// <summary>
+        /// A value indicating if debug output is enabled
+        /// </summary>
+        public bool DebugOutput { get { return GetBool("debug-output"); } }
 
 
         /// <summary>

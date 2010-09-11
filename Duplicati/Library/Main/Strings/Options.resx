@@ -372,4 +372,10 @@
   <data name="AsynchronousuploadlimitShort" xml:space="preserve">
     <value>The number of volumes to create ahead of time</value>
   </data>
+  <data name="DebugoutputLong" xml:space="preserve">
+    <value>Activating this option will make some error messages more verbose, which may help you track down a particular issue</value>
+  </data>
+  <data name="DebugoutputShort" xml:space="preserve">
+    <value>Enables debugging output</value>
+  </data>
 </root>

@@ -205,6 +205,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Activating this option will make some error messages more verbose, which may help you track down a particular issue.
+        /// </summary>
+        internal static string DebugoutputLong {
+            get {
+                return ResourceManager.GetString("DebugoutputLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enables debugging output.
+        /// </summary>
+        internal static string DebugoutputShort {
+            get {
+                return ResourceManager.GetString("DebugoutputShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won&apos;t work correctly unless this flag is set..
         /// </summary>
         internal static string DisablefiletimecheckLong {

@@ -25,6 +25,7 @@ namespace Duplicati.Library.Main
 {
     public class CommunicationStatistics
     {
+        private bool m_verboseErrors = false;
         private long m_numberOfBytesUploaded;
         private long m_numberOfRemoteCalls;
         private long m_numberOfBytesDownloaded;
@@ -34,6 +35,12 @@ namespace Duplicati.Library.Main
 
         private long m_numberOfWarnings;
         private StringBuilder m_warningMessages = new StringBuilder();
+
+        public bool VerboseErrors
+        {
+            get { return m_verboseErrors; }
+            set { m_verboseErrors = value; }
+        }
 
         public long NumberOfBytesUploaded
         {
@@ -53,10 +60,12 @@ namespace Duplicati.Library.Main
             set { m_numberOfRemoteCalls = value; }
         }
 
-        public void LogError(string errorMessage)
+        public void LogError(string errorMessage, Exception ex)
         {
             m_numberOfErrors++;
             m_errorMessages.AppendLine(errorMessage);
+            if (m_verboseErrors && ex != null)
+                m_errorMessages.AppendLine(ex.ToString());
         }
 
         public override string ToString()
@@ -86,10 +95,12 @@ namespace Duplicati.Library.Main
             return sb.ToString();
         }
 
-        public void LogWarning(string warningMessage)
+        public void LogWarning(string warningMessage, Exception ex)
         {
             m_numberOfWarnings++;
             m_warningMessages.AppendLine(warningMessage);
+            if (m_verboseErrors && ex != null)
+                m_warningMessages.AppendLine(ex.ToString());
         }
     }
 }
