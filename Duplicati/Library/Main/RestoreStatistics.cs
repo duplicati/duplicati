@@ -29,6 +29,10 @@ namespace Duplicati.Library.Main
         private DateTime m_endTime;
         private long m_filesRestored;
         private long m_sizeOfRestoredFiles;
+        private long m_foldersRestored;
+        private long m_filesPatched;
+        private long m_filesDeleted;
+        private long m_foldersDeleted;
 
         public RestoreStatistics()
         {
@@ -49,7 +53,7 @@ namespace Duplicati.Library.Main
 
         public TimeSpan Duration
         {
-            get { return m_beginTime - m_endTime; }
+            get { return m_endTime - m_beginTime; }
         }
 
         public long FilesRestored
@@ -64,14 +68,42 @@ namespace Duplicati.Library.Main
             set { m_sizeOfRestoredFiles = value; }
         }
 
+        public long FoldersRestored
+        {
+            get { return m_foldersRestored; }
+            set { m_foldersRestored = value; }
+        }
+
+        public long FoldersDeleted
+        {
+            get { return m_foldersDeleted; }
+            set { m_foldersDeleted = value; }
+        }
+
+        public long FilesPatched
+        {
+            get { return m_filesPatched; }
+            set { m_filesPatched = value; }
+        }
+
+        public long FilesDeleted
+        {
+            get { return m_filesDeleted; }
+            set { m_filesDeleted = value; }
+        }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("BeginTime       : " + this.BeginTime.ToString(System.Globalization.CultureInfo.InvariantCulture));
             sb.AppendLine("EndTime         : " + this.EndTime.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            sb.AppendLine("Duration         : " + this.Duration.ToString());
-            sb.AppendLine("Files restored   : " + this.FilesRestored.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            sb.AppendLine("Restored size    : " + this.SizeOfRestoredFiles.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sb.AppendLine("Duration        : " + this.Duration.ToString());
+            sb.AppendLine("Files restored  : " + this.FilesRestored.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sb.AppendLine("Files patched   : " + this.FilesPatched.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sb.AppendLine("Files deleted   : " + this.FilesDeleted.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sb.AppendLine("Restored size   : " + this.SizeOfRestoredFiles.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sb.AppendLine("Folders created : " + this.FoldersRestored.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sb.AppendLine("Folders deleted : " + this.FoldersDeleted.ToString(System.Globalization.CultureInfo.InvariantCulture));
             sb.Append(base.ToString());
             return sb.ToString();
         }

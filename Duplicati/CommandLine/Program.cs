@@ -40,7 +40,8 @@ namespace Duplicati.CommandLine
                         return;
                     }
 
-                options["filter"] = filter;
+                if (!string.IsNullOrEmpty(filter))
+                    options["filter"] = filter;
 
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions

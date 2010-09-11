@@ -1134,6 +1134,11 @@ namespace Duplicati.Library.Main.RSync
                         {
                             //TODO: Perhaps read ahead in patches to prevent creation
                             System.IO.Directory.Delete(s, false);
+                            if (m_stat as RestoreStatistics != null)
+                            {
+                                (m_stat as RestoreStatistics).FoldersDeleted++;
+                                (m_stat as RestoreStatistics).FoldersRestored--;
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -1273,7 +1278,15 @@ namespace Duplicati.Library.Main.RSync
                         try
                         {
                             //TODO: Perhaps read ahead in patches to prevent creation
+                            long size = new FileInfo(s).Length;
+
                             System.IO.File.Delete(s);
+                            if (m_stat as RestoreStatistics != null)
+                            {
+                                (m_stat as RestoreStatistics).FilesRestored--;
+                                (m_stat as RestoreStatistics).SizeOfRestoredFiles -= size;
+                                (m_stat as RestoreStatistics).FilesDeleted++;
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -1320,6 +1333,8 @@ namespace Duplicati.Library.Main.RSync
                         try
                         {
                             System.IO.Directory.CreateDirectory(s);
+                            if (m_stat as RestoreStatistics != null)
+                                (m_stat as RestoreStatistics).FoldersRestored++;
                         }
                         catch (Exception ex)
                         {
@@ -1411,6 +1426,12 @@ namespace Duplicati.Library.Main.RSync
                             partialFile.Dispose();
                             m_partialDeltas.Remove(s);
                         }
+
+                        if (m_stat is RestoreStatistics && (partialFile == null || pex == fe))
+                        {
+                            (m_stat as RestoreStatistics).FilesRestored++;
+                            (m_stat as RestoreStatistics).SizeOfRestoredFiles += new FileInfo(target).Length;
+                        }
                     }
 
                     if (File.Exists(target))
@@ -1421,7 +1442,8 @@ namespace Duplicati.Library.Main.RSync
                         try { File.SetLastWriteTimeUtc(target, t); }
                         catch (Exception ex)
                         {
-                            m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message));
+                            if (m_stat != null)
+                                m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message));
                         }
                     }
                 }
@@ -1496,6 +1518,13 @@ namespace Duplicati.Library.Main.RSync
                         using (System.IO.FileStream s3 = System.IO.File.Create(tempfile))
                             SharpRSync.Interface.PatchFile(s1, s2, s3);
 
+                        if (m_stat as RestoreStatistics != null)
+                        {
+                            (m_stat as RestoreStatistics).SizeOfRestoredFiles -= new FileInfo(target).Length;
+                            (m_stat as RestoreStatistics).SizeOfRestoredFiles += new FileInfo(tempfile).Length;
+                            (m_stat as RestoreStatistics).FilesPatched++;
+                        }
+
                         System.IO.File.Delete(target);
                         System.IO.File.Move(tempfile, target);
                     }
@@ -1509,7 +1538,8 @@ namespace Duplicati.Library.Main.RSync
                         try { File.SetLastWriteTimeUtc(target, t); }
                         catch (Exception ex)
                         {
-                            m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message));
+                            if (m_stat != null)
+                                m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFileWriteTime, target, ex.Message));
                         }
                     }
                 }
