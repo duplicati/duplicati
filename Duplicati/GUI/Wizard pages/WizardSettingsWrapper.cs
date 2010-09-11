@@ -29,6 +29,13 @@ namespace Duplicati.GUI.Wizard_pages
     /// </summary>
     public class WizardSettingsWrapper
     {
+        /*
+         * Most of the properties in this class are just copies
+         * of the actual data object properties and most of this
+         * class could be removed if they mapped directly to
+         * the data objects instead.
+         */
+
         private Dictionary<string, object> m_settings;
         private const string PREFIX = "WSW_";
 
@@ -149,6 +156,14 @@ namespace Duplicati.GUI.Wizard_pages
             this.SelectFilesUI.IncludeImages = schedule.Task.Extensions.SelectFiles_IncludeImages;
             this.SelectFilesUI.IncludeSettings = schedule.Task.Extensions.SelectFiles_IncludeAppData;
 
+            this.SelectWhenUI.HasWarnedNoSchedule = schedule.Task.Extensions.SelectWhen_WarnedNoSchedule;
+            this.SelectWhenUI.HasWarnedTooManyIncremental = schedule.Task.Extensions.SelectWhen_WarnedTooManyIncrementals;
+            this.SelectWhenUI.HasWarnedNoIncrementals = schedule.Task.Extensions.SelectWhen_WarnedNoIncrementals;
+
+            this.PasswordSettingsUI.WarnedNoPassword = schedule.Task.Extensions.PasswordSettings_WarnedNoPassword;
+
+            this.CleanupSettingsUI.HasWarnedClean = schedule.Task.Extensions.CleanupSettings_WarnedNoCleanup;
+
             this.Overrides = new Dictionary<string, string>(schedule.Task.TaskOverridesLookup);
             this.EncryptionSettings = new Dictionary<string, string>(schedule.Task.EncryptionSettingsLookup);
             this.CompressionSettings = new Dictionary<string, string>(schedule.Task.CompressionSettingsLookup);
@@ -207,6 +222,14 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.Extensions.SelectFiles_IncludeMusic = this.SelectFilesUI.IncludeMusic;
             schedule.Task.Extensions.SelectFiles_IncludeImages = this.SelectFilesUI.IncludeImages;
             schedule.Task.Extensions.SelectFiles_IncludeAppData = this.SelectFilesUI.IncludeSettings;
+
+            schedule.Task.Extensions.SelectWhen_WarnedNoSchedule = this.SelectWhenUI.HasWarnedNoSchedule;
+            schedule.Task.Extensions.SelectWhen_WarnedTooManyIncrementals = this.SelectWhenUI.HasWarnedTooManyIncremental;
+            schedule.Task.Extensions.SelectWhen_WarnedNoIncrementals = this.SelectWhenUI.HasWarnedNoIncrementals;
+
+            schedule.Task.Extensions.PasswordSettings_WarnedNoPassword = this.PasswordSettingsUI.WarnedNoPassword;
+
+            schedule.Task.Extensions.CleanupSettings_WarnedNoCleanup = this.CleanupSettingsUI.HasWarnedClean;
 
             SyncLookupTables(this.Overrides, schedule.Task.TaskOverridesLookup);
 
@@ -651,6 +674,21 @@ namespace Duplicati.GUI.Wizard_pages
         public SelectFilesUI SelectFilesUI { get { return new SelectFilesUI(this); } }
 
         /// <summary>
+        /// Gets a wrapper for the settings that are available on the SelectWhen UI
+        /// </summary>
+        public SelectWhenUI SelectWhenUI { get { return new SelectWhenUI(this); } }
+
+        /// <summary>
+        /// Gets a wrapper for the settings that are available on the CleanupSettings UI
+        /// </summary>
+        public CleanupSettingsUI CleanupSettingsUI { get { return new CleanupSettingsUI(this); } }
+
+        /// <summary>
+        /// Gets a wrapper for the settings that are available on the PasswordSettings UI
+        /// </summary>
+        public PasswordSettingsUI PasswordSettingsUI { get { return new PasswordSettingsUI(this); } }
+
+        /// <summary>
         /// Gets all the encryption settings present on the task
         /// </summary>
         public IDictionary<string, string> EncryptionSettings
@@ -966,6 +1004,104 @@ namespace Duplicati.GUI.Wizard_pages
             get { return m_parent.GetItem<bool>("UI:SelectFiles:IncludeSettings", true); }
             set { m_parent.SetItem("UI:SelectFiles:IncludeSettings", value); }
         }
+    }
+
+    /// <summary>
+    /// Represents a set of settings related to the SelectWhen wizard page
+    /// </summary>
+    public class SelectWhenUI
+    {
+        private WizardSettingsWrapper m_parent;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SelectWhenUI"/> class.
+        /// </summary>
+        /// <param name="parent">The parent.</param>
+        public SelectWhenUI(WizardSettingsWrapper parent)
+        {
+            m_parent = parent;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating if the user has been warned that there is no schedule
+        /// </summary>
+        public bool HasWarnedNoSchedule
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectWhen:HasWarnedNoSchedule", false); }
+            set { m_parent.SetItem("UI:SelectWhen:HasWarnedNoSchedule", value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating if the user has been warned about not selecting incremental backups
+        /// </summary>
+        public bool HasWarnedNoIncrementals
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectWhen:HasWarnedNoIncrementals", false); }
+            set { m_parent.SetItem("UI:SelectWhen:HasWarnedNoIncrementals", value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating if the user has been warned that the settings generate too many incrementals
+        /// </summary>
+        public bool HasWarnedTooManyIncremental
+        {
+            get { return m_parent.GetItem<bool>("UI:SelectWhen:HasWarnedTooManyIncremental", false); }
+            set { m_parent.SetItem("UI:SelectWhen:HasWarnedTooManyIncremental", value); }
+        }
 
     }
+
+    /// <summary>
+    /// Represents the persisted settings for the CleanupSettings UI
+    /// </summary>
+    public class CleanupSettingsUI
+    {
+        private WizardSettingsWrapper m_parent;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CleanupSettingsUI"/> class.
+        /// </summary>
+        /// <param name="parent">The parent.</param>
+        public CleanupSettingsUI(WizardSettingsWrapper parent)
+        {
+            m_parent = parent;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating if the user has been warned that cleanup is disabled
+        /// </summary>
+        public bool HasWarnedClean
+        {
+            get { return m_parent.GetItem<bool>("UI:CleanupSettings:WarnedClean", false); }
+            set { m_parent.SetItem("UI:CleanupSettings:WarnedClean", value); }
+        }
+    }
+
+    /// <summary>
+    /// Represents a set of settings related to the SelectWhen wizard page
+    /// </summary>
+    public class PasswordSettingsUI
+    {
+        private WizardSettingsWrapper m_parent;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PasswordSettingsUI"/> class.
+        /// </summary>
+        /// <param name="parent">The parent.</param>
+        public PasswordSettingsUI(WizardSettingsWrapper parent)
+        {
+            m_parent = parent;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating if the user has been warned that the backup is not encrypted
+        /// </summary>
+        public bool WarnedNoPassword
+        {
+            get { return m_parent.GetItem<bool>("UI:PasswordSettings:WarnedNoPassword", false); }
+            set { m_parent.SetItem("UI:PasswordSettings:WarnedNoPassword", value); }
+        }
+    }
+
+    
 }

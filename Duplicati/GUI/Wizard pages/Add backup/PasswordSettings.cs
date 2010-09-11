@@ -32,7 +32,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class PasswordSettings : WizardControl
     {
-        private bool m_warnedNoPassword = false;
         private bool m_warnedChanged = false;
         private bool m_settingsChanged = false;
         private bool m_hasGeneratedNewPassword = false;
@@ -76,7 +75,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void PasswordSettings_PageLeave(object sender, PageChangedArgs args)
         {
-            m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
             m_settings["Password:WarnedChanged"] = m_warnedChanged;
             m_settings["Password:SettingsChanged"] = m_settingsChanged;
             m_settings["Password:NewPasswordGenerated"] = m_hasGeneratedNewPassword;
@@ -91,7 +89,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 return;
             }
 
-            if (!m_warnedNoPassword && !EnablePassword.Checked && m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
+            if (!m_wrapper.PasswordSettingsUI.WarnedNoPassword && !EnablePassword.Checked && m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add)
             {
                 if (MessageBox.Show(this, Strings.PasswordSettings.NoPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
@@ -99,7 +97,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     return;
                 }
 
-                m_warnedNoPassword = true;
+                m_wrapper.PasswordSettingsUI.WarnedNoPassword = true;
             }
 
             if (EnablePassword.Checked)
@@ -144,7 +142,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             }
 
             m_settings["Password:SettingsChanged"] = m_settingsChanged;
-            m_settings["Password:WarnedNoPassword"] = m_warnedNoPassword;
             m_settings["Password:WarnedChanged"] = m_warnedChanged;
             m_settings["Password:NewPasswordGenerated"] = m_hasGeneratedNewPassword;
 
@@ -173,6 +170,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         void PasswordSettings_PageEnter(object sender, PageChangedArgs args)
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
+            bool hasWarnedNoPassword = m_wrapper.PasswordSettingsUI.WarnedNoPassword;
 
             if (!m_valuesAutoLoaded)
             {
@@ -200,8 +198,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             EncryptionModule_SelectedIndexChanged(EncryptionModule, null);
             m_settingsChanged = tmp;
 
-            if (m_settings.ContainsKey("Password:WarnedNoPassword"))
-                m_warnedNoPassword = (bool)m_settings["Password:WarnedNoPassword"];
+            m_wrapper.PasswordSettingsUI.WarnedNoPassword = hasWarnedNoPassword;
             if (m_settings.ContainsKey("Password:WarnedChanged"))
                 m_warnedChanged = (bool)m_settings["Password:WarnedChanged"];
             if (m_settings.ContainsKey("Password:SettingsChanged"))
@@ -223,7 +220,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private void EnablePassword_CheckedChanged(object sender, EventArgs e)
         {
             Password.Enabled = EncryptionModule.Enabled = GeneratePasswordButton.Enabled = EncryptionControlContainer.Enabled = EnablePassword.Checked;
-            m_warnedNoPassword = false;
+            m_wrapper.PasswordSettingsUI.WarnedNoPassword = false;
             m_settingsChanged = true;
         }
 
@@ -263,7 +260,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private void Password_TextChanged(object sender, EventArgs e)
         {
             m_settingsChanged = true;
-            m_warnedNoPassword = false;
+            m_wrapper.PasswordSettingsUI.WarnedNoPassword = false;
         }
 
         private void GeneratePasswordButton_Click(object sender, EventArgs e)

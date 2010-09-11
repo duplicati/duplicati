@@ -32,10 +32,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class SelectWhen : WizardControl
     {
-        private bool m_hasWarnedNoSchedule;
-        private bool m_hasWarnedNotRecommendedIncremental;
-        private bool m_hasWarnedTooManyIncremental;
-
         private WizardSettingsWrapper m_wrapper;
 
         public SelectWhen()
@@ -49,24 +45,20 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void SelectWhen_PageLeave(object sender, PageChangedArgs args)
         {
-            m_settings["When:HasWarnedNoSchedule"] = m_hasWarnedNoSchedule;
-            m_settings["When:HasWarnedNotRecommendedIncremental"] = m_hasWarnedNotRecommendedIncremental;
-            m_settings["When:HasWarnedTooManyIncremental"] = m_hasWarnedTooManyIncremental;
-
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
-            if (!m_hasWarnedNoSchedule && NoScheduleRadio.Checked)
+            if (!m_wrapper.SelectWhenUI.HasWarnedNoSchedule && NoScheduleRadio.Checked)
             {
                 if (MessageBox.Show(this, Strings.SelectWhen.NoScheduleWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                 {
                     args.Cancel = true;
                     return;
                 }
-                m_hasWarnedNoSchedule = true;
+                m_wrapper.SelectWhenUI.HasWarnedNoSchedule = true;
             }
 
-            if (!m_hasWarnedNotRecommendedIncremental && !IncrementalPeriodRadio.Checked)
+            if (!m_wrapper.SelectWhenUI.HasWarnedNoIncrementals && !IncrementalPeriodRadio.Checked)
             {
                 string s = NeverFullRadio.Checked ? Strings.SelectWhen.OnlyIncrementalBackupsWarning : Strings.SelectWhen.OnlyFullBackupsWarning;
                 if (MessageBox.Show(this, s, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
@@ -74,7 +66,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     args.Cancel = true;
                     return;
                 }
-                m_hasWarnedNoSchedule = true;
+                m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = true;
             }
 
             DateTime scheduledTime = OffsetDate.Value.Date.Add(OffsetTime.Value.TimeOfDay);
@@ -130,7 +122,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     return;
                 }
 
-                if (!m_hasWarnedTooManyIncremental && fullDuration.Ticks / scheduleInterval.Ticks > 100)
+                if (!m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental && fullDuration.Ticks / scheduleInterval.Ticks > 100)
                 {
                     if (MessageBox.Show(this, string.Format(Strings.SelectWhen.TooManyIncrementalsWarning,fullDuration.Ticks / scheduleInterval.Ticks), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
@@ -138,13 +130,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                         return;
                     }
 
-                    m_hasWarnedTooManyIncremental = true;
+                    m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = true;
                 }
             }
-
-            m_settings["When:HasWarnedNoSchedule"] = m_hasWarnedNoSchedule;
-            m_settings["When:HasWarnedNotRecommendedIncremental"] = m_hasWarnedNotRecommendedIncremental;
-            m_settings["When:HasWarnedTooManyIncremental"] = m_hasWarnedTooManyIncremental;
 
             m_wrapper.BackupTimeOffset = scheduledTime;
             if (ScheduleRadio.Checked)
@@ -189,6 +177,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         void SelectWhen_PageEnter(object sender, PageChangedArgs args)
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
+
+            bool hasWarnedNoSchedule = m_wrapper.SelectWhenUI.HasWarnedNoSchedule;
+            bool HasWarnedTooManyIncremental = m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental;
+            bool hasWarnedNoIncrementals = m_wrapper.SelectWhenUI.HasWarnedNoIncrementals;
 
             DayOfWeek d = System.Globalization.CultureInfo.CurrentUICulture.DateTimeFormat.FirstDayOfWeek;
             CheckBox[] chks = new CheckBox[] { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday };
@@ -245,52 +237,49 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 }
             }
 
-            if (m_settings.ContainsKey("When:HasWarnedNoSchedule"))
-                m_hasWarnedNoSchedule = (bool)m_settings["When:HasWarnedNoSchedule"];
-            if (m_settings.ContainsKey("When:HasWarnedNotRecommendedIncremental"))
-                m_hasWarnedNotRecommendedIncremental = (bool)m_settings["When:HasWarnedNotRecommendedIncremental"];
-            if (m_settings.ContainsKey("When:HasWarnedTooManyIncremental"))
-                m_hasWarnedTooManyIncremental = (bool)m_settings["When:HasWarnedTooManyIncremental"];
+            m_wrapper.SelectWhenUI.HasWarnedNoSchedule = hasWarnedNoSchedule;
+            m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = hasWarnedNoIncrementals;
+            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = HasWarnedTooManyIncremental;
         }
 
         private void ScheduleRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_hasWarnedNoSchedule = false;
-            m_hasWarnedTooManyIncremental = false;
+            m_wrapper.SelectWhenUI.HasWarnedNoSchedule = false;
+            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
             ScheduleGroup.Enabled = ScheduleRadio.Checked;
         }
 
         private void NoScheduleRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_hasWarnedNoSchedule = false;
+            m_wrapper.SelectWhenUI.HasWarnedNoSchedule = false;
         }
 
         private void IncrementalPeriodRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_hasWarnedNotRecommendedIncremental = false;
-            m_hasWarnedTooManyIncremental = false;
+            m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
+            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
             FullDuration.Enabled = IncrementalPeriodRadio.Checked;
         }
 
         private void NeverFullRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_hasWarnedTooManyIncremental = false;
-            m_hasWarnedNotRecommendedIncremental = false;
+            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
+            m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
         }
 
         private void AlwaysFullRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_hasWarnedNotRecommendedIncremental = false;
+            m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
         }
 
         private void RepeatInterval_ValueChanged(object sender, EventArgs e)
         {
-            m_hasWarnedTooManyIncremental = false;
+            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
         }
 
         private void AllowedDay_CheckedChanged(object sender, EventArgs e)
         {
-            m_hasWarnedTooManyIncremental = false;
+            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
         }
     }
 }

@@ -201,6 +201,14 @@ namespace Duplicati.Datamodel
             private const string SELECTFILES_INCLUDEIMAGES = "Select Files - Include Images";
             private const string SELECTFILES_INCLUDEAPPDATA = "Select Files - Include AppData";
 
+            private const string SELECTWHEN_WARNEDNOSCHEDULE = "Select When - Warned No Schedule";
+            private const string SELECTWHEN_WARNEDTOOMANYINCREMENTALS = "Select When - Warned Too Many Incrementals";
+            private const string SELECTWHEN_WARNEDNOINCREMENTALS = "Select When - Warned No Incrementals";
+
+            private const string PASSWORDSETTINGS_WARNEDNOPASSWORD = "Password Settings - Warned No Password";
+
+            private const string CLEANUPSETTINGS_WARNEDNOCLEANUP = "Cleanup Settings - Warned No Cleanup";
+
             private Task m_owner;
 
             public TaskExtensionWrapper(Task owner)
@@ -321,6 +329,36 @@ namespace Duplicati.Datamodel
                 get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA] = value.ToString(); }
             }
-        }
+
+            public bool SelectWhen_WarnedNoSchedule
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOSCHEDULE], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOSCHEDULE] = value.ToString(); }
+            }
+
+            public bool SelectWhen_WarnedNoIncrementals
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOINCREMENTALS], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOINCREMENTALS] = value.ToString(); }
+            }
+
+            public bool SelectWhen_WarnedTooManyIncrementals
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDTOOMANYINCREMENTALS], false); }
+                set { m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDTOOMANYINCREMENTALS] = value.ToString(); }
+            }
+
+            public bool PasswordSettings_WarnedNoPassword
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[PASSWORDSETTINGS_WARNEDNOPASSWORD], false); }
+                set { m_owner.TaskExtensionsLookup[PASSWORDSETTINGS_WARNEDNOPASSWORD] = value.ToString(); }
+            }
+
+            public bool CleanupSettings_WarnedNoCleanup
+            {
+                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[CLEANUPSETTINGS_WARNEDNOCLEANUP], false); }
+                set { m_owner.TaskExtensionsLookup[CLEANUPSETTINGS_WARNEDNOCLEANUP] = value.ToString(); }
+            }
+}
     }
 }

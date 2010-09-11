@@ -32,8 +32,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
     public partial class CleanupSettings : WizardControl
     {
-        private bool m_warnedClean = false;
-
         private WizardSettingsWrapper m_wrapper;
 
         public CleanupSettings()
@@ -54,8 +52,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         void IncrementalSettings_PageLeave(object sender, PageChangedArgs args)
         {
-            m_settings["Incremental:WarnedClean"] = m_warnedClean;
-
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
@@ -78,17 +74,15 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 }
             }
 
-            if (!m_warnedClean && !(EnableCleanupDuration.Checked || EnableFullBackupClean.Checked))
+            if (!m_wrapper.CleanupSettingsUI.HasWarnedClean && !(EnableCleanupDuration.Checked || EnableFullBackupClean.Checked))
             {
                 if (MessageBox.Show(this, Strings.CleanupSettings.DisabledCleanupWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
                     args.Cancel = true;
                     return;
                 }
-                m_warnedClean = true;
+                m_wrapper.CleanupSettingsUI.HasWarnedClean = true;
             }
-
-            m_settings["Incremental:WarnedClean"] = m_warnedClean;
 
             m_wrapper.MaxFullBackups = EnableFullBackupClean.Checked ? (int)CleanFullBackupCount.Value : 0;
             m_wrapper.BackupExpireInterval = EnableCleanupDuration.Checked ? CleanupDuration.Value : "";
@@ -101,7 +95,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         void IncrementalSettings_PageEnter(object sender, PageChangedArgs args)
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
-
+            
+            bool hasWarnedClean = m_wrapper.CleanupSettingsUI.HasWarnedClean;
+            
             if (!m_valuesAutoLoaded)
             {
                 if (m_wrapper.MaxFullBackups > 0)
@@ -111,7 +107,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 }
                 else
                 {
-                    CleanFullBackupCount.Value = 0;
+                    CleanFullBackupCount.Value = 4;
                     EnableFullBackupClean.Checked = false;
                 }
 
@@ -123,30 +119,29 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 IgnoreTimestamps.Checked = m_wrapper.IgnoreFileTimestamps;
             }
 
-            if (m_settings.ContainsKey("Incremental:WarnedClean"))
-                m_warnedClean = (bool)m_settings["Incremental:WarnedClean"];
+            m_wrapper.CleanupSettingsUI.HasWarnedClean = hasWarnedClean;
         }
 
         private void EnableFullBackupClean_CheckedChanged(object sender, EventArgs e)
         {
             CleanFullBackupCount.Enabled = EnableFullBackupClean.Checked;
-            m_warnedClean = false;
+            m_wrapper.CleanupSettingsUI.HasWarnedClean = false;
         }
 
         private void EnableCleanupDuration_CheckedChanged(object sender, EventArgs e)
         {
             CleanupDuration.Enabled = EnableCleanupDuration.Checked;
-            m_warnedClean = false;
+            m_wrapper.CleanupSettingsUI.HasWarnedClean = false;
         }
 
         private void CleanFullBackupCount_ValueChanged(object sender, EventArgs e)
         {
-            m_warnedClean = false; 
+            m_wrapper.CleanupSettingsUI.HasWarnedClean = false; 
         }
 
         private void CleanupDuration_ValueChanged(object sender, EventArgs e)
         {
-            m_warnedClean = false;
+            m_wrapper.CleanupSettingsUI.HasWarnedClean = false;
         }
 
     }
