@@ -92,7 +92,9 @@ namespace Duplicati.GUI
                                     using (System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType))
                                     {
                                         con.ConnectionString = "Data Source=" + filename;
-                                        con.Open();
+                                        
+                                        //Open the database, handle any encryption issues automatically
+                                        Program.OpenDatabase(con);
 
                                         using (System.Data.IDbCommand cmd = con.CreateCommand())
                                         {

@@ -41,7 +41,12 @@ namespace Duplicati.GUI
         /// <summary>
         /// Gets the folder where Duplicati data is stored
         /// </summary>
-        public static string DATAFOLDER { get { return Library.Core.Utility.AppendDirSeperator(Environment.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } } 
+        public static string DATAFOLDER { get { return Library.Core.Utility.AppendDirSeperator(Environment.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } }
+
+        /// <summary>
+        /// A flag indicating if database encryption is in use
+        /// </summary>
+        public static bool UseDatabaseEncryption;
 
         /// <summary>
         /// This is the only access to the database
@@ -198,14 +203,15 @@ namespace Duplicati.GUI
 
 #if DEBUG
                     //Default is to no use encryption for debugging
-                    bool noDbEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
+                    
+                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
 #else
-                    bool noDbEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
+                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
 #endif
                     con.ConnectionString = "Data Source=" + DatabasePath;
 
-                    //Attempt to open the database
-                    OpenDatabase(con, Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME), noDbEncryption);
+                    //Attempt to open the database, handling any encryption present
+                    OpenDatabase(con);
 
                     DatabaseUpgrader.UpgradeDatebase(con, DatabasePath);
                 }
@@ -372,10 +378,11 @@ namespace Duplicati.GUI
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
         /// <param name="con">The SQLite connection object</param>
-        /// <param name="password">The password used for encryption</param>
-        /// <param name="noEncryption">A flag indicating that the database should not be encrypted</param>
-        private static void OpenDatabase(System.Data.IDbConnection con, string password, bool noEncryption)
+        internal static void OpenDatabase(System.Data.IDbConnection con)
         {
+            bool noEncryption = !Program.UseDatabaseEncryption;
+            string password = Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME);
+
             System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
             string attemptedPassword;
 
