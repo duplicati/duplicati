@@ -1084,6 +1084,9 @@ namespace Duplicati.Library.Main
 
         private void SetupCommonOptions(CommunicationStatistics stats)
         {
+            if (stats != null)
+                stats.VerboseErrors = m_options.DebugOutput;
+
             if (!string.IsNullOrEmpty(m_options.TempDir))
                 Core.TempFolder.SystemTempPath = m_options.TempDir;
 
