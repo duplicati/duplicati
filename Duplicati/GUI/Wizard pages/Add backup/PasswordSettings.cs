@@ -213,7 +213,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 UseSettingsAsDefault.Visible = false;
 
                 EnablePassword.Text = Strings.PasswordSettings.EnablePasswordRestoreText;
-                EncryptionModule.Top = PasswordHelptext.Top;
+                EncryptionModule.Top = EncryptionModuleLabel.Top = PasswordHelptext.Top;
+                
             }
         }
 

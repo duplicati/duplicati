@@ -33,7 +33,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.EnablePassword = new System.Windows.Forms.CheckBox();
             this.PasswordHelptext = new System.Windows.Forms.Label();
             this.UseSettingsAsDefault = new System.Windows.Forms.CheckBox();
-            this.label1 = new System.Windows.Forms.Label();
+            this.EncryptionModuleLabel = new System.Windows.Forms.Label();
             this.EncryptionModule = new System.Windows.Forms.ComboBox();
             this.GeneratePasswordButton = new System.Windows.Forms.Button();
             this.EncryptionControlContainer = new System.Windows.Forms.Panel();
@@ -62,10 +62,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.toolTip.SetToolTip(this.UseSettingsAsDefault, resources.GetString("UseSettingsAsDefault.ToolTip"));
             this.UseSettingsAsDefault.UseVisualStyleBackColor = true;
             // 
-            // label1
+            // EncryptionModuleLabel
             // 
-            resources.ApplyResources(this.label1, "label1");
-            this.label1.Name = "label1";
+            resources.ApplyResources(this.EncryptionModuleLabel, "EncryptionModuleLabel");
+            this.EncryptionModuleLabel.Name = "EncryptionModuleLabel";
             // 
             // EncryptionModule
             // 
@@ -93,6 +93,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             // Password
             // 
             this.Password.AskToEnterNewPassword = false;
+            this.Password.IsPasswordVisible = false;
             resources.ApplyResources(this.Password, "Password");
             this.Password.MaximumSize = new System.Drawing.Size(5000, 20);
             this.Password.MinimumSize = new System.Drawing.Size(150, 20);
@@ -107,7 +108,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.EncryptionControlContainer);
             this.Controls.Add(this.GeneratePasswordButton);
             this.Controls.Add(this.EncryptionModule);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.EncryptionModuleLabel);
             this.Controls.Add(this.UseSettingsAsDefault);
             this.Controls.Add(this.PasswordHelptext);
             this.Controls.Add(this.EnablePassword);
@@ -122,7 +123,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.CheckBox EnablePassword;
         private System.Windows.Forms.Label PasswordHelptext;
         private System.Windows.Forms.CheckBox UseSettingsAsDefault;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label EncryptionModuleLabel;
         private System.Windows.Forms.ComboBox EncryptionModule;
         private System.Windows.Forms.Button GeneratePasswordButton;
         private System.Windows.Forms.Panel EncryptionControlContainer;
