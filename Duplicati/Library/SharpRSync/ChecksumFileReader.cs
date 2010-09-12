@@ -257,7 +257,7 @@ namespace Duplicati.Library.SharpRSync
                 long index = m_weakTable[sh].Value;
                 int i;
                 for (i = 0; i < stronghash.Length; i++)
-                    if (stronghash[i] != m_strongIndex[(index * m_longs_pr_strong) + 1])
+                    if (stronghash[i] != m_strongIndex[(index * m_longs_pr_strong) + i])
                         break;
 
                 if (i == stronghash.Length)
