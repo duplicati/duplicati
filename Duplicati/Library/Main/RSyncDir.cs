@@ -120,7 +120,7 @@ namespace Duplicati.Library.Main.RSync
             /// <summary>
             /// Gets the last time the file was modified, in UTC format
             /// </summary>
-            /// <param name="relpath"The path to the file, excluding the prefix></param>
+            /// <param name="relpath">The path to the file, excluding the prefix</param>
             /// <returns>The last time the file was modified</returns>
             internal DateTime GetLastWriteTime(string relpath)
             {
@@ -854,7 +854,7 @@ namespace Duplicati.Library.Main.RSync
                             //Cut off as we only preserve precision in seconds
                             lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second);
 
-                            if (lastWrite < m_oldSignatures[relpath].GetLastWriteTime(relpath))
+                            if (lastWrite <= m_oldSignatures[relpath].GetLastWriteTime(relpath))
                             {
                                 m_oldSignatures.Remove(relpath);
                                 m_examinedfiles++;

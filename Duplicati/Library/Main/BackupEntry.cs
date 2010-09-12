@@ -36,7 +36,8 @@ namespace Duplicati.Library.Main
             IComparer<ManifestEntry>, 
             IComparer<PayloadEntryBase>, 
             IComparer<SignatureEntry>, 
-            IComparer<ContentEntry>
+            IComparer<ContentEntry>,
+            IComparer<Duplicati.Library.Interface.IFileEntry>
     {
         #region IComparer<BackupEntry> Members
 
@@ -59,6 +60,11 @@ namespace Duplicati.Library.Main
         public int Compare(SignatureEntry x, SignatureEntry y) { return Compare((BackupEntryBase)x, (BackupEntryBase)y); }
         public int Compare(PayloadEntryBase x, PayloadEntryBase y) { return Compare((BackupEntryBase)x, (BackupEntryBase)y); }
         public int Compare(ManifestEntry x, ManifestEntry y) { return Compare((BackupEntryBase)x, (BackupEntryBase)y); }
+
+        public int Compare(Library.Interface.IFileEntry x, Library.Interface.IFileEntry y) 
+        { 
+            return string.Compare(x.Name, y.Name); 
+        }
     }
 
 

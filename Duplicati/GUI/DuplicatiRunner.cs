@@ -308,7 +308,7 @@ namespace Duplicati.GUI
             m_lastPGSubmessage = submessage;
 
             //If there are extra operations, reserve some space for it by reducing the displayed progress
-            if (m_extraOperations > 0)
+            if (m_extraOperations > 0 && progress > 0)
                 progress = (int)((m_lastPGProgress / 100.0) * (100 - (m_extraOperations * PERCENT_PR_EXTRA_OPERATION)));
 
             if (DuplicatiProgress != null)

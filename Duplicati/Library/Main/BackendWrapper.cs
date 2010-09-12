@@ -267,6 +267,19 @@ namespace Duplicati.Library.Main
         /// <returns>A list of full backups</returns>
         public List<ManifestEntry> SortAndPairSets(List<Duplicati.Library.Interface.IFileEntry> files)
         {
+            Sorter sortHelper = new Sorter();
+            files.Sort(sortHelper);
+
+            for(int i = 1; i < files.Count; i++)
+                if (files[i].Name == files[i - 1].Name)
+                {
+                    if (m_statistics != null)
+                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.DuplicateFileEntryWarning, files[i].Name), null);
+                    
+                    files.RemoveAt(i);
+                    i--;
+                }
+
             List<ManifestEntry> incrementals = new List<ManifestEntry>();
             List<ManifestEntry> fulls = new List<ManifestEntry>();
             Dictionary<string, List<SignatureEntry>> signatures = new Dictionary<string, List<SignatureEntry>>();
@@ -277,7 +290,11 @@ namespace Duplicati.Library.Main
             {
                 BackupEntryBase be = m_filenamestrategy.ParseFilename(fe);
                 if (be == null)
+                {
+                    if (m_statistics != null && m_statistics.VerboseErrors && !fe.IsFolder)
+                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.UnmatchedFilenameWarning, fe.Name), null);
                     continue; //Non-duplicati files
+                }
 
                 if (!string.IsNullOrEmpty(be.EncryptionMode) && Array.IndexOf<string>(DynamicLoader.EncryptionLoader.Keys, be.EncryptionMode) < 0)
                     continue;
@@ -310,7 +327,6 @@ namespace Duplicati.Library.Main
                     throw new Exception(string.Format(Strings.BackendWrapper.InvalidEntryTypeError, be.GetType().FullName));
             }
 
-            Sorter sortHelper = new Sorter();
             fulls.Sort(sortHelper);
             incrementals.Sort(sortHelper);
 
@@ -408,6 +424,17 @@ namespace Duplicati.Library.Main
             foreach (List<SignatureEntry> lb in signatures.Values)
                 foreach (SignatureEntry be in lb)
                     AddOrphan(be);
+
+            if (m_statistics != null)
+            {
+                foreach (ManifestEntry me in fulls)
+                    if (me.Volumes.Count == 0)
+                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.EmptyManifestWarning, me.Filename), null);
+
+                foreach (ManifestEntry me in incrementals)
+                    if (me.Volumes.Count == 0)
+                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.EmptyManifestWarning, me.Filename), null);
+            }
 
             return fulls;
         }
@@ -570,6 +597,8 @@ namespace Duplicati.Library.Main
                 Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, be.Filename), Duplicati.Library.Logging.LogMessageType.Information);
                 if (m_options.Force)
                 {
+                    if (m_statistics != null)
+                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.RemoveOrphanFileWarning, be.Filename), null);
                     m_backend.Delete(be.Filename);
                     DeleteSignatureCacheCopy(be);
                 }
@@ -579,8 +608,15 @@ namespace Duplicati.Library.Main
                     {
                         Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Key.Filename), Duplicati.Library.Logging.LogMessageType.Information);
                         Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Value.Filename), Duplicati.Library.Logging.LogMessageType.Information);
+
                         if (m_options.Force)
                         {
+                            if (m_statistics != null)
+                            {
+                                m_statistics.LogWarning(string.Format(Strings.BackendWrapper.RemoveOrphanFileWarning, bex.Key.Filename), null);
+                                m_statistics.LogWarning(string.Format(Strings.BackendWrapper.RemoveOrphanFileWarning, bex.Value.Filename), null);
+                            }
+
                             m_backend.Delete(bex.Key.Filename);
                             m_backend.Delete(bex.Value.Filename);
                             DeleteSignatureCacheCopy(bex.Key);
