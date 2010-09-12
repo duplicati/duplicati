@@ -166,6 +166,10 @@ namespace Duplicati.Library.Backend
 
                         foreach (XmlNode obj in objects)
                         {
+                            //The "marker" element is reported again when doing split queries
+                            if (obj["Key"].InnerText == filename)
+                                continue;
+
                             filename = obj["Key"].InnerText;
                             long size = long.Parse(obj["Size"].InnerText);
                             DateTime lastModified = DateTime.Parse(obj["LastModified"].InnerText);
