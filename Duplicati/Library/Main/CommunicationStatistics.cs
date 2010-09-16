@@ -64,8 +64,12 @@ namespace Duplicati.Library.Main
         {
             m_numberOfErrors++;
             m_errorMessages.AppendLine(errorMessage);
-            if (m_verboseErrors && ex != null)
-                m_errorMessages.AppendLine(ex.ToString());
+            if (m_verboseErrors)
+                while (ex != null)
+                {
+                    m_errorMessages.AppendLine(ex.ToString());
+                    ex = ex.InnerException;
+                }
         }
 
         public override string ToString()
@@ -99,8 +103,12 @@ namespace Duplicati.Library.Main
         {
             m_numberOfWarnings++;
             m_warningMessages.AppendLine(warningMessage);
-            if (m_verboseErrors && ex != null)
-                m_warningMessages.AppendLine(ex.ToString());
+            if (m_verboseErrors)
+                while (ex != null)
+                {
+                    m_warningMessages.AppendLine(ex.ToString());
+                    ex = ex.InnerException;
+                }
         }
     }
 }
