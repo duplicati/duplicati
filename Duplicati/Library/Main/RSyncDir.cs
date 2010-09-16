@@ -138,14 +138,14 @@ namespace Duplicati.Library.Main.RSync
         {
             public readonly string relativeName;
             private Core.TempFile tempfile;
-            private System.IO.FileStream m_fs;
+            private System.IO.Stream m_fs;
             private System.IO.Stream m_signatureStream;
             private string m_signaturePath;
             private DateTime m_lastWrite;
 
-            public PartialFileEntry(string filename, string relname, long position, System.IO.Stream signatureFile, string signaturePath, DateTime lastWrite)
+            public PartialFileEntry(System.IO.Stream fs, string relname, long position, System.IO.Stream signatureFile, string signaturePath, DateTime lastWrite)
             {
-                m_fs = System.IO.File.OpenRead(filename);
+                m_fs = fs;
                 m_fs.Position = position;
                 this.relativeName = relname;
                 this.tempfile = null;
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.RSync
                 this.m_lastWrite = lastWrite;
             }
 
-            public System.IO.FileStream Stream { get { return m_fs; } }
+            public System.IO.Stream Stream { get { return m_fs; } }
             public DateTime LastWriteTime { get { return m_lastWrite; } }
 
             public void DumpSignature(Library.Interface.ICompression signatureArchive)
@@ -867,10 +867,13 @@ namespace Duplicati.Library.Main.RSync
                         m_unproccesed.FilesWithError.Add(s);
                     else
                     {
-                        using (System.IO.Stream fs = m_snapshot.OpenRead(s))
+                        System.IO.Stream fs = null;
+
+                        try
                         {
+                            fs = m_snapshot.OpenRead(s);
                             DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
-                            
+
                             //Cut off as we only preserve precision in seconds
                             lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second);
 
@@ -886,6 +889,17 @@ namespace Duplicati.Library.Main.RSync
                                 if (signature != null)
                                     totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile, volumesize, lastWrite);
                             }
+                        }
+                        catch
+                        {
+                            try
+                            {
+                                if (fs != null)
+                                    fs.Dispose();
+                            }
+                            catch { }
+
+                            throw;
                         }
                     }
                 }
@@ -1010,10 +1024,11 @@ namespace Duplicati.Library.Main.RSync
                 string signaturepath = System.IO.Path.Combine(CONTENT_SIGNATURE_ROOT, relpath);
                 string target = System.IO.Path.Combine(CONTENT_ROOT, relpath);
 
-                m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(s, target, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
+                long size = fs.Length;
+                m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(fs, target, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
                 
                 m_addedfiles++;
-                m_addedfilessize += fs.Length;
+                m_addedfilessize += size;
 
                 m_newfiles.Remove(s);
             }
