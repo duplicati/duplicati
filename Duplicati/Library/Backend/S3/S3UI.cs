@@ -395,7 +395,12 @@ namespace Duplicati.Library.Backend
         private void AWS_ID_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (AWS_ID.SelectedItem as Core.ComboBoxItemPair<string> != null)
+            {
+                AWS_KEY.AskToEnterNewPassword = false;
+                AWS_KEY.IsPasswordVisible = false;
                 AWS_KEY.Text = (AWS_ID.SelectedItem as Core.ComboBoxItemPair<string>).Value;
+                AWS_KEY.AskToEnterNewPassword = true;
+            }
         }
 
         public static string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
