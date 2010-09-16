@@ -428,12 +428,14 @@ namespace Duplicati.Library.Main
             if (m_statistics != null)
             {
                 foreach (ManifestEntry me in fulls)
+                {
                     if (me.Volumes.Count == 0)
                         m_statistics.LogWarning(string.Format(Strings.BackendWrapper.EmptyManifestWarning, me.Filename), null);
 
-                foreach (ManifestEntry me in incrementals)
-                    if (me.Volumes.Count == 0)
-                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.EmptyManifestWarning, me.Filename), null);
+                    foreach (ManifestEntry me2 in me.Incrementals)
+                        if (me.Volumes.Count == 0)
+                            m_statistics.LogWarning(string.Format(Strings.BackendWrapper.EmptyManifestWarning, me.Filename), null);
+                }
             }
 
             return fulls;
