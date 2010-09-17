@@ -526,7 +526,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="full">True if the set is a full backup, false if it is incremental</param>
         public void InitiateMultiPassDiff(bool full)
         {
-            InitiateMultiPassDiff(full, Options.SnapShotMode.Auto);
+            InitiateMultiPassDiff(full, Options.SnapShotMode.Auto, false);
         }
 
         /// <summary>
@@ -534,7 +534,8 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="full">True if the set is a full backup, false if it is incremental</param>
         /// <param name="snapshotPolicy">The snapshot policy to apply</param>
-        public void InitiateMultiPassDiff(bool full, Options.SnapShotMode snapshotPolicy)
+        /// <param name="excludeEmptyFolders">A flag indicating if empty folders are excluded</param>
+        public void InitiateMultiPassDiff(bool full, Options.SnapShotMode snapshotPolicy, bool excludeEmptyFolders)
         {
             if (full)
             {
@@ -579,7 +580,51 @@ namespace Duplicati.Library.Main.RSync
 
             m_totalfiles = m_unproccesed.Files.Count;
             m_isfirstmultipass = true;
-            
+
+            if (excludeEmptyFolders)
+            {
+                //We remove the folders that have no files.
+                //It would be more optimal to exclude them from the list before this point,
+                // but that would require rewriting of the snapshots
+
+                //We can't rely on the order of the folders, so we sort them to get the shortest folder names first
+                m_unproccesed.Folders.Sort(Core.Utility.ClientFilenameStringComparer);
+
+                //We can't rely on the order of the files either, but sorting them allows us to use a O=log(n) search rather than O=n
+                m_unproccesed.Files.Sort(Core.Utility.ClientFilenameStringComparer);
+
+                for (int i = 0; i < m_unproccesed.Folders.Count; i++)
+                {
+                    string folder = m_unproccesed.Folders[i];
+                    int ix = m_unproccesed.Files.BinarySearch(folder, Core.Utility.ClientFilenameStringComparer);
+                    if (ix >= 0)
+                        continue; //Should not happen, means that a file has the same name as a folder
+                    
+                    //Get the next index larger than the foldername
+                    ix = ~ix;
+
+                    if (ix >= m_unproccesed.Files.Count)
+                    {
+                        //No files matched
+                        m_unproccesed.Folders.RemoveAt(i);
+                        i--;
+                    }
+                    else
+                    {
+                        //If the element does not start with the foldername, no files from the folder are included
+                        if (!m_unproccesed.Files[ix].StartsWith(folder, Core.Utility.ClientFilenameStringComparision))
+                        {
+                            //Speedup, remove all subfolders as well without performing binary searches
+                            while (i < m_unproccesed.Folders.Count && m_unproccesed.Folders[i].StartsWith(folder))
+                                m_unproccesed.Folders.RemoveAt(i);
+
+                            //We have removed at least one, so adjust the loop counter
+                            i--;
+                        }
+                    }
+                }
+            }
+
             //Build folder diffs
             foreach(string s in m_unproccesed.Folders)
             {

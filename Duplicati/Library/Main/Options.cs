@@ -147,7 +147,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("enable-module", CommandLineArgument.ArgumentType.String, Strings.Options.EnablemoduleShort, Strings.Options.EnablemoduleLong),
                     new CommandLineArgument("disable-module", CommandLineArgument.ArgumentType.String, Strings.Options.DisablemoduleShort, Strings.Options.DisablemoduleLong),
 
-                    new CommandLineArgument("debug-output", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugoutputShort, Strings.Options.DebugoutputLong),
+                    new CommandLineArgument("debug-output", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugoutputShort, Strings.Options.DebugoutputLong, "false"),
+                    new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
                 });
             }
         }
@@ -635,6 +636,9 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// Gets the snapshot strategy to use
+        /// </summary>
         public SnapShotMode SnapShotStrategy
         {
             get
@@ -653,6 +657,11 @@ namespace Duplicati.Library.Main
                     return SnapShotMode.Off;
             }
         }
+
+        /// <summary>
+        /// A value indicating if empty folders are excluded from the backup
+        /// </summary>
+        public bool ExcludeEmptyFolders { get { return GetBool("exclude-empty-folders"); } }
 
         /// <summary>
         /// Gets the number of volumes to create ahead of time when using async transfers,

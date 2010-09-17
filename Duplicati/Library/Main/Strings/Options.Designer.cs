@@ -331,6 +331,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to By setting this option to true, a folder which has no files that match the filter will be excluded from the backup.
+        /// </summary>
+        internal static string ExcludeemptyfoldersLong {
+            get {
+                return ResourceManager.GetString("ExcludeemptyfoldersLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls empty folder actions.
+        /// </summary>
+        internal static string ExcludeemptyfoldersShort {
+            get {
+                return ResourceManager.GetString("ExcludeemptyfoldersShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Exclude files that match this filter. The filter is a &quot;file-globbing&quot; filter, much like commandline options. You can use &quot;*.txt&quot; to exclude all text files..
         /// </summary>
         internal static string ExcludeLong {

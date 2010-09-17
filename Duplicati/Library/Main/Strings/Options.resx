@@ -378,4 +378,10 @@
   <data name="DebugoutputShort" xml:space="preserve">
     <value>Enables debugging output</value>
   </data>
+  <data name="ExcludeemptyfoldersLong" xml:space="preserve">
+    <value>By setting this option to true, a folder which has no files that match the filter will be excluded from the backup</value>
+  </data>
+  <data name="ExcludeemptyfoldersShort" xml:space="preserve">
+    <value>Controls empty folder actions</value>
+  </data>
 </root>
