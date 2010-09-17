@@ -64,6 +64,9 @@ namespace Duplicati.Library.DynamicLoader
                 if (string.IsNullOrEmpty(fileExtension))
                     throw new ArgumentNullException("fileExtension");
 
+                if (string.IsNullOrEmpty(passphrase))
+                    throw new ArgumentNullException("passphrase");
+
                 LoadInterfaces();
 
                 lock (m_lock)

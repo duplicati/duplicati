@@ -169,7 +169,7 @@ namespace Duplicati.GUI
                         (task as ListBackupEntriesTask).Backups = Interface.ParseFileList(destination, options);
                         break;
                     case DuplicityTaskType.ListFiles:
-                        (task as ListFilesTask).Files = Interface.ListContent(destination, options);
+                        (task as ListFilesTask).Files = Interface.ListCurrentFiles(destination, options);
                         break;
                     case DuplicityTaskType.ListSourceFolders:
                         {

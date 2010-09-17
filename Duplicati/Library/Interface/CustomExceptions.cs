@@ -66,4 +66,26 @@ namespace Duplicati.Library.Interface
             : base(message, innerException)
         { }
     }
+
+    /// <summary>
+    /// An exception indicating that the user has cancelled the action
+    /// </summary>
+    public class CancelException : Exception
+    {
+        public CancelException()
+            : base()
+        { }
+
+        public CancelException(string message)
+            : base(message)
+        { }
+
+        public CancelException(Exception innerException)
+            : base(Strings.Common.CancelExceptionError, innerException)
+        { }
+
+        public CancelException(string message, Exception innerException)
+            : base(message, innerException)
+        { }
+}
 }

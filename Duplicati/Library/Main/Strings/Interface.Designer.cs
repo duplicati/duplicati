@@ -61,15 +61,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Backend not found: {0}.
-        /// </summary>
-        internal static string BackendNotFoundError {
-            get {
-                return ResourceManager.GetString("BackendNotFoundError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Bad sorting of backup times detected.
         /// </summary>
         internal static string BadSortingDetectedError {

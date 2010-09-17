@@ -227,6 +227,15 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Returns all files in the target backend
+        /// </summary>
+        /// <returns>All files in the target backend</returns>
+        public List<Library.Interface.IFileEntry> List()
+        {
+            return m_backend.List();
+        }
+
+        /// <summary>
         /// Gets the manifest entry that represents the most recent full backup, with a list of incrementals in the chain.
         /// </summary>
         /// <param name="timelimit">The oldest allowed time for a backup, set to DateTime.Now to get the most recent entry</param>

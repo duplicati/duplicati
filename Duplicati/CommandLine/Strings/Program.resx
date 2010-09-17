@@ -120,9 +120,6 @@
   <data name="AddedFoldersHeader" xml:space="preserve">
     <value>Added folders</value>
   </data>
-  <data name="ConfirmPassphrasePrompt" xml:space="preserve">
-    <value>Confirm passphrase</value>
-  </data>
   <data name="ControlFilesHeader" xml:space="preserve">
     <value>Control files</value>
   </data>
@@ -134,12 +131,6 @@
   </data>
   <data name="DuplicatiOptionsHeader" xml:space="preserve">
     <value>Duplicati options:</value>
-  </data>
-  <data name="EmptyPassphraseError" xml:space="preserve">
-    <value>Empty passphrases are not allowed</value>
-  </data>
-  <data name="EnterPassphrasePrompt" xml:space="preserve">
-    <value>Enter passphrase</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="ExampleLinux" type="System.Resources.ResXFileRef, System.Windows.Forms">
@@ -171,9 +162,6 @@
   </data>
   <data name="NewOrModifiedFilesHeader" xml:space="preserve">
     <value>New/Modified files</value>
-  </data>
-  <data name="PassphraseMismatchError" xml:space="preserve">
-    <value>The passphrases do not match</value>
   </data>
   <data name="SettingDefaultTimeSeperatorWarning" xml:space="preserve">
     <value>WARNING: Duplicati uses the character : as the time seperator as that makes the filenames easier to read. However, that character is not supported on Windows filesystems. To work around this issue, Duplicati has adjusted the timeseperator char to '. Use the commandline option --time-separator=":" to prevent this from happening.</value>

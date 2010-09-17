@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main
         {
             BackupStatistics bs = new BackupStatistics();
 
-            SetupCommonOptions(bs);
+            SetupCommonOptions("backup", bs);
             BackendWrapper backend = null;
 
             if (m_options.DontReadManifests)
@@ -571,7 +571,7 @@ namespace Duplicati.Library.Main
         public string Restore(string[] target)
         {
             RestoreStatistics rs = new RestoreStatistics();
-            SetupCommonOptions(rs);
+            SetupCommonOptions("restore", rs);
 
             m_progress = 0;
             BackendWrapper backend = null;
@@ -734,7 +734,7 @@ namespace Duplicati.Library.Main
         public string RestoreControlFiles(string target)
         {
             RestoreStatistics rs = new RestoreStatistics();
-            SetupCommonOptions(rs);
+            SetupCommonOptions("restore-controlfiles", rs);
 
             BackendWrapper backend = null;
 
@@ -809,11 +809,14 @@ namespace Duplicati.Library.Main
 
         public string DeleteAllButNFull()
         {
-            int x = Math.Max(0, m_options.RemoveAllButNFull);
+            CommunicationStatistics stats = new CommunicationStatistics();
+            SetupCommonOptions("delete-all-but-n-full", stats);
+
+            int x = Math.Max(0, m_options.DeleteAllButNFull);
 
             StringBuilder sb = new StringBuilder();
 
-            using (BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             try
             {
                 if (OperationStarted != null)
@@ -855,10 +858,12 @@ namespace Duplicati.Library.Main
         public string DeleteOlderThan()
         {
             StringBuilder sb = new StringBuilder();
+            CommunicationStatistics stats = new CommunicationStatistics();
+            SetupCommonOptions("delete-older-than", stats);
 
             DateTime expires = m_options.RemoveOlderThan;
 
-            using (BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             try
             {
                 if (OperationStarted != null)
@@ -952,31 +957,32 @@ namespace Duplicati.Library.Main
 
         public string[] List()
         {
-            SetupCommonOptions(null);
+            CommunicationStatistics stats = new CommunicationStatistics();
+            SetupCommonOptions("list", stats);
 
             List<string> res = new List<string>();
-            Duplicati.Library.Interface.IBackend i = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(m_backend, m_options.RawOptions);
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
+            {
+                if (OperationStarted != null)
+                    OperationStarted(this, DuplicatiOperation.List, 0, -1, Strings.Interface.StatusStarted, "");
 
-            if (i == null)
-                throw new Exception(string.Format(Strings.Interface.BackendNotFoundError, m_backend));
-
-            if (OperationStarted != null)
-                OperationStarted(this, DuplicatiOperation.List, 0, -1, Strings.Interface.StatusStarted, "");
-
-            using(i)
-                foreach (Duplicati.Library.Interface.IFileEntry fe in i.List())
+                foreach (Duplicati.Library.Interface.IFileEntry fe in backend.List())
                     res.Add(fe.Name);
 
-            if (OperationCompleted != null)
-                OperationCompleted(this, DuplicatiOperation.List, 100, -1, Strings.Interface.StatusCompleted, "");
+                if (OperationCompleted != null)
+                    OperationCompleted(this, DuplicatiOperation.List, 100, -1, Strings.Interface.StatusCompleted, "");
 
-            return res.ToArray();
+                return res.ToArray();
+            }
         }
 
         public string Cleanup()
         {
+            CommunicationStatistics stats = new CommunicationStatistics();
+            SetupCommonOptions("cleanup", stats);
+
             bool anyRemoved = false;
-            using (BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             {
                 List<ManifestEntry> sorted = backend.GetBackupSets();
 
@@ -1019,10 +1025,10 @@ namespace Duplicati.Library.Main
             return ""; //TODO: Write a message here?
         }
 
-        public IList<string> ListContent()
+        public IList<string> ListCurrentFiles()
         {
             RestoreStatistics rs = new RestoreStatistics();
-            SetupCommonOptions(rs);
+            SetupCommonOptions("list-current-files", rs);
 
             Core.FilenameFilter filter = m_options.Filter;
             DateTime timelimit = m_options.RestoreTime;
@@ -1056,7 +1062,7 @@ namespace Duplicati.Library.Main
         public string[] ListSourceFolders()
         {
             RestoreStatistics rs = new RestoreStatistics();
-            SetupCommonOptions(rs);
+            SetupCommonOptions("list-source-folders", rs);
 
             Core.FilenameFilter filter = m_options.Filter;
             DateTime timelimit = m_options.RestoreTime;
@@ -1082,8 +1088,10 @@ namespace Duplicati.Library.Main
         }
 
 
-        private void SetupCommonOptions(CommunicationStatistics stats)
+        private void SetupCommonOptions(string method, CommunicationStatistics stats)
         {
+            m_options.MainAction = method;
+
             if (stats != null)
                 stats.VerboseErrors = m_options.DebugOutput;
 
@@ -1210,13 +1218,19 @@ namespace Duplicati.Library.Main
 
         public List<ManifestEntry> GetBackupSets()
         {
-            using (BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
+            CommunicationStatistics stats = new CommunicationStatistics();
+            SetupCommonOptions("get-backup-sets", stats);
+
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
                 return backend.GetBackupSets();
         }
 
         public List<KeyValuePair<RSync.RSyncDir.PatchFileType, string>> ListActualSignatureFiles()
         {
-            using (BackendWrapper backend = new BackendWrapper(new CommunicationStatistics(), m_backend, m_options))
+            CommunicationStatistics stats = new CommunicationStatistics();
+            SetupCommonOptions("list-actual-signature-files", stats);
+
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             {
                 ManifestEntry bestFit = backend.GetBackupSet(m_options.RestoreTime);
                 if (bestFit.Incrementals.Count > 0) //Get the most recent incremental
@@ -1225,7 +1239,7 @@ namespace Duplicati.Library.Main
                 using (Core.TempFolder folder = new Duplicati.Library.Core.TempFolder())
                 {
                     List<Library.Interface.ICompression> patches = FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder, false, null);
-                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { folder }, new CommunicationStatistics(), null))
+                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { folder }, stats, null))
                         return dir.ListPatchFiles(patches);
                 }
             }
@@ -1456,10 +1470,10 @@ namespace Duplicati.Library.Main
                 return i.GetBackupSets();
         }
 
-        public static IList<string> ListContent(string target, Dictionary<string, string> options)
+        public static IList<string> ListCurrentFiles(string target, Dictionary<string, string> options)
         {
             using (Interface i = new Interface(target, options))
-                return i.ListContent();
+                return i.ListCurrentFiles();
         }
 
         public static string[] ListSourceFolders(string target, Dictionary<string, string> options)

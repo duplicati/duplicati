@@ -117,49 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CancelExceptionError" xml:space="preserve">
-    <value>Cancelled</value>
+  <data name="ConfirmPassphrasePrompt" xml:space="preserve">
+    <value>Confirm passphrase</value>
   </data>
-  <data name="ConfigurationIsMissingItemError" xml:space="preserve">
-    <value>The configuration for the backend is not valid, it is missing the {0} field</value>
+  <data name="Description" xml:space="preserve">
+    <value>This module will ask the user for a encryption password on the commandline unless encryption is disabled or the password is supplied by other means</value>
   </data>
-  <data name="ConfirmTestConnectionQuestion" xml:space="preserve">
-    <value>Do you want to test the connection?</value>
+  <data name="Displayname" xml:space="preserve">
+    <value>Password prompt</value>
   </data>
-  <data name="ConnectionFailure" xml:space="preserve">
-    <value>Connection Failed: {0}</value>
+  <data name="EmptyPassphraseError" xml:space="preserve">
+    <value>Empty passphrases are not allowed</value>
   </data>
-  <data name="ConnectionSuccess" xml:space="preserve">
-    <value>Connection succeeded!</value>
+  <data name="EnterPassphrasePrompt" xml:space="preserve">
+    <value>Enter passphrase</value>
   </data>
-  <data name="DefaultDirectoryWarning" xml:space="preserve">
-    <value>You have not entered a path. This will store all backups in the default directory. Is this what you want?</value>
-  </data>
-  <data name="EmptyPasswordError" xml:space="preserve">
-    <value>You must enter a password</value>
-  </data>
-  <data name="EmptyPasswordWarning" xml:space="preserve">
-    <value>You have not entered a password.
-Proceed without a password?</value>
-  </data>
-  <data name="EmptyServernameError" xml:space="preserve">
-    <value>You must enter the name of the server</value>
-  </data>
-  <data name="EmptyUsernameError" xml:space="preserve">
-    <value>You must enter a username</value>
-  </data>
-  <data name="EmptyUsernameWarning" xml:space="preserve">
-    <value>You have not entered a username.
-This is fine if the server allows anonymous uploads, but likely a username is required
-Proceed without a username?</value>
-  </data>
-  <data name="FolderAlreadyExistsError" xml:space="preserve">
-    <value>The folder cannot be created because it already exists</value>
-  </data>
-  <data name="FolderCreated" xml:space="preserve">
-    <value>Folder created!</value>
-  </data>
-  <data name="FolderMissingError" xml:space="preserve">
-    <value>The requested folder does not exist</value>
+  <data name="PassphraseMismatchError" xml:space="preserve">
+    <value>The passphrases do not match</value>
   </data>
 </root>

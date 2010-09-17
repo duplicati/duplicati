@@ -80,7 +80,8 @@ namespace Duplicati.Library.Main
                     "restore",
                     "delete-older-than",
                     "delete-all-but-n-full",
-                    "filter"
+                    "filter",
+                    "main-action"
                 };
             }
         }
@@ -155,6 +156,21 @@ namespace Duplicati.Library.Main
         /// A value indicating if the backup is a full backup
         /// </summary>
         public bool Full { get { return GetBool("full"); } }
+
+        /// <summary>
+        /// Gets or sets the current main action of the library,
+        /// valid values are: 
+        /// backup, restore, 
+        /// list, get-backup-sets,
+        /// list-current-files, list-source-folders, list-actual-signature-files, 
+        /// delete-all-but-n-full, delete-older-than, cleanup,
+        /// restore-controlfiles
+        /// </summary>
+        public string MainAction 
+        { 
+            get { return m_options.ContainsKey("main-action") ? m_options["main-action"] : null; }
+            set { m_options["main-action"] = value; }
+        }
 
         /// <summary>
         /// Gets the size of each volume in bytes
@@ -394,7 +410,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the number of old backups to keep
         /// </summary>
-        public int RemoveAllButNFull
+        public int DeleteAllButNFull
         {
             get
             {

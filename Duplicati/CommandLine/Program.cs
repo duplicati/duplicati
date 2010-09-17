@@ -140,10 +140,7 @@ namespace Duplicati.CommandLine
                         return;
                     }
 
-                    if (!EnsurePassphrase(options))
-                        return;
-
-                    Console.WriteLine(string.Join("\r\n", new List<string>(Duplicati.Library.Main.Interface.ListContent(target, options)).ToArray()));
+                    Console.WriteLine(string.Join("\r\n", new List<string>(Duplicati.Library.Main.Interface.ListCurrentFiles(target, options)).ToArray()));
                 }
                 else if (source.Trim().ToLower() == "list-source-folders")
                 {
@@ -154,9 +151,6 @@ namespace Duplicati.CommandLine
                         Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
                         return;
                     }
-
-                    if (!EnsurePassphrase(options))
-                        return;
 
                     Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.ListSourceFolders(target, options) ?? new string[0]));
                 }
@@ -169,9 +163,6 @@ namespace Duplicati.CommandLine
                         Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
                         return;
                     }
-
-                    if (!EnsurePassphrase(options))
-                        return;
 
                     List<KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string>> files = Duplicati.Library.Main.Interface.ListActualSignatureFiles(cargs[0], options);
 
@@ -290,16 +281,10 @@ namespace Duplicati.CommandLine
                 }
                 else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
                 {
-                    if (!EnsurePassphrase(options))
-                        return;
-
                     Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target.Split(System.IO.Path.PathSeparator), options));
                 }
                 else
                 {
-                    if (!EnsurePassphrase(options))
-                        return;
-
                     Console.WriteLine(Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options));
                 }
             }
@@ -308,90 +293,26 @@ namespace Duplicati.CommandLine
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
 
-                Console.Error.WriteLine(Strings.Program.UnhandledException, ex.ToString());
-
-                while (ex.InnerException != null)
+                if (!(ex is Library.Interface.CancelException))
                 {
-                    ex = ex.InnerException;
-                    Console.Error.WriteLine();
-                    Console.Error.WriteLine(Strings.Program.UnhandledInnerException, ex.ToString());
+                    if (!string.IsNullOrEmpty(ex.Message))
+                    {
+                        Console.Error.WriteLine();
+                        Console.Error.WriteLine(ex.Message);
+                    }
                 }
-            }
-        }
-
-        private static bool EnsurePassphrase(Dictionary<string, string> options)
-        {
-            if (!options.ContainsKey("passphrase") && !options.ContainsKey("no-encryption"))
-            {
-                string pwd = ReadPassphraseFromConsole(false);
-                if (pwd == null)
-                    return false;
                 else
-                    options["passphrase"] = pwd;
-            }
-
-            return true;
-        }
-
-        private static string ReadPassphraseFromConsole(bool confirm)
-        {
-            Console.Write("\n" + Strings.Program.EnterPassphrasePrompt + ": ");
-            StringBuilder passphrase = new StringBuilder();
-
-            while (true)
-            {
-                ConsoleKeyInfo k = Console.ReadKey(true);
-                if (k.Key == ConsoleKey.Enter)
-                    break;
-
-                if (k.Key == ConsoleKey.Escape)
-                    return null;
-
-                passphrase.Append(k.KeyChar);
-
-                //Unix/Linux user know that there is no feedback, Win user gets scared :)
-                if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                    Console.Write("*");
-            }
-
-            Console.WriteLine();
-
-            if (confirm)
-            {
-                Console.Write("\n" + Strings.Program.ConfirmPassphrasePrompt + ": ");
-                StringBuilder password2 = new StringBuilder();
-
-                while (true)
                 {
-                    ConsoleKeyInfo k = Console.ReadKey(true);
-                    if (k.Key == ConsoleKey.Enter)
-                        break;
+                    Console.Error.WriteLine(Strings.Program.UnhandledException, ex.ToString());
 
-                    if (k.Key == ConsoleKey.Escape)
-                        return null;
-
-                    password2.Append(k.KeyChar);
-
-                    //Unix/Linux user know that there is no feedback, Win user gets scared :)
-                    if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                        Console.Write("*");
-                }
-                Console.WriteLine();
-
-                if (passphrase.ToString() != password2.ToString())
-                {
-                    Console.WriteLine(Strings.Program.PassphraseMismatchError);
-                    return null;
+                    while (ex.InnerException != null)
+                    {
+                        ex = ex.InnerException;
+                        Console.Error.WriteLine();
+                        Console.Error.WriteLine(Strings.Program.UnhandledInnerException, ex.ToString());
+                    }
                 }
             }
-
-            if (passphrase.ToString().Length == 0)
-            {
-                Console.WriteLine(Strings.Program.EmptyPassphraseError);
-                return null;
-            }
-
-            return passphrase.ToString();
         }
 
         private static void PrintUsage(bool extended)
