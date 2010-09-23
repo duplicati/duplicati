@@ -166,10 +166,6 @@ namespace Duplicati.Library.Backend
 
                         foreach (XmlNode obj in objects)
                         {
-                            //The "marker" element is reported again when doing split queries
-                            if (obj["Key"].InnerText == filename)
-                                continue;
-
                             filename = obj["Key"].InnerText;
                             long size = long.Parse(obj["Size"].InnerText);
                             DateTime lastModified = DateTime.Parse(obj["LastModified"].InnerText);
@@ -180,6 +176,17 @@ namespace Duplicati.Library.Backend
                     }
                 }
             }
+
+            //Unfortunately S3 sometimes reports duplicate values when requesting more than one page of results
+            Dictionary<string, string> tmp = new Dictionary<string, string>();
+            for (int i = 0; i < files.Count; i++)
+                if (tmp.ContainsKey(files[i].Name))
+                {
+                    files.RemoveAt(i);
+                    i--;
+                }
+                else
+                    tmp.Add(files[i].Name, null);
 
             return files;
         }
