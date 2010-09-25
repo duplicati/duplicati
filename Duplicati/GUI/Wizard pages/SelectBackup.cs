@@ -33,6 +33,7 @@ namespace Duplicati.GUI.Wizard_pages
     public partial class SelectBackup : WizardControl
     {
         private WizardSettingsWrapper m_wrapper;
+        private bool m_skipFirstEvent = false;
 
         public SelectBackup()
             : base ("", "")
@@ -52,17 +53,23 @@ namespace Duplicati.GUI.Wizard_pages
             if (m_wrapper.ScheduleID > 0)
                 BackupList.SelectedBackup = m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
 
-            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
+            if (!m_valuesAutoLoaded)
             {
-                topLabel.Visible = false;
-                RestoreOptions.Visible = true;
+                if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
+                {
+                    topLabel.Visible = false;
+                    RestoreOptions.Visible = true;
+                }
+                else
+                {
+                    topLabel.Visible = true;
+                    RestoreOptions.Visible = false;
+                    ShowAdvancedPanel.Visible = false;
+                    topLabel.Text = this.Title;
+                }
             }
             else
-            {
-                topLabel.Visible = true;
-                RestoreOptions.Visible = false;
-                topLabel.Text = this.Title;
-            }
+                m_skipFirstEvent = true;
         }
 
         void SelectBackup_PageLeave(object sender, PageChangedArgs args)
@@ -105,10 +112,11 @@ namespace Duplicati.GUI.Wizard_pages
                     args.NextPage = new Delete_backup.DeleteFinished();
                     break;
                 case WizardSettingsWrapper.MainAction.Restore:
+                    m_wrapper.ShowAdvancedRestoreOptions = ShowAdvanced.Checked;
                     if (DirectRestore.Checked)
                         args.NextPage = new Add_backup.PasswordSettings();
                     else
-                        args.NextPage = new Restore.SelectBackup();
+                        args.NextPage = m_wrapper.ShowAdvancedRestoreOptions ? (IWizardControl)new Add_backup.SettingOverrides() : (IWizardControl)new Restore.SelectBackupVersion();
                     break;
                 case WizardSettingsWrapper.MainAction.RunNow:
                     args.NextPage = new RunNow.RunNowFinished();
@@ -172,7 +180,10 @@ namespace Duplicati.GUI.Wizard_pages
 
         private void BackupList_SelectedBackupChanged(object sender, EventArgs e)
         {
-            RestoreExisting.Checked = true;
+            if (m_skipFirstEvent)
+                m_skipFirstEvent = false;
+            else
+                RestoreExisting.Checked = true;
         }
 
         private void DirectRestore_DoubleClick(object sender, EventArgs e)

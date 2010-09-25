@@ -58,7 +58,7 @@ namespace Duplicati.Library.Snapshots
                 m_sourcepaths = new string[sourcepaths.Length];
 
                 for(int i = 0; i < m_sourcepaths.Length; i++)
-                    m_sourcepaths[i] = Core.Utility.AppendDirSeperator(sourcepaths[i]);
+                    m_sourcepaths[i] = Core.Utility.AppendDirSeparator(sourcepaths[i]);
 
                 try
                 {
@@ -170,8 +170,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         private string[] ListFolders(string folder)
         {
-            string root = Core.Utility.AppendDirSeperator(Path.GetPathRoot(folder));
-            string volumePath = Core.Utility.AppendDirSeperator(GetSnapshotPath(root));
+            string root = Core.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
+            string volumePath = Core.Utility.AppendDirSeparator(GetSnapshotPath(root));
 
             string[] tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(GetSnapshotPath(folder));
             for (int i = 0; i < tmp.Length; i++)
@@ -188,8 +188,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         private string[] ListFiles(string folder)
         {
-            string root = Core.Utility.AppendDirSeperator(Path.GetPathRoot(folder));
-            string volumePath = Core.Utility.AppendDirSeperator(GetSnapshotPath(root));
+            string root = Core.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
+            string volumePath = Core.Utility.AppendDirSeparator(GetSnapshotPath(root));
 
             string[] tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(GetSnapshotPath(folder));
             for (int i = 0; i < tmp.Length; i++)

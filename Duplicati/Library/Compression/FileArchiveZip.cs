@@ -83,7 +83,7 @@ namespace Duplicati.Library.Compression
 
         /// <summary>
         /// Converts a zip file path to the format used by the local filesystem.
-        /// Internally all files are stored in the archive use / as directory seperator.
+        /// Internally all files are stored in the archive use / as directory separator.
         /// </summary>
         /// <param name="path">The path to convert in internal format</param>
         /// <returns>The path in filesystem format</returns>
@@ -97,7 +97,7 @@ namespace Duplicati.Library.Compression
 
         /// <summary>
         /// Converts a file system path to the internal format.
-        /// Internally all files are stored in the archive use / as directory seperator.
+        /// Internally all files are stored in the archive use / as directory separator.
         /// </summary>
         /// <param name="path">The path to convert in filesystem format</param>
         /// <returns>The path in the internal format</returns>
@@ -177,7 +177,7 @@ namespace Duplicati.Library.Compression
                 if (prefix == null || name.StartsWith(prefix))
                 {
                     if (ze.IsDirectory)
-                        results.Add(Core.Utility.AppendDirSeperator(name));
+                        results.Add(Core.Utility.AppendDirSeparator(name));
                 }
             }
 
@@ -203,7 +203,7 @@ namespace Duplicati.Library.Compression
                 if (prefix == null || name.StartsWith(prefix))
                 {
                     if (ze.IsDirectory)
-                        results.Add(Core.Utility.AppendDirSeperator(name));
+                        results.Add(Core.Utility.AppendDirSeparator(name));
                     else
                         results.Add(name);
                 }
@@ -304,7 +304,7 @@ namespace Duplicati.Library.Compression
         {
             ICSharpCode.SharpZipLib.Zip.ZipEntry ze = m_zip.GetEntry(PathFromFilesystem(file));
             
-            if (ze == null) //Grrr... The zip library has a pretty relaxed take on seperators
+            if (ze == null) //Grrr... The zip library has a pretty relaxed take on separators
                 ze = m_zip.GetEntry(PathToFilesystem(file));
 
             return ze;

@@ -60,9 +60,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\..\GUI\UrlUtillity.cs">
-      <Link>UrlUtillity.cs</Link>
-    </Compile>
     <Compile Include="CloudFiles.cs" />
     <Compile Include="CloudFilesUI.cs">
       <SubType>UserControl</SubType>

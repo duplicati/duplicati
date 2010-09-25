@@ -46,7 +46,7 @@ namespace Duplicati.Library.Snapshots
             public SnapShot(string path)
             {
                 m_name = string.Format("duplicati-{0}", Guid.NewGuid().ToString());
-                m_realDir = Core.Utility.AppendDirSeperator(path);
+                m_realDir = Core.Utility.AppendDirSeparator(path);
                 GetVolumeName(m_realDir);
             }
 
@@ -172,7 +172,7 @@ namespace Duplicati.Library.Snapshots
                 if (string.IsNullOrEmpty(m_mountPoint) || m_mountPoint.Trim().Length == 0)
                     throw new Exception(string.Format(Strings.LinuxSnapshot.ScriptOutputError, "mountpoint", output));
 
-                m_mountPoint = Core.Utility.AppendDirSeperator(m_mountPoint);
+                m_mountPoint = Core.Utility.AppendDirSeparator(m_mountPoint);
             }
 
             /// <summary>
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Snapshots
                     throw new InvalidOperationException();
 
                 //Create the snapshot volume
-                string output = ExecuteCommand("create-lvm-snapshot.sh", string.Format("\"{0}\" \"{1}\" \"{2}\"", m_name, m_device, Core.Utility.AppendDirSeperator(Core.TempFolder.SystemTempPath)), 0);
+                string output = ExecuteCommand("create-lvm-snapshot.sh", string.Format("\"{0}\" \"{1}\" \"{2}\"", m_name, m_device, Core.Utility.AppendDirSeparator(Core.TempFolder.SystemTempPath)), 0);
 
                 System.Text.RegularExpressions.Regex rex = new System.Text.RegularExpressions.Regex("tmpdir=\"(?<tmpdir>[^\"]+)\"");
                 System.Text.RegularExpressions.Match m = rex.Match(output);
@@ -200,7 +200,7 @@ namespace Duplicati.Library.Snapshots
                 if (!System.IO.Directory.Exists(m_tmpDir))
                     throw new Exception(string.Format(Strings.LinuxSnapshot.MountFolderMissingError, m_tmpDir, output));
 
-                m_tmpDir = Core.Utility.AppendDirSeperator(m_tmpDir);
+                m_tmpDir = Core.Utility.AppendDirSeparator(m_tmpDir);
             }
 
             #region IDisposable Members

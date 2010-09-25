@@ -59,8 +59,8 @@ namespace Duplicati.Library.Core
 
                     //It is annoying to use backslashes on windows, because they are also escape
                     //controls, so \t has to be \\t and on the command line it must be \\\\t, so we
-                    //accept the unix style dir seperator "/"
-                    cmd = cmd.Replace("/", ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString()));
+                    //accept the unix style dir separator "/"
+                    cmd = cmd.Replace("/", ConvertGlobbingToRegExp(Core.Utility.DirectorySeparatorString));
 
                     lst.Add(new KeyValuePair<bool, string>(include, cmd));
                     if (remove)
@@ -88,7 +88,7 @@ namespace Duplicati.Library.Core
                     sb.Append(System.IO.Path.PathSeparator.ToString());
                 sb.Append(x.Key ? "i:" : "e:");
                 if (x.Value.Contains(System.IO.Path.PathSeparator.ToString()))
-                    throw new Exception(string.Format(Strings.FilenameFilter.FilterContainsPathSeperator, System.IO.Path.PathSeparator));
+                    throw new Exception(string.Format(Strings.FilenameFilter.FilterContainsPathSeparator, System.IO.Path.PathSeparator));
                 sb.Append(x.Value);
             }
             return sb.ToString();
@@ -112,7 +112,7 @@ namespace Duplicati.Library.Core
                 x = filter.IndexOf(System.IO.Path.PathSeparator, x);
                 
                 //HACK: Detection of linux special case
-                //TODO: Reconsider using the ":" character, as that is the PathSeperator on linux
+                //TODO: Reconsider using the ":" character, as that is the PathSeparator on linux
                 if (System.IO.Path.PathSeparator == ':' && x == 1)
                     x = filter.IndexOf(System.IO.Path.PathSeparator, x + 1);
 
@@ -236,7 +236,7 @@ namespace Duplicati.Library.Core
         public bool ShouldInclude(string basepath, string filename, out IFilenameFilter match)
         {
             match = null;
-            basepath = Core.Utility.AppendDirSeperator(basepath);
+            basepath = Core.Utility.AppendDirSeparator(basepath);
             if (!filename.StartsWith(basepath, Core.Utility.ClientFilenameStringComparision))
                 return false;
 
@@ -258,7 +258,7 @@ namespace Duplicati.Library.Core
 
         public List<string> FilterList(string basepath, IEnumerable<string> filenames)
         {
-            basepath = Core.Utility.AppendDirSeperator(basepath);
+            basepath = Core.Utility.AppendDirSeparator(basepath);
 
             List<string> included = new List<string>();
             foreach (string s in filenames)

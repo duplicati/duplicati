@@ -116,18 +116,6 @@ namespace Duplicati.CommandLine
                     if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_USERNAME")))
                         options["ftp-username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
 
-                if (!Library.Core.Utility.IsClientLinux && (source.StartsWith("file://", StringComparison.InvariantCultureIgnoreCase) || target.StartsWith("file://", StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    string tmpShort;
-                    options.TryGetValue("short-filenames", out tmpShort);
-
-                    if (!options.ContainsKey("time-separator") && !options.ContainsKey("time-seperator") && !Library.Core.Utility.ParseBool(tmpShort, false))
-                    {
-                        Console.Error.WriteLine(Strings.Program.SettingDefaultTimeSeperatorWarning);
-                        options["time-separator"] = "'";
-                    }
-                }
-
                 if (source.Trim().ToLower() == "list")
                     Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
                 else if (source.Trim().ToLower() == "list-current-files")

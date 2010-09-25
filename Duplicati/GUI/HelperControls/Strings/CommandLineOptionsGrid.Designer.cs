@@ -63,7 +63,7 @@ namespace Duplicati.GUI.HelperControls.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Value type: {0}. 
         ///{1}. 
-        ///{2}..
+        ///{2}.
         /// </summary>
         internal static string InfoLabelFormat {
             get {

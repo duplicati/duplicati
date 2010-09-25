@@ -128,7 +128,7 @@ namespace Duplicati.Library.Main
 
             //Make sure they all have the same format
             for (int i = 0; i < sources.Length; i++)
-                sources[i] = Core.Utility.AppendDirSeperator(sources[i]);
+                sources[i] = Core.Utility.AppendDirSeparator(sources[i]);
 
             //Sanity check for duplicate folders and multiple inclusions of the same folder
             for (int i = 0; i < sources.Length - 1; i++)
@@ -352,7 +352,7 @@ namespace Duplicati.Library.Main
                                 Core.TempFile mf = new Duplicati.Library.Core.TempFile();
                                 mf.Protected = true;
 
-                                using (new Logging.Timer("Writing manifest"))
+                                using (new Logging.Timer("Writing manifest " + backuptime.ToUniversalTime().ToString("yyyyMMddTHHmmssK")))
                                 {
                                     manifest.Save(mf);
 
@@ -415,8 +415,6 @@ namespace Duplicati.Library.Main
                                 backend.Put(p.Key, p.Value);
                                 m_asyncReserved -= unitcost;
                                 m_progress += unitcost;
-
-                                
                             }
                         }
                     }
@@ -758,7 +756,7 @@ namespace Duplicati.Library.Main
 
                     flatlist.Reverse();
 
-                    string prefix = Core.Utility.AppendDirSeperator(RSync.RSyncDir.CONTROL_ROOT);
+                    string prefix = Core.Utility.AppendDirSeparator(RSync.RSyncDir.CONTROL_ROOT);
 
                     foreach (ManifestEntry be in flatlist)
                     {

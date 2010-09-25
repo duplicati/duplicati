@@ -143,10 +143,6 @@ namespace Duplicati.GUI.Wizard_pages
             this.IgnoreFileTimestamps = schedule.Task.Extensions.IgnoreTimestamps;
             this.FileSizeLimit = schedule.Task.Extensions.FileSizeLimit;
 
-            this.FilePrefix = schedule.Task.Extensions.FilenamePrefix;
-            this.FileTimeSeperator = schedule.Task.Extensions.FileTimeSeperator;
-            this.ShortFilenames = schedule.Task.Extensions.ShortFilenames;
-
             //Handle the "Select Files" portion
             this.SelectFilesUI.Version = schedule.Task.Extensions.SelectFiles_Version;
             this.SelectFilesUI.UseSimpleMode = schedule.Task.Extensions.SelectFiles_UseSimpleMode;
@@ -210,10 +206,6 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.IncludeSetup = this.IncludeSetup;
             schedule.Task.Extensions.IgnoreTimestamps = this.IgnoreFileTimestamps;
             schedule.Task.Extensions.FileSizeLimit = this.FileSizeLimit;
-
-            schedule.Task.Extensions.FilenamePrefix = this.FilePrefix;
-            schedule.Task.Extensions.FileTimeSeperator = this.FileTimeSeperator;
-            schedule.Task.Extensions.ShortFilenames = this.ShortFilenames;
 
             schedule.Task.Extensions.SelectFiles_Version = this.SelectFilesUI.Version;
             schedule.Task.Extensions.SelectFiles_UseSimpleMode = this.SelectFilesUI.UseSimpleMode;
@@ -628,30 +620,12 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
-        /// A prefix to the volume filename
+        /// True if advanced restore options should be displayed
         /// </summary>
-        public string FilePrefix
+        public bool ShowAdvancedRestoreOptions
         {
-            get { return GetItem<string>("FilePrefix", ""); }
-            set { SetItem("FilePrefix", value); }
-        }
-
-        /// <summary>
-        /// The character used to seperate time digits in the filename
-        /// </summary>
-        public string FileTimeSeperator
-        {
-            get { return GetItem<string>("FileTimeSeperator", ":"); }
-            set { SetItem("FileTimeSeperator", value); }
-        }
-
-        /// <summary>
-        /// True if the filenames generated should be short
-        /// </summary>
-        public bool ShortFilenames
-        {
-            get { return GetItem<bool>("ShortFilenames", false); }
-            set { SetItem("ShortFilenames", value); }
+            get { return GetItem<bool>("ShowAdvancedRestoreOptions", false); }
+            set { SetItem("ShowAdvancedRestoreOptions", value); }
         }
 
         /// <summary>

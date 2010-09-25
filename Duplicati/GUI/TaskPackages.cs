@@ -214,13 +214,7 @@ namespace Duplicati.GUI
                 options["asynchronous-upload"] = "";
             if (ext.IgnoreTimestamps)
                 options["disable-filetime-check"] = "";
-            if (!string.IsNullOrEmpty(ext.FileTimeSeperator))
-                options["time-separator"] = ext.FileTimeSeperator;
 
-            if (!string.IsNullOrEmpty(ext.FilenamePrefix))
-                options["backup-prefix"] = ext.FilenamePrefix;
-            if (ext.ShortFilenames)
-                options["short-filenames"] = "";
             if (!string.IsNullOrEmpty(ext.FileSizeLimit))
                 options["skip-files-larger-than"] = ext.FileSizeLimit;
         }

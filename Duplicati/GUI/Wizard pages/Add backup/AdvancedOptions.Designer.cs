@@ -34,7 +34,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.ThrottleOptions = new System.Windows.Forms.CheckBox();
             this.EditFilters = new System.Windows.Forms.CheckBox();
             this.IncludeDuplicatiSetup = new System.Windows.Forms.CheckBox();
-            this.EditVolumeFilenames = new System.Windows.Forms.CheckBox();
             this.EditOverrides = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
@@ -70,12 +69,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.IncludeDuplicatiSetup.Name = "IncludeDuplicatiSetup";
             this.IncludeDuplicatiSetup.UseVisualStyleBackColor = true;
             // 
-            // EditVolumeFilenames
-            // 
-            resources.ApplyResources(this.EditVolumeFilenames, "EditVolumeFilenames");
-            this.EditVolumeFilenames.Name = "EditVolumeFilenames";
-            this.EditVolumeFilenames.UseVisualStyleBackColor = true;
-            // 
             // EditOverrides
             // 
             resources.ApplyResources(this.EditOverrides, "EditOverrides");
@@ -87,7 +80,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.EditOverrides);
-            this.Controls.Add(this.EditVolumeFilenames);
             this.Controls.Add(this.IncludeDuplicatiSetup);
             this.Controls.Add(this.EditFilters);
             this.Controls.Add(this.ThrottleOptions);
@@ -106,7 +98,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private System.Windows.Forms.CheckBox ThrottleOptions;
         private System.Windows.Forms.CheckBox EditFilters;
         private System.Windows.Forms.CheckBox IncludeDuplicatiSetup;
-        private System.Windows.Forms.CheckBox EditVolumeFilenames;
         private System.Windows.Forms.CheckBox EditOverrides;
     }
 }

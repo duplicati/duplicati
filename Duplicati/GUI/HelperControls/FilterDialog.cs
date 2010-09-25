@@ -88,9 +88,9 @@ namespace Duplicati.GUI.HelperControls
         {
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
                 if (IsRegExp.Checked)
-                    FilterText.Text = Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeperator(folderBrowserDialog.SelectedPath));
+                    FilterText.Text = Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath));
                 else
-                    FilterText.Text = Duplicati.Library.Core.Utility.AppendDirSeperator(folderBrowserDialog.SelectedPath);
+                    FilterText.Text = Duplicati.Library.Core.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath);
         }
 
         private void BrowseFileButton_Click(object sender, EventArgs e)
@@ -104,7 +104,7 @@ namespace Duplicati.GUI.HelperControls
 
         private void HelpImage_Click(object sender, EventArgs e)
         {
-            UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
+            Duplicati.Library.Core.UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
         }
 
         private void HelpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

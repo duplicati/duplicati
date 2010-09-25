@@ -518,7 +518,7 @@ namespace Duplicati.GUI
             {
                 Duplicati.License.LicenseEntry l = LicenseSections.SelectedItem as Duplicati.License.LicenseEntry;
                 if (!string.IsNullOrEmpty(l.Url))
-                    UrlUtillity.OpenUrl(l.Url);
+                    Duplicati.Library.Core.UrlUtillity.OpenUrl(l.Url);
             }
         }
     }

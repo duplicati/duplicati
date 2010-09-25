@@ -39,7 +39,7 @@ namespace Duplicati.Library.Core
         public TempFolder(string folder)
         {
             m_protect = false;
-            m_folder = Core.Utility.AppendDirSeperator(folder);
+            m_folder = Core.Utility.AppendDirSeparator(folder);
             System.IO.Directory.CreateDirectory(m_folder);
         }
 

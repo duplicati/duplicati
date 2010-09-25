@@ -55,11 +55,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             InitializeComponent();
             m_sizes = new Dictionary<string, long>(Library.Core.Utility.IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase );
 
-            m_myPictures = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
-            m_myMusic = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
-            m_desktop = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
-            m_appData = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
-            m_myDocuments = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+            m_myPictures = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
+            m_myMusic = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
+            m_desktop = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+            m_appData = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            m_myDocuments = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
 
             FolderTooltip.SetToolTip(IncludeDocuments, m_myDocuments);
             FolderTooltip.SetToolTip(IncludeMusic, m_myMusic);
@@ -101,7 +101,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 string path = entry.SelectedPath.Trim();
                 if (!string.IsNullOrEmpty(path))
-                    folders.Add(Library.Core.Utility.AppendDirSeperator(path));
+                    folders.Add(Library.Core.Utility.AppendDirSeparator(path));
             }
 
             folders.Reverse();
@@ -138,7 +138,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 {
                     string path = entry.SelectedPath.Trim();
                     if (!string.IsNullOrEmpty(path))
-                        folders.Add(Library.Core.Utility.AppendDirSeperator(path));
+                        folders.Add(Library.Core.Utility.AppendDirSeparator(path));
                 }
 
                 for (int i = 0; i < folders.Count; i++)
@@ -204,7 +204,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             //Upgrade from the previous design with one source folder and multiple filters
             MessageBox.Show(this, Strings.SelectFiles.UpgradeWarning, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            string p = Library.Core.Utility.AppendDirSeperator(m_wrapper.SourcePath);
+            string p = Library.Core.Utility.AppendDirSeparator(m_wrapper.SourcePath);
             List<KeyValuePair<bool, string>> filters = Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters);
 
             //See what folders are included with the current setup

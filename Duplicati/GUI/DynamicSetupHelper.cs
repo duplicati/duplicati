@@ -88,8 +88,8 @@ namespace Duplicati.GUI
         private static string[] PrependFilterList(string[] sourceFolders, ApplicationSettings settings, List<KeyValuePair<bool, string>> filters)
         {
             string[] exFolders = new string[] {
-                Library.Core.Utility.AppendDirSeperator(System.Environment.ExpandEnvironmentVariables(settings.SignatureCachePath)), 
-                Library.Core.Utility.AppendDirSeperator(System.Environment.ExpandEnvironmentVariables(settings.TempPath))
+                Library.Core.Utility.AppendDirSeparator(System.Environment.ExpandEnvironmentVariables(settings.SignatureCachePath)), 
+                Library.Core.Utility.AppendDirSeparator(System.Environment.ExpandEnvironmentVariables(settings.TempPath))
             };
 
             foreach (string i in sourceFolders)
@@ -112,11 +112,11 @@ namespace Duplicati.GUI
         /// <returns>The source folder string</returns>
         private static string[] GetSourceFolders(bool includeDocuments, bool includeMusic, bool includeImages, bool includeDesktop, bool includeSettings, ApplicationSettings settings, List<KeyValuePair<bool, string>> filters)
         {
-            string myPictures = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
-            string myMusic = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
-            string desktop = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
-            string appData = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
-            string myDocuments = Library.Core.Utility.AppendDirSeperator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+            string myPictures = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
+            string myMusic = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
+            string desktop = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+            string appData = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            string myDocuments = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
 
             List<string> folders = new List<string>();
             List<string> exfolders = new List<string>();

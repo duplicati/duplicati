@@ -159,7 +159,7 @@ namespace Duplicati.GUI.HelperControls
             //Find the source folder that matches the path entered
             string basepath = null;
             foreach (string s in m_basepath)
-                if (filename.StartsWith(Library.Core.Utility.AppendDirSeperator(s), Library.Core.Utility.ClientFilenameStringComparision))
+                if (filename.StartsWith(Library.Core.Utility.AppendDirSeparator(s), Library.Core.Utility.ClientFilenameStringComparision))
                 {
                     basepath = s;
                     break;
@@ -178,7 +178,7 @@ namespace Duplicati.GUI.HelperControls
             while (folder.Length > basepath.Length)
             {
                 folder = System.IO.Path.GetDirectoryName(folder);
-                parentFolders.Add(Duplicati.Library.Core.Utility.AppendDirSeperator(folder));
+                parentFolders.Add(Duplicati.Library.Core.Utility.AppendDirSeparator(folder));
             }
 
             //Work from the source towards the path
@@ -388,7 +388,7 @@ namespace Duplicati.GUI.HelperControls
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void HelpButton_Click(object sender, EventArgs e)
         {
-            UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
+            Duplicati.Library.Core.UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
         }
 
 
@@ -402,7 +402,7 @@ namespace Duplicati.GUI.HelperControls
             folderBrowserDialog.Description = Strings.FilterEditor.IncludeFolderBrowseTitle;
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
-                listView.Items.Add(Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeperator(folderBrowserDialog.SelectedPath)), 0);
+                listView.Items.Add(Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath)), 0);
                 FilenameTester_TextChanged(sender, e);
             }
         }
@@ -417,7 +417,7 @@ namespace Duplicati.GUI.HelperControls
             folderBrowserDialog.Description = Strings.FilterEditor.ExcludeFolderBrowseTitle;
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
-                listView.Items.Add(Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeperator(folderBrowserDialog.SelectedPath)), 1);
+                listView.Items.Add(Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath)), 1);
                 FilenameTester_TextChanged(sender, e);
             }
         }

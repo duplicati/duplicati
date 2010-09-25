@@ -1,6 +1,6 @@
 namespace Duplicati.GUI.Wizard_pages.Restore
 {
-    partial class SelectBackup
+    partial class SelectBackupVersion
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,7 +28,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SelectBackup));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SelectBackupVersion));
             this.BackupList = new Duplicati.GUI.HelperControls.BackupItems();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();

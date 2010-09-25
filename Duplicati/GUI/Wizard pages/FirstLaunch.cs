@@ -58,7 +58,14 @@ namespace Duplicati.GUI.Wizard_pages
             }
             else if (RestoreSetup.Checked)
             {
+                DialogResult res = MessageBox.Show(this, Strings.FirstLaunch.ShowAdvancedQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+                if (res == DialogResult.Cancel)
+                {
+                    args.Cancel = true;
+                    return;
+                }
                 wrapper.SetupDefaults();
+                wrapper.ShowAdvancedRestoreOptions = res == DialogResult.Yes;
                 args.NextPage = new Add_backup.PasswordSettings();
                 wrapper.DataConnection = Program.DataConnection;
                 wrapper.PrimayAction = WizardSettingsWrapper.MainAction.RestoreSetup;

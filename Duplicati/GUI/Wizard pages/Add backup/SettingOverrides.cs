@@ -49,7 +49,19 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (!OptionGrid.Unsupported)
                 m_wrapper.Overrides = OptionGrid.GetConfiguration();
 
-            //Don't set args.NextPage, it runs on a list
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
+            {
+                m_wrapper.UpdateSchedule(m_wrapper.DataConnection.GetObjectById<Datamodel.Schedule>(m_wrapper.ScheduleID));
+                args.NextPage = new Restore.SelectBackupVersion();
+            }
+            else if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+            {
+                args.NextPage = new RestoreSetup.FinishedRestoreSetup();
+            }
+            else
+            {
+                //Don't set args.NextPage, it runs on a list
+            }
         }
 
         void SettingOverrides_PageEnter(object sender, System.Windows.Forms.Wizard.PageChangedArgs args)

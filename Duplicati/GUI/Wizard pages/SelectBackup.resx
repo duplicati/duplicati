@@ -163,7 +163,7 @@
     <value>0, 17</value>
   </data>
   <data name="BackupList.Size" type="System.Drawing.Size, System.Drawing">
-    <value>432, 127</value>
+    <value>432, 111</value>
   </data>
   <data name="BackupList.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -187,7 +187,7 @@
     <value>0, 56</value>
   </data>
   <data name="panel1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>432, 144</value>
+    <value>432, 128</value>
   </data>
   <data name="panel1.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -203,6 +203,60 @@
   </data>
   <data name="&gt;&gt;panel1.ZOrder" xml:space="preserve">
     <value>0</value>
+  </data>
+  <data name="ShowAdvanced.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="ShowAdvanced.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="ShowAdvanced.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 4</value>
+  </data>
+  <data name="ShowAdvanced.Size" type="System.Drawing.Size, System.Drawing">
+    <value>141, 17</value>
+  </data>
+  <data name="ShowAdvanced.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="ShowAdvanced.Text" xml:space="preserve">
+    <value>Show advanced options</value>
+  </data>
+  <data name="&gt;&gt;ShowAdvanced.Name" xml:space="preserve">
+    <value>ShowAdvanced</value>
+  </data>
+  <data name="&gt;&gt;ShowAdvanced.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ShowAdvanced.Parent" xml:space="preserve">
+    <value>ShowAdvancedPanel</value>
+  </data>
+  <data name="&gt;&gt;ShowAdvanced.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="ShowAdvancedPanel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Bottom</value>
+  </data>
+  <data name="ShowAdvancedPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 184</value>
+  </data>
+  <data name="ShowAdvancedPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>432, 24</value>
+  </data>
+  <data name="ShowAdvancedPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;ShowAdvancedPanel.Name" xml:space="preserve">
+    <value>ShowAdvancedPanel</value>
+  </data>
+  <data name="&gt;&gt;ShowAdvancedPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ShowAdvancedPanel.Parent" xml:space="preserve">
+    <value>ExpanderPanel</value>
+  </data>
+  <data name="&gt;&gt;ShowAdvancedPanel.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <data name="DirectRestore.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -286,13 +340,13 @@
     <value>ExpanderPanel</value>
   </data>
   <data name="&gt;&gt;RestoreOptions.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="ExpanderPanel.Location" type="System.Drawing.Point, System.Drawing">
     <value>32, 8</value>
   </data>
   <data name="ExpanderPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>432, 200</value>
+    <value>432, 208</value>
   </data>
   <data name="ExpanderPanel.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>

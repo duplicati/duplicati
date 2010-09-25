@@ -30,28 +30,31 @@ using Duplicati.Library.Core;
 
 namespace Duplicati.GUI.Wizard_pages.Restore
 {
-    public partial class SelectBackup : WizardControl
+    public partial class SelectBackupVersion : WizardControl
     {
         WizardSettingsWrapper m_wrapper;
         DateTime m_selectedDate = new DateTime();
 
-        public SelectBackup()
-            : base(Strings.SelectBackup.PageTitle, Strings.SelectBackup.PageDescription)
+        public SelectBackupVersion()
+            : base(Strings.SelectBackupVersion.PageTitle, Strings.SelectBackupVersion.PageDescription)
         {
             InitializeComponent();
 
-            base.PageEnter += new PageChangeHandler(SelectBackup_PageEnter);
-            base.PageLeave += new PageChangeHandler(SelectBackup_PageLeave);
+            base.PageEnter += new PageChangeHandler(SelectBackupVersion_PageEnter);
+            base.PageLeave += new PageChangeHandler(SelectBackupVersion_PageLeave);
         }
 
-        void SelectBackup_PageLeave(object sender, PageChangedArgs args)
+        void SelectBackupVersion_PageLeave(object sender, PageChangedArgs args)
         {
             if (args.Direction == PageChangedDirection.Back)
+            {
+                BackupList.Abort();
                 return;
+            }
 
             if (BackupList.SelectedItem.Ticks == 0)
             {
-                MessageBox.Show(this, Strings.SelectBackup.NoBackupSelectedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.SelectBackupVersion.NoBackupSelectedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }
@@ -63,9 +66,10 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             args.NextPage = new TargetFolder();
         }
 
-        void SelectBackup_PageEnter(object sender, PageChangedArgs args)
+        void SelectBackupVersion_PageEnter(object sender, PageChangedArgs args)
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
+            m_wrapper.UpdateSchedule(m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID));
             BackupList.Setup(m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID));
         }
 

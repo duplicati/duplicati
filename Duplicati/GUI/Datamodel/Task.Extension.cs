@@ -189,9 +189,6 @@ namespace Duplicati.Datamodel
             private const string INCLUDE_SETUP = "Include Setup";
             private const string IGNORE_TIMESTAMPS = "Ignore Timestamps";
             private const string FILE_SIZE_LIMIT = "File Size Limit";
-            private const string FILE_TIME_SEPERATOR = "File Time Seperator";
-            private const string SHORT_FILENAMES = "Short Filenames";
-            private const string FILENAME_PREFIX = "Filename Prefix";
 
             private const string SELECTFILES_VERSION = "Select Files - Version";
             private const string SELECTFILES_USESIMPLEMODE = "Select Files - Use Simple Mode";
@@ -268,24 +265,6 @@ namespace Duplicati.Datamodel
             {
                 get { return m_owner.TaskExtensionsLookup[FILE_SIZE_LIMIT]; }
                 set { m_owner.TaskExtensionsLookup[FILE_SIZE_LIMIT] = value; }
-            }
-
-            public string FileTimeSeperator
-            {
-                get { return m_owner.TaskExtensionsLookup[FILE_TIME_SEPERATOR]; }
-                set { m_owner.TaskExtensionsLookup[FILE_TIME_SEPERATOR] = value; }
-            }
-
-            public bool ShortFilenames
-            {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SHORT_FILENAMES], false); }
-                set { m_owner.TaskExtensionsLookup[SHORT_FILENAMES] = value.ToString(); }
-            }
-
-            public string FilenamePrefix
-            {
-                get { return m_owner.TaskExtensionsLookup[FILENAME_PREFIX]; }
-                set { m_owner.TaskExtensionsLookup[FILENAME_PREFIX] = value; }
             }
 
             public int SelectFiles_Version

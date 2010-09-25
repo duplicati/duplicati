@@ -35,6 +35,8 @@ namespace Duplicati.GUI.HelperControls
         public event EventHandler LoadError;
         public event EventHandler ItemDoubleClicked;
         private Datamodel.Schedule m_schedule;
+        private object m_lock = new object();
+        private DuplicatiRunner m_runner = null;
 
         public BackupItems()
         {
@@ -72,8 +74,30 @@ namespace Duplicati.GUI.HelperControls
 
         private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            DuplicatiRunner r = new DuplicatiRunner();
-            e.Result = r.ListBackupEntries(m_schedule);
+            try
+            {
+                lock (m_lock)
+                    m_runner = new DuplicatiRunner();
+                e.Result = m_runner.ListBackupEntries(m_schedule);
+            }
+            finally
+            {
+                lock (m_lock)
+                    m_runner = null;
+            }
+        }
+
+        public void Abort()
+        {
+            try
+            {
+                lock (m_lock)
+                    if (m_runner != null)
+                        m_runner.Terminate();
+            }
+            catch
+            {
+            }
         }
 
         private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

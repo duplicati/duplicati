@@ -48,7 +48,7 @@ namespace Duplicati.Library.Snapshots
         {
             m_sourcefolders = new string[folders.Length];
             for (int i = 0; i < m_sourcefolders.Length; i++)
-                m_sourcefolders[i] = Core.Utility.AppendDirSeperator(folders[i]);
+                m_sourcefolders[i] = Core.Utility.AppendDirSeparator(folders[i]);
 
             m_attemptDirtyAccess = attemptDirtyAccess;
             m_attemptBackupRead = false;

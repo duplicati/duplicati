@@ -25,6 +25,7 @@ namespace Duplicati.Library.Main
 {
     public class CommunicationStatistics
     {
+        private object m_lock = new object();
         private bool m_verboseErrors = false;
         private long m_numberOfBytesUploaded;
         private long m_numberOfRemoteCalls;
@@ -45,31 +46,49 @@ namespace Duplicati.Library.Main
         public long NumberOfBytesUploaded
         {
             get { return m_numberOfBytesUploaded; }
-            set { m_numberOfBytesUploaded = value; }
         }
 
         public long NumberOfBytesDownloaded
         {
             get { return m_numberOfBytesDownloaded; }
-            set { m_numberOfBytesDownloaded = value; }
         }
 
         public long NumberOfRemoteCalls
         {
             get { return m_numberOfRemoteCalls; }
-            set { m_numberOfRemoteCalls = value; }
+        }
+
+        public void AddBytesUploaded(long value)
+        {
+            lock (m_lock)
+                m_numberOfBytesUploaded += value;
+        }
+
+        public void AddBytesDownloaded(long value)
+        {
+            lock (m_lock)
+                m_numberOfBytesDownloaded += value;
+        }
+
+        public void AddNumberOfRemoteCalls(long value)
+        {
+            lock (m_lock)
+                m_numberOfRemoteCalls += value;
         }
 
         public void LogError(string errorMessage, Exception ex)
         {
-            m_numberOfErrors++;
-            m_errorMessages.AppendLine(errorMessage);
-            if (m_verboseErrors)
-                while (ex != null)
-                {
-                    m_errorMessages.AppendLine(ex.ToString());
-                    ex = ex.InnerException;
-                }
+            lock (m_lock)
+            {
+                m_numberOfErrors++;
+                m_errorMessages.AppendLine(errorMessage);
+                if (m_verboseErrors)
+                    while (ex != null)
+                    {
+                        m_errorMessages.AppendLine(ex.ToString());
+                        ex = ex.InnerException;
+                    }
+            }
         }
 
         public override string ToString()
@@ -101,14 +120,17 @@ namespace Duplicati.Library.Main
 
         public void LogWarning(string warningMessage, Exception ex)
         {
-            m_numberOfWarnings++;
-            m_warningMessages.AppendLine(warningMessage);
-            if (m_verboseErrors)
-                while (ex != null)
-                {
-                    m_warningMessages.AppendLine(ex.ToString());
-                    ex = ex.InnerException;
-                }
+            lock (m_lock)
+            {
+                m_numberOfWarnings++;
+                m_warningMessages.AppendLine(warningMessage);
+                if (m_verboseErrors)
+                    while (ex != null)
+                    {
+                        m_warningMessages.AppendLine(ex.ToString());
+                        ex = ex.InnerException;
+                    }
+            }
         }
     }
 }

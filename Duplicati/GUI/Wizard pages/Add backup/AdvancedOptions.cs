@@ -57,7 +57,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_settings["Advanced:Incremental"] = SelectCleanup.Checked;
             m_settings["Advanced:Throttle"] = ThrottleOptions.Checked;
             m_settings["Advanced:Filters"] = EditFilters.Checked;
-            m_settings["Advanced:Filenames"] = EditVolumeFilenames.Checked;
             m_settings["Advanced:Overrides"] = EditOverrides.Checked;
 
             if (args.Direction == PageChangedDirection.Back)
@@ -75,8 +74,6 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 pages.Add(new Wizard_pages.Add_backup.ThrottleOptions());
             if (EditFilters.Checked)
                 pages.Add(new Wizard_pages.Add_backup.EditFilters());
-            if (EditVolumeFilenames.Checked)
-                pages.Add(new Wizard_pages.Add_backup.GeneratedFilenameOptions());
             if (EditOverrides.Checked)
                 pages.Add(new Wizard_pages.Add_backup.SettingOverrides());
             

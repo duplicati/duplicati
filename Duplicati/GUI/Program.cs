@@ -41,7 +41,7 @@ namespace Duplicati.GUI
         /// <summary>
         /// Gets the folder where Duplicati data is stored
         /// </summary>
-        public static string DATAFOLDER { get { return Library.Core.Utility.AppendDirSeperator(Environment.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } }
+        public static string DATAFOLDER { get { return Library.Core.Utility.AppendDirSeparator(Environment.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } }
 
         /// <summary>
         /// A flag indicating if database encryption is in use
@@ -114,6 +114,8 @@ namespace Duplicati.GUI
                         "win-tools")
                 );
             }
+
+            Library.Core.UrlUtillity.ErrorHandler = new Duplicati.Library.Core.UrlUtillity.ErrorHandlerDelegate(DisplayURLOpenError);
 
             //If we are on windows we encrypt the database by default
             //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
@@ -202,11 +204,10 @@ namespace Duplicati.GUI
                         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
 
 #if DEBUG
-                    //Default is to no use encryption for debugging
-                    
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
+                    //Default is to not use encryption for debugging
+                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
 #else
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
+                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
 #endif
                     con.ConnectionString = "Data Source=" + DatabasePath;
 
@@ -427,6 +428,11 @@ namespace Duplicati.GUI
                 System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new Type[] { typeof(string) });
                 changePwdMethod.Invoke(con, new object[] { noEncryption ? null : password });
             }
+        }
+
+        private static void DisplayURLOpenError(string message)
+        {
+            System.Windows.Forms.MessageBox.Show(message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

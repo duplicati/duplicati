@@ -163,9 +163,6 @@
   <data name="NewOrModifiedFilesHeader" xml:space="preserve">
     <value>New/Modified files</value>
   </data>
-  <data name="SettingDefaultTimeSeperatorWarning" xml:space="preserve">
-    <value>WARNING: Duplicati uses the character : as the time seperator as that makes the filenames easier to read. However, that character is not supported on Windows filesystems. To work around this issue, Duplicati has adjusted the timeseperator char to '. Use the commandline option --time-separator=":" to prevent this from happening.</value>
-  </data>
   <data name="SupportedBackendsHeader" xml:space="preserve">
     <value>Supported backends:</value>
   </data>

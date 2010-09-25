@@ -38,7 +38,7 @@ namespace Duplicati.Library.Compression
         /// <param name="basefolder">The folder to base the archive on</param>
         public FileArchiveDirectory(string basefolder)
         {
-            m_folder = Core.Utility.AppendDirSeperator(basefolder);
+            m_folder = Core.Utility.AppendDirSeparator(basefolder);
         }
 
         #region IFileArchive Members
@@ -83,7 +83,7 @@ namespace Duplicati.Library.Compression
         }
 
         /// <summary>
-        /// Lists all entries in the archive, folders are suffixed with System.IO.Path.DirectorySeperator
+        /// Lists all entries in the archive, folders are suffixed with System.IO.Path.DirectorySeparator
         /// </summary>
         /// <param name="prefix">An optional prefix that is used to filter the list</param>
         /// <returns>A filtered list of entries</returns>

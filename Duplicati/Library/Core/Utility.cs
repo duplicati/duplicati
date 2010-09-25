@@ -125,11 +125,11 @@ namespace Duplicati.Library.Core
 
             while (lst.Count > 0)
             {
-                string f = AppendDirSeperator(lst.Dequeue());
+                string f = AppendDirSeparator(lst.Dequeue());
                 try
                 {
                     foreach (string s in folderList(f))
-                        if (filter == null || filter.ShouldInclude(rootpath, AppendDirSeperator(s)))
+                        if (filter == null || filter.ShouldInclude(rootpath, AppendDirSeparator(s)))
                             lst.Enqueue(s);
 
                      callback(rootpath, f, EnumeratedFileStatus.Folder);
@@ -237,7 +237,7 @@ namespace Duplicati.Library.Core
         /// The search is recursive.
         /// </summary>
         /// <param name="basepath">The folder to look in.</param>
-        /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseperator char</returns>
+        /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
         public static List<string> EnumerateFileSystemEntries(string basepath)
         {
             return EnumerateFileSystemEntries(basepath, null);
@@ -249,7 +249,7 @@ namespace Duplicati.Library.Core
         /// </summary>
         /// <param name="basepath">The folder to look in.</param>
         /// <param name="filter">An optional filter to apply to the filenames</param>
-        /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseperator char</returns>
+        /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
         public static List<string> EnumerateFileSystemEntries(string basepath, FilenameFilter filter)
         {
             PathCollector c = new PathCollector(true, true);
@@ -272,15 +272,20 @@ namespace Duplicati.Library.Core
         }
 
         /// <summary>
-        /// Appends the appropriate directory seperator to paths, depending on OS.
-        /// Does not append the seperator if the path already ends with it.
+        /// A cached instance of the directory separator as a string
+        /// </summary>
+        public static readonly string DirectorySeparatorString = System.IO.Path.DirectorySeparatorChar.ToString();
+
+        /// <summary>
+        /// Appends the appropriate directory separator to paths, depending on OS.
+        /// Does not append the separator if the path already ends with it.
         /// </summary>
         /// <param name="path">The path to append to</param>
-        /// <returns>The path with the directory seperator appended</returns>
-        public static string AppendDirSeperator(string path)
+        /// <returns>The path with the directory separator appended</returns>
+        public static string AppendDirSeparator(string path)
         {
-            if (!path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                return path += System.IO.Path.DirectorySeparatorChar;
+            if (!path.EndsWith(DirectorySeparatorString))
+                return path += DirectorySeparatorString;
             else
                 return path;
         }

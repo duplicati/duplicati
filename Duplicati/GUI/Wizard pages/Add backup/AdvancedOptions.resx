@@ -144,7 +144,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;SelectWhen.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>5</value>
   </data>
   <data name="SelectCleanup.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -171,7 +171,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;SelectCleanup.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>4</value>
   </data>
   <data name="ThrottleOptions.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -198,7 +198,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;ThrottleOptions.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>3</value>
   </data>
   <data name="EditFilters.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -225,7 +225,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;EditFilters.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>2</value>
   </data>
   <data name="IncludeDuplicatiSetup.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -252,49 +252,22 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;IncludeDuplicatiSetup.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="EditVolumeFilenames.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="EditVolumeFilenames.Location" type="System.Drawing.Point, System.Drawing">
-    <value>32, 136</value>
-  </data>
-  <data name="EditVolumeFilenames.Size" type="System.Drawing.Size, System.Drawing">
-    <value>369, 17</value>
-  </data>
-  <data name="EditVolumeFilenames.TabIndex" type="System.Int32, mscorlib">
-    <value>6</value>
-  </data>
-  <data name="EditVolumeFilenames.Text" xml:space="preserve">
-    <value>Change the generated names for files stored on the backend (advanced)</value>
-  </data>
-  <data name="&gt;&gt;EditVolumeFilenames.Name" xml:space="preserve">
-    <value>EditVolumeFilenames</value>
-  </data>
-  <data name="&gt;&gt;EditVolumeFilenames.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;EditVolumeFilenames.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;EditVolumeFilenames.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
   <data name="EditOverrides.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
   <data name="EditOverrides.Location" type="System.Drawing.Point, System.Drawing">
-    <value>32, 168</value>
+    <value>32, 152</value>
   </data>
   <data name="EditOverrides.Size" type="System.Drawing.Size, System.Drawing">
-    <value>228, 17</value>
+    <value>205, 17</value>
   </data>
   <data name="EditOverrides.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
   </data>
   <data name="EditOverrides.Text" xml:space="preserve">
-    <value>Manually override settings (very advanced)</value>
+    <value>Manually override settings (advanced)</value>
   </data>
   <data name="&gt;&gt;EditOverrides.Name" xml:space="preserve">
     <value>EditOverrides</value>

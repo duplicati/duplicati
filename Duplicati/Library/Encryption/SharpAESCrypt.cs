@@ -155,7 +155,7 @@ namespace SharpAESCrypt
         /// <summary>
         /// An exception message that indicates that an extension had an invalid format
         /// </summary>
-        public static string InvalidExtensionData = "Invalid extension data, seperator (0x00) not found";
+        public static string InvalidExtensionData = "Invalid extension data, separator (0x00) not found";
         /// <summary>
         /// An exception message that indicates that the format was accepted, but the password was not verified
         /// </summary>
@@ -356,13 +356,13 @@ namespace SharpAESCrypt
                     if (extensionLength != 0)
                     {
                         byte[] data = RepeatRead(m_stream, extensionLength);
-                        int seperatorIndex = Array.IndexOf<byte>(data, 0);
-                        if (seperatorIndex < 0)
+                        int separatorIndex = Array.IndexOf<byte>(data, 0);
+                        if (separatorIndex < 0)
                             throw new InvalidDataException(Strings.InvalidExtensionData);
 
-                        string key = System.Text.Encoding.UTF8.GetString(data, 0, seperatorIndex);
-                        byte[] value = new byte[data.Length - seperatorIndex - 1];
-                        Array.Copy(data, seperatorIndex + 1, value, 0, value.Length);
+                        string key = System.Text.Encoding.UTF8.GetString(data, 0, separatorIndex);
+                        byte[] value = new byte[data.Length - separatorIndex - 1];
+                        Array.Copy(data, separatorIndex + 1, value, 0, value.Length);
 
                         m_extensions.Add(new KeyValuePair<string, byte[]>(key, value));
                     }

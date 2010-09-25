@@ -95,7 +95,7 @@ namespace Duplicati.Library.Main
         /// The cache filename strategy used
         /// </summary>
         /// <returns>A cache filename strategy object</returns>
-        public static FilenameStrategy CreateCacheFilenameStrategy() { return new FilenameStrategy("dpl", "_", true); }
+        public static FilenameStrategy CreateCacheFilenameStrategy() { return new FilenameStrategy("dpl"); }
 
         /// <summary>
         /// The filename strategy used to generate and parse filenames
@@ -442,7 +442,7 @@ namespace Duplicati.Library.Main
                         m_statistics.LogWarning(string.Format(Strings.BackendWrapper.EmptyManifestWarning, me.Filename), null);
 
                     foreach (ManifestEntry me2 in me.Incrementals)
-                        if (me.Volumes.Count == 0)
+                        if (me2.Volumes.Count == 0)
                             m_statistics.LogWarning(string.Format(Strings.BackendWrapper.EmptyManifestWarning, me.Filename), null);
                 }
             }
@@ -648,7 +648,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    m_statistics.NumberOfRemoteCalls++;
+                    m_statistics.AddNumberOfRemoteCalls(1);
                     return m_backend.List();
                 }
                 catch (System.Threading.ThreadAbortException)
@@ -678,7 +678,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    m_statistics.NumberOfRemoteCalls++;
+                    m_statistics.AddNumberOfRemoteCalls(1);
                     m_backend.Delete(remote.Filename);
                     lastEx = null;
                 }
@@ -742,7 +742,7 @@ namespace Duplicati.Library.Main
                         else
                             tempfile = new Duplicati.Library.Core.TempFile(filename);
 
-                        m_statistics.NumberOfRemoteCalls++;
+                        m_statistics.AddNumberOfRemoteCalls(1);
                         if (m_backend is Duplicati.Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
                             using (System.IO.FileStream fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
@@ -830,7 +830,7 @@ namespace Duplicati.Library.Main
                 else
                     throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError, lastEx.Message), lastEx);
 
-            m_statistics.NumberOfBytesDownloaded += new System.IO.FileInfo(filename).Length;
+            m_statistics.AddBytesDownloaded(new System.IO.FileInfo(filename).Length);
         }
 
         private void PutInternal(BackupEntryBase remote, string filename)
@@ -861,7 +861,7 @@ namespace Duplicati.Library.Main
                 {
                     try
                     {
-                        m_statistics.NumberOfRemoteCalls++;
+                        m_statistics.AddNumberOfRemoteCalls(1);
                         if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
 #if DEBUG_THROTTLE
@@ -929,7 +929,7 @@ namespace Duplicati.Library.Main
                 if (!success)
                     throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError, lastEx == null ? "<null>" : lastEx.Message), lastEx);
 
-                m_statistics.NumberOfBytesUploaded += new System.IO.FileInfo(filename).Length;
+                m_statistics.AddBytesUploaded(new System.IO.FileInfo(filename).Length);
             }
             finally
             {
@@ -1125,20 +1125,30 @@ namespace Duplicati.Library.Main
                         m_asyncTerminate = true;
 
                         work = new List<KeyValuePair<BackupEntryBase, string>>();
-                        if (m_pendingOperations.Count > 1)
+
+                        if (m_pendingOperations.Count > 0)
                         {
                             while (m_pendingOperations.Count != 0)
                                 work.Add(m_pendingOperations.Dequeue());
 
-                            //The top entry is being completed by the thread
+                            //The top entry is probably being completed by the thread
                             m_pendingOperations.Enqueue(work[0]);
-                            work.RemoveAt(0);
                         }
                     }
+
+                    //Make sure the worker is awake to see the terminate message
+                    m_asyncItemReady.Set();
 
                     //When the thread completes, disable asynchronous transfers and return the unfinished work
                     if (m_workerThread == null || !m_workerThread.IsAlive)
                     {
+                        if (m_workerException != null)
+                            throw m_workerException;
+
+                        //If the thread did indeed complete the entry, remove it from the pending list
+                        if (m_pendingOperations.Count == 0 && work.Count > 0)
+                            work.RemoveAt(0);
+
                         m_async = false;
                         return work;
                     }

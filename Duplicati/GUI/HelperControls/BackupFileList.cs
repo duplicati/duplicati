@@ -331,7 +331,7 @@ namespace Duplicati.GUI.HelperControls
                         if (t.Checked)
                         {
                             if (t.Tag != null && (bool)t.Tag == true)
-                                files.Add(Library.Core.Utility.AppendDirSeperator(t.FullPath));
+                                files.Add(Library.Core.Utility.AppendDirSeparator(t.FullPath));
                             else
                                 files.Add(t.FullPath);
                         }
@@ -421,7 +421,7 @@ namespace Duplicati.GUI.HelperControls
 
             for (int index = 0; index < m_rootnodes.Length; index++)
             {
-                string target = string.IsNullOrEmpty(m_defaultTarget) ? "" : Library.Core.Utility.AppendDirSeperator(m_defaultTarget) + index.ToString();
+                string target = string.IsNullOrEmpty(m_defaultTarget) ? "" : Library.Core.Utility.AppendDirSeparator(m_defaultTarget) + index.ToString();
                 m_rootnodes[index].Text = m_sourcefolders[index] + " => " + (!string.IsNullOrEmpty(m_targetfolders[index]) ? m_targetfolders[index] : target);
                 m_rootnodes[index].ToolTipText = string.Format(Strings.BackupFileList.RootNodeTooltip, m_sourcefolders[index], string.IsNullOrEmpty(m_targetfolders[index]) ? target : m_targetfolders[index]);
             }

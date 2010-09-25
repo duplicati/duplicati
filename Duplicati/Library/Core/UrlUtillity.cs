@@ -20,16 +20,31 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Windows.Forms;
 
-namespace Duplicati.GUI
+namespace Duplicati.Library.Core
 {
     public static class UrlUtillity
     {
+        /// <summary>
+        /// The file path to the system browser selected
+        /// </summary>
         public static string SystemBrowser = null;
+
+        /// <summary>
+        /// A delegate for handing error messages
+        /// </summary>
+        /// <param name="errormessage">The message to display the error for</param>
+        public delegate void ErrorHandlerDelegate(string errormessage);
+
+        /// <summary>
+        /// The errorhandler callback method
+        /// </summary>
+        public static ErrorHandlerDelegate ErrorHandler;
+
         /// <summary>
         /// Opens the given URL in a browser
         /// </summary>
+        /// <param name="url">The url to open, must start with http:// or https://</param>
         public static void OpenUrl(string url)
         {
             try
@@ -68,7 +83,8 @@ namespace Duplicati.GUI
             }
             catch
             {
-                MessageBox.Show(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (ErrorHandler != null)
+                    ErrorHandler(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url));
             }
 
         }

@@ -119,10 +119,6 @@ namespace Duplicati.CommandLine
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
-                //Actually this is supposed to be the remote server's OS, not the client OS
-                if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                    options["time-separator"] = "'";
-
                 //The code below tests for a race condition in the ssh backend.
                 /*string[] list = null;
                 string[] prevList = null;
@@ -186,7 +182,13 @@ namespace Duplicati.CommandLine
                 List<Duplicati.Library.Main.ManifestEntry> entries = Duplicati.Library.Main.Interface.ParseFileList(target, options);
 
                 if (entries.Count != 1 || entries[0].Incrementals.Count != folders.Length - 1)
-                    throw new Exception("Filename parsing problem, or corrupt storage");
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("Entry count: " + entries.Count.ToString());
+                    if (entries.Count == 1)
+                        sb.Append(string.Format("Found {0} incrementals but there were {1} source folders", entries[0].Incrementals.Count, folders.Length));
+                    throw new Exception("Filename parsing problem, or corrupt storage: " + sb.ToString());
+                }
 
                 List<Duplicati.Library.Main.ManifestEntry> t = new List<Duplicati.Library.Main.ManifestEntry>();
                 t.Add(entries[0]);
@@ -235,8 +237,8 @@ namespace Duplicati.CommandLine
         /// <param name="f2">Another folder</param>
         private static void VerifyDir(string f1, string f2)
         {
-            f1 = Utility.AppendDirSeperator(f1);
-            f2 = Utility.AppendDirSeperator(f2);
+            f1 = Utility.AppendDirSeparator(f1);
+            f2 = Utility.AppendDirSeparator(f2);
 
             List<string> folders1 = Utility.EnumerateFolders(f1);
             List<string> folders2 = Utility.EnumerateFolders(f2);

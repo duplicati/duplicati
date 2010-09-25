@@ -425,9 +425,9 @@ namespace Duplicati.Library.Main.RSync
             : this(sourcefolder, stat, filter)
         {
             string[] prefixes = new string[] {
-                Core.Utility.AppendDirSeperator(COMBINED_SIGNATURE_ROOT),
-                Core.Utility.AppendDirSeperator(CONTENT_SIGNATURE_ROOT),
-                Core.Utility.AppendDirSeperator(DELTA_SIGNATURE_ROOT)
+                Core.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
+                Core.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT),
+                Core.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
             };
 
             m_patches = patches;
@@ -498,7 +498,7 @@ namespace Duplicati.Library.Main.RSync
             {
                 if (!System.IO.Path.IsPathRooted(sourcefolder[i]))
                     sourcefolder[i] = System.IO.Path.GetFullPath(sourcefolder[i]); 
-                sourcefolder[i] = Core.Utility.AppendDirSeperator(sourcefolder[i]);
+                sourcefolder[i] = Core.Utility.AppendDirSeparator(sourcefolder[i]);
             }
             m_stat = stat;
             m_sourcefolder = sourcefolder;
@@ -1284,7 +1284,7 @@ namespace Duplicati.Library.Main.RSync
             /// <returns>True if the element is accepted, false if it is filtered</returns>
             private bool FilterPredicate(string element)
             {
-                return m_filter.ShouldInclude(System.IO.Path.DirectorySeparatorChar.ToString(), System.IO.Path.DirectorySeparatorChar.ToString() + Core.Utility.AppendDirSeperator(element));
+                return m_filter.ShouldInclude(Core.Utility.DirectorySeparatorString, Core.Utility.DirectorySeparatorString + Core.Utility.AppendDirSeparator(element));
             }
 
             /// <summary>
@@ -1322,7 +1322,7 @@ namespace Duplicati.Library.Main.RSync
                 m_folderTimestamps = new Dictionary<string, DateTime>();
 
             for (int i = 0; i < destination.Length; i++)
-                destination[i] = Core.Utility.AppendDirSeperator(destination[i]);
+                destination[i] = Core.Utility.AppendDirSeparator(destination[i]);
 
             bool isUtc = patch.FileExists(UTC_TIME_MARKER);
 
@@ -1436,7 +1436,7 @@ namespace Duplicati.Library.Main.RSync
                 fe = new PartialEntryRecord(patch.ReadAllLines(COMPLETED_FILE));
 
             //Restore new files
-            string prefix = Core.Utility.AppendDirSeperator(CONTENT_ROOT);
+            string prefix = Core.Utility.AppendDirSeparator(CONTENT_ROOT);
 
             foreach (string s in m_filter.FilterList(prefix, patch.ListFiles(prefix)))
             {
@@ -1517,7 +1517,7 @@ namespace Duplicati.Library.Main.RSync
             }
 
             //Patch modfied files
-            prefix = Core.Utility.AppendDirSeperator(DELTA_ROOT);
+            prefix = Core.Utility.AppendDirSeparator(DELTA_ROOT);
             foreach (string s in m_filter.FilterList(prefix, patch.ListFiles(prefix)))
             {
                 string target = GetFullPathFromRelname(destination, s.Substring(prefix.Length));
@@ -1686,11 +1686,11 @@ namespace Duplicati.Library.Main.RSync
         }
 
         /// <summary>
-        /// Converts a list of filenames with / as the dir seperator to use the OS seperator.
+        /// Converts a list of filenames with / as the dir separator to use the OS separator.
         /// </summary>
         /// <param name="filenames">The list of filenames to convert</param>
         /// <param name="prefix">An optional prefix that is appended to the filenames</param>
-        /// <returns>A list of filenames that use the prefix and the OS direseperator</returns>
+        /// <returns>A list of filenames that use the prefix and the OS dirseparator</returns>
         public static string[] FilenamesFromPlatformIndependant(string[] filenames, string[] prefixes)
         {
             if (prefixes == null)
@@ -1707,10 +1707,10 @@ namespace Duplicati.Library.Main.RSync
 
 
         /// <summary>
-        /// Converts a list of filenames with / as the dir seperator to use the OS seperator.
+        /// Converts a list of filenames with / as the dir separator to use the OS separator.
         /// </summary>
         /// <param name="filenames">The list of filenames to convert</param>
-        /// <returns>A list of filenames that use the prefix and the OS direseperator</returns>
+        /// <returns>A list of filenames that use the prefix and the OS dirseparator</returns>
         public static string[] FilenamesFromPlatformIndependant(string[] filenames)
         {
             return FilenamesFromPlatformIndependant(filenames, null);
@@ -1768,14 +1768,14 @@ namespace Duplicati.Library.Main.RSync
             List<KeyValuePair<PatchFileType, string>> files = new List<KeyValuePair<PatchFileType, string>>();
 
             KeyValuePair<PatchFileType, string>[] signatures = new KeyValuePair<PatchFileType, string>[] {
-                new KeyValuePair<PatchFileType, string>(PatchFileType.AddedOrUpdatedFile, Core.Utility.AppendDirSeperator(COMBINED_SIGNATURE_ROOT)),
-                new KeyValuePair<PatchFileType, string>(PatchFileType.AddedFile, Core.Utility.AppendDirSeperator(CONTENT_SIGNATURE_ROOT)),
-                new KeyValuePair<PatchFileType, string>(PatchFileType.UpdatedFile, Core.Utility.AppendDirSeperator(DELTA_SIGNATURE_ROOT)),
+                new KeyValuePair<PatchFileType, string>(PatchFileType.AddedOrUpdatedFile, Core.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT)),
+                new KeyValuePair<PatchFileType, string>(PatchFileType.AddedFile, Core.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT)),
+                new KeyValuePair<PatchFileType, string>(PatchFileType.UpdatedFile, Core.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)),
             };
 
-            string content_prefix = Core.Utility.AppendDirSeperator(CONTENT_ROOT);
-            string delta_prefix = Core.Utility.AppendDirSeperator(DELTA_ROOT);
-            string control_prefix = Core.Utility.AppendDirSeperator(CONTROL_ROOT);
+            string content_prefix = Core.Utility.AppendDirSeparator(CONTENT_ROOT);
+            string delta_prefix = Core.Utility.AppendDirSeparator(DELTA_ROOT);
+            string control_prefix = Core.Utility.AppendDirSeparator(CONTROL_ROOT);
             Dictionary<string, bool> partials = new Dictionary<string, bool>();
 
             foreach (Library.Interface.ICompression arch in patches)

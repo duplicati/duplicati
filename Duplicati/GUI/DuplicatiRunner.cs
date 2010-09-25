@@ -63,169 +63,147 @@ namespace Duplicati.GUI
 
             try
             {
-                switch (task.TaskType)
+                //TODO: Its a bit dirty to set the options after creating the instance
+                using (Interface i = new Interface(destination, options))
                 {
-                    case DuplicityTaskType.FullBackup:
-                    case DuplicityTaskType.IncrementalBackup:
-                        {
-                            //Activate auto-cleanup
-                            options["auto-cleanup"] = "";
-                            options["force"] = "";
-                            if (task.Schedule.Task.KeepFull > 0)
-                                m_extraOperations++;
-                           if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
-                               m_extraOperations++;
+                    lock (m_lock)
+                        m_currentBackupControlInterface = i;
+                    SetupControlInterface();
+                    
+                    i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
 
-                            Library.Core.TempFolder tf = null;
-                            try
+                    switch (task.TaskType)
+                    {
+                        case DuplicityTaskType.FullBackup:
+                        case DuplicityTaskType.IncrementalBackup:
                             {
-                                if (DuplicatiProgress != null)
-                                    DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Started, task.Schedule.Name, "", 0, -1);
+                                //Activate auto-cleanup
+                                options["auto-cleanup"] = "";
+                                options["force"] = "";
+                                if (task.Schedule.Task.KeepFull > 0)
+                                    m_extraOperations++;
+                                if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
+                                    m_extraOperations++;
 
-                                if (task.Task.IncludeSetup)
+                                Library.Core.TempFolder tf = null;
+                                try
                                 {
-                                    //Make a copy of the current database
-                                    tf = new Duplicati.Library.Core.TempFolder();
-                                    string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
+                                    if (DuplicatiProgress != null)
+                                        DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Started, task.Schedule.Name, "", 0, -1);
 
-                                    System.IO.File.Copy(Program.DatabasePath, filename, true);
-                                    using (System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType))
+                                    if (task.Task.IncludeSetup)
                                     {
-                                        con.ConnectionString = "Data Source=" + filename;
-                                        
-                                        //Open the database, handle any encryption issues automatically
-                                        Program.OpenDatabase(con);
+                                        //Make a copy of the current database
+                                        tf = new Duplicati.Library.Core.TempFolder();
+                                        string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
 
-                                        using (System.Data.IDbCommand cmd = con.CreateCommand())
+                                        System.IO.File.Copy(Program.DatabasePath, filename, true);
+                                        using (System.Data.IDbConnection con = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType))
                                         {
-                                            //Remove all log data to minimize the size of the database
-                                            cmd.CommandText = "DELETE FROM CommandQueue;";
-                                            cmd.ExecuteNonQuery();
-                                            cmd.CommandText = "DELETE FROM Log;";
-                                            cmd.ExecuteNonQuery();
-                                            cmd.CommandText = "DELETE FROM LogBlob;";
-                                            cmd.ExecuteNonQuery();
+                                            con.ConnectionString = "Data Source=" + filename;
 
-                                            //Free up unused space
-                                            cmd.CommandText = "VACUUM;";
+                                            //Open the database, handle any encryption issues automatically
+                                            Program.OpenDatabase(con);
+
+                                            using (System.Data.IDbCommand cmd = con.CreateCommand())
+                                            {
+                                                //Remove all log data to minimize the size of the database
+                                                cmd.CommandText = "DELETE FROM CommandQueue;";
+                                                cmd.ExecuteNonQuery();
+                                                cmd.CommandText = "DELETE FROM Log;";
+                                                cmd.ExecuteNonQuery();
+                                                cmd.CommandText = "DELETE FROM LogBlob;";
+                                                cmd.ExecuteNonQuery();
+
+                                                //Free up unused space
+                                                cmd.CommandText = "VACUUM;";
+                                            }
                                         }
+
+                                        options["signature-control-files"] = filename;
                                     }
 
-                                    options["signature-control-files"] = filename;
+                                    options["full-if-sourcefolder-changed"] = "";
+
+                                    List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
+                                    string[] sourceFolders = DynamicSetupHelper.GetSourceFolders(task.Task, new ApplicationSettings(task.Task.DataParent), filters);
+
+                                    if (options.ContainsKey("filter"))
+                                        filters.AddRange(Library.Core.FilenameFilter.DecodeFilter(options["filter"]));
+
+                                    options["filter"] = Library.Core.FilenameFilter.EncodeAsFilter(filters);
+
+                                    results = i.Backup(sourceFolders);
                                 }
-
-                                options["full-if-sourcefolder-changed"] = "";
-
-                                List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
-                                string[] sourceFolders = DynamicSetupHelper.GetSourceFolders(task.Task, new ApplicationSettings(task.Task.DataParent), filters);
-
-                                if (options.ContainsKey("filter"))
-                                    filters.AddRange(Library.Core.FilenameFilter.DecodeFilter(options["filter"]));
-
-                                options["filter"] = Library.Core.FilenameFilter.EncodeAsFilter(filters);
-
-                                using (Interface i = new Interface(destination, options))
+                                finally
                                 {
-                                    try
-                                    {
-                                        lock (m_lock)
-                                            m_currentBackupControlInterface = i;
-                                        
-                                        SetupControlInterface();
+                                    if (tf != null)
+                                        tf.Dispose();
 
-                                        i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
-                                        results = i.Backup(sourceFolders);
-                                    }
-                                    finally
-                                    {
-                                        lock (m_lock)
-                                            m_currentBackupControlInterface = null;
-                                    }
+                                    if (DuplicatiProgress != null)
+                                        DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                                 }
+                                break;
                             }
-                            finally
+                        case DuplicityTaskType.ListBackups:
+
+                            List<string> res = new List<string>();
+                            foreach (ManifestEntry be in i.GetBackupSets())
                             {
-                                if (tf != null)
-                                    tf.Dispose();
-
-                                if (DuplicatiProgress != null)
-                                    DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
+                                res.Add(be.Time.ToString());
+                                foreach (ManifestEntry bei in be.Incrementals)
+                                    res.Add(bei.Time.ToString());
                             }
+
+                            (task as ListBackupsTask).Backups = res.ToArray();
                             break;
-                        }
-                    case DuplicityTaskType.ListBackups:
+                        case DuplicityTaskType.ListBackupEntries:
+                            (task as ListBackupEntriesTask).Backups = i.GetBackupSets();
+                            break;
+                        case DuplicityTaskType.ListFiles:
+                            (task as ListFilesTask).Files = i.ListCurrentFiles();
+                            break;
+                        case DuplicityTaskType.ListSourceFolders:
+                            (task as ListSourceFoldersTask).Files = new List<string>(i.ListSourceFolders() ?? new string[0]);
+                            break;
+                        case DuplicityTaskType.ListActualFiles:
+                            (task as ListActualFilesTask).Files = i.ListActualSignatureFiles();
+                            break;
+                        case DuplicityTaskType.RemoveAllButNFull:
+                            results = i.DeleteAllButNFull();
+                            break;
+                        case DuplicityTaskType.RemoveOlderThan:
+                            results = i.DeleteOlderThan();
+                            break;
+                        case DuplicityTaskType.Restore:
+                            options["file-to-restore"] = ((RestoreTask)task).SourceFiles;
+                            if (options.ContainsKey("filter"))
+                                options.Remove("filter");
 
-                        List<string> res = new List<string>();
-                        foreach (ManifestEntry be in Interface.ParseFileList(destination, options))
-                        {
-                            res.Add(be.Time.ToString());
-                            foreach (ManifestEntry bei in be.Incrementals)
-                                res.Add(bei.Time.ToString());
-                        }
-
-                        (task as ListBackupsTask).Backups = res.ToArray();
-                        break;
-                    case DuplicityTaskType.ListBackupEntries:
-                        (task as ListBackupEntriesTask).Backups = Interface.ParseFileList(destination, options);
-                        break;
-                    case DuplicityTaskType.ListFiles:
-                        (task as ListFilesTask).Files = Interface.ListCurrentFiles(destination, options);
-                        break;
-                    case DuplicityTaskType.ListSourceFolders:
-                        {
-                            string[] tmp = Interface.ListSourceFolders(destination, options);
-                            (task as ListSourceFoldersTask).Files = new List<string>(tmp ?? new string[0]);
-                        }
-                        break;
-                    case DuplicityTaskType.ListActualFiles:
-                        (task as ListActualFilesTask).Files = Interface.ListActualSignatureFiles(destination, options);
-                        break;
-                    case DuplicityTaskType.RemoveAllButNFull:
-                        results = Interface.DeleteAllButNFull(destination, options);
-                        break;
-                    case DuplicityTaskType.RemoveOlderThan:
-                        results = Interface.DeleteOlderThan(destination, options);
-                        break;
-                    case DuplicityTaskType.Restore:
-                        options["file-to-restore"] = ((RestoreTask)task).SourceFiles;
-                        if (options.ContainsKey("filter"))
-                            options.Remove("filter");
-
-                        using (Interface i = new Interface(destination, options))
-                        {
                             try
                             {
-                                lock (m_lock)
-                                    m_currentBackupControlInterface = i;
-
-                                SetupControlInterface();
-
                                 if (DuplicatiProgress != null)
                                     DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
-                                i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
                                 results = i.Restore(task.LocalPath.Split(System.IO.Path.PathSeparator));
                             }
                             finally
                             {
-                                lock (m_lock)
-                                    m_currentBackupControlInterface = null;
-
                                 if (DuplicatiProgress != null)
                                     DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                             }
-                        }
-                        break;
+                            break;
 
-                    case DuplicityTaskType.RestoreSetup:
-                        Interface.RestoreControlFiles(destination, task.LocalPath, options);
-                        break;
-                    default:
-                        return;
+                        case DuplicityTaskType.RestoreSetup:
+                            i.RestoreControlFiles(task.LocalPath);
+                            break;
+                        default:
+                            return;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                //TODO: Extract ex.Message and save it in seperate field in the database
+                //TODO: Extract ex.Message and save it in separate field in the database
                 if (ex is System.Threading.ThreadAbortException)
                 {
                     isAbortException = true;
@@ -244,6 +222,11 @@ namespace Duplicati.GUI
                     ex = ex.InnerException;
                     results += Environment.NewLine + "InnerError: " + ex.ToString(); //Don't localize
                 }
+            }
+            finally
+            {
+                lock (m_lock)
+                    m_currentBackupControlInterface = null;
             }
 
             try

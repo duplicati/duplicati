@@ -19,7 +19,7 @@ INSERT INTO TaskExtension ([TaskID], [Name], [Value]) SELECT [ID], 'Async Transf
 INSERT INTO TaskExtension ([TaskID], [Name], [Value]) SELECT [ID], 'Include Setup', [IncludeSetup] FROM Task;
 INSERT INTO TaskExtension ([TaskID], [Name], [Value]) SELECT [ID], 'Ignore Timestamps', [IgnoreTimestamps] FROM Task;
 
--- Move FileTimeSeperator into extensions
+-- Move FileTimeSeparator into extensions
 INSERT INTO TaskExtension ([TaskID], [Name], [Value]) SELECT [TaskID], 'File Time Seperator', Value FROM BackendSetting WHERE [Name] = 'TimeSeparator';
 DELETE FROM BackendSetting WHERE [Name] = 'TimeSeparator';
 

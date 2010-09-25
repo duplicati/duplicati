@@ -120,7 +120,7 @@
   <data name="InfoLabelFormat" xml:space="preserve">
     <value>Value type: {0}. 
 {1}. 
-{2}.</value>
+{2}</value>
   </data>
   <data name="PageNotSupportedWarning" xml:space="preserve">
     <value>This page is not supported on the current platform, this is a known issue.

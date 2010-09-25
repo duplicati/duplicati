@@ -89,9 +89,20 @@ namespace Duplicati.GUI.Wizard_pages
 
             m_wrapper.Backend = selectedBackend.ProtocolKey;
 
-            //Setup page to go to after the backend GUI
-            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
-                args.NextPage = new Add_backup.GeneratedFilenameOptions();
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
+            {
+                if (m_wrapper.ShowAdvancedRestoreOptions)
+                    args.NextPage = new Add_backup.SettingOverrides();
+                else
+                    args.NextPage = new Restore.SelectBackupVersion();
+            }
+            else if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup)
+            {
+                if (m_wrapper.ShowAdvancedRestoreOptions)
+                    args.NextPage = new Add_backup.SettingOverrides();
+                else
+                    args.NextPage = new RestoreSetup.FinishedRestoreSetup();
+            }
             else
                 args.NextPage = new Add_backup.AdvancedOptions();
 

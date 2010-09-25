@@ -62,12 +62,12 @@ namespace Duplicati.Library.Core
             if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentUICulture, System.Globalization.DateTimeStyles.None, out t))
                 return t;
 
-            char[] seperators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
+            char[] separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
 
             int index = 0;
             int previndex = 0;
 
-            while ((index = datestring.IndexOfAny(seperators, previndex)) > 0)
+            while ((index = datestring.IndexOfAny(separators, previndex)) > 0)
             {
                 string partial = datestring.Substring(previndex, index - previndex).Trim();
                 int factor;

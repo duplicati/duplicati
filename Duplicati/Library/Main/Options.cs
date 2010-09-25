@@ -111,8 +111,10 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"high", "abovenormal", "normal", "belownormal", "low", "idle" }),
 
                     new CommandLineArgument("backup-prefix", CommandLineArgument.ArgumentType.String, Strings.Options.BackupprefixShort, Strings.Options.BackupprefixLong, "duplicati"),
-                    new CommandLineArgument("time-separator", CommandLineArgument.ArgumentType.String, Strings.Options.TimeseparatorShort, Strings.Options.TimeseparatorLong, ":", new string[] {"time-seperator"}),
-                    new CommandLineArgument("short-filenames", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ShortfilenamesShort, Strings.Options.ShortfilenamesLong),
+
+                    new CommandLineArgument("time-separator", CommandLineArgument.ArgumentType.String, Strings.Options.TimeseparatorShort, Strings.Options.TimeseparatorLong, ":", new string[] {"time-seperator"}, null, Strings.Options.TimeseparatorDeprecated),
+                    new CommandLineArgument("short-filenames", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ShortfilenamesShort, Strings.Options.ShortfilenamesLong, "false", null, null, Strings.Options.ShortfilenamesDeprecated),
+                    new CommandLineArgument("old-filenames", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OldfilenamesShort, Strings.Options.OldfilenamesLong, "false", null, null, Strings.Options.OldfilenamesDeprecated),
 
                     new CommandLineArgument("include", CommandLineArgument.ArgumentType.String, Strings.Options.IncludeShort, Strings.Options.IncludeLong),
                     new CommandLineArgument("exclude", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludeShort, Strings.Options.ExcludeLong),
@@ -353,9 +355,14 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// A value indicating if file deletes are forced
+        /// A value indicating if short filenames are used
         /// </summary>
         public bool UseShortFilenames { get { return GetBool("short-filenames"); } }
+
+        /// <summary>
+        /// A value indicating if old filenames are used
+        /// </summary>
+        public bool UseOldFilenames { get { return GetBool("old-filenames"); } }
 
         /// <summary>
         /// Gets the backup prefix
@@ -372,19 +379,19 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the process priority
+        /// Gets the character used to separate the time components of a file timestamp
         /// </summary>
-        public string TimeSeperatorChar
+        public string TimeSeparatorChar
         {
             get
             {
-                if (!m_options.ContainsKey("time-separator") || string.IsNullOrEmpty(m_options["time-separator"]))
-                    if (!m_options.ContainsKey("time-seperator") || string.IsNullOrEmpty(m_options["time-seperator"]))
-                        return ":";
-                    else
-                        return m_options["time-seperator"];
-                else
-                    return m_options["time-separator"];
+                string key;
+                if (m_options.TryGetValue("time-separator", out key) && !string.IsNullOrEmpty(key))
+                    return key;
+                if (m_options.TryGetValue("time-seperator", out key) && !string.IsNullOrEmpty(key))
+                    return key;
+
+                return null;
             }
         }
 
@@ -527,7 +534,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// A value indicating if backups are transmitted on a seperate thread
+        /// A value indicating if backups are transmitted on a separate thread
         /// </summary>
         public bool AsynchronousUpload { get { return GetBool("asynchronous-upload"); } }
 
@@ -705,12 +712,21 @@ namespace Duplicati.Library.Main
         /// </summary>
         public List<KeyValuePair<bool, Library.Interface.IGenericModule>> LoadedModules { get { return m_loadedModules; } }
 
+        /// <summary>
+        /// Helper method to extract boolean values.
+        /// If the option is not present, it it's value is false.
+        /// If the option is present it's value is true, unless the option's value is false, off or 0
+        /// </summary>
+        /// <param name="name">The name of the option to read</param>
+        /// <returns>The interpreted value of the option</returns>
         private bool GetBool(string name)
         {
-            if (!m_options.ContainsKey(name))
-                return false;
+            string value;
+            
+            if (m_options.TryGetValue(name, out value))
+                return Core.Utility.ParseBool(value, true);
             else
-                return Core.Utility.ParseBool(m_options[name], true);
+                return false;
         }
 
     }

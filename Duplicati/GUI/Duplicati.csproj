@@ -307,7 +307,6 @@
     <Compile Include="ThrottleControl.Designer.cs">
       <DependentUpon>ThrottleControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="UrlUtillity.cs" />
     <Compile Include="Wizard pages\Add backup\AdvancedOptions.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -331,12 +330,6 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\FinishedAdd.Designer.cs">
       <DependentUpon>FinishedAdd.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Wizard pages\Add backup\GeneratedFilenameOptions.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Wizard pages\Add backup\GeneratedFilenameOptions.Designer.cs">
-      <DependentUpon>GeneratedFilenameOptions.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Add backup\SettingOverrides.cs">
       <SubType>UserControl</SubType>
@@ -499,21 +492,21 @@
     <Compile Include="Wizard pages\Restore\FinishedRestore.Designer.cs">
       <DependentUpon>FinishedRestore.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Restore\SelectBackup.cs">
+    <Compile Include="Wizard pages\Restore\SelectBackupVersion.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Wizard pages\Restore\SelectBackup.Designer.cs">
-      <DependentUpon>SelectBackup.cs</DependentUpon>
+    <Compile Include="Wizard pages\Restore\SelectBackupVersion.Designer.cs">
+      <DependentUpon>SelectBackupVersion.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Restore\Strings\FinishedRestore.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>FinishedRestore.resx</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Restore\Strings\SelectBackup.Designer.cs">
+    <Compile Include="Wizard pages\Restore\Strings\SelectBackupVersion.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>SelectBackup.resx</DependentUpon>
+      <DependentUpon>SelectBackupVersion.resx</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Restore\Strings\TargetFolder.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -775,9 +768,9 @@
       <SubType>Designer</SubType>
       <DependentUpon>FinishedRestore.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Restore\SelectBackup.resx">
+    <EmbeddedResource Include="Wizard pages\Restore\SelectBackupVersion.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>SelectBackup.cs</DependentUpon>
+      <DependentUpon>SelectBackupVersion.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Restore\TargetFolder.resx">
       <SubType>Designer</SubType>
@@ -928,10 +921,6 @@
     <EmbeddedResource Include="ThrottleControl.resx">
       <DependentUpon>ThrottleControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Add backup\GeneratedFilenameOptions.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>GeneratedFilenameOptions.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\SettingOverrides.resx">
       <SubType>Designer</SubType>
       <DependentUpon>SettingOverrides.cs</DependentUpon>
@@ -1015,10 +1004,10 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FinishedRestore.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Restore\Strings\SelectBackup.resx">
+    <EmbeddedResource Include="Wizard pages\Restore\Strings\SelectBackupVersion.resx">
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>SelectBackup.Designer.cs</LastGenOutput>
+      <LastGenOutput>SelectBackupVersion.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Restore\Strings\TargetFolder.resx">
       <SubType>Designer</SubType>
@@ -1132,7 +1121,8 @@
     <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
       <DependentUpon>RawContainer.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Database schema\5.Remove signaturekey.sql" />
+    <EmbeddedResource Include="Database schema\5. Remove signaturekey.sql" />
+    <EmbeddedResource Include="Database schema\6. Remove TimeSeparator and UseShortFilenames.sql" />
     <None Include="Resources\Play.png" />
     <None Include="Resources\Delay.png" />
     <None Include="Resources\Pause.png" />

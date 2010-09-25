@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main
 
         //In Duplicati 1.0 there is only one manifest file, and it is called manifest or M in short mode
         //Issue# 58 introduced a backup manifest. Since 1.0 does not verify the manifest version number,
-        // the name manifest/M is not used, as that prevents 1.0 clients from reading the manifests and volumes.
+        // the name manifest/M is not used, which prevents 1.0 clients from reading the manifests and volumes.
         //The new names are manifestA and manifestB (A/B in short mode).
         //Future versions of Duplicati always verify the version number to avoid reading/writing data to a format 
         // that is not supported.
@@ -60,10 +60,15 @@ namespace Duplicati.Library.Main
 
         private const string VOLUME = "vol";
 
+        //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
+        private const string TIMESTAMP_FORMAT = "yyyyMMdd'T'HHmmssK";
+
+        private bool m_useOldFilenames;
         private bool m_useShortFilenames;
-        private string m_timeSeperator;
+        private string m_timeSeparator;
         private string m_prefix;
 
+        private Regex m_oldFilenameRegExp;
         private Regex m_filenameRegExp;
         private Regex m_shortRegExp;
 
@@ -73,11 +78,17 @@ namespace Duplicati.Library.Main
         /// </summary>
         private Dictionary<DateTime, string> m_timeStringCache;
 
-        public FilenameStrategy(string prefix, string timeSeperator, bool useShortNames)
+        public FilenameStrategy(string prefix)
+            : this(prefix, null, false, false)
+        {
+        }
+
+        public FilenameStrategy(string prefix, string timeSeparator, bool useShortNames, bool oldFilenames)
         {
             m_prefix = prefix;
-            m_timeSeperator = timeSeperator;
+            m_timeSeparator = timeSeparator;
             m_useShortFilenames = useShortNames;
+            m_useOldFilenames = oldFilenames;
 
             m_shortRegExp = new Regex(
                 string.Format(@"(?<prefix>{0})\-(?<type>({1}|{2}|{3}|{4}|{5}))(?<inc>({6}|{7}))(?<time>([A-F]|[a-f]|[0-9])+)\.(?<volumegroup>{8}(?<volumenumber>\d+)\.)?(?<extension>.+)",
@@ -92,8 +103,17 @@ namespace Duplicati.Library.Main
                     VOLUME
                 )
             );
-            m_filenameRegExp = new Regex(
-                string.Format(@"(?<prefix>{0})\-(?<inc>({1}|{2}))\-(?<type>({3}|{4}|{5}|{6}|{7}))\.(?<time>\d{10}\-\d{11}\-\d{11}.\d{11}{9}\d{11}{9}\d{11}(?<timezone>([\+\-]\d{11}{9}\d{11})|Z)?)\.(?<volumegroup>{8}(?<volumenumber>\d+)\.)?(?<extension>.+)",
+
+            //As we the --time-separator is now deprecated, we must guess what was used
+            string timeSepRegEx;
+            if (m_timeSeparator == null)
+                timeSepRegEx = "."; //We accept any character
+            else
+                timeSepRegEx = Regex.Escape(m_timeSeparator);
+
+            
+            m_oldFilenameRegExp = new Regex(
+                string.Format(@"(?<prefix>{0})\-(?<inc>({1}|{2}))\-(?<type>({3}|{4}|{5}|{6}|{7}))\.(?<time>\d{10}\-\d{11}\-\d{11}.\d{11}(?<timeseparator>{9})\d{11}{9}\d{11}(?<timezone>([\+\-]\d{11}{9}\d{11})|Z)?)\.(?<volumegroup>{8}(?<volumenumber>\d+)\.)?(?<extension>.+)",
                     Regex.Escape(m_prefix),
                     FULL,
                     INCREMENTAL,
@@ -103,19 +123,33 @@ namespace Duplicati.Library.Main
                     MANIFEST_A,
                     MANIFEST_B,
                     VOLUME,
-                    Regex.Escape(timeSeperator),
+                    timeSepRegEx,
                     "{4}", //We need to insert it because it gets replaced by string.Format
                     "{2}" //Same as above
                 )
             );
 
-            //The short filenames are UTC so there is no timezone attached
-            if (!m_useShortFilenames)
+            m_filenameRegExp = new Regex(
+                string.Format(@"(?<prefix>{0})\-(?<inc>({1}|{2}))\-(?<type>({3}|{4}|{5}|{6}|{7}))\.(?<time>{9})\.(?<volumegroup>{8}(?<volumenumber>\d+)\.)?(?<extension>.+)",
+                    Regex.Escape(m_prefix),
+                    FULL,
+                    INCREMENTAL,
+                    CONTENT,
+                    SIGNATURE,
+                    MANIFEST_OLD,
+                    MANIFEST_A,
+                    MANIFEST_B,
+                    VOLUME,
+                    @"\d{8}T\d{6}Z" //Timestamp format is YYYYMMDDTHHMMSSZ
+                )
+            );
+            //The short filenames and new filenames are UTC so there is no timezone attached
+            if (!m_useShortFilenames && m_useOldFilenames)
                 m_timeStringCache = new Dictionary<DateTime, string>();
         }
 
         public FilenameStrategy(Options options)
-            : this(options.BackupPrefix, options.TimeSeperatorChar, options.UseShortFilenames)
+            : this(options.BackupPrefix, options.TimeSeparatorChar, options.UseShortFilenames, options.UseOldFilenames)
         {
         }
 
@@ -134,18 +168,26 @@ namespace Duplicati.Library.Main
                 throw new Exception(string.Format(Strings.FilenameStrategy.InvalidEntryTypeError, type));
 
             string filename;
-            if (!m_useShortFilenames)
+            if (m_useShortFilenames)
             {
-                //Make sure the same DateTime is always the same string
-                if (!m_timeStringCache.ContainsKey(type.Time))
-                    m_timeStringCache[type.Time] = type.Time.ToString("yyyy-MM-ddTHH:mm:ssK");
-
-                string datetime = m_timeStringCache[type.Time].Replace(":", m_timeSeperator);
-                filename = m_prefix + "-" + (type.IsFull ? FULL : INCREMENTAL) + "-" + t + "." + datetime;
+                filename = m_prefix + "-" + t + (type.IsFull ? FULL_SHORT : INCREMENTAL_SHORT) + (type.Time.ToUniversalTime().Ticks / TimeSpan.TicksPerSecond).ToString("X");
             }
             else
             {
-                filename = m_prefix + "-" + t + (type.IsFull ? FULL_SHORT : INCREMENTAL_SHORT) + (type.Time.ToUniversalTime().Ticks / TimeSpan.TicksPerSecond).ToString("X");
+                string datetime;
+                if (m_useOldFilenames)
+                {
+                    //Make sure the same DateTime is always the same string
+                    if (!m_timeStringCache.ContainsKey(type.Time))
+                        m_timeStringCache[type.Time] = type.Time.ToString("yyyy-MM-ddTHH:mm:ssK");
+                    datetime = m_timeStringCache[type.Time].Replace(":", m_timeSeparator ?? (Core.Utility.IsClientLinux ? ":" : "'"));
+                }
+                else
+                {
+                    datetime = type.Time.ToUniversalTime().ToString(TIMESTAMP_FORMAT);
+                }
+
+                filename = m_prefix + "-" + (type.IsFull ? FULL : INCREMENTAL) + "-" + t + "." + datetime;
             }
 
             if (type is ManifestEntry)
@@ -156,9 +198,15 @@ namespace Duplicati.Library.Main
 
         public BackupEntryBase ParseFilename(Duplicati.Library.Interface.IFileEntry fe)
         {
+            bool oldFilename = false;
             Match m = m_filenameRegExp.Match(fe.Name);
             if (!m.Success)
                 m = m_shortRegExp.Match(fe.Name);
+            if (!m.Success)
+            {
+                m = m_oldFilenameRegExp.Match(fe.Name);
+                oldFilename = true;
+            }
             if (!m.Success)
                 return null;
             if (m.Value != fe.Name)
@@ -171,7 +219,12 @@ namespace Duplicati.Library.Main
             if (isShortName)
                 time = new DateTime(long.Parse(timeString, System.Globalization.NumberStyles.HexNumber) * TimeSpan.TicksPerSecond, DateTimeKind.Utc).ToLocalTime();
             else
-                time = DateTime.Parse(timeString.Replace(m_timeSeperator, ":"));
+            {
+                if (oldFilename)
+                    time = DateTime.Parse(timeString.Replace(m.Groups["timeseparator"].Value, ":"));
+                else
+                    time = DateTime.ParseExact(timeString, TIMESTAMP_FORMAT, System.Globalization.CultureInfo.InvariantCulture).ToLocalTime();
+            }
 
             string extension = m.Groups["extension"].Value;
 

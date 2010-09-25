@@ -70,7 +70,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                             args.Cancel = true;
                             return;
                         }
-                        targetpaths[i] = Library.Core.Utility.AppendDirSeperator(TargetPath.Text) + i.ToString();
+                        targetpaths[i] = Library.Core.Utility.AppendDirSeparator(TargetPath.Text) + i.ToString();
                     }
             }
             else

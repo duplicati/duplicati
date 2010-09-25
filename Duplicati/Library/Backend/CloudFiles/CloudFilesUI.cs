@@ -127,7 +127,7 @@ namespace Duplicati.Library.Backend
 
         private void SignUpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Duplicati.GUI.UrlUtillity.OpenUrl(LOGIN_PAGE);
+            Duplicati.Library.Core.UrlUtillity.OpenUrl(LOGIN_PAGE);
         }
 
         private void TestConnection_Click(object sender, EventArgs e)

@@ -202,15 +202,6 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to WARNING: Duplicati uses the character : as the time seperator as that makes the filenames easier to read. However, that character is not supported on Windows filesystems. To work around this issue, Duplicati has adjusted the timeseperator char to &apos;. Use the commandline option --time-separator=&quot;:&quot; to prevent this from happening..
-        /// </summary>
-        internal static string SettingDefaultTimeSeperatorWarning {
-            get {
-                return ResourceManager.GetString("SettingDefaultTimeSeperatorWarning", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Supported backends:.
         /// </summary>
         internal static string SupportedBackendsHeader {
