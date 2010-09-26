@@ -121,7 +121,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             }
         }
 
-        void i_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, int progress, int subprogress, string message, string submessage)
+        void i_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, Duplicati.Library.Main.DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
         {
             m_waitdlg.SetTitle(message);
             m_waitdlg.SetProgress(progress);

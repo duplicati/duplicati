@@ -45,6 +45,7 @@ namespace Duplicati.GUI
         private int m_extraOperations = 0;
 
         private DuplicatiOperation m_lastPGOperation;
+        private DuplicatiOperationMode m_lastPGMode;
         private int m_lastPGProgress;
         private int m_lastPGSubprogress;
         private string m_lastPGmessage;
@@ -282,9 +283,10 @@ namespace Duplicati.GUI
                 task.Schedule.ScheduledRunCompleted(); //Register as completed
         }
 
-        void Duplicati_OperationProgress(Interface caller, DuplicatiOperation operation, int progress, int subprogress, string message, string submessage)
+        void Duplicati_OperationProgress(Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
         {
             m_lastPGOperation = operation;
+            m_lastPGMode = specificmode;
             m_lastPGProgress = progress;
             m_lastPGSubprogress = subprogress;
             m_lastPGmessage = message;
@@ -301,7 +303,7 @@ namespace Duplicati.GUI
 
         public void ReinvokeLastProgressEvent()
         {
-            Duplicati_OperationProgress(null, m_lastPGOperation, m_lastPGProgress, m_lastPGSubprogress, m_lastPGmessage, m_lastPGSubmessage );
+            Duplicati_OperationProgress(null, m_lastPGOperation, m_lastPGMode, m_lastPGProgress, m_lastPGSubprogress, m_lastPGmessage, m_lastPGSubmessage );
         }
 
 

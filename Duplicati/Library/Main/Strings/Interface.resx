@@ -255,6 +255,9 @@
   <data name="UnexpectedCompressionError" xml:space="preserve">
     <value>Unexpected compression mode: {0}</value>
   </data>
+  <data name="UnexpectedOperationTypeError" xml:space="preserve">
+    <value>The operation mode {0} was not expected</value>
+  </data>
   <data name="UnsupportedBooleanValue" xml:space="preserve">
     <value>The value "{1}" supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to "true"</value>
   </data>

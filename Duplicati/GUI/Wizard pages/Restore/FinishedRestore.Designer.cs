@@ -48,6 +48,8 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // RunInBackground
             // 
             resources.ApplyResources(this.RunInBackground, "RunInBackground");
+            this.RunInBackground.Checked = true;
+            this.RunInBackground.CheckState = System.Windows.Forms.CheckState.Checked;
             this.RunInBackground.Name = "RunInBackground";
             this.RunInBackground.UseVisualStyleBackColor = true;
             // 

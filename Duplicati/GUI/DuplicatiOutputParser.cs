@@ -34,8 +34,11 @@ namespace Duplicati.GUI
         private const string OK_INDICATOR = "Duration";
         private const string WARNING_INDICATOR = "NumberOfErrors";
 
-        private const string SIZE_INDICATOR = "BytesUploaded";
+        private const string UPLOAD_SIZE_INDICATOR = "BytesUploaded";
+        private const string DOWNLOAD_SIZE_INDICATOR = "BytesDownloaded";
         private const string PARTIAL_INDICATOR = "Unprocessed";
+
+        private const string METHOD_INDICATOR = "OperationName";
 
         public static void ParseData(Log log)
         {
@@ -50,12 +53,16 @@ namespace Duplicati.GUI
             if (c > 0)
                 log.ParsedStatus = WarningStatus;
 
-            c = ExtractNumber(text, SIZE_INDICATOR, -1);
+            if (ExtractValue(text, METHOD_INDICATOR, "").StartsWith("backup", StringComparison.InvariantCultureIgnoreCase))
+                c = ExtractNumber(text, UPLOAD_SIZE_INDICATOR, -1);
+            else
+                c = ExtractNumber(text, DOWNLOAD_SIZE_INDICATOR, -1);
 
             if (c == 0)
                 log.ParsedStatus = WarningStatus;
 
             log.Transfersize = c;
+
 
             if (log.ParsedStatus == WarningStatus)
             {
@@ -68,18 +75,25 @@ namespace Duplicati.GUI
 
         private static long ExtractNumber(string output, string key, long @default)
         {
-            long count = @default;
+            long count;
+            if (!long.TryParse(ExtractValue(output, key, @default.ToString()), out count))
+                count = @default;
+            
+            return count;
+        }
+
+        private static string ExtractValue(string output, string key, string @default)
+        {
+            string result = @default;
             if (output.IndexOf(key) >= 0)
             {
                 int pos = output.IndexOf(key) + key.Length;
                 pos = output.IndexOf(':', pos) + 1;
                 int p2 = output.IndexOfAny(new char[] { '\r', '\n' }, pos);
-                string number = output.Substring(pos, p2 - pos).Trim();
-                if (!long.TryParse(number, out count))
-                    count = @default;
+                result = output.Substring(pos, p2 - pos).Trim();
             }
 
-            return count;
+            return result;
         }
     }
 }

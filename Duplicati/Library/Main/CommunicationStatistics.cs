@@ -30,12 +30,20 @@ namespace Duplicati.Library.Main
         private long m_numberOfBytesUploaded;
         private long m_numberOfRemoteCalls;
         private long m_numberOfBytesDownloaded;
+        private DuplicatiOperationMode m_operationMode;
 
         private long m_numberOfErrors;
         private StringBuilder m_errorMessages = new StringBuilder();
 
         private long m_numberOfWarnings;
         private StringBuilder m_warningMessages = new StringBuilder();
+
+        public CommunicationStatistics(DuplicatiOperationMode operationMode)
+        {
+            m_operationMode = operationMode;
+        }
+
+        public DuplicatiOperationMode OperationMode { get { return m_operationMode; } }
 
         public bool VerboseErrors
         {
@@ -95,6 +103,7 @@ namespace Duplicati.Library.Main
         {
             //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
+            sb.Append("OperationName   : " + this.OperationMode.ToString() + "\r\n");
             sb.Append("BytesUploaded   : " + this.NumberOfBytesUploaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("BytesDownloaded : " + this.NumberOfBytesDownloaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("RemoteCalls     : " + this.NumberOfRemoteCalls.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");

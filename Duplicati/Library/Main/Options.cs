@@ -161,18 +161,12 @@ namespace Duplicati.Library.Main
         public bool Full { get { return GetBool("full"); } }
 
         /// <summary>
-        /// Gets or sets the current main action of the library,
-        /// valid values are: 
-        /// backup, restore, 
-        /// list, get-backup-sets,
-        /// list-current-files, list-source-folders, list-actual-signature-files, 
-        /// delete-all-but-n-full, delete-older-than, cleanup,
-        /// restore-controlfiles
+        /// Gets or sets the current main action of the instance
         /// </summary>
-        public string MainAction 
-        { 
-            get { return m_options.ContainsKey("main-action") ? m_options["main-action"] : null; }
-            set { m_options["main-action"] = value; }
+        public DuplicatiOperationMode MainAction 
+        {
+            get { return (DuplicatiOperationMode)Enum.Parse(typeof(DuplicatiOperationMode), m_options["main-action"]); }
+            set { m_options["main-action"] = value.ToString(); }
         }
 
         /// <summary>

@@ -23,15 +23,99 @@ using System.Text;
 
 namespace Duplicati.Library.Main
 {
+    /// <summary>
+    /// The operations that Duplicati can report
+    /// </summary>
     public enum DuplicatiOperation
     {
+        /// <summary>
+        /// Indicates that the operations is a full or incremental backup
+        /// </summary>
         Backup,
+        /// <summary>
+        /// Indicates that the operation is a restore type operation
+        /// </summary>
         Restore,
+        /// <summary>
+        /// Indicates that the operation is a list type operation
+        /// </summary>
         List,
+        /// <summary>
+        /// Indicates that the operation is a delete type operation
+        /// </summary>
         Remove
     };
 
-    public delegate void OperationProgressEvent(Interface caller, DuplicatiOperation operation, int progress, int subprogress, string message, string submessage);
+    /// <summary>
+    /// The actual operation that Duplicati supports
+    /// </summary>
+    public enum DuplicatiOperationMode
+    {
+        /// <summary>
+        /// A backup operation, either full or incremental
+        /// </summary>
+        Backup,
+        /// <summary>
+        /// A full backup
+        /// </summary>
+        BackupFull,
+        /// <summary>
+        /// An incremental backup
+        /// </summary>
+        BackupIncremental,
+        /// <summary>
+        /// A restore operation
+        /// </summary>
+        Restore,
+        /// <summary>
+        /// A restore operation for control files
+        /// </summary>
+        RestoreControlfiles,
+        /// <summary>
+        /// A backend file listing
+        /// </summary>
+        List,
+        /// <summary>
+        /// A list of backup chains found on the backend
+        /// </summary>
+        GetBackupSets,
+        /// <summary>
+        /// A list of files found in a specific backup set, produced by summing through incremental signature files
+        /// </summary>
+        ListCurrentFiles,
+        /// <summary>
+        /// A list of the source folders found in a specific backup set
+        /// </summary>
+        ListSourceFolders,
+        /// <summary>
+        /// A list of files found in a specific backup set, only shows content from the single backup set and not the entire chain
+        /// </summary>
+        ListActualSignatureFiles,
+        /// <summary>
+        /// A delete operation performed by looking at the number of existing full backups
+        /// </summary>
+        DeleteAllButNFull,
+        /// <summary>
+        /// A delete operation performed by looking at the age of existing backups
+        /// </summary>
+        DeleteOlderThan,
+        /// <summary>
+        /// A cleanup operation that removes orphan files
+        /// </summary>
+        CleanUp
+    }
+
+    /// <summary>
+    /// A delegate for reporting progress from within the Duplicati module
+    /// </summary>
+    /// <param name="caller">The instance that is running</param>
+    /// <param name="operation">The overall operation type</param>
+    /// <param name="specificoperation">A more specific type of operation</param>
+    /// <param name="progress">The current overall progress of the operation</param>
+    /// <param name="subprogress">The progress of a transfer</param>
+    /// <param name="message">A message describing the current operation</param>
+    /// <param name="submessage">A message describing the current transfer operation</param>
+    public delegate void OperationProgressEvent(Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificoperation, int progress, int subprogress, string message, string submessage);
 
     public class Interface : IDisposable, LiveControl.ILiveControl
     {
@@ -59,6 +143,10 @@ namespace Duplicati.Library.Main
         /// The current overall progress without taking the reserved amounts into account
         /// </summary>
         private double m_progress = 0.0;
+        /// <summary>
+        /// The number of restore patches
+        /// </summary>
+        private int m_restorePatches = 0;
 
         private string m_lastProgressMessage = "";
 
@@ -89,6 +177,41 @@ namespace Duplicati.Library.Main
         /// </summary>
         private LiveControl.LiveControl m_liveControl;
 
+        /// <summary>
+        /// Returns the current overall operation mode based on the actual operation mode
+        /// </summary>
+        /// <returns>The overall operation type</returns>
+        private DuplicatiOperation GetOperationType()
+        {
+            switch (m_options.MainAction)
+            {
+                case DuplicatiOperationMode.Backup:
+                case DuplicatiOperationMode.BackupFull:
+                case DuplicatiOperationMode.BackupIncremental:
+                    return DuplicatiOperation.Backup;
+                case DuplicatiOperationMode.Restore:
+                case DuplicatiOperationMode.RestoreControlfiles:
+                    return DuplicatiOperation.Restore;
+                case DuplicatiOperationMode.List:
+                case DuplicatiOperationMode.GetBackupSets:
+                case DuplicatiOperationMode.ListCurrentFiles:
+                case DuplicatiOperationMode.ListSourceFolders:
+                case DuplicatiOperationMode.ListActualSignatureFiles:
+                    return DuplicatiOperation.List;
+                case DuplicatiOperationMode.DeleteAllButNFull:
+                case DuplicatiOperationMode.DeleteOlderThan:
+                case DuplicatiOperationMode.CleanUp:
+                    return DuplicatiOperation.Remove;
+                default:
+                    throw new Exception(string.Format(Strings.Interface.UnexpectedOperationTypeError, m_options.MainAction));
+            }
+        }
+
+        /// <summary>
+        /// Constructs a new interface for performing backup and restore operations
+        /// </summary>
+        /// <param name="backend">The url for the backend to use</param>
+        /// <param name="options">All required options</param>
         public Interface(string backend, Dictionary<string, string> options)
         {
             m_backend = backend;
@@ -100,11 +223,14 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Event handler for the OperationProgres, used to store the last status message
         /// </summary>
-        private void Interface_OperationProgress(Interface caller, DuplicatiOperation operation, int progress, int subprogress, string message, string submessage)
+        private void Interface_OperationProgress(Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificoperation, int progress, int subprogress, string message, string submessage)
         {
             m_lastProgressMessage = message;
         }
 
+        /// <summary>
+        /// Internal helper to pause and stop when requested
+        /// </summary>
         private void CheckLiveControl()
         {
             m_liveControl.PauseIfRequested();
@@ -115,9 +241,9 @@ namespace Duplicati.Library.Main
 
         public string Backup(string[] sources)
         {
-            BackupStatistics bs = new BackupStatistics();
+            BackupStatistics bs = new BackupStatistics(DuplicatiOperationMode.Backup);
+            SetupCommonOptions(bs);
 
-            SetupCommonOptions("backup", bs);
             BackendWrapper backend = null;
 
             if (m_options.DontReadManifests)
@@ -154,8 +280,8 @@ namespace Duplicati.Library.Main
                 try
                 {
                     if (OperationStarted != null)
-                        OperationStarted(this, DuplicatiOperation.Backup, -1, -1, Strings.Interface.StatusLoadingFilelist, "");
-                    OperationProgress(this, DuplicatiOperation.Backup, -1, -1, Strings.Interface.StatusLoadingFilelist, "");
+                        OperationStarted(this, DuplicatiOperation.Backup, bs.OperationMode, -1, -1, Strings.Interface.StatusLoadingFilelist, "");
+                    OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, -1, -1, Strings.Interface.StatusLoadingFilelist, "");
 
                     CheckLiveControl();
 
@@ -167,7 +293,7 @@ namespace Duplicati.Library.Main
 
                     m_progress = 0.0;
 
-                    OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementals, "");
+                    OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementals, "");
                     
                     CheckLiveControl();
 
@@ -265,7 +391,7 @@ namespace Duplicati.Library.Main
 
                         DateTime backuptime = DateTime.Now;
 
-                        OperationProgress(this, DuplicatiOperation.Backup, -1, -1, Strings.Interface.StatusBuildingFilelist, "");
+                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, -1, -1, Strings.Interface.StatusBuildingFilelist, "");
 
                         using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(manifest.SourceDirs, bs, m_options.Filter, patches))
                         {
@@ -287,7 +413,7 @@ namespace Duplicati.Library.Main
                                 using (Core.TempFile signaturefile = new Duplicati.Library.Core.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
                                 using (Core.TempFile contentfile = new Duplicati.Library.Core.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
                                 {
-                                    OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusCreatingVolume, vol + 1), "");
+                                    OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusCreatingVolume, vol + 1), "");
 
                                     CheckLiveControl();
 
@@ -327,7 +453,7 @@ namespace Duplicati.Library.Main
                                         m_allowUploadProgressAfter = DateTime.Now.AddSeconds(1);
                                     }
                                     else
-                                        OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingContentVolume, vol + 1), "");
+                                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingContentVolume, vol + 1), "");
 
                                     //Last check before we upload, we do not interrupt transfers
                                     CheckLiveControl();
@@ -341,7 +467,7 @@ namespace Duplicati.Library.Main
                                         backend.Put(new ContentEntry(backuptime, full, vol + 1), contentfile);
 
                                     if (!m_options.AsynchronousUpload)
-                                        OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
+                                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
                                     
                                     manifest.SignatureHashes.Add(Core.Utility.CalculateHash(signaturefile));
                                     using (new Logging.Timer("Writing remote signatures"))
@@ -357,7 +483,7 @@ namespace Duplicati.Library.Main
                                     manifest.Save(mf);
 
                                     if (!m_options.AsynchronousUpload)
-                                        OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingManifestVolume, vol + 1), "");
+                                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingManifestVolume, vol + 1), "");
 
                                     //Alternate primary/secondary
                                     backend.Put(new ManifestEntry(backuptime, full, manifest.SignatureHashes.Count % 2 != 0), mf);
@@ -411,7 +537,7 @@ namespace Duplicati.Library.Main
                                 else
                                     throw new InvalidOperationException();
 
-                                OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, msg, "");
+                                OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, msg, "");
                                 backend.Put(p.Key, p.Value);
                                 m_asyncReserved -= unitcost;
                                 m_progress += unitcost;
@@ -459,9 +585,9 @@ namespace Duplicati.Library.Main
                         catch { }
 
                     if (OperationCompleted != null)
-                        OperationCompleted(this, DuplicatiOperation.Backup, 100, -1, Strings.Interface.StatusCompleted, "");
+                        OperationCompleted(this, DuplicatiOperation.Backup, bs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
                     
-                    OperationProgress(this, DuplicatiOperation.Backup, 100, -1, Strings.Interface.StatusCompleted, "");
+                    OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
                 }
             }
 
@@ -488,11 +614,11 @@ namespace Duplicati.Library.Main
         private void BackupTransfer_ProgressEvent(int progress, string filename)
         {
             if (m_allowUploadProgress && DateTime.Now > m_allowUploadProgressAfter)
-                OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), progress, m_lastProgressMessage, filename);
+                OperationProgress(this, GetOperationType(), m_options.MainAction, (int)(m_progress * 100), progress, m_lastProgressMessage, filename);
         }
 
         /// <summary>
-        /// Event handler for reporting backup/restore progress
+        /// Event handler for reporting backup progress
         /// </summary>
         /// <param name="progress">The total progress in percent</param>
         /// <param name="filename">The file currently being examined</param>
@@ -500,8 +626,23 @@ namespace Duplicati.Library.Main
         {
             m_progress = ((1.0 - m_incrementalFraction) * (progress / (double)100.0)) + m_incrementalFraction;
             m_progress *= (1.0 - m_asyncReserved);
-            
-            OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusProcessing, filename), "");
+
+            OperationProgress(this, GetOperationType(), m_options.MainAction, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusProcessing, filename), "");
+
+            CheckLiveControl();
+        }
+
+        /// <summary>
+        /// Event handler for reporting restore progress
+        /// </summary>
+        /// <param name="progress">The total progress in percent</param>
+        /// <param name="filename">The file currently being examined</param>
+        private void RestoreRSyncDir_ProgressEvent(int progress, string filename)
+        {
+            double pgPrPatch = ((1.0 - INCREMENAL_COST) / m_restorePatches);
+            int fullProgress = (int)((m_progress * 100) + (pgPrPatch * (progress / 100.0)));
+
+            OperationProgress(this, GetOperationType(), m_options.MainAction, fullProgress, -1, string.Format(Strings.Interface.StatusProcessing, filename), "");
 
             CheckLiveControl();
         }
@@ -568,19 +709,20 @@ namespace Duplicati.Library.Main
 
         public string Restore(string[] target)
         {
-            RestoreStatistics rs = new RestoreStatistics();
-            SetupCommonOptions("restore", rs);
+            RestoreStatistics rs = new RestoreStatistics(DuplicatiOperationMode.Restore);
+            SetupCommonOptions(rs);
 
             m_progress = 0;
             BackendWrapper backend = null;
+            m_restorePatches = 0;
 
             using (new Logging.Timer("Restore from " + m_backend + " to " + target))
             {
                 try
                 {
                     if (OperationStarted != null)
-                        OperationStarted(this, DuplicatiOperation.Restore, -1, -1, Strings.Interface.StatusStarted, "");
-                    OperationProgress(this, DuplicatiOperation.Restore, -1, -1, Strings.Interface.StatusStarted, "");
+                        OperationStarted(this, DuplicatiOperation.Restore, rs.OperationMode, -1, -1, Strings.Interface.StatusStarted, "");
+                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, -1, -1, Strings.Interface.StatusStarted, "");
 
                     Core.FilenameFilter filter = m_options.Filter;
 
@@ -597,7 +739,7 @@ namespace Duplicati.Library.Main
                     backend = new BackendWrapper(rs, m_backend, m_options);
                     backend.ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(BackupTransfer_ProgressEvent);
 
-                    OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementals, "");
+                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementals, "");
 
                     ManifestEntry bestFit = backend.GetBackupSet(m_options.RestoreTime);
 
@@ -607,18 +749,19 @@ namespace Duplicati.Library.Main
                     entries.Add(bestFit);
                     entries.AddRange(bestFit.Incrementals);
                     int patchno = 0;
-
-                    int patchCount = 0;
+                    
                     foreach (ManifestEntry be in entries)
-                        patchCount += be.Volumes.Count;
+                        m_restorePatches += be.Volumes.Count;
 
                     using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs, filter))
                     {
+                        sync.ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(RestoreRSyncDir_ProgressEvent);
+
                         foreach (ManifestEntry be in entries)
                         {
-                            m_progress = ((1.0 - INCREMENAL_COST) * (patchno / (double)patchCount)) + INCREMENAL_COST;
+                            m_progress = ((1.0 - INCREMENAL_COST) * (patchno / (double)m_restorePatches)) + INCREMENAL_COST;
 
-                            OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, be.Filename), "");
+                            OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, be.Filename), "");
                             
                             CheckLiveControl();
 
@@ -631,7 +774,7 @@ namespace Duplicati.Library.Main
                                 ContentEntry contentVol = vol.Value;
                                 SignatureEntry signatureVol = vol.Key;
 
-                                m_progress = ((1.0 - INCREMENAL_COST) * (patchno / (double)patchCount)) + INCREMENAL_COST;
+                                m_progress = ((1.0 - INCREMENAL_COST) * (patchno / (double)m_restorePatches)) + INCREMENAL_COST;
 
                                 //Skip nonlisted
                                 if (manifest.ContentHashes != null && contentVol.Volumenumber > manifest.ContentHashes.Count)
@@ -644,7 +787,7 @@ namespace Duplicati.Library.Main
 
                                 using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
                                 {
-                                    OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
+                                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
 
                                     CheckLiveControl();
 
@@ -654,7 +797,7 @@ namespace Duplicati.Library.Main
 
                                          using (Core.TempFile sigFile = new Duplicati.Library.Core.TempFile())
                                          {
-                                             OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingSignatureVolume, patchno + 1), "");
+                                             OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingSignatureVolume, patchno + 1), "");
 
                                              try
                                              {
@@ -685,12 +828,12 @@ namespace Duplicati.Library.Main
                                              continue; //Avoid downloading the content file
                                     }
 
-                                     OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
+                                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
 
                                     using (new Logging.Timer("Get " + contentVol.Filename))
                                         backend.Get(contentVol, patchzip, manifest.ContentHashes == null ? null : manifest.ContentHashes[contentVol.Volumenumber - 1]);
 
-                                    OperationProgress(this, DuplicatiOperation.Restore, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
+                                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
                                     
                                     using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
                                     using (Library.Interface.ICompression patch = DynamicLoader.CompressionLoader.GetModule(contentVol.Compression, patchzip, m_options.RawOptions))
@@ -710,9 +853,9 @@ namespace Duplicati.Library.Main
                         backend.Dispose();
 
                     if (OperationCompleted != null)
-                        OperationCompleted(this, DuplicatiOperation.Restore, 100, -1, Strings.Interface.StatusCompleted, "");
+                        OperationCompleted(this, DuplicatiOperation.Restore, rs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
 
-                    OperationProgress(this, DuplicatiOperation.Restore, 100, -1, Strings.Interface.StatusCompleted, "");
+                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
                 }
             } 
 
@@ -731,8 +874,8 @@ namespace Duplicati.Library.Main
         /// <returns>A restore report</returns>
         public string RestoreControlFiles(string target)
         {
-            RestoreStatistics rs = new RestoreStatistics();
-            SetupCommonOptions("restore-controlfiles", rs);
+            RestoreStatistics rs = new RestoreStatistics(DuplicatiOperationMode.RestoreControlfiles);
+            SetupCommonOptions(rs);
 
             BackendWrapper backend = null;
 
@@ -741,7 +884,7 @@ namespace Duplicati.Library.Main
                 try
                 {
                     if (OperationStarted != null)
-                        OperationStarted(this, DuplicatiOperation.Restore, 0, -1, Strings.Interface.StatusStarted, "");
+                        OperationStarted(this, DuplicatiOperation.Restore, rs.OperationMode, 0, -1, Strings.Interface.StatusStarted, "");
 
                     backend = new BackendWrapper(rs, m_backend, m_options);
 
@@ -763,7 +906,7 @@ namespace Duplicati.Library.Main
                         if (be.Volumes.Count > 0)
                             using(Core.TempFile z = new Duplicati.Library.Core.TempFile())
                             {
-                                OperationProgress(this, DuplicatiOperation.Backup, 0, -1, string.Format(Strings.Interface.StatusReadingIncrementalFile, be.Volumes[0].Key.Filename), "");
+                                OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, 0, -1, string.Format(Strings.Interface.StatusReadingIncrementalFile, be.Volumes[0].Key.Filename), "");
 
                                 Manifestfile mf = GetManifest(backend, be);
 
@@ -796,7 +939,7 @@ namespace Duplicati.Library.Main
                         backend.Dispose();
 
                     if (OperationCompleted != null)
-                        OperationCompleted(this, DuplicatiOperation.Restore, 100, -1, Strings.Interface.StatusCompleted, "");
+                        OperationCompleted(this, DuplicatiOperation.Restore, rs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
                 }
             }
 
@@ -807,8 +950,8 @@ namespace Duplicati.Library.Main
 
         public string DeleteAllButNFull()
         {
-            CommunicationStatistics stats = new CommunicationStatistics();
-            SetupCommonOptions("delete-all-but-n-full", stats);
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.DeleteAllButNFull);
+            SetupCommonOptions(stats);
 
             int x = Math.Max(0, m_options.DeleteAllButNFull);
 
@@ -818,7 +961,7 @@ namespace Duplicati.Library.Main
             try
             {
                 if (OperationStarted != null)
-                    OperationStarted(this, DuplicatiOperation.Remove, 0, -1, Strings.Interface.StatusStarted, "");
+                    OperationStarted(this, DuplicatiOperation.Remove, stats.OperationMode, 0, -1, Strings.Interface.StatusStarted, "");
 
                 List<ManifestEntry> entries = backend.GetBackupSets();
                 List<ManifestEntry> toremove = new List<ManifestEntry>();
@@ -847,7 +990,7 @@ namespace Duplicati.Library.Main
             finally
             {
                 if (OperationCompleted != null)
-                    OperationCompleted(this, DuplicatiOperation.Remove, 100, -1, Strings.Interface.StatusCompleted, "");
+                    OperationCompleted(this, DuplicatiOperation.Remove, stats.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
             }
 
             return sb.ToString();
@@ -856,8 +999,8 @@ namespace Duplicati.Library.Main
         public string DeleteOlderThan()
         {
             StringBuilder sb = new StringBuilder();
-            CommunicationStatistics stats = new CommunicationStatistics();
-            SetupCommonOptions("delete-older-than", stats);
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.DeleteOlderThan);
+            SetupCommonOptions(stats);
 
             DateTime expires = m_options.RemoveOlderThan;
 
@@ -865,7 +1008,7 @@ namespace Duplicati.Library.Main
             try
             {
                 if (OperationStarted != null)
-                    OperationStarted(this, DuplicatiOperation.Remove, 0, -1, Strings.Interface.StatusStarted, "");
+                    OperationStarted(this, DuplicatiOperation.Remove, stats.OperationMode, 0, -1, Strings.Interface.StatusStarted, "");
 
                 List<ManifestEntry> entries = backend.GetBackupSets();
                 List<ManifestEntry> toremove = new List<ManifestEntry>();
@@ -916,7 +1059,7 @@ namespace Duplicati.Library.Main
             finally
             {
                 if (OperationCompleted != null)
-                    OperationCompleted(this, DuplicatiOperation.Remove, 100, -1, Strings.Interface.StatusCompleted, "");
+                    OperationCompleted(this, DuplicatiOperation.Remove, stats.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
             }
 
             return sb.ToString();
@@ -955,20 +1098,20 @@ namespace Duplicati.Library.Main
 
         public string[] List()
         {
-            CommunicationStatistics stats = new CommunicationStatistics();
-            SetupCommonOptions("list", stats);
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.List);
+            SetupCommonOptions(stats);
 
             List<string> res = new List<string>();
             using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             {
                 if (OperationStarted != null)
-                    OperationStarted(this, DuplicatiOperation.List, 0, -1, Strings.Interface.StatusStarted, "");
+                    OperationStarted(this, DuplicatiOperation.List, stats.OperationMode, 0, -1, Strings.Interface.StatusStarted, "");
 
                 foreach (Duplicati.Library.Interface.IFileEntry fe in backend.List())
                     res.Add(fe.Name);
 
                 if (OperationCompleted != null)
-                    OperationCompleted(this, DuplicatiOperation.List, 100, -1, Strings.Interface.StatusCompleted, "");
+                    OperationCompleted(this, DuplicatiOperation.List, stats.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
 
                 return res.ToArray();
             }
@@ -976,8 +1119,8 @@ namespace Duplicati.Library.Main
 
         public string Cleanup()
         {
-            CommunicationStatistics stats = new CommunicationStatistics();
-            SetupCommonOptions("cleanup", stats);
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.CleanUp);
+            SetupCommonOptions(stats);
 
             bool anyRemoved = false;
             using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
@@ -1025,14 +1168,14 @@ namespace Duplicati.Library.Main
 
         public IList<string> ListCurrentFiles()
         {
-            RestoreStatistics rs = new RestoreStatistics();
-            SetupCommonOptions("list-current-files", rs);
+            RestoreStatistics rs = new RestoreStatistics(DuplicatiOperationMode.ListCurrentFiles);
+            SetupCommonOptions(rs);
 
             Core.FilenameFilter filter = m_options.Filter;
             DateTime timelimit = m_options.RestoreTime;
 
             if (OperationStarted != null)
-                OperationStarted(this, DuplicatiOperation.List, 0, -1, Strings.Interface.StatusStarted, "");
+                OperationStarted(this, DuplicatiOperation.List, rs.OperationMode, 0, -1, Strings.Interface.StatusStarted, "");
 
             List<string> res;
 
@@ -1052,21 +1195,21 @@ namespace Duplicati.Library.Main
             }
 
             if (OperationCompleted != null)
-                OperationCompleted(this, DuplicatiOperation.List, 100, -1, Strings.Interface.StatusCompleted, "");
+                OperationCompleted(this, DuplicatiOperation.List, rs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
 
             return res;
         }
 
         public string[] ListSourceFolders()
         {
-            RestoreStatistics rs = new RestoreStatistics();
-            SetupCommonOptions("list-source-folders", rs);
+            RestoreStatistics rs = new RestoreStatistics(DuplicatiOperationMode.ListSourceFolders);
+            SetupCommonOptions(rs);
 
             Core.FilenameFilter filter = m_options.Filter;
             DateTime timelimit = m_options.RestoreTime;
 
             if (OperationStarted != null)
-                OperationStarted(this, DuplicatiOperation.List, 0, -1, Strings.Interface.StatusStarted, "");
+                OperationStarted(this, DuplicatiOperation.List, rs.OperationMode, 0, -1, Strings.Interface.StatusStarted, "");
 
             string[] res;
 
@@ -1080,15 +1223,15 @@ namespace Duplicati.Library.Main
             }
 
             if (OperationCompleted != null)
-                OperationCompleted(this, DuplicatiOperation.List, 100, -1, Strings.Interface.StatusCompleted, "");
+                OperationCompleted(this, DuplicatiOperation.List, rs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
 
             return res;
         }
 
 
-        private void SetupCommonOptions(string method, CommunicationStatistics stats)
+        private void SetupCommonOptions(CommunicationStatistics stats)
         {
-            m_options.MainAction = method;
+            m_options.MainAction = stats.OperationMode;
 
             if (stats != null)
                 stats.VerboseErrors = m_options.DebugOutput;
@@ -1126,7 +1269,7 @@ namespace Duplicati.Library.Main
 
             using (new Logging.Timer("Reading incremental data"))
             {
-                OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementalData, "");
+                OperationProgress(this, GetOperationType(), stat.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementalData, "");
 
                 //Calculate the total number of files to download
                 //, and verify their order
@@ -1157,7 +1300,7 @@ namespace Duplicati.Library.Main
                 {
                     m_progress += unitCost;
 
-                    OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, be.Time.ToShortDateString() + " " + be.Time.ToShortTimeString()), "");
+                    OperationProgress(this, GetOperationType(), stat.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, be.Time.ToShortDateString() + " " + be.Time.ToShortTimeString()), "");
 
                     Manifestfile manifest = GetManifest(backend, be);
 
@@ -1173,7 +1316,7 @@ namespace Duplicati.Library.Main
                             continue;
                         }
 
-                        OperationProgress(this, DuplicatiOperation.Backup, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingSignatureFile, be.Time.ToShortDateString() + " " + be.Time.ToShortTimeString(), bes.Key.Volumenumber), "");
+                        OperationProgress(this, GetOperationType(), stat.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingSignatureFile, be.Time.ToShortDateString() + " " + be.Time.ToShortTimeString(), bes.Key.Volumenumber), "");
 
                         string filename = System.IO.Path.Combine(tempfolder, "patch-" + patches.Count.ToString() + ".zip");
 
@@ -1216,8 +1359,8 @@ namespace Duplicati.Library.Main
 
         public List<ManifestEntry> GetBackupSets()
         {
-            CommunicationStatistics stats = new CommunicationStatistics();
-            SetupCommonOptions("get-backup-sets", stats);
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.GetBackupSets);
+            SetupCommonOptions(stats);
 
             using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
                 return backend.GetBackupSets();
@@ -1225,8 +1368,8 @@ namespace Duplicati.Library.Main
 
         public List<KeyValuePair<RSync.RSyncDir.PatchFileType, string>> ListActualSignatureFiles()
         {
-            CommunicationStatistics stats = new CommunicationStatistics();
-            SetupCommonOptions("list-actual-signature-files", stats);
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.ListActualSignatureFiles);
+            SetupCommonOptions(stats);
 
             using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             {

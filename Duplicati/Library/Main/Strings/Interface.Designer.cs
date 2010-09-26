@@ -475,6 +475,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The operation mode {0} was not expected.
+        /// </summary>
+        internal static string UnexpectedOperationTypeError {
+            get {
+                return ResourceManager.GetString("UnexpectedOperationTypeError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The value &quot;{1}&quot; supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to &quot;true&quot;.
         /// </summary>
         internal static string UnsupportedBooleanValue {

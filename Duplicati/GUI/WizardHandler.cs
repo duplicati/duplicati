@@ -127,6 +127,8 @@ namespace Duplicati.GUI
                     Program.WorkThread.AddTask(new RestoreTask(schedule, target, restoreFilter));
                 else
                     Program.WorkThread.AddTask(new RestoreTask(schedule, target, restoreFilter, when));
+
+                Program.DisplayHelper.ShowStatus();
             }
             else if (m_form.CurrentPage is Wizard_pages.RunNow.RunNowFinished)
             {

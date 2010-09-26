@@ -1435,18 +1435,35 @@ namespace Duplicati.Library.Main.RSync
             if (patch.FileExists(COMPLETED_FILE))
                 fe = new PartialEntryRecord(patch.ReadAllLines(COMPLETED_FILE));
 
-            //Restore new files
-            string prefix = Core.Utility.AppendDirSeparator(CONTENT_ROOT);
+            int lastPg = -1;
 
-            foreach (string s in m_filter.FilterList(prefix, patch.ListFiles(prefix)))
+            string contentprefix = Core.Utility.AppendDirSeparator(CONTENT_ROOT);
+            List<string> contentfiles = m_filter.FilterList(contentprefix, patch.ListFiles(contentprefix));
+
+            string deltaprefix = Core.Utility.AppendDirSeparator(DELTA_ROOT);
+            List<string> deltafiles = m_filter.FilterList(deltaprefix, patch.ListFiles(deltaprefix));
+
+            long totalfiles = deltafiles.Count + contentfiles.Count;
+            long fileindex = 0;
+
+            //Restore new files
+            foreach (string s in contentfiles)
             {
-                string target = GetFullPathFromRelname(destination, s.Substring(prefix.Length));
+                string target = GetFullPathFromRelname(destination, s.Substring(contentprefix.Length));
                 try
                 {
                     if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
                     {
                         Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFolderMissingError, target), Duplicati.Library.Logging.LogMessageType.Warning);
                         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                    }
+
+                    //Update each 0.5%
+                    int pg = (int)((fileindex / (double)totalfiles) * 200);
+                    if (pg != lastPg)
+                    {
+                        ProgressEvent(pg / 2, target);
+                        lastPg = pg;
                     }
 
                     using (System.IO.Stream s1 = patch.OpenRead(s))
@@ -1513,16 +1530,23 @@ namespace Duplicati.Library.Main.RSync
                         m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), ex);
                     Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
                 }
-
+                fileindex++;
             }
 
             //Patch modfied files
-            prefix = Core.Utility.AppendDirSeparator(DELTA_ROOT);
-            foreach (string s in m_filter.FilterList(prefix, patch.ListFiles(prefix)))
+            foreach (string s in deltafiles)
             {
-                string target = GetFullPathFromRelname(destination, s.Substring(prefix.Length));
+                string target = GetFullPathFromRelname(destination, s.Substring(deltaprefix.Length));
                 try
                 {
+                    //Update each 0.5%
+                    int pg = (int)((fileindex / (double)totalfiles) * 200);
+                    if (pg != lastPg)
+                    {
+                        ProgressEvent(pg / 2, target);
+                        lastPg = pg;
+                    }
+
                     if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
                     {
                         Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFolderDeltaError, target), Duplicati.Library.Logging.LogMessageType.Warning);
@@ -1612,6 +1636,7 @@ namespace Duplicati.Library.Main.RSync
                     try { System.IO.File.Delete(target); }
                     catch { }
                 }
+                fileindex++;
             }
         }
 

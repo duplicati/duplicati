@@ -34,7 +34,8 @@ namespace Duplicati.Library.Main
         private long m_filesDeleted;
         private long m_foldersDeleted;
 
-        public RestoreStatistics()
+        public RestoreStatistics(DuplicatiOperationMode operationMode)
+            : base(operationMode)
         {
             m_beginTime = m_endTime = DateTime.Now;
         }
