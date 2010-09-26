@@ -183,7 +183,7 @@
     <value>329, 17</value>
   </data>
   <data name="ThrottleOptions.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+    <value>2</value>
   </data>
   <data name="ThrottleOptions.Text" xml:space="preserve">
     <value>Select options that limit machine usage, such as bandwidth limits</value>
@@ -210,7 +210,7 @@
     <value>316, 17</value>
   </data>
   <data name="EditFilters.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
+    <value>3</value>
   </data>
   <data name="EditFilters.Text" xml:space="preserve">
     <value>Modify filters that control what files are included in the backup</value>
@@ -264,7 +264,7 @@
     <value>205, 17</value>
   </data>
   <data name="EditOverrides.TabIndex" type="System.Int32, mscorlib">
-    <value>7</value>
+    <value>4</value>
   </data>
   <data name="EditOverrides.Text" xml:space="preserve">
     <value>Manually override settings (advanced)</value>
