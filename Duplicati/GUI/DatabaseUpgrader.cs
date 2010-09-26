@@ -53,7 +53,7 @@ namespace Duplicati.GUI
         /// </summary>
         /// <param name="connection">The database connection to use</param>
         /// <param name="sourcefile">The file the database is placed in</param>
-        public static void UpgradeDatebase(IDbConnection connection, string sourcefile)
+        public static void UpgradeDatabase(IDbConnection connection, string sourcefile)
         {
             //Shorthand for current assembly
             System.Reflection.Assembly asm = System.Reflection.Assembly.GetExecutingAssembly();
@@ -100,7 +100,7 @@ namespace Duplicati.GUI
             {
                 cmd.CommandText = new System.IO.StreamReader(asm.GetManifestResourceStream(typeof(DatabaseUpgrader), FOLDER_NAME + "." + SCHEMA_NAME)).ReadToEnd();
                 cmd.ExecuteNonQuery();
-                UpgradeDatebase(connection, sourcefile);
+                UpgradeDatabase(connection, sourcefile);
                 return;
             }
 

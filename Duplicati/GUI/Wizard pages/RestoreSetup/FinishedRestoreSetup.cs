@@ -139,12 +139,42 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
 
                 string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
                 if (System.IO.File.Exists(filename))
+                {
+                    //Connect to the downloaded database
+                    using (System.Data.IDbConnection scon = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType))
+                    {
+                        scon.ConnectionString = "Data Source=" + filename;
+
+                        //Make sure encryption etc is handled correctly
+                        Program.OpenDatabase(scon);
+
+                        //Upgrade the database to the current version
+                        DatabaseUpgrader.UpgradeDatabase(scon, filename);
+                    }
+
+                    //Shut down this connection
+                    Program.LiveControl.Pause();
+                    Program.DataConnection.ClearCache();
+                    //We also need to remove any dirty objects as the ClearCache maintains those
+                    foreach (System.Data.LightDatamodel.IDataClass o in Program.DataConnection.LocalCache.GetAllChanged())
+                        Program.DataConnection.DiscardObject(o);
+                    Program.DataConnection.Provider.Connection.Close();
+
+                    //Replace the existing database with this one
                     System.IO.File.Copy(filename, Program.DatabasePath, true);
+
+                    //Re-start the connection, using the new file
+                    Program.DataConnection.Provider.Connection = (System.Data.IDbConnection)Activator.CreateInstance(SQLiteLoader.SQLiteConnectionType);
+                    Program.DataConnection.Provider.Connection.ConnectionString = "Data Source=" + Program.DatabasePath;
+                    Program.OpenDatabase(Program.DataConnection.Provider.Connection);
+
+                    //Remove the downloaded database
+                    try { System.IO.File.Delete(filename); }
+                    catch { }
+                }
                 else
                     throw new Exception(Strings.FinishedRestoreSetup.SetupFileMissingError);
 
-                Program.LiveControl.Pause();
-                Program.DataConnection.ClearCache();
 
                 //Make sure we have a startup delay, so a restart won't accidently wipe something
                 Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);

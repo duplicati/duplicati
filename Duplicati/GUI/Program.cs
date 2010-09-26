@@ -214,7 +214,7 @@ namespace Duplicati.GUI
                     //Attempt to open the database, handling any encryption present
                     OpenDatabase(con);
 
-                    DatabaseUpgrader.UpgradeDatebase(con, DatabasePath);
+                    DatabaseUpgrader.UpgradeDatabase(con, DatabasePath);
                 }
                 catch (Exception ex)
                 {
