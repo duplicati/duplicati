@@ -210,11 +210,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 PasswordHelptext.Visible =
                 GeneratePasswordButton.Visible =
+                EncryptionModuleLabel.Visible =
+                EncryptionModule.Visible =
+                EncryptionControlContainer.Visible =
                 UseSettingsAsDefault.Visible = false;
 
                 EnablePassword.Text = Strings.PasswordSettings.EnablePasswordRestoreText;
-                EncryptionModule.Top = EncryptionModuleLabel.Top = PasswordHelptext.Top;
-                
             }
         }
 
@@ -240,7 +241,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             if (m_wrapper != null)
             {
-                m_settingsChanged = true;
+                //Since the encryption mode is autodetected, there is no warning for changing the encryption module
+                //m_settingsChanged = true;
 
                 EncryptionControlContainer.Controls.Clear();
                 if (EncryptionModule.SelectedItem as ComboBoxItemPair<Library.Interface.IEncryption> != null)

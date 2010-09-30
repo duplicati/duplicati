@@ -301,6 +301,33 @@ namespace Duplicati.Library.Main
 
                     if (backupsets.Count == 0)
                         full = true;
+                    else
+                    {
+                        //A prioir backup exists, extract the compression and encryption modules used in the most recent entry
+                        string compression = null;
+                        string encryption = null;
+                        for (int i = backupsets.Count - 1; compression == null && i >= 0; i--)
+                        {
+                            for (int j = backupsets[i].Incrementals.Count - 1; compression == null && j >= 0; j--)
+                                for (int k = backupsets[i].Incrementals[j].Volumes.Count - 1; compression == null && k >= 0; k--)
+                                {
+                                    compression = backupsets[i].Incrementals[j].Volumes[k].Key.Compression;
+                                    encryption = backupsets[i].Incrementals[j].Volumes[k].Key.EncryptionMode;
+                                }
+
+                            for (int k = backupsets[i].Volumes.Count - 1; compression == null && k >= 0; k--)
+                            {
+                                compression = backupsets[i].Volumes[k].Key.Compression;
+                                encryption = backupsets[i].Volumes[k].Key.EncryptionMode;
+                            }
+                        }
+
+                        if (compression != null)
+                        {
+                            m_options.SetEncryptionModuleDefault(encryption);
+                            m_options.SetCompressionModuleDefault(compression);
+                        }
+                    }
 
                     if (!full)
                         full = DateTime.Now > m_options.FullIfOlderThan(backupsets[backupsets.Count - 1].Time);
@@ -329,7 +356,7 @@ namespace Duplicati.Library.Main
 
                             //Check before we start the download
                             CheckLiveControl();
-                            Manifestfile latest = GetManifest(backend, backupsets[0]);
+                            Manifestfile latest = GetManifest(backend, backupsets[backupsets.Count - 1]);
 
                             //Manifest version 1 does not support multiple folders
                             if (latest.Version == 1) 
@@ -648,7 +675,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Will attempt to read the manifest file, optinally revering to the secondary manifest if reading one fails.
+        /// Will attempt to read the manifest file, optionally reverting to the secondary manifest if reading one fails.
         /// </summary>
         /// <param name="backend">The backendwrapper to read from</param>
         /// <param name="entry">The manifest to read</param>

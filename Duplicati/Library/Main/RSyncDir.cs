@@ -125,9 +125,10 @@ namespace Duplicati.Library.Main.RSync
             internal DateTime GetLastWriteTime(string relpath)
             {
                 DateTime t = m_archive.GetLastWriteTime(System.IO.Path.Combine(m_prefix, relpath));
-                if (!m_isDateInUtc)
-                    t = t.ToUniversalTime();
-                return t;
+                if (m_isDateInUtc)
+                    return new DateTime(t.Ticks, DateTimeKind.Utc);
+                else
+                    return new DateTime(t.Ticks, DateTimeKind.Local).ToUniversalTime();
             }
         }
 
@@ -894,12 +895,13 @@ namespace Duplicati.Library.Main.RSync
                         string relpath = GetRelativeName(s);
                         if (m_oldSignatures.ContainsKey(relpath))
                         {
-                            DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
+                            DateTime lastFileWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
 
-                            //Cut off as we only preserve precision in seconds
-                            lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second);
+                            //Cut off as we only preserve precision in seconds after compression
+                            lastFileWrite = new DateTime(lastFileWrite.Year, lastFileWrite.Month, lastFileWrite.Day, lastFileWrite.Hour, lastFileWrite.Minute, lastFileWrite.Second);
 
-                            if (lastWrite <= m_oldSignatures[relpath].GetLastWriteTime(relpath))
+                            //Compare with the modification time recorded in the the archive
+                            if (lastFileWrite <= m_oldSignatures[relpath].GetLastWriteTime(relpath))
                             {
                                 m_oldSignatures.Remove(relpath);
                                 m_examinedfiles++;

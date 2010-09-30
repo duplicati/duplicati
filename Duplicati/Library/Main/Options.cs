@@ -456,6 +456,22 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Helper method to set the default encryption mode based on the settings of the previous backup
+        /// </summary>
+        /// <param name="lastSetting">The encryption module used for the last entry</param>
+        public void SetEncryptionModuleDefault(string lastSetting)
+        {
+            //If the encryption module was specified explicitly, don't change it
+            if (m_options.ContainsKey("no-encryption") || m_options.ContainsKey("encryption-module"))
+                return;
+
+            if (string.IsNullOrEmpty(lastSetting))
+                m_options["no-encryption"] = "";
+            else
+                m_options["encryption-module"] = lastSetting;
+        }
+
+        /// <summary>
         /// A value indicating if backups are not encrypted
         /// </summary>
         public bool NoEncryption { get { return GetBool("no-encryption"); } }
@@ -490,6 +506,19 @@ namespace Duplicati.Library.Main
         { 
             get { return GetBool("gpg-encryption"); }
             set { m_options["gpg-encryption"] = value.ToString(); }
+        }
+
+        /// <summary>
+        /// Helper method to set the default compression mode based on the settings of the previous backup
+        /// </summary>
+        /// <param name="lastSetting">The compression module used for the last entry</param>
+        public void SetCompressionModuleDefault(string lastSetting)
+        {
+            //If a compression module is explicitly selected, don't change it
+            if (m_options.ContainsKey("compression-module"))
+                return;
+
+            m_options["compression-module"] = lastSetting;
         }
 
         /// <summary>
