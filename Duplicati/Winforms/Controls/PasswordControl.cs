@@ -19,7 +19,7 @@ namespace Duplicati.Winforms.Controls
         /// <summary>
         /// The internal password storage
         /// </summary>
-        private string m_password;
+        private string m_password = "";
 
         /// <summary>
         /// A control field used to distinguish the code generated events from the user generated events
@@ -55,9 +55,13 @@ namespace Duplicati.Winforms.Controls
         /// </summary>
         public override string Text
         {
-            get { return m_password; }
+            //Mono does not play nice if Text returns null
+            get { return m_password ?? ""; }
             set
             {
+                if (value == null)
+                    value = "";
+
                 bool changed = m_password != value;
                 m_password = value;
                 UpdateDisplay();
