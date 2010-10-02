@@ -245,20 +245,27 @@ namespace Duplicati.GUI
                 lvi.ImageIndex = imageList.Images.ContainsKey(l.ParsedStatus) ? imageList.Images.IndexOfKey(l.ParsedStatus) : imageList.Images.IndexOfKey("Warning");
                 recentBackups.Items.Add(lvi);
 
-                switch (l.ParsedStatus)
+                if (!string.IsNullOrEmpty(l.ParsedMessage))
                 {
-                    case DuplicatiOutputParser.OKStatus:
-                        lvi.ToolTipText = Strings.ServiceStatus.BackupStatusOK;
-                        break;
-                    case DuplicatiOutputParser.ErrorStatus:
-                        lvi.ToolTipText = Strings.ServiceStatus.BackupStatusError;
-                        break;
-                    case DuplicatiOutputParser.WarningStatus:
-                        lvi.ToolTipText = Strings.ServiceStatus.BackupStatusWarning;
-                        break;
-                    case DuplicatiOutputParser.PartialStatus:
-                        lvi.ToolTipText = Strings.ServiceStatus.BackupStatusPartial;
-                        break;
+                    lvi.ToolTipText = l.ParsedMessage;
+                }
+                else
+                {
+                    switch (l.ParsedStatus)
+                    {
+                        case DuplicatiOutputParser.OKStatus:
+                            lvi.ToolTipText = Strings.ServiceStatus.BackupStatusOK;
+                            break;
+                        case DuplicatiOutputParser.ErrorStatus:
+                            lvi.ToolTipText = Strings.ServiceStatus.BackupStatusError;
+                            break;
+                        case DuplicatiOutputParser.WarningStatus:
+                            lvi.ToolTipText = Strings.ServiceStatus.BackupStatusWarning;
+                            break;
+                        case DuplicatiOutputParser.PartialStatus:
+                            lvi.ToolTipText = Strings.ServiceStatus.BackupStatusPartial;
+                            break;
+                    }
                 }
             }
 
@@ -275,8 +282,13 @@ namespace Duplicati.GUI
                 return;
 
             LogViewer dlg = new LogViewer();
+            if (!string.IsNullOrEmpty(l.ParsedMessage))
+                dlg.LogText.Text = l.ParsedMessage + Environment.NewLine + Environment.NewLine;
+            else
+                dlg.LogText.Text = "";
+
             //TODO: Figure out if LDM still fails here
-            dlg.LogText.Text = l.Blob.StringData;
+            dlg.LogText.Text += l.Blob.StringData;
 
             dlg.ShowDialog(this);
         }
@@ -333,7 +345,7 @@ namespace Duplicati.GUI
 
         private void stopBackupToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Program.Runner.Stop();
+            Program.Runner.Stop(CloseReason.UserClosing);
         }
 
         private void statusImage_Click(object sender, EventArgs e)

@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ApplicationExitLogMesssage" xml:space="preserve">
+    <value>The backup was stopped because the application was closed</value>
+  </data>
   <data name="CleaningUpMessage" xml:space="preserve">
     <value>Removing old backups ...</value>
   </data>
@@ -125,5 +128,20 @@
   </data>
   <data name="CleanupLogdataHeader" xml:space="preserve">
     <value>Cleanup output:</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>Error: {0}</value>
+  </data>
+  <data name="OtherAbortMessage" xml:space="preserve">
+    <value>The backup was stopped, the reason was: {0}</value>
+  </data>
+  <data name="TaskManagerCloseMessage" xml:space="preserve">
+    <value>The backup was stopped because the application was closed by the task manager</value>
+  </data>
+  <data name="UserClosingMessage" xml:space="preserve">
+    <value>The backup was stopped by the user</value>
+  </data>
+  <data name="WindowsShutdownMessage" xml:space="preserve">
+    <value>The backup was stopped because the machine was being shut down</value>
   </data>
 </root>

@@ -58,6 +58,7 @@ CREATE TABLE "Log" (
     "SubAction" TEXT NULL,
     "Transfersize" INTEGER NULL,
     "ParsedStatus" TEXT NULL,
+    "ParsedMessage" TEXT NULL,
     "LogBlobID" INTEGER NULL
 );
 
@@ -106,4 +107,4 @@ CREATE TABLE "EncryptionSetting" (
     "Value" TEXT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (6);
+INSERT INTO "Version" ("Version") VALUES (7);

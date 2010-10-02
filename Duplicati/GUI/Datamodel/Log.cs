@@ -54,7 +54,9 @@ namespace Duplicati.Datamodel
 		private System.Int64 m_Transfersize = long.MinValue;
 		[DatabaseField("ParsedStatus")]
 		private System.String m_ParsedStatus = "";
-		[Relation("LogBlob", typeof(LogBlob), "ID"), DatabaseField("LogBlobID")]
+        [DatabaseField("ParsedMessage")]
+        private System.String m_ParsedMessage = "";
+        [Relation("LogBlob", typeof(LogBlob), "ID"), DatabaseField("LogBlobID")]
 		private System.Int64 m_LogBlobID = long.MinValue;
 #endregion
 
@@ -107,6 +109,12 @@ namespace Duplicati.Datamodel
 			get{return m_ParsedStatus;}
 			set{object oldvalue = m_ParsedStatus;OnBeforeDataChange(this, "ParsedStatus", oldvalue, value);m_ParsedStatus = value;OnAfterDataChange(this, "ParsedStatus", oldvalue, value);}
 		}
+
+        public System.String ParsedMessage
+        {
+            get { return m_ParsedMessage; }
+            set { object oldvalue = m_ParsedMessage; OnBeforeDataChange(this, "ParsedMessage", oldvalue, value); m_ParsedMessage = value; OnAfterDataChange(this, "ParsedMessage", oldvalue, value); }
+        }
 
 		public System.Int64 LogBlobID
 		{

@@ -40,13 +40,13 @@ namespace Duplicati.GUI
     }
 
 
-    public delegate void TaskCompletedHandler(IDuplicityTask owner, string output);
+    public delegate void TaskCompletedHandler(IDuplicityTask owner, string output, string shortMessage);
 
     public interface IDuplicityTask
     {
         DuplicityTaskType TaskType { get; }
         event TaskCompletedHandler TaskCompleted;
-        void RaiseTaskCompleted(string output);
+        void RaiseTaskCompleted(string output, string parsedMessage);
 
         
         DateTime BeginTime { get; set; }
@@ -82,10 +82,10 @@ namespace Duplicati.GUI
             m_schedule = schedule;
         }
 
-        public void RaiseTaskCompleted(string output)
+        public void RaiseTaskCompleted(string output, string parsedMessage)
         {
             if (TaskCompleted != null)
-                TaskCompleted(this, output);
+                TaskCompleted(this, output, parsedMessage);
         }
 
         public abstract string LocalPath { get; }
@@ -259,7 +259,7 @@ namespace Duplicati.GUI
             set { m_result = value; }
         }
 
-        protected virtual void WriteLogMessage(string action, string subaction, string data, bool commit)
+        protected virtual void WriteLogMessage(string action, string subaction, string data, string parsedMessage, bool commit)
         {
             lock (Program.MainLock)
             {
@@ -277,6 +277,7 @@ namespace Duplicati.GUI
                 l.SubAction = subaction;
                 l.BeginTime = m_beginTime;
                 l.EndTime = DateTime.Now;
+                l.ParsedMessage = parsedMessage;
 
                 //Find logs that are no longer displayed, and delete them
                 foreach (Log x in con.GetObjects<Log>("EndTime < ?", Library.Core.Timeparser.ParseTimeInterval(new ApplicationSettings(con).RecentBackupDuration, DateTime.Now, true)))
@@ -300,9 +301,9 @@ namespace Duplicati.GUI
             base.TaskCompleted += new TaskCompletedHandler(DoneEvent);
         }
 
-        protected void DoneEvent(IDuplicityTask task, string output)
+        protected void DoneEvent(IDuplicityTask task, string output, string parsedMessage)
         {
-            WriteLogMessage("Backup", "Primary", output, true);
+            WriteLogMessage("Backup", "Primary", output, parsedMessage, true);
         }
 
         public override string GetConfiguration(Dictionary<string, string> options)
@@ -396,7 +397,7 @@ namespace Duplicati.GUI
             this.TaskCompleted += new TaskCompletedHandler(ListBackupsTask_TaskCompleted);
         }
 
-        void ListBackupsTask_TaskCompleted(IDuplicityTask owner, string output)
+        void ListBackupsTask_TaskCompleted(IDuplicityTask owner, string output, string parsedMessage)
         {
             if (string.IsNullOrEmpty(output))
                 return;
@@ -610,9 +611,9 @@ namespace Duplicati.GUI
             base.TaskCompleted += new TaskCompletedHandler(DoneEvent);
         }
 
-        void DoneEvent(IDuplicityTask owner, string output)
+        void DoneEvent(IDuplicityTask owner, string output, string parsedMessage)
         {
-            WriteLogMessage("Restore", "Primary", output, true);
+            WriteLogMessage("Restore", "Primary", output, parsedMessage, true);
         }
 
         public override string LocalPath
@@ -648,9 +649,9 @@ namespace Duplicati.GUI
             base.TaskCompleted += new TaskCompletedHandler(DoneEvent);
         }
 
-        void DoneEvent(IDuplicityTask owner, string output)
+        void DoneEvent(IDuplicityTask owner, string output, string parsedMessage)
         {
-            WriteLogMessage("Backup", "Cleanup", output, false);
+            WriteLogMessage("Backup", "Cleanup", output, parsedMessage, false);
         }
 
         public override string LocalPath
@@ -688,9 +689,9 @@ namespace Duplicati.GUI
             base.TaskCompleted += new TaskCompletedHandler(DoneEvent);
         }
 
-        void DoneEvent(IDuplicityTask owner, string output)
+        void DoneEvent(IDuplicityTask owner, string output, string parsedMessage)
         {
-            WriteLogMessage("Backup", "Cleanup", output, false);
+            WriteLogMessage("Backup", "Cleanup", output, parsedMessage, false);
         }
 
         public override string GetConfiguration(Dictionary<string, string> options)

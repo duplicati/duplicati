@@ -61,6 +61,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The backup was stopped because the application was closed.
+        /// </summary>
+        internal static string ApplicationExitLogMesssage {
+            get {
+                return ResourceManager.GetString("ApplicationExitLogMesssage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Removing old backups ....
         /// </summary>
         internal static string CleaningUpMessage {
@@ -84,6 +93,51 @@ namespace Duplicati.GUI.Strings {
         internal static string CleanupLogdataHeader {
             get {
                 return ResourceManager.GetString("CleanupLogdataHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error: {0}.
+        /// </summary>
+        internal static string ErrorMessage {
+            get {
+                return ResourceManager.GetString("ErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The backup was stopped, the reason was: {0}.
+        /// </summary>
+        internal static string OtherAbortMessage {
+            get {
+                return ResourceManager.GetString("OtherAbortMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The backup was stopped because the application was closed by the task manager.
+        /// </summary>
+        internal static string TaskManagerCloseMessage {
+            get {
+                return ResourceManager.GetString("TaskManagerCloseMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The backup was stopped by the user.
+        /// </summary>
+        internal static string UserClosingMessage {
+            get {
+                return ResourceManager.GetString("UserClosingMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The backup was stopped because the machine was being shut down.
+        /// </summary>
+        internal static string WindowsShutdownMessage {
+            get {
+                return ResourceManager.GetString("WindowsShutdownMessage", resourceCulture);
             }
         }
     }

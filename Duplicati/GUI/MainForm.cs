@@ -39,6 +39,8 @@ namespace Duplicati.GUI
 		
 		private string[] m_initialArguments;
 
+        private bool m_hasAttemptedBackupTermination = false;
+
         public string[] InitialArguments
         {
             get { return m_initialArguments; }
@@ -141,7 +143,7 @@ namespace Duplicati.GUI
 
         private void stopToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Program.Runner.Stop();
+            Program.Runner.Stop(CloseReason.UserClosing);
         }
 
         private void WorkThread_StartingWork(object sender, EventArgs e)
@@ -180,7 +182,7 @@ namespace Duplicati.GUI
                 return;
 
             Program.LiveControl.Pause();
-            Program.Runner.Stop();
+            Program.Runner.Stop(CloseReason.ApplicationExitCall);
 
             TrayIcon.Visible = false;
             if (StatusDialog != null && StatusDialog.Visible)
@@ -188,7 +190,7 @@ namespace Duplicati.GUI
             if (WizardDialog != null && WizardDialog.Visible)
                 WizardDialog.Close();
 
-            EnsureBackupIsTerminated();
+            EnsureBackupIsTerminated(CloseReason.ApplicationExitCall);
 
             Application.Exit();
         }
@@ -265,6 +267,8 @@ namespace Duplicati.GUI
             Program.WorkThread.StartingWork -= new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
             Program.SingleInstance.SecondInstanceDetected -= new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected);
+
+            EnsureBackupIsTerminated(e.CloseReason == CloseReason.UserClosing ? CloseReason.ApplicationExitCall : e.CloseReason);
         }
 
         private void SingleInstance_SecondInstanceDetected(string[] commandlineargs)
@@ -317,8 +321,14 @@ namespace Duplicati.GUI
             return false;
         }
 
-        private void EnsureBackupIsTerminated()
+        private void EnsureBackupIsTerminated(CloseReason reason)
         {
+            //Ensure that this function can only be called once, 
+            // as this prevents multiple termination questions presented to the user
+            if (m_hasAttemptedBackupTermination)
+                return;
+            m_hasAttemptedBackupTermination = true;
+
             if (Program.Runner != null && Program.WorkThread != null && Program.WorkThread.Active)
             {
                 //Make sure no new items can enter the queue
@@ -330,7 +340,7 @@ namespace Duplicati.GUI
 
                 Program.Runner.Pause();
                 if (!Program.Runner.IsStopRequested)
-                    Program.Runner.Stop();
+                    Program.Runner.Stop(reason);
 
                 //Wait 15 seconds to see if the stop works
                 for (int i = 0; i < 15; i++)
@@ -347,7 +357,7 @@ namespace Duplicati.GUI
                     if (MessageBox.Show(Strings.MainForm.TerminateForExitQuestion, Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
                     {
                         //Abort the thread
-                        Program.Runner.Terminate();
+                        Program.Runner.Terminate(reason);
                         
                         //Give last 5 second chance to write the remaining data
                         int i = 5;

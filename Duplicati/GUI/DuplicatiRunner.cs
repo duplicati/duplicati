@@ -52,6 +52,7 @@ namespace Duplicati.GUI
         private string m_lastPGSubmessage;
 
         private object m_lock = new object();
+        private System.Windows.Forms.CloseReason m_stopReason = System.Windows.Forms.CloseReason.None;
         private Library.Main.LiveControl.ILiveControl m_currentBackupControlInterface;
 
         public void ExecuteTask(IDuplicityTask task)
@@ -60,6 +61,7 @@ namespace Duplicati.GUI
             string destination = task.GetConfiguration(options);
 
             string results = "";
+            string parsedMessage = "";
             bool isAbortException = false;
 
             try
@@ -68,7 +70,11 @@ namespace Duplicati.GUI
                 using (Interface i = new Interface(destination, options))
                 {
                     lock (m_lock)
+                    {
+                        m_stopReason = System.Windows.Forms.CloseReason.None;
                         m_currentBackupControlInterface = i;
+                    }
+
                     SetupControlInterface();
                     
                     i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
@@ -204,7 +210,9 @@ namespace Duplicati.GUI
             }
             catch (Exception ex)
             {
-                //TODO: Extract ex.Message and save it in separate field in the database
+                while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
+                    ex = ex.InnerException;
+
                 if (ex is System.Threading.ThreadAbortException)
                 {
                     isAbortException = true;
@@ -213,8 +221,30 @@ namespace Duplicati.GUI
                 else if (ex is Library.Main.LiveControl.ExecutionStoppedException)
                     isAbortException = true;
 
-                while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
-                    ex = ex.InnerException;
+                if (isAbortException && m_stopReason != System.Windows.Forms.CloseReason.None)
+                {
+                    //If the user has stopped the backup for some reason, write a nicer message
+                    switch (m_stopReason)
+                    {
+                        case System.Windows.Forms.CloseReason.ApplicationExitCall:
+                            parsedMessage = Strings.DuplicatiRunner.ApplicationExitLogMesssage;
+                            break;
+                        case System.Windows.Forms.CloseReason.TaskManagerClosing:
+                            parsedMessage = Strings.DuplicatiRunner.TaskManagerCloseMessage;
+                            break;
+                        case System.Windows.Forms.CloseReason.UserClosing:
+                            parsedMessage = Strings.DuplicatiRunner.UserClosingMessage;
+                            break;
+                        case System.Windows.Forms.CloseReason.WindowsShutDown:
+                            parsedMessage = Strings.DuplicatiRunner.WindowsShutdownMessage;
+                            break;
+                        default:
+                            parsedMessage = string.Format(Strings.DuplicatiRunner.OtherAbortMessage, m_stopReason);
+                            break;
+                    }
+                }
+                else
+                    parsedMessage = string.Format(Strings.DuplicatiRunner.ErrorMessage, ex.Message);
 
                 results = "Error: " + ex.ToString(); //Don't localize
 
@@ -223,6 +253,7 @@ namespace Duplicati.GUI
                     ex = ex.InnerException;
                     results += Environment.NewLine + "InnerError: " + ex.ToString(); //Don't localize
                 }
+                
             }
             finally
             {
@@ -277,10 +308,10 @@ namespace Duplicati.GUI
             }
 
             task.Result = results;
-            task.RaiseTaskCompleted(results);
+            task.RaiseTaskCompleted(results, parsedMessage);
 
-            if (task.Schedule != null)
-                task.Schedule.ScheduledRunCompleted(); //Register as completed
+            if (task.Schedule != null && !isAbortException)
+                task.Schedule.ScheduledRunCompleted(); //Register as completed if not aborted
         }
 
         void Duplicati_OperationProgress(Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
@@ -407,19 +438,35 @@ namespace Duplicati.GUI
 
         public void Stop()
         {
+            Stop(System.Windows.Forms.CloseReason.None);
+        }
+
+        public void Stop(System.Windows.Forms.CloseReason reason)
+        {
             lock (m_lock)
                 if (m_currentBackupControlInterface != null)
+                {
+                    m_stopReason = reason;
                     if (m_currentBackupControlInterface.IsStopRequested)
                         m_currentBackupControlInterface.Terminate();
                     else
                         m_currentBackupControlInterface.Stop();
+                }
+        }
+
+        public void Terminate(System.Windows.Forms.CloseReason reason)
+        {
+            lock (m_lock)
+                if (m_currentBackupControlInterface != null)
+                {
+                    m_stopReason = reason;
+                    m_currentBackupControlInterface.Terminate();
+                }
         }
 
         public void Terminate()
         {
-            lock (m_lock)
-                if (m_currentBackupControlInterface != null)
-                    m_currentBackupControlInterface.Terminate();
+            Terminate(System.Windows.Forms.CloseReason.None);
         }
 
         public bool IsStopRequested
