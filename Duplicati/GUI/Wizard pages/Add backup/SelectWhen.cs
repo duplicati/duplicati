@@ -202,8 +202,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 OffsetDate.Value = m_wrapper.BackupTimeOffset;
                 OffsetTime.Value = m_wrapper.BackupTimeOffset;
-                RepeatInterval.Value = m_wrapper.RepeatInterval;
                 ScheduleRadio.Checked = !string.IsNullOrEmpty(m_wrapper.RepeatInterval);
+                if (string.IsNullOrEmpty(m_wrapper.RepeatInterval))
+                    RepeatInterval.Value = "1D";
+                else
+                    RepeatInterval.Value = m_wrapper.RepeatInterval;
                 NoScheduleRadio.Checked = ! ScheduleRadio.Checked;
 
                 if (m_wrapper.AllowedWeekdays == null || m_wrapper.AllowedWeekdays.Length == 0)
@@ -244,42 +247,57 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void ScheduleRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_wrapper.SelectWhenUI.HasWarnedNoSchedule = false;
-            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
+            if (m_wrapper != null)
+            {
+                m_wrapper.SelectWhenUI.HasWarnedNoSchedule = false;
+                m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
+            }
+
             ScheduleGroup.Enabled = ScheduleRadio.Checked;
         }
 
         private void NoScheduleRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_wrapper.SelectWhenUI.HasWarnedNoSchedule = false;
+            if (m_wrapper != null)
+                m_wrapper.SelectWhenUI.HasWarnedNoSchedule = false;
         }
 
         private void IncrementalPeriodRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
-            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
+            if (m_wrapper != null)
+            {
+                m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
+                m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
+            }
+
             FullDuration.Enabled = IncrementalPeriodRadio.Checked;
         }
 
         private void NeverFullRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
-            m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
+            if (m_wrapper != null)
+            {
+                m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
+                m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
+            }
         }
 
         private void AlwaysFullRadio_CheckedChanged(object sender, EventArgs e)
         {
-            m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
+            if (m_wrapper != null)
+                m_wrapper.SelectWhenUI.HasWarnedNoIncrementals = false;
         }
 
         private void RepeatInterval_ValueChanged(object sender, EventArgs e)
         {
-            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
+            if (m_wrapper != null)
+                m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
         }
 
         private void AllowedDay_CheckedChanged(object sender, EventArgs e)
         {
-            m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
+            if (m_wrapper != null)
+                m_wrapper.SelectWhenUI.HasWarnedTooManyIncremental = false;
         }
     }
 }

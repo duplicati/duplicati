@@ -97,7 +97,7 @@ namespace Duplicati.GUI.HelperControls
             }
             set
             {
-                for (int i = 0; i < m_values.Length; i++)
+                for (int i = 0; i < m_values.Length - 1; i++)
                     if (m_values[i] == value)
                     {
                         EasyDuration.SelectedIndex = i;
@@ -106,6 +106,7 @@ namespace Duplicati.GUI.HelperControls
 
                 m_values[EasyDuration.Items.Count - 1] = value;
                 EasyDuration.SelectedIndex = EasyDuration.Items.Count - 1;
+                CustomDuration.Text = m_values[EasyDuration.Items.Count - 1];
 
                 if (ValueChanged != null)
                     ValueChanged(this, null);
