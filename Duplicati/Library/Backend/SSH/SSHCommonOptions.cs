@@ -142,8 +142,10 @@ namespace Duplicati.Library.Backend
             {
                 applicationSettings[SFTP_PATH] = guiOptions[SFTP_PATH];
 
+                //If the backend module is not set, assume we need this module, otherwise only apply settings if the module is actually ssh
                 if (commandlineOptions != null)
-                    commandlineOptions[SSH.SFTP_PATH_OPTION] = guiOptions[SFTP_PATH];
+                    if (!applicationSettings.ContainsKey("backend-module") || applicationSettings["backend-module"] == "ssh") 
+                        commandlineOptions[SSH.SFTP_PATH_OPTION] = guiOptions[SFTP_PATH];
             }
 
             if (guiOptions.ContainsKey(DEFAULT_MANAGED))

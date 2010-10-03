@@ -135,8 +135,10 @@ namespace Duplicati.Library.Encryption
             {
                 applicationSettings[GPG_PATH] = guiOptions[GPG_PATH];
 
+                //If the encryption module is not set, assume we need this module, otherwise only apply settings if the module is actually gpg
                 if (commandlineOptions != null)
-                    commandlineOptions[GPGEncryption.COMMANDLINE_OPTIONS_PATH] = guiOptions[GPG_PATH];
+                    if (!applicationSettings.ContainsKey("encryption-module") || applicationSettings["encryption-module"] == "gpg")
+                        commandlineOptions[GPGEncryption.COMMANDLINE_OPTIONS_PATH] = guiOptions[GPG_PATH];
             }
 
             return null;

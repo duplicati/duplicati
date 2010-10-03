@@ -112,7 +112,12 @@ namespace Duplicati.GUI
 
             Dictionary<string, string> env = appSet.CreateDetachedCopy();
 
-            //If there are any control extensions, let them modify the environement
+            //Inject the encryption, backend and compression module names into the environment
+            env["encryption-module"] = this.Task.EncryptionModule;
+            env["compression-module"] = this.Task.CompressionModule;
+            env["backend-module"] = this.Task.Service;
+
+            //If there are any control extensions, let them modify the environment
             foreach (Library.Interface.ISettingsControl ic in Library.DynamicLoader.SettingsControlLoader.Modules)
                 ic.GetConfiguration(env, SettingExtension.GetExtensions(this.Task.Schedule.DataParent, ic.Key), options);
 
