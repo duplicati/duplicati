@@ -88,6 +88,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to execute the Pause request: {0}.
+        /// </summary>
+        internal static string PauseOperationFailed {
+            get {
+                return ResourceManager.GetString("PauseOperationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicati is attempting to quit, but a backup is running.
         ///Do you want Duplicati to continue waiting for the backup to stop?.
         /// </summary>

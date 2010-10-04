@@ -80,11 +80,85 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Forces the --run-backup command to perform a full backup.
+        /// </summary>
+        internal static string FullCommandDescription {
+            get {
+                return ResourceManager.GetString("FullCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays this help.
+        /// </summary>
+        internal static string HelpCommandDescription {
+            get {
+                return ResourceManager.GetString("HelpCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Supported commandline arguments:
+        ///
+        ///{0}.
+        /// </summary>
+        internal static string HelpDisplayDialog {
+            get {
+                return ResourceManager.GetString("HelpDisplayDialog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to --{0}: {1}.
+        /// </summary>
+        internal static string HelpDisplayFormat {
+            get {
+                return ResourceManager.GetString("HelpDisplayFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to set the user interface language: {0}.
         /// </summary>
         internal static string LanguageSelectionError {
             get {
                 return ResourceManager.GetString("LanguageSelectionError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pauses Duplicati, supply a time eg. 5m to limit pause to 5 minutes.
+        /// </summary>
+        internal static string PauseCommandDescription {
+            get {
+                return ResourceManager.GetString("PauseCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Activates portable mode where the database is placed below the program executable.
+        /// </summary>
+        internal static string PortablemodeCommandDescription {
+            get {
+                return ResourceManager.GetString("PortablemodeCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resumes operation of Duplicati, if paused.
+        /// </summary>
+        internal static string ResumeCommandDescription {
+            get {
+                return ResourceManager.GetString("ResumeCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Runs the backup with the name supplied. If no backup name is supplied, the available backups are displayed.
+        /// </summary>
+        internal static string RunbackupCommandDescription {
+            get {
+                return ResourceManager.GetString("RunbackupCommandDescription", resourceCulture);
             }
         }
         
@@ -98,12 +172,30 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Displays the status window.
+        /// </summary>
+        internal static string ShowstausCommandDescription {
+            get {
+                return ResourceManager.GetString("ShowstausCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to start up, perhaps another process is already running?
         ///Error message: {0}.
         /// </summary>
         internal static string StartupFailure {
             get {
                 return ResourceManager.GetString("StartupFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disables database encryption.
+        /// </summary>
+        internal static string UnencrypteddatabaseCommandDescription {
+            get {
+                return ResourceManager.GetString("UnencrypteddatabaseCommandDescription", resourceCulture);
             }
         }
         

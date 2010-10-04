@@ -33,7 +33,14 @@ namespace Duplicati.GUI.Wizard_pages
     public partial class SelectBackup : WizardControl
     {
         private WizardSettingsWrapper m_wrapper;
+        private WizardSettingsWrapper.MainAction? m_action = null;
         private bool m_skipFirstEvent = false;
+
+        public SelectBackup(WizardSettingsWrapper.MainAction action)
+            : this()
+        {
+            m_action = action;
+        }
 
         public SelectBackup()
             : base ("", "")
@@ -50,8 +57,14 @@ namespace Duplicati.GUI.Wizard_pages
             BackupList.Setup(Program.DataConnection, true, false);
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
+            if (m_action != null)
+                m_wrapper.PrimayAction = m_action.Value;
+
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RunNow && m_wrapper.DataConnection == null)
+                m_wrapper.DataConnection = Program.DataConnection;
+
             if (m_wrapper.ScheduleID > 0)
-                BackupList.SelectedBackup = m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
+                BackupList.SelectedBackup = (m_wrapper.DataConnection ?? Program.DataConnection).GetObjectById<Schedule>(m_wrapper.ScheduleID);
 
             if (!m_valuesAutoLoaded)
             {
@@ -70,6 +83,8 @@ namespace Duplicati.GUI.Wizard_pages
             }
             else
                 m_skipFirstEvent = true;
+
+            args.TreatAsLast = false;
         }
 
         void SelectBackup_PageLeave(object sender, PageChangedArgs args)

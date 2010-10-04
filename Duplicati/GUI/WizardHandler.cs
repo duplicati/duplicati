@@ -38,19 +38,29 @@ namespace Duplicati.GUI
         IWizardForm m_form;
 
         public WizardHandler()
+            : this(null)
+        { }
+
+        public WizardHandler(IWizardControl[] pages)
         {
             m_form = new Dialog();
             m_form.Title = Strings.WizardHandler.WizardFormTitle;
 
             m_form.Pages.Clear();
-            long count = 0;
-            lock (Program.MainLock)
-                count = Program.DataConnection.GetObjects<Schedule>().Length;
 
-            if (count == 0)
-                m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.FirstLaunch() });
+            if (pages == null || pages.Length == 0)
+            {
+                long count = 0;
+                lock (Program.MainLock)
+                    count = Program.DataConnection.GetObjects<Schedule>().Length;
+
+                if (count == 0)
+                    m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.FirstLaunch() });
+                else
+                    m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.MainPage() });
+            }
             else
-                m_form.Pages.AddRange(new IWizardControl[] { new Wizard_pages.MainPage() });
+                m_form.Pages.AddRange(pages);
 
             m_form.DefaultImage = Properties.Resources.Duplicati;
             m_form.Dialog.Icon = Properties.Resources.TrayNormal;

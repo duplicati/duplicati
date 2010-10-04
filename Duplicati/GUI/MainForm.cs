@@ -290,33 +290,73 @@ namespace Duplicati.GUI
         {
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = CommandLine.CommandLineParser.ExtractOptions(args);
+
+            //Backwards compatible options
             if (args.Count == 2 && args[0].ToLower().Trim() == "run-backup")
-            {
-                Datamodel.Schedule[] schedules = Program.DataConnection.GetObjects<Datamodel.Schedule>("Name LIKE ?", args[1].Trim());
-                if (schedules == null || schedules.Length == 0)
-                {
-                    MessageBox.Show(string.Format(Strings.MainForm.NamedBackupNotFound, args[1]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return false;
-                }
-                else if (schedules.Length > 1)
-                {
-                    MessageBox.Show(string.Format(Strings.MainForm.MultipleNamedBackupsFound, args[1], schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return false;
-                }
-
-                if (options.ContainsKey("full"))
-                    Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
-                else
-                    Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
-
-                return true;
-            }
-
+                options["run-backup"] = args[1].Trim();
+            
+            //Backwards compatible options
             if (args.Count == 1 && args[0] == "show-status")
+                options["show-status"] = "";
+
+            //If pause is requested, pause before parsing --run-backup
+            if (options.ContainsKey("pause"))
             {
-                ShowStatus();
-                return true;
+                string period = options["pause"];
+                if (string.IsNullOrEmpty(period))
+                    Program.LiveControl.Pause();
+                else
+                {
+                    try
+                    {
+                        Program.LiveControl.Pause(period);
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.LiveControl.Pause();
+                        MessageBox.Show(this, string.Format(Strings.MainForm.PauseOperationFailed, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
             }
+
+            if (options.ContainsKey("run-backup"))
+            {
+                string backupname = options["run-backup"];
+                if (string.IsNullOrEmpty(backupname))
+                {
+                    if (WizardDialog == null || !WizardDialog.Visible)
+                    {
+                        WizardDialog = new WizardHandler(new System.Windows.Forms.Wizard.IWizardControl[] { new Wizard_pages.SelectBackup(Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.RunNow) });
+                        WizardDialog.Show();
+                    }
+                }
+                else
+                {
+                    Datamodel.Schedule[] schedules = Program.DataConnection.GetObjects<Datamodel.Schedule>("Name LIKE ?", backupname.Trim());
+                    if (schedules == null || schedules.Length == 0)
+                    {
+                        MessageBox.Show(string.Format(Strings.MainForm.NamedBackupNotFound, backupname), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    else if (schedules.Length > 1)
+                    {
+                        MessageBox.Show(string.Format(Strings.MainForm.MultipleNamedBackupsFound, backupname, schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+
+                    if (options.ContainsKey("full"))
+                        Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
+                    else
+                        Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
+                }
+            }
+
+            if (options.ContainsKey("show-status"))
+                ShowStatus();
+
+            //Resume if requested
+            if (options.ContainsKey("resume"))
+                Program.LiveControl.Resume();
 
             return false;
         }

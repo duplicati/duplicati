@@ -144,6 +144,24 @@ namespace Duplicati.GUI
             //Find commandline options here for handling special startup cases
             Dictionary<string, string> commandlineOptions = CommandLine.CommandLineParser.ExtractOptions(new List<string>(args));
 
+            foreach (string s in args)
+                if (
+                    s.Equals("help", StringComparison.InvariantCultureIgnoreCase) ||
+                    s.Equals("/help", StringComparison.InvariantCultureIgnoreCase) ||
+                    s.Equals("usage", StringComparison.InvariantCultureIgnoreCase) ||
+                    s.Equals("/usage", StringComparison.InvariantCultureIgnoreCase))
+                    commandlineOptions["help"] = "";
+
+            //If the commandline issues --help, just stop here
+            if (commandlineOptions.ContainsKey("help"))
+            {
+                List<string> lines = new List<string>();
+                foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
+                    lines.Add(string.Format(Strings.Program.HelpDisplayFormat, arg.Name, arg.LongDescription));
+                MessageBox.Show(string.Format(Strings.Program.HelpDisplayDialog, string.Join(Environment.NewLine, lines.ToArray())), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
             {
@@ -430,9 +448,34 @@ namespace Duplicati.GUI
             }
         }
 
+        /// <summary>
+        /// Callback method for dealing with url open errors
+        /// </summary>
+        /// <param name="message">The error message to display</param>
         private static void DisplayURLOpenError(string message)
         {
             System.Windows.Forms.MessageBox.Show(message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+
+        /// <summary>
+        /// Gets a list of all supported commandline options
+        /// </summary>
+        private static Library.Interface.ICommandLineArgument[] SupportedCommands
+        {
+            get
+            {
+                return new Duplicati.Library.Interface.ICommandLineArgument[] {
+                    new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("run-backup", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.RunbackupCommandDescription, Strings.Program.RunbackupCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("full", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.FullCommandDescription, Strings.Program.FullCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("resume", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ResumeCommandDescription, Strings.Program.ResumeCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("pause", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.PauseCommandDescription, Strings.Program.PauseCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("show-status", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ShowstausCommandDescription, Strings.Program.ShowstausCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription)
+                };
+            }
+        }
+
     }
 }

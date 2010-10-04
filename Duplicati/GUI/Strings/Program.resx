@@ -126,18 +126,50 @@
 Error message: {0}</value>
     <comment>An error message displayed when opening the database fails</comment>
   </data>
+  <data name="FullCommandDescription" xml:space="preserve">
+    <value>Forces the --run-backup command to perform a full backup</value>
+  </data>
+  <data name="HelpCommandDescription" xml:space="preserve">
+    <value>Displays this help</value>
+  </data>
+  <data name="HelpDisplayDialog" xml:space="preserve">
+    <value>Supported commandline arguments:
+
+{0}</value>
+  </data>
+  <data name="HelpDisplayFormat" xml:space="preserve">
+    <value>--{0}: {1}</value>
+  </data>
   <data name="LanguageSelectionError" xml:space="preserve">
     <value>Failed to set the user interface language: {0}</value>
     <comment>An error message displayed if the language cannot be selected</comment>
+  </data>
+  <data name="PauseCommandDescription" xml:space="preserve">
+    <value>Pauses Duplicati, supply a time eg. 5m to limit pause to 5 minutes</value>
+  </data>
+  <data name="PortablemodeCommandDescription" xml:space="preserve">
+    <value>Activates portable mode where the database is placed below the program executable</value>
+  </data>
+  <data name="ResumeCommandDescription" xml:space="preserve">
+    <value>Resumes operation of Duplicati, if paused</value>
+  </data>
+  <data name="RunbackupCommandDescription" xml:space="preserve">
+    <value>Runs the backup with the name supplied. If no backup name is supplied, the available backups are displayed</value>
   </data>
   <data name="SeriousError" xml:space="preserve">
     <value>A serious error occured in Duplicati: {0}</value>
     <comment>Duplicati crashes</comment>
   </data>
+  <data name="ShowstausCommandDescription" xml:space="preserve">
+    <value>Displays the status window</value>
+  </data>
   <data name="StartupFailure" xml:space="preserve">
     <value>Unable to start up, perhaps another process is already running?
 Error message: {0}</value>
     <comment>An error message displayed when Duplicati startup fails</comment>
+  </data>
+  <data name="UnencrypteddatabaseCommandDescription" xml:space="preserve">
+    <value>Disables database encryption</value>
   </data>
   <data name="WrongSQLiteVersion" xml:space="preserve">
     <value>Unsupported version of SQLite detected ({0}), must be {1} or higher</value>
