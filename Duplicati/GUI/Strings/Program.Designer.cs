@@ -127,6 +127,24 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Outputs log information to the file given.
+        /// </summary>
+        internal static string LogfileCommandDescription {
+            get {
+                return ResourceManager.GetString("LogfileCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the amount of information written in the log file.
+        /// </summary>
+        internal static string LoglevelCommandDescription {
+            get {
+                return ResourceManager.GetString("LoglevelCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Pauses Duplicati, supply a time eg. 5m to limit pause to 5 minutes.
         /// </summary>
         internal static string PauseCommandDescription {

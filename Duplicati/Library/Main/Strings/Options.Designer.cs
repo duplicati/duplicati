@@ -538,6 +538,42 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Specifies the name of a while into which internal log information is written.
+        /// </summary>
+        internal static string LogfileLong {
+            get {
+                return ResourceManager.GetString("LogfileLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log internal information.
+        /// </summary>
+        internal static string LogfileShort {
+            get {
+                return ResourceManager.GetString("LogfileShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Specifies the amount of log information to write into the file specified by --log-file.
+        /// </summary>
+        internal static string LoglevelLong {
+            get {
+                return ResourceManager.GetString("LoglevelLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log information level.
+        /// </summary>
+        internal static string LoglevelShort {
+            get {
+                return ResourceManager.GetString("LoglevelShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive..
         /// </summary>
         internal static string MaxdownloadprsecondLong {

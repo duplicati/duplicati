@@ -1260,6 +1260,11 @@ namespace Duplicati.Library.Main
         {
             m_options.MainAction = stats.OperationMode;
 
+            Library.Logging.Log.LogLevel = m_options.Loglevel;
+
+            if (!string.IsNullOrEmpty(m_options.Logfile))
+                Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
+
             if (stats != null)
                 stats.VerboseErrors = m_options.DebugOutput;
 

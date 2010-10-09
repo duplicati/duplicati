@@ -399,4 +399,16 @@
   <data name="TimeseparatorDeprecated" xml:space="preserve">
     <value>Duplicati no longer uses a time separator for the filenames so this option is useless</value>
   </data>
+  <data name="LogfileLong" xml:space="preserve">
+    <value>Specifies the name of a while into which internal log information is written</value>
+  </data>
+  <data name="LogfileShort" xml:space="preserve">
+    <value>Log internal information</value>
+  </data>
+  <data name="LoglevelLong" xml:space="preserve">
+    <value>Specifies the amount of log information to write into the file specified by --log-file</value>
+  </data>
+  <data name="LoglevelShort" xml:space="preserve">
+    <value>Log information level</value>
+  </data>
 </root>

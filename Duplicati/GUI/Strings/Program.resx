@@ -144,6 +144,12 @@ Error message: {0}</value>
     <value>Failed to set the user interface language: {0}</value>
     <comment>An error message displayed if the language cannot be selected</comment>
   </data>
+  <data name="LogfileCommandDescription" xml:space="preserve">
+    <value>Outputs log information to the file given</value>
+  </data>
+  <data name="LoglevelCommandDescription" xml:space="preserve">
+    <value>Determines the amount of information written in the log file</value>
+  </data>
   <data name="PauseCommandDescription" xml:space="preserve">
     <value>Pauses Duplicati, supply a time eg. 5m to limit pause to 5 minutes</value>
   </data>

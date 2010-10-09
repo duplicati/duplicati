@@ -162,6 +162,27 @@ namespace Duplicati.GUI
                 return;
             }
 
+#if DEBUG
+            //Log various information in the logfile
+            if (!commandlineOptions.ContainsKey("log-file"))
+            {
+                commandlineOptions["log-file"] = System.IO.Path.Combine(Application.StartupPath, "Duplicati.debug.log");
+                commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
+            }
+#endif
+
+            if (commandlineOptions.ContainsKey("log-level"))
+                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    if (s.Equals(commandlineOptions["log-level"].Trim(), StringComparison.InvariantCultureIgnoreCase))
+                        Duplicati.Library.Logging.Log.LogLevel = (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+
+            if (commandlineOptions.ContainsKey("log-file"))
+            {
+                if (System.IO.File.Exists(commandlineOptions["log-file"]))
+                    System.IO.File.Delete(commandlineOptions["log-file"]);
+                Duplicati.Library.Logging.Log.CurrentLog = new Duplicati.Library.Logging.StreamLog(commandlineOptions["log-file"]);
+            }
+
             //Set the %DUPLICATI_HOME% env variable, if it is not already set
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
             {
@@ -257,16 +278,6 @@ namespace Duplicati.GUI
                         MessageBox.Show(string.Format(Strings.Program.LanguageSelectionError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         //This is non-fatal, just keep running with system default language
                     }
-
-#if DEBUG
-                //Log various information in the logfile
-                string logfile = System.IO.Path.Combine(Application.StartupPath, "Duplicati.debug.log");
-                if (System.IO.File.Exists(logfile))
-                    System.IO.File.Delete(logfile);
-                
-                Duplicati.Library.Logging.Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
-                Duplicati.Library.Logging.Log.CurrentLog = new Duplicati.Library.Logging.StreamLog(logfile);
-#endif
 
                 LiveControl = new LiveControls(new ApplicationSettings(DataConnection));
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
@@ -472,7 +483,9 @@ namespace Duplicati.GUI
                     new Duplicati.Library.Interface.CommandLineArgument("pause", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.PauseCommandDescription, Strings.Program.PauseCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("show-status", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ShowstausCommandDescription, Strings.Program.ShowstausCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
-                    new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription)
+                    new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
                 };
             }
         }

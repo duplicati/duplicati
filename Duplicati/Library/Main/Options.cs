@@ -151,6 +151,9 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("debug-output", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugoutputShort, Strings.Options.DebugoutputLong, "false"),
                     new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
+
+                    new CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileShort),
+                    new CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
                 });
             }
         }
@@ -727,6 +730,39 @@ namespace Duplicati.Library.Main
                     return this.TempDir ?? Core.TempFolder.SystemTempPath;
                 else
                     return value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the logfile filename
+        /// </summary>
+        public string Logfile
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("log-file", out value))
+                    value = null;
+                return value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the logfile filename
+        /// </summary>
+        public Duplicati.Library.Logging.LogMessageType Loglevel
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("log-level", out value))
+                    value = null;
+
+                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    if (s.Equals(value, StringComparison.InvariantCultureIgnoreCase))
+                        return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+
+                return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 

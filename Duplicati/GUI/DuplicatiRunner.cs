@@ -58,6 +58,10 @@ namespace Duplicati.GUI
         public void ExecuteTask(IDuplicityTask task)
         {
             Dictionary<string, string> options = new Dictionary<string,string>();
+            
+            //Set the log level to be that of the GUI
+            options["log-level"] = Duplicati.Library.Logging.Log.LogLevel.ToString();
+
             string destination = task.GetConfiguration(options);
 
             string results = "";
