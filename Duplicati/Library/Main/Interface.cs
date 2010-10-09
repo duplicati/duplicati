@@ -1473,7 +1473,7 @@ namespace Duplicati.Library.Main
                 if (l != null)
                     foreach (Library.Interface.ICommandLineArgument a in l)
                     {
-                        if (supportedOptions.ContainsKey(a.Name))
+                        if (supportedOptions.ContainsKey(a.Name) && Array.IndexOf(Options.KnownDuplicates, a.Name.ToLower()) < 0)
                             stats.LogWarning(string.Format(Strings.Interface.DuplicateOptionNameWarning, a.Name), null);
 
                         supportedOptions[a.Name] = a;
@@ -1481,7 +1481,7 @@ namespace Duplicati.Library.Main
                         if (a.Aliases != null)
                             foreach (string s in a.Aliases)
                             {
-                                if (supportedOptions.ContainsKey(s))
+                                if (supportedOptions.ContainsKey(s) && Array.IndexOf(Options.KnownDuplicates, s.ToLower()) < 0)
                                     stats.LogWarning(string.Format(Strings.Interface.DuplicateOptionNameWarning, s), null);
 
                                 supportedOptions[s] = a;

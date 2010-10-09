@@ -86,6 +86,14 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// Returns a list of options that are intentionally duplicate
+        /// </summary>
+        public static string[] KnownDuplicates
+        {
+            get { return new string[] { "ftp-password", "ftp-username" }; }
+        }
+
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
