@@ -231,6 +231,12 @@ namespace Duplicati.Library.Main
             int volNumber = -1;
             if (m.Groups["volumenumber"].Success)
                 volNumber = int.Parse(m.Groups["volumenumber"].Value);
+            else if (m.Groups["extension"].Success && m.Groups["extension"].Value.StartsWith(VOLUME))
+            {
+                //The extension must be present, but the volumenumber is optional, so the greedy regexp takes it
+                if (!int.TryParse(m.Groups["extension"].Value.Substring(VOLUME.Length), out volNumber))
+                    volNumber = -1;
+            }
 
             string compression = extension;
             string encryption = null;

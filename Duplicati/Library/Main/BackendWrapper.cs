@@ -725,13 +725,30 @@ namespace Duplicati.Library.Main
                     {
                         string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
 
+                        //If the new filename does not exist, see if we can parse the older style short filenames instead
+                        if (!System.IO.File.Exists(cachefilename) && System.IO.Directory.Exists(m_options.SignatureCachePath))
+                            foreach (string s in System.IO.Directory.GetFiles(m_options.SignatureCachePath))
+                            {
+                                BackupEntryBase be = m_cachefilenamestrategy.ParseFilename(new Duplicati.Library.Interface.FileEntry(System.IO.Path.GetFileName(s)));
+                                if (be is SignatureEntry)
+                                {
+                                    if (be.Time == remote.Time && be.IsFull == remote.IsFull && ((SignatureEntry)be).Volumenumber == ((SignatureEntry)remote).Volumenumber)
+                                    {
+                                        cachefilename = s;
+                                        break;
+                                    }
+                                }
+                            }
+
                         if (System.IO.File.Exists(cachefilename))
+                        {
                             if (filehash != null && Core.Utility.CalculateHash(cachefilename) == filehash)
                             {
                                 //TODO: Don't copy, but just return it as write protected
                                 System.IO.File.Copy(cachefilename, filename, true); //TODO: Warn on hash mismatch?
                                 return;
                             }
+                        }
                     }
 
                     Core.TempFile tempfile = null;
