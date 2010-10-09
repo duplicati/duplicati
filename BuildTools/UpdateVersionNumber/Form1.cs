@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2010, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
@@ -34,6 +34,8 @@ namespace UpdateVersionNumber
         private readonly System.Text.RegularExpressions.Regex RXP3 = new System.Text.RegularExpressions.Regex(@"\[assembly\: AssemblyFileVersionAttribute\(\""(?<version>\d+\.\d+\.\d+\.\d+)\""\)\]");
 
         private readonly System.Text.RegularExpressions.Regex RXP4 = new System.Text.RegularExpressions.Regex(@"\<\?define ProductVersion\=\""(?<version>\d+\.\d+\.\d+\.\d+)\"" \?\>");
+
+        private readonly System.Text.RegularExpressions.Regex RXP5 = new System.Text.RegularExpressions.Regex(@"newVersion\=\""(?<version>\d+\.\d+\.\d+\.\d+)\""");
 
         public Form1()
         {
@@ -119,6 +121,18 @@ namespace UpdateVersionNumber
                     }
                 }
 
+                file = System.IO.Path.Combine(folder, "AssemblyRedirects.xml");
+                if (System.IO.File.Exists(file))
+                {
+                    string content = System.IO.File.ReadAllText(file);
+                    System.Text.RegularExpressions.Match m = RXP5.Match(content);
+
+                    if (m.Success)
+                    {
+                        string v = m.Groups["version"].Value;
+                        results.Add(new DisplayItem(file, new Version(v)));
+                    }
+                }
 
             }
         }
@@ -138,13 +152,43 @@ namespace UpdateVersionNumber
                 return;
             }
 
+            Dictionary<string, bool> overrideDefault = new Dictionary<string, bool>(System.Environment.OSVersion.Platform == PlatformID.MacOSX || System.Environment.OSVersion.Platform == PlatformID.Unix ? StringComparer.InvariantCulture : StringComparer.InvariantCultureIgnoreCase );
+            string configfile = null;
+            bool updateDefault = true;
+            try
+            {
+                configfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "UpdateVersionNumber.config");
+                if (System.IO.File.Exists(configfile))
+                {
+                    System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                    doc.Load(configfile);
+
+                    System.Xml.XmlNode root = doc["root"];
+                    if (root.Attributes["update_as_default"] != null)
+                        updateDefault = bool.Parse(root.Attributes["update_as_default"].Value);
+
+                    foreach (System.Xml.XmlNode file in root.SelectNodes("file"))
+                    {
+                        string filename = file.InnerText;
+                        if (!System.IO.Path.IsPathRooted(filename))
+                            filename = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), filename);
+
+                        overrideDefault[filename] = bool.Parse(file.Attributes["update"].Value);
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(this, string.Format("An error occured while reading config file \"{0}\": {1}", configfile, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
             button2.Enabled = true;
             List<DisplayItem> files = (List<DisplayItem>)e.Result;
             checkedListBox1.Items.Clear();
             Version vmax = new Version();
             foreach (DisplayItem d in files)
             {
-                checkedListBox1.Items.Add(d, true);
+                checkedListBox1.Items.Add(d, overrideDefault.ContainsKey(d.File) ? overrideDefault[d.File] : updateDefault);
                 vmax = d.Version > vmax ? d.Version : vmax;
             }
 
@@ -182,6 +226,7 @@ namespace UpdateVersionNumber
             string replacement2 = "[assembly: AssemblyFileVersion(\"" + v.ToString() + "\")]";
             string replacement3 = "[assembly: AssemblyFileVersionAttribute(\"" + v.ToString() + "\")]";
             string replacement4 = "<?define ProductVersion=\"" + v.ToString() + "\" ?>";
+            string replacement5 = "newVersion=\"" + v.ToString() + "\"";
             bool errors = false;
 
             foreach (DisplayItem d in checkedListBox1.CheckedItems)
@@ -191,6 +236,10 @@ namespace UpdateVersionNumber
                     string content = System.IO.File.ReadAllText(d.File);
                     if (d.File.ToLower().EndsWith(".wxi"))
                         content = RXP4.Replace(content, replacement4);
+                    else if (System.IO.Path.GetFileName(d.File).Equals("AssemblyRedirects.xml", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        content = RXP5.Replace(content, replacement5);
+                    }
                     else
                     {
                         content = RXP.Replace(content, replacement);

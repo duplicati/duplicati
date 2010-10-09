@@ -69,6 +69,9 @@ namespace Duplicati.Library.DynamicLoader
                     if (m_interfaces == null)
                     {
                         Dictionary<string, T> interfaces = new Dictionary<string, T>();
+                        //When loading, the subfolder matches are places last in the
+                        // resulting list, and thus applied last to the lookup,
+                        // meaning that they can replace the stock versions
                         foreach (T b in FindInterfaceImplementors(Subfolders))
                             interfaces[GetInterfaceKey(b)] = b;
 
@@ -94,7 +97,7 @@ namespace Duplicati.Library.DynamicLoader
             if (additionalfolders != null)
                 foreach (string s in additionalfolders)
                 {
-                    string subpath = System.IO.Path.Combine(path, "backends");
+                    string subpath = System.IO.Path.Combine(path, s);
                     if (System.IO.Directory.Exists(subpath))
                         files.AddRange(System.IO.Directory.GetFiles(subpath, "*.dll"));
                 }
@@ -103,24 +106,37 @@ namespace Duplicati.Library.DynamicLoader
             {
                 try
                 {
+                    //NOTE: This is pretty nifty, due to the use of assembly redirect and LoadFile, we can
+                    // actually end up loading multiple versions of the same file (if it is present).
+                    //Since the lookup dictionary applies the modules in the order returned
+                    // and the subfolders are probed last, a module in the subfolder
+                    // will take the place of a stock module, if both use same key
                     System.Reflection.Assembly asm = System.Reflection.Assembly.LoadFile(s);
                     if (asm != System.Reflection.Assembly.GetExecutingAssembly())
                     {
                         foreach (Type t in asm.GetExportedTypes())
-                            if (typeof(T).IsAssignableFrom(t) && t != typeof(T))
+                            try
                             {
-                                //TODO: Figure out how to support types with no default constructors
-                                if (t.GetConstructor(Type.EmptyTypes) != null)
+                                if (typeof(T).IsAssignableFrom(t) && t != typeof(T))
                                 {
-                                    T i = Activator.CreateInstance(t) as T;
-                                    if (i != null)
-                                        interfaces.Add(i);
+                                    //TODO: Figure out how to support types with no default constructors
+                                    if (t.GetConstructor(Type.EmptyTypes) != null)
+                                    {
+                                        T i = Activator.CreateInstance(t) as T;
+                                        if (i != null)
+                                            interfaces.Add(i);
+                                    }
                                 }
+                            }
+                            catch (Exception ex)
+                            {
+                                Duplicati.Library.Logging.Log.WriteMessage(string.Format(Strings.DynamicLoader.DynamicTypeLoadError, t.FullName, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
                             }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Duplicati.Library.Logging.Log.WriteMessage(string.Format(Strings.DynamicLoader.DynamicAssemblyLoadError, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
                 }
             }
 
