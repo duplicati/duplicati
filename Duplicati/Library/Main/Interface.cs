@@ -1122,7 +1122,6 @@ namespace Duplicati.Library.Main
             return sb.ToString();
         }
 
-
         public string[] List()
         {
             CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.List);

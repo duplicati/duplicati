@@ -208,6 +208,40 @@ namespace Duplicati.CommandLine
                         if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.ControlFile)
                             Console.WriteLine(x.Value);
                 }
+                else if (source.Trim().ToLower() == "collection-status")
+                {
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        return;
+                    }
+
+                    List<Duplicati.Library.Main.ManifestEntry> entries = Duplicati.Library.Main.Interface.ParseFileList(cargs[0], options);
+                    
+                    Console.WriteLine(Strings.Program.CollectionStatusHeader.Replace("\\t", "\t"), entries.Count);
+                    
+                    foreach (Duplicati.Library.Main.ManifestEntry m in entries)
+                    {
+                        Console.WriteLine();
+
+                        long size = m.Fileentry.Size;
+                        foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in m.Volumes)
+                            size += x.Key.Fileentry.Size + x.Value.Fileentry.Size;
+
+                        Console.WriteLine(Strings.Program.CollectionStatusLineFull.Replace("\\t", "\t"), m.Time.ToString(), m.Volumes.Count, Library.Core.Utility.FormatSizeString(size));
+
+                        foreach (Duplicati.Library.Main.ManifestEntry mi in m.Incrementals)
+                        {
+                            size = mi.Fileentry.Size;
+                            foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in mi.Volumes)
+                                size += x.Key.Fileentry.Size + x.Value.Fileentry.Size;
+
+                            Console.WriteLine(Strings.Program.CollectionStatusLineInc.Replace("\\t", "\t"), mi.Time.ToString(), mi.Volumes.Count, Library.Core.Utility.FormatSizeString(size));
+                        }
+                    }
+                }
                 else if (source.Trim().ToLower() == "delete-all-but-n-full")
                 {
                     int n = 0;

@@ -156,9 +156,6 @@
   <data name="PartialFileFoundMessage" xml:space="preserve">
     <value>Found a partial file, run cleanup to remove: {0}</value>
   </data>
-  <data name="PassphraseMissingError" xml:space="preserve">
-    <value>Passphrase is not set</value>
-  </data>
   <data name="RemovingLeftoverFileMessage" xml:space="preserve">
     <value>Removing leftover file: {0}</value>
   </data>

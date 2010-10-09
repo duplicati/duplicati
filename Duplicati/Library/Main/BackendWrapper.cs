@@ -1,22 +1,3 @@
-#region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
-// http://www.hexad.dk, opensource@hexad.dk
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -128,14 +109,9 @@ namespace Duplicati.Library.Main
         private Duplicati.Library.Interface.IEncryption m_encryption = null;
 
         /// <summary>
-        /// The number of bytes added to a file when encrypted
-        /// </summary>
-        private long m_encryptionSizeOverhead = 0;
-
-        /// <summary>
         /// Gets the number of bytes added to a file when encrypted and transfered
         /// </summary>
-        public long FileSizeOverhead { get { return m_encryptionSizeOverhead; } }
+        public long FileSizeOverhead { get { return m_encryption == null ? 0 : m_encryption.SizeOverhead(m_options.VolumeSize); } }
 
         /// <summary>
         /// Class to represent hash failures
@@ -177,16 +153,6 @@ namespace Duplicati.Library.Main
             m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(backend, m_options.RawOptions);
             if (m_backend == null)
                 throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, m_backend));
-
-            if (!m_options.NoEncryption)
-            {
-                if (string.IsNullOrEmpty(m_options.Passphrase))
-                    throw new Exception(Strings.BackendWrapper.PassphraseMissingError);
-
-                m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
-
-                m_encryptionSizeOverhead = m_encryption.SizeOverhead(m_options.VolumeSize);
-            }
 
             if (m_options.AutoCleanup)
                 m_orphans = new List<BackupEntryBase>();
@@ -859,8 +825,11 @@ namespace Duplicati.Library.Main
 
             try
             {
-                if (m_encryption != null)
+                if (!m_options.NoEncryption)
                 {
+                    if (m_encryption == null)
+                        m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
+
                     using (Core.TempFile tf = new Duplicati.Library.Core.TempFile()) //If exception is thrown, tf will be deleted
                     {
                         m_encryption.Encrypt(filename, tf);
@@ -1001,8 +970,13 @@ namespace Duplicati.Library.Main
             else
                 remotename += "." + m_options.CompressionModule;
 
-            if (m_encryption != null)
+            if (!m_options.NoEncryption)
+            {
+                if (m_encryption == null)
+                    m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
+
                 remotename += "." + m_encryption.FilenameExtension;
+            }
 
             return remotename;
         }

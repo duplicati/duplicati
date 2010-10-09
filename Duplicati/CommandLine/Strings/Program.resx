@@ -120,6 +120,17 @@
   <data name="AddedFoldersHeader" xml:space="preserve">
     <value>Added folders</value>
   </data>
+  <data name="CollectionStatusHeader" xml:space="preserve">
+    <value>Found {0} backup chains on backend
+
+Type\tTime\t\t\tVolumes\tSize</value>
+  </data>
+  <data name="CollectionStatusLineFull" xml:space="preserve">
+    <value>Full\t{0}\t{1}\t{2}</value>
+  </data>
+  <data name="CollectionStatusLineInc" xml:space="preserve">
+    <value> Inc\t{0}\t{1}\t{2}</value>
+  </data>
   <data name="ControlFilesHeader" xml:space="preserve">
     <value>Control files</value>
   </data>
@@ -162,6 +173,10 @@
   </data>
   <data name="NewOrModifiedFilesHeader" xml:space="preserve">
     <value>New/Modified files</value>
+  </data>
+  <data name="String1" xml:space="preserve">
+    <value />
+    <comment>There is a space to the left, which makes the output look nicer</comment>
   </data>
   <data name="SupportedBackendsHeader" xml:space="preserve">
     <value>Supported backends:</value>

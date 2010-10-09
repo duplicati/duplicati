@@ -70,6 +70,35 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Found {0} backup chains on backend
+        ///
+        ///Type\tTime\t\t\tVolumes\tSize.
+        /// </summary>
+        internal static string CollectionStatusHeader {
+            get {
+                return ResourceManager.GetString("CollectionStatusHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Full\t{0}\t{1}\t{2}.
+        /// </summary>
+        internal static string CollectionStatusLineFull {
+            get {
+                return ResourceManager.GetString("CollectionStatusLineFull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to  Inc\t{0}\t{1}\t{2}.
+        /// </summary>
+        internal static string CollectionStatusLineInc {
+            get {
+                return ResourceManager.GetString("CollectionStatusLineInc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Control files.
         /// </summary>
         internal static string ControlFilesHeader {
@@ -198,6 +227,15 @@ namespace Duplicati.CommandLine.Strings {
         internal static string NewOrModifiedFilesHeader {
             get {
                 return ResourceManager.GetString("NewOrModifiedFilesHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        internal static string String1 {
+            get {
+                return ResourceManager.GetString("String1", resourceCulture);
             }
         }
         

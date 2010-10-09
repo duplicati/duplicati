@@ -196,15 +196,6 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Passphrase is not set.
-        /// </summary>
-        internal static string PassphraseMissingError {
-            get {
-                return ResourceManager.GetString("PassphraseMissingError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Deleting orphan file: {0}.
         /// </summary>
         internal static string RemoveOrphanFileWarning {

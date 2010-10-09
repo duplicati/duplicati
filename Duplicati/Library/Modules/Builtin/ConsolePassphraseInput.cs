@@ -10,7 +10,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// These actions only use the file list and do not require access to the data inside the files,
         /// and thus require no encryption setup
         /// </summary>
-        private readonly static string[] PASSWORDLESS_ACTIONS = { "list", "delete-all-but-n-full", "delete-older-than", "cleanup", "get-backup-sets" };
+        private readonly static string[] PASSWORDLESS_ACTIONS = { "List", "DeleteAllButNFull", "DeleteOlderThan", "Cleanup", "GetBackupSets" };
 
         #region IGenericModule Members
 
