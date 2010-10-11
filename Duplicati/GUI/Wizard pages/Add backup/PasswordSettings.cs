@@ -262,8 +262,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private void Password_TextChanged(object sender, EventArgs e)
         {
-            m_settingsChanged = true;
-            m_wrapper.PasswordSettingsUI.WarnedNoPassword = false;
+            if (m_wrapper != null)
+            {
+                m_settingsChanged = true;
+                m_wrapper.PasswordSettingsUI.WarnedNoPassword = false;
+            }
         }
 
         private void GeneratePasswordButton_Click(object sender, EventArgs e)
