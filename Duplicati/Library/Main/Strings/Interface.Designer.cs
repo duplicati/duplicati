@@ -466,6 +466,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The backup contains {0} folders but {1} target folders were supplied.
+        /// </summary>
+        internal static string TooFewTargetFoldersError {
+            get {
+                return ResourceManager.GetString("TooFewTargetFoldersError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The backup contains {0} folder(s) but {1} target folders were supplied.
+        /// </summary>
+        internal static string TooManyTargetFoldersWarning {
+            get {
+                return ResourceManager.GetString("TooManyTargetFoldersWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unexpected compression mode: {0}.
         /// </summary>
         internal static string UnexpectedCompressionError {

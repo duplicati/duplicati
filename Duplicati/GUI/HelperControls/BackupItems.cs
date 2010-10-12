@@ -133,18 +133,36 @@ namespace Duplicati.GUI.HelperControls
 
                     foreach (Library.Main.ManifestEntry ef in (List<Library.Main.ManifestEntry>)e.Result)
                     {
+                        long fullSize = ef.Fileentry.Size;
+                        foreach (KeyValuePair<Library.Main.SignatureEntry, Library.Main.ContentEntry> v in ef.Volumes)
+                            fullSize += v.Key.Fileentry.Size + v.Value.Fileentry.Size;
+
                         ListViewItem n = new ListViewItem(ef.Time.ToLongDateString() + " " + ef.Time.ToLongTimeString(), 0);
                         n.Tag = ef;
-                        n.ToolTipText = Strings.BackupItems.TooltipFullBackup;
+
+                        if (fullSize <= 0)
+                            n.ToolTipText = Strings.BackupItems.TooltipFullBackup;
+                        else
+                            n.ToolTipText = string.Format(Strings.BackupItems.TooltipFullBackupWithSize, Library.Core.Utility.FormatSizeString(fullSize));
+                        
                         listView.Items.Add(n);
 
                         foreach (Library.Main.ManifestEntry i in ef.Incrementals)
                         {
+                            long incSize = i.Fileentry.Size;
+                            foreach (KeyValuePair<Library.Main.SignatureEntry, Library.Main.ContentEntry> v in i.Volumes)
+                                incSize += v.Key.Fileentry.Size + v.Value.Fileentry.Size;
+
                             ListViewItem nn = new ListViewItem(i.Time.ToLongDateString() + " " + i.Time.ToLongTimeString(), 1);
                             nn.Tag = i;
-                            nn.ToolTipText = Strings.BackupItems.TooltipPartialBackup;
-                            listView.Items.Add(nn);
 
+                            fullSize += incSize;
+
+                            if (fullSize <= 0)
+                                nn.ToolTipText = Strings.BackupItems.TooltipIncrementalBackup;
+                            else
+                                nn.ToolTipText = string.Format(Strings.BackupItems.TooltipIncrementalBackupWithSize, Library.Core.Utility.FormatSizeString(incSize), Library.Core.Utility.FormatSizeString(fullSize));
+                            listView.Items.Add(nn);
                         }
                     }
                 }

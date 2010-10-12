@@ -670,11 +670,52 @@ namespace Duplicati.Library.Main
             {
                 try 
                 { 
-                    if (System.IO.File.Exists(System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote))))
-                        System.IO.File.Delete(System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote))); 
+                    string file = FindCacheEntry(remote as SignatureEntry);
+                    try
+                    { 
+                        while(file != null)
+                            System.IO.File.Delete(file); 
+                    }
+                    catch (Exception ex) 
+                    {
+                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.DeleteCacheFileError, file), ex);
+                    }
+
+                    
                 }
                 catch {}
             }
+        }
+
+        /// <summary>
+        /// Searches the cache directory for a matching entry, returns null if no entry matches
+        /// </summary>
+        /// <param name="remote">The signature entry to search for</param>
+        /// <returns>The filename to the cached copy or null</returns>
+        private string FindCacheEntry(SignatureEntry remote)
+        {
+            if (remote == null)
+                return null;
+            if (string.IsNullOrEmpty(m_options.SignatureCachePath))
+                return null;
+            
+            string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
+            if (System.IO.File.Exists(cachefilename))
+                return cachefilename;
+
+            //If the new filename does not exist, see if we can parse the older style short filenames instead
+            if (!System.IO.File.Exists(cachefilename) && System.IO.Directory.Exists(m_options.SignatureCachePath))
+                foreach (string s in System.IO.Directory.GetFiles(m_options.SignatureCachePath))
+                {
+                    BackupEntryBase be = m_cachefilenamestrategy.ParseFilename(new Duplicati.Library.Interface.FileEntry(System.IO.Path.GetFileName(s)));
+                    if (be is SignatureEntry)
+                    {
+                        if (be.Time == remote.Time && be.IsFull == remote.IsFull && ((SignatureEntry)be).Volumenumber == ((SignatureEntry)remote).Volumenumber)
+                            return s;
+                    }
+                }
+
+            return null;
         }
 
         private void GetInternal(BackupEntryBase remote, string filename, string filehash)
@@ -689,30 +730,23 @@ namespace Duplicati.Library.Main
                 {
                     if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                     {
-                        string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
-
-                        //If the new filename does not exist, see if we can parse the older style short filenames instead
-                        if (!System.IO.File.Exists(cachefilename) && System.IO.Directory.Exists(m_options.SignatureCachePath))
-                            foreach (string s in System.IO.Directory.GetFiles(m_options.SignatureCachePath))
-                            {
-                                BackupEntryBase be = m_cachefilenamestrategy.ParseFilename(new Duplicati.Library.Interface.FileEntry(System.IO.Path.GetFileName(s)));
-                                if (be is SignatureEntry)
-                                {
-                                    if (be.Time == remote.Time && be.IsFull == remote.IsFull && ((SignatureEntry)be).Volumenumber == ((SignatureEntry)remote).Volumenumber)
-                                    {
-                                        cachefilename = s;
-                                        break;
-                                    }
-                                }
-                            }
-
-                        if (System.IO.File.Exists(cachefilename))
+                        string cachefilename = FindCacheEntry(remote as SignatureEntry);
+                        if (cachefilename != null && System.IO.File.Exists(cachefilename))
                         {
-                            if (filehash != null && Core.Utility.CalculateHash(cachefilename) == filehash)
+                            if (filehash != null)
                             {
-                                //TODO: Don't copy, but just return it as write protected
-                                System.IO.File.Copy(cachefilename, filename, true); //TODO: Warn on hash mismatch?
-                                return;
+                                if (Core.Utility.CalculateHash(cachefilename) == filehash)
+                                {
+                                    //TODO: Don't copy, but just return it as write protected
+                                    System.IO.File.Copy(cachefilename, filename, true);
+                                    return;
+                                }
+                                else
+                                {
+                                    m_statistics.LogWarning(string.Format(Strings.BackendWrapper.CachedSignatureHashMismatchWarning, cachefilename), null);
+                                    try { System.IO.File.Delete(cachefilename); }
+                                    catch { }
+                                }
                             }
                         }
                     }
@@ -774,7 +808,14 @@ namespace Duplicati.Library.Main
                         if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                         {
                             string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
-                            System.IO.File.Copy(tempfile, cachefilename);
+                            try
+                            {
+                                System.IO.File.Copy(tempfile, cachefilename, true);
+                            }
+                            catch (Exception ex)
+                            {
+                                m_statistics.LogWarning(string.Format(Strings.BackendWrapper.SaveCacheFileError, cachefilename), ex);
+                            }
                         }
 
                         lastEx = null;

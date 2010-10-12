@@ -252,6 +252,12 @@
   <data name="StatusWaitingForUpload" xml:space="preserve">
     <value>Waiting for upload to complete ...</value>
   </data>
+  <data name="TooFewTargetFoldersError" xml:space="preserve">
+    <value>The backup contains {0} folders but {1} target folders were supplied</value>
+  </data>
+  <data name="TooManyTargetFoldersWarning" xml:space="preserve">
+    <value>The backup contains {0} folder(s) but {1} target folders were supplied</value>
+  </data>
   <data name="UnexpectedCompressionError" xml:space="preserve">
     <value>Unexpected compression mode: {0}</value>
   </data>

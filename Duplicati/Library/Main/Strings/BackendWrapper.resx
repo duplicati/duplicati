@@ -177,4 +177,13 @@
   <data name="UnmatchedFilenameWarning" xml:space="preserve">
     <value>The file {0} was found on the backend but not recognized by Duplicati</value>
   </data>
+  <data name="CachedSignatureHashMismatchWarning" xml:space="preserve">
+    <value>The cache file {0} did not match the expected hash for the same file, ignoring cache file</value>
+  </data>
+  <data name="DeleteCacheFileError" xml:space="preserve">
+    <value>An error occured while attempting to delete cache file {0}</value>
+  </data>
+  <data name="SaveCacheFileError" xml:space="preserve">
+    <value>Failed to save the cached signature file as {0}</value>
+  </data>
 </root>

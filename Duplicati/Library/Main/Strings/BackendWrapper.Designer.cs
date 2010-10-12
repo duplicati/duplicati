@@ -70,6 +70,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The cache file {0} did not match the expected hash for the same file, ignoring cache file.
+        /// </summary>
+        internal static string CachedSignatureHashMismatchWarning {
+            get {
+                return ResourceManager.GetString("CachedSignatureHashMismatchWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occured while attempting to delete cache file {0}.
+        /// </summary>
+        internal static string DeleteCacheFileError {
+            get {
+                return ResourceManager.GetString("DeleteCacheFileError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The file {0} was found multiple times in the file list, this is likely an error in the backend, please report it to the developers.
         /// </summary>
         internal static string DuplicateFileEntryWarning {
@@ -210,6 +228,15 @@ namespace Duplicati.Library.Main.Strings {
         internal static string RemovingLeftoverFileMessage {
             get {
                 return ResourceManager.GetString("RemovingLeftoverFileMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to save the cached signature file as {0}.
+        /// </summary>
+        internal static string SaveCacheFileError {
+            get {
+                return ResourceManager.GetString("SaveCacheFileError", resourceCulture);
             }
         }
         

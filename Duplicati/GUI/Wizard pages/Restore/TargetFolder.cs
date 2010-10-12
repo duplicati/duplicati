@@ -53,33 +53,55 @@ namespace Duplicati.GUI.Wizard_pages.Restore
         {
             m_wrapper.RestoreTargetFolders = backupFileList.TargetFolders;
             m_wrapper.RestoreFileSelection = backupFileList.CheckedFiles;
-
+            
             if (args.Direction == PageChangedDirection.Back)
                 return;
 
             string[] targetpaths;
+            Dictionary<string, string> filesInFolder = new Dictionary<string,string>();
+
             if (PartialRestore.Checked && backupFileList.TargetFolders.Count > 1)
             {
                 targetpaths = backupFileList.TargetFolders.ToArray();
                 for (int i = 0; i < targetpaths.Length; i++)
                     if (string.IsNullOrEmpty(targetpaths[i]))
                     {
-                        if (string.IsNullOrEmpty(TargetPath.Text) || TargetPath.Text.Trim().Length == 0)
-                        {
-                            MessageBox.Show(this, Strings.TargetFolder.NoFolderError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            args.Cancel = true;
-                            return;
-                        }
-                        targetpaths[i] = Library.Core.Utility.AppendDirSeparator(TargetPath.Text) + i.ToString();
+                        if (!string.IsNullOrEmpty(TargetPath.Text) && TargetPath.Text.Trim().Length != 0)
+                            targetpaths[i] = Library.Core.Utility.AppendDirSeparator(TargetPath.Text) + i.ToString();
                     }
+
+                foreach (string s in m_wrapper.RestoreFileSelection)
+                {
+                    int index = int.Parse(s.Substring(0, s.IndexOf(System.IO.Path.DirectorySeparatorChar)));
+                    if (string.IsNullOrEmpty(targetpaths[index]))
+                    {
+                        MessageBox.Show(this, Strings.TargetFolder.NoFolderError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        args.Cancel = true;
+                        return;
+                    }
+                    filesInFolder[targetpaths[index]] = null;
+                }
             }
             else
-                targetpaths = new string[] { TargetPath.Text.Trim() };
-
-            foreach (string targetpath in targetpaths)
             {
+                targetpaths = new string[] { TargetPath.Text.Trim() };
+                filesInFolder[TargetPath.Text] = null;
+            }
+
+            bool anyValids = false;
+            for (int i = 0; i < targetpaths.Length; i++)
+            {
+                string targetpath = targetpaths[i];
+
                 try
                 {
+                    //Skip the verification for folders with no target files
+                    if (string.IsNullOrEmpty(targetpaths[i]) || !filesInFolder.ContainsKey(targetpath))
+                    {
+                        targetpaths[i] = Environment.ExpandEnvironmentVariables(new Datamodel.ApplicationSettings(Program.DataConnection).TempPath);
+                        continue;
+                    }
+
                     if (targetpath.Trim().Length == 0)
                     {
                         MessageBox.Show(this, Strings.TargetFolder.NoFolderError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -114,6 +136,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                             return;
                         }
 
+                    anyValids = true;
                 }
                 catch (Exception ex)
                 {
@@ -123,7 +146,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 }
             }
 
-            if (PartialRestore.Checked && backupFileList.CheckedCount == 0)
+            if ( !anyValids || (PartialRestore.Checked && m_wrapper.RestoreFileSelection.Count == 0))
             {
                 MessageBox.Show(this, Strings.TargetFolder.NoFilesSelectedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;

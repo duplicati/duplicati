@@ -743,7 +743,7 @@ namespace Duplicati.Library.Main
             BackendWrapper backend = null;
             m_restorePatches = 0;
 
-            using (new Logging.Timer("Restore from " + m_backend + " to " + target))
+            using (new Logging.Timer("Restore from " + m_backend + " to " + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
             {
                 try
                 {
@@ -780,6 +780,75 @@ namespace Duplicati.Library.Main
                     foreach (ManifestEntry be in entries)
                         m_restorePatches += be.Volumes.Count;
 
+                    Manifestfile rootManifest = GetManifest(backend, bestFit);
+
+                    //After reading the first manifest, we know the source folder count
+                    if ((rootManifest.SourceDirs == null || rootManifest.SourceDirs.Length == 0) && target.Length > 1)
+                    {
+                        //V1 support
+                        rs.LogWarning(string.Format(Strings.Interface.TooManyTargetFoldersWarning, 1, target.Length), null);
+                        Array.Resize(ref target, 1);
+                    }
+                    else if (target.Length > rootManifest.SourceDirs.Length)
+                    {
+                        //If we get too many, we can just cut them off
+                        rs.LogWarning(string.Format(Strings.Interface.TooManyTargetFoldersWarning, rootManifest.SourceDirs.Length, target.Length), null);
+                        Array.Resize(ref target, rootManifest.SourceDirs.Length);
+                    }
+                    else if (target.Length != 1 && target.Length < rootManifest.SourceDirs.Length)
+                    {
+                        //If we get too few, we have to bail
+                        throw new Exception(string.Format(Strings.Interface.TooFewTargetFoldersError, rootManifest.SourceDirs.Length, target.Length));
+                    }
+                    else if (target.Length == 1 && rootManifest.SourceDirs.Length > 1)
+                    {
+                        //If there is just one target folder, we automatically compose target subfolders
+                        string[] newtargets = new string[rootManifest.SourceDirs.Length];
+
+                        List<string> suggestions = new List<string>();
+                        for (int i = 0; i < rootManifest.SourceDirs.Length; i++)
+                        {
+                            string s = rootManifest.SourceDirs[i];
+                            //HACK: We use a leading / in the path name to detect source OS
+                            // all paths are absolute, so this detects all unix like systems
+                            string dirSepChar = s.StartsWith("/") ? "/" : "\\";
+
+                            if (s.EndsWith(dirSepChar))
+                                s = s.Substring(0, s.Length - 1);
+
+                            int lix = s.LastIndexOf(dirSepChar);
+                            if (lix < 0 || lix + 1 >= s.Length)
+                                s = i.ToString();
+                            else
+                                s = s.Substring(lix + 1);
+
+                            foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+                                s = s.Replace(c, '_');
+
+                            suggestions.Add(s);
+                        }
+
+                        Dictionary<string, int> duplicates = new Dictionary<string, int>(Library.Core.Utility.ClientFilenameStringComparer);
+                        for (int i = 0; i < suggestions.Count; i++)
+                            if (duplicates.ContainsKey(suggestions[i]))
+                                duplicates[suggestions[i]]++;
+                            else
+                                duplicates[suggestions[i]] = 1;
+
+                        for (int i = 0; i < newtargets.Length; i++)
+                        {
+                            string suffix = duplicates[suggestions[i]] > 1 ? i.ToString() : suggestions[i];
+                            newtargets[i] = System.IO.Path.Combine(target[0], suffix);
+                        }
+
+                        target = newtargets;
+                    }
+
+                    //Make sure all targets exist
+                    foreach(string s in target)
+                        if (!System.IO.Directory.Exists(s))
+                            System.IO.Directory.CreateDirectory(s);
+
                     using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs, filter))
                     {
                         sync.ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(RestoreRSyncDir_ProgressEvent);
@@ -792,7 +861,7 @@ namespace Duplicati.Library.Main
                             
                             CheckLiveControl();
 
-                            Manifestfile manifest = GetManifest(backend, be);
+                            Manifestfile manifest = be == bestFit ? rootManifest : GetManifest(backend, be);
 
                             CheckLiveControl();
 
@@ -1231,7 +1300,6 @@ namespace Duplicati.Library.Main
             RestoreStatistics rs = new RestoreStatistics(DuplicatiOperationMode.ListSourceFolders);
             SetupCommonOptions(rs);
 
-            Core.FilenameFilter filter = m_options.Filter;
             DateTime timelimit = m_options.RestoreTime;
 
             if (OperationStarted != null)
