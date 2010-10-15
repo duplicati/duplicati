@@ -79,6 +79,8 @@ namespace Duplicati.GUI.HelperControls
                 lock (m_lock)
                     m_runner = new DuplicatiRunner();
                 e.Result = m_runner.ListBackupEntries(m_schedule);
+                if (m_runner.IsAborted)
+                    e.Cancel = true;
             }
             finally
             {

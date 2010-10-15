@@ -84,7 +84,7 @@ namespace Duplicati.GUI.HelperControls
                 DuplicatiRunner r = new DuplicatiRunner();
                 //TODO: Speed up by returning the source folders from ListFiles somehow?
                 IList<string> sourcefolders = r.ListSourceFolders(m_schedule, m_when);
-                if (backgroundWorker.CancellationPending)
+                if (r.IsAborted || backgroundWorker.CancellationPending)
                 {
                     e.Cancel = true;
                     return;
@@ -93,7 +93,7 @@ namespace Duplicati.GUI.HelperControls
                 if (m_files == null || m_files.Count == 0)
                 {
                     IList<string> files = r.ListFiles(m_schedule, m_when);
-                    if (backgroundWorker.CancellationPending)
+                    if (backgroundWorker.CancellationPending || r.IsAborted)
                     {
                         e.Cancel = true;
                         return;

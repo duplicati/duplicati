@@ -75,6 +75,8 @@ namespace Duplicati.GUI
                 object[] args = (object[])e.Argument;
                 DuplicatiRunner r = new DuplicatiRunner();
                 e.Result = r.ListActualFiles((Datamodel.Schedule)args[0], (DateTime)args[1]);
+                if (r.IsAborted)
+                    e.Cancel = true;
             }
             catch (System.Threading.ThreadAbortException)
             {
@@ -90,6 +92,10 @@ namespace Duplicati.GUI
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            //If the user has closed, ignore any results
+            if (!this.Visible)
+                return;
+
             if (e.Cancelled)
                 this.Close();
             else if (e.Error != null || e.Result == null)

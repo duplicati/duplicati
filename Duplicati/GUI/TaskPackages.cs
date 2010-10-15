@@ -57,6 +57,8 @@ namespace Duplicati.GUI
         string LocalPath { get; }
 
         string Result { get; set; }
+
+        bool IsAborted { get; set; }
     }
 
     public abstract class BackupTask : IDuplicityTask
@@ -65,7 +67,9 @@ namespace Duplicati.GUI
         protected DateTime m_beginTime;
 
         protected string m_result;
+        protected bool m_isAborted = false;
 
+        public bool IsAborted { get { return m_isAborted; } set { m_isAborted = value; } }
         public abstract DuplicityTaskType TaskType { get; }
 
         public Schedule Schedule { get { return m_schedule; } }

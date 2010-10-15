@@ -54,6 +54,7 @@ namespace Duplicati.GUI
         private object m_lock = new object();
         private System.Windows.Forms.CloseReason m_stopReason = System.Windows.Forms.CloseReason.None;
         private Library.Main.LiveControl.ILiveControl m_currentBackupControlInterface;
+        private bool m_isAborted = false;
 
         public void ExecuteTask(IDuplicityTask task)
         {
@@ -66,7 +67,7 @@ namespace Duplicati.GUI
 
             string results = "";
             string parsedMessage = "";
-            bool isAbortException = false;
+            m_isAborted = false;
 
             try
             {
@@ -219,13 +220,13 @@ namespace Duplicati.GUI
 
                 if (ex is System.Threading.ThreadAbortException)
                 {
-                    isAbortException = true;
+                    m_isAborted = true;
                     System.Threading.Thread.ResetAbort();
                 }
                 else if (ex is Library.Main.LiveControl.ExecutionStoppedException)
-                    isAbortException = true;
+                    m_isAborted = true;
 
-                if (isAbortException && m_stopReason != System.Windows.Forms.CloseReason.None)
+                if (m_isAborted && m_stopReason != System.Windows.Forms.CloseReason.None)
                 {
                     //If the user has stopped the backup for some reason, write a nicer message
                     switch (m_stopReason)
@@ -267,7 +268,7 @@ namespace Duplicati.GUI
 
             try
             {
-                if (!isAbortException && (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup))
+                if (!m_isAborted && (task.TaskType == DuplicityTaskType.FullBackup || task.TaskType == DuplicityTaskType.IncrementalBackup))
                 {
                     if (task.Schedule.Task.KeepFull > 0)
                     {
@@ -311,10 +312,11 @@ namespace Duplicati.GUI
                 results += Environment.NewLine + string.Format(Strings.DuplicatiRunner.CleanupError, ex.Message);
             }
 
+            task.IsAborted = m_isAborted;
             task.Result = results;
             task.RaiseTaskCompleted(results, parsedMessage);
 
-            if (task.Schedule != null && !isAbortException)
+            if (task.Schedule != null && !m_isAborted)
                 task.Schedule.ScheduledRunCompleted(); //Register as completed if not aborted
         }
 
@@ -359,6 +361,10 @@ namespace Duplicati.GUI
         {
             ListBackupsTask task = new ListBackupsTask(schedule);
             ExecuteTask(task);
+
+            if (task.IsAborted)
+                return null;
+            
             return task.Backups;
         }
 
@@ -366,8 +372,13 @@ namespace Duplicati.GUI
         {
             ListBackupEntriesTask task = new ListBackupEntriesTask(schedule);
             ExecuteTask(task);
+
+            if (task.IsAborted)
+                return null;
+
             if (task.Result.StartsWith("Error:"))
                 throw new Exception(task.Result);
+
             return task.Backups;
         }
 
@@ -375,8 +386,13 @@ namespace Duplicati.GUI
         {
             ListActualFilesTask task = new ListActualFilesTask(schedule, when);
             ExecuteTask(task);
+            
+            if (task.IsAborted)
+                return null;
+            
             if (task.Result.StartsWith("Error:"))
                 throw new Exception(task.Result);
+            
             return task.Files;
         }
 
@@ -384,6 +400,10 @@ namespace Duplicati.GUI
         {
             ListFilesTask task = new ListFilesTask(schedule, when);
             ExecuteTask(task);
+
+            if (task.IsAborted)
+                return null;
+
             if (task.Result.StartsWith("Error:"))
                 throw new Exception(task.Result);
             return task.Files;
@@ -393,8 +413,13 @@ namespace Duplicati.GUI
         {
             ListSourceFoldersTask task = new ListSourceFoldersTask(schedule, when);
             ExecuteTask(task);
+            
+            if (task.IsAborted)
+                return null;
+
             if (task.Result.StartsWith("Error:"))
                 throw new Exception(task.Result);
+            
             return task.Files;
         }
 
@@ -407,6 +432,11 @@ namespace Duplicati.GUI
         {
             PerformBackup(schedule, true, null);
         }
+
+        /// <summary>
+        /// Gets a value indicating if the last run was aborted
+        /// </summary>
+        public bool IsAborted { get { return m_isAborted; } }
 
         /// <summary>
         /// Function used to apply settings to a new interface
