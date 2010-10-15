@@ -518,13 +518,15 @@ namespace Duplicati.Library.SharpExpect
         private void StreamReader(object input)
         {
             //Setup the threads local data and buffer
-            char[] buf = new char[1024];
-            System.IO.StreamReader sr = (System.IO.StreamReader)input;
-            List<string> queue = sr == m_process.StandardError ? m_stdErr : m_stdOut;
-            bool lastRun = false;
+            System.IO.StreamReader sr = null;
 
             try
             {
+                sr = (System.IO.StreamReader)input;
+                char[] buf = new char[1024];
+                bool lastRun = false;
+                List<string> queue = sr == m_process.StandardError ? m_stdErr : m_stdOut;
+
                 //Keep reading until the process exits
                 while (true)
                 {
