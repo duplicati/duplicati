@@ -11,8 +11,11 @@ Usage:
  Cleanup (remove partial and unused files):
   Duplicati.CommandLine cleanup [options] <backend>
 
- List files (backup volume sets):
+ List files:
   Duplicati.CommandLine list [options] <backend>
+
+ List backup sets:
+  Duplicati.CommandLine collection-status [options] <backend>
 
  List content files (files that can be restored):
   Duplicati.CommandLine list-current-files [options] <backend>
