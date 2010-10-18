@@ -186,14 +186,19 @@ namespace Duplicati.Library.SharpRSync
             //Setup the initial checksum
             uint weakChecksum = Adler32Checksum.Calculate(working_data, 0, blocklength);
 
-            long indexMatched;
+            long indexMatched = -1;
             bool force_buffer_refill = false;
+            bool recalculate_weak_checksum = false;
+            bool streamExhausted = false;
 
             while (blocklength > 0)
             {
-                //Check if the block matches somewhere
-                indexMatched = m_checksum.LookupChunck(weakChecksum, working_data, buffer_index, blocklength, next_match_key);
-
+                //Check if the block matches somewhere, if we have force-reloaded the buffer, the check has already been made
+                if (force_buffer_refill)
+                    force_buffer_refill = false;
+                else
+                    indexMatched = m_checksum.LookupChunck(weakChecksum, working_data, buffer_index, blocklength, next_match_key);
+                
                 if (indexMatched >= 0)
                 {
                     //We have a match, flush unmatched
@@ -225,13 +230,25 @@ namespace Duplicati.Library.SharpRSync
                     //Adjust the counters
                     matched += blocklength;
                     buffer_index += blocklength;
-                    blocklength = Math.Min(blocklength, buffer_len - buffer_index);
 
-                    //Reset the checksum to fit the new block
-                    weakChecksum = Adler32Checksum.Calculate(working_data, buffer_index, blocklength);
+                    if (buffer_len - buffer_index < blocklength)
+                    {
+                        //If this is the last chunck, compare to the last hash
+                        if (temp_work == null)
+                            blocklength = Math.Min(blocklength, buffer_len - buffer_index);
+                        else //We are out of buffer, reload
+                            recalculate_weak_checksum = true;
+                    }
+
+                    //Reset the checksum to fit the new block, but skip it if we are out of data
+                    if (!recalculate_weak_checksum)
+                        weakChecksum = Adler32Checksum.Calculate(working_data, buffer_index, blocklength);
                 }
                 else
                 {
+                    //At this point we have not advanced the buffer_index, so the weak_checksum matches the data,
+                    // even if we arrive here after reloading the buffer
+
                     //No match, flush accumulated matches, if any
                     if (matched > 0)
                     {
@@ -244,7 +261,8 @@ namespace Duplicati.Library.SharpRSync
                         // because the buffer may be nearly empty, and we 
                         // want to gather as many unmatched bytes as possible
                         // to avoid the instruction overhead in the file
-                        force_buffer_refill = true;
+                        if (buffer_index != 0)
+                            force_buffer_refill = true;
                     }
                     else
                     {
@@ -253,9 +271,12 @@ namespace Duplicati.Library.SharpRSync
                             unmatched_offset = buffer_index;
 
                         //Local speedup for long non-matching regions
-                        for (/* buffer_index = buffer_index */; buffer_index < lastPossible; buffer_index++)
+                        while (buffer_index < lastPossible)
                         {
+                            //Roll the weak checksum buffer by 1 byte
                             weakChecksum = Adler32Checksum.Roll(working_data[buffer_index], working_data[buffer_index + blocklength], weakChecksum, blocklength);
+                            buffer_index++;
+
                             if (weakLookup[weakChecksum >> 16])
                                 break;
                         }
@@ -265,6 +286,9 @@ namespace Duplicati.Library.SharpRSync
                         //If this is the last block, claim the remaining bytes as unmatched
                         if (temp_work == null)
                         {
+                            //There may be a minor optimization possible here, as the last chunk of the original file may still fit 
+                            // and be smaller than the block length
+
                             unmatched += blocklength;
                             blocklength = 0;
                         }
@@ -274,16 +298,17 @@ namespace Duplicati.Library.SharpRSync
                 //If we are out of buffer, try to load some more
                 if (force_buffer_refill || buffer_len - buffer_index <= m_checksum.BlockLength)
                 {
-                    //Prevent continous refill
-                    force_buffer_refill = false;
+                    //The number of unused bytes the the buffer
+                    int remaining_bytes = buffer_len - buffer_index;
 
-                    //If we have read the last bytes already, then just skip this
-                    if (temp_work != null)
+                    //If we have read the last bytes or the buffer is already full, skip this
+                    if (temp_work != null && temp_work.Length - remaining_bytes > 0)
                     {
-                        int remaining_bytes = buffer_len - buffer_index;
                         Array.Copy(working_data, buffer_index, temp_work, 0, remaining_bytes);
 
-                        int tempread = Utility.ForceStreamRead(input, temp_work, remaining_bytes, temp_work.Length - remaining_bytes);
+                        //Prevent reading the stream after it has been exhausted because some streams break on that
+                        int tempread =  
+                            streamExhausted ? 0 : Utility.ForceStreamRead(input, temp_work, remaining_bytes, temp_work.Length - remaining_bytes);
 
                         if (tempread > 0)
                         {
@@ -302,14 +327,29 @@ namespace Duplicati.Library.SharpRSync
                             buffer_index = 0;
                             buffer_len = remaining_bytes + tempread;
                         }
-                        else
+                        else 
                         {
-                            //Mark as done
-                            temp_work = null;
+                            //Prevent reading the stream after it has been exhausted because some streams break on that
+                            streamExhausted = true;
 
-                            //The last round has a smaller block length
-                            blocklength = remaining_bytes;
+                            if (remaining_bytes <= m_checksum.BlockLength)
+                            {
+                                //Mark as done
+                                temp_work = null;
+
+                                //The last round has a smaller block length
+                                blocklength = remaining_bytes;
+                            }
+
                         }
+
+                        //If we run out of buffer, we may need to recalculate the checksum
+                        if (recalculate_weak_checksum)
+                        {
+                            weakChecksum = Adler32Checksum.Calculate(working_data, buffer_index, blocklength);
+                            recalculate_weak_checksum = false;
+                        }
+
                     }
                 }
             }

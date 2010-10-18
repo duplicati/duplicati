@@ -115,6 +115,8 @@ namespace Duplicati.CommandLine
             options["disable-filetime-check"] = null;
             //We do not use the same folder, so we need this option
             options["allow-sourcefolder-change"] = null;
+            //We want all messages in the log
+            options["log-level"] = LogMessageType.Profiling.ToString();
 
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())

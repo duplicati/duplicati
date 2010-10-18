@@ -15,7 +15,7 @@ namespace Duplicati.Library.SharpRSync
         /// Runs the test
         /// </summary>
         /// <param name="items">A list of items to test, Key is the current version, Value is the updated version</param>
-        /// <param name="useRdiff">True if rdiff should also be tested, false otherwise (requires that &quot;rdiff&qout; can be executed)</param>
+        /// <param name="useRdiff">True if rdiff should also be tested, false otherwise (requires that &quot;rdiff&quot; can be executed)</param>
         public static void DoTest(List<KeyValuePair<string, string>> items, bool useRdiff)
         {
             string basedir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);

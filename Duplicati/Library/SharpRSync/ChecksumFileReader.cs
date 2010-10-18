@@ -34,10 +34,13 @@ namespace Duplicati.Library.SharpRSync
         private bool[] m_weakLookup;
 
         /// <summary>
-        /// This list contains all the weak hashes and the index of the corresponding strong hash.
-        /// The list is sorted by the weak hash to allow for O(log n) lookups
+        /// This is a list of all weak values, sorted by value
         /// </summary>
-        private KeyValuePair<uint, long>[] m_weakTable;
+        private uint[] m_weakValues;
+        /// <summary>
+        /// This list contains index values for <see cref="m_strongIndex"/> and is sorted to match the index of <see cref="m_weakValues"/> 
+        /// </summary>
+        private long[] m_weakToStrongIndex;
 
         /// <summary>
         /// This list contains all strong hashes, encoded as unsigned int64,
@@ -51,11 +54,6 @@ namespace Duplicati.Library.SharpRSync
         /// The number of long values each strong hash occupies
         /// </summary>
         private int m_longs_pr_strong;
-
-        /// <summary>
-        /// The comparer used to perform binary searches in the weak table
-        /// </summary>
-        private KeyComparer<uint, long> m_comparer;
 
         /// <summary>
         /// Reads a ChecksumFile from a stream
@@ -88,7 +86,7 @@ namespace Duplicati.Library.SharpRSync
             //Prepare the data structures
             m_weakLookup = new bool[0x10000];
             m_longs_pr_strong = (m_stronglen + (BYTES_PR_LONG - 1)) / BYTES_PR_LONG;
-            m_comparer = new KeyComparer<uint,long>();
+            KeyComparer<uint, long> comparer = new KeyComparer<uint,long>();
             byte[] strongbuf = new byte[m_longs_pr_strong * BYTES_PR_LONG];
 
             //We would like to use static allocation for these lists, but unfortunately
@@ -116,26 +114,31 @@ namespace Duplicati.Library.SharpRSync
                 count++;
             }
 
-            //Copy the lists into fixed sized arrays
-            m_weakTable = tempWeakTable.ToArray();
-            tempWeakTable.Clear();
-            tempWeakTable = null;
             m_strongIndex = tempStrongIndex.ToArray();
             tempStrongIndex.Clear();
             tempStrongIndex = null;
 
-            //Sort the m_weakTable by weak checksum so we can make binary lookups
-            Array.Sort<KeyValuePair<uint, long>>(m_weakTable, m_comparer);
+            tempWeakTable.Sort(comparer);
             
+            m_weakValues = new uint[tempWeakTable.Count];
+            m_weakToStrongIndex = new long[m_weakValues.Length];
+
             //Initialize the weakest lookup table
-            for (int i = 0; i < m_weakTable.Length; i++)
-                m_weakLookup[m_weakTable[i].Key >> 16] = true;
+            for (int i = 0; i < tempWeakTable.Count; i++)
+            {
+                m_weakValues[i] = tempWeakTable[i].Key;
+                m_weakToStrongIndex[i] = tempWeakTable[i].Value;
+                m_weakLookup[m_weakValues[i] >> 16] = true;
+            }
+
+            tempWeakTable.Clear();
+            tempWeakTable = null;
         }
 
         /// <summary>
-        /// A comparer that allows sorting and searching with a list/array of KeyValuePair items
+        /// A comparer that allows sorting a list/array of KeyValuePair items
         /// </summary>
-        /// <typeparam name="TKey">The key tyoe</typeparam>
+        /// <typeparam name="TKey">The key type</typeparam>
         /// <typeparam name="TValue">The value type</typeparam>
         private class KeyComparer<TKey, TValue> : IEqualityComparer<KeyValuePair<TKey, TValue>>, IComparer<KeyValuePair<TKey, TValue>>
              where TKey : IComparable
@@ -196,8 +199,38 @@ namespace Duplicati.Library.SharpRSync
             if (!m_weakLookup[weakChecksum >> 16])
                 return -1;
 
-            //Do a O(log n) lookup on the weak hash, a hashtable would have O(1), but requires too much memory
-            long sh = Array.BinarySearch<KeyValuePair<uint, long>>(m_weakTable, new KeyValuePair<uint, long>(weakChecksum, 0), m_comparer);
+            long sh;
+            if (m_weakValues.LongLength <= int.MaxValue)
+            {
+                //Do a O(log n) lookup on the weak hash, a hashtable would have O(1), but requires too much memory
+                sh = Array.BinarySearch<uint>(m_weakValues, weakChecksum);
+            }
+            else
+            {
+                //If the table gets too big, Array.BinarySearch fails because it can only return int values
+                //Below is a custom binary search algorithm
+                long maxIndex = m_weakValues.LongLength - 1;
+                long minIndex = 0;
+                sh = -1;
+
+                while (minIndex < maxIndex)
+                {
+                    long testIndex = ((maxIndex - minIndex) / 2) + minIndex;
+                    if (m_weakValues[testIndex] == weakChecksum)
+                    {
+                        sh = testIndex;
+                        break;
+                    }
+                    else if (m_weakValues[testIndex] > weakChecksum)
+                        maxIndex = testIndex - 1;
+                    else
+                        minIndex = testIndex + 1;
+                }
+
+                if (sh == -1)
+                    sh = ~minIndex;
+            }
+
             if (sh < 0)
                 return -1;
             
@@ -236,9 +269,9 @@ namespace Duplicati.Library.SharpRSync
             long shMid = sh;
 
             //First we search down, starting with the match
-            while (sh < m_weakTable.LongLength && m_weakTable[sh].Key == weakChecksum)
+            while (sh < m_weakValues.LongLength && m_weakValues[sh] == weakChecksum)
             {
-                long index = m_weakTable[sh].Value;
+                long index = m_weakToStrongIndex[sh];
                 int i;
                 for (i = 0; i < stronghash.Length; i++)
                     if (stronghash[i] != m_strongIndex[(index * m_longs_pr_strong) + i])
@@ -252,9 +285,9 @@ namespace Duplicati.Library.SharpRSync
 
             //Then we search up, starting with the one above the match
             sh = shMid - 1;
-            while (sh >= 0 && m_weakTable[sh].Key == weakChecksum)
+            while (sh >= 0 && m_weakValues[sh] == weakChecksum)
             {
-                long index = m_weakTable[sh].Value;
+                long index = m_weakToStrongIndex[sh];
                 int i;
                 for (i = 0; i < stronghash.Length; i++)
                     if (stronghash[i] != m_strongIndex[(index * m_longs_pr_strong) + i])
