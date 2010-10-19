@@ -26,6 +26,8 @@ namespace Duplicati.Library.SharpRSync
                 bool useRdiff = false;
                 if (args.Count > 0 && args[0].Equals("unittest", StringComparison.InvariantCultureIgnoreCase))
                 {
+                    args.RemoveAt(0);
+
                     for (int i = 0; i < args.Count; i++)
                         if (args[i].Equals("--use-rdiff", StringComparison.InvariantCultureIgnoreCase))
                         {
