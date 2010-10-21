@@ -22,6 +22,14 @@ echo "" > "Duplicati.exe.config"
 xcopy /Y ..\..\..\AssemblyRedirects.xml "Duplicati.exe.config"
 xcopy /Y ..\..\..\AssemblyRedirects.xml "Duplicati.CommandLine.exe.config"
 
+REM Build translations : *TODO* Make this pick up output from the "compiled" folder automatically
+REM ..\..\..\..\Duplicati\Localization\LocalizationTool.exe CLEAN
+del "..\..\..\..\Duplicati\Localization\compiled\*" /Q
+..\..\..\..\Duplicati\Localization\LocalizationTool.exe UPDATE
+..\..\..\..\Duplicati\Localization\LocalizationTool.exe BUILD
+xcopy /I /Y /E ..\..\..\..\Duplicati\Localization\Compiled\fr-FR fr-FR
+xcopy /I /Y /E ..\..\..\..\Duplicati\Localization\Compiled\pt-BR pt-BR
+
 cd ..
 del ..\Duplicati.msi
 del ..\Duplicati.zip

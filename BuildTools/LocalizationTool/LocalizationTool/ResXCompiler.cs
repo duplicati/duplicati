@@ -28,7 +28,7 @@ namespace LocalizationTool
     {
         public static void CompileResxFiles(string folder, List<string> excludeFolders, string @namespace, string assemblyname, string versionAssembly, string keyfile, string culture, string productname)
         {
-            folder = Duplicati.Library.Core.Utility.AppendDirSeperator(folder);
+            folder = Duplicati.Library.Core.Utility.AppendDirSeparator(folder);
             string resgenexe = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\resgen.exe");
             string alexe = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\al.exe");
 
@@ -72,7 +72,7 @@ namespace LocalizationTool
             {
                 if (s.ToLower().EndsWith("." + culture.ToLower() + ".resx"))
                 {
-                    if (excludeFolders.Any(xf => s.ToLower().StartsWith(Duplicati.Library.Core.Utility.AppendDirSeperator(xf).ToLower())))
+                    if (excludeFolders.Any(xf => s.ToLower().StartsWith(Duplicati.Library.Core.Utility.AppendDirSeparator(xf).ToLower())))
                         continue;
 
                     string resname = System.IO.Path.ChangeExtension(s, ".resources");
@@ -108,6 +108,13 @@ namespace LocalizationTool
 
             if (resources.Count == 0)
                 return;
+
+            if (!System.IO.File.Exists(versionAssembly))
+            {
+                Console.WriteLine("Unable to locate file: {0}", versionAssembly);
+                Console.WriteLine("This can be fixed by compiling the application or modifying the file configuration.xml");
+                return;
+            }
 
             using (Duplicati.Library.Core.TempFile tf = new Duplicati.Library.Core.TempFile())
             {

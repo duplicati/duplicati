@@ -260,8 +260,8 @@ namespace LocalizationTool
             List<ResXFileInfo> res = new List<ResXFileInfo>();
             foreach (XElement conf in XDocument.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml")).Element("root").Elements("configuration"))
             {
-                string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Core.Utility.AppendDirSeperator(System.IO.Path.Combine(Application.StartupPath, culture)));
-                string sourcefolder = Duplicati.Library.Core.Utility.AppendDirSeperator(System.IO.Path.GetFullPath(conf.Element("sourcefolder").Value));
+                string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Core.Utility.AppendDirSeparator(System.IO.Path.Combine(Application.StartupPath, culture)));
+                string sourcefolder = Duplicati.Library.Core.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(conf.Element("sourcefolder").Value));
 
                 foreach (XElement fn in conf.Elements("assembly"))
                 {
@@ -367,7 +367,7 @@ namespace LocalizationTool
 
         private static void Clean(string cultureReq)
         {
-            string root = Duplicati.Library.Core.Utility.AppendDirSeperator(Application.StartupPath);
+            string root = Duplicati.Library.Core.Utility.AppendDirSeparator(Application.StartupPath);
             if (!string.IsNullOrEmpty(cultureReq))
                 root = System.IO.Path.Combine(root, cultureReq);
 
