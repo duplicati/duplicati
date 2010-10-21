@@ -197,10 +197,12 @@ namespace LocalizationTool
 
                     var sourceVals = sourceElements.ToSafeDictionary(c => c.Attribute("name").Value, inf.SourceFile);
                     var targetVals = targetElements.ToSafeDictionary(c => c.Attribute("name").Value, inf.TargetFile);
-                    var missing = sourceVals.Where(c => !targetVals.ContainsKey(c.Key) && !ignores.ContainsKey(c.Value.Element("value").Value.Trim().ToLower()));
+                    var missing = sourceVals.Where(c => !targetVals.ContainsKey(c.Key) && !ignores.ContainsKey(c.Value.Element("value").Value.Trim().ToLower()) && !c.Value.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\"));
                     var unused = targetVals.Where(c => !sourceVals.ContainsKey(c.Key));
                     var notUpdated = sourceVals.Where(c =>
                         !ignores.ContainsKey(c.Value.Element("value").Value.Trim().ToLower())
+                        &&
+                        !c.Value.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\")
                         &&
                         targetVals.ContainsKey(c.Key)
                         &&
