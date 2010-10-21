@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <schema id="root" xmlns="http://www.w3.org/2001/XMLSchema">
+    <import namespace="http://www.w3.org/XML/1998/namespace"></import>
+    <element name="root" NS2:IsDataSet="true" xmlns:NS2="urn:schemas-microsoft-com:xml-msdata">
+      <complexType>
+        <choice maxOccurs="unbounded">
+          <element name="metadata">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0"></element>
+              </sequence>
+              <attribute name="name" use="required" type="xsd:string"></attribute>
+              <attribute name="type" type="xsd:string"></attribute>
+              <attribute name="mimetype" type="xsd:string"></attribute>
+              <attribute ref="xml:space"></attribute>
+            </complexType>
+          </element>
+          <element name="assembly">
+            <complexType>
+              <attribute name="alias" type="xsd:string"></attribute>
+              <attribute name="name" type="xsd:string"></attribute>
+            </complexType>
+          </element>
+          <element name="data">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element>
+                <element name="comment" type="xsd:string" minOccurs="0" NS2:Ordinal="2"></element>
+              </sequence>
+              <attribute name="name" type="xsd:string" use="required" NS2:Ordinal="1"></attribute>
+              <attribute name="type" type="xsd:string" NS2:Ordinal="3"></attribute>
+              <attribute name="mimetype" type="xsd:string" NS2:Ordinal="4"></attribute>
+              <attribute ref="xml:space"></attribute>
+            </complexType>
+          </element>
+          <element name="resheader">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element>
+              </sequence>
+              <attribute name="name" type="xsd:string" use="required"></attribute>
+            </complexType>
+          </element>
+        </choice>
+      </complexType>
+    </element>
+  </schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="FifteenMinutes">
+    <value>15 minutes</value>
+    <comment>A string displayed when the user selects a period of 15 minutes</comment>
+  </data>
+  <data name="FiveMinutes">
+    <value>5 minutes</value>
+    <comment>A string displayed when the user selects a period of 5 minutes</comment>
+  </data>
+  <data name="GenericError">
+    <value>Une erreur est apparue: {0}</value>
+    <comment>A generic error message</comment>
+  </data>
+  <data name="InvalidDuration">
+    <value>la durée de sauvegarde complète entrée est invalide: {0}</value>
+  </data>
+  <data name="MenuPause">
+    <value>Pause</value>
+  </data>
+  <data name="MenuResume">
+    <value>Reprise</value>
+  </data>
+  <data name="NoMinutes">
+    <value>Aucune</value>
+    <comment>A string displayed when the user selects a period of 0</comment>
+  </data>
+  <data name="OneDay">
+    <value>Un jour</value>
+    <comment>A string displayed in comboboxes indicating that the duration should be one day</comment>
+  </data>
+  <data name="OneMinute">
+    <value>1 minute</value>
+    <comment>A string displayed when the user selects a period of 1 minute</comment>
+  </data>
+  <data name="OneMonth">
+    <value>Un mois</value>
+    <comment>A string displayed in comboboxes indicating that the duration should be one month</comment>
+  </data>
+  <data name="OneWeek">
+    <value>Une semaine</value>
+    <comment>A string displayed in comboboxes indicating that the duration should be one week</comment>
+  </data>
+  <data name="SixtyMinutes">
+    <value>1 heure</value>
+    <comment>A string displayed when the user selects a period of 60 minutes</comment>
+  </data>
+  <data name="ThirtyMinutes">
+    <value>30 minutes</value>
+    <comment>A string displayed when the user selects a period of 30 minutes</comment>
+  </data>
+  <data name="ThreadPriorityAboveNormal">
+    <value>Au dessus de la normale</value>
+  </data>
+  <data name="ThreadPriorityBelowNormal">
+    <value>En dessous de la normale</value>
+  </data>
+  <data name="ThreadPriorityHighest">
+    <value>La plus haute</value>
+  </data>
+  <data name="ThreadPriorityNormal">
+    <value>Normal</value>
+  </data>
+  <data name="ThreadPriortyLowest">
+    <value>Le plus bas</value>
+  </data>
+  <data name="ThreeMonths">
+    <value>Trois mois</value>
+    <comment>A string displayed in comboboxes indicating that the duration should be three months</comment>
+  </data>
+  <data name="TwoWeeks">
+    <value>Deux semaines</value>
+    <comment>A string displayed in comboboxes indicating that the duration should be two weeks</comment>
+  </data>
+</root>
