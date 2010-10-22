@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,4 +117,31 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="DelayDuration60Menu.Text" xml:space="preserve">
+    <value>1 heure</value>
+  </data>
+  <data name="statusToolStripMenuItem.Text" xml:space="preserve">
+    <value>Etat</value>
+  </data>
+  <data name="wizardToolStripMenuItem.Text" xml:space="preserve">
+    <value>Assistant...</value>
+  </data>
+  <data name="pausePeriodToolStripMenuItem.Text" xml:space="preserve">
+    <value>Délais de pause</value>
+  </data>
+  <data name="throttleOptionsToolStripMenuItem.Text" xml:space="preserve">
+    <value>Options de vitesse...</value>
+  </data>
+  <data name="controlToolStripMenuItem.Text" xml:space="preserve">
+    <value>Commandes</value>
+  </data>
+  <data name="quitToolStripMenuItem.Text" xml:space="preserve">
+    <value>Quitter le programme</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>Panneau de contrôle de Duplicati</value>
+  </data>
+  <data name="label1.Text" xml:space="preserve">
+    <value>Fenêtre factice de Duplicati</value>
+  </data>
 </root>
