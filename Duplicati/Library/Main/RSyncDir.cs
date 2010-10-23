@@ -95,16 +95,22 @@ namespace Duplicati.Library.Main.RSync
             private bool m_isDateInUtc;
 
             /// <summary>
+            /// The time the archive was created
+            /// </summary>
+            private DateTime m_createTime;
+
+            /// <summary>
             /// Constructs a new ArchiveWrapper with a given prefix
             /// </summary>
             /// <param name="arch">The archive to wrap</param>
-            /// <param name="isUtc">A value indicating if the dates are in UTC format</param>
             /// <param name="prefix">The prefix to use</param>
-            public ArchiveWrapper(Library.Interface.ICompression arch, string prefix)
+            /// <param name="backupTime">The time the backup was created</param>
+            public ArchiveWrapper(Library.Interface.ICompression arch, DateTime createTime, string prefix)
             {
                 m_archive = arch;
                 m_prefix = prefix;
                 m_isDateInUtc = arch.FileExists(UTC_TIME_MARKER);
+                m_createTime = createTime.ToUniversalTime();
             }
 
             /// <summary>
@@ -118,18 +124,9 @@ namespace Duplicati.Library.Main.RSync
             }
 
             /// <summary>
-            /// Gets the last time the file was modified, in UTC format
+            /// Gets the time the archive was created
             /// </summary>
-            /// <param name="relpath">The path to the file, excluding the prefix</param>
-            /// <returns>The last time the file was modified</returns>
-            internal DateTime GetLastWriteTime(string relpath)
-            {
-                DateTime t = m_archive.GetLastWriteTime(System.IO.Path.Combine(m_prefix, relpath));
-                if (m_isDateInUtc)
-                    return new DateTime(t.Ticks, DateTimeKind.Utc);
-                else
-                    return new DateTime(t.Ticks, DateTimeKind.Local).ToUniversalTime();
-            }
+            internal DateTime CreateTime { get { return m_createTime; } }
         }
 
         /// <summary>
@@ -272,6 +269,7 @@ namespace Duplicati.Library.Main.RSync
         internal static readonly string UTC_TIME_MARKER = "utc-times";
         internal static readonly string UPDATED_FOLDERS = "updated_folders.txt";
         internal static readonly string UPDATED_FOLDERS_TIMESTAMPS = "updated_folders_timestamps.txt";
+        internal static readonly string UNMODIFIED_FILES = "unmodified-files.txt";
 
         public delegate void ProgressEventDelegate(int progress, string filename);
         public event ProgressEventDelegate ProgressEvent;
@@ -306,6 +304,10 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private List<string> m_deletedfiles;
         /// <summary>
+        /// This is the list of examined files that were unchanged
+        /// </summary>
+        private List<string> m_checkedUnchangedFiles;
+        /// <summary>
         /// This is the list of added folders
         /// </summary>
         private List<KeyValuePair<string, DateTime>> m_newfolders;
@@ -317,7 +319,11 @@ namespace Duplicati.Library.Main.RSync
         /// This is the list of deleted folders
         /// </summary>
         private List<string> m_deletedfolders;
-        
+        /// <summary>
+        /// This is a dictionary with the last time a file was examined (and not changed) with the current signature
+        /// </summary>
+        private Dictionary<string, DateTime> m_lastVerificationTime;
+
         /// <summary>
         /// The total number of files found
         /// </summary>
@@ -421,8 +427,8 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="sourcefolder">The folders to create a backup from</param>
         /// <param name="stat">The status report object</param>
         /// <param name="filter">An optional filter that controls what files to include</param>
-        /// <param name="patches">A list of signature archives to read</param>
-        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter, List<Library.Interface.ICompression> patches)
+        /// <param name="patches">A list of signature archives to read, MUST be sorted in the creation order, oldest first</param>
+        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter, List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches)
             : this(sourcefolder, stat, filter)
         {
             string[] prefixes = new string[] {
@@ -431,23 +437,39 @@ namespace Duplicati.Library.Main.RSync
                 Core.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
             };
 
-            m_patches = patches;
+            m_patches = new List<Duplicati.Library.Interface.ICompression>();
+            foreach (KeyValuePair<ManifestEntry, Library.Interface.ICompression> patch in patches)
+                m_patches.Add(patch.Value);
 
-            foreach (Library.Interface.ICompression z in patches)
+            foreach (KeyValuePair<ManifestEntry, Library.Interface.ICompression> patch in patches)
             {
+                Library.Interface.ICompression z = patch.Value;
+
                 if (z.FileExists(DELETED_FILES))
                     foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(DELETED_FILES)))
-                        if (m_oldSignatures.ContainsKey(s))
-                            m_oldSignatures.Remove(s);
+                    {
+                        m_oldSignatures.Remove(s);
+                        m_lastVerificationTime.Remove(s);
+                    }
 
-                foreach(string prefix in prefixes)
+                foreach (string prefix in prefixes)
+                {
+                    ArchiveWrapper aw = new ArchiveWrapper(z, patch.Key.Time.ToUniversalTime(), prefix);
                     foreach (string f in FilenamesFromPlatformIndependant(z.ListFiles(prefix)))
-                        m_oldSignatures[f.Substring(prefix.Length)] = new ArchiveWrapper(z, prefix);
+                    {
+                        string name = f.Substring(prefix.Length);
+                        m_oldSignatures[name] = aw;
+                        m_lastVerificationTime.Remove(name);
+                    }
+                }
+
+                if (z.FileExists(UNMODIFIED_FILES))
+                    foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(UNMODIFIED_FILES)))
+                        m_lastVerificationTime[s] = patch.Key.Time.ToUniversalTime();
 
                 if (z.FileExists(DELETED_FOLDERS))
                     foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(DELETED_FOLDERS)))
-                        if (m_oldFolders.ContainsKey(s))
-                            m_oldFolders.Remove(s);
+                        m_oldFolders.Remove(s);
 
                 if (z.FileExists(ADDED_FOLDERS))
                 {
@@ -493,8 +515,11 @@ namespace Duplicati.Library.Main.RSync
         public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter)
         {
             m_filter = filter;
+            //TODO: These should theoretically use the file systems case sensitivity
             m_oldSignatures = new Dictionary<string, ArchiveWrapper>();
             m_oldFolders = new Dictionary<string, DateTime>();
+            m_lastVerificationTime = new Dictionary<string, DateTime>();
+
             for (int i = 0; i < sourcefolder.Length; i++)
             {
                 if (!System.IO.Path.IsPathRooted(sourcefolder[i]))
@@ -550,6 +575,7 @@ namespace Duplicati.Library.Main.RSync
             m_newfolders = new List<KeyValuePair<string, DateTime>>();
             m_updatedfolders = new List<KeyValuePair<string, DateTime>>();
             m_deletedfolders = new List<string>();
+            m_checkedUnchangedFiles = new List<string>();
             m_lastPartialFile = null;
 
             try
@@ -635,7 +661,7 @@ namespace Duplicati.Library.Main.RSync
                     DateTime lastWrite = Directory.GetLastWriteTimeUtc(s);
 
                     //Cut off as we only have seconds stored
-                    lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second);
+                    lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
 
                     if (!m_oldFolders.ContainsKey(relpath))
                         m_newfolders.Add(new KeyValuePair<string, DateTime>(relpath, lastWrite));
@@ -786,6 +812,9 @@ namespace Duplicati.Library.Main.RSync
                     }
                 }
 
+                if (m_checkedUnchangedFiles.Count > 0)
+                    signaturefile.WriteAllLines(UNMODIFIED_FILES, m_checkedUnchangedFiles.ToArray());
+
                 m_finalized = true;
             }
 
@@ -896,12 +925,15 @@ namespace Duplicati.Library.Main.RSync
                         if (m_oldSignatures.ContainsKey(relpath))
                         {
                             DateTime lastFileWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
-
                             //Cut off as we only preserve precision in seconds after compression
-                            lastFileWrite = new DateTime(lastFileWrite.Year, lastFileWrite.Month, lastFileWrite.Day, lastFileWrite.Hour, lastFileWrite.Minute, lastFileWrite.Second);
+                            lastFileWrite = new DateTime(lastFileWrite.Year, lastFileWrite.Month, lastFileWrite.Day, lastFileWrite.Hour, lastFileWrite.Minute, lastFileWrite.Second, DateTimeKind.Utc);
 
-                            //Compare with the modification time recorded in the the archive
-                            if (lastFileWrite <= m_oldSignatures[relpath].GetLastWriteTime(relpath))
+                            DateTime lastCheck;
+                            if (!m_lastVerificationTime.TryGetValue(relpath, out lastCheck))
+                                lastCheck = m_oldSignatures[relpath].CreateTime;
+
+                            //Compare with the modification time of the last known check time
+                            if (lastFileWrite <= lastCheck)
                             {
                                 m_oldSignatures.Remove(relpath);
                                 m_examinedfiles++;
@@ -919,10 +951,12 @@ namespace Duplicati.Library.Main.RSync
                         try
                         {
                             fs = m_snapshot.OpenRead(s);
+                            
+                            //Record the change time after we opened (and thus locked) the file
                             DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
-
                             //Cut off as we only preserve precision in seconds
-                            lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second);
+                            lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
+
 
                             if (fs.Length > m_maxFileSize)
                                 m_unproccesed.FilesTooLarge.Add(s);
@@ -933,7 +967,17 @@ namespace Duplicati.Library.Main.RSync
                                     ProgressEvent(lastPg / 2, s);
 
                                 System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
-                                if (signature != null)
+                                if (signature == null)
+                                {
+                                    //If we had to check the file, it's timestamp was modified, so we record that the file is still unchanged
+                                    // so we can avoid checking the next time
+                                    if (!m_disableFiletimeCheck)
+                                        m_checkedUnchangedFiles.Add(GetRelativeName(s));
+                                    
+                                    //TODO: If the file timestamp was changed AFTER the backup started, we will record it in this and the next backup.
+                                    //      This can be avoided, but only happens if the file was not modified, so it will happen rarely
+                                }
+                                else
                                     totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile, volumesize, lastWrite);
                             }
                         }
