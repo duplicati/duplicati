@@ -10,7 +10,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// These actions only use the file list and do not require access to the data inside the files,
         /// and thus require no encryption setup
         /// </summary>
-        private readonly static string[] PASSWORDLESS_ACTIONS = { "List", "DeleteAllButNFull", "DeleteOlderThan", "Cleanup", "GetBackupSets" };
+        private readonly static string[] PASSPHRASELESS_ACTIONS = { "List", "DeleteAllButNFull", "DeleteOlderThan", "Cleanup", "GetBackupSets", "CreateFolder" };
 
         #region IGenericModule Members
 
@@ -27,7 +27,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             //First see if a password is actually required for the action
-            foreach (string s in PASSWORDLESS_ACTIONS)
+            foreach (string s in PASSPHRASELESS_ACTIONS)
                 if (string.Equals(s, commandlineOptions["main-action"], StringComparison.InvariantCultureIgnoreCase))
                     return;
 
