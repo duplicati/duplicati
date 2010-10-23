@@ -186,4 +186,7 @@
   <data name="SaveCacheFileError" xml:space="preserve">
     <value>Failed to save the cached signature file as {0}</value>
   </data>
+  <data name="BackendDoesNotSupportCreateFolder" xml:space="preserve">
+    <value>The backend {0} ({1}) does not support the CreateFolder operation </value>
+  </data>
 </root>

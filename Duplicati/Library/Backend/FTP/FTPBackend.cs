@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class FTP : IStreamingBackend, IBackendGUI
+    public class FTP : IBackend_v2, IStreamingBackend, IBackendGUI
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
@@ -147,7 +147,7 @@ namespace Duplicati.Library.Backend
         {
             get { return true; }
         }
-
+        
         public List<IFileEntry> List()
         {
             using (ActivateCertificateValidator())
@@ -159,10 +159,10 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     List<IFileEntry> lst = new List<IFileEntry>();
-                    using(System.Net.WebResponse resp = req.GetResponse())
-                    using(System.IO.Stream rs = resp.GetResponseStream())
-                    using(System.IO.StreamReader sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
-                    { 
+                    using (System.Net.WebResponse resp = req.GetResponse())
+                    using (System.IO.Stream rs = resp.GetResponseStream())
+                    using (System.IO.StreamReader sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
+                    {
                         string line;
                         while ((line = sr.ReadLine()) != null)
                         {
@@ -185,17 +185,28 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream input)
         {
-            using (ActivateCertificateValidator())
+            System.Net.FtpWebRequest req = null;
+            try
             {
-                System.Net.FtpWebRequest req = CreateRequest(remotename);
-                req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
-                req.UseBinary = true;
-                
-                //We only depend on the ReadWriteTimeout
-                req.Timeout = System.Threading.Timeout.Infinite;
+                using (ActivateCertificateValidator())
+                {
+                    req = CreateRequest(remotename);
+                    req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
+                    req.UseBinary = true;
 
-                using (System.IO.Stream rs = req.GetRequestStream())
-                    Core.Utility.CopyStream(input, rs, true);
+                    //We only depend on the ReadWriteTimeout
+                    req.Timeout = System.Threading.Timeout.Infinite;
+
+                    using (System.IO.Stream rs = req.GetRequestStream())
+                        Core.Utility.CopyStream(input, rs, true);
+                }
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (req != null && wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
+                    throw new Interface.FolderMissingException(string.Format(Strings.FTPBackend.MissingFolderError, req.RequestUri.PathAndQuery, wex.Message), wex);
+                else
+                    throw;
             }
         }
 
@@ -304,6 +315,13 @@ namespace Duplicati.Library.Backend
             return req;
         }
 
+        #region IBackend_v2 Members
+
+        public void Test()
+        {
+            List();
+        }
+
         public void CreateFolder()
         {
             using (ActivateCertificateValidator())
@@ -316,6 +334,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        #endregion
 
         #region IBackendGUI Members
 

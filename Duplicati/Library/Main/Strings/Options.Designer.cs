@@ -223,6 +223,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation..
+        /// </summary>
+        internal static string DisableautocreatefolderLong {
+            get {
+                return ResourceManager.GetString("DisableautocreatefolderLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disables automatic folder creation.
+        /// </summary>
+        internal static string DisableautocreatefolderShort {
+            get {
+                return ResourceManager.GetString("DisableautocreatefolderShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won&apos;t work correctly unless this flag is set..
         /// </summary>
         internal static string DisablefiletimecheckLong {

@@ -61,6 +61,7 @@
     <Compile Include="FileEntry.cs" />
     <Compile Include="IBackend.cs" />
     <Compile Include="IBackendGUI.cs" />
+    <Compile Include="IBackend_v2.cs" />
     <Compile Include="ICommandLineArgument.cs" />
     <Compile Include="ICompressionGUI.cs" />
     <Compile Include="IEncryption.cs" />

@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IStreamingBackend, IBackendGUI
+    public class S3 : IBackend_v2, IStreamingBackend, IBackendGUI
     {
         public const string RRS_OPTION = "s3-use-rrs";
         public const string EU_BUCKETS_OPTION = "s3-european-buckets";
@@ -156,8 +156,29 @@ namespace Duplicati.Library.Backend
                 m_prefix += "/";
         }
 
+        public static bool IsValidHostname(string bucketname)
+        {
+            return !new System.Text.RegularExpressions.Regex(@"[^\w\-]").Match(bucketname).Success;
+        }
 
-        private List<IFileEntry> List(bool isTesting)
+        #region IBackend Members
+
+        public string DisplayName
+        {
+            get { return Strings.S3Backend.DisplayName; }
+        }
+
+        public string ProtocolKey
+        {
+            get { return "s3"; }
+        }
+
+        public bool SupportsStreaming
+        {
+            get { return true; }
+        }
+
+        public List<IFileEntry> List()
         {
             try
             {
@@ -183,46 +204,13 @@ namespace Duplicati.Library.Backend
 
                 //Catch "non-existing" buckets
                 if (wex != null && wex.Status == System.Net.WebExceptionStatus.ProtocolError && wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
-                    if (isTesting)
-                        throw new Interface.FolderMissingException(wex);
-                    else
-                        return new List<IFileEntry>();
+                    throw new Interface.FolderMissingException(wex);
 
                 if (tex != null && tex.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    if (isTesting)
-                        throw new Interface.FolderMissingException(tex);
-                    else
-                        return new List<IFileEntry>();
+                    throw new Interface.FolderMissingException(tex);
 
                 throw;
             }
-        }
-
-        public static bool IsValidHostname(string bucketname)
-        {
-            return !new System.Text.RegularExpressions.Regex(@"[^\w\-]").Match(bucketname).Success;
-        }
-
-        #region IBackend Members
-
-        public string DisplayName
-        {
-            get { return Strings.S3Backend.DisplayName; }
-        }
-
-        public string ProtocolKey
-        {
-            get { return "s3"; }
-        }
-
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
-        public List<IFileEntry> List()
-        {
-            return List(false);
         }
 
         public void Put(string remotename, string localname)
@@ -243,27 +231,13 @@ namespace Duplicati.Library.Backend
 				bool isBucketMissingError = false;
 				System.Net.WebException wex = ex as System.Net.WebException;
 				Affirma.ThreeSharp.ThreeSharpException tex = ex as Affirma.ThreeSharp.ThreeSharpException;
-				if (wex == null && tex != null)
+				
+                if (wex == null && tex != null)
 					wex = tex.InnerException as System.Net.WebException;
                 if (wex != null && wex.Status == System.Net.WebExceptionStatus.ProtocolError && wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
-					isBucketMissingError = true;
+                    throw new Interface.FolderMissingException(wex);
 				if (!isBucketMissingError && tex != null && tex.StatusCode == System.Net.HttpStatusCode.NotFound)
-					isBucketMissingError = true;
-				
-				if (isBucketMissingError)
-                {
-                    //Perhaps the bucket needs to be created?
-                    try
-                    {
-                        con.AddBucket(m_bucket);
-                        con.AddFileStream(m_bucket, GetFullKey(remotename), input);
-                        return;
-                    }
-                    catch
-                    {
-                    }
-
-                }
+                    throw new Interface.FolderMissingException(wex);
 
 				throw;
             }
@@ -307,11 +281,6 @@ namespace Duplicati.Library.Backend
             con.DeleteObject(m_bucket, GetFullKey(remotename));
         }
 
-        public void Test()
-        {
-            List(true);
-        }
-
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -337,13 +306,22 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        #endregion
+
+        #region IBackend_v2 Members
+
+        public void Test()
+        {
+            List();
+        }
+
         public void CreateFolder()
         {
             S3Wrapper con = CreateRequest();
             //S3 does not complain if the bucket already exists
             con.AddBucket(m_bucket);
         }
-        
+
         #endregion
 
         #region IDisposable Members

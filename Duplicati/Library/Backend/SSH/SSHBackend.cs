@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSH : IStreamingBackend, IBackendGUI
+    public class SSH : IBackend_v2, IStreamingBackend, IBackendGUI
     {
         public const string SFTP_PATH_OPTION = "sftp-command";
         public const string USE_UNMANAGED_OPTION = "use-sftp-application";
@@ -209,6 +209,13 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
+        #region IBackend_v2 Implementation
+
+        public void Test()
+        {
+            List();
+        }
+
         public void CreateFolder()
         {
             if (m_useManaged)
@@ -216,6 +223,8 @@ namespace Duplicati.Library.Backend
             else
                 CreateFolderUnmanaged();
         }
+
+        #endregion
 
         #region IDisposable Members
 
@@ -508,8 +517,6 @@ namespace Duplicati.Library.Backend
            return proc;
         }
 
-        #endregion
-
         private void CreateFolderUnmanaged()
         {
             using (SharpExpect.SharpExpectProcess p = GetUnmanagedConnection(false))
@@ -524,6 +531,8 @@ namespace Duplicati.Library.Backend
                     throw new Exception(string.Format(Strings.SSHBackend.DeleteError, p.LogKillAndDispose()));
             }
         }
+
+        #endregion
 
         #region Managed Implementation
 

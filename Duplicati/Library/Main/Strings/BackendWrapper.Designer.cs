@@ -61,6 +61,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The backend {0} ({1}) does not support the CreateFolder operation .
+        /// </summary>
+        internal static string BackendDoesNotSupportCreateFolder {
+            get {
+                return ResourceManager.GetString("BackendDoesNotSupportCreateFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to find backend for: {0}.
         /// </summary>
         internal static string BackendNotFoundError {

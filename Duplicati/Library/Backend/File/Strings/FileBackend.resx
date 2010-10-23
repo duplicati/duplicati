@@ -135,4 +135,7 @@
   <data name="DisplayName" xml:space="preserve">
     <value>File based</value>
   </data>
+  <data name="FolderMissingError" xml:space="preserve">
+    <value>The folder {0} does not exist</value>
+  </data>
 </root>

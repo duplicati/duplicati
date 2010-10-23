@@ -411,4 +411,10 @@
   <data name="LoglevelShort" xml:space="preserve">
     <value>Log information level</value>
   </data>
+  <data name="DisableautocreatefolderLong" xml:space="preserve">
+    <value>If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation.</value>
+  </data>
+  <data name="DisableautocreatefolderShort" xml:space="preserve">
+    <value>Disables automatic folder creation</value>
+  </data>
 </root>

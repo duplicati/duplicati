@@ -102,7 +102,11 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A cleanup operation that removes orphan files
         /// </summary>
-        CleanUp
+        CleanUp,
+        /// <summary>
+        /// A request to create the underlying folder
+        /// </summary>
+        CreateFolder
     }
 
     /// <summary>
@@ -1489,6 +1493,16 @@ namespace Duplicati.Library.Main
 
         }
 
+        private void CreateFolder()
+        {
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.CreateFolder);
+            SetupCommonOptions(stats);
+
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
+                backend.CreateFolder();
+        }
+
+
         /// <summary>
         /// This function will examine all options passed on the commandline, and test for unsupported or deprecated values.
         /// Any errors will be logged into the statistics module.
@@ -1763,6 +1777,13 @@ namespace Duplicati.Library.Main
             using (Interface i = new Interface(target, options))
                 return i.ListActualSignatureFiles();
         }
+
+        public static void CreateFolder(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                i.CreateFolder();
+        }
+
         #endregion
 
         #region IDisposable Members

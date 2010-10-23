@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class CloudFiles : IBackend, IStreamingBackend, IBackendGUI
+    public class CloudFiles : IBackend_v2, IStreamingBackend, IBackendGUI
     {
         private const string AUTH_URL = "https://api.mosso.com/auth";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
@@ -129,13 +129,7 @@ namespace Duplicati.Library.Backend
                 //The response should be 404 from the server, but it is not :(
                 if (lst.Count == 0 && markerUrl == "") //Only on first itteration
                 {
-                    try
-                    {
-                        HttpWebRequest createReq = CreateRequest("", "");
-                        createReq.Method = "PUT";
-                        using (HttpWebResponse resp = (HttpWebResponse)createReq.GetResponse())
-                        { }
-                    }
+                    try { CreateFolder(); }
                     catch { } //Ignore
                 }
 
@@ -163,20 +157,6 @@ namespace Duplicati.Library.Backend
             } while (repeat);
 
             return files;
-        }
-
-        public void Test()
-        {
-            //The "Folder not found" is not detectable :(
-            List();
-        }
-
-        public void CreateFolder()
-        {
-            HttpWebRequest createReq = CreateRequest("", "");
-            createReq.Method = "PUT";
-            using (HttpWebResponse resp = (HttpWebResponse)createReq.GetResponse())
-            { }
         }
 
         public void Put(string remotename, string filename)
@@ -220,6 +200,24 @@ namespace Duplicati.Library.Backend
         public string Description
         {
             get { return Strings.CloudFiles.Description; }
+        }
+
+        #endregion
+
+        #region IBackend_v2 Members
+        
+        public void Test()
+        {
+            //The "Folder not found" is not detectable :(
+            List();
+        }
+
+        public void CreateFolder()
+        {
+            HttpWebRequest createReq = CreateRequest("", "");
+            createReq.Method = "PUT";
+            using (HttpWebResponse resp = (HttpWebResponse)createReq.GetResponse())
+            { }
         }
 
         #endregion

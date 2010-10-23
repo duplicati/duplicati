@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class WEBDAV : IBackend, IStreamingBackend, IBackendGUI
+    public class WEBDAV : IBackend_v2, IStreamingBackend, IBackendGUI
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
@@ -40,7 +40,7 @@ namespace Duplicati.Library.Backend
 
         /// <summary>
         /// A list of files seen in the last List operation.
-        /// It is used to detect a problem with IIS where a file is list,
+        /// It is used to detect a problem with IIS where a file is listed,
         /// but IIS responds 404 because the file mapping is incorrect.
         /// </summary>
         private List<string> m_filenamelist = null;
@@ -212,23 +212,12 @@ namespace Duplicati.Library.Backend
                 }
                 catch (System.Net.WebException wex)
                 {
-                    if (wex.Response as System.Net.HttpWebResponse != null && (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
+                    if (wex.Response as System.Net.HttpWebResponse != null && 
+                            ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict))
                         throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
-                    else
-                        throw;
+                    
+                    throw;
                 }
-            }
-        }
-
-        public void CreateFolder()
-        {
-            using (ActivateCertificateValidator())
-            {
-                System.Net.HttpWebRequest req = CreateRequest("");
-                req.Method = System.Net.WebRequestMethods.Http.MkCol;
-                req.KeepAlive = false;
-                using (req.GetResponse())
-                { }
             }
         }
 
@@ -278,6 +267,27 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
+        #region IBackend_v2 Members
+
+        public void Test()
+        {
+            List();
+        }
+
+        public void CreateFolder()
+        {
+            using (ActivateCertificateValidator())
+            {
+                System.Net.HttpWebRequest req = CreateRequest("");
+                req.Method = System.Net.WebRequestMethods.Http.MkCol;
+                req.KeepAlive = false;
+                using (req.GetResponse())
+                { }
+            }
+        }
+
+        #endregion
+
         #region IDisposable Members
 
         public void Dispose()
@@ -317,7 +327,6 @@ namespace Duplicati.Library.Backend
 
             return req;
         }
-        
 
         #region IStreamingBackend Members
 
@@ -328,26 +337,38 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            using (ActivateCertificateValidator())
+            try
             {
-                System.Net.HttpWebRequest req = CreateRequest(remotename);
-                req.Method = System.Net.WebRequestMethods.Http.Put;
-                req.ContentType = "application/binary";
-                //We only depend on the ReadWriteTimeout
-                req.Timeout = System.Threading.Timeout.Infinite;
-
-                try { req.ContentLength = stream.Length; }
-                catch { }
-
-                using (System.IO.Stream s = req.GetRequestStream())
-                    Core.Utility.CopyStream(stream, s);
-
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                using (ActivateCertificateValidator())
                 {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                    System.Net.HttpWebRequest req = CreateRequest(remotename);
+                    req.Method = System.Net.WebRequestMethods.Http.Put;
+                    req.ContentType = "application/binary";
+                    //We only depend on the ReadWriteTimeout
+                    req.Timeout = System.Threading.Timeout.Infinite;
+
+                    try { req.ContentLength = stream.Length; }
+                    catch { }
+
+                    using (System.IO.Stream s = req.GetRequestStream())
+                        Core.Utility.CopyStream(stream, s);
+
+                    using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                    {
+                        int code = (int)resp.StatusCode;
+                        if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                            throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                    }
                 }
+            }
+            catch (System.Net.WebException wex)
+            {
+                //Convert to better exception
+                if (wex.Response as System.Net.HttpWebResponse != null)
+                    if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound)
+                        throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+
+                throw;
             }
         }
 
@@ -374,18 +395,23 @@ namespace Duplicati.Library.Backend
                 }
                 catch (System.Net.WebException wex)
                 {
-                    if (
-                        wex.Response as System.Net.HttpWebResponse != null
-                        &&
-                        (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound
-                        &&
-                        m_filenamelist != null
-                        &&
-                        m_filenamelist.Contains(remotename)
-                    )
-                        throw new Exception(string.Format(Strings.WEBDAV.SeenThenNotFoundError, m_path, remotename, System.IO.Path.GetExtension(remotename), wex.Message), wex);
-                    else
-                        throw;
+                    if (wex.Response as System.Net.HttpWebResponse != null)
+                    {
+                        if ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict)
+                            throw new Interface.FolderMissingException(string.Format(Strings.WEBDAV.MissingFolderError, m_path, wex.Message), wex);
+
+                        if
+                        (
+                            (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound
+                            &&
+                            m_filenamelist != null
+                            &&
+                            m_filenamelist.Contains(remotename)
+                        )
+                            throw new Exception(string.Format(Strings.WEBDAV.SeenThenNotFoundError, m_path, remotename, System.IO.Path.GetExtension(remotename), wex.Message), wex);
+                    }
+
+                    throw;
                 }
             }
         }

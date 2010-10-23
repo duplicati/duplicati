@@ -112,6 +112,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("dont-read-manifests", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontreadmanifestsShort, Strings.Options.DontreadmanifestsLong),
                     new CommandLineArgument("file-to-restore", CommandLineArgument.ArgumentType.String, Strings.Options.FiletorestoreShort, Strings.Options.FiletorestoreLong),
                     new CommandLineArgument("restore-time", CommandLineArgument.ArgumentType.String, Strings.Options.RestoretimeShort, Strings.Options.RestoretimeLong, "now"),
+                    new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
 
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.String, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong),
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
@@ -368,6 +369,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if old filenames are used
         /// </summary>
         public bool UseOldFilenames { get { return GetBool("old-filenames"); } }
+
+        /// <summary>
+        /// A value indicating if missing folders should be created automatically
+        /// </summary>
+        public bool AutocreateFolders { get { return !GetBool("disable-autocreate-folder"); } }
 
         /// <summary>
         /// Gets the backup prefix

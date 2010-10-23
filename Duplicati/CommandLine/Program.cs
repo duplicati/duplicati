@@ -301,6 +301,19 @@ namespace Duplicati.CommandLine
 
                     Console.WriteLine(Duplicati.Library.Main.Interface.Cleanup(cargs[0], options));
                 }
+                else if (source.Trim().ToLower() == "create-folder")
+                {
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        return;
+                    }
+
+                    Duplicati.Library.Main.Interface.CreateFolder(cargs[0], options);
+                    Console.WriteLine(string.Format(Strings.Program.FolderCreatedMessage, cargs[0]));
+                }
                 else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
                 {
                     Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target.Split(System.IO.Path.PathSeparator), options));

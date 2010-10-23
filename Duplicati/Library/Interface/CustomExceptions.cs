@@ -29,7 +29,7 @@ namespace Duplicati.Library.Interface
     public class FolderMissingException : Exception
     {
         public FolderMissingException()
-            : base()
+            : base(Strings.Common.FolderMissingError)
         { }
 
         public FolderMissingException(string message)
@@ -48,21 +48,21 @@ namespace Duplicati.Library.Interface
     /// <summary>
     /// An exception indicating that the requested folder already existed
     /// </summary>
-    public class FolderAreadyExistedExcpetion : Exception
+    public class FolderAreadyExistedException : Exception
     {
-        public FolderAreadyExistedExcpetion()
-            : base()
+        public FolderAreadyExistedException()
+            : base(Strings.Common.FolderAlreadyExistsError)
         { }
 
-        public FolderAreadyExistedExcpetion(string message)
+        public FolderAreadyExistedException(string message)
             : base(message)
         { }
 
-        public FolderAreadyExistedExcpetion(Exception innerException)
+        public FolderAreadyExistedException(Exception innerException)
             : base(Strings.Common.FolderAlreadyExistsError, innerException)
         { }
 
-        public FolderAreadyExistedExcpetion(string message, Exception innerException)
+        public FolderAreadyExistedException(string message, Exception innerException)
             : base(message, innerException)
         { }
     }

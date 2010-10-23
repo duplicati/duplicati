@@ -159,6 +159,15 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The folder {0} was created.
+        /// </summary>
+        internal static string FolderCreatedMessage {
+            get {
+                return ResourceManager.GetString("FolderCreatedMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Supported generic modules:.
         /// </summary>
         internal static string GenericModulesHeader {

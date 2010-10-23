@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class File : IStreamingBackend, IBackendGUI
+    public class File : IBackend_v2, IStreamingBackend, IBackendGUI
     {
         private string m_path;
         private string m_username;
@@ -88,20 +88,22 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            string path = m_path;
             List<IFileEntry> ls = new List<IFileEntry>();
 
             //Attempt to apply credentials
             if (!string.IsNullOrEmpty(m_username) && m_password != null)
                 Win32.PreAuthenticate(m_path, m_username, m_password);
 
-            foreach (string s in System.IO.Directory.GetFiles(path))
+            if (!System.IO.Directory.Exists(m_path))
+                    throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
+
+            foreach (string s in System.IO.Directory.GetFiles(m_path))
             {
                 System.IO.FileInfo fi = new System.IO.FileInfo(s);
                 ls.Add(new FileEntry(fi.Name, fi.Length, fi.LastAccessTime, fi.LastWriteTime));
             }
 
-            foreach (string s in System.IO.Directory.GetDirectories(path))
+            foreach (string s in System.IO.Directory.GetDirectories(m_path))
             {
                 System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(s);
                 FileEntry fe = new FileEntry(di.Name, 0, di.LastAccessTime, di.LastWriteTime);
@@ -114,6 +116,9 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
+            if (!System.IO.Directory.Exists(m_path))
+                throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
+
             string path = System.IO.Path.Combine(m_path, remotename);
             using (System.IO.FileStream writestream = System.IO.File.Open(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                 Core.Utility.CopyStream(stream, writestream);
@@ -127,6 +132,9 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream stream)
         {
+            if (!System.IO.Directory.Exists(m_path))
+                throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
+
             string path = System.IO.Path.Combine(m_path, remotename);
             using (System.IO.FileStream readstream = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 Core.Utility.CopyStream(readstream, stream);
@@ -166,8 +174,25 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
+        #region IBackend_v2 Members
+
+        public void Test()
+        {
+            List();
+        }
+
+        public void CreateFolder()
+        {
+            if (System.IO.Directory.Exists(m_path))
+                throw new FolderAreadyExistedException();
+
+            System.IO.Directory.CreateDirectory(m_path);
+        }
+
+        #endregion
+
         #region IDisposable Members
-        
+
         public void Dispose()
         {
             if (m_options != null)

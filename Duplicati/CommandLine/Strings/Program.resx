@@ -150,6 +150,9 @@ Type\tTime\t\t\tVolumes\tSize</value>
   <data name="ExampleWindows" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ExampleWindows.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
   </data>
+  <data name="FolderCreatedMessage" xml:space="preserve">
+    <value>The folder {0} was created</value>
+  </data>
   <data name="GenericModulesHeader" xml:space="preserve">
     <value>Supported generic modules:</value>
   </data>

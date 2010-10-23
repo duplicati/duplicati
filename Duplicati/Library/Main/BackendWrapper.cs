@@ -626,6 +626,9 @@ namespace Duplicati.Library.Main
                     lastEx = ex;
                     m_statistics.LogError(ex.Message, ex);
 
+                    if (ex is Library.Interface.FolderMissingException && m_backend is Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
+                        return new List<Library.Interface.IFileEntry>();
+
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
                         System.Threading.Thread.Sleep(m_options.RetryDelay);
@@ -944,6 +947,12 @@ namespace Duplicati.Library.Main
                     }
                     catch (Exception ex)
                     {
+                        //Even if we can create the folder, we still count it as an error to prevent trouble with backends
+                        // that report OK for CreateFolder, but still report the folder as missing
+                        if (ex is Library.Interface.FolderMissingException && m_backend is Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
+                            try { (m_backend as Library.Interface.IBackend_v2).CreateFolder(); }
+                            catch { }
+                        
                         lastEx = ex;
                         m_statistics.LogError(ex.Message, ex);
 
@@ -986,6 +995,14 @@ namespace Duplicati.Library.Main
                 }
             }
 
+        }
+
+        public void CreateFolder()
+        {
+            if (m_backend is Library.Interface.IBackend_v2)
+                (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+            else
+                throw new Exception(string.Format(Strings.BackendWrapper.BackendDoesNotSupportCreateFolder, m_backend.DisplayName, m_backend.ProtocolKey));
         }
 
         /// <summary>
