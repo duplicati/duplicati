@@ -159,6 +159,33 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &lt; not found &gt;.
+        /// </summary>
+        internal static string FileEntryNotFound {
+            get {
+                return ResourceManager.GetString("FileEntryNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}\t{1}.
+        /// </summary>
+        internal static string FindLastVersionEntry {
+            get {
+                return ResourceManager.GetString("FindLastVersionEntry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Backuptime\t\tFilename.
+        /// </summary>
+        internal static string FindLastVersionHeader {
+            get {
+                return ResourceManager.GetString("FindLastVersionHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The folder {0} was created.
         /// </summary>
         internal static string FolderCreatedMessage {
@@ -325,11 +352,11 @@ namespace Duplicati.CommandLine.Strings {
         /// Cleanup (remove partial and unused files):
         ///  Duplicati.CommandLine cleanup [options] &lt;backend&gt;
         ///
-        /// List files (backup volume sets):
+        /// List files:
         ///  Duplicati.CommandLine list [options] &lt;backend&gt;
         ///
-        /// List content files (files that can be restored):
-        ///  [rest of string was truncated]&quot;;.
+        /// List backup sets:
+        ///  Duplicati.CommandLine collection-status [options] &lt; [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string Usage {
             get {

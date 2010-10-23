@@ -160,11 +160,29 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to One or more manifests are from version 1, which requires that filenames searched are relative.
+        /// </summary>
+        internal static string ManifestVersionRequiresRelativeNamesWarning {
+            get {
+                return ResourceManager.GetString("ManifestVersionRequiresRelativeNamesWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The signature file for a content volume was missing, date: {0}, volumenumber: {1}, content volume filename: {2}.
         /// </summary>
         internal static string MissingSignatureFile {
             get {
                 return ResourceManager.GetString("MissingSignatureFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No filenames given for find-last-file.
+        /// </summary>
+        internal static string NoFilesGivenError {
+            get {
+                return ResourceManager.GetString("NoFilesGivenError", resourceCulture);
             }
         }
         
@@ -264,6 +282,15 @@ namespace Duplicati.Library.Main.Strings {
         internal static string SkippedContentVolumeLogMessage {
             get {
                 return ResourceManager.GetString("SkippedContentVolumeLogMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The signature file {0} was skipped because the signature file was not found in the manifest.
+        /// </summary>
+        internal static string SkippedUnlistedSignatureFileWarning {
+            get {
+                return ResourceManager.GetString("SkippedUnlistedSignatureFileWarning", resourceCulture);
             }
         }
         

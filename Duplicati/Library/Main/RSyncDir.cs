@@ -711,6 +711,22 @@ namespace Duplicati.Library.Main.RSync
             throw new Exception(string.Format(Strings.RSyncDir.InternalPathMappingError, path, string.Join(System.IO.Path.PathSeparator.ToString(), m_sourcefolder)));
         }
 
+        private static string GetRelativeName(string[] sourcefolders, string path)
+        {
+            if (sourcefolders.Length == 1)
+            {
+                if (!path.StartsWith(Core.Utility.AppendDirSeparator(sourcefolders[0]), Core.Utility.ClientFilenameStringComparision))
+                    throw new Exception(string.Format(Strings.RSyncDir.InternalPathMappingError, path, sourcefolders[0]));
+                return path.Substring(Core.Utility.AppendDirSeparator(sourcefolders[0]).Length);
+            }
+
+            for (int i = 0; i < sourcefolders.Length; i++)
+                if (path.StartsWith(Core.Utility.AppendDirSeparator(sourcefolders[i]), Core.Utility.ClientFilenameStringComparision))
+                    return System.IO.Path.Combine(i.ToString(), path.Substring(Core.Utility.AppendDirSeparator(sourcefolders[i]).Length));
+
+            throw new Exception(string.Format(Strings.RSyncDir.InternalPathMappingError, path, string.Join(System.IO.Path.PathSeparator.ToString(), sourcefolders)));
+        }
+
         /// <summary>
         /// Gets the system path, given a relative filename
         /// </summary>
@@ -1975,5 +1991,35 @@ namespace Duplicati.Library.Main.RSync
             }
         }
 
+
+        /// <summary>
+        /// Helper method to search a signature file for existence of a specified file
+        /// </summary>
+        /// <param name="mfi">The manifest that the signature file derives from</param>
+        /// <param name="fileToFind">The files to find</param>
+        /// <param name="signature">The signature file</param>
+        internal static void ContainsFile(Manifestfile mfi, string[] filesToFind, Duplicati.Library.Interface.ICompression signature)
+        {
+            string[] prefixes = new string[] {
+                Core.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
+                Core.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT),
+                Core.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
+            };
+
+            foreach (string prefix in prefixes)
+                foreach (string f in FilenamesFromPlatformIndependant(signature.ListFiles(prefix)))
+                {
+                    string fname = f.Substring(prefix.Length);
+                    for (int i = 0; i < filesToFind.Length; i++)
+                    {
+                        if (string.IsNullOrEmpty(filesToFind[i]))
+                            continue;
+                        string fileToFind = filesToFind[i];
+                        string name = System.IO.Path.IsPathRooted(fileToFind) ? GetRelativeName(mfi.SourceDirs, fileToFind) : fileToFind;
+                        if (fname.Equals(name, Core.Utility.ClientFilenameStringComparision))
+                            filesToFind[i] = null;
+                    }
+                }
+        }
     }
 }

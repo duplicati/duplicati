@@ -26,6 +26,9 @@ Usage:
  List signature files (files in a single backup volume set):
   Duplicati.CommandLine list-actual-signature-files [options] <backend>
 
+ Find the last version of a file:
+  Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>
+
  Purge signature cache:
   Duplicati.CommandLine purge-signature-cache [options]
 

@@ -150,8 +150,14 @@
   <data name="ManifestsMustBeReadOnBackups" xml:space="preserve">
     <value>It is not allowed to disable manifest reading when performing a backup. Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
   </data>
+  <data name="ManifestVersionRequiresRelativeNamesWarning" xml:space="preserve">
+    <value>One or more manifests are from version 1, which requires that filenames searched are relative</value>
+  </data>
   <data name="MissingSignatureFile" xml:space="preserve">
     <value>The signature file for a content volume was missing, date: {0}, volumenumber: {1}, content volume filename: {2}</value>
+  </data>
+  <data name="NoFilesGivenError" xml:space="preserve">
+    <value>No filenames given for find-last-file</value>
   </data>
   <data name="NoSourceFoldersError" xml:space="preserve">
     <value>No source folders specified for backup</value>
@@ -185,6 +191,9 @@
   </data>
   <data name="SkippedContentVolumeLogMessage" xml:space="preserve">
     <value>The content volume {0} is not present in the manifest and is not used</value>
+  </data>
+  <data name="SkippedUnlistedSignatureFileWarning" xml:space="preserve">
+    <value>The signature file {0} was skipped because the signature file was not found in the manifest</value>
   </data>
   <data name="SourceDirIsIncludedMultipleTimesError" xml:space="preserve">
     <value>The folder {0} is included multiple times</value>

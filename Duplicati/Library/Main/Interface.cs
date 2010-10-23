@@ -106,7 +106,11 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A request to create the underlying folder
         /// </summary>
-        CreateFolder
+        CreateFolder,
+        /// <summary>
+        /// A search for files in signature files
+        /// </summary>
+        FindLastFileVersion
     }
 
     /// <summary>
@@ -1504,6 +1508,105 @@ namespace Duplicati.Library.Main
 
 
         /// <summary>
+        /// Reads through a backup and finds the last backup entry that has a specific file
+        /// </summary>
+        /// <returns></returns>
+        public List<KeyValuePair<string, DateTime>> FindLastFileVersion()
+        {
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.FindLastFileVersion);
+            SetupCommonOptions(stats);
+
+            if (m_options.DontReadManifests)
+                throw new Exception(Strings.Interface.ManifestsMustBeReadOnBackups);
+
+            if (string.IsNullOrEmpty(m_options.FileToRestore))
+                throw new Exception(Strings.Interface.NoFilesGivenError);
+
+            string[] filesToFind = m_options.FileToRestore.Split(System.IO.Path.PathSeparator);
+            KeyValuePair<string, DateTime>[] results = new KeyValuePair<string, DateTime>[filesToFind.Length];
+            for (int i = 0; i < results.Length; i++)
+                results[i] = new KeyValuePair<string, DateTime>(filesToFind[i], new DateTime(0));
+
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
+            {
+                //Extract the full backup set list
+                List<ManifestEntry> fulls = backend.GetBackupSets();
+
+                //Flatten the list
+                List<ManifestEntry> workList = new List<ManifestEntry>();
+
+                //The list is oldest first, this function work newest first
+                fulls.Reverse();
+                foreach (ManifestEntry f in fulls)
+                {
+                    f.Incrementals.Reverse();
+
+                    workList.AddRange(f.Incrementals);
+                    workList.Add(f);
+                }
+
+                bool warned_manifest_v1 = false;
+
+                foreach (ManifestEntry mf in workList)
+                {
+                    List<string> signatureHashes = null;
+                    Manifestfile mfi;
+
+                    using(Core.TempFile tf = new Duplicati.Library.Core.TempFile())
+                    {
+                        backend.Get(mf, tf, null);
+                        mfi = new Manifestfile(tf);
+                        if (!m_options.SkipFileHashChecks)
+                            signatureHashes = mfi.SignatureHashes;
+                    }
+
+                    //If there are no volumes, don't stop here
+                    bool any_unmatched = true;
+
+                    if (stats != null && !warned_manifest_v1 && (mfi.SourceDirs == null || mfi.SourceDirs.Length == 0))
+                    {
+                        warned_manifest_v1 = true;
+                        stats.LogWarning(Strings.Interface.ManifestVersionRequiresRelativeNamesWarning, null);
+                    }
+
+                    foreach(KeyValuePair<SignatureEntry, ContentEntry> e in mf.Volumes)
+                        using (Core.TempFile tf = new Duplicati.Library.Core.TempFile())
+                        {
+                            //Skip non-approved signature files
+                            if (signatureHashes != null && e.Key.Volumenumber > signatureHashes.Count)
+                            {
+                                stats.LogWarning(string.Format(Strings.Interface.SkippedUnlistedSignatureFileWarning, e.Key.Filename), null);
+                                continue;
+                            }
+
+                            backend.Get(e.Key, tf, signatureHashes == null ? null : signatureHashes[e.Key.Volumenumber - 1]);
+
+                            any_unmatched = false;
+
+                            RSync.RSyncDir.ContainsFile(mfi, filesToFind, DynamicLoader.CompressionLoader.GetModule(e.Key.Compression, tf, m_options.RawOptions));
+
+                            for (int i = 0; i < filesToFind.Length; i++)
+                            {
+                                if (results[i].Value.Ticks == 0 && string.IsNullOrEmpty(filesToFind[i]))
+                                    results[i] = new KeyValuePair<string,DateTime>(results[i].Key, mf.Time);
+                                else
+                                    any_unmatched = true;
+                            }
+
+                            if (!any_unmatched)
+                                break;
+                        }
+
+                    if (!any_unmatched)
+                        break;
+                }
+
+                return new List<KeyValuePair<string,DateTime>>(results);
+            }
+
+        }
+
+        /// <summary>
         /// This function will examine all options passed on the commandline, and test for unsupported or deprecated values.
         /// Any errors will be logged into the statistics module.
         /// </summary>
@@ -1782,6 +1885,12 @@ namespace Duplicati.Library.Main
         {
             using (Interface i = new Interface(target, options))
                 i.CreateFolder();
+        }
+
+        public static List<KeyValuePair<string, DateTime>> FindLastFileVersion(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.FindLastFileVersion();
         }
 
         #endregion

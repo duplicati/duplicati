@@ -314,6 +314,21 @@ namespace Duplicati.CommandLine
                     Duplicati.Library.Main.Interface.CreateFolder(cargs[0], options);
                     Console.WriteLine(string.Format(Strings.Program.FolderCreatedMessage, cargs[0]));
                 }
+                else if (source.Trim().ToLower() == "find-last-version")
+                {
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        return;
+                    }
+
+                    List<KeyValuePair<string, DateTime>> results = Duplicati.Library.Main.Interface.FindLastFileVersion(cargs[0], options);
+                    Console.WriteLine(Strings.Program.FindLastVersionHeader.Replace("\\t", "\t"));
+                    foreach(KeyValuePair<string, DateTime> k in results)
+                        Console.WriteLine(string.Format(Strings.Program.FindLastVersionEntry.Replace("\\t", "\t"), k.Value.Ticks == 0 ? Strings.Program.FileEntryNotFound : k.Value.ToLocalTime().ToString("yyyyMMdd hhmmss"), k.Key));
+                }
                 else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
                 {
                     Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target.Split(System.IO.Path.PathSeparator), options));
