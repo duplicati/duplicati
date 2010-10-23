@@ -109,6 +109,7 @@ namespace Duplicati.GUI
             //ea, from 1 to 8, by stepping 2->3->4->5->6->7->8
             SortedDictionary<int, string> upgrades = new SortedDictionary<int, string>();
             string prefix = typeof(DatabaseUpgrader).Namespace + "." + FOLDER_NAME + ".";
+            int maxversion = -1;
             foreach (string s in asm.GetManifestResourceNames())
             {
                 //The resource name will be "Duplicati.GUI.Database_schema.1.Sample upgrade.sql"
@@ -119,6 +120,7 @@ namespace Duplicati.GUI
                     {
                         string version = s.Substring(prefix.Length, s.IndexOf(".", prefix.Length + 1) - prefix.Length);
                         int fileversion = int.Parse(version);
+                        maxversion = Math.Max(maxversion, fileversion);
                         if (fileversion > dbversion)
                         {
                             if (!upgrades.ContainsKey(fileversion))
@@ -131,6 +133,9 @@ namespace Duplicati.GUI
                     }
                 }
             }
+
+            if (dbversion > maxversion)
+                throw new Exception(string.Format(Strings.DatabaseUpgrader.InvalidVersionError, dbversion, maxversion, System.IO.Path.GetDirectoryName(sourcefile)));
 
             if (upgrades.Count > 0)
             {

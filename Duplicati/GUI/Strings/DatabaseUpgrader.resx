@@ -125,6 +125,14 @@
     <value>Unable to determine database format: {0}</value>
     <comment>An error message that is displayed if an error occurs while determining database layout</comment>
   </data>
+  <data name="InvalidVersionError" xml:space="preserve">
+    <value>
+The database has version {0} but the largest supported version is {1}.
+
+This is likely caused by upgrading to a newer version and then downgrading.
+If this is the case, there is likely a backup file of the previous database version in the folder {2}.</value>
+    <comment>An error message that is displayed if the database version number does not match</comment>
+  </data>
   <data name="TableLayoutError" xml:space="preserve">
     <value>Unknown table layout detected</value>
     <comment>An error message that is displayed when the layout of the database is unexpected</comment>
