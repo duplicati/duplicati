@@ -44,7 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Duplicati\CommandLine\CommandLineParser.cs">
+    <Compile Include="..\..\Duplicati\CommandLine\CommandLineParser.cs">
       <Link>CommandLineParser.cs</Link>
     </Compile>
     <Compile Include="Program.cs" />

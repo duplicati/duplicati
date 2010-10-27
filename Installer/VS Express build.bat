@@ -34,8 +34,11 @@ xcopy /I /Y /E ..\..\..\..\Duplicati\Localization\Compiled\fr-FR fr-FR
 xcopy /I /Y /E ..\..\..\..\Duplicati\Localization\Compiled\pt-BR pt-BR
 
 cd ..
-del ..\Duplicati.msi
-del ..\Duplicati.zip
+del ..\Duplicati.msi /Q
+del ..\Duplicati.x86.msi /Q
+del ..\Duplicati.x64.msi /Q
+del ..\Duplicati.zip /Q
+
 
 "%PROGRAMFILES%\7-zip\7z.exe" a -r Duplicati.zip Duplicati
 
@@ -43,7 +46,7 @@ cd ..\..
 
 REM Create incBinFiles.wxs if required
 REM Does NOT set the FILE_DUPLICATI_MAIN_EXE id on the main file, which is required to build the MSI
-if not exist incBinFiles.wxs paraffin -dir bin\Release\Duplicati -groupname DUPLICATIBIN -dirref INSTALLLOCATION -ext .pdb -ext .0 -alias bin\Release\Duplicati -norootdirectory -multiple  incBinFiles.wxs 
+if not exist incBinFiles.wxs paraffin -dir bin\Release\Duplicati -groupname DUPLICATIBIN -dirref INSTALLLOCATION -ext .pdb -ext .0 -alias bin\Release\Duplicati -norootdirectory -multiple -Win64var "$(var.Win64)" incBinFiles.wxs 
 
 REM Update version
 if exist incBinFiles.PARAFFIN del incBinFiles.PARAFFIN
@@ -52,4 +55,7 @@ if exist incBinFiles.PARAFFIN xcopy /I /Y incBinFiles.PARAFFIN incBinFiles.wxs
 if exist incBinFiles.PARAFFIN del incBinFiles.PARAFFIN
 
 WixProjBuilder.exe --wixpath="C:\Program Files (x86)\Windows Installer XML v3\bin" WixInstaller.wixproj
+move "bin\Release\Duplicati.msi" "bin\Release\Duplicati.x86.msi"
+WixProjBuilder.exe --wixpath="C:\Program Files (x86)\Windows Installer XML v3\bin" --platform=x64 WixInstaller.wixproj
+move "bin\Release\Duplicati.msi" "bin\Release\Duplicati.x64.msi"
 pause

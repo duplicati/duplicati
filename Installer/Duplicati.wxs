@@ -3,10 +3,28 @@
 <?include UpgradeData.wxi ?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="$(var.ProductCode)" Name="Duplicati" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
-		<Package InstallerVersion="200" Compressed="yes" Id="$(var.PackageCode)" />
 
-		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+    <!-- Various nice-to-have shorthands for x64/x32 -->
+	<?if $(var.Platform) = "x64" ?>
+		<?define SystemFolder = "System64Folder" ?>
+		<?define SystemFolderX86 = "SystemFolder" ?>
+		<?define SoftwareKey = "Software" ?>
+		<?define SoftwareKeyX86 = "Software\Wow6432Node" ?>
+		<?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
+		<?define ProgramFilesFolderX86 = "ProgramFilesFolder" ?>
+		<?define DisplayName = "Duplicati (x64)" ?>
+	<?else?>
+		<?define SystemFolder = "SystemFolder" ?>
+		<?define SystemFolderX86 = "SystemFolder" ?>
+		<?define SoftwareKey = "Software" ?>
+		<?define SoftwareKeyX86 = "Software" ?>
+		<?define ProgramFilesFolder = "ProgramFilesFolder" ?>
+		<?define DisplayName = "Duplicati" ?>
+	<?endif?>
+	
+  <Product Id="$(var.ProductCode)" Name="$(var.DisplayName)" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+	<Package InstallerVersion="200" Compressed="yes" Id="$(var.PackageCode)" Platform="$(var.Platform)" />
+	<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
     <PropertyRef Id="NETFRAMEWORK20"/>
     <Condition Message="The .NET Framework 2.0 must be installed ([NETFRAMEWORK20])">
@@ -53,19 +71,11 @@
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder" Name="Programs"/>
       <Directory Id="DesktopFolder" Name="Desktop"/>
-      <!-- 
-      <Directory Id="ProgramFiles64Folder">
-      <Directory Id="INSTALLLOCATION64" Name="Duplicati" />
-      </Directory> 
-      -->
-        <Directory Id="ProgramFilesFolder">
-        <Directory Id="INSTALLLOCATION" Name="Duplicati">
-          <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
-          <!-- <Component Id="ProductComponent" Guid="931b7759-4503-43c0-b4cf-9cdafc349147"> -->
-          <!-- TODO: Insert files, registry keys, and other resources here. -->
-          <!-- </Component> -->
-        </Directory>
-      </Directory>
+	  
+  	  <Directory Id="$(var.ProgramFilesFolder)">
+	    <Directory Id="INSTALLLOCATION" Name="Duplicati" />
+	  </Directory>
+		
     </Directory>
 
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />

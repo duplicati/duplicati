@@ -120,6 +120,11 @@ namespace WixProjBuilder
             string compile_args = "\"" + string.Join("\" \"", includes.ToArray()) + "\"";
             compile_args += " -out \"" + objdir.Replace("\\", "\\\\") + "\"";
 
+            if (options.ContainsKey("platform") && options["platform"] == "x64")
+                compile_args += " -dPlatform=x64 -dWin64=yes";
+            else
+                compile_args += " -dPlatform=x86 -dWin64=no";
+
             int res = Execute(
                 System.IO.Path.Combine(wixpath, "candle.exe"), 
                 projdir,
