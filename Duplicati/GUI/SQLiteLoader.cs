@@ -41,9 +41,12 @@ namespace Duplicati.GUI
                 {
                     string filename = "System.Data.SQLite.dll";
                     string basePath = System.IO.Path.Combine(System.Windows.Forms.Application.StartupPath, "SQLite");
+
+                    //Default is to use the pinvoke version which requires a native .dll/.so
                     string assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
 
-                    if (System.Environment.OSVersion.Platform == PlatformID.Win32NT || System.Environment.OSVersion.Platform == PlatformID.Win32Windows)
+                    //If we run on windows with MS.Net we can use the mixed mode assemblies
+                    if (!Duplicati.Library.Core.Utility.IsClientLinux && !Duplicati.Library.Core.Utility.IsMono)
                     {
                         //On my x64 system, 32bit appears to work correctly as 32 bit, where loading the 64bit dll fails
                         if (IntPtr.Size == 8 /*|| (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor())*/)

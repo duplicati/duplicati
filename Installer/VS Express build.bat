@@ -14,6 +14,9 @@ xcopy /I /Y "..\..\..\linux help\*" .
 del "*.vshost.*" /Q
 xcopy /Y ..\..\..\..\Duplicati\GUI\StartDuplicati.sh .
 
+REM This dll enables Mono on Windows support
+xcopy /I /Y ..\..\..\..\thirdparty\SQLite\Bin\sqlite3.dll .
+
 REM Prepare the config file with version overrides
 del "Duplicati.exe.config" /Q
 del "Duplicati.CommandLine.exe.config" /Q
