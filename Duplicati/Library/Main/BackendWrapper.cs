@@ -673,11 +673,16 @@ namespace Duplicati.Library.Main
             {
                 try 
                 { 
+                    
                     string file = FindCacheEntry(remote as SignatureEntry);
                     try
-                    { 
-                        while(file != null)
-                            System.IO.File.Delete(file); 
+                    {
+
+                        while (file != null)
+                        {
+                            System.IO.File.Delete(file);
+                            file = FindCacheEntry(remote as SignatureEntry);
+                        }
                     }
                     catch (Exception ex) 
                     {
