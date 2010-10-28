@@ -30,6 +30,7 @@ namespace Duplicati.GUI.HelperControls
     public partial class CommandLineOptionGrid : UserControl
     {
         private bool m_unsupported = false;
+        private bool m_enabledClicked = false;
 
         public CommandLineOptionGrid()
         {
@@ -54,6 +55,7 @@ namespace Duplicati.GUI.HelperControls
             if (!m_unsupported)
             {
                 OverrideTable.Rows.Clear();
+                
                 foreach (IList<Library.Interface.ICommandLineArgument> sw in new IList<Library.Interface.ICommandLineArgument>[] { switches, extras })
                     if (sw != null)
                         foreach (Library.Interface.ICommandLineArgument arg in sw)
@@ -92,13 +94,39 @@ namespace Duplicati.GUI.HelperControls
                     OptionsGrid.DataSource = BaseDataSet;
                     OverrideTable = BaseDataSet.Tables["OverrideTable"];
                     OptionsGrid.DataMember = "OverrideTable";
+
+                    OptionsGrid.Sort(nameDataGridViewTextBoxColumn, ListSortDirection.Ascending);
                 }
             }
         }
 
+        private DataRow FindRow(int rowIndex)
+        {
+            int argIndex = -1;
+            foreach (DataGridViewColumn c in OptionsGrid.Columns)
+                if (c.DataPropertyName == "argument")
+                {
+                    argIndex = c.Index;
+                    break;
+                }
+
+            if (argIndex == -1)
+                return null;
+
+            Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument) OptionsGrid.Rows[rowIndex].Cells[argIndex].Value;
+
+            foreach (DataRow r in OverrideTable.Rows)
+                if (r["argument"] == arg)
+                    return r;
+            
+            return null;
+        }
+
         private void OptionsGrid_RowEnter(object sender, DataGridViewCellEventArgs e)
         {
-            DataRow r = OverrideTable.Rows[e.RowIndex];
+            DataRow r = FindRow(e.RowIndex);
+            if (r == null)
+                return;
             Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument)r["argument"];
 
             string typename = arg.Typename;
@@ -108,20 +136,18 @@ namespace Duplicati.GUI.HelperControls
             InfoLabel.Text = string.Format(Strings.CommandLineOptionsGrid.InfoLabelFormat, typename, arg.ShortDescription, arg.LongDescription);
         }
 
-        private void OptionsGrid_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        private void OptionsGrid_RowValidating(object sender, DataGridViewCellCancelEventArgs e)
         {
-            DataRow r = OverrideTable.Rows[e.RowIndex];
+            DataRow r = FindRow(e.RowIndex);
+            if (r == null)
+                return;
 
             if (e.ColumnIndex != 0)
                 r["Enabled"] = r["Value"] != DBNull.Value;
 
             r["validated"] = false;
-        }
 
-        private void OptionsGrid_RowValidating(object sender, DataGridViewCellCancelEventArgs e)
-        {
-            DataRow r = OverrideTable.Rows[e.RowIndex];
-            if ((bool)r["Enabled"] && !(bool)r["validated"])
+            if ((bool)r["Enabled"])
             {
                 Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument)r["argument"];
                 string optionvalue = (string)(r["Value"] == DBNull.Value ? "" : r["Value"] ?? "");
@@ -134,6 +160,37 @@ namespace Duplicati.GUI.HelperControls
                 if (!e.Cancel)
                     r["validated"] = true;
             }
+        }
+
+        private void OptionsGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == 0)
+                m_enabledClicked = true;
+        }
+
+        private void OptionsGrid_CellValidating(object sender, DataGridViewCellValidatingEventArgs e)
+        {
+            if (e == null || e.FormattedValue == null)
+                return;
+
+            if (m_enabledClicked && e.ColumnIndex == 0 && e.FormattedValue.ToString() == true.ToString())
+            {
+                DataRow r = FindRow(e.RowIndex);
+                if (r == null)
+                    return;
+
+                Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument)r["argument"];
+                if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
+                {
+                    if (r["Value"] == DBNull.Value)
+                    {
+                        r["Value"] = "true";
+                        r["Enabled"] = true; //Required or display is weird
+                    }
+                }
+            }
+
+            m_enabledClicked = false;
         }
     }
 }

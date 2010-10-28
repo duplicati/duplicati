@@ -42,6 +42,7 @@
             this.valueDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.argumentDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.InfoLabel = new System.Windows.Forms.TextBox();
+            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.BaseDataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OverrideTable)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OptionsGrid)).BeginInit();
@@ -111,13 +112,15 @@
             this.OptionsGrid.RowHeadersVisible = false;
             this.OptionsGrid.RowEnter += new System.Windows.Forms.DataGridViewCellEventHandler(this.OptionsGrid_RowEnter);
             this.OptionsGrid.RowValidating += new System.Windows.Forms.DataGridViewCellCancelEventHandler(this.OptionsGrid_RowValidating);
-            this.OptionsGrid.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.OptionsGrid_CellEndEdit);
+            this.OptionsGrid.CellValidating += new System.Windows.Forms.DataGridViewCellValidatingEventHandler(this.OptionsGrid_CellValidating);
+            this.OptionsGrid.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.OptionsGrid_CellContentClick);
             // 
             // enabledDataGridViewCheckBoxColumn
             // 
             this.enabledDataGridViewCheckBoxColumn.DataPropertyName = "Enabled";
             resources.ApplyResources(this.enabledDataGridViewCheckBoxColumn, "enabledDataGridViewCheckBoxColumn");
             this.enabledDataGridViewCheckBoxColumn.Name = "enabledDataGridViewCheckBoxColumn";
+            this.enabledDataGridViewCheckBoxColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
             // 
             // nameDataGridViewTextBoxColumn
             // 
@@ -145,6 +148,12 @@
             this.InfoLabel.Name = "InfoLabel";
             this.InfoLabel.ReadOnly = true;
             // 
+            // dataGridViewTextBoxColumn1
+            // 
+            this.dataGridViewTextBoxColumn1.DataPropertyName = "argument";
+            resources.ApplyResources(this.dataGridViewTextBoxColumn1, "dataGridViewTextBoxColumn1");
+            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            // 
             // CommandLineOptionGrid
             // 
             resources.ApplyResources(this, "$this");
@@ -169,11 +178,12 @@
         private System.Data.DataColumn ValueDataColumn;
         private System.Data.DataColumn argumentDataColumn;
         private System.Windows.Forms.DataGridView OptionsGrid;
+        private System.Data.DataColumn validatedDataColumn;
+        private System.Windows.Forms.TextBox InfoLabel;
         private System.Windows.Forms.DataGridViewCheckBoxColumn enabledDataGridViewCheckBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn nameDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn valueDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn argumentDataGridViewTextBoxColumn;
-        private System.Data.DataColumn validatedDataColumn;
-        private System.Windows.Forms.TextBox InfoLabel;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
     }
 }
