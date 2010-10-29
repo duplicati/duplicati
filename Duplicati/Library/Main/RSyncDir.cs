@@ -704,9 +704,12 @@ namespace Duplicati.Library.Main.RSync
             if (m_sourcefolder.Length == 1)
                 return path.Substring(m_sourcefolder[0].Length);
 
-            for(int i = 0; i < m_sourcefolder.Length; i++)
+            for (int i = 0; i < m_sourcefolder.Length; i++)
                 if (path.StartsWith(m_sourcefolder[i], Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
-                    return System.IO.Path.Combine(i.ToString(), path.Substring(m_sourcefolder[i].Length));
+                    if (path.Length == m_sourcefolder[i].Length)
+                        return Core.Utility.AppendDirSeparator(i.ToString()); //This is a folder, and must be suffix with a slash
+                    else
+                        return System.IO.Path.Combine(i.ToString(), path.Substring(m_sourcefolder[i].Length)); //This will use whatever suffix the path already has
 
             throw new Exception(string.Format(Strings.RSyncDir.InternalPathMappingError, path, string.Join(System.IO.Path.PathSeparator.ToString(), m_sourcefolder)));
         }
@@ -734,14 +737,7 @@ namespace Duplicati.Library.Main.RSync
         /// <returns>The full system path to the file</returns>
         private string GetFullPathFromRelname(string relpath)
         {
-            if (m_sourcefolder.Length == 1)
-                return System.IO.Path.Combine(m_sourcefolder[0], relpath);
-            else
-            {
-                int ix = relpath.IndexOf(System.IO.Path.DirectorySeparatorChar);
-                int pos = int.Parse(relpath.Substring(0, ix));
-                return System.IO.Path.Combine(m_sourcefolder[pos], relpath.Substring(ix + 1));
-            }
+            return GetFullPathFromRelname(m_sourcefolder, relpath);
         }
 
         /// <summary>
@@ -771,11 +767,9 @@ namespace Duplicati.Library.Main.RSync
             else
             {
                 int ix = relpath.IndexOf(System.IO.Path.DirectorySeparatorChar);
-                int pos = int.Parse(relpath.Substring(0, ix));
-                if (ix >= sourcefolders.Length)
-                    return System.IO.Path.Combine(sourcefolders[sourcefolders.Length - 1], relpath);
-                else
-                    return System.IO.Path.Combine(sourcefolders[pos], relpath.Substring(ix + 1));
+                //In some versions, Duplicati incorrectly writes the folder name without a trailing slash
+                int pos = ix < 0 ? int.Parse(relpath) : int.Parse(relpath.Substring(0, ix));
+                return System.IO.Path.Combine(sourcefolders[Math.Min(sourcefolders.Length - 1, pos)], relpath.Substring(ix + 1));
             }
         }
 
@@ -966,6 +960,7 @@ namespace Duplicati.Library.Main.RSync
 
                         try
                         {
+                            //We cannot have a "using" directive here because the fs may need to survive multiple rounds
                             fs = m_snapshot.OpenRead(s);
                             
                             //Record the change time after we opened (and thus locked) the file
@@ -975,7 +970,9 @@ namespace Duplicati.Library.Main.RSync
 
 
                             if (fs.Length > m_maxFileSize)
+                            {
                                 m_unproccesed.FilesTooLarge.Add(s);
+                            }
                             else
                             {
                                 //If the file is > 10mb, update the display to show the file being processed
@@ -989,15 +986,22 @@ namespace Duplicati.Library.Main.RSync
                                     // so we can avoid checking the next time
                                     if (!m_disableFiletimeCheck)
                                         m_checkedUnchangedFiles.Add(GetRelativeName(s));
-                                    
+
                                     //TODO: If the file timestamp was changed AFTER the backup started, we will record it in this and the next backup.
                                     //      This can be avoided, but only happens if the file was not modified, so it will happen rarely
                                 }
                                 else
+                                {
                                     totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile, volumesize, lastWrite);
+                                    
+                                    //If this turned into a partial full entry, we must keep the file open.
+                                    //The file will be closed when m_lastPartialFile is disposed
+                                    if (m_lastPartialFile != null && m_lastPartialFile.Stream == fs)
+                                        fs = null;
+                                }
                             }
                         }
-                        catch
+                        finally
                         {
                             try
                             {
@@ -1005,8 +1009,6 @@ namespace Duplicati.Library.Main.RSync
                                     fs.Dispose();
                             }
                             catch { }
-
-                            throw;
                         }
                     }
                 }
@@ -1169,10 +1171,9 @@ namespace Duplicati.Library.Main.RSync
                 string[] tmplines = new PartialEntryRecord(entry.relativeName, startPos, entry.Stream.Position - startPos, entry.Stream.Length).Serialize();
                 contentfile.WriteAllLines(INCOMPLETE_FILE, tmplines);
                 signaturefile.WriteAllLines(INCOMPLETE_FILE, tmplines);
-#if DEBUG
+
                 //If we are debugging, this can be nice to have
                 Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.PartialFileAddedLogMessage, entry.relativeName, startPos), Duplicati.Library.Logging.LogMessageType.Information);
-#endif
             }
             else
             {
