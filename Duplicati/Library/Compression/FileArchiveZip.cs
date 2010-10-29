@@ -465,8 +465,8 @@ namespace Duplicati.Library.Compression
         { 
             get 
             {
-                //The 1024 is a safety margin, I have seen up to 663 bytes extra, but unfortunately not found the source
-                return m_headersize + (long)ICSharpCode.SharpZipLib.Zip.ZipConstants.CentralHeaderBaseSize + 1024; 
+                //The 1200 is a safety margin, I have seen up to 1050 bytes extra, but unfortunately not found the source
+                return m_headersize + (long)ICSharpCode.SharpZipLib.Zip.ZipConstants.CentralHeaderBaseSize + 1200; 
             } 
         }
 
