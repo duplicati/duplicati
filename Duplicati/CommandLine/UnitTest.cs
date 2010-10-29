@@ -206,21 +206,26 @@ namespace Duplicati.CommandLine
 
                         options["restore-time"] = entries[i].Time.ToString();
 
+                        string[] actualfolders = folders[i].Split(System.IO.Path.PathSeparator);
+                        string[] restorefoldernames;
+                        if (actualfolders.Length == 1)
+                            restorefoldernames = new string[] { ttf };
+                        else
+                        {
+                            restorefoldernames = new string[actualfolders.Length];
+                            for (int j = 0; j < actualfolders.Length; j++)
+                                restorefoldernames[j] = System.IO.Path.Combine(ttf, System.IO.Path.GetFileName(actualfolders[j]));
+                        }
+
                         using (new Timer("Restore of " + folders[i]))
-                            Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, new string[] { ttf }, options), LogMessageType.Information);
+                            Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, restorefoldernames, options), LogMessageType.Information);
 
                         Console.WriteLine("Verifying the copy: " + folders[i]);
 
                         using (new Timer("Verification of " + folders[i]))
                         {
-                            string[] actualfolders = folders[i].Split(System.IO.Path.PathSeparator);
-                            if (actualfolders.Length == 1)
-                                VerifyDir(System.IO.Path.GetFullPath(folders[i]), ttf);
-                            else
-                            {
-                                for (int j = 0; j < actualfolders.Length; j++)
-                                    VerifyDir(actualfolders[j], System.IO.Path.Combine(ttf, j.ToString()));
-                            }
+                            for (int j = 0; j < actualfolders.Length; j++)
+                                VerifyDir(actualfolders[j], restorefoldernames[j]);
                         }
                     }
                 }
