@@ -238,7 +238,8 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new snapshot module using LVM
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots for</param>
-        public LinuxSnapshot(string[] folders)
+        /// <param name="options">A set of commandline options</param>
+        public LinuxSnapshot(string[] folders, Dictionary<string, string> options)
         {
             try
             {

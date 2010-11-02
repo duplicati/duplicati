@@ -552,7 +552,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="full">True if the set is a full backup, false if it is incremental</param>
         public void InitiateMultiPassDiff(bool full)
         {
-            InitiateMultiPassDiff(full, Options.SnapShotMode.Auto, false);
+            InitiateMultiPassDiff(full, Options.SnapShotMode.Auto, false, new Dictionary<string,string>());
         }
 
         /// <summary>
@@ -561,7 +561,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="full">True if the set is a full backup, false if it is incremental</param>
         /// <param name="snapshotPolicy">The snapshot policy to apply</param>
         /// <param name="excludeEmptyFolders">A flag indicating if empty folders are excluded</param>
-        public void InitiateMultiPassDiff(bool full, Options.SnapShotMode snapshotPolicy, bool excludeEmptyFolders)
+        public void InitiateMultiPassDiff(bool full, Options.SnapShotMode snapshotPolicy, bool excludeEmptyFolders, Dictionary<string, string> snapshotOptions)
         {
             if (full)
             {
@@ -581,7 +581,7 @@ namespace Duplicati.Library.Main.RSync
             try
             {
                 if (snapshotPolicy != Options.SnapShotMode.Off)
-                    m_snapshot = Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(m_sourcefolder);
+                    m_snapshot = Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(m_sourcefolder, snapshotOptions);
             }
             catch (Exception ex)
             {

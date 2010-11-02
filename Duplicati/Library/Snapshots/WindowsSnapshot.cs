@@ -41,7 +41,8 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sourcepaths">The folders that are about to be backed up</param>
-        public WindowsSnapshot(string[] sourcepaths)
+        /// <param name="options">A set of commandline options</param>
+        public WindowsSnapshot(string[] sourcepaths, Dictionary<string, string> options)
         {
             try
             {
@@ -49,10 +50,22 @@ namespace Duplicati.Library.Snapshots
                 string alphadir = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "alphavss");
                 string alphadll = System.IO.Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyName().Name + ".dll");
                 IVssImplementation vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
-                
+
+                List<Guid> excludedWriters = new List<Guid>();
+                if (options.ContainsKey("vss-exclude-writers"))
+                {
+                    foreach (string s in options["vss-exclude-writers"].Split(';'))
+                        if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
+                            excludedWriters.Add(new Guid(s));
+                }
+
                 //Prepare the backup
                 m_backup = vss.CreateVssBackupComponents();
                 m_backup.InitializeForBackup(null);
+
+                if (excludedWriters.Count > 0)
+                    m_backup.DisableWriterClasses(excludedWriters.ToArray());
+
                 m_snapshotId = m_backup.StartSnapshotSet();
 
                 m_sourcepaths = new string[sourcepaths.Length];

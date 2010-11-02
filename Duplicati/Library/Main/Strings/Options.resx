@@ -417,4 +417,10 @@
   <data name="DisableautocreatefolderShort" xml:space="preserve">
     <value>Disables automatic folder creation</value>
   </data>
+  <data name="VssexcludewritersLong" xml:space="preserve">
+    <value>Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces.</value>
+  </data>
+  <data name="VssexcludewritersShort" xml:space="preserve">
+    <value>A semicolon separated list of guids of VSS writers to exclude (Windows only)</value>
+  </data>
 </root>

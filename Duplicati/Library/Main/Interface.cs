@@ -437,7 +437,7 @@ namespace Duplicati.Library.Main
                             dir.DisableFiletimeCheck = m_options.DisableFiletimeCheck;
                             dir.MaxFileSize = m_options.SkipFilesLargerThan;
                             using (new Logging.Timer("Initiating multipass"))
-                                dir.InitiateMultiPassDiff(full, m_options.SnapShotStrategy, m_options.ExcludeEmptyFolders);
+                                dir.InitiateMultiPassDiff(full, m_options.SnapShotStrategy, m_options.ExcludeEmptyFolders, m_options.RawOptions);
 
                             string tempVolumeFolder = m_options.AsynchronousUpload ? m_options.AsynchronousUploadFolder : (m_options.TempDir ?? Core.TempFolder.SystemTempPath);
 

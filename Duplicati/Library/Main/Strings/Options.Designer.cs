@@ -959,5 +959,23 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("VolsizeShort", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces..
+        /// </summary>
+        internal static string VssexcludewritersLong {
+            get {
+                return ResourceManager.GetString("VssexcludewritersLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A semicolon separated list of guids of VSS writers to exclude (Windows only).
+        /// </summary>
+        internal static string VssexcludewritersShort {
+            get {
+                return ResourceManager.GetString("VssexcludewritersShort", resourceCulture);
+            }
+        }
     }
 }
