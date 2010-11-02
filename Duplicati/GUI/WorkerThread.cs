@@ -86,9 +86,9 @@ namespace Duplicati.GUI
         /// </summary>
         public event EventHandler CompletedWork;
         /// <summary>
-        /// An operation that occurs when a new task is added to the queue
+        /// An evnet that occurs when a new task is added to the queue or an existing one is removed
         /// </summary>
-        public event EventHandler AddedWork;
+        public event EventHandler WorkQueueChanged;
 
         public delegate void ProcessItemDelegate(Tx item);
 
@@ -162,8 +162,31 @@ namespace Duplicati.GUI
                 m_event.Set();
             }
 
-            if (AddedWork != null)
-                AddedWork(this, null);
+            if (WorkQueueChanged != null)
+                WorkQueueChanged(this, null);
+        }
+
+        /// <summary>
+        /// Removes a task from the queue, does not remove the task if it is currently running
+        /// </summary>
+        /// <param name="task">The task to remove</param>
+        public void RemoveTask(Tx task)
+        {
+            lock (m_lock)
+            {
+                Queue<Tx> tmp = new Queue<Tx>();
+                while (m_tasks.Count > 0)
+                {
+                    Tx n = m_tasks.Dequeue();
+                    if (n != task)
+                        tmp.Enqueue(n);
+                }
+
+                m_tasks = tmp;
+            }
+
+            if (WorkQueueChanged != null)
+                WorkQueueChanged(this, null);
         }
 
         /// <summary>

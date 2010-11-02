@@ -245,9 +245,6 @@
   <data name="Password.Location" type="System.Drawing.Point, System.Drawing">
     <value>120, 48</value>
   </data>
-  <data name="Password.PasswordChar" type="System.Char, mscorlib" xml:space="preserve">
-    <value>*</value>
-  </data>
   <data name="Password.Size" type="System.Drawing.Size, System.Drawing">
     <value>264, 20</value>
   </data>
@@ -258,7 +255,7 @@
     <value>Password</value>
   </data>
   <data name="&gt;&gt;Password.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>Duplicati.Winforms.Controls.PasswordControl, Duplicati.Winforms.Controls, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
   <data name="&gt;&gt;Password.Parent" xml:space="preserve">
     <value>Credentials</value>

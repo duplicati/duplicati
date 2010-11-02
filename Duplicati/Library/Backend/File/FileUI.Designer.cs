@@ -64,6 +64,8 @@ namespace Duplicati.Library.Backend
             // 
             // TargetFolder
             // 
+            this.TargetFolder.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
+            this.TargetFolder.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystemDirectories;
             resources.ApplyResources(this.TargetFolder, "TargetFolder");
             this.TargetFolder.Name = "TargetFolder";
             // 
@@ -93,7 +95,11 @@ namespace Duplicati.Library.Backend
             // 
             // Password
             // 
+            this.Password.AskToEnterNewPassword = false;
+            this.Password.IsPasswordVisible = false;
             resources.ApplyResources(this.Password, "Password");
+            this.Password.MaximumSize = new System.Drawing.Size(5000, 20);
+            this.Password.MinimumSize = new System.Drawing.Size(150, 20);
             this.Password.Name = "Password";
             // 
             // Username

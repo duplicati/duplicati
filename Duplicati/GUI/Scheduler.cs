@@ -184,8 +184,9 @@ namespace Duplicati.GUI
                         {
                             //See if it is already queued
                             List<IDuplicityTask> tmplst = m_worker.CurrentTasks;
-                            if (m_worker.CurrentTask != null)
-                                tmplst.Add(m_worker.CurrentTask);
+                            IDuplicityTask tastTemp = m_worker.CurrentTask;
+                            if (tastTemp != null)
+                                tmplst.Add(tastTemp);
 
                             bool found = false;
                             foreach (IDuplicityTask t in tmplst)

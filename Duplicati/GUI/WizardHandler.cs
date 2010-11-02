@@ -74,11 +74,7 @@ namespace Duplicati.GUI
             if (wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Add || wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Edit)
             {
                 bool scheduleRun = wrapper.RunImmediately;
-
-                bool autoScheduled =
-                    wrapper.BackupTimeOffset > DateTime.Now &&
-                    !string.IsNullOrEmpty(wrapper.RepeatInterval) &&
-                    wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Add;
+                bool autoScheduled = wrapper.BackupTimeOffset < DateTime.Now;
 
                 //Resume Duplicati if the backup is supposed to run
                 if (scheduleRun || autoScheduled)
@@ -268,8 +264,16 @@ namespace Duplicati.GUI
                 foreach(IDataClass o in visited.Keys)
                     con.DeleteObject(o);
 
+                //TODO: The worker may schedule the task while we attempt to de-schedule it
+                foreach (IDuplicityTask t in Program.WorkThread.CurrentTasks)
+                    if (t != null && t is IncrementalBackupTask && ((IncrementalBackupTask)t).Schedule.ID == schedule.ID)
+                        Program.WorkThread.RemoveTask(t);
+
                 //Persist to database
                 con.CommitAllRecursive();
+
+                //We have fiddled with the schedules
+                Program.Scheduler.Reschedule();
             }
             else if (m_form.CurrentPage is Wizard_pages.RestoreSetup.FinishedRestoreSetup)
             {

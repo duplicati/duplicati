@@ -47,7 +47,7 @@ namespace Duplicati.GUI
             this.FormClosed += new FormClosedEventHandler(ServiceStatus_FormClosed);
             Program.WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
-            Program.WorkThread.AddedWork += new EventHandler(WorkThread_AddedWork);
+            Program.WorkThread.WorkQueueChanged += new EventHandler(WorkThread_WorkQueueChanged);
             Program.Scheduler.NewSchedule += new EventHandler(Scheduler_NewSchedule);
             Program.Runner.DuplicatiProgress += new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
             Program.LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
@@ -55,7 +55,7 @@ namespace Duplicati.GUI
 
             LiveControl_StateChanged(null, null);
 
-            WorkThread_AddedWork(null, null);
+            WorkThread_WorkQueueChanged(null, null);
             Scheduler_NewSchedule(null, null);
             BuildRecent();
             PlaceAtBottom();
@@ -147,7 +147,7 @@ namespace Duplicati.GUI
             Program.DataConnection.AfterDataConnection -= new System.Data.LightDatamodel.DataConnectionEventHandler(DataConnection_AfterDataConnection);
             Program.WorkThread.StartingWork -= new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
-            Program.WorkThread.AddedWork -= new EventHandler(WorkThread_AddedWork);
+            Program.WorkThread.WorkQueueChanged -= new EventHandler(WorkThread_WorkQueueChanged);
             Program.Scheduler.NewSchedule -= new EventHandler(Scheduler_NewSchedule);
             Program.Runner.DuplicatiProgress -= new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
             Program.LiveControl.StateChanged -= new EventHandler(LiveControl_StateChanged);
@@ -181,21 +181,29 @@ namespace Duplicati.GUI
 
                 CurrentStatus.Text = c == null ? Strings.ServiceStatus.StatusWaiting : string.Format(prefix, c.Name);
                 statusImage.Image = Properties.Resources.Status_Working;
-                WorkThread_AddedWork(sender, e);
+                WorkThread_WorkQueueChanged(sender, e);
                 stopBackupToolStripMenuItem.Enabled = true;
             }
         }
 
-        void WorkThread_AddedWork(object sender, EventArgs e)
+        void WorkThread_WorkQueueChanged(object sender, EventArgs e)
         {
             if (this.InvokeRequired)
-                this.Invoke(new EventHandler(WorkThread_AddedWork), sender, e);
+                this.Invoke(new EventHandler(WorkThread_WorkQueueChanged), sender, e);
             else
             {
-                pendingBackups.Items.Clear();
-                //No locking here, the list is protected by the thread raising the event
-                foreach (IDuplicityTask t in Program.WorkThread.CurrentTasks)
-                    pendingBackups.Items.Add(Program.LocalizeTaskType(t.TaskType) + ": " + t.Schedule.Name == null ? "" : t.Schedule.Name);
+                try
+                {
+                    pendingBackups.BeginUpdate();
+                    pendingBackups.Items.Clear();
+                    //No locking here, the list is protected by the thread raising the event
+                    foreach (IDuplicityTask t in Program.WorkThread.CurrentTasks)
+                        pendingBackups.Items.Add(Program.LocalizeTaskType(t.TaskType) + ": " + t.Schedule.Name == null ? "" : t.Schedule.Name);
+                }
+                finally
+                {
+                    pendingBackups.EndUpdate();
+                }
             }
 
         }
@@ -236,40 +244,46 @@ namespace Duplicati.GUI
             lock(Program.MainLock)
                 logs = Program.DataConnection.GetObjects<Log>("EndTime > ? AND SubAction LIKE ? ORDER BY EndTime DESC", Timeparser.ParseTimeInterval(new Datamodel.ApplicationSettings(Program.DataConnection).RecentBackupDuration, DateTime.Now, true), "Primary");
 
-            recentBackups.Items.Clear();
-            foreach (Log l in logs)
+            try
             {
-                ListViewItem lvi = new ListViewItem(new string[] { l.EndTime.ToString("g", System.Globalization.CultureInfo.CurrentUICulture), l.OwnerTask == null || l.OwnerTask.Schedule == null ? "" : l.OwnerTask.Schedule.Name, l.Transfersize > 0 ? l.TransferSizeString : "" });
-
-                lvi.Tag = l;
-                lvi.ImageIndex = imageList.Images.ContainsKey(l.ParsedStatus) ? imageList.Images.IndexOfKey(l.ParsedStatus) : imageList.Images.IndexOfKey("Warning");
-                recentBackups.Items.Add(lvi);
-
-                if (!string.IsNullOrEmpty(l.ParsedMessage))
+                recentBackups.BeginUpdate();
+                recentBackups.Items.Clear();
+                foreach (Log l in logs)
                 {
-                    lvi.ToolTipText = l.ParsedMessage;
-                }
-                else
-                {
-                    switch (l.ParsedStatus)
+                    ListViewItem lvi = new ListViewItem(new string[] { l.EndTime.ToString("g", System.Globalization.CultureInfo.CurrentUICulture), l.OwnerTask == null || l.OwnerTask.Schedule == null ? "" : l.OwnerTask.Schedule.Name, l.Transfersize > 0 ? l.TransferSizeString : "" });
+
+                    lvi.Tag = l;
+                    lvi.ImageIndex = imageList.Images.ContainsKey(l.ParsedStatus) ? imageList.Images.IndexOfKey(l.ParsedStatus) : imageList.Images.IndexOfKey("Warning");
+                    recentBackups.Items.Add(lvi);
+
+                    if (!string.IsNullOrEmpty(l.ParsedMessage))
                     {
-                        case DuplicatiOutputParser.OKStatus:
-                            lvi.ToolTipText = Strings.ServiceStatus.BackupStatusOK;
-                            break;
-                        case DuplicatiOutputParser.ErrorStatus:
-                            lvi.ToolTipText = Strings.ServiceStatus.BackupStatusError;
-                            break;
-                        case DuplicatiOutputParser.WarningStatus:
-                            lvi.ToolTipText = Strings.ServiceStatus.BackupStatusWarning;
-                            break;
-                        case DuplicatiOutputParser.PartialStatus:
-                            lvi.ToolTipText = Strings.ServiceStatus.BackupStatusPartial;
-                            break;
+                        lvi.ToolTipText = l.ParsedMessage;
+                    }
+                    else
+                    {
+                        switch (l.ParsedStatus)
+                        {
+                            case DuplicatiOutputParser.OKStatus:
+                                lvi.ToolTipText = Strings.ServiceStatus.BackupStatusOK;
+                                break;
+                            case DuplicatiOutputParser.ErrorStatus:
+                                lvi.ToolTipText = Strings.ServiceStatus.BackupStatusError;
+                                break;
+                            case DuplicatiOutputParser.WarningStatus:
+                                lvi.ToolTipText = Strings.ServiceStatus.BackupStatusWarning;
+                                break;
+                            case DuplicatiOutputParser.PartialStatus:
+                                lvi.ToolTipText = Strings.ServiceStatus.BackupStatusPartial;
+                                break;
+                        }
                     }
                 }
             }
-
-
+            finally
+            {
+                recentBackups.EndUpdate();
+            }
         }
 
         private void recentBackups_DoubleClick(object sender, EventArgs e)
