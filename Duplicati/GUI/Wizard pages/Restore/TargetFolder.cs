@@ -62,7 +62,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
             if (PartialRestore.Checked && backupFileList.TargetFolders.Count > 1)
             {
-                targetpaths = backupFileList.TargetFolders.ToArray();
+                targetpaths = backupFileList.TargetSuggestions;
                 for (int i = 0; i < targetpaths.Length; i++)
                     if (string.IsNullOrEmpty(targetpaths[i]))
                     {

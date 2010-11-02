@@ -418,47 +418,64 @@ namespace Duplicati.GUI.HelperControls
         {
             if (m_sourcefolders == null || m_sourcefolders.Count <= 1)
                 return;
-            
-            List<string> suggestions = new List<string>();
-            for(int i = 0; i < m_sourcefolders.Count; i++)
-            {
-                string s = m_sourcefolders[i];
-                //HACK: We use a leading / in the path name to detect source OS
-                // all paths are absolute, so this detects all unix like systems
-                string dirSepChar = m_sourcefolders[i].StartsWith("/") ? "/" : "\\";
 
-                if (s.EndsWith(dirSepChar))
-                    s = s.Substring(0, s.Length - 1);
-
-                int lix = s.LastIndexOf(dirSepChar);
-                if (lix < 0 || lix + 1 >= s.Length)
-                    s = i.ToString();
-                else
-                    s = s.Substring(lix + 1);
-
-                foreach (char c in System.IO.Path.GetInvalidFileNameChars())
-                    s = s.Replace(c, '_');
-
-                suggestions.Add(s);
-            }
-            
-            Dictionary<string, int> duplicates = new Dictionary<string, int>(Library.Core.Utility.ClientFilenameStringComparer);
-            for (int i = 0; i < suggestions.Count; i++)
-                if (duplicates.ContainsKey(suggestions[i]))
-                    duplicates[suggestions[i]]++;
-                else
-                    duplicates[suggestions[i]] = 1;
-
-
+            string[] targets = this.TargetSuggestions;
             for (int index = 0; index < m_rootnodes.Length; index++)
             {
-                string suffix = duplicates[suggestions[index]] > 1 ? index.ToString() : suggestions[index];
-                string target = string.IsNullOrEmpty(m_defaultTarget) ? "" : Library.Core.Utility.AppendDirSeparator(m_defaultTarget) + suffix;
-                m_rootnodes[index].Text = m_sourcefolders[index] + " => " + (!string.IsNullOrEmpty(m_targetfolders[index]) ? m_targetfolders[index] : target);
-                m_rootnodes[index].ToolTipText = string.Format(Strings.BackupFileList.RootNodeTooltip, m_sourcefolders[index], string.IsNullOrEmpty(m_targetfolders[index]) ? target : m_targetfolders[index]);
+                m_rootnodes[index].Text = m_sourcefolders[index] + " => " + (!string.IsNullOrEmpty(m_targetfolders[index]) ? m_targetfolders[index] : targets[index]);
+                m_rootnodes[index].ToolTipText = string.Format(Strings.BackupFileList.RootNodeTooltip, m_sourcefolders[index], string.IsNullOrEmpty(m_targetfolders[index]) ? targets[index] : m_targetfolders[index]);
             }
 
             treeView.Sort();
+        }
+
+        public string[] TargetSuggestions
+        {
+            get
+            {
+                if (m_sourcefolders == null || m_sourcefolders.Count <= 1)
+                    return null;
+
+                List<string> suggestions = new List<string>();
+                for (int i = 0; i < m_sourcefolders.Count; i++)
+                {
+                    string s = m_sourcefolders[i];
+                    //HACK: We use a leading / in the path name to detect source OS
+                    // all paths are absolute, so this detects all unix like systems
+                    string dirSepChar = m_sourcefolders[i].StartsWith("/") ? "/" : "\\";
+
+                    if (s.EndsWith(dirSepChar))
+                        s = s.Substring(0, s.Length - 1);
+
+                    int lix = s.LastIndexOf(dirSepChar);
+                    if (lix < 0 || lix + 1 >= s.Length)
+                        s = i.ToString();
+                    else
+                        s = s.Substring(lix + 1);
+
+                    foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+                        s = s.Replace(c, '_');
+
+                    suggestions.Add(s);
+                }
+
+                Dictionary<string, int> duplicates = new Dictionary<string, int>(Library.Core.Utility.ClientFilenameStringComparer);
+                for (int i = 0; i < suggestions.Count; i++)
+                    if (duplicates.ContainsKey(suggestions[i]))
+                        duplicates[suggestions[i]]++;
+                    else
+                        duplicates[suggestions[i]] = 1;
+
+                string[] targets = new string[m_rootnodes.Length];
+
+                for (int index = 0; index < m_rootnodes.Length; index++)
+                {
+                    string suffix = duplicates[suggestions[index]] > 1 ? index.ToString() : suggestions[index];
+                    targets[index] = string.IsNullOrEmpty(m_defaultTarget) ? "" : Library.Core.Utility.AppendDirSeparator(m_defaultTarget) + suffix;
+                }
+
+                return targets;
+            }
         }
 
         private void treeView_BeforeLabelEdit(object sender, NodeLabelEditEventArgs e)

@@ -48,6 +48,8 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // 
             // TargetPath
             // 
+            this.TargetPath.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
+            this.TargetPath.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystemDirectories;
             resources.ApplyResources(this.TargetPath, "TargetPath");
             this.TargetPath.Name = "TargetPath";
             this.TargetPath.TextChanged += new System.EventHandler(this.TargetPath_TextChanged);
@@ -66,6 +68,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             // 
             // backupFileList
             // 
+            this.backupFileList.CheckedFiles = ((System.Collections.Generic.List<string>)(resources.GetObject("backupFileList.CheckedFiles")));
             this.backupFileList.DefaultTarget = null;
             resources.ApplyResources(this.backupFileList, "backupFileList");
             this.backupFileList.Name = "backupFileList";
