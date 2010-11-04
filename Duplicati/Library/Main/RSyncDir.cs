@@ -333,6 +333,10 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private long m_examinedfiles;
         /// <summary>
+        /// The number of files opened for matching
+        /// </summary>
+        private long m_filesopened;
+        /// <summary>
         /// The combined size of the examined files
         /// </summary>
         private long m_examinedfilesize;
@@ -960,6 +964,7 @@ namespace Duplicati.Library.Main.RSync
 
                         try
                         {
+                            m_filesopened++;
                             //We cannot have a "using" directive here because the fs may need to survive multiple rounds
                             fs = m_snapshot.OpenRead(s);
                             
@@ -1740,6 +1745,7 @@ namespace Duplicati.Library.Main.RSync
                 bs.ModifiedFiles = m_diffedfiles;
                 bs.AddedFiles = m_addedfiles;
                 bs.ExaminedFiles = m_examinedfiles;
+                bs.OpenedFiles = m_filesopened;
                 bs.SizeOfModifiedFiles = m_diffedfilessize;
                 bs.SizeOfAddedFiles = m_addedfilessize;
                 bs.SizeOfExaminedFiles = m_examinedfilesize;

@@ -31,6 +31,7 @@ namespace Duplicati.Library.Main
         private long m_deletedFolders;
         private long m_modifiedFiles;
         private long m_examinedFiles;
+        private long m_openedFiles;
         private long m_addedFiles;
         private long m_sizeOfModifiedFiles;
         private long m_sizeOfAddedFiles;
@@ -100,6 +101,12 @@ namespace Duplicati.Library.Main
             set { m_examinedFiles = value; }
         }
 
+        public long OpenedFiles
+        {
+            get { return m_openedFiles; }
+            set { m_openedFiles = value; }
+        }
+
         public long SizeOfModifiedFiles
         {
             get { return m_sizeOfModifiedFiles; }
@@ -157,6 +164,7 @@ namespace Duplicati.Library.Main
             sb.Append("AddedFiles      : " + this.AddedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("AddedFolders    : " + this.AddedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("ExaminedFiles   : " + this.ExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("OpenedFiles     : " + this.OpenedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfModified  : " + this.SizeOfModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfAdded     : " + this.SizeOfAddedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfExamined  : " + this.SizeOfExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
