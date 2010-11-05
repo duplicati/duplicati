@@ -57,6 +57,10 @@ namespace Duplicati.GUI
             imageList.Images.Add(MODIFIED_FILE_IMAGE_KEY, Properties.Resources.ModifiedFile);
             imageList.Images.Add(INCOMPLETE_FILE_IMAGE_KEY, Properties.Resources.IncompleteFile);
             this.Icon = Properties.Resources.TrayNormal;
+
+#if DEBUG
+            this.Text += " (DEBUG)";
+#endif
         }
 
         public void ShowList(Control owner, Datamodel.Schedule schedule, DateTime when)

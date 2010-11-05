@@ -37,6 +37,10 @@ namespace Duplicati.GUI
         {
             InitializeComponent();
             backupItems.listView.SelectedIndexChanged += new EventHandler(listView_SelectedIndexChanged);
+
+#if DEBUG
+            this.Text += " (DEBUG)";
+#endif
         }
 
         void listView_SelectedIndexChanged(object sender, EventArgs e)

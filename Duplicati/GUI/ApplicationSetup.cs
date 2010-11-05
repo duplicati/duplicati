@@ -105,6 +105,9 @@ namespace Duplicati.GUI
 
             this.Icon = Properties.Resources.TrayNormal;
 
+#if DEBUG
+            this.Text += " (DEBUG)";
+#endif
             
         }
 
@@ -188,6 +191,9 @@ namespace Duplicati.GUI
             try
             {
                 this.Text = string.Format(Strings.ApplicationSetup.DialogTitle, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+#if DEBUG
+                this.Text += " (DEBUG)";
+#endif
 
                 m_isUpdating = true;
                 RecentDuration.Value = m_settings.RecentBackupDuration;

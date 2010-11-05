@@ -40,6 +40,10 @@ namespace Duplicati.GUI
             imageList.Images.Add(DuplicatiOutputParser.WarningStatus, Properties.Resources.WarningStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.ErrorStatus, Properties.Resources.ErrorStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.PartialStatus, Properties.Resources.PartialStatusIcon);
+
+#if DEBUG
+            this.Text += " (DEBUG)";
+#endif
         }
 
         private void ServiceStatus_Load(object sender, EventArgs e)

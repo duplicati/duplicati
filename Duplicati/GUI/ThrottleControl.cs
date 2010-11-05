@@ -33,6 +33,9 @@ namespace Duplicati.GUI
         {
             InitializeComponent();
 
+#if DEBUG
+            this.Text += " (DEBUG)";
+#endif
         }
 
         private void ThrottleControl_Load(object sender, EventArgs e)

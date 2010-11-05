@@ -46,6 +46,10 @@ namespace Duplicati.GUI
             m_form = new Dialog();
             m_form.Title = Strings.WizardHandler.WizardFormTitle;
 
+#if DEBUG
+            m_form.Title += " (DEBUG)";
+#endif
+
             m_form.Pages.Clear();
 
             if (pages == null || pages.Length == 0)

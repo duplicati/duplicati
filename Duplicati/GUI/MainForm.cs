@@ -55,6 +55,9 @@ namespace Duplicati.GUI
             Program.WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
             Program.SingleInstance.SecondInstanceDetected += new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected);
+#if DEBUG
+            this.Text += " (DEBUG)";
+#endif
         }
 
         void LiveControl_StateChanged(object sender, EventArgs e)

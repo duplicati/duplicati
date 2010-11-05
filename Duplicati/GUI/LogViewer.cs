@@ -33,6 +33,10 @@ namespace Duplicati.GUI
         {
             InitializeComponent();
             this.Icon = Properties.Resources.LogViewer;
+
+#if DEBUG
+            this.Text += " (DEBUG)";
+#endif
         }
     }
 }
