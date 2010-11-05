@@ -790,6 +790,8 @@ namespace Duplicati.Library.Main
 
                     Manifestfile rootManifest = GetManifest(backend, bestFit);
 
+                    int sourceDirCount = (rootManifest.SourceDirs == null || rootManifest.SourceDirs.Length == 0) ? 1 : rootManifest.SourceDirs.Length;
+
                     //After reading the first manifest, we know the source folder count
                     if ((rootManifest.SourceDirs == null || rootManifest.SourceDirs.Length == 0) && target.Length > 1)
                     {
@@ -797,18 +799,18 @@ namespace Duplicati.Library.Main
                         rs.LogWarning(string.Format(Strings.Interface.TooManyTargetFoldersWarning, 1, target.Length), null);
                         Array.Resize(ref target, 1);
                     }
-                    else if (target.Length > rootManifest.SourceDirs.Length)
+                    else if (target.Length > sourceDirCount)
                     {
                         //If we get too many, we can just cut them off
-                        rs.LogWarning(string.Format(Strings.Interface.TooManyTargetFoldersWarning, rootManifest.SourceDirs.Length, target.Length), null);
+                        rs.LogWarning(string.Format(Strings.Interface.TooManyTargetFoldersWarning, sourceDirCount, target.Length), null);
                         Array.Resize(ref target, rootManifest.SourceDirs.Length);
                     }
-                    else if (target.Length != 1 && target.Length < rootManifest.SourceDirs.Length)
+                    else if (target.Length != 1 && target.Length < sourceDirCount)
                     {
                         //If we get too few, we have to bail
-                        throw new Exception(string.Format(Strings.Interface.TooFewTargetFoldersError, rootManifest.SourceDirs.Length, target.Length));
+                        throw new Exception(string.Format(Strings.Interface.TooFewTargetFoldersError, sourceDirCount, target.Length));
                     }
-                    else if (target.Length == 1 && rootManifest.SourceDirs.Length > 1)
+                    else if (target.Length == 1 && sourceDirCount > 1)
                     {
                         //If there is just one target folder, we automatically compose target subfolders
                         string[] newtargets = new string[rootManifest.SourceDirs.Length];
