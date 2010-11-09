@@ -127,7 +127,7 @@ namespace Duplicati.GUI
                 if (Program.DataConnection.GetObjects<Datamodel.Schedule>().Length == 0)
                     ShowWizard();
                 else
-                    ShowStatus();
+                    ToggleStatus();
             }
         }
 
@@ -227,7 +227,7 @@ namespace Duplicati.GUI
         }
 
 
-        public void ShowStatus()
+        private void ChangeStatusVisibility(bool toggle)
         {
             if (InvokeRequired)
             {
@@ -238,8 +238,21 @@ namespace Duplicati.GUI
             if (StatusDialog == null || !StatusDialog.Visible)
                 StatusDialog = new ServiceStatus();
 
-            StatusDialog.Show();
-            StatusDialog.Activate();
+            if (toggle && StatusDialog.Visible)
+                StatusDialog.Close();
+            else
+            {
+                StatusDialog.Show();
+                StatusDialog.Activate();
+            }
+        }
+        public void ToggleStatus()
+        {
+            ChangeStatusVisibility(true);
+        }
+        public void ShowStatus()
+        {
+            ChangeStatusVisibility(false);
         }
 
         public void ShowWizard()
