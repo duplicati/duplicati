@@ -158,7 +158,15 @@ namespace Duplicati.GUI
             }
 
             TrayIcon.Icon = Properties.Resources.TrayWorking;
-            TrayIcon.Text = string.Format(Strings.MainForm.TrayStatusRunning, Program.WorkThread.CurrentTask == null ? "" : Program.WorkThread.CurrentTask.Schedule.Name);
+            string tmp = string.Format(Strings.MainForm.TrayStatusRunning, Program.WorkThread.CurrentTask == null ? "" : Program.WorkThread.CurrentTask.Schedule.Name);
+
+            //Strange 64 character limit on linux: http://code.google.com/p/duplicati/issues/detail?id=298
+            try { TrayIcon.Text = tmp; }
+            catch 
+            { 
+                if (tmp.Length >= 64 )
+                    TrayIcon.Text = tmp.Substring(0, 60) + "..."; 
+            }
             stopToolStripMenuItem.Enabled = true;
         }
 
