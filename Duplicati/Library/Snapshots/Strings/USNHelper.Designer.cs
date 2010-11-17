@@ -22,14 +22,14 @@ namespace Duplicati.Library.Snapshots.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class LinuxSnapshot {
+    internal class USNHelper {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal LinuxSnapshot() {
+        internal USNHelper() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Snapshots.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Snapshots.Strings.LinuxSnapshot", typeof(LinuxSnapshot).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Snapshots.Strings.USNHelper", typeof(USNHelper).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,67 +61,29 @@ namespace Duplicati.Library.Snapshots.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The external command failed to start.
-        ///Error message: {0}
-        ///Command: {1} {2}.
+        ///   Looks up a localized string similar to Unexpected empty response while enumerating.
         /// </summary>
-        internal static string ExternalProgramLaunchError {
+        internal static string EmptyResponseError {
             get {
-                return ResourceManager.GetString("ExternalProgramLaunchError", resourceCulture);
+                return ResourceManager.GetString("EmptyResponseError", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The external command failed to complete within the set time limit: {0} {1}.
+        ///   Looks up a localized string similar to USN is not supported on Linux.
         /// </summary>
-        internal static string ExternalProgramTimeoutError {
+        internal static string LinuxNotSupportedError {
             get {
-                return ResourceManager.GetString("ExternalProgramTimeoutError", resourceCulture);
+                return ResourceManager.GetString("LinuxNotSupportedError", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unable to match local path {0} with any snapshot path: {1}.
+        ///   Looks up a localized string similar to The number of files returned by USN was zero. This is likely an error. To remedy this, USN has been disabled..
         /// </summary>
-        internal static string InvalidFilePathError {
+        internal static string SafeGuardError {
             get {
-                return ResourceManager.GetString("InvalidFilePathError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Script returned successfully, but the temporary folder {0} does not exist: {1}.
-        /// </summary>
-        internal static string MountFolderMissingError {
-            get {
-                return ResourceManager.GetString("MountFolderMissingError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Script returned successfully, but the temporary folder {0} still exist: {1}.
-        /// </summary>
-        internal static string MountFolderNotRemovedError {
-            get {
-                return ResourceManager.GetString("MountFolderNotRemovedError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The script returned exit code {0}, but {1} was expected: {2}.
-        /// </summary>
-        internal static string ScriptExitCodeError {
-            get {
-                return ResourceManager.GetString("ScriptExitCodeError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Script returned successfully, but the output was missing the {0} parameter: {1}.
-        /// </summary>
-        internal static string ScriptOutputError {
-            get {
-                return ResourceManager.GetString("ScriptOutputError", resourceCulture);
+                return ResourceManager.GetString("SafeGuardError", resourceCulture);
             }
         }
     }

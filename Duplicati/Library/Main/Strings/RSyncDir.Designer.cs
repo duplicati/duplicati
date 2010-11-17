@@ -250,5 +250,50 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("SnapshotFailedError", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to dispose USN helper: {0}.
+        /// </summary>
+        internal static string UsnDisposeFailedWarning {
+            get {
+                return ResourceManager.GetString("UsnDisposeFailedWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to read USN data: {0}.
+        /// </summary>
+        internal static string UsnFailedError {
+            get {
+                return ResourceManager.GetString("UsnFailedError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The USN journalId for volume {0} was changed from {1} to {2}, performing full file compare.
+        /// </summary>
+        internal static string UsnJournalIdChangedWarning {
+            get {
+                return ResourceManager.GetString("UsnJournalIdChangedWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to USN is not supported on Linux.
+        /// </summary>
+        internal static string UsnNotSupportedOnLinuxError {
+            get {
+                return ResourceManager.GetString("UsnNotSupportedOnLinuxError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The stored USN number for volume {0} is {1} but the current USN is {1}, performing full file compare.
+        /// </summary>
+        internal static string UsnNumberingFaultWarning {
+            get {
+                return ResourceManager.GetString("UsnNumberingFaultWarning", resourceCulture);
+            }
+        }
     }
 }

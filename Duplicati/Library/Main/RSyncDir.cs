@@ -74,6 +74,7 @@ namespace Duplicati.Library.Main.RSync
             AddedOrUpdatedFile
         };
 
+        #region Helper classes
         /// <summary>
         /// An internal helper class that aids in supporting three different prefixes for signatures
         /// </summary>
@@ -249,6 +250,128 @@ namespace Duplicati.Library.Main.RSync
             }
         }
 
+        /// <summary>
+        /// Class that represents a USN record
+        /// </summary>
+        public class USNRecord
+        {
+            /// <summary>
+            /// The USN value list
+            /// </summary>
+            private Dictionary<string, KeyValuePair<long, long>> m_values;
+
+            /// <summary>
+            /// Constructs a new USNRecord
+            /// </summary>
+            public USNRecord()
+            {
+                m_values = new Dictionary<string, KeyValuePair<long, long>>(Core.Utility.ClientFilenameStringComparer);
+            }
+
+
+            /// <summary>
+            /// Reads an existing UNSRecord from an xml file
+            /// </summary>
+            /// <param name="stream">The stream with xml data</param>
+            public USNRecord(System.IO.Stream stream)
+                : this(CreateDoc(stream))
+            {
+            }
+
+            /// <summary>
+            /// Reads an existing USNRecord from an xml document
+            /// </summary>
+            /// <param name="doc">The XmlDocument with USN data</param>
+            public USNRecord(System.Xml.XmlDocument doc)
+                : this()
+            {
+                System.Xml.XmlNode root = doc["usnroot"];
+                foreach (System.Xml.XmlNode n in root.SelectNodes("usnrecord"))
+                    if (n.Attributes["root"] != null && n.Attributes["journalid"] != null && n.Attributes["usn"] != null)
+                        m_values.Add(n.Attributes["root"].Value, new KeyValuePair<long, long>(long.Parse(n.Attributes["journalid"].Value), long.Parse(n.Attributes["usn"].Value)));
+            }
+
+            /// <summary>
+            /// Internal helper that creates an XmlDocument from a stream
+            /// </summary>
+            /// <param name="stream">The stream data to read</param>
+            /// <returns>An XmlDocument</returns>
+            private static System.Xml.XmlDocument CreateDoc(System.IO.Stream stream)
+            {
+                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                doc.Load(stream);
+                return doc;
+            }
+
+            /// <summary>
+            /// Saves the USN data to an XmlDocument
+            /// </summary>
+            /// <returns>An XmlDocument with the USN data</returns>
+            public System.Xml.XmlDocument Save()
+            {
+                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                System.Xml.XmlNode root = doc.AppendChild(doc.CreateElement("usnroot"));
+                foreach (KeyValuePair<string, KeyValuePair<long, long>> kv in m_values)
+                {
+                    System.Xml.XmlNode n = root.AppendChild(doc.CreateElement("usnrecord"));
+                    n.Attributes.Append(doc.CreateAttribute("root")).Value = kv.Key;
+                    n.Attributes.Append(doc.CreateAttribute("journalid")).Value = kv.Value.Key.ToString();
+                    n.Attributes.Append(doc.CreateAttribute("usn")).Value = kv.Value.Value.ToString();
+                }
+
+                return doc;
+            }
+
+            /// <summary>
+            /// Saves the USN data to a stream as xml
+            /// </summary>
+            /// <param name="stream">The stream to write the xml data to</param>
+            public void Save(System.IO.Stream stream)
+            {
+                Save().Save(stream);
+            }
+
+            /// <summary>
+            /// Gets the USN values recorded
+            /// </summary>
+            public Dictionary<string, KeyValuePair<long, long>> Values
+            {
+                get { return m_values; }
+            }
+
+            /// <summary>
+            /// Gets a value indicating if the root folder was found in this USN entry
+            /// </summary>
+            /// <param name="rootFolder">The root folder to look for</param>
+            /// <returns>True if found, false otherwise</returns>
+            public bool ContainsKey(string rootFolder)
+            {
+                return m_values.ContainsKey(rootFolder);
+            }
+
+            /// <summary>
+            /// Gets the JournalId and USN number for the root folder
+            /// </summary>
+            /// <param name="index">The root folder to look for</param>
+            /// <returns>The JournalId and USN number</returns>
+            public KeyValuePair<long, long> this[string index]
+            {
+                get { return m_values[index]; }
+            }
+
+            /// <summary>
+            /// Adds a new USN record
+            /// </summary>
+            /// <param name="rootfolder">The folder this entry represents</param>
+            /// <param name="journalId">The volume journalId</param>
+            /// <param name="usn">The volume USN</param>
+            public void Add(string rootfolder, long journalId, long usn)
+            {
+                m_values.Add(rootfolder, new KeyValuePair<long, long>(journalId, usn));
+            }
+        }
+
+        #endregion
 
         internal static readonly string COMBINED_SIGNATURE_ROOT = "signature";
         internal static readonly string CONTENT_SIGNATURE_ROOT = "content_signature";
@@ -270,11 +393,12 @@ namespace Duplicati.Library.Main.RSync
         internal static readonly string UPDATED_FOLDERS = "updated_folders.txt";
         internal static readonly string UPDATED_FOLDERS_TIMESTAMPS = "updated_folders_timestamps.txt";
         internal static readonly string UNMODIFIED_FILES = "unmodified-files.txt";
+        internal static readonly string USN_VALUES = "usn-values.xml";
 
         public delegate void ProgressEventDelegate(int progress, string filename);
         public event ProgressEventDelegate ProgressEvent;
 
-
+        #region Private instance variables
         /// <summary>
         /// This is the folders being backed up
         /// </summary>
@@ -426,6 +550,18 @@ namespace Duplicati.Library.Main.RSync
         private Snapshots.ISnapshotService m_snapshot;
 
         /// <summary>
+        /// The USN values recorded in this run
+        /// </summary>
+        private USNRecord m_currentUSN = null;
+
+        /// <summary>
+        /// The set of USN values from the last complete run
+        /// </summary>
+        private USNRecord m_lastUSN = null;
+
+        #endregion
+
+        /// <summary>
         /// Initializes a RSyncDir instance, binds it to the source folder, and reads in the supplied patches
         /// </summary>
         /// <param name="sourcefolder">The folders to create a backup from</param>
@@ -507,6 +643,11 @@ namespace Duplicati.Library.Main.RSync
                         if (long.TryParse(timestamps[i], out l))
                             m_oldFolders[filenames[i]] = EPOCH.AddSeconds(l);
                 }
+
+                //The latest file is the most valid
+                if (z.FileExists(USN_VALUES))
+                    using (System.IO.Stream s = z.OpenRead(USN_VALUES))
+                        m_lastUSN = new USNRecord(s);
             }
         }
 
@@ -556,16 +697,15 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="full">True if the set is a full backup, false if it is incremental</param>
         public void InitiateMultiPassDiff(bool full)
         {
-            InitiateMultiPassDiff(full, Options.SnapShotMode.Auto, false, new Dictionary<string,string>());
+            InitiateMultiPassDiff(full, new Options(new Dictionary<string, string>()));
         }
 
         /// <summary>
         /// Initiates creating a content/signature pair.
         /// </summary>
         /// <param name="full">True if the set is a full backup, false if it is incremental</param>
-        /// <param name="snapshotPolicy">The snapshot policy to apply</param>
-        /// <param name="excludeEmptyFolders">A flag indicating if empty folders are excluded</param>
-        public void InitiateMultiPassDiff(bool full, Options.SnapShotMode snapshotPolicy, bool excludeEmptyFolders, Dictionary<string, string> snapshotOptions)
+        /// <param name="options">Any setup options to use</param>
+        public void InitiateMultiPassDiff(bool full, Options options)
         {
             if (full)
             {
@@ -584,35 +724,161 @@ namespace Duplicati.Library.Main.RSync
 
             try
             {
-                if (snapshotPolicy != Options.SnapShotMode.Off)
-                    m_snapshot = Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(m_sourcefolder, snapshotOptions);
+                if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
+                    m_snapshot = Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(m_sourcefolder, options.RawOptions);
             }
             catch (Exception ex)
             {
-                if (snapshotPolicy == Options.SnapShotMode.Required)
+                if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
-                else if (snapshotPolicy == Options.SnapShotMode.On)
+                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                 {
                     if (m_stat != null)
-                        m_stat.LogWarning(string.Format(Strings.RSyncDir.SnapshotFailedError, ex.ToString()), null);
+                        m_stat.LogWarning(string.Format(Strings.RSyncDir.SnapshotFailedError, ex.ToString()), ex);
                 }
             }
 
             //Failsafe, just use a plain implementation
             if (m_snapshot == null)
-                m_snapshot = new Duplicati.Library.Snapshots.NoSnapshot(m_sourcefolder);
-
-
-            //TODO: Figure out how to make this faster, but still random
-            //Perhaps use itterative callbacks, with random recurse or itterate on each folder
-            //... we need to know the total length to provide a progress bar... :(
+            {
+                m_snapshot = new Duplicati.Library.Snapshots.NoSnapshot(m_sourcefolder, options.RawOptions);
+            }
+            
+            Dictionary<string, Snapshots.USNHelper> usnHelpers = null;
+            List<string> unchanged = new List<string>();
             m_unproccesed = new PathCollector();
-            m_snapshot.EnumerateFilesAndFolders(m_filter, m_unproccesed.Callback);
+
+            try
+            {
+                if (options.UsnStrategy != Options.OptimizationStrategy.Off)
+                {
+                    if (Core.Utility.IsClientLinux && options.UsnStrategy != Options.OptimizationStrategy.Auto)
+                        throw new Exception(Strings.RSyncDir.UsnNotSupportedOnLinuxError);
+
+                    if (options.DisableUSNDiffCheck)
+                        m_lastUSN = null;
+
+                    usnHelpers = new Dictionary<string, Duplicati.Library.Snapshots.USNHelper>(Core.Utility.ClientFilenameStringComparer);
+                    foreach (string s in m_sourcefolder)
+                    {
+                        string rootFolder = System.IO.Path.GetPathRoot(s);
+                        if (!usnHelpers.ContainsKey(rootFolder))
+                            try { usnHelpers[rootFolder] = new Duplicati.Library.Snapshots.USNHelper(rootFolder); }
+                            catch (Exception ex)
+                            {
+                                if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
+                                    throw;
+                                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
+                                {
+                                    if (m_stat != null)
+                                        m_stat.LogWarning(string.Format(Strings.RSyncDir.UsnFailedError, ex.ToString()), ex);
+                                }
+                            }
+
+                        if (usnHelpers.ContainsKey(rootFolder))
+                        {
+                            if (m_lastUSN != null && m_lastUSN.ContainsKey(rootFolder))
+                            {
+                                if (m_lastUSN[rootFolder].Key != usnHelpers[rootFolder].JournalID)
+                                {
+                                    if (m_stat != null)
+                                        m_stat.LogWarning(string.Format(Strings.RSyncDir.UsnJournalIdChangedWarning, rootFolder, m_lastUSN[rootFolder].Key, usnHelpers[rootFolder].JournalID), null);
+
+                                    //Just take it all again
+                                    usnHelpers[rootFolder].EnumerateFilesAndFolders(s, m_filter, m_unproccesed.Callback);
+                                }
+                                else if (m_lastUSN[rootFolder].Value > usnHelpers[rootFolder].USN)
+                                {
+                                    if (m_stat != null)
+                                        m_stat.LogWarning(string.Format(Strings.RSyncDir.UsnNumberingFaultWarning, rootFolder, m_lastUSN[rootFolder].Value, usnHelpers[rootFolder].USN), null);
+
+                                    //Just take it all again
+                                    usnHelpers[rootFolder].EnumerateFilesAndFolders(s, m_filter, m_unproccesed.Callback);
+                                }
+                                else //All good we rely on USN numbers to find a list of changed files
+                                {
+                                    //Find all changed files
+                                    Dictionary<string, string> tmp = new Dictionary<string, string>(Core.Utility.ClientFilenameStringComparer);
+                                    foreach (string sx in usnHelpers[rootFolder].GetChangedFileSystemEntries(s, m_lastUSN[rootFolder].Value))
+                                    {
+                                        tmp.Add(sx, null);
+                                        m_unproccesed.Files.Add(sx);
+                                    }
+
+                                    //Remove the existing unchanged ones
+                                    foreach (string x in usnHelpers[rootFolder].GetFileSystemEntries(s))
+                                        if (!tmp.ContainsKey(x))
+                                            unchanged.Add(x);
+                                }
+                            }
+                            else
+                            {
+                                usnHelpers[rootFolder].EnumerateFilesAndFolders(s, m_filter, m_unproccesed.Callback);
+                            }
+                        }
+
+                    }
+
+                    if (usnHelpers.Count > 0)
+                    {
+                        m_currentUSN = new USNRecord();
+                        foreach (KeyValuePair<string, Snapshots.USNHelper> kx in usnHelpers)
+                            m_currentUSN.Add(kx.Key, kx.Value.JournalID, kx.Value.USN);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
+                    throw;
+                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
+                {
+                    if (m_stat != null)
+                        m_stat.LogWarning(string.Format(Strings.RSyncDir.UsnFailedError, ex.ToString()), ex);
+                }
+
+                //If we get here, something went really wrong with USN, so we disable it
+                m_currentUSN = null;
+                m_unproccesed = new PathCollector();
+                unchanged = null;
+            }
+            finally
+            {
+                if (usnHelpers != null)
+                    foreach(Snapshots.USNHelper h in usnHelpers.Values)
+                        try { h.Dispose(); }
+                        catch (Exception ex) 
+                        {
+                            if (m_stat != null)
+                                m_stat.LogWarning(string.Format(Strings.RSyncDir.UsnDisposeFailedWarning, ex.ToString()), ex);
+                        }
+            }
+
+
+            if (m_currentUSN == null)
+            {
+                m_snapshot.EnumerateFilesAndFolders(m_filter, m_unproccesed.Callback);
+            }
+            else
+            {
+                //Skip all items that we know are unchanged
+                foreach (string x in unchanged)
+                {
+                    string relpath = GetRelativeName(x);
+                    m_oldSignatures.Remove(relpath);
+                    m_oldFolders.Remove(relpath);
+                }
+
+                //If some folders did not support USN, add their files now
+                foreach (string s in m_sourcefolder)
+                    if (!m_currentUSN.ContainsKey(System.IO.Path.GetPathRoot(s)))
+                        m_snapshot.EnumerateFilesAndFolders(s, m_filter, m_unproccesed.Callback);
+            }
 
             m_totalfiles = m_unproccesed.Files.Count;
             m_isfirstmultipass = true;
 
-            if (excludeEmptyFolders)
+            if (options.ExcludeEmptyFolders)
             {
                 //We remove the folders that have no files.
                 //It would be more optimal to exclude them from the list before this point,
@@ -824,10 +1090,16 @@ namespace Duplicati.Library.Main.RSync
                         signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
                         contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
                     }
-                }
 
-                if (m_checkedUnchangedFiles.Count > 0)
-                    signaturefile.WriteAllLines(UNMODIFIED_FILES, m_checkedUnchangedFiles.ToArray());
+                    //We only write the USN if all files were processed
+                    if (m_currentUSN != null)
+                        using (System.IO.Stream s = signaturefile.CreateFile(USN_VALUES))
+                            m_currentUSN.Save(s);
+
+                    //Only write this if all files were processed
+                    if (m_checkedUnchangedFiles.Count > 0)
+                        signaturefile.WriteAllLines(UNMODIFIED_FILES, m_checkedUnchangedFiles.ToArray());
+                }
 
                 m_finalized = true;
             }
@@ -1538,24 +1810,33 @@ namespace Duplicati.Library.Main.RSync
                     {
                         PartialEntryRecord pex = null;
                         Core.TempFile partialFile = null;
+
                         if (pe != null && string.Equals(pe.Filename, s))
-                        {
                             pex = pe; //The file is incomplete
-                            if (!m_partialDeltas.ContainsKey(s))
-                                m_partialDeltas.Add(s, new Core.TempFile());
-                            partialFile = m_partialDeltas[s];
-                        }
                         else if (fe != null && string.Equals(fe.Filename, s))
-                        {
                             pex = fe; //The file has the final segment
-                            if (!m_partialDeltas.ContainsKey(s))
+
+                        if (pex != null && string.Equals(pex.Filename, s))
+                        {
+                            //Ensure that the partial file list is in the correct state
+                            if (pex.StartOffset == 0 && m_partialDeltas.ContainsKey(s))
                                 throw new Exception(string.Format(Strings.RSyncDir.InvalidPartialFileEntry, s));
+                            else if (pex.StartOffset != 0 && !m_partialDeltas.ContainsKey(s))
+                                throw new Exception(string.Format(Strings.RSyncDir.InvalidPartialFileEntry, s));
+                            else if (pex.StartOffset == 0) //First entry, so create a temp file
+                                m_partialDeltas.Add(s, new Duplicati.Library.Core.TempFile());
+
                             partialFile = m_partialDeltas[s];
                         }
+                        else if (m_partialDeltas.ContainsKey(s))
+                            throw new Exception(string.Format(Strings.RSyncDir.FileShouldBePartialError, s));
 
                         long startOffset = pex == null ? 0 : pex.StartOffset;
                         using (System.IO.FileStream s2 = System.IO.File.OpenWrite(partialFile == null ? target : (string)partialFile))
                         {
+                            if (s2.Length != startOffset)
+                                throw new Exception(string.Format(Strings.RSyncDir.InvalidPartialFileEntry, s));
+
                             s2.Position = startOffset;
                             if (startOffset == 0)
                                 s2.SetLength(0);

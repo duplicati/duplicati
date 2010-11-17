@@ -295,6 +295,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If USN is enabled the USN numbers are used to find all changed files since last backup. Use this option to disable the use of USN numbers, which will make Duplicati investigate all source files. This option is primarily intended for testing and should not be disabled in a production environment. If USN is not enabled, this option has no effect..
+        /// </summary>
+        internal static string DisableusndiffcheckLong {
+            get {
+                return ResourceManager.GetString("DisableusndiffcheckLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disables changelist by USN numbers.
+        /// </summary>
+        internal static string DisableusndiffcheckShort {
+            get {
+                return ResourceManager.GetString("DisableusndiffcheckShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This option will make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery..
         /// </summary>
         internal static string DontreadmanifestsLong {
@@ -939,6 +957,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string TotalsizeShort {
             get {
                 return ResourceManager.GetString("TotalsizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This settings controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to &quot;off&quot;, Duplicati will not attempt to use USN. Setting this to &quot;auto&quot; makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of &quot;on&quot; will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to &quot;required&quot; will make Duplicati abort the backup if the USN usage fail [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string UsnpolicyLong {
+            get {
+                return ResourceManager.GetString("UsnpolicyLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the use of NTFS Update Sequence Numbers.
+        /// </summary>
+        internal static string UsnpolicyShort {
+            get {
+                return ResourceManager.GetString("UsnpolicyShort", resourceCulture);
             }
         }
         

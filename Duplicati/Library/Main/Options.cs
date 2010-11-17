@@ -31,24 +31,24 @@ namespace Duplicati.Library.Main
     public class Options
     {
         /// <summary>
-        /// An enumeration that describes the supported snapshot modes
+        /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
-        public enum SnapShotMode
+        public enum OptimizationStrategy
         {
             /// <summary>
-            /// A snapshot is created if possible, but silently ignored if it fails to start
+            /// The optimization feature is created if possible, but silently ignored if it fails
             /// </summary>
             Auto,
             /// <summary>
-            /// A snapshot is created if possible, but an error is logged if it fails to start
+            /// The optimization feature is created if possible, but an error is logged if it fails
             /// </summary>
             On,
             /// <summary>
-            /// Snapshots are deactivated
+            /// The optimization feature is deactivated
             /// </summary>
             Off,
             /// <summary>
-            /// A snapshot is created, and the backup is aborted if it fails
+            /// The optimization feature is created, and the backup is aborted if it fails
             /// </summary>
             Required
         }
@@ -115,6 +115,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
 
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.String, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong),
+                    new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
+
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
                     new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong),
                     new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"high", "abovenormal", "normal", "belownormal", "low", "idle" }),
@@ -152,6 +154,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
+                    new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, Library.Core.Utility.IsClientLinux ? "off" : "auto", null, new string[] {"auto", "off", "on", "required"}),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
                     new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
@@ -327,6 +330,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if file time checks are skipped
         /// </summary>
         public bool DisableFiletimeCheck { get { return GetBool("disable-filetime-check"); } }
+
+        /// <summary>
+        /// A value indicating if USN numbers are used to get list of changed files
+        /// </summary>
+        public bool DisableUSNDiffCheck { get { return GetBool("disable-usn-diff-check"); } }
 
         /// <summary>
         /// A value indicating if file deletes are forced
@@ -687,7 +695,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the snapshot strategy to use
         /// </summary>
-        public SnapShotMode SnapShotStrategy
+        public OptimizationStrategy SnapShotStrategy
         {
             get
             {
@@ -696,13 +704,35 @@ namespace Duplicati.Library.Main
                     strategy = "";
 
                 if (string.Equals(strategy, "on", StringComparison.InvariantCultureIgnoreCase))
-                    return SnapShotMode.On;
+                    return OptimizationStrategy.On;
                 else if (string.Equals(strategy, "off", StringComparison.InvariantCultureIgnoreCase))
-                    return SnapShotMode.Off;
+                    return OptimizationStrategy.Off;
                 else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
-                    return SnapShotMode.Required;
+                    return OptimizationStrategy.Required;
                 else
-                    return SnapShotMode.Off;
+                    return OptimizationStrategy.Off;
+            }
+        }
+
+        /// <summary>
+        /// Gets the snapshot strategy to use
+        /// </summary>
+        public OptimizationStrategy UsnStrategy
+        {
+            get
+            {
+                string strategy;
+                if (!m_options.TryGetValue("usn-policy", out strategy))
+                    strategy = "";
+
+                if (string.Equals(strategy, "on", StringComparison.InvariantCultureIgnoreCase))
+                    return OptimizationStrategy.On;
+                else if (string.Equals(strategy, "off", StringComparison.InvariantCultureIgnoreCase))
+                    return OptimizationStrategy.Off;
+                else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
+                    return OptimizationStrategy.Required;
+                else
+                    return Core.Utility.IsClientLinux ? OptimizationStrategy.Off : OptimizationStrategy.Auto; //TODO: Test if this gives errors in EvenLog
             }
         }
 

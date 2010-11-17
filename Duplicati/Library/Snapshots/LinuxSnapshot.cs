@@ -364,6 +364,24 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Enumerates all files and folders in the snapshot
         /// </summary>
+        /// <param name="startpath">The path from which to retrieve files and folders</param>
+        /// <param name="filter">The filter to apply when evaluating files and folders</param>
+        /// <param name="callback">The callback to invoke with each found path</param>
+        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)
+        {
+            foreach (KeyValuePair<string, SnapShot> s in m_entries)
+                if (s.Key.Equals(startpath, Core.Utility.ClientFilenameStringComparision))
+                {
+                    Core.Utility.EnumerateFileSystemEntries(s.Key, filter, callback, this.ListFolders, this.ListFiles);
+                    return;
+                }
+
+            throw new InvalidOperationException(string.Format(Strings.Shared.InvalidEnumPathError, startpath));
+        }
+
+        /// <summary>
+        /// Enumerates all files and folders in the snapshot
+        /// </summary>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
         public void EnumerateFilesAndFolders(Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)

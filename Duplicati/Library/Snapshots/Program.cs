@@ -6,39 +6,51 @@ namespace Duplicati.Library.Snapshots
 {
     static class Program
     {
-        public static void Main(string[] args)
+        private static Dictionary<string, string> ExtractOptions(List<string> args)
+        {
+            Dictionary<string, string> options = new Dictionary<string, string>();
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].StartsWith("--"))
+                {
+                    string key = null;
+                    string value = null;
+                    if (args[i].IndexOf("=") > 0)
+                    {
+                        key = args[i].Substring(0, args[i].IndexOf("="));
+                        value = args[i].Substring(args[i].IndexOf("=") + 1);
+                    }
+                    else
+                        key = args[i];
+
+                    //Skip the leading --
+                    key = key.Substring(2).ToLower();
+                    if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("\"") && value.EndsWith("\""))
+                        value = value.Substring(1, value.Length - 2);
+
+                    //Last argument overwrites the current
+                    options[key] = value;
+
+                    args.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            return options;
+        }
+
+        public static void Main(string[] _args)
         {
             try
             {
-                Dictionary<string, string> options = new Dictionary<string, string>();
-                if (args.Length == 0)
-                    args = new string[] { System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) };
+                List<string> args = new List<string>(_args);
+                Dictionary<string, string> options = ExtractOptions(args);
+                
+                if (args.Count == 0)
+                    args = new List<string> { System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) };
 
-                if (args.Length == 2)
-                {
-                    string vssstring = null;
-                    if (args[0].StartsWith("--vss-exclude-writers="))
-                    {
-                        vssstring = args[0].Substring("--vss-exclude-writers=".Length);
-                        args = new string[] { args[1] };
-                    }
-                    else if (args[1].StartsWith("--vss-exclude-writers="))
-                    {
-                        vssstring = args[1].Substring("--vss-exclude-writers=".Length);
-                        args = new string[] { args[0] };
-                    }
-
-                    if (vssstring != null)
-                    {
-                        if (vssstring.StartsWith("\""))
-                            vssstring = vssstring.Substring(1);
-                        if (vssstring.EndsWith("\""))
-                            vssstring = vssstring.Substring(vssstring.Length - 1);
-                        options["vss-exclude-writers"] = vssstring;
-                    }
-                }
-
-                if (args.Length != 1)
+                if (args.Count != 1)
                 {
                     Console.WriteLine(@"Usage:
 Duplicati.Library.Snapshots.exe [test-folder]

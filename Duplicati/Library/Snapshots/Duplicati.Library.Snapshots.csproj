@@ -6,7 +6,7 @@
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
     <AssemblyName>Duplicati.Library.Snapshots</AssemblyName>
@@ -64,6 +64,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileHasChangedException.cs" />
     <Compile Include="ISnapshotService.cs" />
     <Compile Include="LinuxSnapshot.cs" />
     <Compile Include="Program.cs" />
@@ -74,12 +75,24 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>LinuxSnapshot.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\Shared.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Shared.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\USNHelper.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>USNHelper.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\WinNativeMethod.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>WinNativeMethod.resx</DependentUpon>
     </Compile>
     <Compile Include="SnapshotUtility.cs" />
+    <Compile Include="USNHelper.cs" />
+    <Compile Include="Win32USN.cs" />
     <Compile Include="WindowsSnapshot.cs" />
     <Compile Include="WinNativeMethods.cs" />
   </ItemGroup>
@@ -133,6 +146,14 @@
     <EmbeddedResource Include="Strings\LinuxSnapshot.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>LinuxSnapshot.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Shared.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Shared.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\USNHelper.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>USNHelper.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\WinNativeMethod.resx">
       <Generator>ResXFileCodeGenerator</Generator>

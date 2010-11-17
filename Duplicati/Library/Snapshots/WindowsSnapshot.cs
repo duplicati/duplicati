@@ -131,9 +131,7 @@ namespace Duplicati.Library.Snapshots
         public List<string> AllFiles()
         {
             collector c = new collector();
-
             EnumerateFilesAndFolders(null, c.callback);
-
             return c.files;
         }
 
@@ -203,7 +201,6 @@ namespace Duplicati.Library.Snapshots
         {
             string root = Core.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
             string volumePath = Core.Utility.AppendDirSeparator(GetSnapshotPath(root));
-
             string[] tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(GetSnapshotPath(folder));
             for (int i = 0; i < tmp.Length; i++)
                 tmp[i] = root + tmp[i].Substring(volumePath.Length);
@@ -239,6 +236,24 @@ namespace Duplicati.Library.Snapshots
         #endregion
 
         #region ISnapshotService Members
+
+        /// <summary>
+        /// Enumerates all files and folders in the snapshot
+        /// </summary>
+        /// <param name="startpath">The path from which to retrieve files and folders</param>
+        /// <param name="filter">The filter to apply when evaluating files and folders</param>
+        /// <param name="callback">The callback to invoke with each found path</param>
+        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)
+        {
+            foreach (string s in m_sourcepaths)
+                if (s.Equals(startpath, Core.Utility.ClientFilenameStringComparision))
+                {
+                    Core.Utility.EnumerateFileSystemEntries(s, filter, callback, this.ListFolders, this.ListFiles);
+                    return;
+                }
+
+            throw new InvalidOperationException(string.Format(Strings.Shared.InvalidEnumPathError, startpath));
+        }
 
         /// <summary>
         /// Enumerates all files and folders in the shadow copy

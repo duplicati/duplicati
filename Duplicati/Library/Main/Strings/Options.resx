@@ -423,4 +423,16 @@
   <data name="VssexcludewritersShort" xml:space="preserve">
     <value>A semicolon separated list of guids of VSS writers to exclude (Windows only)</value>
   </data>
+  <data name="UsnpolicyLong" xml:space="preserve">
+    <value>This settings controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to "off", Duplicati will not attempt to use USN. Setting this to "auto" makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of "on" will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to "required" will make Duplicati abort the backup if the USN usage fails. This feature is only supported on Windows and requires administrative privileges.</value>
+  </data>
+  <data name="UsnpolicyShort" xml:space="preserve">
+    <value>Controls the use of NTFS Update Sequence Numbers</value>
+  </data>
+  <data name="DisableusndiffcheckLong" xml:space="preserve">
+    <value>If USN is enabled the USN numbers are used to find all changed files since last backup. Use this option to disable the use of USN numbers, which will make Duplicati investigate all source files. This option is primarily intended for testing and should not be disabled in a production environment. If USN is not enabled, this option has no effect.</value>
+  </data>
+  <data name="DisableusndiffcheckShort" xml:space="preserve">
+    <value>Disables changelist by USN numbers</value>
+  </data>
 </root>
