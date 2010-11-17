@@ -5,7 +5,7 @@
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{47FE73E1-0832-44F7-96B9-2580273206C3}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.SharpRSync</RootNamespace>
     <AssemblyName>Duplicati.Library.SharpRSync</AssemblyName>
