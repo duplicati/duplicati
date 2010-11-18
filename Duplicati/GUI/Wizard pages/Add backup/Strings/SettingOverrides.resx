@@ -124,7 +124,7 @@
     <value>An error occured while loading compression settings: {0}</value>
   </data>
   <data name="EncryptionLoadError" xml:space="preserve">
-    <value>An error occured while loading encryption settings: {1}</value>
+    <value>An error occured while loading encryption settings: {0}</value>
   </data>
   <data name="GenericModuleLoadError" xml:space="preserve">
     <value>An error occured while loading generic module settings: {0}</value>

@@ -352,11 +352,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>FinishedAdd.resx</DependentUpon>
     </Compile>
-    <Compile Include="Wizard pages\Add backup\Strings\GeneratedFilenameOptions.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>GeneratedFilenameOptions.resx</DependentUpon>
-    </Compile>
     <Compile Include="Wizard pages\Add backup\Strings\CleanupSettings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -939,11 +934,6 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FinishedAdd.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizard pages\Add backup\Strings\GeneratedFilenameOptions.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>GeneratedFilenameOptions.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Wizard pages\Add backup\Strings\CleanupSettings.resx">
       <SubType>Designer</SubType>
