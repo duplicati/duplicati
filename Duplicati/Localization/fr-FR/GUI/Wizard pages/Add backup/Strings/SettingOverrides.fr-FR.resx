@@ -124,7 +124,7 @@
     <value>Une erreur est apparue lors du chargement de la configuration sur la compression de la sauvegarde, stockée sur le disque de sauvegarde: {0}</value>
   </data>
   <data name="EncryptionLoadError" xml:space="preserve">
-    <value>Une erreur est apparue lors du chargement de la configuration sur les paramètres de cryptage de la sauvegarde, stockée sur le disque de sauvegarde: {1}</value>
+    <value>Une erreur est apparue lors du chargement de la configuration sur les paramètres de cryptage de la sauvegarde, stockée sur le disque de sauvegarde: {0}</value>
   </data>
   <data name="GenericModuleLoadError" xml:space="preserve">
     <value>Une erreur est apparue lors du chargement de la configuration des modules généraux de la sauvegarde, stockée sur le disque de sauvegarde: {0}</value>
