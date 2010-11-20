@@ -709,6 +709,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If Duplicati encounters a file that is opened by another program, it will attempt to read whatever contents that are in the file. Since the file may be written during the backup, this can cause the backup to contain a partially written file. Use this option to disable this, omitting locked files from the backup. This option has no effect if a snapshot is active..
+        /// </summary>
+        internal static string OpenfilepolicyLong {
+            get {
+                return ResourceManager.GetString("OpenfilepolicyLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines how to handle open files.
+        /// </summary>
+        internal static string OpenfilepolicyShort {
+            get {
+                return ResourceManager.GetString("OpenfilepolicyShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Supply a passphrase that Duplicati will use to encrypt the backup volumes, making them unreadable without the passphrase. This variable can also be supplied through the environment variable PASSPHRASE..
         /// </summary>
         internal static string PassphraseLong {

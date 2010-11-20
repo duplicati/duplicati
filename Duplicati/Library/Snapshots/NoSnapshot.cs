@@ -16,21 +16,6 @@ namespace Duplicati.Library.Snapshots
         private string[] m_sourcefolders;
 
         /// <summary>
-        /// A flag that toggles backupRead attempts if the file is locked
-        /// </summary>
-        private bool m_attemptBackupRead;
-
-        /// <summary>
-        /// A flag indicating if the file should be opened in read/write mode if read mode fails
-        /// </summary>
-        private bool m_attemptDirtyAccess;
-
-        /// <summary>
-        /// A falg that indicates if the backup privilege has been enabled and should be disabled when disposing
-        /// </summary>
-        private bool m_disableBackupPrivilege;
-
-                /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sourcepaths">The folders that are about to be backed up</param>
@@ -49,55 +34,6 @@ namespace Duplicati.Library.Snapshots
             m_sourcefolders = new string[folders.Length];
             for (int i = 0; i < m_sourcefolders.Length; i++)
                 m_sourcefolders[i] = Core.Utility.AppendDirSeparator(folders[i]);
-
-            m_attemptDirtyAccess = false;
-            m_attemptBackupRead = false;
-            m_disableBackupPrivilege = false;
-
-            //The code below activates the use of BackupRead
-            //It is deactivated because it is incomplete, and apparently
-            // works by creating a blob of the file, attributes, metadata, etc.
-            
-            //To use this blob, a program must use BackupWrite to restore the
-            // actual file. This works nicely if the backup program
-            // is designed for this, but in Duplicati we want the file
-            // data itself, which would require that we use BackupWrite
-            // to restore the file, resulting in a copy of the file.
-
-            //This could be enabled, but would not be nice for 1gb+ files.
-            //It could also be used as a special option, say --use-win-backupread,
-            // which would then treat all files as blobs, and only restoring with
-            // BackupWrite. Currently Duplicati needs to read each file twice,
-            // so some logic would have to change to accomodate this.
-            //The restore would also have to be changed to correctly update
-            // a blob with streams etc, before writing the final version
-
-            /*if (m_attemptDirtyAccess && !Core.Utility.IsClientLinux)
-            {
-                try
-                {
-                    //If we know we cannot enable the privilege, don't try
-                    if (WinNativeMethods.CanEnableBackupPrivilege)
-                    {
-                        if (!WinNativeMethods.BackupPrivilege)
-                        {
-                            //Activate the privilege
-                            WinNativeMethods.BackupPrivilege = true;
-                            
-                            //We have set the privilege, remember to unset it
-                            m_disableBackupPrivilege = true;
-                        }
-
-                        //If the flag setting succeeded, this should be true
-                        if (WinNativeMethods.BackupPrivilege)
-                            m_attemptBackupRead = true;
-                    }
-                }
-                catch
-                {
-                }
-            }*/
-
         }
 
         #region ISnapshotService Members
@@ -107,9 +43,6 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         public void Dispose()
         {
-            if (m_disableBackupPrivilege)
-                try { WinNativeMethods.BackupPrivilege = false; }
-                catch { }
         }
 
         /// <summary>
@@ -158,29 +91,17 @@ namespace Duplicati.Library.Snapshots
         /// <returns>An open filestream that can be read</returns>
         public System.IO.Stream OpenRead(string file)
         {
-            try
-            {
-                return System.IO.File.OpenRead(file);
-            }
-            catch
-            {
-                if (m_attemptDirtyAccess)
-                {
-                    //Lets try a little softer, allowing file modification while reading
-                    try { return System.IO.File.Open(file, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite); }
-                    catch { }
+            return System.IO.File.OpenRead(file);
+        }
 
-                    //If we have SeBackupPrivilege (and are on Windows), try some extra tricks
-                    if (m_attemptBackupRead)
-                    {
-                        //Lets see if we can open it for reading with the BackupSemantics flag set
-                        try { return WinNativeMethods.OpenAsBackupFile(file); }
-                        catch { }
-                    }
-                }
-
-                throw; //None of the tricks worked, throw original error
-            }
+        /// <summary>
+        /// Opens a locked file for reading
+        /// </summary>
+        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <returns>An open filestream that can be read</returns>
+        public System.IO.Stream OpenLockedRead(string file)
+        {
+            return System.IO.File.Open(file, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
         }
 
         #endregion

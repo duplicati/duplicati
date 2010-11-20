@@ -435,4 +435,10 @@
   <data name="DisableusndiffcheckShort" xml:space="preserve">
     <value>Disables changelist by USN numbers</value>
   </data>
+  <data name="OpenfilepolicyLong" xml:space="preserve">
+    <value>If Duplicati encounters a file that is opened by another program, it will attempt to read whatever contents that are in the file. Since the file may be written during the backup, this can cause the backup to contain a partially written file. Use this option to disable this, omitting locked files from the backup. This option has no effect if a snapshot is active.</value>
+  </data>
+  <data name="OpenfilepolicyShort" xml:space="preserve">
+    <value>Determines how to handle open files</value>
+  </data>
 </root>

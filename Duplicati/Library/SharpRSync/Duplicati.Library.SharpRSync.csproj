@@ -70,6 +70,7 @@
     <Compile Include="Adler32Checksum.cs" />
     <Compile Include="ChecksumFileReader.cs" />
     <Compile Include="ChecksumFileWriter.cs" />
+    <Compile Include="ChecksumGeneratingStream.cs" />
     <Compile Include="DeltaFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -117,6 +117,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The file {0} changed while being backed up, omitting file from backup set.
+        /// </summary>
+        internal static string FileChangedWhileReadError {
+            get {
+                return ResourceManager.GetString("FileChangedWhileReadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} changed while being backed up, this may result in a broken file.
+        /// </summary>
+        internal static string FileChangedWhileReadWarning {
+            get {
+                return ResourceManager.GetString("FileChangedWhileReadWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to process file: {0}. Error message: {1}.
         /// </summary>
         internal static string FileProcessError {

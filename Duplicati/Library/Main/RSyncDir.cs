@@ -136,9 +136,9 @@ namespace Duplicati.Library.Main.RSync
         private class PartialFileEntry : IDisposable
         {
             public readonly string relativeName;
-            private Core.TempFile tempfile;
             private System.IO.Stream m_fs;
             private System.IO.Stream m_signatureStream;
+            private System.IO.Stream m_originalSignatureStream;
             private string m_signaturePath;
             private DateTime m_lastWrite;
 
@@ -147,18 +147,6 @@ namespace Duplicati.Library.Main.RSync
                 m_fs = fs;
                 m_fs.Position = position;
                 this.relativeName = relname;
-                this.tempfile = null;
-                this.m_signatureStream = signatureFile;
-                this.m_signaturePath = signaturePath;
-                this.m_lastWrite = lastWrite;
-            }
-
-            public PartialFileEntry(Core.TempFile tempfile, string relname, long position, System.IO.Stream signatureFile, string signaturePath, DateTime lastWrite)
-            {
-                m_fs = System.IO.File.OpenRead(tempfile);
-                m_fs.Position = position;
-                this.relativeName = relname;
-                this.tempfile = tempfile;
                 this.m_signatureStream = signatureFile;
                 this.m_signaturePath = signaturePath;
                 this.m_lastWrite = lastWrite;
@@ -167,17 +155,38 @@ namespace Duplicati.Library.Main.RSync
             public System.IO.Stream Stream { get { return m_fs; } }
             public DateTime LastWriteTime { get { return m_lastWrite; } }
 
-            public void DumpSignature(Library.Interface.ICompression signatureArchive)
+            public System.IO.Stream OriginalSignatureStream { get { return m_originalSignatureStream; } set { m_originalSignatureStream = value; } }
+
+            public bool DumpSignature(Library.Interface.ICompression signatureArchive)
             {
+                bool success = true;
                 //Add signature AFTER content.
                 //If content is present, it is restoreable, if signature is missing, file will be backed up on next run
                 //If signature is present, but not content, the entire differential sequence will be unable to recover the file
 
+                if (m_fs is SharpRSync.ChecksumGeneratingStream)
+                    m_fs.Flush();
+
                 using (m_signatureStream)
-                using (System.IO.Stream s3 = signatureArchive.CreateFile(this.m_signaturePath, m_lastWrite))
-                    Core.Utility.CopyStream(m_signatureStream, s3, true);
-                
+                {
+                    if (m_originalSignatureStream != null)
+                    {
+                        //Rewind both streams
+                        m_originalSignatureStream.Position = 0;
+                        m_signatureStream.Position = 0;
+
+                        success = Core.Utility.CompareStreams(m_originalSignatureStream, m_signatureStream, true);
+
+                        //Rewind signature
+                        m_signatureStream.Position = 0;
+                    }
+
+                    using (System.IO.Stream s3 = signatureArchive.CreateFile(this.m_signaturePath, m_lastWrite))
+                        Core.Utility.CopyStream(m_signatureStream, s3, true);
+                }
+
                 m_signatureStream = null;
+                return success;
             }
 
             /// <summary>
@@ -195,16 +204,16 @@ namespace Duplicati.Library.Main.RSync
                     m_fs = null;
                 }
 
-                if (this.tempfile != null)
-                {
-                    this.tempfile.Dispose();
-                    this.tempfile = null;
-                }
-
                 if (m_signatureStream != null)
                 {
                     m_signatureStream.Dispose();
                     m_signatureStream = null;
+                }
+
+                if (m_originalSignatureStream != null)
+                {
+                    m_originalSignatureStream.Dispose();
+                    m_originalSignatureStream = null;
                 }
             }
 
@@ -373,6 +382,7 @@ namespace Duplicati.Library.Main.RSync
 
         #endregion
 
+        #region Filenames
         internal static readonly string COMBINED_SIGNATURE_ROOT = "signature";
         internal static readonly string CONTENT_SIGNATURE_ROOT = "content_signature";
         internal static readonly string DELTA_SIGNATURE_ROOT = "delta_signature";
@@ -394,6 +404,7 @@ namespace Duplicati.Library.Main.RSync
         internal static readonly string UPDATED_FOLDERS_TIMESTAMPS = "updated_folders_timestamps.txt";
         internal static readonly string UNMODIFIED_FILES = "unmodified-files.txt";
         internal static readonly string USN_VALUES = "usn-values.xml";
+        #endregion
 
         public delegate void ProgressEventDelegate(int progress, string filename);
         public event ProgressEventDelegate ProgressEvent;
@@ -548,6 +559,11 @@ namespace Duplicati.Library.Main.RSync
         /// The snapshot control that guards this backup
         /// </summary>
         private Snapshots.ISnapshotService m_snapshot;
+
+        /// <summary>
+        /// The open file strategy to use if not using VSS
+        /// </summary>
+        private Options.OpenFileStrategy m_openfilepolicy;
 
         /// <summary>
         /// The USN values recorded in this run
@@ -721,6 +737,7 @@ namespace Duplicati.Library.Main.RSync
             m_deletedfolders = new List<string>();
             m_checkedUnchangedFiles = new List<string>();
             m_lastPartialFile = null;
+            m_openfilepolicy = Options.OpenFileStrategy.Ignore;
 
             try
             {
@@ -742,6 +759,7 @@ namespace Duplicati.Library.Main.RSync
             if (m_snapshot == null)
             {
                 m_snapshot = new Duplicati.Library.Snapshots.NoSnapshot(m_sourcefolder, options.RawOptions);
+                m_openfilepolicy = options.OpenFilePolicy;
             }
             
             Dictionary<string, Snapshots.USNHelper> usnHelpers = null;
@@ -1186,7 +1204,6 @@ namespace Duplicati.Library.Main.RSync
 
             while (m_unproccesed.Files.Count > 0 && totalSize < volumesize && m_lastPartialFile == null)
             {
-
                 int next = r.Next(0, m_unproccesed.Files.Count);
                 string s = m_unproccesed.Files[next];
                 m_unproccesed.Files.RemoveAt(next);
@@ -1233,12 +1250,29 @@ namespace Duplicati.Library.Main.RSync
                     else
                     {
                         System.IO.Stream fs = null;
-
                         try
                         {
+                            bool isLockedStream = false;
+
                             m_filesopened++;
                             //We cannot have a "using" directive here because the fs may need to survive multiple rounds
-                            fs = m_snapshot.OpenRead(s);
+                            try { fs = m_snapshot.OpenRead(s); }
+                            catch
+                            {
+                                if (m_snapshot is Snapshots.NoSnapshot && m_openfilepolicy != Options.OpenFileStrategy.Ignore)
+                                {
+                                    try { fs = ((Snapshots.NoSnapshot)m_snapshot).OpenLockedRead(s); }
+                                    catch { }
+
+                                    //Rethrow original error
+                                    if (fs == null)
+                                        throw;
+
+                                    isLockedStream = true;
+                                }
+                                else
+                                    throw;
+                            }
                             
                             //Record the change time after we opened (and thus locked) the file
                             DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
@@ -1269,12 +1303,55 @@ namespace Duplicati.Library.Main.RSync
                                 }
                                 else
                                 {
+                                    System.IO.Stream originalSignature = null;
+
+                                    //If the stream was locked, we hijack it here to ensure that the signature recorded
+                                    // matches the file data being read
+                                    if (isLockedStream)
+                                    {
+                                        if (m_openfilepolicy == Options.OpenFileStrategy.Copy)
+                                        {
+                                            using (MemoryStream newSig = new MemoryStream())
+                                            {
+                                                fs.Position = 0;
+                                                using (SharpRSync.ChecksumGeneratingStream ts = new SharpRSync.ChecksumGeneratingStream(newSig, fs))
+                                                {
+                                                    fs = new Core.TempFileStream();
+                                                    Core.Utility.CopyStream(ts, fs, false);
+                                                }
+
+                                                fs.Position = 0;
+                                                signature.Position = 0;
+                                                newSig.Position = 0;
+
+                                                if (!Core.Utility.CompareStreams(signature, newSig, true))
+                                                    throw new Exception(string.Format(Strings.RSyncDir.FileChangedWhileReadError, s));
+
+                                                signature.Position = 0;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            //Keep a copy of the original signature for change detection
+                                            originalSignature = signature;
+
+                                            //Set up for a new round
+                                            signature = new System.IO.MemoryStream();
+                                            fs.Position = 0;
+                                            fs = new SharpRSync.ChecksumGeneratingStream(signature, fs);
+                                        }
+                                    }
+
                                     totalSize = AddFileToCompression(fs, s, signature, contentfile, signaturefile, volumesize, lastWrite);
                                     
                                     //If this turned into a partial full entry, we must keep the file open.
                                     //The file will be closed when m_lastPartialFile is disposed
-                                    if (m_lastPartialFile != null && m_lastPartialFile.Stream == fs)
-                                        fs = null;
+                                    if (m_lastPartialFile != null)
+                                    {
+                                        m_lastPartialFile.OriginalSignatureStream = originalSignature;
+                                        if (m_lastPartialFile.Stream == fs)
+                                            fs = null;
+                                    }
                                 }
                             }
                         }
@@ -1367,7 +1444,6 @@ namespace Duplicati.Library.Main.RSync
         private long AddFileToCompression(System.IO.Stream fs, string s, System.IO.Stream signature, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize, DateTime lastWrite)
         {
             fs.Position = 0;
-            signature.Position = 0;
             string relpath = GetRelativeName(s);
 
             if (m_modifiedFiles.ContainsKey(s))
@@ -1380,12 +1456,12 @@ namespace Duplicati.Library.Main.RSync
                 {
                     long lbefore = contentfile.Size;
 
-                    Core.TempFile deltaTemp = null;
+                    Core.TempFileStream deltaTemp = null;
                     try
                     {
-                        deltaTemp = new Core.TempFile();
-                        using (System.IO.FileStream s3 = System.IO.File.Create(deltaTemp))
-                            SharpRSync.Interface.GenerateDelta(sigfs, fs, s3);
+                        deltaTemp = new Duplicati.Library.Core.TempFileStream();
+                        SharpRSync.Interface.GenerateDelta(sigfs, fs, deltaTemp);
+                        deltaTemp.Position = 0;
 
                         m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(deltaTemp, target, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
                     }
@@ -1465,7 +1541,12 @@ namespace Duplicati.Library.Main.RSync
                 //Add signature AFTER content is completed.
                 //If content is present, it is restoreable, if signature is missing, file will be backed up on next run
                 //If signature is present, but not content, the entire differential sequence will be unable to recover the file
-                entry.DumpSignature(signaturefile);
+                if (!entry.DumpSignature(signaturefile))
+                {
+                    if (m_stat != null)
+                        m_stat.LogWarning(string.Format(Strings.RSyncDir.FileChangedWhileReadWarning, GetFullPathFromRelname(entry.relativeName)), null);
+                }
+
                 entry.Dispose();
             }
             return pe;

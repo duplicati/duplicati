@@ -197,4 +197,10 @@ Error message: {1}</value>
   <data name="UsnNumberingFaultWarning" xml:space="preserve">
     <value>The stored USN number for volume {0} is {1} but the current USN is {1}, performing full file compare</value>
   </data>
+  <data name="FileChangedWhileReadError" xml:space="preserve">
+    <value>The file {0} changed while being backed up, omitting file from backup set</value>
+  </data>
+  <data name="FileChangedWhileReadWarning" xml:space="preserve">
+    <value>The file {0} changed while being backed up, this may result in a broken file</value>
+  </data>
 </root>

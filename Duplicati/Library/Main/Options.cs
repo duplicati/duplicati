@@ -54,6 +54,27 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// The possible settings for the open file strategy
+        /// </summary>
+        public enum OpenFileStrategy
+        {
+            /// <summary>
+            /// Means that locked files are not backed up
+            /// </summary>
+            Ignore,
+
+            /// <summary>
+            /// Reads locked files as-is
+            /// </summary>
+            Snapshot,
+
+            /// <summary>
+            /// Copies the file to prevent partial writes
+            /// </summary>
+            Copy
+        }
+
+        /// <summary>
         /// Lock that protects the options collection
         /// </summary>
         private object m_lock = new object();
@@ -155,6 +176,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
                     new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, Library.Core.Utility.IsClientLinux ? "off" : "auto", null, new string[] {"auto", "off", "on", "required"}),
+                    new CommandLineArgument("open-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.OpenfilepolicyShort, Strings.Options.OpenfilepolicyLong, "snapshot", null, new string[] { "ignore", "snapshot", "copy" }),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
                     new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
@@ -732,7 +754,29 @@ namespace Duplicati.Library.Main
                 else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
                     return OptimizationStrategy.Required;
                 else
-                    return Core.Utility.IsClientLinux ? OptimizationStrategy.Off : OptimizationStrategy.Auto; //TODO: Test if this gives errors in EvenLog
+                    return Core.Utility.IsClientLinux ? OptimizationStrategy.Off : OptimizationStrategy.Auto;
+            }
+        }
+
+        /// <summary>
+        /// Gets the open file strategy setting
+        /// </summary>
+        public OpenFileStrategy OpenFilePolicy
+        {
+            get
+            {
+                string strategy;
+                if (!m_options.TryGetValue("open-file-policy", out strategy))
+                    strategy = "";
+
+                if (string.Equals(strategy, "snapshot", StringComparison.InvariantCultureIgnoreCase))
+                    return OpenFileStrategy.Snapshot;
+                else if (string.Equals(strategy, "ignore", StringComparison.InvariantCultureIgnoreCase))
+                    return OpenFileStrategy.Ignore;
+                else if (string.Equals(strategy, "copy", StringComparison.InvariantCultureIgnoreCase))
+                    return OpenFileStrategy.Copy;
+                else
+                    return OpenFileStrategy.Snapshot;
             }
         }
 

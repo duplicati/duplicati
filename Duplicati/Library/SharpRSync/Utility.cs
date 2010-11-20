@@ -69,15 +69,17 @@ namespace Duplicati.Library.SharpRSync
                 return stream.Read(buf, index, count);
 
             int a;
+            int read = 0;
             do
             {
                 a = stream.Read(buf, index, count);
                 index += a;
+                read += a;
                 count -= a;
             }
             while (a != 0 && count > 0);
 
-            return index;
+            return read;
         }
 
         /// <summary>

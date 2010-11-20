@@ -102,6 +102,7 @@
       <DependentUpon>Utility.resx</DependentUpon>
     </Compile>
     <Compile Include="TempFile.cs" />
+    <Compile Include="TempFileStream.cs" />
     <Compile Include="TempFolder.cs" />
     <Compile Include="ThrottledStream.cs" />
     <Compile Include="Timeparser.cs" />
