@@ -21,35 +21,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
     /// <summary>
-    /// A simple filter that includes or excludes files, based on a list
+    /// A common interface for filtering filenames
     /// </summary>
-    public class FilelistFilter : IFilenameFilter
+    public interface IFilenameFilter
     {
-        private Dictionary<string, string> m_filter = new Dictionary<string, string>(Utility.IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase);
-        private bool m_include;
-
-        public FilelistFilter(bool include, IEnumerable<string> filenames)
-        {
-            m_include = include;
-            foreach (string s in filenames)
-                if (!System.IO.Path.IsPathRooted(s))
-                    m_filter[System.IO.Path.DirectorySeparatorChar + s] = null;
-                else
-                    m_filter[s] = null;
-        }
-
-        #region IFilenameFilter Members
-
-        public bool Match(string filename)
-        {
-            return m_filter.ContainsKey(filename);
-        }
-
-        public bool Include { get { return m_include; } }
-
-        #endregion
+        bool Include { get; }
+        bool Match(string filename);
     }
 }

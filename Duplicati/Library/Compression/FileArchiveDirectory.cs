@@ -38,7 +38,7 @@ namespace Duplicati.Library.Compression
         /// <param name="basefolder">The folder to base the archive on</param>
         public FileArchiveDirectory(string basefolder)
         {
-            m_folder = Core.Utility.AppendDirSeparator(basefolder);
+            m_folder = Utility.Utility.AppendDirSeparator(basefolder);
         }
 
         #region IFileArchive Members
@@ -68,7 +68,7 @@ namespace Duplicati.Library.Compression
         public string[] ListFiles(string prefix)
         {
             if (prefix == null) prefix = "";
-            return Core.Utility.EnumerateFiles(System.IO.Path.Combine(m_folder, prefix)).ToArray();
+            return Utility.Utility.EnumerateFiles(System.IO.Path.Combine(m_folder, prefix)).ToArray();
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace Duplicati.Library.Compression
         public string[] ListDirectories(string prefix)
         {
             if (prefix == null) prefix = "";
-            return Core.Utility.EnumerateFolders(System.IO.Path.Combine(m_folder, prefix)).ToArray();
+            return Utility.Utility.EnumerateFolders(System.IO.Path.Combine(m_folder, prefix)).ToArray();
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace Duplicati.Library.Compression
         public string[] ListEntries(string prefix)
         {
             if (prefix == null) prefix = "";
-            return Core.Utility.EnumerateFileSystemEntries(System.IO.Path.Combine(m_folder, prefix)).ToArray();
+            return Utility.Utility.EnumerateFileSystemEntries(System.IO.Path.Combine(m_folder, prefix)).ToArray();
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Compression
         /// </summary>
         public long Size
         {
-            get { return Core.Utility.GetDirectorySize(m_folder, null); }
+            get { return Utility.Utility.GetDirectorySize(m_folder, null); }
         }
 
         /// <summary>

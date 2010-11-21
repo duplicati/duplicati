@@ -95,7 +95,7 @@ namespace Duplicati.Library.Backend
             Save();
 
             Dictionary<string, string> tmp = new Dictionary<string, string>();
-            foreach (Core.ComboBoxItemPair<string> x in AWS_ID.Items)
+            foreach (Utility.ComboBoxItemPair<string> x in AWS_ID.Items)
                 tmp[x.ToString()] = x.Value;
 
             tmp[AWS_ID.Text] = AWS_KEY.Text;
@@ -140,7 +140,7 @@ namespace Duplicati.Library.Backend
         {
             AWS_ID.Items.Clear();
             foreach (KeyValuePair<string, string> x in S3CommonOptions.ExtractAccounts(m_applicationSettings))
-                AWS_ID.Items.Add(new Core.ComboBoxItemPair<string>(x.Key, x.Value));
+                AWS_ID.Items.Add(new Utility.ComboBoxItemPair<string>(x.Key, x.Value));
 
             if (m_options.ContainsKey(ACCESS_ID))
                 AWS_ID.Text = m_options[ACCESS_ID];
@@ -207,7 +207,7 @@ namespace Duplicati.Library.Backend
                     return true;
 
                 //The problem should be fixed in any version after 2.4.2.3
-                if (Core.Utility.IsMono && Core.Utility.MonoVersion <= new Version(2, 4, 2, 3))
+                if (Utility.Utility.IsMono && Utility.Utility.MonoVersion <= new Version(2, 4, 2, 3))
                 {
                     switch (MessageBox.Show(this, Strings.S3UI.MonoRequiresExistingBucket, Application.ProductName, MessageBoxButtons.YesNoCancel))
                     {
@@ -321,7 +321,7 @@ namespace Duplicati.Library.Backend
 
         private void SignUpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Duplicati.Library.Core.UrlUtillity.OpenUrl(LOGIN_PAGE);
+            Duplicati.Library.Utility.UrlUtillity.OpenUrl(LOGIN_PAGE);
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -394,11 +394,11 @@ namespace Duplicati.Library.Backend
 
         private void AWS_ID_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (AWS_ID.SelectedItem as Core.ComboBoxItemPair<string> != null)
+            if (AWS_ID.SelectedItem as Utility.ComboBoxItemPair<string> != null)
             {
                 AWS_KEY.AskToEnterNewPassword = false;
                 AWS_KEY.IsPasswordVisible = false;
-                AWS_KEY.Text = (AWS_ID.SelectedItem as Core.ComboBoxItemPair<string>).Value;
+                AWS_KEY.Text = (AWS_ID.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
                 AWS_KEY.AskToEnterNewPassword = true;
             }
         }

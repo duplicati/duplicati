@@ -26,7 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
-using Duplicati.Library.Core;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.GUI.Wizard_pages.Restore
 {

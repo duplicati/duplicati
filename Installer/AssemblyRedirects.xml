@@ -3,7 +3,7 @@
 		<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
 
 			<dependentAssembly>
-				<assemblyIdentity name="Duplicati.Library.Core"	publicKeyToken="8bfe994a39631a7b" />
+				<assemblyIdentity name="Duplicati.Library.Utility"	publicKeyToken="8bfe994a39631a7b" />
 				<bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion="1.0.1.410" />
 			</dependentAssembly>
 

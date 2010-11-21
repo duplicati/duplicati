@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// This is a stream wrapper that reports the current progress of reading or writing the stream to the supplied delegate

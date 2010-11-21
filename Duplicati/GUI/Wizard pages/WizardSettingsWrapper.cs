@@ -98,7 +98,7 @@ namespace Duplicati.GUI.Wizard_pages
                     System.Reflection.PropertyInfo pi = this.GetType().GetProperty(n.Name);
                     if (pi != null && pi.CanWrite)
                         if (pi.PropertyType == typeof(DateTime))
-                            pi.SetValue(this, Library.Core.Timeparser.ParseTimeInterval(n.InnerText, DateTime.Now.Date), null);
+                            pi.SetValue(this, Library.Utility.Timeparser.ParseTimeInterval(n.InnerText, DateTime.Now.Date), null);
                         else
                             pi.SetValue(this, Convert.ChangeType(n.InnerText, pi.PropertyType), null);
                 }

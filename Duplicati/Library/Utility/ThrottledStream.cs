@@ -25,7 +25,7 @@ using System.IO;
 //TODO: Use the IPGlobalProperties to dynamically throttle data
 //http://msdn.microsoft.com/en-us/library/system.net.networkinformation.ipglobalproperties.aspx
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// This class throttles the rate data can be read or written to the underlying stream.

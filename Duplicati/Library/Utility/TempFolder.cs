@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// This represents a temporary folder, that will be automatically removed when disposed
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Core
         public TempFolder(string folder)
         {
             m_protect = false;
-            m_folder = Core.Utility.AppendDirSeparator(folder);
+            m_folder = Utility.AppendDirSeparator(folder);
             System.IO.Directory.CreateDirectory(m_folder);
         }
 

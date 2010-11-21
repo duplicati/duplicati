@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// A filename filter based on regular expressions

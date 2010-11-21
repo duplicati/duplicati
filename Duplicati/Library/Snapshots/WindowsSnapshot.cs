@@ -71,7 +71,7 @@ namespace Duplicati.Library.Snapshots
                 m_sourcepaths = new string[sourcepaths.Length];
 
                 for(int i = 0; i < m_sourcepaths.Length; i++)
-                    m_sourcepaths[i] = Core.Utility.AppendDirSeparator(sourcepaths[i]);
+                    m_sourcepaths[i] = Utility.Utility.AppendDirSeparator(sourcepaths[i]);
 
                 try
                 {
@@ -159,11 +159,11 @@ namespace Duplicati.Library.Snapshots
             /// <param name="rootpath">The source folder</param>
             /// <param name="path">The full entry path</param>
             /// <param name="status">The entry type</param>
-            public void callback(string rootpath, string path, Core.Utility.EnumeratedFileStatus status)
+            public void callback(string rootpath, string path, Utility.Utility.EnumeratedFileStatus status)
             {
-                if (status == Duplicati.Library.Core.Utility.EnumeratedFileStatus.File)
+                if (status == Duplicati.Library.Utility.Utility.EnumeratedFileStatus.File)
                     files.Add(path);
-                else if (status == Duplicati.Library.Core.Utility.EnumeratedFileStatus.Folder)
+                else if (status == Duplicati.Library.Utility.Utility.EnumeratedFileStatus.Folder)
                     folders.Add(path);
                 else
                     errors.Add(path);
@@ -181,8 +181,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         private string[] ListFolders(string folder)
         {
-            string root = Core.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
-            string volumePath = Core.Utility.AppendDirSeparator(GetSnapshotPath(root));
+            string root = Utility.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
+            string volumePath = Utility.Utility.AppendDirSeparator(GetSnapshotPath(root));
 
             string[] tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(GetSnapshotPath(folder));
             for (int i = 0; i < tmp.Length; i++)
@@ -199,8 +199,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         private string[] ListFiles(string folder)
         {
-            string root = Core.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
-            string volumePath = Core.Utility.AppendDirSeparator(GetSnapshotPath(root));
+            string root = Utility.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
+            string volumePath = Utility.Utility.AppendDirSeparator(GetSnapshotPath(root));
             string[] tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(GetSnapshotPath(folder));
             for (int i = 0; i < tmp.Length; i++)
                 tmp[i] = root + tmp[i].Substring(volumePath.Length);
@@ -243,12 +243,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="startpath">The path from which to retrieve files and folders</param>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (string s in m_sourcepaths)
-                if (s.Equals(startpath, Core.Utility.ClientFilenameStringComparision))
+                if (s.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
                 {
-                    Core.Utility.EnumerateFileSystemEntries(s, filter, callback, this.ListFolders, this.ListFiles);
+                    Utility.Utility.EnumerateFileSystemEntries(s, filter, callback, this.ListFolders, this.ListFiles);
                     return;
                 }
 
@@ -260,10 +260,10 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Core.FilenameFilter filter, Core.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(Utility.FilenameFilter filter, Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (string s in m_sourcepaths)
-                Core.Utility.EnumerateFileSystemEntries(s, filter, callback, this.ListFolders, this.ListFiles);
+                Utility.Utility.EnumerateFileSystemEntries(s, filter, callback, this.ListFolders, this.ListFiles);
         }
 
         /// <summary>

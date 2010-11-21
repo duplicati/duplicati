@@ -139,7 +139,7 @@ namespace Duplicati.GUI
 
                 //HACK: the unix file lock does not allow us to read the file length when the file is locked
                 if (new System.IO.FileInfo(lockfile).Length == 0)
-                    if (!Library.Core.Utility.IsClientLinux)
+                    if (!Library.Utility.Utility.IsClientLinux)
                         throw new Exception("The file was locked, but had no data");
 
                 //Notify the other process that we have started

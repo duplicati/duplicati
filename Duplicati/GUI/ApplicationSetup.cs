@@ -27,7 +27,7 @@ using System.Windows.Forms;
 using System.Data.LightDatamodel;
 using Duplicati.Datamodel;
 using System.Globalization;
-using Duplicati.Library.Core;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.GUI
 {
@@ -70,7 +70,7 @@ namespace Duplicati.GUI
             try
             {
                 LanguageSelection.Items.Clear();
-                LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(string.Format(Strings.ApplicationSetup.DefaultLanguage, Library.Core.Utility.DefaultCulture.DisplayName), Library.Core.Utility.DefaultCulture));
+                LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(string.Format(Strings.ApplicationSetup.DefaultLanguage, Library.Utility.Utility.DefaultCulture.DisplayName), Library.Utility.Utility.DefaultCulture));
 
                 System.Text.RegularExpressions.Regex cix = new System.Text.RegularExpressions.Regex("[A-z][A-z](\\-[A-z][A-z])?");
 
@@ -146,7 +146,7 @@ namespace Duplicati.GUI
             try
             {
                 if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
-                    newCI = Library.Core.Utility.DefaultCulture;
+                    newCI = Library.Utility.Utility.DefaultCulture;
                 else
                     newCI = System.Globalization.CultureInfo.GetCultureInfo(m_settings.DisplayLanguage);
             }
@@ -354,7 +354,7 @@ namespace Duplicati.GUI
 
             try
             {
-                e.Result = string.Format(Strings.ApplicationSetup.CacheSize, Library.Core.Utility.FormatSizeString(Library.Core.Utility.GetDirectorySize(System.Environment.ExpandEnvironmentVariables((string)e.Argument), null)));
+                e.Result = string.Format(Strings.ApplicationSetup.CacheSize, Library.Utility.Utility.FormatSizeString(Library.Utility.Utility.GetDirectorySize(System.Environment.ExpandEnvironmentVariables((string)e.Argument), null)));
             }
             catch (System.Threading.ThreadAbortException)
             {
@@ -524,7 +524,7 @@ namespace Duplicati.GUI
             {
                 Duplicati.License.LicenseEntry l = LicenseSections.SelectedItem as Duplicati.License.LicenseEntry;
                 if (!string.IsNullOrEmpty(l.Url))
-                    Duplicati.Library.Core.UrlUtillity.OpenUrl(l.Url);
+                    Duplicati.Library.Utility.UrlUtillity.OpenUrl(l.Url);
             }
         }
     }

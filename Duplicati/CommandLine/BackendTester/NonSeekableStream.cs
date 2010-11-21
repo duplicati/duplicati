@@ -28,7 +28,7 @@ namespace Duplicati.CommandLine.BackendTester
     /// ensure that all operations work correctly on streams that
     /// are not seekable.
     /// </summary>
-    public class NonSeekableStream : Library.Core.OverrideableStream
+    public class NonSeekableStream : Library.Utility.OverrideableStream
     {
         public NonSeekableStream(System.IO.Stream stream)
             : base(stream)

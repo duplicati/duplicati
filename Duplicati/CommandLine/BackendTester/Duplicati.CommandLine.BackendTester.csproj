@@ -86,9 +86,9 @@
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
       <Name>Duplicati.Library.Backend.WEBDAV</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Core\Duplicati.Library.Core.csproj">
+    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Core</Name>
+      <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
       <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>

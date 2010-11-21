@@ -254,7 +254,7 @@ namespace Duplicati.Library.Backend
             using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
             {
                 string md5Hash = resp.Headers["ETag"];
-                Core.Utility.CopyStream(mds, stream);
+                Utility.Utility.CopyStream(mds, stream);
 
                 if (mds.GetFinalHashString().ToLower() != md5Hash.ToLower())
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
@@ -307,7 +307,7 @@ namespace Duplicati.Library.Backend
                 using (System.IO.Stream s = req.GetRequestStream())
                 using (MD5CalculatingStream mds = new MD5CalculatingStream(s))
                 {
-                    Core.Utility.CopyStream(stream, mds);
+                    Utility.Utility.CopyStream(stream, mds);
                     fileHash = mds.GetFinalHashString();
                 }
 

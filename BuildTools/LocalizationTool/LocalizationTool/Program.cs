@@ -149,7 +149,7 @@ namespace LocalizationTool
                 var missingFiles = files.Where(c => !System.IO.File.Exists(c.TargetFile));
                 var existingFiles = files.Where(c => System.IO.File.Exists(c.TargetFile));
 
-                var extraFiles = from x in Duplicati.Library.Core.Utility.EnumerateFiles(System.IO.Path.Combine(Application.StartupPath, culture))
+                var extraFiles = from x in Duplicati.Library.Utility.Utility.EnumerateFiles(System.IO.Path.Combine(Application.StartupPath, culture))
                                  where 
                                     x.EndsWith("." + culture + ".resx")
                                     &&
@@ -262,12 +262,12 @@ namespace LocalizationTool
             List<ResXFileInfo> res = new List<ResXFileInfo>();
             foreach (XElement conf in XDocument.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml")).Element("root").Elements("configuration"))
             {
-                string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Core.Utility.AppendDirSeparator(System.IO.Path.Combine(Application.StartupPath, culture)));
-                string sourcefolder = Duplicati.Library.Core.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(conf.Element("sourcefolder").Value));
+                string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.Combine(Application.StartupPath, culture)));
+                string sourcefolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(conf.Element("sourcefolder").Value));
 
                 foreach (XElement fn in conf.Elements("assembly"))
                 {
-                    foreach (string s in Duplicati.Library.Core.Utility.EnumerateFiles(System.IO.Path.Combine(sourcefolder, fn.Attribute("folder").Value)))
+                    foreach (string s in Duplicati.Library.Utility.Utility.EnumerateFiles(System.IO.Path.Combine(sourcefolder, fn.Attribute("folder").Value)))
                     {
                         if (s.ToLower().StartsWith(Application.StartupPath.ToLower()))
                             continue;
@@ -369,11 +369,11 @@ namespace LocalizationTool
 
         private static void Clean(string cultureReq)
         {
-            string root = Duplicati.Library.Core.Utility.AppendDirSeparator(Application.StartupPath);
+            string root = Duplicati.Library.Utility.Utility.AppendDirSeparator(Application.StartupPath);
             if (!string.IsNullOrEmpty(cultureReq))
                 root = System.IO.Path.Combine(root, cultureReq);
 
-            foreach (string s in Duplicati.Library.Core.Utility.EnumerateFiles(Application.StartupPath))
+            foreach (string s in Duplicati.Library.Utility.Utility.EnumerateFiles(Application.StartupPath))
                 if (System.IO.Path.GetDirectoryName(s) != Application.StartupPath && (System.IO.Path.GetExtension(s) == ".resources" || System.IO.Path.GetExtension(s) == ".dll"))
                     System.IO.File.Delete(s);
                 else if (System.IO.Path.GetExtension(s) == ".resx")

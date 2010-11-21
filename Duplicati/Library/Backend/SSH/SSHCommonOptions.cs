@@ -63,7 +63,7 @@ namespace Duplicati.Library.Backend
                 {
                     try
                     {
-                        if (Core.Utility.LocateFileInSystemPath(SFTPPath.Text) == null && MessageBox.Show(this, Strings.SSHCommonOptions.LocatingSftpError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                        if (Utility.Utility.LocateFileInSystemPath(SFTPPath.Text) == null && MessageBox.Show(this, Strings.SSHCommonOptions.LocatingSftpError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                             return false;
                     }
                     catch (Exception ex)
@@ -90,7 +90,7 @@ namespace Duplicati.Library.Backend
                 SFTPPath.Items.Clear();
                 SFTPPath.Items.Add(ExecutableFilename);
 
-                string autofind = Core.Utility.LocateFileInSystemPath(ExecutableFilename);
+                string autofind = Utility.Utility.LocateFileInSystemPath(ExecutableFilename);
                 if (!string.IsNullOrEmpty(autofind))
                 {
                     BrowseForSFTPDialog.FileName = System.IO.Path.GetFileName(autofind);
@@ -134,7 +134,7 @@ namespace Duplicati.Library.Backend
                 SFTPPath.Text = BrowseForSFTPDialog.FileName;
         }
 
-        private static string ExecutableFilename { get { return Core.Utility.IsClientLinux ? "sftp" : "psftp.exe"; } }
+        private static string ExecutableFilename { get { return Utility.Utility.IsClientLinux ? "sftp" : "psftp.exe"; } }
 
         public static string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {

@@ -151,7 +151,7 @@ namespace Duplicati.Library.Backend
         {
             TargetDrive.Items.Clear();
 
-            if (!Library.Core.Utility.IsClientLinux)
+            if (!Library.Utility.Utility.IsClientLinux)
                 for (char i = 'A'; i < 'Z'; i++)
                 {
                     try

@@ -67,7 +67,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                     if (string.IsNullOrEmpty(targetpaths[i]))
                     {
                         if (!string.IsNullOrEmpty(TargetPath.Text) && TargetPath.Text.Trim().Length != 0)
-                            targetpaths[i] = Library.Core.Utility.AppendDirSeparator(TargetPath.Text) + i.ToString();
+                            targetpaths[i] = Library.Utility.Utility.AppendDirSeparator(TargetPath.Text) + i.ToString();
                     }
 
                 foreach (string s in m_wrapper.RestoreFileSelection)

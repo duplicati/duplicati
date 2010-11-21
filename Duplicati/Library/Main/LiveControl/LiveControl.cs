@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.LiveControl
 
         public void SetUploadLimit(string limit)
         {
-            long newLimit = Core.Sizeparser.ParseSize(limit);
+            long newLimit = Utility.Sizeparser.ParseSize(limit);
 
             if (newLimit <= 0)
                 m_options.MaxUploadPrSecond = m_uploadLimit;
@@ -177,7 +177,7 @@ namespace Duplicati.Library.Main.LiveControl
 
         public void SetDownloadLimit(string limit)
         {
-            long newLimit = Core.Sizeparser.ParseSize(limit);
+            long newLimit = Utility.Sizeparser.ParseSize(limit);
 
             if (newLimit <= 0)
                 m_options.MaxDownloadPrSecond = m_downloadLimit;

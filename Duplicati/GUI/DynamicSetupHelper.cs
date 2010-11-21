@@ -88,14 +88,14 @@ namespace Duplicati.GUI
         private static string[] PrependFilterList(string[] sourceFolders, ApplicationSettings settings, List<KeyValuePair<bool, string>> filters)
         {
             string[] exFolders = new string[] {
-                Library.Core.Utility.AppendDirSeparator(System.Environment.ExpandEnvironmentVariables(settings.SignatureCachePath)), 
-                Library.Core.Utility.AppendDirSeparator(System.Environment.ExpandEnvironmentVariables(settings.TempPath))
+                Library.Utility.Utility.AppendDirSeparator(System.Environment.ExpandEnvironmentVariables(settings.SignatureCachePath)), 
+                Library.Utility.Utility.AppendDirSeparator(System.Environment.ExpandEnvironmentVariables(settings.TempPath))
             };
 
             foreach (string i in sourceFolders)
                 foreach (string x in exFolders)
-                    if (x.StartsWith(i, Library.Core.Utility.ClientFilenameStringComparision))
-                        filters.Insert(0, new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(x)));
+                    if (x.StartsWith(i, Library.Utility.Utility.ClientFilenameStringComparision))
+                        filters.Insert(0, new KeyValuePair<bool, string>(false, Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(x)));
 
             return sourceFolders;
         }
@@ -112,11 +112,11 @@ namespace Duplicati.GUI
         /// <returns>The source folder string</returns>
         private static string[] GetSourceFolders(bool includeDocuments, bool includeMusic, bool includeImages, bool includeDesktop, bool includeSettings, ApplicationSettings settings, List<KeyValuePair<bool, string>> filters)
         {
-            string myPictures = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
-            string myMusic = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
-            string desktop = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
-            string appData = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
-            string myDocuments = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+            string myPictures = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
+            string myMusic = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
+            string desktop = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+            string appData = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            string myDocuments = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
 
             List<string> folders = new List<string>();
             List<string> exfolders = new List<string>();
@@ -133,13 +133,13 @@ namespace Duplicati.GUI
             //Figure out if any folders are subfolders, and only include the parents
             for (int i = 0; i < folders.Count; i++)
                 for (int j = i + 1; j < folders.Count; j++)
-                    if (folders[i].StartsWith(folders[j], Library.Core.Utility.ClientFilenameStringComparision))
+                    if (folders[i].StartsWith(folders[j], Library.Utility.Utility.ClientFilenameStringComparision))
                     {
                         folders.RemoveAt(i);
                         i--;
                         break; //Break inner, continue outer
                     }
-                    else if (folders[j].StartsWith(folders[i], Library.Core.Utility.ClientFilenameStringComparision))
+                    else if (folders[j].StartsWith(folders[i], Library.Utility.Utility.ClientFilenameStringComparision))
                     {
                         folders.RemoveAt(j);
                         i = -1; //Restart loop
@@ -152,7 +152,7 @@ namespace Duplicati.GUI
                 foreach (string s2 in folders)
                     if (s.StartsWith(s2))
                     {
-                        filters.Insert(0, new KeyValuePair<bool, string>(false, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s)));
+                        filters.Insert(0, new KeyValuePair<bool, string>(false, Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(s)));
                         break;
                     }
             }

@@ -57,7 +57,7 @@ namespace Duplicati.CommandLine.BackendTester
                 options["ftp_username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
 
             if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                Library.Core.TempFolder.SystemTempPath = options["tempdir"];
+                Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
 
 
             if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
@@ -137,9 +137,9 @@ namespace Duplicati.CommandLine.BackendTester
             if (options.ContainsKey("number-of-files"))
                 number_of_files = int.Parse(options["number-of-files"]);
             if (options.ContainsKey("min-file-size"))
-                min_file_size = (int)Duplicati.Library.Core.Sizeparser.ParseSize(options["min-file-size"], "mb");
+                min_file_size = (int)Duplicati.Library.Utility.Sizeparser.ParseSize(options["min-file-size"], "mb");
             if (options.ContainsKey("max-file-size"))
-                max_file_size = (int)Duplicati.Library.Core.Sizeparser.ParseSize(options["max-file-size"]);
+                max_file_size = (int)Duplicati.Library.Utility.Sizeparser.ParseSize(options["max-file-size"]);
 
             if (options.ContainsKey("min-filename-length"))
                 min_filename_size = int.Parse(options["min-filename-length"]);
@@ -150,7 +150,7 @@ namespace Duplicati.CommandLine.BackendTester
             System.Security.Cryptography.SHA256 sha = System.Security.Cryptography.SHA256.Create();
 
             //Create random files
-            using (Library.Core.TempFolder tf = new Duplicati.Library.Core.TempFolder())
+            using (Library.Utility.TempFolder tf = new Duplicati.Library.Utility.TempFolder())
             {
                 List<TempFile> files = new List<TempFile>();
                 for (int i = 0; i < number_of_files; i++)
@@ -167,7 +167,7 @@ namespace Duplicati.CommandLine.BackendTester
                         byte[] buf = new byte[1024];
                         int size = rnd.Next(min_file_size, max_file_size);
 
-                        Console.WriteLine(" ({0})", Duplicati.Library.Core.Utility.FormatSizeString(size));
+                        Console.WriteLine(" ({0})", Duplicati.Library.Utility.Utility.FormatSizeString(size));
 
                         while (size > 0)
                         {
@@ -187,7 +187,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                 for (int i = 0; i < files.Count; i++)
                 {
-                    Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Core.Utility.FormatSizeString(new System.IO.FileInfo(System.IO.Path.Combine(tf, i.ToString())).Length));
+                    Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(System.IO.Path.Combine(tf, i.ToString())).Length));
                     try 
                     {
                         if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
@@ -240,7 +240,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                 for(int i = 0; i < files.Count; i++)
                 {
-                    using (Duplicati.Library.Core.TempFile cf = new Duplicati.Library.Core.TempFile())
+                    using (Duplicati.Library.Utility.TempFile cf = new Duplicati.Library.Utility.TempFile())
                     {
                         Exception e = null;
                         Console.Write("Downloading file {0} ... ", i);

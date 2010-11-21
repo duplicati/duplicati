@@ -289,7 +289,7 @@ namespace Duplicati.GUI
                 l.ParsedMessage = parsedMessage;
 
                 //Find logs that are no longer displayed, and delete them
-                foreach (Log x in con.GetObjects<Log>("EndTime < ?", Library.Core.Timeparser.ParseTimeInterval(new ApplicationSettings(con).RecentBackupDuration, DateTime.Now, true)))
+                foreach (Log x in con.GetObjects<Log>("EndTime < ?", Library.Utility.Timeparser.ParseTimeInterval(new ApplicationSettings(con).RecentBackupDuration, DateTime.Now, true)))
                 {
                     if (x.Blob != null) //Load the blob part if required
                         con.DeleteObject(x.Blob);

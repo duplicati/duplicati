@@ -28,7 +28,7 @@ namespace LocalizationTool
     {
         public static void CompileResxFiles(string folder, List<string> excludeFolders, string @namespace, string assemblyname, string versionAssembly, string keyfile, string culture, string productname)
         {
-            folder = Duplicati.Library.Core.Utility.AppendDirSeparator(folder);
+            folder = Duplicati.Library.Utility.Utility.AppendDirSeparator(folder);
             string resgenexe = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\resgen.exe");
             string alexe = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\al.exe");
 
@@ -68,11 +68,11 @@ namespace LocalizationTool
 
             List<string> resources = new List<string>();
 
-            foreach (string s in Duplicati.Library.Core.Utility.EnumerateFiles(folder))
+            foreach (string s in Duplicati.Library.Utility.Utility.EnumerateFiles(folder))
             {
                 if (s.ToLower().EndsWith("." + culture.ToLower() + ".resx"))
                 {
-                    if (excludeFolders.Any(xf => s.ToLower().StartsWith(Duplicati.Library.Core.Utility.AppendDirSeparator(xf).ToLower())))
+                    if (excludeFolders.Any(xf => s.ToLower().StartsWith(Duplicati.Library.Utility.Utility.AppendDirSeparator(xf).ToLower())))
                         continue;
 
                     string resname = System.IO.Path.ChangeExtension(s, ".resources");
@@ -116,7 +116,7 @@ namespace LocalizationTool
                 return;
             }
 
-            using (Duplicati.Library.Core.TempFile tf = new Duplicati.Library.Core.TempFile())
+            using (Duplicati.Library.Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
             {
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(tf))
                 {

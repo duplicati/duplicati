@@ -24,7 +24,7 @@ using System.IO;
 
 namespace Duplicati.Library.Encryption
 {
-    internal class CryptoStreamWrapper : Core.OverrideableStream
+    internal class CryptoStreamWrapper : Utility.OverrideableStream
     {
         private bool m_hasFlushed = false;
 

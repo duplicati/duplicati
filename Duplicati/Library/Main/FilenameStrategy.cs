@@ -180,7 +180,7 @@ namespace Duplicati.Library.Main
                     //Make sure the same DateTime is always the same string
                     if (!m_timeStringCache.ContainsKey(type.Time))
                         m_timeStringCache[type.Time] = type.Time.ToString("yyyy-MM-ddTHH:mm:ssK");
-                    datetime = m_timeStringCache[type.Time].Replace(":", m_timeSeparator ?? (Core.Utility.IsClientLinux ? ":" : "'"));
+                    datetime = m_timeStringCache[type.Time].Replace(":", m_timeSeparator ?? (Utility.Utility.IsClientLinux ? ":" : "'"));
                 }
                 else
                 {

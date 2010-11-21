@@ -97,7 +97,7 @@ namespace Duplicati.GUI
                                 if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
                                     m_extraOperations++;
 
-                                Library.Core.TempFolder tf = null;
+                                Library.Utility.TempFolder tf = null;
                                 try
                                 {
                                     if (DuplicatiProgress != null)
@@ -106,7 +106,7 @@ namespace Duplicati.GUI
                                     if (task.Task.IncludeSetup)
                                     {
                                         //Make a copy of the current database
-                                        tf = new Duplicati.Library.Core.TempFolder();
+                                        tf = new Duplicati.Library.Utility.TempFolder();
                                         string filename = System.IO.Path.Combine(tf, System.IO.Path.GetFileName(Program.DatabasePath));
 
                                         System.IO.File.Copy(Program.DatabasePath, filename, true);
@@ -141,9 +141,9 @@ namespace Duplicati.GUI
                                     string[] sourceFolders = DynamicSetupHelper.GetSourceFolders(task.Task, new ApplicationSettings(task.Task.DataParent), filters);
 
                                     if (options.ContainsKey("filter"))
-                                        filters.AddRange(Library.Core.FilenameFilter.DecodeFilter(options["filter"]));
+                                        filters.AddRange(Library.Utility.FilenameFilter.DecodeFilter(options["filter"]));
 
-                                    options["filter"] = Library.Core.FilenameFilter.EncodeAsFilter(filters);
+                                    options["filter"] = Library.Utility.FilenameFilter.EncodeAsFilter(filters);
 
                                     results = i.Backup(sourceFolders);
                                 }

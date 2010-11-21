@@ -90,9 +90,9 @@
       <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
       <Name>Duplicati.Winforms.Controls</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Core\Duplicati.Library.Core.csproj">
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Core</Name>
+      <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>

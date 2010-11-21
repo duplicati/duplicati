@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.Library.Core.Strings {
+namespace Duplicati.Library.Utility.Strings {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Core.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Core.Strings.FilenameFilter", typeof(FilenameFilter).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Utility.Strings.FilenameFilter", typeof(FilenameFilter).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
 
     /// <summary>

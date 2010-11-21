@@ -131,7 +131,7 @@ namespace Duplicati.Library.Encryption
 
             bool disableArmor = true;
             if (options.ContainsKey(COMMANDLINE_OPTIONS_DISABLE_ARMOR))
-                disableArmor = Core.Utility.ParseBool(options[COMMANDLINE_OPTIONS_DISABLE_ARMOR], true);
+                disableArmor = Utility.Utility.ParseBool(options[COMMANDLINE_OPTIONS_DISABLE_ARMOR], true);
 
             if (!disableArmor)
             {
@@ -264,7 +264,7 @@ namespace Duplicati.Library.Encryption
         {
             //Unwrap arguments and read stream
             object[] tmp = (object[])x;
-            Core.Utility.CopyStream((Stream)tmp[0], (Stream)tmp[1]);
+            Utility.Utility.CopyStream((Stream)tmp[0], (Stream)tmp[1]);
             ((Stream)tmp[1]).Close();
         }
 
@@ -288,7 +288,7 @@ namespace Duplicati.Library.Encryption
                 {
                     string v;
                     this.Options.TryGetValue("UI: WarnedNoGPG", out v);
-                    return Library.Core.Utility.ParseBool(v, false);
+                    return Library.Utility.Utility.ParseBool(v, false);
                 }
                 set
                 {
@@ -327,7 +327,7 @@ namespace Duplicati.Library.Encryption
                     fi = new System.IO.FileInfo(filename);
                     if (!fi.Exists)
                     {
-                        filename = Core.Utility.LocateFileInSystemPath(filename);
+                        filename = Utility.Utility.LocateFileInSystemPath(filename);
                         if (filename != null)
                             fi = new System.IO.FileInfo(filename);
                     }

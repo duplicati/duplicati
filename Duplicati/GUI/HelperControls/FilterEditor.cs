@@ -58,7 +58,7 @@ namespace Duplicati.GUI.HelperControls
 
             if (includeDynamicFilters && !string.IsNullOrEmpty(m_dynamicFilter))
             {
-                List<KeyValuePair<bool, string>> tmp = Library.Core.FilenameFilter.DecodeFilter(m_dynamicFilter);
+                List<KeyValuePair<bool, string>> tmp = Library.Utility.FilenameFilter.DecodeFilter(m_dynamicFilter);
                 tmp.AddRange(filters);
                 filters = tmp;
             }
@@ -72,7 +72,7 @@ namespace Duplicati.GUI.HelperControls
         [DefaultValue("")]
         public string Filter
         {
-            get { return Library.Core.FilenameFilter.EncodeAsFilter(GetFilterList(false)); }
+            get { return Library.Utility.FilenameFilter.EncodeAsFilter(GetFilterList(false)); }
             set { m_filter = value; RefreshList(); FilenameTester_TextChanged(null, null); }
         }
 
@@ -103,7 +103,7 @@ namespace Duplicati.GUI.HelperControls
         private void RefreshList()
         {
             listView.Items.Clear();
-            foreach (KeyValuePair<bool, string> f in Library.Core.FilenameFilter.DecodeFilter(m_filter))
+            foreach (KeyValuePair<bool, string> f in Library.Utility.FilenameFilter.DecodeFilter(m_filter))
                 listView.Items.Add(f.Value, f.Key ? 0 : 1);
 
             if (listView.Items.Count > 0)
@@ -159,7 +159,7 @@ namespace Duplicati.GUI.HelperControls
             //Find the source folder that matches the path entered
             string basepath = null;
             foreach (string s in m_basepath)
-                if (filename.StartsWith(Library.Core.Utility.AppendDirSeparator(s), Library.Core.Utility.ClientFilenameStringComparision))
+                if (filename.StartsWith(Library.Utility.Utility.AppendDirSeparator(s), Library.Utility.Utility.ClientFilenameStringComparision))
                 {
                     basepath = s;
                     break;
@@ -178,19 +178,19 @@ namespace Duplicati.GUI.HelperControls
             while (folder.Length > basepath.Length)
             {
                 folder = System.IO.Path.GetDirectoryName(folder);
-                parentFolders.Add(Duplicati.Library.Core.Utility.AppendDirSeparator(folder));
+                parentFolders.Add(Duplicati.Library.Utility.Utility.AppendDirSeparator(folder));
             }
 
             //Work from the source towards the path
             parentFolders.Reverse();
 
             //Test if any of the parent folders are excluded
-            Library.Core.FilenameFilter fn = new Duplicati.Library.Core.FilenameFilter(GetFilterList(true));
-            Library.Core.IFilenameFilter match;
+            Library.Utility.FilenameFilter fn = new Duplicati.Library.Utility.FilenameFilter(GetFilterList(true));
+            Library.Utility.IFilenameFilter match;
             foreach (string s in parentFolders)
                 if (!fn.ShouldInclude(basepath, s, out match))
                 {
-                    SetTooltipMessage(string.Format(Strings.FilterEditor.FolderIsExcluded, s, ((Library.Core.RegularExpressionFilter)match).Expression.ToString()));
+                    SetTooltipMessage(string.Format(Strings.FilterEditor.FolderIsExcluded, s, ((Library.Utility.RegularExpressionFilter)match).Expression.ToString()));
                     TestResults.Image = imageList.Images[1];
                     TestResults.Visible = true;
                     return;
@@ -203,9 +203,9 @@ namespace Duplicati.GUI.HelperControls
             if (match == null)
                 SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsIncludedDefault, filename));
             else if (match.Include)
-                SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsIncluded, filename, ((Library.Core.RegularExpressionFilter)match).Expression.ToString()));
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsIncluded, filename, ((Library.Utility.RegularExpressionFilter)match).Expression.ToString()));
             else
-                SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsExcluded, filename, ((Library.Core.RegularExpressionFilter)match).Expression.ToString()));
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FileIsExcluded, filename, ((Library.Utility.RegularExpressionFilter)match).Expression.ToString()));
 
             TestResults.Visible = true;
         }
@@ -388,7 +388,7 @@ namespace Duplicati.GUI.HelperControls
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void HelpButton_Click(object sender, EventArgs e)
         {
-            Duplicati.Library.Core.UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
+            Duplicati.Library.Utility.UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
         }
 
 
@@ -402,7 +402,7 @@ namespace Duplicati.GUI.HelperControls
             folderBrowserDialog.Description = Strings.FilterEditor.IncludeFolderBrowseTitle;
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
-                listView.Items.Add(Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath)), 0);
+                listView.Items.Add(Duplicati.Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Utility.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath)), 0);
                 FilenameTester_TextChanged(sender, e);
             }
         }
@@ -417,7 +417,7 @@ namespace Duplicati.GUI.HelperControls
             folderBrowserDialog.Description = Strings.FilterEditor.ExcludeFolderBrowseTitle;
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
-                listView.Items.Add(Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath)), 1);
+                listView.Items.Add(Duplicati.Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Utility.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath)), 1);
                 FilenameTester_TextChanged(sender, e);
             }
         }

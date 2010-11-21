@@ -53,13 +53,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             : base(Strings.SelectFiles.PageTitle, Strings.SelectFiles.PageDescription)
         {
             InitializeComponent();
-            m_sizes = new Dictionary<string, long>(Library.Core.Utility.IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase );
+            m_sizes = new Dictionary<string, long>(Library.Utility.Utility.IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase );
 
-            m_myPictures = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
-            m_myMusic = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
-            m_desktop = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
-            m_appData = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
-            m_myDocuments = Library.Core.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+            m_myPictures = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
+            m_myMusic = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
+            m_desktop = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+            m_appData = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            m_myDocuments = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
 
             FolderTooltip.SetToolTip(IncludeDocuments, m_myDocuments);
             FolderTooltip.SetToolTip(IncludeMusic, m_myMusic);
@@ -101,7 +101,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             {
                 string path = entry.SelectedPath.Trim();
                 if (!string.IsNullOrEmpty(path))
-                    folders.Add(Library.Core.Utility.AppendDirSeparator(path));
+                    folders.Add(Library.Utility.Utility.AppendDirSeparator(path));
             }
 
             folders.Reverse();
@@ -138,7 +138,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 {
                     string path = entry.SelectedPath.Trim();
                     if (!string.IsNullOrEmpty(path))
-                        folders.Add(Library.Core.Utility.AppendDirSeparator(path));
+                        folders.Add(Library.Utility.Utility.AppendDirSeparator(path));
                 }
 
                 for (int i = 0; i < folders.Count; i++)
@@ -160,7 +160,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                     for (int j = i + 1; j < folders.Count; j++)
                     {
-                        if (folders[i].Equals(folders[j], Library.Core.Utility.ClientFilenameStringComparision))
+                        if (folders[i].Equals(folders[j], Library.Utility.Utility.ClientFilenameStringComparision))
                         {
                             MessageBox.Show(this, string.Format(Strings.SelectFiles.DuplicateFolderError, folders[i]), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                             args.Cancel = true;
@@ -204,11 +204,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             //Upgrade from the previous design with one source folder and multiple filters
             MessageBox.Show(this, Strings.SelectFiles.UpgradeWarning, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            string p = Library.Core.Utility.AppendDirSeparator(m_wrapper.SourcePath);
-            List<KeyValuePair<bool, string>> filters = Library.Core.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters);
+            string p = Library.Utility.Utility.AppendDirSeparator(m_wrapper.SourcePath);
+            List<KeyValuePair<bool, string>> filters = Library.Utility.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters);
 
             //See what folders are included with the current setup
-            Library.Core.FilenameFilter filter = new Duplicati.Library.Core.FilenameFilter(filters);
+            Library.Utility.FilenameFilter filter = new Duplicati.Library.Utility.FilenameFilter(filters);
             IncludeDocuments.Checked = filter.ShouldInclude(p, m_myDocuments);
             IncludeImages.Checked = filter.ShouldInclude(p, m_myPictures);
             IncludeMusic.Checked = filter.ShouldInclude(p, m_myMusic);
@@ -220,7 +220,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 foreach (string s in m_specialFolders)
                     if (s.StartsWith(p))
                     {
-                        if (filters[i].Value == Library.Core.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(p.Length - 1) + "*"))
+                        if (filters[i].Value == Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(s.Substring(p.Length - 1) + "*"))
                         {
                             filters.RemoveAt(i);
                             i--;
@@ -239,7 +239,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             //See if there are extra filters that are not supported
             bool unsupported = false;
             foreach (KeyValuePair<bool, string> f in filters)
-                if (f.Value.StartsWith(Library.Core.FilenameFilter.ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString())))
+                if (f.Value.StartsWith(Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(System.IO.Path.DirectorySeparatorChar.ToString())))
                 {
                     unsupported = true;
                     break;
@@ -253,7 +253,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             //Make sure the extra filters are not included
             if (!unsupported)
-                m_wrapper.EncodedFilters = Library.Core.FilenameFilter.EncodeAsFilter(filters);
+                m_wrapper.EncodedFilters = Library.Utility.FilenameFilter.EncodeAsFilter(filters);
 
             if (unsupported)
                 FolderRadio.Checked = true;
@@ -382,28 +382,28 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                             if (m_sizes.ContainsKey(path))
                             {
                                 s += m_sizes[path];
-                                entry.FolderSize = Library.Core.Utility.FormatSizeString(m_sizes[path]);
+                                entry.FolderSize = Library.Utility.Utility.FormatSizeString(m_sizes[path]);
                             }
                         }
                 }
                 
                 if (m_calculator.CurrentTasks.Count == 0 && !m_calculator.Active)
-                    totalSize.Text = string.Format(Strings.SelectFiles.FinalSizeCalculated, Library.Core.Utility.FormatSizeString(s));
+                    totalSize.Text = string.Format(Strings.SelectFiles.FinalSizeCalculated, Library.Utility.Utility.FormatSizeString(s));
                 else
-                    totalSize.Text = string.Format(Strings.SelectFiles.PartialSizeCalculated, Library.Core.Utility.FormatSizeString(s));
+                    totalSize.Text = string.Format(Strings.SelectFiles.PartialSizeCalculated, Library.Utility.Utility.FormatSizeString(s));
 
                 lock(m_lock)
                 {
                     if (m_sizes.ContainsKey(m_myMusic))
-                        myMusicSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_myMusic));
+                        myMusicSize.Text = Library.Utility.Utility.FormatSizeString(FindActualSize(m_myMusic));
                     if (m_sizes.ContainsKey(m_myPictures))
-                        myPicturesSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_myPictures));
+                        myPicturesSize.Text = Library.Utility.Utility.FormatSizeString(FindActualSize(m_myPictures));
                     if (m_sizes.ContainsKey(m_desktop))
-                        desktopSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_desktop));
+                        desktopSize.Text = Library.Utility.Utility.FormatSizeString(FindActualSize(m_desktop));
                     if (m_sizes.ContainsKey(m_appData))
-                        appdataSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_appData));
+                        appdataSize.Text = Library.Utility.Utility.FormatSizeString(FindActualSize(m_appData));
                     if (m_sizes.ContainsKey(m_myDocuments))
-                        myDocumentsSize.Text = Library.Core.Utility.FormatSizeString(FindActualSize(m_myDocuments));
+                        myDocumentsSize.Text = Library.Utility.Utility.FormatSizeString(FindActualSize(m_myDocuments));
                 }
             }
         }
@@ -502,7 +502,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     return;
 
             //Calculate outside lock
-            long size = Duplicati.Library.Core.Utility.GetDirectorySize(folder, null);
+            long size = Duplicati.Library.Utility.Utility.GetDirectorySize(folder, null);
             lock (m_lock)
                 m_sizes[folder] = size;
         }

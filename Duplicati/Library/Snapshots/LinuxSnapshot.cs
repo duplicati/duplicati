@@ -46,7 +46,7 @@ namespace Duplicati.Library.Snapshots
             public SnapShot(string path)
             {
                 m_name = string.Format("duplicati-{0}", Guid.NewGuid().ToString());
-                m_realDir = Core.Utility.AppendDirSeparator(path);
+                m_realDir = Utility.Utility.AppendDirSeparator(path);
                 GetVolumeName(m_realDir);
             }
 
@@ -172,7 +172,7 @@ namespace Duplicati.Library.Snapshots
                 if (string.IsNullOrEmpty(m_mountPoint) || m_mountPoint.Trim().Length == 0)
                     throw new Exception(string.Format(Strings.LinuxSnapshot.ScriptOutputError, "mountpoint", output));
 
-                m_mountPoint = Core.Utility.AppendDirSeparator(m_mountPoint);
+                m_mountPoint = Utility.Utility.AppendDirSeparator(m_mountPoint);
             }
 
             /// <summary>
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Snapshots
                     throw new InvalidOperationException();
 
                 //Create the snapshot volume
-                string output = ExecuteCommand("create-lvm-snapshot.sh", string.Format("\"{0}\" \"{1}\" \"{2}\"", m_name, m_device, Core.Utility.AppendDirSeparator(Core.TempFolder.SystemTempPath)), 0);
+                string output = ExecuteCommand("create-lvm-snapshot.sh", string.Format("\"{0}\" \"{1}\" \"{2}\"", m_name, m_device, Utility.Utility.AppendDirSeparator(Utility.TempFolder.SystemTempPath)), 0);
 
                 System.Text.RegularExpressions.Regex rex = new System.Text.RegularExpressions.Regex("tmpdir=\"(?<tmpdir>[^\"]+)\"");
                 System.Text.RegularExpressions.Match m = rex.Match(output);
@@ -200,7 +200,7 @@ namespace Duplicati.Library.Snapshots
                 if (!System.IO.Directory.Exists(m_tmpDir))
                     throw new Exception(string.Format(Strings.LinuxSnapshot.MountFolderMissingError, m_tmpDir, output));
 
-                m_tmpDir = Core.Utility.AppendDirSeparator(m_tmpDir);
+                m_tmpDir = Utility.Utility.AppendDirSeparator(m_tmpDir);
             }
 
             #region IDisposable Members
@@ -367,12 +367,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="startpath">The path from which to retrieve files and folders</param>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (KeyValuePair<string, SnapShot> s in m_entries)
-                if (s.Key.Equals(startpath, Core.Utility.ClientFilenameStringComparision))
+                if (s.Key.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
                 {
-                    Core.Utility.EnumerateFileSystemEntries(s.Key, filter, callback, this.ListFolders, this.ListFiles);
+                    Utility.Utility.EnumerateFileSystemEntries(s.Key, filter, callback, this.ListFolders, this.ListFiles);
                     return;
                 }
 
@@ -384,10 +384,10 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (KeyValuePair<string, SnapShot> s in m_entries)
-                Core.Utility.EnumerateFileSystemEntries(s.Key, filter, callback, this.ListFolders, this.ListFiles);
+                Utility.Utility.EnumerateFileSystemEntries(s.Key, filter, callback, this.ListFolders, this.ListFiles);
         }
 
         /// <summary>

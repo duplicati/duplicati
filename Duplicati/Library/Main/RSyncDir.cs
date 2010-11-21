@@ -175,14 +175,14 @@ namespace Duplicati.Library.Main.RSync
                         m_originalSignatureStream.Position = 0;
                         m_signatureStream.Position = 0;
 
-                        success = Core.Utility.CompareStreams(m_originalSignatureStream, m_signatureStream, true);
+                        success = Utility.Utility.CompareStreams(m_originalSignatureStream, m_signatureStream, true);
 
                         //Rewind signature
                         m_signatureStream.Position = 0;
                     }
 
                     using (System.IO.Stream s3 = signatureArchive.CreateFile(this.m_signaturePath, m_lastWrite))
-                        Core.Utility.CopyStream(m_signatureStream, s3, true);
+                        Utility.Utility.CopyStream(m_signatureStream, s3, true);
                 }
 
                 m_signatureStream = null;
@@ -274,7 +274,7 @@ namespace Duplicati.Library.Main.RSync
             /// </summary>
             public USNRecord()
             {
-                m_values = new Dictionary<string, KeyValuePair<long, long>>(Core.Utility.ClientFilenameStringComparer);
+                m_values = new Dictionary<string, KeyValuePair<long, long>>(Utility.Utility.ClientFilenameStringComparer);
             }
 
 
@@ -499,7 +499,7 @@ namespace Duplicati.Library.Main.RSync
         /// <summary>
         /// The filter applied to restore or backup
         /// </summary>
-        private Core.FilenameFilter m_filter;
+        private Utility.FilenameFilter m_filter;
 
         /// <summary>
         /// Statistics reporting
@@ -543,7 +543,7 @@ namespace Duplicati.Library.Main.RSync
         /// <summary>
         /// A list of partial delta files, used when restoring
         /// </summary>
-        private Dictionary<string, Core.TempFile> m_partialDeltas;
+        private Dictionary<string, Utility.TempFile> m_partialDeltas;
 
         /// <summary>
         /// A list of timestamps to be assigned to the folders during restore finalization
@@ -584,13 +584,13 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="stat">The status report object</param>
         /// <param name="filter">An optional filter that controls what files to include</param>
         /// <param name="patches">A list of signature archives to read, MUST be sorted in the creation order, oldest first</param>
-        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter, List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches)
+        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Utility.FilenameFilter filter, List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches)
             : this(sourcefolder, stat, filter)
         {
             string[] prefixes = new string[] {
-                Core.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
-                Core.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT),
-                Core.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
+                Utility.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
+                Utility.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT),
+                Utility.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
             };
 
             m_patches = new List<Duplicati.Library.Interface.ICompression>();
@@ -673,7 +673,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="sourcefolder">The folders to create a backup from</param>
         /// <param name="stat">The status report object</param>
         /// <param name="filter">An optional filter that controls what files to include</param>
-        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Core.FilenameFilter filter)
+        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Utility.FilenameFilter filter)
         {
             m_filter = filter;
             //TODO: These should theoretically use the file systems case sensitivity
@@ -685,13 +685,13 @@ namespace Duplicati.Library.Main.RSync
             {
                 if (!System.IO.Path.IsPathRooted(sourcefolder[i]))
                     sourcefolder[i] = System.IO.Path.GetFullPath(sourcefolder[i]); 
-                sourcefolder[i] = Core.Utility.AppendDirSeparator(sourcefolder[i]);
+                sourcefolder[i] = Utility.Utility.AppendDirSeparator(sourcefolder[i]);
             }
             m_stat = stat;
             m_sourcefolder = sourcefolder;
 
             if (m_filter == null)
-                m_filter = new Duplicati.Library.Core.FilenameFilter(new List<KeyValuePair<bool, string>>());
+                m_filter = new Duplicati.Library.Utility.FilenameFilter(new List<KeyValuePair<bool, string>>());
         }
 
         /// <summary>
@@ -770,13 +770,13 @@ namespace Duplicati.Library.Main.RSync
             {
                 if (options.UsnStrategy != Options.OptimizationStrategy.Off)
                 {
-                    if (Core.Utility.IsClientLinux && options.UsnStrategy != Options.OptimizationStrategy.Auto)
+                    if (Utility.Utility.IsClientLinux && options.UsnStrategy != Options.OptimizationStrategy.Auto)
                         throw new Exception(Strings.RSyncDir.UsnNotSupportedOnLinuxError);
 
                     if (options.DisableUSNDiffCheck)
                         m_lastUSN = null;
 
-                    usnHelpers = new Dictionary<string, Duplicati.Library.Snapshots.USNHelper>(Core.Utility.ClientFilenameStringComparer);
+                    usnHelpers = new Dictionary<string, Duplicati.Library.Snapshots.USNHelper>(Utility.Utility.ClientFilenameStringComparer);
                     foreach (string s in m_sourcefolder)
                     {
                         string rootFolder = System.IO.Path.GetPathRoot(s);
@@ -816,7 +816,7 @@ namespace Duplicati.Library.Main.RSync
                                 else //All good we rely on USN numbers to find a list of changed files
                                 {
                                     //Find all changed files
-                                    Dictionary<string, string> tmp = new Dictionary<string, string>(Core.Utility.ClientFilenameStringComparer);
+                                    Dictionary<string, string> tmp = new Dictionary<string, string>(Utility.Utility.ClientFilenameStringComparer);
                                     foreach (string sx in usnHelpers[rootFolder].GetChangedFileSystemEntries(s, m_lastUSN[rootFolder].Value))
                                     {
                                         tmp.Add(sx, null);
@@ -903,15 +903,15 @@ namespace Duplicati.Library.Main.RSync
                 // but that would require rewriting of the snapshots
 
                 //We can't rely on the order of the folders, so we sort them to get the shortest folder names first
-                m_unproccesed.Folders.Sort(Core.Utility.ClientFilenameStringComparer);
+                m_unproccesed.Folders.Sort(Utility.Utility.ClientFilenameStringComparer);
 
                 //We can't rely on the order of the files either, but sorting them allows us to use a O=log(n) search rather than O=n
-                m_unproccesed.Files.Sort(Core.Utility.ClientFilenameStringComparer);
+                m_unproccesed.Files.Sort(Utility.Utility.ClientFilenameStringComparer);
 
                 for (int i = 0; i < m_unproccesed.Folders.Count; i++)
                 {
                     string folder = m_unproccesed.Folders[i];
-                    int ix = m_unproccesed.Files.BinarySearch(folder, Core.Utility.ClientFilenameStringComparer);
+                    int ix = m_unproccesed.Files.BinarySearch(folder, Utility.Utility.ClientFilenameStringComparer);
                     if (ix >= 0)
                         continue; //Should not happen, means that a file has the same name as a folder
                     
@@ -927,7 +927,7 @@ namespace Duplicati.Library.Main.RSync
                     else
                     {
                         //If the element does not start with the foldername, no files from the folder are included
-                        if (!m_unproccesed.Files[ix].StartsWith(folder, Core.Utility.ClientFilenameStringComparision))
+                        if (!m_unproccesed.Files[ix].StartsWith(folder, Utility.Utility.ClientFilenameStringComparision))
                         {
                             //Speedup, remove all subfolders as well without performing binary searches
                             while (i < m_unproccesed.Folders.Count && m_unproccesed.Folders[i].StartsWith(folder))
@@ -976,7 +976,7 @@ namespace Duplicati.Library.Main.RSync
         private string GetSourceFolder(string path)
         {
             foreach (string s in m_sourcefolder)
-                if (path.StartsWith(s, Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                if (path.StartsWith(s, Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                     return s;
 
             throw new Exception(string.Format(Strings.RSyncDir.InternalPathMappingError, path, string.Join(System.IO.Path.PathSeparator.ToString(), m_sourcefolder)));
@@ -993,9 +993,9 @@ namespace Duplicati.Library.Main.RSync
                 return path.Substring(m_sourcefolder[0].Length);
 
             for (int i = 0; i < m_sourcefolder.Length; i++)
-                if (path.StartsWith(m_sourcefolder[i], Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                if (path.StartsWith(m_sourcefolder[i], Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                     if (path.Length == m_sourcefolder[i].Length)
-                        return Core.Utility.AppendDirSeparator(i.ToString()); //This is a folder, and must be suffix with a slash
+                        return Utility.Utility.AppendDirSeparator(i.ToString()); //This is a folder, and must be suffix with a slash
                     else
                         return System.IO.Path.Combine(i.ToString(), path.Substring(m_sourcefolder[i].Length)); //This will use whatever suffix the path already has
 
@@ -1006,14 +1006,14 @@ namespace Duplicati.Library.Main.RSync
         {
             if (sourcefolders.Length == 1)
             {
-                if (!path.StartsWith(Core.Utility.AppendDirSeparator(sourcefolders[0]), Core.Utility.ClientFilenameStringComparision))
+                if (!path.StartsWith(Utility.Utility.AppendDirSeparator(sourcefolders[0]), Utility.Utility.ClientFilenameStringComparision))
                     throw new Exception(string.Format(Strings.RSyncDir.InternalPathMappingError, path, sourcefolders[0]));
-                return path.Substring(Core.Utility.AppendDirSeparator(sourcefolders[0]).Length);
+                return path.Substring(Utility.Utility.AppendDirSeparator(sourcefolders[0]).Length);
             }
 
             for (int i = 0; i < sourcefolders.Length; i++)
-                if (path.StartsWith(Core.Utility.AppendDirSeparator(sourcefolders[i]), Core.Utility.ClientFilenameStringComparision))
-                    return System.IO.Path.Combine(i.ToString(), path.Substring(Core.Utility.AppendDirSeparator(sourcefolders[i]).Length));
+                if (path.StartsWith(Utility.Utility.AppendDirSeparator(sourcefolders[i]), Utility.Utility.ClientFilenameStringComparision))
+                    return System.IO.Path.Combine(i.ToString(), path.Substring(Utility.Utility.AppendDirSeparator(sourcefolders[i]).Length));
 
             throw new Exception(string.Format(Strings.RSyncDir.InternalPathMappingError, path, string.Join(System.IO.Path.PathSeparator.ToString(), sourcefolders)));
         }
@@ -1316,15 +1316,15 @@ namespace Duplicati.Library.Main.RSync
                                                 fs.Position = 0;
                                                 using (SharpRSync.ChecksumGeneratingStream ts = new SharpRSync.ChecksumGeneratingStream(newSig, fs))
                                                 {
-                                                    fs = new Core.TempFileStream();
-                                                    Core.Utility.CopyStream(ts, fs, false);
+                                                    fs = new Utility.TempFileStream();
+                                                    Utility.Utility.CopyStream(ts, fs, false);
                                                 }
 
                                                 fs.Position = 0;
                                                 signature.Position = 0;
                                                 newSig.Position = 0;
 
-                                                if (!Core.Utility.CompareStreams(signature, newSig, true))
+                                                if (!Utility.Utility.CompareStreams(signature, newSig, true))
                                                     throw new Exception(string.Format(Strings.RSyncDir.FileChangedWhileReadError, s));
 
                                                 signature.Position = 0;
@@ -1408,7 +1408,7 @@ namespace Duplicati.Library.Main.RSync
                 bool equals;
                 //File exists in archive, check if signature has changed
                 using (System.IO.Stream s2 = m_oldSignatures[relpath].OpenRead(relpath))
-                    equals = Core.Utility.CompareStreams(s2, ms, false);
+                    equals = Utility.Utility.CompareStreams(s2, ms, false);
 
                 ms.Position = 0;
 
@@ -1456,10 +1456,10 @@ namespace Duplicati.Library.Main.RSync
                 {
                     long lbefore = contentfile.Size;
 
-                    Core.TempFileStream deltaTemp = null;
+                    Utility.TempFileStream deltaTemp = null;
                     try
                     {
-                        deltaTemp = new Duplicati.Library.Core.TempFileStream();
+                        deltaTemp = new Duplicati.Library.Utility.TempFileStream();
                         SharpRSync.Interface.GenerateDelta(sigfs, fs, deltaTemp);
                         deltaTemp.Position = 0;
 
@@ -1635,7 +1635,7 @@ namespace Duplicati.Library.Main.RSync
 
             if (m_partialDeltas != null)
             {
-                foreach (KeyValuePair<string, Core.TempFile> tf in m_partialDeltas)
+                foreach (KeyValuePair<string, Utility.TempFile> tf in m_partialDeltas)
                 {
                     Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.PartialFileIncompleteWarning, tf.Key), Duplicati.Library.Logging.LogMessageType.Warning);
                     try
@@ -1674,7 +1674,7 @@ namespace Duplicati.Library.Main.RSync
             /// <summary>
             /// A copy of the filter to use
             /// </summary>
-            private Core.FilenameFilter m_filter;
+            private Utility.FilenameFilter m_filter;
 
             /// <summary>
             /// The list of folders to restore to
@@ -1691,7 +1691,7 @@ namespace Duplicati.Library.Main.RSync
             /// </summary>
             /// <param name="folders">The restore folder list</param>
             /// <param name="filter">The filter to apply to the files</param>
-            public FilterHelper(RSyncDir parent, string[] folders, Core.FilenameFilter filter)
+            public FilterHelper(RSyncDir parent, string[] folders, Utility.FilenameFilter filter)
             {
                 m_parent = parent;
                 m_folders  = folders;
@@ -1705,7 +1705,7 @@ namespace Duplicati.Library.Main.RSync
             /// <returns>True if the element is accepted, false if it is filtered</returns>
             private bool FilterPredicate(string element)
             {
-                return m_filter.ShouldInclude(Core.Utility.DirectorySeparatorString, Core.Utility.DirectorySeparatorString + Core.Utility.AppendDirSeparator(element));
+                return m_filter.ShouldInclude(Utility.Utility.DirectorySeparatorString, Utility.Utility.DirectorySeparatorString + Utility.Utility.AppendDirSeparator(element));
             }
 
             /// <summary>
@@ -1725,7 +1725,7 @@ namespace Duplicati.Library.Main.RSync
             /// <returns>A filtered list</returns>
             public IEnumerable<string> Filterlist(IEnumerable<string> input)
             {
-                return new Core.PlugableEnumerable<string>(new Predicate<string>(FilterPredicate), new Core.Func<string,string>(GetFullpathFunc), input);
+                return new Utility.PlugableEnumerable<string>(new Predicate<string>(FilterPredicate), new Utility.Func<string,string>(GetFullpathFunc), input);
             }
         }
 
@@ -1737,13 +1737,13 @@ namespace Duplicati.Library.Main.RSync
         public void Patch(string[] destination, Library.Interface.ICompression patch)
         {
             if (m_partialDeltas == null)
-                m_partialDeltas = new Dictionary<string, Duplicati.Library.Core.TempFile>();
+                m_partialDeltas = new Dictionary<string, Duplicati.Library.Utility.TempFile>();
 
             if (m_folderTimestamps == null)
                 m_folderTimestamps = new Dictionary<string, DateTime>();
 
             for (int i = 0; i < destination.Length; i++)
-                destination[i] = Core.Utility.AppendDirSeparator(destination[i]);
+                destination[i] = Utility.Utility.AppendDirSeparator(destination[i]);
 
             bool isUtc = patch.FileExists(UTC_TIME_MARKER);
 
@@ -1858,10 +1858,10 @@ namespace Duplicati.Library.Main.RSync
 
             int lastPg = -1;
 
-            string contentprefix = Core.Utility.AppendDirSeparator(CONTENT_ROOT);
+            string contentprefix = Utility.Utility.AppendDirSeparator(CONTENT_ROOT);
             List<string> contentfiles = m_filter.FilterList(contentprefix, patch.ListFiles(contentprefix));
 
-            string deltaprefix = Core.Utility.AppendDirSeparator(DELTA_ROOT);
+            string deltaprefix = Utility.Utility.AppendDirSeparator(DELTA_ROOT);
             List<string> deltafiles = m_filter.FilterList(deltaprefix, patch.ListFiles(deltaprefix));
 
             long totalfiles = deltafiles.Count + contentfiles.Count;
@@ -1890,7 +1890,7 @@ namespace Duplicati.Library.Main.RSync
                     using (System.IO.Stream s1 = patch.OpenRead(s))
                     {
                         PartialEntryRecord pex = null;
-                        Core.TempFile partialFile = null;
+                        Utility.TempFile partialFile = null;
 
                         if (pe != null && string.Equals(pe.Filename, s))
                             pex = pe; //The file is incomplete
@@ -1905,7 +1905,7 @@ namespace Duplicati.Library.Main.RSync
                             else if (pex.StartOffset != 0 && !m_partialDeltas.ContainsKey(s))
                                 throw new Exception(string.Format(Strings.RSyncDir.InvalidPartialFileEntry, s));
                             else if (pex.StartOffset == 0) //First entry, so create a temp file
-                                m_partialDeltas.Add(s, new Duplicati.Library.Core.TempFile());
+                                m_partialDeltas.Add(s, new Duplicati.Library.Utility.TempFile());
 
                             partialFile = m_partialDeltas[s];
                         }
@@ -1922,7 +1922,7 @@ namespace Duplicati.Library.Main.RSync
                             if (startOffset == 0)
                                 s2.SetLength(0);
 
-                            Core.Utility.CopyStream(s1, s2);
+                            Utility.Utility.CopyStream(s1, s2);
                         }
 
                         if (pex != null && pex == fe)
@@ -1989,7 +1989,7 @@ namespace Duplicati.Library.Main.RSync
                     else if (fe != null && string.Equals(fe.Filename, s))
                         pex = fe; //The file has the final segment
 
-                    Core.TempFile tempDelta = null;
+                    Utility.TempFile tempDelta = null;
 
                     if (pex != null && string.Equals(pex.Filename, s))
                     {
@@ -1999,7 +1999,7 @@ namespace Duplicati.Library.Main.RSync
                         else if (pex.StartOffset != 0 && !m_partialDeltas.ContainsKey(s))
                             throw new Exception(string.Format(Strings.RSyncDir.InvalidPartialFileEntry, s));
                         else if (pex.StartOffset == 0) //First entry, so create a temp file
-                            m_partialDeltas.Add(s, new Duplicati.Library.Core.TempFile());
+                            m_partialDeltas.Add(s, new Duplicati.Library.Utility.TempFile());
 
                         //Dump the content in the temp file at the specified offset
                         using (System.IO.Stream st = System.IO.File.OpenWrite(m_partialDeltas[s]))
@@ -2008,7 +2008,7 @@ namespace Duplicati.Library.Main.RSync
                                 throw new Exception(string.Format(Strings.RSyncDir.InvalidPartialFileEntry, s));
                             st.Position = pex.StartOffset;
                             using (System.IO.Stream s2 = patch.OpenRead(s))
-                                Core.Utility.CopyStream(s2, st);
+                                Utility.Utility.CopyStream(s2, st);
                         }
 
                         //We can't process it until it is received completely
@@ -2022,7 +2022,7 @@ namespace Duplicati.Library.Main.RSync
                         throw new Exception(string.Format(Strings.RSyncDir.FileShouldBePartialError, s));
 
 
-                    using (Core.TempFile tempfile = new Core.TempFile())
+                    using (Utility.TempFile tempfile = new Utility.TempFile())
                     using (tempDelta) //May be null, but the using directive does not care
                     {
                         //Use either the patch directly, or the partial temp file
@@ -2085,7 +2085,7 @@ namespace Duplicati.Library.Main.RSync
 
             if (m_partialDeltas != null)
             {
-                foreach (Core.TempFile tf in m_partialDeltas.Values)
+                foreach (Utility.TempFile tf in m_partialDeltas.Values)
                     try 
                     { 
                         if (tf != null)
@@ -2224,14 +2224,14 @@ namespace Duplicati.Library.Main.RSync
             List<KeyValuePair<PatchFileType, string>> files = new List<KeyValuePair<PatchFileType, string>>();
 
             KeyValuePair<PatchFileType, string>[] signatures = new KeyValuePair<PatchFileType, string>[] {
-                new KeyValuePair<PatchFileType, string>(PatchFileType.AddedOrUpdatedFile, Core.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT)),
-                new KeyValuePair<PatchFileType, string>(PatchFileType.AddedFile, Core.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT)),
-                new KeyValuePair<PatchFileType, string>(PatchFileType.UpdatedFile, Core.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)),
+                new KeyValuePair<PatchFileType, string>(PatchFileType.AddedOrUpdatedFile, Utility.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT)),
+                new KeyValuePair<PatchFileType, string>(PatchFileType.AddedFile, Utility.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT)),
+                new KeyValuePair<PatchFileType, string>(PatchFileType.UpdatedFile, Utility.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)),
             };
 
-            string content_prefix = Core.Utility.AppendDirSeparator(CONTENT_ROOT);
-            string delta_prefix = Core.Utility.AppendDirSeparator(DELTA_ROOT);
-            string control_prefix = Core.Utility.AppendDirSeparator(CONTROL_ROOT);
+            string content_prefix = Utility.Utility.AppendDirSeparator(CONTENT_ROOT);
+            string delta_prefix = Utility.Utility.AppendDirSeparator(DELTA_ROOT);
+            string control_prefix = Utility.Utility.AppendDirSeparator(CONTROL_ROOT);
             Dictionary<string, bool> partials = new Dictionary<string, bool>();
 
             foreach (Library.Interface.ICompression arch in patches)
@@ -2334,13 +2334,13 @@ namespace Duplicati.Library.Main.RSync
             private List<string> m_filesWithError = new List<string>();
             private List<string> m_filesTooLarge = new List<string>();
 
-            public void Callback(string rootpath, string path, Core.Utility.EnumeratedFileStatus status)
+            public void Callback(string rootpath, string path, Utility.Utility.EnumeratedFileStatus status)
             {
-                if (status == Core.Utility.EnumeratedFileStatus.Folder)
+                if (status == Utility.Utility.EnumeratedFileStatus.Folder)
                     m_folders.Add(path);
-                else if (status == Core.Utility.EnumeratedFileStatus.File)
+                else if (status == Utility.Utility.EnumeratedFileStatus.File)
                     m_files.Add(path);
-                else if (status == Core.Utility.EnumeratedFileStatus.Error)
+                else if (status == Utility.Utility.EnumeratedFileStatus.Error)
                     m_errors.Add(path);
             }
 
@@ -2370,9 +2370,9 @@ namespace Duplicati.Library.Main.RSync
         internal static void ContainsFile(Manifestfile mfi, string[] filesToFind, Duplicati.Library.Interface.ICompression signature)
         {
             string[] prefixes = new string[] {
-                Core.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
-                Core.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT),
-                Core.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
+                Utility.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
+                Utility.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT),
+                Utility.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
             };
 
             foreach (string prefix in prefixes)
@@ -2385,7 +2385,7 @@ namespace Duplicati.Library.Main.RSync
                             continue;
                         string fileToFind = filesToFind[i];
                         string name = System.IO.Path.IsPathRooted(fileToFind) ? GetRelativeName(mfi.SourceDirs, fileToFind) : fileToFind;
-                        if (fname.Equals(name, Core.Utility.ClientFilenameStringComparision))
+                        if (fname.Equals(name, Utility.Utility.ClientFilenameStringComparision))
                             filesToFind[i] = null;
                     }
                 }

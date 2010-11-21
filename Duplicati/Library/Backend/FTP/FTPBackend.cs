@@ -198,7 +198,7 @@ namespace Duplicati.Library.Backend
                     req.Timeout = System.Threading.Timeout.Infinite;
 
                     using (System.IO.Stream rs = req.GetRequestStream())
-                        Core.Utility.CopyStream(input, rs, true);
+                        Utility.Utility.CopyStream(input, rs, true);
                 }
             }
             catch (System.Net.WebException wex)
@@ -229,7 +229,7 @@ namespace Duplicati.Library.Backend
 
                 using (System.Net.WebResponse resp = req.GetResponse())
                 using (System.IO.Stream rs = resp.GetResponseStream())
-                    Core.Utility.CopyStream(rs, output, false);
+                    Utility.Utility.CopyStream(rs, output, false);
             }
         }
 
@@ -292,7 +292,7 @@ namespace Duplicati.Library.Backend
         private IDisposable ActivateCertificateValidator()
         {
             return m_useSSL ?
-                new Core.SslCertificateValidator(m_acceptAllCertificates, m_acceptCertificateHash) :
+                new Utility.SslCertificateValidator(m_acceptAllCertificates, m_acceptCertificateHash) :
                 null;
         }
 
@@ -373,7 +373,7 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// Private helper class to fix a bug with the StreamReader
         /// </summary>
-        private class StreamReadHelper : Core.OverrideableStream
+        private class StreamReadHelper : Utility.OverrideableStream
         {
             /// <summary>
             /// Once the stream has returned 0 as the read count it is disposed

@@ -17,7 +17,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The ISnapshotService implementation</returns>
         public static ISnapshotService CreateSnapshot(string[] folders, Dictionary<string, string> options)
         {
-            if (Core.Utility.IsClientLinux)
+            if (Utility.Utility.IsClientLinux)
                 return new LinuxSnapshot(folders, options);
             else
                 return new WindowsSnapshot(folders, options);

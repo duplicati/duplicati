@@ -331,7 +331,7 @@ namespace Duplicati.GUI.HelperControls
                         if (t.Checked)
                         {
                             if (t.Tag != null && (bool)t.Tag == true)
-                                files.Add(Library.Core.Utility.AppendDirSeparator(t.FullPath));
+                                files.Add(Library.Utility.Utility.AppendDirSeparator(t.FullPath));
                             else
                                 files.Add(t.FullPath);
                         }
@@ -365,7 +365,7 @@ namespace Duplicati.GUI.HelperControls
                             foreach (string e in s.Split(System.IO.Path.DirectorySeparatorChar))
                             {
                                 foreach (TreeNode n in col)
-                                    if (n.Text.Equals(e, Library.Core.Utility.ClientFilenameStringComparision))
+                                    if (n.Text.Equals(e, Library.Utility.Utility.ClientFilenameStringComparision))
                                     {
                                         p = n;
                                         col = n.Nodes;
@@ -403,12 +403,12 @@ namespace Duplicati.GUI.HelperControls
                 treeView.PathSeparator = System.IO.Path.DirectorySeparatorChar.ToString();
 
                 foreach(string path in this.CheckedFiles)
-                    filter.Add(new KeyValuePair<bool, string>(true, Library.Core.FilenameFilter.ConvertGlobbingToRegExp(treeView.PathSeparator + path)));
+                    filter.Add(new KeyValuePair<bool, string>(true, Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(treeView.PathSeparator + path)));
 
                 //Exclude everything else
                 filter.Add(new KeyValuePair<bool, string>(false, ".*"));
 
-                return Library.Core.FilenameFilter.EncodeAsFilter(filter);
+                return Library.Utility.FilenameFilter.EncodeAsFilter(filter);
             }
         }
 
@@ -459,7 +459,7 @@ namespace Duplicati.GUI.HelperControls
                     suggestions.Add(s);
                 }
 
-                Dictionary<string, int> duplicates = new Dictionary<string, int>(Library.Core.Utility.ClientFilenameStringComparer);
+                Dictionary<string, int> duplicates = new Dictionary<string, int>(Library.Utility.Utility.ClientFilenameStringComparer);
                 for (int i = 0; i < suggestions.Count; i++)
                     if (duplicates.ContainsKey(suggestions[i]))
                         duplicates[suggestions[i]]++;
@@ -471,7 +471,7 @@ namespace Duplicati.GUI.HelperControls
                 for (int index = 0; index < m_rootnodes.Length; index++)
                 {
                     string suffix = duplicates[suggestions[index]] > 1 ? index.ToString() : suggestions[index];
-                    targets[index] = string.IsNullOrEmpty(m_defaultTarget) ? "" : Library.Core.Utility.AppendDirSeparator(m_defaultTarget) + suffix;
+                    targets[index] = string.IsNullOrEmpty(m_defaultTarget) ? "" : Library.Utility.Utility.AppendDirSeparator(m_defaultTarget) + suffix;
                 }
 
                 return targets;

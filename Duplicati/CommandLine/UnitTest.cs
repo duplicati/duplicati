@@ -24,7 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Core;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine
 {
@@ -102,7 +102,7 @@ namespace Duplicati.CommandLine
                 Log.WriteMessage("Failed to clean tempdir", LogMessageType.Error, ex);
             }
 
-            Duplicati.Library.Core.TempFolder.SystemTempPath = tempdir;
+            Duplicati.Library.Utility.TempFolder.SystemTempPath = tempdir;
 
             //Set some defaults
             if (!options.ContainsKey("passphrase"))

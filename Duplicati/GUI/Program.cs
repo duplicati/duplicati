@@ -41,7 +41,7 @@ namespace Duplicati.GUI
         /// <summary>
         /// Gets the folder where Duplicati data is stored
         /// </summary>
-        public static string DATAFOLDER { get { return Library.Core.Utility.AppendDirSeparator(Environment.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } }
+        public static string DATAFOLDER { get { return Library.Utility.Utility.AppendDirSeparator(Environment.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } }
 
         /// <summary>
         /// A flag indicating if database encryption is in use
@@ -104,7 +104,7 @@ namespace Duplicati.GUI
 
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
-            if (!Library.Core.Utility.IsClientLinux)
+            if (!Library.Utility.Utility.IsClientLinux)
             {
                 Environment.SetEnvironmentVariable("PATH",
                     Environment.GetEnvironmentVariable("PATH") +
@@ -115,12 +115,12 @@ namespace Duplicati.GUI
                 );
             }
 
-            Library.Core.UrlUtillity.ErrorHandler = new Duplicati.Library.Core.UrlUtillity.ErrorHandlerDelegate(DisplayURLOpenError);
+            Library.Utility.UrlUtillity.ErrorHandler = new Duplicati.Library.Utility.UrlUtillity.ErrorHandlerDelegate(DisplayURLOpenError);
 
             //If we are on windows we encrypt the database by default
             //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
             //Linux users can use an encrypted home folder, or install a SQLite library with encryption support
-            if (!Library.Core.Utility.IsClientLinux && string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME)))
+            if (!Library.Utility.Utility.IsClientLinux && string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME)))
             {
                 //Note that the password here is a default password and public knowledge
                 //
@@ -190,7 +190,7 @@ namespace Duplicati.GUI
                 //debug mode uses a lock file located in the app folder
                 Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 #else
-                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Core.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
+                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
 
                 if (portableMode)
                 {
@@ -244,9 +244,9 @@ namespace Duplicati.GUI
 
 #if DEBUG
                     //Default is to not use encryption for debugging
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
+                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
 #else
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Core.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
+                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
 #endif
                     con.ConnectionString = "Data Source=" + DatabasePath;
 

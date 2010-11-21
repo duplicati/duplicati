@@ -24,7 +24,7 @@ using System.IO;
 
 namespace Duplicati.Library.Encryption
 {
-    internal class GPGStreamWrapper : Core.OverrideableStream
+    internal class GPGStreamWrapper : Utility.OverrideableStream
     {
         private System.Diagnostics.Process m_p;
         private System.Threading.Thread m_t;

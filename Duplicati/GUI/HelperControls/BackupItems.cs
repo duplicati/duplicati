@@ -145,7 +145,7 @@ namespace Duplicati.GUI.HelperControls
                         if (fullSize <= 0)
                             n.ToolTipText = Strings.BackupItems.TooltipFullBackup;
                         else
-                            n.ToolTipText = string.Format(Strings.BackupItems.TooltipFullBackupWithSize, Library.Core.Utility.FormatSizeString(fullSize));
+                            n.ToolTipText = string.Format(Strings.BackupItems.TooltipFullBackupWithSize, Library.Utility.Utility.FormatSizeString(fullSize));
                         
                         listView.Items.Add(n);
 
@@ -163,7 +163,7 @@ namespace Duplicati.GUI.HelperControls
                             if (fullSize <= 0)
                                 nn.ToolTipText = Strings.BackupItems.TooltipIncrementalBackup;
                             else
-                                nn.ToolTipText = string.Format(Strings.BackupItems.TooltipIncrementalBackupWithSize, Library.Core.Utility.FormatSizeString(incSize), Library.Core.Utility.FormatSizeString(fullSize));
+                                nn.ToolTipText = string.Format(Strings.BackupItems.TooltipIncrementalBackupWithSize, Library.Utility.Utility.FormatSizeString(incSize), Library.Utility.Utility.FormatSizeString(fullSize));
                             listView.Items.Add(nn);
                         }
                     }

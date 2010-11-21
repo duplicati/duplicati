@@ -23,7 +23,7 @@ using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
     public class SslCertificateValidator : IDisposable
     {
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Core
 
             try
             {
-                certHash = Core.Utility.ByteArrayAsHexString(cert.GetCertHash());
+                certHash = Utility.ByteArrayAsHexString(cert.GetCertHash());
                 if (certHash != null && certHash.Equals(m_validHash, StringComparison.InvariantCultureIgnoreCase))
                     return true;
 

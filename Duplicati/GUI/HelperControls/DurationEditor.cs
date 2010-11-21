@@ -71,7 +71,7 @@ namespace Duplicati.GUI.HelperControls
         {
             try
             {
-                Duplicati.Library.Core.Timeparser.ParseTimeSpan(CustomDuration.Text);
+                Duplicati.Library.Utility.Timeparser.ParseTimeSpan(CustomDuration.Text);
             }
             catch (Exception ex)
             {

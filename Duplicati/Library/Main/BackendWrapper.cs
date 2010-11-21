@@ -189,7 +189,7 @@ namespace Duplicati.Library.Main
             if (string.IsNullOrEmpty(timelimit))
                 timelimit = "now";
 
-            return GetBackupSet(Core.Timeparser.ParseTimeInterval(timelimit, DateTime.Now));
+            return GetBackupSet(Utility.Timeparser.ParseTimeInterval(timelimit, DateTime.Now));
         }
 
         /// <summary>
@@ -743,7 +743,7 @@ namespace Duplicati.Library.Main
                         {
                             if (filehash != null)
                             {
-                                if (Core.Utility.CalculateHash(cachefilename) == filehash)
+                                if (Utility.Utility.CalculateHash(cachefilename) == filehash)
                                 {
                                     //TODO: Don't copy, but just return it as write protected
                                     System.IO.File.Copy(cachefilename, filename, true);
@@ -759,23 +759,23 @@ namespace Duplicati.Library.Main
                         }
                     }
 
-                    Core.TempFile tempfile = null;
+                    Utility.TempFile tempfile = null;
                     try
                     {
                         if (!string.IsNullOrEmpty(remote.EncryptionMode))
-                            tempfile = new Duplicati.Library.Core.TempFile();
+                            tempfile = new Duplicati.Library.Utility.TempFile();
                         else
-                            tempfile = new Duplicati.Library.Core.TempFile(filename);
+                            tempfile = new Duplicati.Library.Utility.TempFile(filename);
 
                         m_statistics.AddNumberOfRemoteCalls(1);
                         if (m_backend is Duplicati.Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
                             using (System.IO.FileStream fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, remote.Fileentry.Size))
-                            using (Core.ThrottledStream ts = new Duplicati.Library.Core.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                            using (Utility.ProgressReportingStream pgs = new Duplicati.Library.Utility.ProgressReportingStream(fs, remote.Fileentry.Size))
+                            using (Utility.ThrottledStream ts = new Duplicati.Library.Utility.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                             {
-                                pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
-                                ts.Callback += new Duplicati.Library.Core.ThrottledStream.ThrottledStreamCallback(ThrottledStream_Callback);
+                                pgs.Progress += new Duplicati.Library.Utility.ProgressReportingStream.ProgressDelegate(pgs_Progress);
+                                ts.Callback += new Duplicati.Library.Utility.ThrottledStream.ThrottledStreamCallback(ThrottledStream_Callback);
                                 ((Duplicati.Library.Interface.IStreamingBackend)m_backend).Get(remote.Filename, ts);
                             }
                         }
@@ -807,11 +807,11 @@ namespace Duplicati.Library.Main
                             tempfile.Dispose(); //Remove the encrypted file
 
                             //Wrap the new file as a temp file
-                            tempfile = new Duplicati.Library.Core.TempFile(filename);
+                            tempfile = new Duplicati.Library.Utility.TempFile(filename);
                         }
 
-                        if (filehash != null && Core.Utility.CalculateHash(tempfile) != filehash)
-                            throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Core.Utility.CalculateHash(tempfile)));
+                        if (filehash != null && Utility.Utility.CalculateHash(tempfile) != filehash)
+                            throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Utility.Utility.CalculateHash(tempfile)));
 
                         if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                         {
@@ -868,7 +868,7 @@ namespace Duplicati.Library.Main
         private void PutInternal(BackupEntryBase remote, string filename)
         {
             string remotename = GenerateFilename(remote);
-            m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageUploading, remotename, Core.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length));
+            m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageUploading, remotename, Utility.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length));
 
             string encryptedFile = filename;
 
@@ -879,7 +879,7 @@ namespace Duplicati.Library.Main
                     if (m_encryption == null)
                         m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
 
-                    using (Core.TempFile tf = new Duplicati.Library.Core.TempFile()) //If exception is thrown, tf will be deleted
+                    using (Utility.TempFile tf = new Duplicati.Library.Utility.TempFile()) //If exception is thrown, tf will be deleted
                     {
                         m_encryption.Encrypt(filename, tf);
                         tf.Protected = true; //Done, keep file
@@ -903,13 +903,13 @@ namespace Duplicati.Library.Main
                             DateTime begin = DateTime.Now;
 #endif
                             using (System.IO.FileStream fs = System.IO.File.Open(encryptedFile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                            using (Core.ProgressReportingStream pgs = new Duplicati.Library.Core.ProgressReportingStream(fs, fs.Length))
+                            using (Utility.ProgressReportingStream pgs = new Duplicati.Library.Utility.ProgressReportingStream(fs, fs.Length))
                             {   
-                                pgs.Progress += new Duplicati.Library.Core.ProgressReportingStream.ProgressDelegate(pgs_Progress);
+                                pgs.Progress += new Duplicati.Library.Utility.ProgressReportingStream.ProgressDelegate(pgs_Progress);
 
-                                using (Core.ThrottledStream ts = new Core.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                                using (Utility.ThrottledStream ts = new Utility.ThrottledStream(pgs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                                 {
-                                    ts.Callback += new Duplicati.Library.Core.ThrottledStream.ThrottledStreamCallback(ThrottledStream_Callback);
+                                    ts.Callback += new Duplicati.Library.Utility.ThrottledStream.ThrottledStreamCallback(ThrottledStream_Callback);
                                     ((Library.Interface.IStreamingBackend)m_backend).Put(remotename, ts);
                                 }
                             }
@@ -1014,7 +1014,7 @@ namespace Duplicati.Library.Main
         /// A callback from the throttled stream, used to change speed based on user adjustments
         /// </summary>
         /// <param name="sender">The stream that raised the event</param>
-        void ThrottledStream_Callback(Core.ThrottledStream sender)
+        void ThrottledStream_Callback(Utility.ThrottledStream sender)
         {
             sender.ReadSpeed = m_options.MaxUploadPrSecond;
             sender.WriteSpeed = m_options.MaxDownloadPrSecond;

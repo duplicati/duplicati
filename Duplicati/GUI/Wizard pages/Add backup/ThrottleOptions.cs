@@ -81,7 +81,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 Bandwidth.UploadLimit = m_wrapper.UploadSpeedLimit;
                 Bandwidth.DownloadLimit = m_wrapper.DownloadSpeedLimit;
                 
-                if (string.IsNullOrEmpty(m_wrapper.BackupSizeLimit) || Library.Core.Sizeparser.ParseSize(m_wrapper.BackupSizeLimit) == 0)
+                if (string.IsNullOrEmpty(m_wrapper.BackupSizeLimit) || Library.Utility.Sizeparser.ParseSize(m_wrapper.BackupSizeLimit) == 0)
                     BackupLimitEnabled.Checked = false;
                 else
                 {
@@ -92,7 +92,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 VolumeSize.CurrentSize = m_wrapper.VolumeSize;
 
                 AsyncEnabled.Checked = m_wrapper.AsyncTransfer;
-                ThreadPriorityPicker.SelectedPriority = string.IsNullOrEmpty(m_wrapper.ThreadPriority) ? null : (System.Threading.ThreadPriority?)Library.Core.Utility.ParsePriority(m_wrapper.ThreadPriority);
+                ThreadPriorityPicker.SelectedPriority = string.IsNullOrEmpty(m_wrapper.ThreadPriority) ? null : (System.Threading.ThreadPriority?)Library.Utility.Utility.ParsePriority(m_wrapper.ThreadPriority);
             }
         }
 

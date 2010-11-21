@@ -33,7 +33,7 @@ namespace Duplicati.Library.Snapshots
         {
             m_sourcefolders = new string[folders.Length];
             for (int i = 0; i < m_sourcefolders.Length; i++)
-                m_sourcefolders[i] = Core.Utility.AppendDirSeparator(folders[i]);
+                m_sourcefolders[i] = Utility.Utility.AppendDirSeparator(folders[i]);
         }
 
         #region ISnapshotService Members
@@ -51,12 +51,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="startpath">The path from which to retrieve files and folders</param>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (string s in m_sourcefolders)
-                if (s.Equals(startpath, Core.Utility.ClientFilenameStringComparision))
+                if (s.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
                 {
-                    Core.Utility.EnumerateFileSystemEntries(s, filter, callback);
+                    Utility.Utility.EnumerateFileSystemEntries(s, filter, callback);
                     return;
                 }
 
@@ -68,10 +68,10 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (string s in m_sourcefolders)
-                Core.Utility.EnumerateFileSystemEntries(s, filter, callback);
+                Utility.Utility.EnumerateFileSystemEntries(s, filter, callback);
         }
 
         /// <summary>

@@ -89,9 +89,9 @@
     <None Include="Resources\Empty_resx.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Duplicati\Library\Core\Duplicati.Library.Core.csproj">
+    <ProjectReference Include="..\..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Core</Name>
+      <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

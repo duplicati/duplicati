@@ -83,7 +83,7 @@ namespace Duplicati.Library.Backend
             {
                 objectGetRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
                 using (ObjectGetResponse objectGetResponse = m_service.ObjectGet(objectGetRequest))
-                    Core.Utility.CopyStream(objectGetResponse.DataStream, target);
+                    Utility.Utility.CopyStream(objectGetResponse.DataStream, target);
             }
         }
 

@@ -59,7 +59,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             List<KeyValuePair<bool, string>> lst = new List<KeyValuePair<bool, string>>();
             filterEditor1.BasePath = DynamicSetupHelper.GetSourceFolders(m_wrapper, new ApplicationSettings(m_wrapper.DataConnection ?? Program.DataConnection), lst);
-            filterEditor1.DynamicFilter = Library.Core.FilenameFilter.EncodeAsFilter(lst);
+            filterEditor1.DynamicFilter = Library.Utility.FilenameFilter.EncodeAsFilter(lst);
         }
     }
 }

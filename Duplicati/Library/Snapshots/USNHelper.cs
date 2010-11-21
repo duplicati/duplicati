@@ -54,13 +54,13 @@ namespace Duplicati.Library.Snapshots
         /// <param name="volumeRoot">The root volume where the USN lookup is performed</param>
         internal USNHelper(string path, string volumeRoot)
         {
-            if (Core.Utility.IsClientLinux)
+            if (Utility.Utility.IsClientLinux)
                 throw new Exception(Strings.USNHelper.LinuxNotSupportedError);
 
             if (!System.IO.Path.IsPathRooted(path))
                 throw new Exception(string.Format("Path {0} is not rooted", path));
 
-            m_path = Core.Utility.AppendDirSeparator(path);
+            m_path = Utility.Utility.AppendDirSeparator(path);
 
             try
             {
@@ -104,17 +104,17 @@ namespace Duplicati.Library.Snapshots
         /// <param name="rootpath">The root path to look in and use as filter base</param>
         /// <param name="filter">The filter to apply</param>
         /// <param name="callback">The callback function that collects the output</param>
-        public void EnumerateFilesAndFolders(string rootpath, Duplicati.Library.Core.FilenameFilter filter, Duplicati.Library.Core.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(string rootpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
                 if (r.Key.StartsWith(rootpath))
                 {
                     bool isFolder = (r.Value.FileAttributes & Win32USN.EFileAttributes.Directory) != 0;
 
-                    if (isFolder && (filter == null || filter.ShouldInclude(rootpath, Core.Utility.AppendDirSeparator(r.Key))))
-                        callback(rootpath, r.Key, Duplicati.Library.Core.Utility.EnumeratedFileStatus.Folder);
+                    if (isFolder && (filter == null || filter.ShouldInclude(rootpath, Utility.Utility.AppendDirSeparator(r.Key))))
+                        callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.Folder);
                     else if (!isFolder && (filter == null || filter.ShouldInclude(rootpath, r.Key)))
-                        callback(rootpath, r.Key, Duplicati.Library.Core.Utility.EnumeratedFileStatus.File);
+                        callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.File);
                 }
         }
 
@@ -164,7 +164,7 @@ namespace Duplicati.Library.Snapshots
         {
             List<string> result = new List<string>();
             foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
-                if (r.Value.Usn >= lastUsn && r.Key.StartsWith(sourceFolder, Core.Utility.ClientFilenameStringComparision))
+                if (r.Value.Usn >= lastUsn && r.Key.StartsWith(sourceFolder, Utility.Utility.ClientFilenameStringComparision))
                     result.Add(r.Key);
 
             return result;
@@ -179,7 +179,7 @@ namespace Duplicati.Library.Snapshots
         {
             List<string> result = new List<string>();
             foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
-                if (r.Key.StartsWith(sourceFolder, Core.Utility.ClientFilenameStringComparision))
+                if (r.Key.StartsWith(sourceFolder, Utility.Utility.ClientFilenameStringComparision))
                     result.Add(r.Key);
 
             return result;
@@ -194,7 +194,7 @@ namespace Duplicati.Library.Snapshots
             {
                 List<string> result = new List<string>();
                 foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
-                    if (r.Key.StartsWith(m_path, Core.Utility.ClientFilenameStringComparision))
+                    if (r.Key.StartsWith(m_path, Utility.Utility.ClientFilenameStringComparision))
                         result.Add(r.Key);
 
                 return result;
@@ -210,7 +210,7 @@ namespace Duplicati.Library.Snapshots
             {
                 List<string> result = new List<string>();
                 foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
-                    if (r.Key.StartsWith(m_path, Core.Utility.ClientFilenameStringComparision) && (r.Value.FileAttributes & Win32USN.EFileAttributes.Directory) == 0)
+                    if (r.Key.StartsWith(m_path, Utility.Utility.ClientFilenameStringComparision) && (r.Value.FileAttributes & Win32USN.EFileAttributes.Directory) == 0)
                         result.Add(r.Key);
 
                 return result;
@@ -226,7 +226,7 @@ namespace Duplicati.Library.Snapshots
             {
                 List<string> result = new List<string>();
                 foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
-                    if (r.Key.StartsWith(m_path, Core.Utility.ClientFilenameStringComparision) && (r.Value.FileAttributes & Win32USN.EFileAttributes.Directory) != 0)
+                    if (r.Key.StartsWith(m_path, Utility.Utility.ClientFilenameStringComparision) && (r.Value.FileAttributes & Win32USN.EFileAttributes.Directory) != 0)
                         result.Add(r.Key);
 
                 return result;

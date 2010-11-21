@@ -26,7 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using Duplicati.Datamodel;
-using Duplicati.Library.Core;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.GUI.Wizard_pages.Add_backup
 {
@@ -281,7 +281,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             Password.IsPasswordVisible = true;
 
             m_hasGeneratedNewPassword = true;
-            Password.Text = Duplicati.Library.Core.KeyGenerator.GenerateKey(10, 24);
+            Password.Text = Duplicati.Library.Utility.KeyGenerator.GenerateKey(10, 24);
         }
     }
 }

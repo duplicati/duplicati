@@ -175,7 +175,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
-                    new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, Library.Core.Utility.IsClientLinux ? "off" : "auto", null, new string[] {"auto", "off", "on", "required"}),
+                    new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, Library.Utility.Utility.IsClientLinux ? "off" : "auto", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("open-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.OpenfilepolicyShort, Strings.Options.OpenfilepolicyLong, "snapshot", null, new string[] { "ignore", "snapshot", "copy" }),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
@@ -219,7 +219,7 @@ namespace Duplicati.Library.Main
                     volsize = m_options["volsize"];
 
 #if DEBUG
-                return Math.Max(1024 * 10, Core.Sizeparser.ParseSize(volsize, "mb"));
+                return Math.Max(1024 * 10, Utility.Sizeparser.ParseSize(volsize, "mb"));
 #else
                 return Math.Max(1024 * 1024, Core.Sizeparser.ParseSize(volsize, "mb"));
 #endif
@@ -236,7 +236,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("totalsize") || string.IsNullOrEmpty(m_options["totalsize"]))
                     return long.MaxValue;
                 else
-                    return Math.Max(VolumeSize, Core.Sizeparser.ParseSize(m_options["totalsize"], "mb"));
+                    return Math.Max(VolumeSize, Utility.Sizeparser.ParseSize(m_options["totalsize"], "mb"));
             }
         }
 
@@ -250,7 +250,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("skip-files-larger-than") || string.IsNullOrEmpty(m_options["skip-files-larger-than"]))
                     return long.MaxValue;
                 else
-                    return Core.Sizeparser.ParseSize(m_options["skip-files-larger-than"], "mb");
+                    return Utility.Sizeparser.ParseSize(m_options["skip-files-larger-than"], "mb");
             }
         }
 
@@ -264,7 +264,7 @@ namespace Duplicati.Library.Main
             if (!m_options.ContainsKey("full-if-older-than") || string.IsNullOrEmpty(m_options["full-if-older-than"]))
                 return DateTime.Now.AddYears(1); //We assume that the check will occur in less than one year :)
             else
-                return Core.Timeparser.ParseTimeInterval(m_options["full-if-older-than"], offsettime);
+                return Utility.Timeparser.ParseTimeInterval(m_options["full-if-older-than"], offsettime);
         }
 
         /// <summary>
@@ -344,7 +344,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("restore-time") || string.IsNullOrEmpty(m_options["restore-time"]))
                     return DateTime.Now.AddYears(1); //We assume that the check will occur in less than one year :)
                 else
-                    return Core.Timeparser.ParseTimeInterval(m_options["restore-time"], DateTime.Now);
+                    return Utility.Timeparser.ParseTimeInterval(m_options["restore-time"], DateTime.Now);
             }
         }
 
@@ -441,14 +441,14 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the filter used to include or exclude files
         /// </summary>
-        public Core.FilenameFilter Filter
+        public Utility.FilenameFilter Filter
         {
             get
             {
                 if (m_options.ContainsKey("filter") && !string.IsNullOrEmpty(m_options["filter"]))
-                    return new Duplicati.Library.Core.FilenameFilter(Core.FilenameFilter.DecodeFilter(m_options["filter"]));
+                    return new Duplicati.Library.Utility.FilenameFilter(Utility.FilenameFilter.DecodeFilter(m_options["filter"]));
                 else
-                    return new Duplicati.Library.Core.FilenameFilter(new List<KeyValuePair<bool, string>>());
+                    return new Duplicati.Library.Utility.FilenameFilter(new List<KeyValuePair<bool, string>>());
             }
         }
 
@@ -485,7 +485,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("delete-older-than"))
                     throw new Exception("No count given for \"Delete Older Than\"");
 
-                return Core.Timeparser.ParseTimeInterval(m_options["delete-older-than"], DateTime.Now, true);
+                return Utility.Timeparser.ParseTimeInterval(m_options["delete-older-than"], DateTime.Now, true);
             }
         }
 
@@ -625,7 +625,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("retry-delay") || string.IsNullOrEmpty(m_options["retry-delay"]))
                     return new TimeSpan(TimeSpan.TicksPerSecond * 10);
                 else
-                    return Core.Timeparser.ParseTimeSpan(m_options["retry-delay"]);
+                    return Utility.Timeparser.ParseTimeSpan(m_options["retry-delay"]);
             }
         }
 
@@ -640,7 +640,7 @@ namespace Duplicati.Library.Main
                     if (!m_options.ContainsKey("max-upload-pr-second") || string.IsNullOrEmpty(m_options["max-upload-pr-second"]))
                         return 0;
                     else
-                        return Core.Sizeparser.ParseSize(m_options["max-upload-pr-second"], "kb");
+                        return Utility.Sizeparser.ParseSize(m_options["max-upload-pr-second"], "kb");
             }
             set
             {
@@ -663,7 +663,7 @@ namespace Duplicati.Library.Main
                     if (!m_options.ContainsKey("max-download-pr-second") || string.IsNullOrEmpty(m_options["max-download-pr-second"]))
                         return 0;
                     else
-                        return Core.Sizeparser.ParseSize(m_options["max-download-pr-second"], "kb");
+                        return Utility.Sizeparser.ParseSize(m_options["max-download-pr-second"], "kb");
             }
             set
             {
@@ -754,7 +754,7 @@ namespace Duplicati.Library.Main
                 else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
                     return OptimizationStrategy.Required;
                 else
-                    return Core.Utility.IsClientLinux ? OptimizationStrategy.Off : OptimizationStrategy.Auto;
+                    return Utility.Utility.IsClientLinux ? OptimizationStrategy.Off : OptimizationStrategy.Auto;
             }
         }
 
@@ -816,7 +816,7 @@ namespace Duplicati.Library.Main
                     value = null;
 
                 if (string.IsNullOrEmpty(value))
-                    return this.TempDir ?? Core.TempFolder.SystemTempPath;
+                    return this.TempDir ?? Utility.TempFolder.SystemTempPath;
                 else
                     return value;
             }
@@ -872,7 +872,7 @@ namespace Duplicati.Library.Main
             string value;
             
             if (m_options.TryGetValue(name, out value))
-                return Core.Utility.ParseBool(value, true);
+                return Utility.Utility.ParseBool(value, true);
             else
                 return false;
         }

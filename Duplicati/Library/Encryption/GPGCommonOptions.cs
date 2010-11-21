@@ -62,7 +62,7 @@ namespace Duplicati.Library.Encryption
                 {
                     try
                     {
-                        if (Core.Utility.LocateFileInSystemPath(GPGPath.Text) == null && MessageBox.Show(this, Strings.GPGCommonOptions.LocatingGpgError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                        if (Utility.Utility.LocateFileInSystemPath(GPGPath.Text) == null && MessageBox.Show(this, Strings.GPGCommonOptions.LocatingGpgError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                             return false;
                     }
                     catch (Exception ex)
@@ -88,7 +88,7 @@ namespace Duplicati.Library.Encryption
                 GPGPath.Items.Clear();
                 GPGPath.Items.Add(ExecutableFilename);
 
-                string autofind = Core.Utility.LocateFileInSystemPath(ExecutableFilename);
+                string autofind = Utility.Utility.LocateFileInSystemPath(ExecutableFilename);
                 if (!string.IsNullOrEmpty(autofind))
                 {
                     BrowseForGPGDialog.FileName = System.IO.Path.GetFileName(autofind);
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Encryption
             m_pathTested = false;
         }
 
-        private static string ExecutableFilename { get { return Core.Utility.IsClientLinux ? "gpg" : "gpg.exe"; } }
+        private static string ExecutableFilename { get { return Utility.Utility.IsClientLinux ? "gpg" : "gpg.exe"; } }
 
         public static string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {

@@ -53,7 +53,7 @@ namespace LocalizationTool
                     (n.Element("not-updated") != null && n.Element("not-updated").Elements().Count() > 0)
                 );
 
-            string rootfolder = Duplicati.Library.Core.Utility.AppendDirSeparator(System.IO.Path.Combine(Application.StartupPath, culturename));
+            string rootfolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.Combine(Application.StartupPath, culturename));
 
             treeView1.BeginUpdate();
             treeView1.Nodes.Clear();

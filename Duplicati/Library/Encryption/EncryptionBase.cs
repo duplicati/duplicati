@@ -47,7 +47,7 @@ namespace Duplicati.Library.Encryption
         public virtual void Encrypt(System.IO.Stream input, System.IO.Stream output)
         {
             using (System.IO.Stream cs = Encrypt(output))
-                Core.Utility.CopyStream(input, cs);
+                Utility.Utility.CopyStream(input, cs);
         }
 
         public abstract System.IO.Stream Encrypt(System.IO.Stream input);
@@ -63,8 +63,8 @@ namespace Duplicati.Library.Encryption
 
         public virtual long SizeOverhead(long filesize)
         {
-            using (Core.TempFile t1 = new Duplicati.Library.Core.TempFile())
-            using (Core.TempFile t2 = new Duplicati.Library.Core.TempFile())
+            using (Utility.TempFile t1 = new Duplicati.Library.Utility.TempFile())
+            using (Utility.TempFile t2 = new Duplicati.Library.Utility.TempFile())
             {
                 using (System.IO.Stream s1 = System.IO.File.Create(t1))
                 {
@@ -90,7 +90,7 @@ namespace Duplicati.Library.Encryption
             try
             {
                 using (System.IO.Stream cs = Decrypt(input))
-                    Core.Utility.CopyStream(cs, output);
+                    Utility.Utility.CopyStream(cs, output);
             }
             catch (System.Security.Cryptography.CryptographicException cex)
             {

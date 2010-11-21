@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
     //TODO: Remove this delegate if we upgrade to .Net Framework 3.5, as it is built in
     public delegate TResult Func<T, TResult>(T input);

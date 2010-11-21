@@ -51,7 +51,7 @@ namespace Duplicati.GUI.HelperControls
             }
             set
             {
-                if (string.IsNullOrEmpty(value) || Library.Core.Sizeparser.ParseSize(value) == 0)
+                if (string.IsNullOrEmpty(value) || Library.Utility.Sizeparser.ParseSize(value) == 0)
                 {
                     DownloadLimitEnabled = false;
                 }
@@ -116,7 +116,7 @@ namespace Duplicati.GUI.HelperControls
             }
             set
             {
-                if (string.IsNullOrEmpty(value) || Library.Core.Sizeparser.ParseSize(value) == 0)
+                if (string.IsNullOrEmpty(value) || Library.Utility.Sizeparser.ParseSize(value) == 0)
                 {
                     UploadLimitEnabled = false;
                 }

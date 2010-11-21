@@ -121,7 +121,7 @@ namespace Duplicati.Library.Backend
 
             string path = System.IO.Path.Combine(m_path, remotename);
             using (System.IO.FileStream writestream = System.IO.File.Open(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Core.Utility.CopyStream(stream, writestream);
+                Utility.Utility.CopyStream(stream, writestream);
         }
 
         public void Put(string remotename, string filename)
@@ -137,7 +137,7 @@ namespace Duplicati.Library.Backend
 
             string path = System.IO.Path.Combine(m_path, remotename);
             using (System.IO.FileStream readstream = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Core.Utility.CopyStream(readstream, stream);
+                Utility.Utility.CopyStream(readstream, stream);
         }
 
         public void Get(string remotename, string filename)

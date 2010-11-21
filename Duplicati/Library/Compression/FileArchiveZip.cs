@@ -177,7 +177,7 @@ namespace Duplicati.Library.Compression
                 if (prefix == null || name.StartsWith(prefix))
                 {
                     if (ze.IsDirectory)
-                        results.Add(Core.Utility.AppendDirSeparator(name));
+                        results.Add(Utility.Utility.AppendDirSeparator(name));
                 }
             }
 
@@ -203,7 +203,7 @@ namespace Duplicati.Library.Compression
                 if (prefix == null || name.StartsWith(prefix))
                 {
                     if (ze.IsDirectory)
-                        results.Add(Core.Utility.AppendDirSeparator(name));
+                        results.Add(Utility.Utility.AppendDirSeparator(name));
                     else
                         results.Add(name);
                 }
@@ -222,7 +222,7 @@ namespace Duplicati.Library.Compression
             using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
             using(System.IO.Stream s = OpenRead(file))
             {
-                Core.Utility.CopyStream(s, ms);
+                Utility.Utility.CopyStream(s, ms);
                 return ms.ToArray();
             }
         }
@@ -524,7 +524,7 @@ namespace Duplicati.Library.Compression
         /// <summary>
         /// Stream wrapper to prevent closing the base stream when disposing the entry stream
         /// </summary>
-        private class StreamWrapper2 : Core.OverrideableStream
+        private class StreamWrapper2 : Utility.OverrideableStream
         {
             public StreamWrapper2(System.IO.Stream stream)
                 : base(stream)

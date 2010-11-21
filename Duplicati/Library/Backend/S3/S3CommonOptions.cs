@@ -56,7 +56,7 @@ namespace Duplicati.Library.Backend
 
             CredentialList.Items.Clear();
             foreach(KeyValuePair<string, string> k in ExtractAccounts(m_settings))
-                CredentialList.Items.Add(new Core.ComboBoxItemPair<string>(k.Key, k.Value));
+                CredentialList.Items.Add(new Utility.ComboBoxItemPair<string>(k.Key, k.Value));
         }
 
         private void RemoveAllButton_Click(object sender, EventArgs e)
@@ -66,12 +66,12 @@ namespace Duplicati.Library.Backend
 
         private void CredentialList_SelectedIndexChanged(object sender, EventArgs e)
         {
-            RemoveSelectedButton.Enabled = CredentialList.SelectedItem as Core.ComboBoxItemPair<string> != null;
+            RemoveSelectedButton.Enabled = CredentialList.SelectedItem as Utility.ComboBoxItemPair<string> != null;
         }
 
         private void RemoveSelectedButton_Click(object sender, EventArgs e)
         {
-            if (CredentialList.SelectedItem as Core.ComboBoxItemPair<string> != null)
+            if (CredentialList.SelectedItem as Utility.ComboBoxItemPair<string> != null)
                 CredentialList.Items.RemoveAt(CredentialList.SelectedIndex);
         }
 
@@ -91,7 +91,7 @@ namespace Duplicati.Library.Backend
                 m_settings[DEFAULT_RRS] = UseRRS.Checked.ToString();
 
                 Dictionary<string, string> tmp = new Dictionary<string, string>();
-                foreach (Core.ComboBoxItemPair<string> item in CredentialList.Items)
+                foreach (Utility.ComboBoxItemPair<string> item in CredentialList.Items)
                     tmp[item.ToString()] = item.Value;
 
                 EncodeAccounts(tmp, m_settings);
@@ -173,7 +173,7 @@ namespace Duplicati.Library.Backend
             string keyv;
 
             options.TryGetValue(ALLOW_SAVED_CREDENTIALS, out keyv);
-            return Core.Utility.ParseBool(keyv, true);
+            return Utility.Utility.ParseBool(keyv, true);
         }
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace Duplicati.Library.Backend
             string keyv;
 
             options.TryGetValue(DEFAULT_EU_BUCKET, out keyv);
-            return Core.Utility.ParseBool(keyv, false);
+            return Utility.Utility.ParseBool(keyv, false);
         }
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace Duplicati.Library.Backend
             string keyv;
 
             options.TryGetValue(DEFAULT_RRS, out keyv);
-            return Core.Utility.ParseBool(keyv, false);
+            return Utility.Utility.ParseBool(keyv, false);
         }
 
         #endregion

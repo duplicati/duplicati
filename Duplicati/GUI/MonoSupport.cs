@@ -26,7 +26,7 @@ namespace Duplicati.GUI
         {
             try
             {
-                if (!Duplicati.Library.Core.Utility.IsClientLinux)
+                if (!Duplicati.Library.Utility.Utility.IsClientLinux)
                     return;
 
                 Dictionary<Control, Control> visited = new Dictionary<Control, Control>();

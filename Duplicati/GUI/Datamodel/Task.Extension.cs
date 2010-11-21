@@ -125,7 +125,7 @@ namespace Duplicati.Datamodel
                 foreach (TaskFilter f in this.SortedFilters)
                     filters.Add(new KeyValuePair<bool, string>(f.Include, f.Filter));
 
-                return Library.Core.FilenameFilter.EncodeAsFilter(filters);
+                return Library.Utility.FilenameFilter.EncodeAsFilter(filters);
             }
             set
             {
@@ -136,7 +136,7 @@ namespace Duplicati.Datamodel
                 this.SortedFilters = new TaskFilter[0];
 
                 List<TaskFilter> filters = new List<TaskFilter>();
-                foreach (KeyValuePair<bool, string> f in Library.Core.FilenameFilter.DecodeFilter(value))
+                foreach (KeyValuePair<bool, string> f in Library.Utility.FilenameFilter.DecodeFilter(value))
                 {
                     TaskFilter tf = this.DataParent.Add<TaskFilter>();
                     tf.Filter = f.Value;
@@ -245,19 +245,19 @@ namespace Duplicati.Datamodel
 
             public bool AsyncTransfer
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[ASYNC_TRANSFER], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[ASYNC_TRANSFER], false); }
                 set { m_owner.TaskExtensionsLookup[ASYNC_TRANSFER] = value.ToString(); }
             }
 
             public bool IncludeSetup
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[INCLUDE_SETUP], true); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[INCLUDE_SETUP], true); }
                 set { m_owner.TaskExtensionsLookup[INCLUDE_SETUP] = value.ToString(); }
             }
 
             public bool IgnoreTimestamps
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS], false); }
                 set { m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS] = value.ToString(); }
             }
 
@@ -275,67 +275,67 @@ namespace Duplicati.Datamodel
 
             public bool SelectFiles_UseSimpleMode
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_USESIMPLEMODE], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_USESIMPLEMODE], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTFILES_USESIMPLEMODE] = value.ToString(); }
             }
 
             public bool SelectFiles_IncludeDocuments
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDOCUMENTS], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDOCUMENTS], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDOCUMENTS] = value.ToString(); }
             }
 
             public bool SelectFiles_IncludeDesktop
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDESKTOP], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDESKTOP], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEDESKTOP] = value.ToString(); }
             }
 
             public bool SelectFiles_IncludeMusic
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEMUSIC], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEMUSIC], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEMUSIC] = value.ToString(); }
             }
 
             public bool SelectFiles_IncludeImages
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEIMAGES], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEIMAGES], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEIMAGES] = value.ToString(); }
             }
 
             public bool SelectFiles_IncludeAppData
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTFILES_INCLUDEAPPDATA] = value.ToString(); }
             }
 
             public bool SelectWhen_WarnedNoSchedule
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOSCHEDULE], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOSCHEDULE], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOSCHEDULE] = value.ToString(); }
             }
 
             public bool SelectWhen_WarnedNoIncrementals
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOINCREMENTALS], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOINCREMENTALS], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDNOINCREMENTALS] = value.ToString(); }
             }
 
             public bool SelectWhen_WarnedTooManyIncrementals
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDTOOMANYINCREMENTALS], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDTOOMANYINCREMENTALS], false); }
                 set { m_owner.TaskExtensionsLookup[SELECTWHEN_WARNEDTOOMANYINCREMENTALS] = value.ToString(); }
             }
 
             public bool PasswordSettings_WarnedNoPassword
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[PASSWORDSETTINGS_WARNEDNOPASSWORD], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[PASSWORDSETTINGS_WARNEDNOPASSWORD], false); }
                 set { m_owner.TaskExtensionsLookup[PASSWORDSETTINGS_WARNEDNOPASSWORD] = value.ToString(); }
             }
 
             public bool CleanupSettings_WarnedNoCleanup
             {
-                get { return Duplicati.Library.Core.Utility.ParseBool(m_owner.TaskExtensionsLookup[CLEANUPSETTINGS_WARNEDNOCLEANUP], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[CLEANUPSETTINGS_WARNEDNOCLEANUP], false); }
                 set { m_owner.TaskExtensionsLookup[CLEANUPSETTINGS_WARNEDNOCLEANUP] = value.ToString(); }
             }
 }

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.Library.Core.Strings {
+namespace Duplicati.Library.Utility.Strings {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Duplicati.Library.Core.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Timeparser {
+    internal class TempFolder {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Timeparser() {
+        internal TempFolder() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Core.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Core.Strings.Timeparser", typeof(Timeparser).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Utility.Strings.TempFolder", typeof(TempFolder).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,65 +61,11 @@ namespace Duplicati.Library.Core.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unable to parse date: {0}, invalid day: {1}.
+        ///   Looks up a localized string similar to Temporary folder does not exist: {0}.
         /// </summary>
-        internal static string InvalidDayError {
+        internal static string TempFolderDoesNotExistError {
             get {
-                return ResourceManager.GetString("InvalidDayError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Failed to parse the segment: {0}, invalid integer.
-        /// </summary>
-        internal static string InvalidIntegerError {
-            get {
-                return ResourceManager.GetString("InvalidIntegerError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Invalid specifier: {0}.
-        /// </summary>
-        internal static string InvalidSpecifierError {
-            get {
-                return ResourceManager.GetString("InvalidSpecifierError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unable to parse date: {0}, invalid time: {1}.
-        /// </summary>
-        internal static string InvalidTimeError {
-            get {
-                return ResourceManager.GetString("InvalidTimeError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unable to parse date: {0}, invalid year: {1}.
-        /// </summary>
-        internal static string InvalidYearError {
-            get {
-                return ResourceManager.GetString("InvalidYearError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unable to parse date: {0}, unknown month: {1}.
-        /// </summary>
-        internal static string UnknownMonthError {
-            get {
-                return ResourceManager.GetString("UnknownMonthError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unparsed data: {0}.
-        /// </summary>
-        internal static string UnparsedDataFragmentError {
-            get {
-                return ResourceManager.GetString("UnparsedDataFragmentError", resourceCulture);
+                return ResourceManager.GetString("TempFolderDoesNotExistError", resourceCulture);
             }
         }
     }

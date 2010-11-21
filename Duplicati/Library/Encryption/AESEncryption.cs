@@ -69,9 +69,9 @@ namespace Duplicati.Library.Encryption
         public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
             if (options.ContainsKey(COMMAND_LINE_NO_AES_CRYPT))
-                m_disableAESCrypt = Core.Utility.ParseBool(options[COMMAND_LINE_NO_AES_CRYPT], true);
+                m_disableAESCrypt = Utility.Utility.ParseBool(options[COMMAND_LINE_NO_AES_CRYPT], true);
             if (options.ContainsKey(COMMAND_LINE_NO_FALLBACK))
-                m_allowFallback = !Core.Utility.ParseBool(options[COMMAND_LINE_NO_FALLBACK], true);
+                m_allowFallback = !Utility.Utility.ParseBool(options[COMMAND_LINE_NO_FALLBACK], true);
 
             if (m_disableAESCrypt && !m_allowFallback)
                 throw new ArgumentException(string.Format(Strings.AESEncryption.OptionsAreMutuallyExclusiveError, COMMAND_LINE_NO_AES_CRYPT, COMMAND_LINE_NO_FALLBACK));

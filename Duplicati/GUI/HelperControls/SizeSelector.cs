@@ -119,7 +119,7 @@ namespace Duplicati.GUI.HelperControls
             }
             set
             {
-                CurrentSizeInBytes = Duplicati.Library.Core.Sizeparser.ParseSize(value);
+                CurrentSizeInBytes = Duplicati.Library.Utility.Sizeparser.ParseSize(value);
 
                 if (CurrentSizeChanged != null)
                     CurrentSizeChanged(this, null);

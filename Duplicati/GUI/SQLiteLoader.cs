@@ -46,7 +46,7 @@ namespace Duplicati.GUI
                     string assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
 
                     //If we run on windows with MS.Net we can use the mixed mode assemblies
-                    if (!Duplicati.Library.Core.Utility.IsClientLinux && !Duplicati.Library.Core.Utility.IsMono)
+                    if (!Duplicati.Library.Utility.Utility.IsClientLinux && !Duplicati.Library.Utility.Utility.IsMono)
                     {
                         //On my x64 system, 32bit appears to work correctly as 32 bit, where loading the 64bit dll fails
                         if (IntPtr.Size == 8 /*|| (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor())*/)

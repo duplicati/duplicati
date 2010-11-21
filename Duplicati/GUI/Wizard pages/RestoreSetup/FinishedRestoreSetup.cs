@@ -130,7 +130,7 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             s.Task = con.Add<Task>();
             m_wrapper.UpdateSchedule(s);
 
-            using (Library.Core.TempFolder tf = new Duplicati.Library.Core.TempFolder())
+            using (Library.Utility.TempFolder tf = new Duplicati.Library.Utility.TempFolder())
             {
                 RestoreSetupTask task = new RestoreSetupTask(s, tf);
                 Dictionary<string, string> options = new Dictionary<string, string>();
@@ -178,7 +178,7 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
 
                 //Make sure we have a startup delay, so a restart won't accidently wipe something
                 Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);
-                if (string.IsNullOrEmpty(appset.StartupDelayDuration) || Duplicati.Library.Core.Timeparser.ParseTimeSpan(appset.StartupDelayDuration) < TimeSpan.FromMinutes(5))
+                if (string.IsNullOrEmpty(appset.StartupDelayDuration) || Duplicati.Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration) < TimeSpan.FromMinutes(5))
                 {
                     appset.StartupDelayDuration = "5m";
                     Program.DataConnection.CommitRecursive(Program.DataConnection.GetObjects<Datamodel.ApplicationSetting>());

@@ -123,7 +123,7 @@ namespace Duplicati.Library.Backend
             {
                 useUnmanaged = false;
                 if (m_applicationSettings.ContainsKey(SSHCommonOptions.DEFAULT_MANAGED))
-                    useUnmanaged = !Core.Utility.ParseBool(m_applicationSettings[SSHCommonOptions.DEFAULT_MANAGED], true);
+                    useUnmanaged = !Utility.Utility.ParseBool(m_applicationSettings[SSHCommonOptions.DEFAULT_MANAGED], true);
             }
 
             if (m_options.ContainsKey(HOST))
@@ -147,7 +147,7 @@ namespace Duplicati.Library.Backend
             if (!m_options.ContainsKey(HAS_WARNED_PATH) || !bool.TryParse(m_options[HAS_WARNED_PATH], out m_warnedPath))
                 m_warnedPath = false;
 
-            if (Library.Core.Utility.IsClientLinux)
+            if (Library.Utility.Utility.IsClientLinux)
             {
                 //sftp is likely present on linux/mac
                 m_warnedNoSFTP = true;
@@ -347,7 +347,7 @@ namespace Duplicati.Library.Backend
             if (debug)
                 commandlineOptions["debug-to-console"] = "";
 
-            bool useUnmanaged = guiOptions.ContainsKey(USE_UNMANAGED_SSH) ? Core.Utility.ParseBool(guiOptions[USE_UNMANAGED_SSH], false) : false;
+            bool useUnmanaged = guiOptions.ContainsKey(USE_UNMANAGED_SSH) ? Utility.Utility.ParseBool(guiOptions[USE_UNMANAGED_SSH], false) : false;
 
             if (useUnmanaged)
             {

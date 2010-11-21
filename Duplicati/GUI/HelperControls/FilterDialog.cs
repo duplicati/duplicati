@@ -65,7 +65,7 @@ namespace Duplicati.GUI.HelperControls
                 f = FilterText.Text;
             }
             else
-                f = Library.Core.FilenameFilter.ConvertGlobbingToRegExp(FilterText.Text);
+                f = Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(FilterText.Text);
 
             m_filter = new KeyValuePair<bool, string>(Inclusive.Checked, f);
             this.DialogResult = DialogResult.OK;
@@ -88,23 +88,23 @@ namespace Duplicati.GUI.HelperControls
         {
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
                 if (IsRegExp.Checked)
-                    FilterText.Text = Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Core.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath));
+                    FilterText.Text = Duplicati.Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Utility.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath));
                 else
-                    FilterText.Text = Duplicati.Library.Core.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath);
+                    FilterText.Text = Duplicati.Library.Utility.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath);
         }
 
         private void BrowseFileButton_Click(object sender, EventArgs e)
         {
             if (openFileDialog.ShowDialog(this) == DialogResult.OK)
                 if (IsRegExp.Checked)
-                    FilterText.Text = Duplicati.Library.Core.FilenameFilter.ConvertGlobbingToRegExp(openFileDialog.FileName);
+                    FilterText.Text = Duplicati.Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(openFileDialog.FileName);
                 else
                     FilterText.Text = openFileDialog.FileName;
         }
 
         private void HelpImage_Click(object sender, EventArgs e)
         {
-            Duplicati.Library.Core.UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
+            Duplicati.Library.Utility.UrlUtillity.OpenUrl("http://code.google.com/p/duplicati/wiki/FilterUsage");
         }
 
         private void HelpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

@@ -262,7 +262,7 @@ namespace Duplicati.Library.Main
 
             //Make sure they all have the same format
             for (int i = 0; i < sources.Length; i++)
-                sources[i] = Core.Utility.AppendDirSeparator(sources[i]);
+                sources[i] = Utility.Utility.AppendDirSeparator(sources[i]);
 
             //Sanity check for duplicate folders and multiple inclusions of the same folder
             for (int i = 0; i < sources.Length - 1; i++)
@@ -271,9 +271,9 @@ namespace Duplicati.Library.Main
                     throw new System.IO.IOException(String.Format(Strings.Interface.SourceFolderIsMissingError, sources[i]));
 
                 for (int j = i + 1; j < sources.Length; j++)
-                    if (sources[i].Equals(sources[j], Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                    if (sources[i].Equals(sources[j], Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                         throw new Exception(string.Format(Strings.Interface.SourceDirIsIncludedMultipleTimesError, sources[i]));
-                    else if (sources[i].StartsWith(sources[j], Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                    else if (sources[i].StartsWith(sources[j], Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                         throw new Exception(string.Format(Strings.Interface.SourceDirsAreRelatedError, sources[i], sources[j]));
             }
 
@@ -348,7 +348,7 @@ namespace Duplicati.Library.Main
                     long totalsize = 0;
                     Manifestfile manifest = new Manifestfile();
 
-                    using (Core.TempFolder tempfolder = new Duplicati.Library.Core.TempFolder())
+                    using (Utility.TempFolder tempfolder = new Duplicati.Library.Utility.TempFolder())
                     {
                         List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches = new List<KeyValuePair<ManifestEntry, Duplicati.Library.Interface.ICompression>>();
                         if (!full)
@@ -389,7 +389,7 @@ namespace Duplicati.Library.Main
                                     {
                                         bool found = false;
                                         foreach (string s2 in sources)
-                                            if (s1.Equals(s2, Core.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                                            if (s1.Equals(s2, Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                                             {
                                                 found = true;
                                                 break;
@@ -439,14 +439,14 @@ namespace Duplicati.Library.Main
                             using (new Logging.Timer("Initiating multipass"))
                                 dir.InitiateMultiPassDiff(full, m_options);
 
-                            string tempVolumeFolder = m_options.AsynchronousUpload ? m_options.AsynchronousUploadFolder : (m_options.TempDir ?? Core.TempFolder.SystemTempPath);
+                            string tempVolumeFolder = m_options.AsynchronousUpload ? m_options.AsynchronousUploadFolder : (m_options.TempDir ?? Utility.TempFolder.SystemTempPath);
 
                             bool done = false;
                             while (!done && totalsize < m_options.MaxSize)
                             {
                                 using (new Logging.Timer("Multipass " + (vol + 1).ToString()))
-                                using (Core.TempFile signaturefile = new Duplicati.Library.Core.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
-                                using (Core.TempFile contentfile = new Duplicati.Library.Core.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
+                                using (Utility.TempFile signaturefile = new Duplicati.Library.Utility.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
+                                using (Utility.TempFile contentfile = new Duplicati.Library.Utility.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
                                 {
                                     OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusCreatingVolume, vol + 1), "");
 
@@ -464,7 +464,7 @@ namespace Duplicati.Library.Main
                                             if (!string.IsNullOrEmpty(s))
                                                 using (System.IO.Stream cs = signaturearchive.CreateFile(System.IO.Path.Combine(RSync.RSyncDir.CONTROL_ROOT, System.IO.Path.GetFileName(s))))
                                                 using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
-                                                    Core.Utility.CopyStream(fs, cs);
+                                                    Utility.Utility.CopyStream(fs, cs);
 
                                         //Only add control files to the very first volume
                                         controlfiles.Clear();
@@ -497,20 +497,20 @@ namespace Duplicati.Library.Main
                                     signaturefile.Protected = true;
                                     contentfile.Protected = true;
 
-                                    manifest.ContentHashes.Add(Core.Utility.CalculateHash(contentfile));
+                                    manifest.ContentHashes.Add(Utility.Utility.CalculateHash(contentfile));
                                     using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
                                         backend.Put(new ContentEntry(backuptime, full, vol + 1), contentfile);
 
                                     if (!m_options.AsynchronousUpload)
                                         OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
                                     
-                                    manifest.SignatureHashes.Add(Core.Utility.CalculateHash(signaturefile));
+                                    manifest.SignatureHashes.Add(Utility.Utility.CalculateHash(signaturefile));
                                     using (new Logging.Timer("Writing remote signatures"))
                                         backend.Put(new SignatureEntry(backuptime, full, vol + 1), signaturefile);
                                 }
 
                                 //The backend wrapper will remove these
-                                Core.TempFile mf = new Duplicati.Library.Core.TempFile();
+                                Utility.TempFile mf = new Duplicati.Library.Utility.TempFile();
                                 mf.Protected = true;
 
                                 using (new Logging.Timer("Writing manifest " + backuptime.ToUniversalTime().ToString("yyyyMMddTHHmmssK")))
@@ -701,7 +701,7 @@ namespace Duplicati.Library.Main
             bool parsingError = false;
 
             using (new Logging.Timer("Get " + entry.Filename))
-            using (Core.TempFile tf = new Duplicati.Library.Core.TempFile())
+            using (Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
             {
                 try
                 {
@@ -759,16 +759,16 @@ namespace Duplicati.Library.Main
                         OperationStarted(this, DuplicatiOperation.Restore, rs.OperationMode, -1, -1, Strings.Interface.StatusStarted, "");
                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, -1, -1, Strings.Interface.StatusStarted, "");
 
-                    Core.FilenameFilter filter = m_options.Filter;
+                    Utility.FilenameFilter filter = m_options.Filter;
 
                     //Filter is prefered, if both file and filter is specified
                     if (!m_options.HasFilter && !string.IsNullOrEmpty(m_options.FileToRestore))
                     {
-                        List<Core.IFilenameFilter> list = new List<Duplicati.Library.Core.IFilenameFilter>();
-                        list.Add(new Core.FilelistFilter(true, m_options.FileToRestore.Split(System.IO.Path.PathSeparator)));
-                        list.Add(new Core.RegularExpressionFilter(false, ".*"));
+                        List<Utility.IFilenameFilter> list = new List<Duplicati.Library.Utility.IFilenameFilter>();
+                        list.Add(new Utility.FilelistFilter(true, m_options.FileToRestore.Split(System.IO.Path.PathSeparator)));
+                        list.Add(new Utility.RegularExpressionFilter(false, ".*"));
 
-                        filter = new Duplicati.Library.Core.FilenameFilter(list);
+                        filter = new Duplicati.Library.Utility.FilenameFilter(list);
                     }
 
                     backend = new BackendWrapper(rs, m_backend, m_options);
@@ -838,7 +838,7 @@ namespace Duplicati.Library.Main
                             suggestions.Add(s);
                         }
 
-                        Dictionary<string, int> duplicates = new Dictionary<string, int>(Library.Core.Utility.ClientFilenameStringComparer);
+                        Dictionary<string, int> duplicates = new Dictionary<string, int>(Library.Utility.Utility.ClientFilenameStringComparer);
                         for (int i = 0; i < suggestions.Count; i++)
                             if (duplicates.ContainsKey(suggestions[i]))
                                 duplicates[suggestions[i]]++;
@@ -891,7 +891,7 @@ namespace Duplicati.Library.Main
                                     continue;
                                 }
 
-                                using (Core.TempFile patchzip = new Duplicati.Library.Core.TempFile())
+                                using (Utility.TempFile patchzip = new Duplicati.Library.Utility.TempFile())
                                 {
                                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
 
@@ -901,7 +901,7 @@ namespace Duplicati.Library.Main
                                      {
                                          bool hasFiles = false;
 
-                                         using (Core.TempFile sigFile = new Duplicati.Library.Core.TempFile())
+                                         using (Utility.TempFile sigFile = new Duplicati.Library.Utility.TempFile())
                                          {
                                              OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingSignatureVolume, patchno + 1), "");
 
@@ -1005,12 +1005,12 @@ namespace Duplicati.Library.Main
 
                     flatlist.Reverse();
 
-                    string prefix = Core.Utility.AppendDirSeparator(RSync.RSyncDir.CONTROL_ROOT);
+                    string prefix = Utility.Utility.AppendDirSeparator(RSync.RSyncDir.CONTROL_ROOT);
 
                     foreach (ManifestEntry be in flatlist)
                     {
                         if (be.Volumes.Count > 0)
-                            using(Core.TempFile z = new Duplicati.Library.Core.TempFile())
+                            using(Utility.TempFile z = new Duplicati.Library.Utility.TempFile())
                             {
                                 OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, 0, -1, string.Format(Strings.Interface.StatusReadingIncrementalFile, be.Volumes[0].Key.Filename), "");
 
@@ -1027,7 +1027,7 @@ namespace Duplicati.Library.Main
                                         any = true;
                                         using (System.IO.Stream s1 = fz.OpenRead(f))
                                         using (System.IO.Stream s2 = System.IO.File.Create(System.IO.Path.Combine(target, f.Substring(prefix.Length))))
-                                            Core.Utility.CopyStream(s1, s2);
+                                            Utility.Utility.CopyStream(s1, s2);
                                     }
 
                                     if (any)
@@ -1276,7 +1276,7 @@ namespace Duplicati.Library.Main
             RestoreStatistics rs = new RestoreStatistics(DuplicatiOperationMode.ListCurrentFiles);
             SetupCommonOptions(rs);
 
-            Core.FilenameFilter filter = m_options.Filter;
+            Utility.FilenameFilter filter = m_options.Filter;
             DateTime timelimit = m_options.RestoreTime;
 
             if (OperationStarted != null)
@@ -1285,7 +1285,7 @@ namespace Duplicati.Library.Main
             List<string> res;
 
             using (BackendWrapper backend = new BackendWrapper(rs, m_backend, m_options))
-            using (Core.TempFolder basefolder = new Duplicati.Library.Core.TempFolder())
+            using (Utility.TempFolder basefolder = new Duplicati.Library.Utility.TempFolder())
             {
                 ManifestEntry bestFit = backend.GetBackupSet(timelimit);
 
@@ -1318,7 +1318,7 @@ namespace Duplicati.Library.Main
             string[] res;
 
             using (BackendWrapper backend = new BackendWrapper(rs, m_backend, m_options))
-            using (Core.TempFile mfile = new Duplicati.Library.Core.TempFile())
+            using (Utility.TempFile mfile = new Duplicati.Library.Utility.TempFile())
             {
                 ManifestEntry bestFit = backend.GetBackupSet(timelimit);
 
@@ -1346,10 +1346,10 @@ namespace Duplicati.Library.Main
                 stats.VerboseErrors = m_options.DebugOutput;
 
             if (!string.IsNullOrEmpty(m_options.TempDir))
-                Core.TempFolder.SystemTempPath = m_options.TempDir;
+                Utility.TempFolder.SystemTempPath = m_options.TempDir;
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
-                System.Threading.Thread.CurrentThread.Priority = Core.Utility.ParsePriority(m_options.ThreadPriority);
+                System.Threading.Thread.CurrentThread.Priority = Utility.Utility.ParsePriority(m_options.ThreadPriority);
 
             //Load all generic modules
             m_options.LoadedModules.Clear();
@@ -1486,7 +1486,7 @@ namespace Duplicati.Library.Main
                 if (bestFit.Incrementals.Count > 0) //Get the most recent incremental
                     bestFit = bestFit.Incrementals[bestFit.Incrementals.Count - 1];
 
-                using (Core.TempFolder folder = new Duplicati.Library.Core.TempFolder())
+                using (Utility.TempFolder folder = new Duplicati.Library.Utility.TempFolder())
                 {
                     List<Library.Interface.ICompression> patches = new List<Duplicati.Library.Interface.ICompression>();
                     foreach (KeyValuePair<ManifestEntry, Library.Interface.ICompression> entry in FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder, false, stats))
@@ -1554,7 +1554,7 @@ namespace Duplicati.Library.Main
                     List<string> signatureHashes = null;
                     Manifestfile mfi;
 
-                    using(Core.TempFile tf = new Duplicati.Library.Core.TempFile())
+                    using(Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
                     {
                         backend.Get(mf, tf, null);
                         mfi = new Manifestfile(tf);
@@ -1572,7 +1572,7 @@ namespace Duplicati.Library.Main
                     }
 
                     foreach(KeyValuePair<SignatureEntry, ContentEntry> e in mf.Volumes)
-                        using (Core.TempFile tf = new Duplicati.Library.Core.TempFile())
+                        using (Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
                         {
                             //Skip non-approved signature files
                             if (signatureHashes != null && e.Key.Volumenumber > signatureHashes.Count)
@@ -1745,7 +1745,7 @@ namespace Duplicati.Library.Main
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
             {
-                if (!string.IsNullOrEmpty(value) && Core.Utility.ParseBool(value, true) != Core.Utility.ParseBool(value, false))
+                if (!string.IsNullOrEmpty(value) && Utility.Utility.ParseBool(value, true) != Utility.Utility.ParseBool(value, false))
                     return string.Format(Strings.Interface.UnsupportedBooleanValue, optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
@@ -1764,7 +1764,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Core.Sizeparser.ParseSize(value);
+                    Utility.Sizeparser.ParseSize(value);
                 }
                 catch
                 {
@@ -1775,7 +1775,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Core.Timeparser.ParseTimeSpan(value);
+                    Utility.Timeparser.ParseTimeSpan(value);
                 }
                 catch
                 {
@@ -1789,7 +1789,7 @@ namespace Duplicati.Library.Main
         public static void RemoveSignatureFiles(string folder)
         {
             FilenameStrategy cachenames = BackendWrapper.CreateCacheFilenameStrategy();
-            foreach (string s in Core.Utility.EnumerateFiles(folder))
+            foreach (string s in Utility.Utility.EnumerateFiles(folder))
             {
                 BackupEntryBase e = cachenames.ParseFilename(new Duplicati.Library.Interface.FileEntry(System.IO.Path.GetFileName(s)));
                 if (e is SignatureEntry)

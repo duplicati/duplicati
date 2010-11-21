@@ -56,7 +56,7 @@ namespace Duplicati.Library.Backend
 
         public SSH()
         {
-            m_isLinux = Library.Core.Utility.IsClientLinux;
+            m_isLinux = Library.Utility.Utility.IsClientLinux;
         }
 
         public SSH(string url, Dictionary<string, string> options)
@@ -131,7 +131,7 @@ namespace Duplicati.Library.Backend
             }
 
             if (m_options.ContainsKey("transfer-timeout"))
-                m_transfer_timeout = Math.Min(1000 * 60 * 60, Math.Max(1000 * 60, (int)Duplicati.Library.Core.Timeparser.ParseTimeSpan(m_options["transfer-timeout"]).TotalMilliseconds));
+                m_transfer_timeout = Math.Min(1000 * 60 * 60, Math.Max(1000 * 60, (int)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(m_options["transfer-timeout"]).TotalMilliseconds));
             else
                 m_transfer_timeout = 1000 * 60 * 15;
 
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(SFTP_PATH_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSFTPCommandShort, Strings.SSHBackend.DescriptionSFTPCommandLong, Library.Core.Utility.IsClientLinux ? "sftp" : "psftp.exe"),
+                    new CommandLineArgument(SFTP_PATH_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSFTPCommandShort, Strings.SSHBackend.DescriptionSFTPCommandLong, Library.Utility.Utility.IsClientLinux ? "sftp" : "psftp.exe"),
                     new CommandLineArgument("ssh-options", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionSSHOptionsShort, Strings.SSHBackend.DescriptionSSHOptionsLong, "-C"),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPPasswordShort, Strings.SSHBackend.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SSHBackend.DescriptionFTPUsernameShort, Strings.SSHBackend.DescriptionFTPUsernameLong),

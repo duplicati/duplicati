@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.Library.Core.Strings {
+namespace Duplicati.Library.Utility.Strings {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Duplicati.Library.Core.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Utility {
+    internal class Sizeparser {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Utility() {
+        internal Sizeparser() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Core.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Core.Strings.Utility", typeof(Utility).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Utility.Strings.Sizeparser", typeof(Sizeparser).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,56 +61,11 @@ namespace Duplicati.Library.Core.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {0} bytes.
+        ///   Looks up a localized string similar to Invalid size value: {0}.
         /// </summary>
-        internal static string FormatStringB {
+        internal static string InvalidSizeValueError {
             get {
-                return ResourceManager.GetString("FormatStringB", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to {0:N} GB.
-        /// </summary>
-        internal static string FormatStringGB {
-            get {
-                return ResourceManager.GetString("FormatStringGB", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to {0:N} KB.
-        /// </summary>
-        internal static string FormatStringKB {
-            get {
-                return ResourceManager.GetString("FormatStringKB", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to {0:N} MB.
-        /// </summary>
-        internal static string FormatStringMB {
-            get {
-                return ResourceManager.GetString("FormatStringMB", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The digit &apos;{0}&apos; is not a valid hex digit.
-        /// </summary>
-        internal static string InvalidHexDigitError {
-            get {
-                return ResourceManager.GetString("InvalidHexDigitError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The hex string size must be a multiple of two, eg. the length must be even.
-        /// </summary>
-        internal static string InvalidHexStringLengthError {
-            get {
-                return ResourceManager.GetString("InvalidHexStringLengthError", resourceCulture);
+                return ResourceManager.GetString("InvalidSizeValueError", resourceCulture);
             }
         }
     }

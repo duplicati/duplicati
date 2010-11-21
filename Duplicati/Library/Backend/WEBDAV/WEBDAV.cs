@@ -299,7 +299,7 @@ namespace Duplicati.Library.Backend
         private IDisposable ActivateCertificateValidator()
         {
             return m_useSSL ? 
-                new Core.SslCertificateValidator(m_acceptAllCertificates, m_acceptCertificateHash) : 
+                new Utility.SslCertificateValidator(m_acceptAllCertificates, m_acceptCertificateHash) : 
                 null;
         }
 
@@ -317,7 +317,7 @@ namespace Duplicati.Library.Backend
             else
 			{
                 req.Credentials = m_userInfo;
-                if (Library.Core.Utility.IsClientLinux)
+                if (Library.Utility.Utility.IsClientLinux)
 					req.PreAuthenticate = true; //We need this under Mono for some reason
 			}
 
@@ -351,7 +351,7 @@ namespace Duplicati.Library.Backend
                     catch { }
 
                     using (System.IO.Stream s = req.GetRequestStream())
-                        Core.Utility.CopyStream(stream, s);
+                        Utility.Utility.CopyStream(stream, s);
 
                     using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
                     {
@@ -390,7 +390,7 @@ namespace Duplicati.Library.Backend
                             throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
                         using (System.IO.Stream s = resp.GetResponseStream())
-                            Core.Utility.CopyStream(s, stream);
+                            Utility.Utility.CopyStream(s, stream);
                     }
                 }
                 catch (System.Net.WebException wex)

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati", "Duplicati\GUI\Duplicati.csproj", "{1470F75F-D364-4010-91D0-FD4DDA1C5159}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Core", "Duplicati\Library\Core\Duplicati.Library.Core.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Main", "Duplicati\Library\Main\Duplicati.Library.Main.csproj", "{10D2D1B7-C664-41D8-9B3A-00040C3D421B}"
 EndProject

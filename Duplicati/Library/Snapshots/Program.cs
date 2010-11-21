@@ -85,7 +85,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
                     }
 
                     Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
-                    Console.WriteLine("If this fails, try to run as " + (Core.Utility.IsClientLinux ? "root" : "Administrator"));
+                    Console.WriteLine("If this fails, try to run as " + (Utility.Utility.IsClientLinux ? "root" : "Administrator"));
                     using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new string[] { args[0] }, options))
                     {
                         Console.WriteLine("Attempting to read locked file via snapshot");

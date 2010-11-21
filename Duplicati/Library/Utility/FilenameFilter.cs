@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Duplicati.Library.Core
+namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// This class handles exclusion and inclusion of filenames, based on supplied patterns
@@ -60,7 +60,7 @@ namespace Duplicati.Library.Core
                     //It is annoying to use backslashes on windows, because they are also escape
                     //controls, so \t has to be \\t and on the command line it must be \\\\t, so we
                     //accept the unix style dir separator "/"
-                    cmd = cmd.Replace("/", ConvertGlobbingToRegExp(Core.Utility.DirectorySeparatorString));
+                    cmd = cmd.Replace("/", ConvertGlobbingToRegExp(Utility.DirectorySeparatorString));
 
                     lst.Add(new KeyValuePair<bool, string>(include, cmd));
                     if (remove)
@@ -236,8 +236,8 @@ namespace Duplicati.Library.Core
         public bool ShouldInclude(string basepath, string filename, out IFilenameFilter match)
         {
             match = null;
-            basepath = Core.Utility.AppendDirSeparator(basepath);
-            if (!filename.StartsWith(basepath, Core.Utility.ClientFilenameStringComparision))
+            basepath = Utility.AppendDirSeparator(basepath);
+            if (!filename.StartsWith(basepath, Utility.ClientFilenameStringComparision))
                 return false;
 
             //All paths start with a slash, because this eases filter creation
@@ -258,7 +258,7 @@ namespace Duplicati.Library.Core
 
         public List<string> FilterList(string basepath, IEnumerable<string> filenames)
         {
-            basepath = Core.Utility.AppendDirSeparator(basepath);
+            basepath = Utility.AppendDirSeparator(basepath);
 
             List<string> included = new List<string>();
             foreach (string s in filenames)

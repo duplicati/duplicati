@@ -29,7 +29,7 @@ namespace Duplicati.Datamodel
         {
             get
             {
-                return Library.Core.Utility.FormatSizeString(this.Transfersize);
+                return Library.Utility.Utility.FormatSizeString(this.Transfersize);
             }
         }
     }

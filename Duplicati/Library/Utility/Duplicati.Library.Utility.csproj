@@ -7,8 +7,8 @@
     <ProjectGuid>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.Library.Core</RootNamespace>
-    <AssemblyName>Duplicati.Library.Core</AssemblyName>
+    <RootNamespace>Duplicati.Library.Utility</RootNamespace>
+    <AssemblyName>Duplicati.Library.Utility</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>

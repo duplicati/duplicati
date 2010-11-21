@@ -30,7 +30,7 @@ namespace Duplicati.CommandLine
             try
             {
                 List<string> cargs = new List<string>(args);
-                string filter = Duplicati.Library.Core.FilenameFilter.EncodeAsFilter(Duplicati.Library.Core.FilenameFilter.ParseCommandLine(cargs, true));
+                string filter = Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(Duplicati.Library.Utility.FilenameFilter.ParseCommandLine(cargs, true));
                 Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
 
                 foreach (string internaloption in Library.Main.Options.InternalOptions)
@@ -45,7 +45,7 @@ namespace Duplicati.CommandLine
 
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions
-                if (!Library.Core.Utility.IsClientLinux)
+                if (!Library.Utility.Utility.IsClientLinux)
                 {
                     Environment.SetEnvironmentVariable("PATH",
                         Environment.GetEnvironmentVariable("PATH") +
@@ -230,7 +230,7 @@ namespace Duplicati.CommandLine
                         foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in m.Volumes)
                             size += x.Key.Fileentry.Size + x.Value.Fileentry.Size;
 
-                        Console.WriteLine(Strings.Program.CollectionStatusLineFull.Replace("\\t", "\t"), m.Time.ToString(), m.Volumes.Count, Library.Core.Utility.FormatSizeString(size));
+                        Console.WriteLine(Strings.Program.CollectionStatusLineFull.Replace("\\t", "\t"), m.Time.ToString(), m.Volumes.Count, Library.Utility.Utility.FormatSizeString(size));
 
                         foreach (Duplicati.Library.Main.ManifestEntry mi in m.Incrementals)
                         {
@@ -238,7 +238,7 @@ namespace Duplicati.CommandLine
                             foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in mi.Volumes)
                                 size += x.Key.Fileentry.Size + x.Value.Fileentry.Size;
 
-                            Console.WriteLine(Strings.Program.CollectionStatusLineInc.Replace("\\t", "\t"), mi.Time.ToString(), mi.Volumes.Count, Library.Core.Utility.FormatSizeString(size));
+                            Console.WriteLine(Strings.Program.CollectionStatusLineInc.Replace("\\t", "\t"), mi.Time.ToString(), mi.Volumes.Count, Library.Utility.Utility.FormatSizeString(size));
                         }
                     }
                 }
@@ -268,7 +268,7 @@ namespace Duplicati.CommandLine
                 {
                     try
                     {
-                        Duplicati.Library.Core.Timeparser.ParseTimeSpan(target);
+                        Duplicati.Library.Utility.Timeparser.ParseTimeSpan(target);
                     }
                     catch (Exception ex)
                     {
@@ -367,7 +367,7 @@ namespace Duplicati.CommandLine
 
         private static void PrintUsage(bool extended)
         {
-            bool isLinux = Library.Core.Utility.IsClientLinux;
+            bool isLinux = Library.Utility.Utility.IsClientLinux;
 
             List<string> lines = new List<string>();
             lines.AddRange(

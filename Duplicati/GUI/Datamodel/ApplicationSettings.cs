@@ -217,7 +217,7 @@ namespace Duplicati.Datamodel
                 if (string.IsNullOrEmpty(m_appset[THREAD_PRIORITY_OVERRIDE]))
                     return null;
                 else
-                    return Library.Core.Utility.ParsePriority(m_appset[THREAD_PRIORITY_OVERRIDE]);
+                    return Library.Utility.Utility.ParsePriority(m_appset[THREAD_PRIORITY_OVERRIDE]);
             }
             set 
             {
@@ -256,7 +256,7 @@ namespace Duplicati.Datamodel
                 string tmp;
                 m_appset.TryGetValue(HIDE_DONATE_BUTTON, out tmp);
 
-                return Duplicati.Library.Core.Utility.ParseBool(tmp, false);
+                return Duplicati.Library.Utility.Utility.ParseBool(tmp, false);
             }
             set { m_appset[HIDE_DONATE_BUTTON] = value.ToString(); }
         }

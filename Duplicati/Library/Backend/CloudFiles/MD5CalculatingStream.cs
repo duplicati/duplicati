@@ -26,7 +26,7 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// A special stream that does on-the-fly MD5 calculations
     /// </summary>
-    class MD5CalculatingStream : Core.OverrideableStream
+    class MD5CalculatingStream : Utility.OverrideableStream
     {
         private System.Security.Cryptography.MD5 m_hash;
         private byte[] m_finalHash = null;
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Backend
 
         public string GetFinalHashString()
         {
-            return Core.Utility.ByteArrayAsHexString(this.GetFinalHash());
+            return Utility.Utility.ByteArrayAsHexString(this.GetFinalHash());
         }
 
         public byte[] GetFinalHash()

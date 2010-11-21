@@ -153,16 +153,16 @@ namespace Duplicati.GUI
             m_waitTimer.Tick += new EventHandler(m_waitTimer_Tick);
             if (!string.IsNullOrEmpty(settings.StartupDelayDuration) && settings.StartupDelayDuration != "0")
             {
-                m_waitTimer.Interval = (int)Duplicati.Library.Core.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds;
+                m_waitTimer.Interval = (int)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds;
                 m_waitTimer.Enabled = true;
                 m_state = LiveControlState.Paused;
             }
 
             m_priority = settings.ThreadPriorityOverride;
             if (!string.IsNullOrEmpty(settings.DownloadSpeedLimit))
-                m_downloadLimit = Library.Core.Sizeparser.ParseSize(settings.DownloadSpeedLimit, "kb");
+                m_downloadLimit = Library.Utility.Sizeparser.ParseSize(settings.DownloadSpeedLimit, "kb");
             if (!string.IsNullOrEmpty(settings.UploadSpeedLimit))
-                m_uploadLimit = Library.Core.Sizeparser.ParseSize(settings.UploadSpeedLimit, "kb");
+                m_uploadLimit = Library.Utility.Sizeparser.ParseSize(settings.UploadSpeedLimit, "kb");
         }
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace Duplicati.GUI
             m_waitTimer.Enabled = false;
             if (!string.IsNullOrEmpty(timeout))
             {
-                m_waitTimer.Interval = ((int)Duplicati.Library.Core.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds);
+                m_waitTimer.Interval = ((int)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds);
                 m_waitTimer.Enabled = true;
             }
         }
@@ -228,7 +228,7 @@ namespace Duplicati.GUI
             {
                 Pause();
                 m_waitTimer.Enabled = false;
-                m_waitTimer.Interval = ((int)Duplicati.Library.Core.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds);
+                m_waitTimer.Interval = ((int)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds);
                 m_waitTimer.Enabled = true;
             }
         }
