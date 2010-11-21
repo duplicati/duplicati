@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main
         /// Indicates that the operation is a delete type operation
         /// </summary>
         Remove
-    };
+    }
 
     /// <summary>
     /// The actual operation that Duplicati supports

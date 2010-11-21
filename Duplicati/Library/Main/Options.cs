@@ -135,8 +135,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-time", CommandLineArgument.ArgumentType.String, Strings.Options.RestoretimeShort, Strings.Options.RestoretimeLong, "now"),
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
 
-                    new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.String, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong),
+                    new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.String, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
                     new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
+                    new CommandLineArgument("disable-time-tolerance", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisabletimetoleranceShort, Strings.Options.DisabletimetoleranceLong, "false"),
 
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
                     new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong),
@@ -264,7 +265,14 @@ namespace Duplicati.Library.Main
             if (!m_options.ContainsKey("full-if-older-than") || string.IsNullOrEmpty(m_options["full-if-older-than"]))
                 return DateTime.Now.AddYears(1); //We assume that the check will occur in less than one year :)
             else
-                return Utility.Timeparser.ParseTimeInterval(m_options["full-if-older-than"], offsettime);
+            {
+                TimeSpan tolerance = 
+                    this.DisableTimeTolerance ?
+                    TimeSpan.FromSeconds(0) :
+                    TimeSpan.FromSeconds(Math.Min(Utility.Timeparser.ParseTimeSpan(m_options["full-if-older-than"]).TotalSeconds / 100, 60.0 * 60.0));
+
+                return Utility.Timeparser.ParseTimeInterval(m_options["full-if-older-than"], offsettime) - tolerance;
+            }
         }
 
         /// <summary>
@@ -357,6 +365,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if USN numbers are used to get list of changed files
         /// </summary>
         public bool DisableUSNDiffCheck { get { return GetBool("disable-usn-diff-check"); } }
+
+        /// <summary>
+        /// A value indicating if time tolerance is disabled
+        /// </summary>
+        public bool DisableTimeTolerance { get { return GetBool("disable-time-tolerance"); } }
 
         /// <summary>
         /// A value indicating if file deletes are forced
@@ -485,7 +498,12 @@ namespace Duplicati.Library.Main
                 if (!m_options.ContainsKey("delete-older-than"))
                     throw new Exception("No count given for \"Delete Older Than\"");
 
-                return Utility.Timeparser.ParseTimeInterval(m_options["delete-older-than"], DateTime.Now, true);
+                TimeSpan tolerance =
+                    this.DisableTimeTolerance ?
+                    TimeSpan.FromSeconds(0) :
+                    TimeSpan.FromSeconds(Math.Min(Utility.Timeparser.ParseTimeSpan(m_options["delete-older-than"]).TotalSeconds / 100, 60.0 * 60.0));
+
+                return Utility.Timeparser.ParseTimeInterval(m_options["delete-older-than"], DateTime.Now, true) - tolerance;
             }
         }
 

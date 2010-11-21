@@ -295,6 +295,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to When deciding if a full backup should be made or an old backup should be deleted, Duplicati will adjust the times by a small fraction to ensure that minor time differences do not interfer with expected operation. If the backup is set to produce a full backup each day, and a full backup is made at, say 12:00:01, and the backup is executed again at 12:00:00, a full day has not passed and thus an incremental backup is performed. To avoid this, Duplicati inserts a 1% tolerance (max 1 hour). Use this option to d [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string DisabletimetoleranceLong {
+            get {
+                return ResourceManager.GetString("DisabletimetoleranceLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deaktivates tolerance when comparing times.
+        /// </summary>
+        internal static string DisabletimetoleranceShort {
+            get {
+                return ResourceManager.GetString("DisabletimetoleranceShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If USN is enabled the USN numbers are used to find all changed files since last backup. Use this option to disable the use of USN numbers, which will make Duplicati investigate all source files. This option is primarily intended for testing and should not be disabled in a production environment. If USN is not enabled, this option has no effect..
         /// </summary>
         internal static string DisableusndiffcheckLong {
