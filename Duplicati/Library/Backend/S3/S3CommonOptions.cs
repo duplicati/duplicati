@@ -110,7 +110,7 @@ namespace Duplicati.Library.Backend
                 applicationSettings[DEFAULT_EU_BUCKET] = guiOptions[DEFAULT_EU_BUCKET];
 
             if (guiOptions.ContainsKey(DEFAULT_RRS))
-                applicationSettings[DEFAULT_RRS] = guiOptions[DEFAULT_EU_BUCKET];
+                applicationSettings[DEFAULT_RRS] = guiOptions[DEFAULT_RRS];
 
             if (guiOptions.ContainsKey(ALLOW_SAVED_CREDENTIALS))
                 applicationSettings[ALLOW_SAVED_CREDENTIALS] = guiOptions[ALLOW_SAVED_CREDENTIALS];
