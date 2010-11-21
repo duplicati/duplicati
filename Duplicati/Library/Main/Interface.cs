@@ -339,6 +339,7 @@ namespace Duplicati.Library.Main
 
                     if (!full)
                         full = DateTime.Now > m_options.FullIfOlderThan(backupsets[backupsets.Count - 1].Time);
+                    bs.Full = full;
 
                     List<string> controlfiles = new List<string>();
                     if (!string.IsNullOrEmpty(m_options.SignatureControlFiles))
