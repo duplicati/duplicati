@@ -222,7 +222,7 @@ namespace Duplicati.Library.Main
 #if DEBUG
                 return Math.Max(1024 * 10, Utility.Sizeparser.ParseSize(volsize, "mb"));
 #else
-                return Math.Max(1024 * 1024, Core.Sizeparser.ParseSize(volsize, "mb"));
+                return Math.Max(1024 * 1024, Utility.Sizeparser.ParseSize(volsize, "mb"));
 #endif
             }
         }
