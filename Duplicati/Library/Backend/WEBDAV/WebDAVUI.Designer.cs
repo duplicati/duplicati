@@ -144,7 +144,11 @@ namespace Duplicati.Library.Backend
             // 
             // Password
             // 
+            this.Password.AskToEnterNewPassword = false;
+            this.Password.IsPasswordVisible = false;
             resources.ApplyResources(this.Password, "Password");
+            this.Password.MaximumSize = new System.Drawing.Size(5000, 20);
+            this.Password.MinimumSize = new System.Drawing.Size(150, 20);
             this.Password.Name = "Password";
             this.Password.TextChanged += new System.EventHandler(this.Password_TextChanged);
             // 

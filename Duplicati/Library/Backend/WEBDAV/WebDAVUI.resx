@@ -392,9 +392,6 @@
   <data name="Password.Location" type="System.Drawing.Point, System.Drawing">
     <value>88, 48</value>
   </data>
-  <data name="Password.PasswordChar" type="System.Char, mscorlib" xml:space="preserve">
-    <value>*</value>
-  </data>
   <data name="Password.Size" type="System.Drawing.Size, System.Drawing">
     <value>160, 20</value>
   </data>
@@ -405,7 +402,7 @@
     <value>Password</value>
   </data>
   <data name="&gt;&gt;Password.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>Duplicati.Winforms.Controls.PasswordControl, Duplicati.Winforms.Controls, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
   <data name="&gt;&gt;Password.Parent" xml:space="preserve">
     <value>PasswordSettings</value>
@@ -465,13 +462,13 @@
     <value>16, 176</value>
   </data>
   <data name="DigestAuth.Size" type="System.Drawing.Size, System.Drawing">
-    <value>209, 17</value>
+    <value>215, 17</value>
   </data>
   <data name="DigestAuth.TabIndex" type="System.Int32, mscorlib">
     <value>27</value>
   </data>
   <data name="DigestAuth.Text" xml:space="preserve">
-    <value>Autentication method must be "Digest"</value>
+    <value>Authentication method must be "Digest"</value>
   </data>
   <data name="&gt;&gt;DigestAuth.Name" xml:space="preserve">
     <value>DigestAuth</value>
