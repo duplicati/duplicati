@@ -53,6 +53,7 @@ namespace Duplicati.Library.Backend
 
             UseEUBuckets.Checked = ExtractDefaultEUBuckets(m_settings);
             AllowCredentialStorage.Checked = ExtractAllowCredentialStorage(m_settings);
+            UseRRS.Checked = ExtractDefaultRRS(m_settings);
 
             CredentialList.Items.Clear();
             foreach(KeyValuePair<string, string> k in ExtractAccounts(m_settings))
