@@ -11,6 +11,7 @@ Artwork:
 
 Translations:
   Gabriell Hahmann - Brazilian, pt-BR
+  Matthieu Weber - French, fr-FR
 
 A special thanks to the many users
 who continues to report problems
