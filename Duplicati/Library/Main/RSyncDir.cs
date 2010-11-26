@@ -784,9 +784,9 @@ namespace Duplicati.Library.Main.RSync
                             try { usnHelpers[rootFolder] = new Duplicati.Library.Snapshots.USNHelper(rootFolder); }
                             catch (Exception ex)
                             {
-                                if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
+                                if (options.UsnStrategy == Options.OptimizationStrategy.Required)
                                     throw;
-                                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
+                                else if (options.UsnStrategy == Options.OptimizationStrategy.On)
                                 {
                                     if (m_stat != null)
                                         m_stat.LogWarning(string.Format(Strings.RSyncDir.UsnFailedError, ex.ToString()), ex);
@@ -847,9 +847,9 @@ namespace Duplicati.Library.Main.RSync
             }
             catch (Exception ex)
             {
-                if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
+                if (options.UsnStrategy == Options.OptimizationStrategy.Required)
                     throw;
-                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
+                else if (options.UsnStrategy == Options.OptimizationStrategy.On)
                 {
                     if (m_stat != null)
                         m_stat.LogWarning(string.Format(Strings.RSyncDir.UsnFailedError, ex.ToString()), ex);
