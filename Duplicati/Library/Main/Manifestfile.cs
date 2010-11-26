@@ -48,7 +48,11 @@ namespace Duplicati.Library.Main
 		///The manifest file version 
 		/// </summary>
 		private int m_version;
-		
+
+        /// <summary>
+        /// The hash algorithm used for content and signature hashes
+        /// </summary>
+        private string m_hashAlgorithm = Utility.Utility.HashAlgorithm;
 		
         /// <summary>
         /// The list of signature hashes
@@ -85,6 +89,15 @@ namespace Duplicati.Library.Main
 			get { return m_version; }
 			set { m_version = value; }
 		}
+
+        /// <summary>
+        /// Gets or sets the hash algorithm used for verifying the signature and content hashes
+        /// </summary>
+        public string HashAlgorithm
+        {
+            get { return m_hashAlgorithm; }
+            set { m_hashAlgorithm = value; }
+        }
 
         /// <summary>
         /// The largest supported version
@@ -155,6 +168,12 @@ namespace Duplicati.Library.Main
             if (Version > MaxSupportedVersion)
                 throw new Exception(string.Format(Strings.Manifestfile.UnsupportedVersionError, Version, MaxSupportedVersion));
 
+            if (root.Attributes["hash-algorithm"] != null)
+                m_hashAlgorithm = root.Attributes["hash-algorithm"].Value;
+
+            if (m_hashAlgorithm != Utility.Utility.HashAlgorithm)
+                throw new Exception(string.Format(Strings.Manifestfile.UnsupportedHashAlgorithmError, m_hashAlgorithm));
+
             List<string> paths = new List<string>();
             foreach (XmlNode n in root.SelectNodes("ContentFiles/Hash"))
                 ContentHashes.Add(n.InnerText);
@@ -215,6 +234,7 @@ namespace Duplicati.Library.Main
             else
                 root = doc.AppendChild(doc.CreateElement("ManifestRoot"));
 
+            root.Attributes.Append(doc.CreateAttribute("hash-algorithm")).Value = m_hashAlgorithm;
             root.Attributes.Append(doc.CreateAttribute("version")).Value = Version.ToString();
             if (Version == 1)
                 root.AppendChild(doc.CreateElement("VolumeCount")).InnerText = ContentHashes.Count.ToString();;

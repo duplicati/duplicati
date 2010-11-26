@@ -126,6 +126,9 @@
   <data name="NoFilesError" xml:space="preserve">
     <value>Invalid manifest, there were no files in the manifest</value>
   </data>
+  <data name="UnsupportedHashAlgorithmError" xml:space="preserve">
+    <value>The manifest uses the hash algorithm {0}, which is unsupported</value>
+  </data>
   <data name="UnsupportedVersionError" xml:space="preserve">
     <value>The manifest has version {0}, the current application only supports versions up to {1}</value>
   </data>

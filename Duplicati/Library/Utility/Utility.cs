@@ -25,6 +25,14 @@ namespace Duplicati.Library.Utility
 {
     public static class Utility
     {
+        /// <summary>
+        /// Gets the hash algorithm used for calculating a hash
+        /// </summary>
+        public static string HashAlgorithm { get { return "SHA256"; } }
+
+        /// <summary>
+        /// An enumeration used to identify file types when performing file listings
+        /// </summary>
         public enum EnumeratedFileStatus
         {
             File,
@@ -32,6 +40,12 @@ namespace Duplicati.Library.Utility
             Error
         };
 
+        /// <summary>
+        /// The callback delegate type used to collecting file information
+        /// </summary>
+        /// <param name="rootpath">The path that the file enumeration started at</param>
+        /// <param name="path">The current element</param>
+        /// <param name="status">The type of the element</param>
         public delegate void EnumerationCallbackDelegate(string rootpath, string path, EnumeratedFileStatus status);
 
         /// <summary>
@@ -390,13 +404,13 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Calculates the SHA256 hash of a given file, and returns the results as an base64 encoded string
+        /// Calculates the hash of a given file, and returns the results as an base64 encoded string
         /// </summary>
         /// <param name="path">The path to the file to calculate the hash for</param>
-        /// <returns>The base64 encoded SHA256 hash</returns>
+        /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(string path)
         {
-            System.Security.Cryptography.HashAlgorithm sha = System.Security.Cryptography.HashAlgorithm.Create("SHA256");
+            System.Security.Cryptography.HashAlgorithm sha = System.Security.Cryptography.HashAlgorithm.Create(HashAlgorithm);
             using (System.IO.FileStream fs = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 return Convert.ToBase64String(sha.ComputeHash(fs));
         }
