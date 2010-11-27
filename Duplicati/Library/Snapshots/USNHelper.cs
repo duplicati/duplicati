@@ -107,14 +107,20 @@ namespace Duplicati.Library.Snapshots
         public void EnumerateFilesAndFolders(string rootpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
-                if (r.Key.StartsWith(rootpath))
+                if (r.Key.StartsWith(rootpath, Utility.Utility.ClientFilenameStringComparision))
                 {
                     bool isFolder = (r.Value.FileAttributes & Win32USN.EFileAttributes.Directory) != 0;
 
-                    if (isFolder && (filter == null || filter.ShouldInclude(rootpath, Utility.Utility.AppendDirSeparator(r.Key))))
-                        callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.Folder);
-                    else if (!isFolder && (filter == null || filter.ShouldInclude(rootpath, r.Key)))
-                        callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.File);
+                    if (isFolder)
+                    {
+                        if (filter == null || filter.ShouldInclude(rootpath, Utility.Utility.AppendDirSeparator(r.Key)))
+                            callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.Folder);
+                    }
+                    else
+                    {
+                        if (filter == null || filter.ShouldInclude(rootpath, r.Key))
+                            callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.File);
+                    }
                 }
         }
 
