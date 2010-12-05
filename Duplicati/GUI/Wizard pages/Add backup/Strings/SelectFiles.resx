@@ -133,11 +133,6 @@
     <value>The folder "{0}" does not exist.
 How do you want to proceed?</value>
   </data>
-  <data name="MultipleSourcesError" xml:space="preserve">
-    <value>Due to your machine setup, it is not possible to backup
-the selected folders in the same backup.
-Try unchecking some items, and create more than one backup.</value>
-  </data>
   <data name="NoFilesSelectedError" xml:space="preserve">
     <value>You have not included any files.</value>
   </data>

@@ -466,7 +466,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Returns a value indiciating if a filter is specified
+        /// Returns a value indicating if a filter is specified
         /// </summary>
         public bool HasFilter { get { return m_options.ContainsKey("filter"); } }
 

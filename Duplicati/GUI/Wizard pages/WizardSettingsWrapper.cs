@@ -824,7 +824,7 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
-        /// A value indiciating if the connection is passwordless
+        /// A value indicating if the connection is passwordless
         /// </summary>
         public bool Passwordless
         {

@@ -160,7 +160,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A flag indiciating that Duplicati should remove unused files.
+        ///   Looks up a localized string similar to A flag indicating that Duplicati should remove unused files.
         /// </summary>
         internal static string AutocleanupShort {
             get {
