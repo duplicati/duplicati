@@ -608,6 +608,10 @@
       <Project>{6BA21DCB-1701-4936-B177-3B6D4DE3474E}</Project>
       <Name>Duplicati.Library.Backend.SSH</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
+      <Project>{C0270709-2A40-43B5-8CF1-69581B9FA2A1}</Project>
+      <Name>Duplicati.Library.Backend.TahoeLAFS</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
       <Name>Duplicati.Library.Backend.WEBDAV</Name>

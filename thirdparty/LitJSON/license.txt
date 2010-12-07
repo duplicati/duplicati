@@ -1,0 +1,14 @@
+All the source code and related files distributed with this software have
+been dedicated to the public domain by the authors.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute
+the software, either in source code form or as a compiled binary, for any
+purpose, commercial or non-commercial, and by any means.
+
+Thank you for reading this notice. Inspired by the enlightened words used by
+the authors of another software project, a very popular one, also in the
+public domain, here's a blessing:
+
+  May you find forgiveness for yourself and forgive others.
+  May you experience and share the gift of uncoditional love.
+  May you see light, wherever the illusion of darkness appears.

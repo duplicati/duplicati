@@ -91,6 +91,12 @@
       <Link>licenses\LightDataModel\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\LitJSON\download.txt">
+      <Link>licenses\LitJSON\download.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\LitJSON\license.txt">
+      <Link>licenses\LitJSON\license.txt</Link>
+    </Content>
     <Content Include="..\..\thirdparty\MD4\Homepage.txt">
       <Link>licenses\MD4\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
