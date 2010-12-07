@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Filed marked for deletion did not exist: {0}.
+        ///   Looks up a localized string similar to File marked for deletion did not exist: {0}.
         /// </summary>
         internal static string FileToDeleteMissingError {
             get {
@@ -162,7 +162,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Folder was marked for deletion, but did not exist: .
+        ///   Looks up a localized string similar to Folder was marked for deletion, but did not exist: {0}.
         /// </summary>
         internal static string FolderToDeleteMissingError {
             get {
