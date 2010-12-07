@@ -99,6 +99,11 @@ namespace Duplicati.CommandLine.BackendTester
             else
                 allowedChars += ExtendedChars;
 
+            bool autoCreateFolders = false;
+            string v;
+            if (options.TryGetValue("auto-create-folder", out v))
+                 autoCreateFolders = Library.Utility.Utility.ParseBool(v, true);
+
             Library.Interface.IBackend backend = Library.DynamicLoader.BackendLoader.GetBackend(args[0], options);
             if (backend == null)
             {
@@ -108,7 +113,29 @@ namespace Duplicati.CommandLine.BackendTester
                 return false;
             }
 
-            List<Library.Interface.IFileEntry> curlist = backend.List();
+            List<Library.Interface.IFileEntry> curlist = null;
+            try
+            {
+                curlist = backend.List();
+            }
+            catch (FolderMissingException fex)
+            {
+                if (autoCreateFolders)
+                {
+                    try
+                    {
+                        if (backend is IBackend_v2)
+                            ((IBackend_v2)backend).CreateFolder();
+
+                        curlist = backend.List();
+                    }
+                    catch { }
+                }
+
+                if (curlist == null)
+                    throw fex;
+            }
+
             foreach (Library.Interface.IFileEntry fe in curlist)
                 if (!fe.IsFolder)
                 {
@@ -305,7 +332,8 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("min-file-size", CommandLineArgument.ArgumentType.Size, "The minimum allowed file size", "File sizes are chosen at random, this valus is the lower bound", "1kb"),
                     new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this valus is the upper bound", "50mb"),
                     new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this valus is the lower bound", "5"),
-                    new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this valus is the upper bound", "80")
+                    new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this valus is the upper bound", "80"),
+                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allows automatic folder creation", "A value that indicates if missing folders are created automatically", "false")
                 });
 
             }
