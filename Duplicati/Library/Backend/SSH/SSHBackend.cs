@@ -29,6 +29,7 @@ namespace Duplicati.Library.Backend
     {
         public const string SFTP_PATH_OPTION = "sftp-command";
         public const string USE_UNMANAGED_OPTION = "use-sftp-application";
+        public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
 
         private string m_server;
         private string m_path;
@@ -194,6 +195,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("debug-to-console", CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionDebugToConsoleShort, Strings.SSHBackend.DescriptionDebugToConsoleLong),
                     new CommandLineArgument("transfer-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SSHBackend.DescriptionTransferTimeoutShort, Strings.SSHBackend.DescriptionTransferTimeoutLong, "15m"),
                     new CommandLineArgument(USE_UNMANAGED_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionUnmanagedShort, Strings.SSHBackend.DescriptionUnmanagedLong, "false"),
+                    new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSshkeyfileShort, Strings.SSHBackend.DescriptionSshkeyfileLong),
                 });
 
             }
@@ -538,7 +540,17 @@ namespace Duplicati.Library.Backend
 
         private SFTPCon CreateManagedConnection(bool changeDir)
         {
-            SFTPCon con = new SFTPCon(m_server, m_username, m_password);
+            SFTPCon con;
+            if (m_options.ContainsKey(SSH_KEYFILE_OPTION))
+            {
+                ValidateKeyFile(m_options[SSH_KEYFILE_OPTION]);
+
+                con = new SFTPCon(m_server, m_username);
+                con.AddIdentityFile(m_options[SSH_KEYFILE_OPTION], m_password);
+            }
+            else
+                con = new SFTPCon(m_server, m_username, m_password);
+            
             con.Connect(m_port);
 
             try
@@ -651,5 +663,56 @@ namespace Duplicati.Library.Backend
         }
 
         #endregion
+
+        /// <summary>
+        /// A helper function for validating SSH key files, as the support for those is limited in the SharpSSH library
+        /// </summary>
+        /// <param name="filename">The key file to validate</param>
+        public static void ValidateKeyFile(string filename)
+        {
+            if (!System.IO.File.Exists(filename))
+                throw new System.IO.FileNotFoundException(string.Format(Strings.SSHBackend.KeyfileNotFoundError, filename));
+
+            string[] lines = System.IO.File.ReadAllLines(filename);
+
+            //Step 1, find the "-----BEGIN RSA PRIVATE KEY-----" header
+            System.Text.RegularExpressions.Regex header = new Regex("BEGIN (RSA|DSA|SSH) PRIVATE KEY", RegexOptions.IgnoreCase);
+
+            int firstline = -1;
+            for (int i = 0; i < Math.Min(100, lines.Length); i++)
+                if (header.Match(lines[i]).Success)
+                {
+                    firstline = i;
+                    break;
+                }
+
+            if (firstline == -1)
+                throw new System.IO.InvalidDataException(Strings.SSHBackend.IncorrectFileHeaderError);
+
+            //Step 2, read all headers, the first line without a ":" marks the start of the header
+            firstline += 1;
+            bool encrypted = false;
+            string encryptionFormat = null;
+            int lastLine;
+
+            for (lastLine = firstline; lastLine < lines.Length; lastLine++)
+            {
+                if (!lines[lastLine].Contains(":"))
+                    break;
+
+                if (lines[lastLine].StartsWith("Proc-Type:") && lines[lastLine].Contains("ENCRYPTED"))
+                    encrypted = true;
+
+                if (lines[lastLine].StartsWith("DEK-Info:"))
+                    encryptionFormat = lines[lastLine].Substring("DEK-Info:".Length).Split(',')[0].Trim();
+            }
+
+            //Step 3, validate the contents
+            if ((encrypted && encryptionFormat == null) || (!encrypted && encryptionFormat != null))
+                throw new System.IO.InvalidDataException(string.Format(Strings.SSHBackend.KeyfileParseError, string.Join(Environment.NewLine, lines, 0, lastLine)));
+
+            if (encryptionFormat != null && !encryptionFormat.Equals("DES-EDE3-CBC", StringComparison.InvariantCultureIgnoreCase))
+                throw new System.IO.InvalidDataException(string.Format(Strings.SSHBackend.UnsupportedKeyfileEncryptionError, string.Join(Environment.NewLine, lines, 0, lastLine)));
+        }
     }
 }

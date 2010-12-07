@@ -186,6 +186,12 @@
   <data name="DescriptionSFTPCommandShort" xml:space="preserve">
     <value>The path to the "sftp" program</value>
   </data>
+  <data name="DescriptionSshkeyfileLong" xml:space="preserve">
+    <value>Points to a valid OpenSSH keyfile. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client.</value>
+  </data>
+  <data name="DescriptionSshkeyfileShort" xml:space="preserve">
+    <value>Uses a SSH private key to authenticate</value>
+  </data>
   <data name="DescriptionSSHOptionsLong" xml:space="preserve">
     <value>Supply any extra commandline arguments, which are passed unaltered to the ssh application. The full path to the "sftp" application. Only used if the --use-sftp-application option is supplied.</value>
   </data>
@@ -222,6 +228,16 @@
   <data name="HostNotAuthenticatedError" xml:space="preserve">
     <value>The host is not authenticated, please connect to the host using SSH, and then re-rerun Duplicati, log: {0}</value>
   </data>
+  <data name="IncorrectFileHeaderError" xml:space="preserve">
+    <value>File must have the OpenSSH private key header, eg: ---- BEGIN RSA PRIVATE KEY ----</value>
+  </data>
+  <data name="KeyfileNotFoundError" xml:space="preserve">
+    <value>The supplied keyfile was not found: {0}</value>
+  </data>
+  <data name="KeyfileParseError" xml:space="preserve">
+    <value>Unable to parse content of the file. Please include the following information in a bug report (you may omit any key data present):
+{0}</value>
+  </data>
   <data name="LaunchErrorLinux" xml:space="preserve">
     <value>Failed to start the SSH application ({0}).
 Make sure that "expect" is installed.
@@ -246,6 +262,11 @@ Error message: {1}</value>
   </data>
   <data name="UnexpectedResponseError" xml:space="preserve">
     <value>Failed to get expected response to command: {0}</value>
+  </data>
+  <data name="UnsupportedKeyfileEncryptionError" xml:space="preserve">
+    <value>Unsupported encryption format for OpenSSH private key, must be 3des-cbc (DES-EDE3-CBC).
+Please include this information in a bug report:
+{0}</value>
   </data>
   <data name="UploadTimeoutError" xml:space="preserve">
     <value>Timeout while uploading file</value>

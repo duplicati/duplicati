@@ -43,6 +43,10 @@ namespace Duplicati.Library.Backend
             this.GenerateDebugOutput = new System.Windows.Forms.CheckBox();
             this.UseUnmanagedSSH = new System.Windows.Forms.CheckBox();
             this.CreateFolderButton = new System.Windows.Forms.Button();
+            this.Keyfile = new System.Windows.Forms.TextBox();
+            this.Keyfilelabel = new System.Windows.Forms.Label();
+            this.BrowseForKeyFileButton = new System.Windows.Forms.Button();
+            this.OpenSSHKeyFileDialog = new System.Windows.Forms.OpenFileDialog();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
             this.SuspendLayout();
             // 
@@ -76,7 +80,11 @@ namespace Duplicati.Library.Backend
             // 
             // Password
             // 
+            this.Password.AskToEnterNewPassword = false;
+            this.Password.IsPasswordVisible = false;
             resources.ApplyResources(this.Password, "Password");
+            this.Password.MaximumSize = new System.Drawing.Size(5000, 20);
+            this.Password.MinimumSize = new System.Drawing.Size(150, 20);
             this.Password.Name = "Password";
             this.Password.TextChanged += new System.EventHandler(this.Password_TextChanged);
             // 
@@ -147,10 +155,35 @@ namespace Duplicati.Library.Backend
             this.CreateFolderButton.UseVisualStyleBackColor = true;
             this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
             // 
+            // Keyfile
+            // 
+            resources.ApplyResources(this.Keyfile, "Keyfile");
+            this.Keyfile.Name = "Keyfile";
+            this.Keyfile.TextChanged += new System.EventHandler(this.Keyfile_TextChanged);
+            // 
+            // Keyfilelabel
+            // 
+            resources.ApplyResources(this.Keyfilelabel, "Keyfilelabel");
+            this.Keyfilelabel.Name = "Keyfilelabel";
+            // 
+            // BrowseForKeyFileButton
+            // 
+            resources.ApplyResources(this.BrowseForKeyFileButton, "BrowseForKeyFileButton");
+            this.BrowseForKeyFileButton.Name = "BrowseForKeyFileButton";
+            this.BrowseForKeyFileButton.UseVisualStyleBackColor = true;
+            this.BrowseForKeyFileButton.Click += new System.EventHandler(this.BrowseForKeyFileButton_Click);
+            // 
+            // OpenSSHKeyFileDialog
+            // 
+            resources.ApplyResources(this.OpenSSHKeyFileDialog, "OpenSSHKeyFileDialog");
+            // 
             // SSHUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.BrowseForKeyFileButton);
+            this.Controls.Add(this.Keyfile);
+            this.Controls.Add(this.Keyfilelabel);
             this.Controls.Add(this.CreateFolderButton);
             this.Controls.Add(this.UseUnmanagedSSH);
             this.Controls.Add(this.GenerateDebugOutput);
@@ -189,5 +222,9 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.CheckBox GenerateDebugOutput;
         private System.Windows.Forms.CheckBox UseUnmanagedSSH;
         private System.Windows.Forms.Button CreateFolderButton;
+        private System.Windows.Forms.TextBox Keyfile;
+        private System.Windows.Forms.Label Keyfilelabel;
+        private System.Windows.Forms.Button BrowseForKeyFileButton;
+        private System.Windows.Forms.OpenFileDialog OpenSSHKeyFileDialog;
     }
 }

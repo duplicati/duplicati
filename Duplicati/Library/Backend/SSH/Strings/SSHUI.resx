@@ -132,7 +132,7 @@ Do you want to continue anyway?</value>
   <data name="PageTitle" xml:space="preserve">
     <value>Backup storage options</value>
   </data>
-  <data name="PasswordRequiredError" xml:space="preserve">
-    <value>A password is required when using the managed SSH option</value>
+  <data name="PasswordRequiredManagedError" xml:space="preserve">
+    <value>A password is required when using the managed SSH option and no keyfile is supplied</value>
   </data>
 </root>

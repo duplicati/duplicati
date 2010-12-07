@@ -37,6 +37,7 @@ namespace Duplicati.Library.Backend
         private const string PORT = "Port";
         private const string DEBUG_ENABLED = "Debug enabled";
         private const string USE_UNMANAGED_SSH = "Use Unmanaged SSH";
+        private const string SSH_KEYFILE = "Keyfile";
 
         private const string HAS_WARNED_PATH = "UI: Has warned path";
         private const string HAS_TESTED = "UI: Has tested";
@@ -103,6 +104,7 @@ namespace Duplicati.Library.Backend
             m_options[USERNAME] = Username.Text;
             m_options[DEBUG_ENABLED] = GenerateDebugOutput.Checked.ToString();
             m_options[USE_UNMANAGED_SSH] = UseUnmanagedSSH.Checked.ToString();
+            m_options[SSH_KEYFILE] = Keyfile.Text;
         }
 
         void SSHUI_PageLoad(object sender, EventArgs args)
@@ -135,6 +137,8 @@ namespace Duplicati.Library.Backend
             UsePassword.Checked = !passwordless;
             if (m_options.ContainsKey(PASSWORD))
                 Password.Text = m_options[PASSWORD];
+            if (m_options.ContainsKey(SSH_KEYFILE))
+                Keyfile.Text = m_options[SSH_KEYFILE];
 
             Password.AskToEnterNewPassword = !string.IsNullOrEmpty(Password.Text);
             
@@ -225,16 +229,19 @@ namespace Duplicati.Library.Backend
 
             if (Password.Text.Trim().Length <= 0 && UsePassword.Checked)
             {
-                MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                try { Password.Focus(); }
-                catch { }
+                if (!UseUnmanagedSSH.Checked && Keyfile.Text.Trim().Length == 0)
+                {
+                    MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try { Password.Focus(); }
+                    catch { }
 
-                return false;
+                    return false;
+                }
             }
 
-            if (!UsePassword.Checked && !UseUnmanagedSSH.Checked)
+            if (!UsePassword.Checked && !UseUnmanagedSSH.Checked && Keyfile.Text.Trim().Length == 0)
             {
-                MessageBox.Show(this, Strings.SSHUI.PasswordRequiredError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.SSHUI.PasswordRequiredManagedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 UsePassword.Checked = true;
                 try { Password.Focus(); }
                 catch { }
@@ -270,6 +277,23 @@ namespace Duplicati.Library.Backend
                     }
 
                     m_warnedNoSFTP = true;
+                }
+            }
+
+            if (!UseUnmanagedSSH.Checked && !string.IsNullOrEmpty(Keyfile.Text))
+            {
+                try
+                {
+                    SSH.ValidateKeyFile(Keyfile.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                    try { Keyfile.Focus(); }
+                    catch { }
+
+                    return false;
                 }
             }
 
@@ -354,6 +378,11 @@ namespace Duplicati.Library.Backend
                 commandlineOptions[SSH.USE_UNMANAGED_OPTION] = "";
                 commandlineOptions["disable-streaming-transfers"] = "";
             }
+            else
+            {
+                if (guiOptions.ContainsKey(SSH_KEYFILE))
+                    commandlineOptions[SSH.SSH_KEYFILE_OPTION] = guiOptions[SSH_KEYFILE];
+            }
 
             if (!guiOptions.ContainsKey(HOST))
                 throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, HOST));
@@ -363,7 +392,10 @@ namespace Duplicati.Library.Backend
 
         private void UseUnmanagedSSH_CheckedChanged(object sender, EventArgs e)
         {
-
+            Keyfilelabel.Enabled =
+            Keyfile.Enabled =
+            BrowseForKeyFileButton.Enabled =
+                !UseUnmanagedSSH.Checked;
         }
 
         private void CreateFolderButton_Click(object sender, EventArgs e)
@@ -396,6 +428,29 @@ namespace Duplicati.Library.Backend
                     this.Cursor = c;
                 }
             }
+        }
+
+        private void BrowseForKeyFileButton_Click(object sender, EventArgs e)
+        {
+            if (OpenSSHKeyFileDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                try
+                {
+                    SSH.ValidateKeyFile(OpenSSHKeyFileDialog.FileName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                Keyfile.Text = OpenSSHKeyFileDialog.FileName;
+            }
+        }
+
+        private void Keyfile_TextChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
         }
     }
 }

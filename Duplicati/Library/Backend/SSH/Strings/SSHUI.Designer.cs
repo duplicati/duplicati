@@ -100,11 +100,11 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A password is required when using the managed SSH option.
+        ///   Looks up a localized string similar to A password is required when using the managed SSH option and no keyfile is supplied.
         /// </summary>
-        internal static string PasswordRequiredError {
+        internal static string PasswordRequiredManagedError {
             get {
-                return ResourceManager.GetString("PasswordRequiredError", resourceCulture);
+                return ResourceManager.GetString("PasswordRequiredManagedError", resourceCulture);
             }
         }
     }

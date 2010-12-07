@@ -28,6 +28,11 @@ namespace Duplicati.Library.Backend
     /// </summary>
     internal class SFTPCon: Tamir.SharpSsh.Sftp, IDisposable
     {
+        public SFTPCon(string hostname, string username)
+            : base(hostname, username)
+        {
+        }
+
         public SFTPCon(string hostname, string username, string password)
             : base(hostname, username, password)
         {
