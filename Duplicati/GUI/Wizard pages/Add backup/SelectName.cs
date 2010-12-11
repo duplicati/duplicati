@@ -62,10 +62,19 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 return;
             }
 
-            Schedule[] tmp = Program.DataConnection.GetObjects<Schedule>("Name LIKE ? AND Path Like ?", BackupName.Text, BackupFolder.SelectedFolder);
-            if ((tmp.Length == 1 && tmp[0].ID != m_wrapper.ScheduleID ) || tmp.Length > 1)
+            try
             {
-                MessageBox.Show(this, Strings.SelectName.DuplicateNameEnteredError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Schedule[] tmp = Program.DataConnection.GetObjects<Schedule>("Name LIKE ? AND Path Like ?", BackupName.Text, BackupFolder.SelectedFolder);
+                if ((tmp.Length == 1 && tmp[0].ID != m_wrapper.ScheduleID) || tmp.Length > 1)
+                {
+                    MessageBox.Show(this, Strings.SelectName.DuplicateNameEnteredError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    args.Cancel = true;
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, string.Format(Strings.SelectName.InvalidNameEnteredError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 args.Cancel = true;
                 return;
             }

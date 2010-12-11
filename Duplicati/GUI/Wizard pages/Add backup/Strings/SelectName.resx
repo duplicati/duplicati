@@ -120,6 +120,9 @@
   <data name="DuplicateNameEnteredError" xml:space="preserve">
     <value>There already exists a backup with that name</value>
   </data>
+  <data name="InvalidNameEnteredError" xml:space="preserve">
+    <value>Failed to validate the backup name: {0}</value>
+  </data>
   <data name="NoNameEnteredError" xml:space="preserve">
     <value>You must enter a name for the backup</value>
   </data>
