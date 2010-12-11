@@ -152,10 +152,10 @@ The shorter format "cloudfiles://container/folder" may be used as long as  the c
     <value>MD5 Hash (ETag) verification failed</value>
   </data>
   <data name="FileDeleteError" xml:space="preserve">
-    <value />
+    <value>Failed to delete file</value>
   </data>
   <data name="FileUploadError" xml:space="preserve">
-    <value />
+    <value>Failed to upload file</value>
   </data>
   <data name="NoAPIKeyError" xml:space="preserve">
     <value>No CloudFiles API Access Key given</value>

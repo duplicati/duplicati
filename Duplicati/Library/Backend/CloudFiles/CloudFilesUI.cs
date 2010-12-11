@@ -106,19 +106,19 @@ namespace Duplicati.Library.Backend
         {
             if (Username.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, Strings.CloudFilesUI.EmptyAWSIDError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.CloudFilesUI.EmptyCloudFilesIDError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
 
             if (API_KEY.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, Strings.CloudFilesUI.EmptyAWSKeyError , Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.CloudFilesUI.EmptyAPIKeyError , Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
 
             if (BucketName.Text.Trim().Length <= 0)
             {
-                MessageBox.Show(this, Strings.CloudFilesUI.EmptyBucketnameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.CloudFilesUI.EmptyContainerNameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
 

@@ -286,7 +286,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supply any extra commandline arguments, which are passed unaltered to the ssh application. The full path to the &quot;sftp&quot; application. Only used if the --use-sftp-application option is supplied..
+        ///   Looks up a localized string similar to Supply any extra commandline arguments, which are passed unaltered to the ssh application.  Only used if the --use-sftp-application option is supplied..
         /// </summary>
         internal static string DescriptionSSHOptionsLong {
             get {
@@ -304,7 +304,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The SSH backend relies on an external program (sftp) to work. Since the external program may hang, Duplicati must use a timeout to detect a stall in the external program. Use this option to adjust the timeout. Minimum allowed value is one minute, maximum allowed is one hour.The full path to the &quot;sftp&quot; application. Only used if the --use-sftp-application option is supplied..
+        ///   Looks up a localized string similar to The SSH backend relies on an external program (sftp) to work. Since the external program may hang, Duplicati must use a timeout to detect a stall in the external program. Use this option to adjust the timeout. Minimum allowed value is one minute, maximum allowed is one hour. Only used if the --use-sftp-application option is supplied..
         /// </summary>
         internal static string DescriptionTransferTimeoutLong {
             get {
