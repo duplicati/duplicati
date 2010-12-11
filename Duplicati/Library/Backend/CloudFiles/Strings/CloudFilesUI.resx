@@ -117,8 +117,8 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CreateMissingBucket" xml:space="preserve">
-    <value>The bucket does not exist, do you want to create it?</value>
+  <data name="CreateMissingContainer" xml:space="preserve">
+    <value>The container does not exist, do you want to create it?</value>
   </data>
   <data name="EmptyAPIKeyError" xml:space="preserve">
     <value>You must enter your CloudFiles API Access Key.

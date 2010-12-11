@@ -151,7 +151,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch (Interface.FolderMissingException)
                 {
-                    switch (MessageBox.Show(this, Strings.CloudFilesUI.CreateMissingBucket, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    switch (MessageBox.Show(this, Strings.CloudFilesUI.CreateMissingContainer, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                     {
                         case DialogResult.Yes:
                             CreateContainer.PerformClick();

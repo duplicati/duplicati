@@ -61,11 +61,11 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The bucket does not exist, do you want to create it?.
+        ///   Looks up a localized string similar to The container does not exist, do you want to create it?.
         /// </summary>
-        internal static string CreateMissingBucket {
+        internal static string CreateMissingContainer {
             get {
-                return ResourceManager.GetString("CreateMissingBucket", resourceCulture);
+                return ResourceManager.GetString("CreateMissingContainer", resourceCulture);
             }
         }
         
