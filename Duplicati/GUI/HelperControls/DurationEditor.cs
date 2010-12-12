@@ -34,6 +34,8 @@ namespace Duplicati.GUI.HelperControls
         public DurationEditor()
         {
             InitializeComponent();
+
+            this.HandleCreated += new EventHandler(EasyDuration_SelectedIndexChanged);
         }
 
         public event EventHandler ValueChanged;
@@ -59,12 +61,17 @@ namespace Duplicati.GUI.HelperControls
 
         private void EasyDuration_SelectedIndexChanged(object sender, EventArgs e)
         {
-            CustomDuration.Visible = (EasyDuration.SelectedIndex == EasyDuration.Items.Count - 1);
-            if (EasyDuration.SelectedIndex == EasyDuration.Items.Count - 1)
-                CustomDuration.Text = m_values[EasyDuration.Items.Count - 1];
+            //To prevent some flickering when creating the control, we must wait until the handle is created
+            if (this.IsHandleCreated)
+            {
+                CustomDuration.Visible = (EasyDuration.SelectedIndex == EasyDuration.Items.Count - 1);
 
-            if (ValueChanged != null)
-                ValueChanged(sender, e);
+                if (EasyDuration.SelectedIndex == EasyDuration.Items.Count - 1)
+                    CustomDuration.Text = m_values[EasyDuration.Items.Count - 1];
+
+                if (ValueChanged != null)
+                    ValueChanged(sender, e);
+            }
         }
 
         private void CustomDuration_TextChanged(object sender, EventArgs e)

@@ -120,14 +120,18 @@ namespace System.Windows.Forms.Wizard
 
         #endregion
 
-        protected Control[] FindAllControls()
+        protected Dictionary<string, Control> FindAllControls()
         {
             Dictionary<Control, object> visited = new Dictionary<Control, object>();
+            Dictionary<Control, string> names = new Dictionary<Control, string>();
             List<Control> items = new List<Control>();
             List<Control> result = new List<Control>();
 
             foreach (Control c in this.Controls)
+            {
+                names.Add(c, this.GetType().FullName + "." + c.Name);
                 items.Add(c);
+            }
 
             while (items.Count > 0)
             {
@@ -143,11 +147,19 @@ namespace System.Windows.Forms.Wizard
                 if (!(c is Label || c is Button || c is GroupBox || c is Panel))
                     result.Add(c);
 
+                string prefix = names[c];
                 foreach (Control cx in c.Controls)
+                {
+                    names.Add(cx, prefix + "." + cx.Name);
                     items.Add(cx);
+                }
             }
 
-            return result.ToArray();
+            Dictionary<string, Control> results = new Dictionary<string, Control>();
+            foreach (Control c in result)
+                results[names[c]] = c;
+
+            return results;
         }
 
         /// <summary>
@@ -156,40 +168,41 @@ namespace System.Windows.Forms.Wizard
         /// <returns>True if there were settings loaded, false otherwise. Use this flag to detect if the control should get default values.</returns>
         protected virtual bool LoadDialogSettings()
         {
-            string prefix = this.GetType().FullName + ".";
             bool anyloaded = false;
 
-            foreach(Control c in FindAllControls())
+            foreach (KeyValuePair<string, Control> kv in FindAllControls())
             {
-                if (m_settings.ContainsKey(prefix + c.Name))
+                Control c = kv.Value;
+
+                if (m_settings.ContainsKey(kv.Key))
                 {
                     anyloaded = true;
 
                     if (c is CheckBox)
-                        ((CheckBox)c).Checked = (bool)m_settings[prefix + c.Name];
+                        ((CheckBox)c).Checked = (bool)m_settings[kv.Key];
                     else if (c is TextBox)
-                        c.Text = (string)m_settings[prefix + c.Name];
+                        c.Text = (string)m_settings[kv.Key];
                     else if (c is ComboBox)
                     {
                         if (((ComboBox)c).DropDownStyle == ComboBoxStyle.DropDownList)
-                            ((ComboBox)c).SelectedIndex = (int)m_settings[prefix + c.Name];
+                            ((ComboBox)c).SelectedIndex = (int)m_settings[kv.Key];
                         else
-                            c.Text = (string)m_settings[prefix + c.Name];
+                            c.Text = (string)m_settings[kv.Key];
                     }
                     else if (c is RadioButton)
-                        ((RadioButton)c).Checked = (bool)m_settings[prefix + c.Name];
+                        ((RadioButton)c).Checked = (bool)m_settings[kv.Key];
                     else if (c is NumericUpDown)
-                        ((NumericUpDown)c).Value = (decimal)m_settings[prefix + c.Name];
+                        ((NumericUpDown)c).Value = (decimal)m_settings[kv.Key];
                     else if (c is DateTimePicker)
-                        ((DateTimePicker)c).Value = (DateTime)m_settings[prefix + c.Name];
+                        ((DateTimePicker)c).Value = (DateTime)m_settings[kv.Key];
                     else
                     {
                         //Default to "Value" if it exists, otherwise use "Text"
                         System.Reflection.PropertyInfo pi = c.GetType().GetProperty("Value");
                         if (pi == null)
-                            c.Text = (string)m_settings[prefix + c.Name];
+                            c.Text = (string)m_settings[kv.Key];
                         else
-                            pi.SetValue(c, m_settings[prefix + c.Name], null);
+                            pi.SetValue(c, m_settings[kv.Key], null);
                     }
                 }
             }
@@ -199,36 +212,37 @@ namespace System.Windows.Forms.Wizard
 
         protected virtual void SaveDialogSettings()
         {
-            string prefix = this.GetType().FullName + ".";
-
-            foreach (Control c in FindAllControls())
-                if (c is CheckBox)
-                    m_settings[prefix + c.Name] = ((CheckBox)c).Checked;
+            foreach (KeyValuePair<string, Control> kv in FindAllControls())
+            {
+                Control c = kv.Value;
+                if (kv.Value is CheckBox)
+                    m_settings[kv.Key] = ((CheckBox)c).Checked;
                 else if (c is TextBox)
-                    m_settings[prefix + c.Name] = c.Text;
+                    m_settings[kv.Key] = c.Text;
                 else if (c is ComboBox)
                 {
                     if (((ComboBox)c).DropDownStyle == ComboBoxStyle.DropDownList)
-                        m_settings[prefix + c.Name] = ((ComboBox)c).SelectedIndex;
+                        m_settings[kv.Key] = ((ComboBox)c).SelectedIndex;
                     else
-                        m_settings[prefix + c.Name] = c.Text;
+                        m_settings[kv.Key] = c.Text;
                 }
                 else if (c is RadioButton)
-                    m_settings[prefix + c.Name] = ((RadioButton)c).Checked;
-                else if (c is NumericUpDown) 
-                    m_settings[prefix + c.Name] = ((NumericUpDown)c).Value;
+                    m_settings[kv.Key] = ((RadioButton)c).Checked;
+                else if (c is NumericUpDown)
+                    m_settings[kv.Key] = ((NumericUpDown)c).Value;
                 else if (c is DateTimePicker)
-                    m_settings[prefix + c.Name] = ((DateTimePicker)c).Value;
+                    m_settings[kv.Key] = ((DateTimePicker)c).Value;
                 else
                 {
                     //Default to "Value" if it exists, otherwise use "Text"
                     System.Reflection.PropertyInfo pi = c.GetType().GetProperty("Value");
                     if (pi == null)
-                        m_settings[prefix + c.Name] = c.Text;
+                        m_settings[kv.Key] = c.Text;
                     else
-                        m_settings[prefix + c.Name] = pi.GetValue(c, null);
+                        m_settings[kv.Key] = pi.GetValue(c, null);
 
                 }
+            }
         }
 
         private void InitializeComponent()
