@@ -1,0 +1,450 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AsynchronousuploadLong" xml:space="preserve">
+    <value>Ved at aktivere denne indstilling vil Duplicati overføre filer mens der bygges sæt. Dette kan mindske overførselstiden, men kræver mere diskplads.</value>
+  </data>
+  <data name="AsynchronousuploadShort" xml:space="preserve">
+    <value>Overfør filer på en separat tråd</value>
+  </data>
+  <data name="AutocleanupLong" xml:space="preserve">
+    <value>Hvis en backup bliver afbrudt er det muligt at der findes delvise filer på destinationen. Ved at anvende denne indstilling vil Duplicati automatisk fjerne sådanne filer når de opdages.</value>
+  </data>
+  <data name="AutocleanupShort" xml:space="preserve">
+    <value>En indstilling der indikerer at Duplicati skal fjerne ubenyttede filer</value>
+  </data>
+  <data name="BackupprefixLong" xml:space="preserve">
+    <value>En vilkårlig tekst streng der sættes foran navnet der dannes af Duplicati.</value>
+  </data>
+  <data name="BackupprefixShort" xml:space="preserve">
+    <value>Præfix til backup filnavne</value>
+  </data>
+  <data name="DisablefiletimecheckLong" xml:space="preserve">
+    <value>Operativ systemet holder styre på hvornår der sidst blev skrevet til en fil. Ved at bruge denne information kan Duplicati hurtigt afgøre om en fil blev redigeret. Hvis et program bevidst ændrer i denne information, vil Duplicati ikke fungere korrekt, medmindre denne indstilling er sat.</value>
+  </data>
+  <data name="DisablefiletimecheckShort" xml:space="preserve">
+    <value>Deaktiverer kontrol af filers redigeringstidspunkt</value>
+  </data>
+  <data name="ExcludeLong" xml:space="preserve">
+    <value>Ekskluder filer der passer til dette filter. Filteret er af typen "fil-globbing", ligesom kommandolinie parametre. Du kan bruge "*.txt" for at ekskludere alle tekst filer.</value>
+  </data>
+  <data name="ExcluderegexpLong" xml:space="preserve">
+    <value>Ekskluder filer der matcher dette filter. Filtret er et regulært udtryk. Du kan angive "(.*)\.txt" for at ekskludere alle tekst filer.</value>
+  </data>
+  <data name="ExcluderegexpShort" xml:space="preserve">
+    <value>Ekskluder filer via regulært udtryk</value>
+  </data>
+  <data name="ExcludeShort" xml:space="preserve">
+    <value>Ekskluder filer</value>
+  </data>
+  <data name="FiletorestoreLong" xml:space="preserve">
+    <value>Som standart vil Duplicati gendanne alle filer i en backup. Brug denne indstilling til at udvælge enkelte filer der skal gendannes.</value>
+  </data>
+  <data name="FiletorestoreShort" xml:space="preserve">
+    <value>En liste med filer der skal gendannes</value>
+  </data>
+  <data name="ForceLong" xml:space="preserve">
+    <value>Når der slettes filer vil Duplicati kun skrive while filer der skal slettes. Angiv denne indstilling for at sørge for at de også fjernes.</value>
+  </data>
+  <data name="ForceShort" xml:space="preserve">
+    <value>Gennemtving sletning af filer</value>
+  </data>
+  <data name="FullifolderthanLong" xml:space="preserve">
+    <value>Hvis den sidste fulde backup er ældre end det interval der er angivet til denne indstilling, vil Duplicati udføre en fuld backup, ellers udføres en trinvis</value>
+  </data>
+  <data name="FullifolderthanShort" xml:space="preserve">
+    <value>Det højeste interval mellem fulde backup'er</value>
+  </data>
+  <data name="FullLong" xml:space="preserve">
+    <value>Når denne indstilling er aktiveret vil Duplicati udføre en fuld backup, og ignorere eksisterende trinvis data</value>
+  </data>
+  <data name="FullShort" xml:space="preserve">
+    <value>En indstilling der gennemtvinger en fuld backup</value>
+  </data>
+  <data name="GpgencryptionLong" xml:space="preserve">
+    <value>Som standard vil Duplicati bruge AES algortimen til at kryptere backup data. Denne indstilling vil få Duplicati til at benytte GNU Privacy Guard istedet. GnuPG skal være installeret på maskinen for at denne kan fungere</value>
+  </data>
+  <data name="GpgencryptionShort" xml:space="preserve">
+    <value>Benyt GnuPG til kryptering</value>
+  </data>
+  <data name="IncludeLong" xml:space="preserve">
+    <value>Inkluder filer der passer til dette filter. Filteret er af typen "fil-globbing", ligesom kommandolinie parametre. Du kan bruge "*.txt" for at inkludere alle tekst filer.</value>
+  </data>
+  <data name="IncluderegexpLong" xml:space="preserve">
+    <value>Inkluder filer der matcher dette filter. Filtret er et regulært udtryk. Du kan angive "(.*)\.txt" for at inkludere alle tekst filer.</value>
+  </data>
+  <data name="IncluderegexpShort" xml:space="preserve">
+    <value>Inkluder filer via regulært udtryk</value>
+  </data>
+  <data name="IncludeShort" xml:space="preserve">
+    <value>Inkluder filer</value>
+  </data>
+  <data name="MaxdownloadprsecondLong" xml:space="preserve">
+    <value>Ved at sætte denne indstilling kan du begrænse hvor meget båndbredde Duplicati bruger under download. Hvis denne indstilling er sat kan backup prodceduren tage længere tid, men Duplicati vil være mindre belastende for systemet.</value>
+  </data>
+  <data name="MaxdownloadprsecondShort" xml:space="preserve">
+    <value>Maksimalt antal bytes downloaded pr. sekund</value>
+  </data>
+  <data name="MaxuploadprsecondLong" xml:space="preserve">
+    <value>Ved at sætte denne indstilling kan du begrænse hvor meget båndbredde Duplicati bruger under upload. Hvis denne indstilling er sat kan backup prodceduren tage længere tid, men Duplicati vil være mindre belastende for systemet.</value>
+  </data>
+  <data name="MaxuploadprsecondShort" xml:space="preserve">
+    <value>Maksimalt antal bytes uploaded pr. sekund</value>
+  </data>
+  <data name="NoencryptionLong" xml:space="preserve">
+    <value>Hvis du gemmer backup data på en lokal disk, og foretrækker at filerne er gemt uden kryptering kan du deaktivere kryptering med denne indstilling.</value>
+  </data>
+  <data name="NoencryptionShort" xml:space="preserve">
+    <value>Deaktiver kryptering</value>
+  </data>
+  <data name="NumberofretriesLong" xml:space="preserve">
+    <value>Hvis en upload eller download fejler vil Duplicati forsøge igen antal gange før der gives op. Dette bevirker at ustabile netværksforbindelser håndteres bedre.</value>
+  </data>
+  <data name="NumberofretriesShort" xml:space="preserve">
+    <value>Antal gange en transmission forsøges</value>
+  </data>
+  <data name="PassphraseLong" xml:space="preserve">
+    <value>Angiv et kodeord som Duplicati vil benytte til at kryptere backup data, for at gøre dem ulæselige uden koden. Denne indstilling kan også angives som miljøvariablen PASSPHRASE.</value>
+  </data>
+  <data name="PassphraseShort" xml:space="preserve">
+    <value>Kode anvendt til at kryptere backup data</value>
+  </data>
+  <data name="RestoretimeLong" xml:space="preserve">
+    <value>Som standard vil Duplicati gendanne filer fra den nyeste backup. Brug denne indstilling til at vælge en anden backup. Du kan anvende relative tider, f.eks. "-2M" for at gendanne fra en backup der er 2 måneder gammmel.</value>
+  </data>
+  <data name="RestoretimeShort" xml:space="preserve">
+    <value>Tidspunktet filer gendannes fra</value>
+  </data>
+  <data name="RetrydelayLong" xml:space="preserve">
+    <value>Efter en fejlet transmission vil Duplicati vente i en kort periode før der forsøges igen. Dette er brugbart hvis netværket af og til forsvinder under transmissioner.</value>
+  </data>
+  <data name="RetrydelayShort" xml:space="preserve">
+    <value>Tid der ventes mellem gentagne forsøg</value>
+  </data>
+  <data name="ShortfilenamesLong" xml:space="preserve">
+    <value>Hvis filsystemet ikke understøtter de lange filnavne som Duplicati anvender, kan denne indstilling anvendes for at skifte til et mere kompakt med format. Dette vil også skifte standard præfix til "dpl".</value>
+  </data>
+  <data name="ShortfilenamesShort" xml:space="preserve">
+    <value>Brug korte filnavne</value>
+  </data>
+  <data name="SignaturecachepathLong" xml:space="preserve">
+    <value>Hvis denne sti er angivet vil Duplicati gememe en kopi af alle signatur filer her, så gen-downloads kan forhindres.</value>
+  </data>
+  <data name="SignaturecachepathShort" xml:space="preserve">
+    <value>Sti til en mappe med signatur filer</value>
+  </data>
+  <data name="SignaturecontrolfilesLong" xml:space="preserve">
+    <value>Angiv filer der skal tilføjes til hver backup, adskildt med semikolon. Duplicati GUI programmet anvender denne indstilling til at gemme indstillingsdatabasen i en backup.</value>
+  </data>
+  <data name="SignaturecontrolfilesShort" xml:space="preserve">
+    <value>En liste med kontrolfiler der indlejres i en backup</value>
+  </data>
+  <data name="SkipfilehashchecksLong" xml:space="preserve">
+    <value>Hvis hash værdien for et backup sæt ikke passer, vil Duplicati nægte at anvende backup data. Brug denne indstilling for at tillade at Duplicati fortsætter alligvel.</value>
+  </data>
+  <data name="SkipfilehashchecksShort" xml:space="preserve">
+    <value>Angiv denne instilling for at deaktivere hash kontrol</value>
+  </data>
+  <data name="SkipfileslargerthanLong" xml:space="preserve">
+    <value>Denne indstilling muliggør ekskludering af filer der er større end den givne værdi. Benyt dette til at forhindre at backup sæt bliver ekstremt store.</value>
+  </data>
+  <data name="SkipfileslargerthanShort" xml:space="preserve">
+    <value>En grænse for filstørrelse for filer der tages backup af</value>
+  </data>
+  <data name="TempdirLong" xml:space="preserve">
+    <value>Duplicati vil anvende systemets standard mappe for midlertidige filer. Denne indstilling kan anvendes til at angive en anden midlertidig mappe.</value>
+  </data>
+  <data name="TempdirShort" xml:space="preserve">
+    <value>Mappe til midlertidige filer</value>
+  </data>
+  <data name="ThreadpriorityLong" xml:space="preserve">
+    <value>Angiver en anden tråd prioritet for processen. Benyt dette for at lade Duplicati være mere eller mindre CPU intensiv.</value>
+  </data>
+  <data name="ThreadpriorityShort" xml:space="preserve">
+    <value>Tråd prioritet</value>
+  </data>
+  <data name="TimeseparatorLong" xml:space="preserve">
+    <value>Som standard vil Duplicati bruge kolon (":") tegnet for at adskilde tidsfelter i filnavnet. På nogle systemer, særligt Windows, er dette tegn ikke tilladt. Brug denne indstilling til for at tillade et andet tegn.</value>
+  </data>
+  <data name="TimeseparatorShort" xml:space="preserve">
+    <value>Backup filnavn tidsseperator</value>
+  </data>
+  <data name="TotalsizeLong" xml:space="preserve">
+    <value>Denne indstilling begrænser den totale størrelse af en backup. Bemærk at hvis denne indstilling kan bevirke at en backup ikke indeholder alle filer, selv hvis der udføres en fuld backup.</value>
+  </data>
+  <data name="TotalsizeShort" xml:space="preserve">
+    <value>Antal bytes dannet i en backup</value>
+  </data>
+  <data name="VolsizeLong" xml:space="preserve">
+    <value>Denne indstilling kan skifte størrelsen på backup filer. Hvis destinationen har en begrænsning på størrelsen af en enkelt fil, kan denne indstilling tilpasses så denne grænse overholdes.</value>
+  </data>
+  <data name="VolsizeShort" xml:space="preserve">
+    <value>Størrelsesgrænse for backup data filer</value>
+  </data>
+  <data name="DisableStreamingLong" xml:space="preserve">
+    <value>Hvis denne indstilling aktiveres vil det ikke tillades at "stream" interfacet anvendes, hvilket betyder at overførsler ikke vil vise transmissionsstatus og at båndbredde begrænsninger ignoreres.</value>
+  </data>
+  <data name="DisableStreamingShort" xml:space="preserve">
+    <value>Deaktiverer brug at "stream" overførsel</value>
+  </data>
+  <data name="AllowfullremoveLong" xml:space="preserve">
+    <value>For at sikre data vil den sidste fulde backup aldrig blive slettet, selv hvis der angives "delete-all-but-n-full 0". Aktiver denne indstilling for at tillade at den sidste backup fjernes.</value>
+  </data>
+  <data name="AllowfullremoveShort" xml:space="preserve">
+    <value>Tillader fjernelse af alle backup data</value>
+  </data>
+  <data name="DontreadmanifestsLong" xml:space="preserve">
+    <value>Denne indstilling bevirker at indholdet af manifest filer ikke er læst. Dette betyder at hash værdier heller ikke kontrolleres. Benyt kun denne indstilling til katastrofe gendannelse.</value>
+  </data>
+  <data name="DontreadmanifestsShort" xml:space="preserve">
+    <value>En indstilling der deaktiverer manifest kontrol</value>
+  </data>
+  <data name="AllowsourcefolderchangeLong" xml:space="preserve">
+    <value>Denne indstilling kan deaktivere kontrol af om der anvendes samme kilde mapper. Denne indstilling anvendes til automatiserede tests og er IKKE beregnet til daglig brug. Aktiver ikke denne indstilling, medmindre du ved hvad du gør.</value>
+  </data>
+  <data name="AllowsourcefolderchangeShort" xml:space="preserve">
+    <value>Deaktiver kontrol af kildemapper</value>
+  </data>
+  <data name="FullifsourcefolderchangedLong" xml:space="preserve">
+    <value>Det er ikke tilladt at skifte kildemapper eller antallet af kildemapper. Hvis denne indstilling er aktiveret og kildemapperne er ændrede, vil backup'en blive til en fuld backup med de nye mapper. Hvis --allow-sourcefolder-change er sat vil en fuld backup kun blive udført hvis antallet af kildemapper er ændret</value>
+  </data>
+  <data name="FullifsourcefolderchangedShort" xml:space="preserve">
+    <value>Kør en fuld backup hvis kildemapperne er ændrede</value>
+  </data>
+  <data name="CompressionmoduleLong" xml:space="preserve">
+    <value>Duplicati understøtter dynamiske kompressionsmoduler. Brug denne indstilling til angive hvilket modul der skal anvendes til at komprimere data. Dette anvendes kun ved oprettelse af nye datasæt. Ved læsning af eksisterede fler benyttes filnavnet til at vælge kompressionsmodul.</value>
+  </data>
+  <data name="CompressionmoduleShort" xml:space="preserve">
+    <value>Angiv kompressionsmodul</value>
+  </data>
+  <data name="EncryptionmoduleLong" xml:space="preserve">
+    <value>Duplicati understøtter dynamiske krypteringsmoduler. Brug denne indstilling til angive hvilket modul der skal anvendes til at kryptere data. Dette anvendes kun ved oprettelse af nye datasæt. Ved læsning af eksisterede fler benyttes filnavnet til at vælge krypterinsmodul.</value>
+  </data>
+  <data name="EncryptionmoduleShort" xml:space="preserve">
+    <value>Angiv krypteringsmodul</value>
+  </data>
+  <data name="GpgencryptionDeprecated" xml:space="preserve">
+    <value>Benyt --encryption-module=gpg instedet</value>
+  </data>
+  <data name="DisablemoduleLong" xml:space="preserve">
+    <value>Angiv et eller modulnavne, adskildt med komma, for at deaktivere dem</value>
+  </data>
+  <data name="DisablemoduleShort" xml:space="preserve">
+    <value>Deaktiver et eller flere moduler</value>
+  </data>
+  <data name="EnablemoduleLong" xml:space="preserve">
+    <value>Angiv et eller modulnavne, adskildt med komma, for at aktivere dem</value>
+  </data>
+  <data name="EnablemoduleShort" xml:space="preserve">
+    <value>Aktiver et eller flere moduler</value>
+  </data>
+  <data name="SnapshotpolicyLong" xml:space="preserve">
+    <value>Denne indstilling kontrollerer brugen af snapshot, hvilket gør det muligt for Duplicati at tage backup af filer der er låst af andre programmer. Hvis denne sættes til "off" vil Duplicati ikke forsøge at oprette et snapshot. Indstillingen "auto" vil få Duplicati til at forsøge at oprette et snapshot, uden at vise en fejlbesked hvis det ikke lykkes. Hvis denne indstilling sættes til "on" vil Duplicati også forsøge at oprette et snapsnot, men skriver en fejlbesked hvis det ikke lykkes. Hvis denne indstilling sættes til "required" vil Duplicati standse backup'en hvis det ikke lykkes at oprette et snapshot. På Windows bruges der Shadow Copy Services (VSS) hvilket kræver Administrator rettigheder. På Linux anvendes der Logical Volume Management (LVM) og dette kræver root rettigheder.</value>
+  </data>
+  <data name="SnapshotpolicyShort" xml:space="preserve">
+    <value>Angiver brugen af disk snapshot</value>
+  </data>
+  <data name="AsynchronousuploadfolderLong" xml:space="preserve">
+    <value>De præ-gerenerede backup sæt placeres i den midlertidige mappe som standard. Denne indstilling kan angives for at anvende en anden mappe hvori backup sæt gemmes. På trods af navnet virker denne indstilling også for synkrone kørsler.</value>
+  </data>
+  <data name="AsynchronousuploadfolderShort" xml:space="preserve">
+    <value>Stien hvor backup sæt placeres indtil de er uploadet</value>
+  </data>
+  <data name="AsynchronousuploadlimitLong" xml:space="preserve">
+    <value>Når der dannes asynkrone upload vil Duplicati danne backup sæt der kan uploades. For at forhindre Duplicati i at danne for mange sæt, kan denne indstilling angives for at begrænse antallet af udestående uploads. Sæt denne til nul for at fjerne begrænsningen.</value>
+  </data>
+  <data name="AsynchronousuploadlimitShort" xml:space="preserve">
+    <value>Antallet af backup sæt der dannes forud</value>
+  </data>
+  <data name="DebugoutputLong" xml:space="preserve">
+    <value>Ved at aktivere denne indstilling vil nogle fejlbeskeder indeholde flere oplysninger, som kan hjælpe dig med at fejlfinde.</value>
+  </data>
+  <data name="DebugoutputShort" xml:space="preserve">
+    <value>Aktiver fejlfindingsoutput</value>
+  </data>
+  <data name="ExcludeemptyfoldersLong" xml:space="preserve">
+    <value>Ved at aktivere denne indstilling vil en mappe der ikke indeholder inkluderede filer blive udeladt</value>
+  </data>
+  <data name="ExcludeemptyfoldersShort" xml:space="preserve">
+    <value>Indstillinger for tommer mapper</value>
+  </data>
+  <data name="OldfilenamesDeprecated" xml:space="preserve">
+    <value>Denne indstilling bliver fjernet på et tidspunkt, men er inkluderet i tilfælde af at den er krævet for at løse et problem</value>
+  </data>
+  <data name="OldfilenamesLong" xml:space="preserve">
+    <value>Ved at aktivere denne indstilling vil filnavne der dannes af Duplicati indeholde en tidsseperator og en tidszone, hvilket ikke er kompatibelt med alle platforme</value>
+  </data>
+  <data name="OldfilenamesShort" xml:space="preserve">
+    <value>Benyt det gamle format til filnavne</value>
+  </data>
+  <data name="ShortfilenamesDeprecated" xml:space="preserve">
+    <value>Duplicati benytter nu et format til filnavne der virker på tværs af alle platforme, så denne indstilling bør ikke anvedes og vil blive fjernet på et tidspunkt</value>
+  </data>
+  <data name="TimeseparatorDeprecated" xml:space="preserve">
+    <value>Duplicati benytter ikke længere en tidsseperator i filnavne, så denne indstilling er ubrugelig</value>
+  </data>
+  <data name="LogfileLong" xml:space="preserve">
+    <value>Angiver navnet på en fil hvori der skrives intern lognings information</value>
+  </data>
+  <data name="LogfileShort" xml:space="preserve">
+    <value>Logføring af intern information</value>
+  </data>
+  <data name="LoglevelLong" xml:space="preserve">
+    <value>Angiver mængden af data der skrives til filen den angives af --log-file</value>
+  </data>
+  <data name="LoglevelShort" xml:space="preserve">
+    <value>Detaljeringsgrad for logføring</value>
+  </data>
+  <data name="DisableautocreatefolderLong" xml:space="preserve">
+    <value>Hvis Duplicati opdager at destinationsmappen mangler bliver den automatisk oprettet. Aktiver denne indstilling for at forhindre automatisk mappe oprettelse</value>
+  </data>
+  <data name="DisableautocreatefolderShort" xml:space="preserve">
+    <value>Dekativer automatisk mappe oprettelse</value>
+  </data>
+  <data name="VssexcludewritersShort" xml:space="preserve">
+    <value>En liste med GUID værdier for VSS skrivere der skal ekskluderes (kun til Windows)</value>
+  </data>
+  <data name="VssexcludewritersLong" xml:space="preserve">
+    <value>Brug denne indstilling til at ekskludere defekte skrivere fra et snapshot. Dette fungerer på samme måde som -wx indstillingen i værktøjet vshadow.exe, men der accepteres kun skriverens klasse GUID værdier og ikke komponent navne eller instans GUID værdier. Flere GUID værdier kan angives med et semikolon, og de fleste formater accepteres, både med og uden krølleparanteser.</value>
+  </data>
+  <data name="OpenfilepolicyShort" xml:space="preserve">
+    <value>Angiver hvordan åbne filer håndteres</value>
+  </data>
+  <data name="OpenfilepolicyLong" xml:space="preserve">
+    <value>Hvis Duplicati forsøger at læse en fil der er åben i et andet program, vil Duplicati som standard forsøge at læse data fra denne fil. Eftersom det er muligt at filen bliver overskrevet mens den bliver læst, kan backup'en indeholde en delvis fil. Benyt denne indstilling for at deaktivere dette, hvilket vil udelade ændrede filer fra backup'en. Hvis der anvendes et snapshot har denne indstilling ingen effekt.</value>
+  </data>
+  <data name="DisableusndiffcheckShort" xml:space="preserve">
+    <value>Deaktiverer USN baserede ændringslister</value>
+  </data>
+  <data name="DisableusndiffcheckLong" xml:space="preserve">
+    <value>Hvis USN er aktiveret vil USN værdierne bruges til at finde alle ændringer siden sidste backup. Brug denne indstilling for at deaktivere brugen af USN værdier, hvilket vil får Duplicati til at undersøge alle kildefiler. Denne indstilling er primært tiltænkt brug i forbindelse med test og bør ikke anvendes i produktion. Hvis USN ikke er aktiveret, har denne indstilling ingen effekt.</value>
+  </data>
+  <data name="UsnpolicyShort" xml:space="preserve">
+    <value>Angiv brug af NTFS Update Sequence Numbers</value>
+  </data>
+  <data name="UsnpolicyLong" xml:space="preserve">
+    <value>Denne indstilling kontrollerer brugen af NTFS USN værdier, hvilket gør det muligt for Duplicati at danne en list med filer og mapper meget hurtigere. Hvis denne indstilling er sat til "off" vil Duplicati ikke forsøge at bruge USN. Hvis denne er sat til "auto" vil Duplicati forsøge at bruge USN hvis det er muligt, men ignorere eventuelle fejl. Hvis der angives "on" vil Duplicati ligeledes forsøge at anvende USN og fortsætte ved en fejl, men vil skrive en fejlbesked. Hvis denne indstiling sættes til "required" vil Duplicati afbryde backup'en hvis der ikke kan aktiveres USN. Denne indstilling understøttes kun på Windows og kræver Administrator rettigheder.</value>
+  </data>
+  <data name="DisabletimetoleranceShort" xml:space="preserve">
+    <value>Deaktiver tidstolerance</value>
+  </data>
+  <data name="DisabletimetoleranceLong" xml:space="preserve">
+    <value>Når det afgøres om der skal dannes en fuld backup, eller om en gammel backup skal slettes, vil Duplicati justere tidspunkterne en smule, for at sikre at mindre afvigelser i tiderne ikke bevirker uventet opførsel. Hvis der dannes en fuld backup hver dag og denne kører f.eks. kl. 12:00:01 og igen kl. 12:00:00, er der ikke gået en hel dag, og der dannes derfor en trinvis backup. For at forhindre dette indsættes der en 1% tolerance (maks. 1 time). Benyt denne indstiling for at deaktivere tolerance og derved benytte præcis tidskontrol.</value>
+  </data>
+</root>
