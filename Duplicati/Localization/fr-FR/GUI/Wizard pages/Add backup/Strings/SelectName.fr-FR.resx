@@ -129,4 +129,7 @@
   <data name="PageTitle" xml:space="preserve">
     <value>Entrez un nom pour la tâche de sauvegarde</value>
   </data>
+  <data name="InvalidNameEnteredError" xml:space="preserve">
+    <value>Failed to validate the backup name: {0}</value>
+  </data>
 </root>

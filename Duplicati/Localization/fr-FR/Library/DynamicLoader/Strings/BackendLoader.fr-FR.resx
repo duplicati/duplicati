@@ -117,25 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Description" xml:space="preserve">
-    <value>Ce serveur permet de transférer des fichiers. Les formats autorisés sont "file://nom_d'hôte_/répertoire" ou "file://nom_d'utilisateur:mot_de_passe@nom_d'hôte/répertoire". Vous devez employer des chemins UNC (comme: "file://\\serveur\répertoire") ou des chemins locaux (comme: (win) "file://c:\repertoire", (linux) "file:///usr/pub/files")</value>
+  <data name="NoURLSuppliedError" xml:space="preserve">
+    <value>This instance was not created with an URL</value>
   </data>
-  <data name="DescriptionFTPPasswordLong" xml:space="preserve">
-    <value>Le mot de passe utilisé pour se connecter au serveur. Egalement accessible via la variable d'environment "FTP_PASSWORD".</value>
-  </data>
-  <data name="DescriptionFTPPasswordShort" xml:space="preserve">
-    <value>Mot de passe utilisé pour se connecter au serveur</value>
-  </data>
-  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
-    <value>Le nom d'utilisateur pour se connecter au serveur.  Egalement accessible via la variable d'environment "FTP_USERNAME".</value>
-  </data>
-  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
-    <value>Nom d'utilisateur pour se connecter au serveur</value>
-  </data>
-  <data name="DisplayName" xml:space="preserve">
-    <value>Basé sur des fichiers</value>
-  </data>
-  <data name="FolderMissingError" xml:space="preserve">
-    <value>The folder {0} does not exist</value>
+  <data name="UrlNotSupportedError" xml:space="preserve">
+    <value>The supplied url is not supported</value>
   </data>
 </root>

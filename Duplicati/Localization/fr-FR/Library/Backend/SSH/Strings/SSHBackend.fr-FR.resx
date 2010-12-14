@@ -1,2 +1,214 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<root><schema id="root" xmlns="http://www.w3.org/2001/XMLSchema"><import namespace="http://www.w3.org/XML/1998/namespace"></import><element name="root" NS2:IsDataSet="true" xmlns:NS2="urn:schemas-microsoft-com:xml-msdata"><complexType><choice maxOccurs="unbounded"><element name="metadata"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0"></element></sequence><attribute name="name" use="required" type="xsd:string"></attribute><attribute name="type" type="xsd:string"></attribute><attribute name="mimetype" type="xsd:string"></attribute><attribute ref="xml:space"></attribute></complexType></element><element name="assembly"><complexType><attribute name="alias" type="xsd:string"></attribute><attribute name="name" type="xsd:string"></attribute></complexType></element><element name="data"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element><element name="comment" type="xsd:string" minOccurs="0" NS2:Ordinal="2"></element></sequence><attribute name="name" type="xsd:string" use="required" NS2:Ordinal="1"></attribute><attribute name="type" type="xsd:string" NS2:Ordinal="3"></attribute><attribute name="mimetype" type="xsd:string" NS2:Ordinal="4"></attribute><attribute ref="xml:space"></attribute></complexType></element><element name="resheader"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element></sequence><attribute name="name" type="xsd:string" use="required"></attribute></complexType></element></choice></complexType></element></schema><resheader name="resmimetype"><value>text/microsoft-resx</value></resheader><resheader name="version"><value>2.0</value></resheader><resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><data name="AuthenticationError"><value>Nom d'utilisateur ou mot de passe incorrect, log: {0}</value></data><data name="CloseTimeoutError"><value>Délais d'attente dépassé lors de la fermeture de la session</value></data><data name="ConnectionTimeoutError"><value>Délais d'attente dépassé lors de la tentative de connexion, log: {0}</value></data><data name="CreateFolderError"><value>Impossible de créer le répertoire: {0}</value></data><data name="DebugDeleteFooter"><value>Suppression terminée</value></data><data name="DebugDeleteHeader"><value>Suppression démarrée</value></data><data name="DebugGetFooter"><value>Commande Get terminée</value></data><data name="DebugGetHeader"><value>Commande Get démarrée</value></data><data name="DebugListFooter"><value>Commande List terminée</value></data><data name="DebugListHeader"><value>Commande List démarrée</value></data><data name="DebugParseFailed"><value>Impossible de décoder la ligne: {0}</value></data><data name="DebugPutFooter"><value>Commande Put terminée</value></data><data name="DebugPutHeader"><value>Commande Put démarrée</value></data><data name="DeleteError"><value>Impossible de créer le fichier: {0}</value></data><data name="Description"><value>Permet le transfert de données sur un serveur basé sur SSH, utilisant du SFTP. Les formats autorisés sont "ssh://nom_d'hote/repertoire" ou "ssh://nom_d'utlilisateur:mot_de_passe@nom_d'hote/repertoire".</value></data><data name="DescriptionDebugToConsoleLong"><value>Pour communiquer en SSH, Duplicati utilise un programme externe qu peut être supprimé ou déplacé par inadvertance. Cela peu empêcher l'accès au serveur distant. Activer cette option permettra d'avoir des informations de débuggage concernant la connexion SSH, pour localiser un éventuel problème. Utilisé uniquement si l'option --use-sftp-application est activée.</value></data><data name="DescriptionDebugToConsoleShort"><value>Affiche les informations de débuggage dans la console</value></data><data name="DescriptionFTPPasswordLong"><value>Spécifie le mot de passe pour se connecter au serveur. Egalement accessible via la variable d'environnement "FTP_PASSWORD".</value></data><data name="DescriptionFTPPasswordShort"><value>Spécifie le mot de passe pour se connecter au serveur</value></data><data name="DescriptionFTPUsernameLong"><value>Spécifie le nom d'utilisateur pour se connecter au serveur. Egalement accessible via la variable d'environnement "FTP_USERNAME".</value></data><data name="DescriptionFTPUsernameShort"><value>Spécifie le nom d'utilisateur pour se connecter au serveur</value></data><data name="DescriptionSFTPCommandLong"><value>Chemin d'accès au module complémentaire "sftp". Uniquement utilisé si l'option --use-sftp-application est spécifiée.</value></data><data name="DescriptionSFTPCommandShort"><value>Chemin d'accès au module complémentaire "sftp"</value></data><data name="DescriptionSSHOptionsLong"><value>Fournissez ici la liste d'arguments complémentaire à passer au module externe SSH (sans modifications). Le chemin complet vers l'application SFTP. Seulement utilisé si l'option --use-sftp-application est employée.</value></data><data name="DescriptionSSHOptionsShort"><value>Option supplémentaires à l'appel du module SSH</value></data><data name="DescriptionTransferTimeoutLong"><value>Pour communiquer en SSH, Duplicati utilise un programme externe qui peut pour diverses raisons mettre du temps à répondre. Cette option permet de spécifier le temps d'attente maximum avant de considérer que le programme SSH est réellement bloqué définitivement et pas que de façon temporaire. La durée minimale possible est d’une minute, le maximum est d’une heure.</value></data><data name="DescriptionTransferTimeoutShort"><value>Configure le temps d'attente max. alloué pour le transfert de fichiers</value></data><data name="DescriptionUnmanagedLong"><value>Activez ce drapeau pour utiliser le mode sftpfrom, --sftp-command pour communiquer avec le serveur. Activer ce drapeau requiers également que --disable-streaming-transfers soit activé</value></data><data name="DescriptionUnmanagedShort"><value>Utilise un programme de sftp externe</value></data><data name="DisplayName"><value>Basé sur SSH</value></data><data name="DownloadTimeoutError"><value>Temps d'attente dépassé lors du téléchargement du fichier</value></data><data name="FolderNotFoundError"><value>Répertoire introuvable: {0}, log: {1}</value></data><data name="FolderNotFoundManagedError"><value>Impossible de changer le répertoire en {0}, message d'erreur: {1}</value></data><data name="FolderVerificationError"><value>Impossible de valider le répertoire distant: {0}</value></data><data name="HostNotAuthenticatedError"><value>L'hôte n'est pas authentifié, veillez vous connecter à l'hôte en utilisant SSH, et ensuite redémarrez Duplicati, log: {0}</value></data><data name="LaunchErrorLinux"><value>Impossible de démarrer l'application SSH ({0}). Assurez-vous que "expect" est installé. Message d'erreur: {1}</value></data><data name="LaunchErrorWindows"><value>Impossible de démarrer l'application SSH ({0}). Assurez-vous que "putty" est installé, et que vous avez défini le bon chemin d'accès. Message d'erreur: {1}</value></data><data name="PasswordMissingError"><value>Un mot de passe était demandé, mais aucun n'a été fourni</value></data><data name="StreamingNotSupportedError"><value>The système SSH distant ne supporte pas le streaming lorsque l'on utilise un SSH distant non supporté, si vous spécifiez --use-sftp-application, vous devez également spécifier --disable-streaming-transfers</value></data><data name="UnexpectedConnectionError"><value>Erreur inattendue: {0}</value></data><data name="UnexpectedExitResponseError"><value>Reçu une commande de fin inattendue</value></data><data name="UnexpectedResponseError"><value>N'a pas pu obtenir la réponse souhaitée à la commande: {0}</value></data><data name="UploadTimeoutError"><value>Délais d'attente dépassé lors du transfert du fichier</value></data><data name="UsernameMissingError"><value>Un nom d'utilisateur était demandé, mais aucun n'a été fourni</value></data></root>
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <schema id="root" xmlns="http://www.w3.org/2001/XMLSchema">
+    <import namespace="http://www.w3.org/XML/1998/namespace"></import>
+    <element name="root" NS2:IsDataSet="true" xmlns:NS2="urn:schemas-microsoft-com:xml-msdata">
+      <complexType>
+        <choice maxOccurs="unbounded">
+          <element name="metadata">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0"></element>
+              </sequence>
+              <attribute name="name" use="required" type="xsd:string"></attribute>
+              <attribute name="type" type="xsd:string"></attribute>
+              <attribute name="mimetype" type="xsd:string"></attribute>
+              <attribute ref="xml:space"></attribute>
+            </complexType>
+          </element>
+          <element name="assembly">
+            <complexType>
+              <attribute name="alias" type="xsd:string"></attribute>
+              <attribute name="name" type="xsd:string"></attribute>
+            </complexType>
+          </element>
+          <element name="data">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element>
+                <element name="comment" type="xsd:string" minOccurs="0" NS2:Ordinal="2"></element>
+              </sequence>
+              <attribute name="name" type="xsd:string" use="required" NS2:Ordinal="1"></attribute>
+              <attribute name="type" type="xsd:string" NS2:Ordinal="3"></attribute>
+              <attribute name="mimetype" type="xsd:string" NS2:Ordinal="4"></attribute>
+              <attribute ref="xml:space"></attribute>
+            </complexType>
+          </element>
+          <element name="resheader">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element>
+              </sequence>
+              <attribute name="name" type="xsd:string" use="required"></attribute>
+            </complexType>
+          </element>
+        </choice>
+      </complexType>
+    </element>
+  </schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AuthenticationError">
+    <value>Nom d'utilisateur ou mot de passe incorrect, log: {0}</value>
+  </data>
+  <data name="CloseTimeoutError">
+    <value>Délais d'attente dépassé lors de la fermeture de la session</value>
+  </data>
+  <data name="ConnectionTimeoutError">
+    <value>Délais d'attente dépassé lors de la tentative de connexion, log: {0}</value>
+  </data>
+  <data name="CreateFolderError">
+    <value>Impossible de créer le répertoire: {0}</value>
+  </data>
+  <data name="DebugDeleteFooter">
+    <value>Suppression terminée</value>
+  </data>
+  <data name="DebugDeleteHeader">
+    <value>Suppression démarrée</value>
+  </data>
+  <data name="DebugGetFooter">
+    <value>Commande Get terminée</value>
+  </data>
+  <data name="DebugGetHeader">
+    <value>Commande Get démarrée</value>
+  </data>
+  <data name="DebugListFooter">
+    <value>Commande List terminée</value>
+  </data>
+  <data name="DebugListHeader">
+    <value>Commande List démarrée</value>
+  </data>
+  <data name="DebugParseFailed">
+    <value>Impossible de décoder la ligne: {0}</value>
+  </data>
+  <data name="DebugPutFooter">
+    <value>Commande Put terminée</value>
+  </data>
+  <data name="DebugPutHeader">
+    <value>Commande Put démarrée</value>
+  </data>
+  <data name="DeleteError">
+    <value>Impossible de créer le fichier: {0}</value>
+  </data>
+  <data name="Description">
+    <value>Permet le transfert de données sur un serveur basé sur SSH, utilisant du SFTP. Les formats autorisés sont "ssh://nom_d'hote/repertoire" ou "ssh://nom_d'utlilisateur:mot_de_passe@nom_d'hote/repertoire".</value>
+  </data>
+  <data name="DescriptionDebugToConsoleLong">
+    <value>Pour communiquer en SSH, Duplicati utilise un programme externe qu peut être supprimé ou déplacé par inadvertance. Cela peu empêcher l'accès au serveur distant. Activer cette option permettra d'avoir des informations de débuggage concernant la connexion SSH, pour localiser un éventuel problème. Utilisé uniquement si l'option --use-sftp-application est activée.</value>
+  </data>
+  <data name="DescriptionDebugToConsoleShort">
+    <value>Affiche les informations de débuggage dans la console</value>
+  </data>
+  <data name="DescriptionFTPPasswordLong">
+    <value>Spécifie le mot de passe pour se connecter au serveur. Egalement accessible via la variable d'environnement "FTP_PASSWORD".</value>
+  </data>
+  <data name="DescriptionFTPPasswordShort">
+    <value>Spécifie le mot de passe pour se connecter au serveur</value>
+  </data>
+  <data name="DescriptionFTPUsernameLong">
+    <value>Spécifie le nom d'utilisateur pour se connecter au serveur. Egalement accessible via la variable d'environnement "FTP_USERNAME".</value>
+  </data>
+  <data name="DescriptionFTPUsernameShort">
+    <value>Spécifie le nom d'utilisateur pour se connecter au serveur</value>
+  </data>
+  <data name="DescriptionSFTPCommandLong">
+    <value>Chemin d'accès au module complémentaire "sftp". Uniquement utilisé si l'option --use-sftp-application est spécifiée.</value>
+  </data>
+  <data name="DescriptionSFTPCommandShort">
+    <value>Chemin d'accès au module complémentaire "sftp"</value>
+  </data>
+  <data name="DescriptionSSHOptionsLong">
+    <value>Fournissez ici la liste d'arguments complémentaire à passer au module externe SSH (sans modifications). Le chemin complet vers l'application SFTP. Seulement utilisé si l'option --use-sftp-application est employée.</value>
+  </data>
+  <data name="DescriptionSSHOptionsShort">
+    <value>Option supplémentaires à l'appel du module SSH</value>
+  </data>
+  <data name="DescriptionTransferTimeoutLong">
+    <value>Pour communiquer en SSH, Duplicati utilise un programme externe qui peut pour diverses raisons mettre du temps à répondre. Cette option permet de spécifier le temps d'attente maximum avant de considérer que le programme SSH est réellement bloqué définitivement et pas que de façon temporaire. La durée minimale possible est d’une minute, le maximum est d’une heure.</value>
+  </data>
+  <data name="DescriptionTransferTimeoutShort">
+    <value>Configure le temps d'attente max. alloué pour le transfert de fichiers</value>
+  </data>
+  <data name="DescriptionUnmanagedLong">
+    <value>Activez ce drapeau pour utiliser le mode sftpfrom, --sftp-command pour communiquer avec le serveur. Activer ce drapeau requiers également que --disable-streaming-transfers soit activé</value>
+  </data>
+  <data name="DescriptionUnmanagedShort">
+    <value>Utilise un programme de sftp externe</value>
+  </data>
+  <data name="DisplayName">
+    <value>Basé sur SSH</value>
+  </data>
+  <data name="DownloadTimeoutError">
+    <value>Temps d'attente dépassé lors du téléchargement du fichier</value>
+  </data>
+  <data name="FolderNotFoundError">
+    <value>Répertoire introuvable: {0}, log: {1}</value>
+  </data>
+  <data name="FolderNotFoundManagedError">
+    <value>Impossible de changer le répertoire en {0}, message d'erreur: {1}</value>
+  </data>
+  <data name="FolderVerificationError">
+    <value>Impossible de valider le répertoire distant: {0}</value>
+  </data>
+  <data name="HostNotAuthenticatedError">
+    <value>L'hôte n'est pas authentifié, veillez vous connecter à l'hôte en utilisant SSH, et ensuite redémarrez Duplicati, log: {0}</value>
+  </data>
+  <data name="LaunchErrorLinux">
+    <value>Impossible de démarrer l'application SSH ({0}). Assurez-vous que "expect" est installé. Message d'erreur: {1}</value>
+  </data>
+  <data name="LaunchErrorWindows">
+    <value>Impossible de démarrer l'application SSH ({0}). Assurez-vous que "putty" est installé, et que vous avez défini le bon chemin d'accès. Message d'erreur: {1}</value>
+  </data>
+  <data name="PasswordMissingError">
+    <value>Un mot de passe était demandé, mais aucun n'a été fourni</value>
+  </data>
+  <data name="StreamingNotSupportedError">
+    <value>The système SSH distant ne supporte pas le streaming lorsque l'on utilise un SSH distant non supporté, si vous spécifiez --use-sftp-application, vous devez également spécifier --disable-streaming-transfers</value>
+  </data>
+  <data name="UnexpectedConnectionError">
+    <value>Erreur inattendue: {0}</value>
+  </data>
+  <data name="UnexpectedExitResponseError">
+    <value>Reçu une commande de fin inattendue</value>
+  </data>
+  <data name="UnexpectedResponseError">
+    <value>N'a pas pu obtenir la réponse souhaitée à la commande: {0}</value>
+  </data>
+  <data name="UploadTimeoutError">
+    <value>Délais d'attente dépassé lors du transfert du fichier</value>
+  </data>
+  <data name="UsernameMissingError">
+    <value>Un nom d'utilisateur était demandé, mais aucun n'a été fourni</value>
+  </data>
+  <data name="UnsupportedKeyfileEncryptionError" xml:space="preserve">
+    <value>Unsupported encryption format for OpenSSH private key, must be 3des-cbc (DES-EDE3-CBC).
+Please include this information in a bug report:
+{0}</value>
+  </data>
+  <data name="KeyfileParseError" xml:space="preserve">
+    <value>Unable to parse content of the file. Please include the following information in a bug report (you may omit any key data present):
+{0}</value>
+  </data>
+  <data name="KeyfileNotFoundError" xml:space="preserve">
+    <value>The supplied keyfile was not found: {0}</value>
+  </data>
+  <data name="IncorrectFileHeaderError" xml:space="preserve">
+    <value>File must have the OpenSSH private key header, eg: ---- BEGIN RSA PRIVATE KEY ----</value>
+  </data>
+  <data name="DescriptionSshkeyfileShort" xml:space="preserve">
+    <value>Uses a SSH private key to authenticate</value>
+  </data>
+  <data name="DescriptionSshkeyfileLong" xml:space="preserve">
+    <value>Points to a valid OpenSSH keyfile. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client.</value>
+  </data>
+</root>

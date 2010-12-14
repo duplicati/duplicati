@@ -1,2 +1,159 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<root><schema id="root" xmlns="http://www.w3.org/2001/XMLSchema"><import namespace="http://www.w3.org/XML/1998/namespace"></import><element name="root" NS2:IsDataSet="true" xmlns:NS2="urn:schemas-microsoft-com:xml-msdata"><complexType><choice maxOccurs="unbounded"><element name="metadata"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0"></element></sequence><attribute name="name" use="required" type="xsd:string"></attribute><attribute name="type" type="xsd:string"></attribute><attribute name="mimetype" type="xsd:string"></attribute><attribute ref="xml:space"></attribute></complexType></element><element name="assembly"><complexType><attribute name="alias" type="xsd:string"></attribute><attribute name="name" type="xsd:string"></attribute></complexType></element><element name="data"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element><element name="comment" type="xsd:string" minOccurs="0" NS2:Ordinal="2"></element></sequence><attribute name="name" type="xsd:string" use="required" NS2:Ordinal="1"></attribute><attribute name="type" type="xsd:string" NS2:Ordinal="3"></attribute><attribute name="mimetype" type="xsd:string" NS2:Ordinal="4"></attribute><attribute ref="xml:space"></attribute></complexType></element><element name="resheader"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element></sequence><attribute name="name" type="xsd:string" use="required"></attribute></complexType></element></choice></complexType></element></schema><resheader name="resmimetype"><value>text/microsoft-resx</value></resheader><resheader name="version"><value>2.0</value></resheader><resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><data name="AddedFoldersHeader">     <value>Répertoires ajoutés</value>   </data><data name="CollectionStatusHeader">     <value>Trouvé {0} chaines de sauvegardes dans le répertoire distant  Type\tTime\t\t\tVolumes\tSize</value>   </data><data name="CollectionStatusLineFull">     <value>Full\t{0}\t{1}\t{2}</value>   </data><data name="CollectionStatusLineInc">     <value> Inc\t{0}\t{1}\t{2}</value>   </data><data name="ControlFilesHeader">     <value>Fichiers de contrôle</value>   </data><data name="DeletedFilesHeader">     <value>Fichiers supprimés</value>   </data><data name="DeletedFoldersHeader">     <value>Répertoires supprimés</value>   </data><data name="DuplicatiOptionsHeader">     <value>Options de Duplicati:</value>   </data><assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"></assembly><data name="ExampleLinux" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>..\Resources\ExampleLinux.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value></data><data name="ExampleWindows" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>..\Resources\ExampleWindows.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value></data><data name="GenericModulesHeader">     <value>Modules standards supportés:</value>   </data><data name="IntegerParseError">     <value>Impossible de convertir "{0}" en un nombre</value>   </data><data name="InternalOptionUsedError">     <value>L'option --{0} à été spécifiée, mais celle-ci est réservée à un usage interne et ne doit pas être spécifiée en ligne de commande</value>   </data><data name="ModifiedFilesHeader">     <value>Fichiers modifiés</value>   </data><data name="ModuleIsLoadedAutomatically">     <value>Le module est automatiquement chargé, utilisez --disable-module pour empècher ca</value>   </data><data name="ModuleIsNotLoadedAutomatically">     <value>Le module n'est pas automatiquement chargé, utilisez --enable-module pour le charger</value>   </data><data name="NewFilesHeader">     <value>Nouveau fichiers</value>   </data><data name="NewOrModifiedFilesHeader">     <value>Nouveau fichiers/modifiés</value>   </data><data name="String1">     <value></value>     <comment>There is a space to the left, which makes the output look nicer</comment>   </data><data name="SupportedBackendsHeader">     <value>Destinations supportées:</value>   </data><data name="SupportedCompressionModulesHeader">     <value>Modules de compression supportés:</value>   </data><data name="SupportedEncryptionModulesHeader">     <value>Modules de cryptages supportés:</value>   </data><data name="SupportedOptionsHeader">     <value>Options supportées:</value>   </data><data name="TimeParseError">     <value>Impossible de convertir "{0}" en une période temporelle: {1}</value>   </data><data name="UnhandledException">     <value>Une erreur est apparue: {0}</value>   </data><data name="UnhandledInnerException">     <value>Le message interne est: {0}</value>   </data><data name="Usage" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>..\Resources\Usage.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value></data><data name="WrongNumberOfArgumentsError">     <value>Nombre d'arguments incorrects</value>   </data></root>
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <schema id="root" xmlns="http://www.w3.org/2001/XMLSchema">
+    <import namespace="http://www.w3.org/XML/1998/namespace"></import>
+    <element name="root" NS2:IsDataSet="true" xmlns:NS2="urn:schemas-microsoft-com:xml-msdata">
+      <complexType>
+        <choice maxOccurs="unbounded">
+          <element name="metadata">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0"></element>
+              </sequence>
+              <attribute name="name" use="required" type="xsd:string"></attribute>
+              <attribute name="type" type="xsd:string"></attribute>
+              <attribute name="mimetype" type="xsd:string"></attribute>
+              <attribute ref="xml:space"></attribute>
+            </complexType>
+          </element>
+          <element name="assembly">
+            <complexType>
+              <attribute name="alias" type="xsd:string"></attribute>
+              <attribute name="name" type="xsd:string"></attribute>
+            </complexType>
+          </element>
+          <element name="data">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element>
+                <element name="comment" type="xsd:string" minOccurs="0" NS2:Ordinal="2"></element>
+              </sequence>
+              <attribute name="name" type="xsd:string" use="required" NS2:Ordinal="1"></attribute>
+              <attribute name="type" type="xsd:string" NS2:Ordinal="3"></attribute>
+              <attribute name="mimetype" type="xsd:string" NS2:Ordinal="4"></attribute>
+              <attribute ref="xml:space"></attribute>
+            </complexType>
+          </element>
+          <element name="resheader">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element>
+              </sequence>
+              <attribute name="name" type="xsd:string" use="required"></attribute>
+            </complexType>
+          </element>
+        </choice>
+      </complexType>
+    </element>
+  </schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddedFoldersHeader">
+    <value>Répertoires ajoutés</value>
+  </data>
+  <data name="CollectionStatusHeader">
+    <value>Trouvé {0} chaines de sauvegardes dans le répertoire distant  Type\tTime\t\t\tVolumes\tSize</value>
+  </data>
+  <data name="CollectionStatusLineFull">
+    <value>Full\t{0}\t{1}\t{2}</value>
+  </data>
+  <data name="CollectionStatusLineInc">
+    <value> Inc\t{0}\t{1}\t{2}</value>
+  </data>
+  <data name="ControlFilesHeader">
+    <value>Fichiers de contrôle</value>
+  </data>
+  <data name="DeletedFilesHeader">
+    <value>Fichiers supprimés</value>
+  </data>
+  <data name="DeletedFoldersHeader">
+    <value>Répertoires supprimés</value>
+  </data>
+  <data name="DuplicatiOptionsHeader">
+    <value>Options de Duplicati:</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"></assembly>
+  <data name="ExampleLinux" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExampleLinux.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="ExampleWindows" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExampleWindows.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="GenericModulesHeader">
+    <value>Modules standards supportés:</value>
+  </data>
+  <data name="IntegerParseError">
+    <value>Impossible de convertir "{0}" en un nombre</value>
+  </data>
+  <data name="InternalOptionUsedError">
+    <value>L'option --{0} à été spécifiée, mais celle-ci est réservée à un usage interne et ne doit pas être spécifiée en ligne de commande</value>
+  </data>
+  <data name="ModifiedFilesHeader">
+    <value>Fichiers modifiés</value>
+  </data>
+  <data name="ModuleIsLoadedAutomatically">
+    <value>Le module est automatiquement chargé, utilisez --disable-module pour empècher ca</value>
+  </data>
+  <data name="ModuleIsNotLoadedAutomatically">
+    <value>Le module n'est pas automatiquement chargé, utilisez --enable-module pour le charger</value>
+  </data>
+  <data name="NewFilesHeader">
+    <value>Nouveau fichiers</value>
+  </data>
+  <data name="NewOrModifiedFilesHeader">
+    <value>Nouveau fichiers/modifiés</value>
+  </data>
+  <data name="String1">
+    <value></value>
+    <comment>There is a space to the left, which makes the output look nicer</comment>
+  </data>
+  <data name="SupportedBackendsHeader">
+    <value>Destinations supportées:</value>
+  </data>
+  <data name="SupportedCompressionModulesHeader">
+    <value>Modules de compression supportés:</value>
+  </data>
+  <data name="SupportedEncryptionModulesHeader">
+    <value>Modules de cryptages supportés:</value>
+  </data>
+  <data name="SupportedOptionsHeader">
+    <value>Options supportées:</value>
+  </data>
+  <data name="TimeParseError">
+    <value>Impossible de convertir "{0}" en une période temporelle: {1}</value>
+  </data>
+  <data name="UnhandledException">
+    <value>Une erreur est apparue: {0}</value>
+  </data>
+  <data name="UnhandledInnerException">
+    <value>Le message interne est: {0}</value>
+  </data>
+  <data name="Usage" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Usage.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="WrongNumberOfArgumentsError">
+    <value>Nombre d'arguments incorrects</value>
+  </data>
+  <data name="FolderCreatedMessage" xml:space="preserve">
+    <value>The folder {0} was created</value>
+  </data>
+  <data name="FindLastVersionHeader" xml:space="preserve">
+    <value>Backuptime\t\tFilename</value>
+  </data>
+  <data name="FindLastVersionEntry" xml:space="preserve">
+    <value>{0}\t{1}</value>
+  </data>
+  <data name="FileEntryNotFound" xml:space="preserve">
+    <value>&lt; not found &gt;</value>
+  </data>
+</root>

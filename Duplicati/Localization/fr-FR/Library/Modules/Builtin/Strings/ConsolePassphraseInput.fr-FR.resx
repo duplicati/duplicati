@@ -117,25 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ConfirmPassphrasePrompt" xml:space="preserve">
+    <value>Confirm passphrase</value>
+  </data>
   <data name="Description" xml:space="preserve">
-    <value>Ce serveur permet de transférer des fichiers. Les formats autorisés sont "file://nom_d'hôte_/répertoire" ou "file://nom_d'utilisateur:mot_de_passe@nom_d'hôte/répertoire". Vous devez employer des chemins UNC (comme: "file://\\serveur\répertoire") ou des chemins locaux (comme: (win) "file://c:\repertoire", (linux) "file:///usr/pub/files")</value>
+    <value>This module will ask the user for a encryption password on the commandline unless encryption is disabled or the password is supplied by other means</value>
   </data>
-  <data name="DescriptionFTPPasswordLong" xml:space="preserve">
-    <value>Le mot de passe utilisé pour se connecter au serveur. Egalement accessible via la variable d'environment "FTP_PASSWORD".</value>
+  <data name="Displayname" xml:space="preserve">
+    <value>Password prompt</value>
   </data>
-  <data name="DescriptionFTPPasswordShort" xml:space="preserve">
-    <value>Mot de passe utilisé pour se connecter au serveur</value>
+  <data name="EmptyPassphraseError" xml:space="preserve">
+    <value>Empty passphrases are not allowed</value>
   </data>
-  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
-    <value>Le nom d'utilisateur pour se connecter au serveur.  Egalement accessible via la variable d'environment "FTP_USERNAME".</value>
+  <data name="EnterPassphrasePrompt" xml:space="preserve">
+    <value>Enter passphrase</value>
   </data>
-  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
-    <value>Nom d'utilisateur pour se connecter au serveur</value>
-  </data>
-  <data name="DisplayName" xml:space="preserve">
-    <value>Basé sur des fichiers</value>
-  </data>
-  <data name="FolderMissingError" xml:space="preserve">
-    <value>The folder {0} does not exist</value>
+  <data name="PassphraseMismatchError" xml:space="preserve">
+    <value>The passphrases do not match</value>
   </data>
 </root>

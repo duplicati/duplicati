@@ -117,25 +117,32 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Description" xml:space="preserve">
-    <value>Ce serveur permet de transférer des fichiers. Les formats autorisés sont "file://nom_d'hôte_/répertoire" ou "file://nom_d'utilisateur:mot_de_passe@nom_d'hôte/répertoire". Vous devez employer des chemins UNC (comme: "file://\\serveur\répertoire") ou des chemins locaux (comme: (win) "file://c:\repertoire", (linux) "file:///usr/pub/files")</value>
+  <data name="ApproveCertificateHashQuestion" xml:space="preserve">
+    <value>The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?</value>
   </data>
-  <data name="DescriptionFTPPasswordLong" xml:space="preserve">
-    <value>Le mot de passe utilisé pour se connecter au serveur. Egalement accessible via la variable d'environment "FTP_PASSWORD".</value>
+  <data name="CreateMissingFolderQuestion" xml:space="preserve">
+    <value>The folder does not exist, do you want to create it?</value>
   </data>
-  <data name="DescriptionFTPPasswordShort" xml:space="preserve">
-    <value>Mot de passe utilisé pour se connecter au serveur</value>
+  <data name="EmptyFolderPathError" xml:space="preserve">
+    <value>You must enter the name of the folder where the data should be stored</value>
   </data>
-  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
-    <value>Le nom d'utilisateur pour se connecter au serveur.  Egalement accessible via la variable d'environment "FTP_USERNAME".</value>
+  <data name="EmptyFolderPathWarning" xml:space="preserve">
+    <value>You have not entered a folder, this will store all files in the root directory of the server.
+Do you want to continue without a folder path?</value>
   </data>
-  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
-    <value>Nom d'utilisateur pour se connecter au serveur</value>
+  <data name="EmptyHashError" xml:space="preserve">
+    <value>You have not entered a hash string</value>
   </data>
-  <data name="DisplayName" xml:space="preserve">
-    <value>Basé sur des fichiers</value>
+  <data name="InvalidFolderPathError" xml:space="preserve">
+    <value>The folder path is invalid, it must start with "{0}"</value>
   </data>
-  <data name="FolderMissingError" xml:space="preserve">
-    <value>The folder {0} does not exist</value>
+  <data name="InvalidHashError" xml:space="preserve">
+    <value>The hash string is not valid, it must be of even length and only contain hex chars (0-9 and a-f)</value>
+  </data>
+  <data name="PageDescription" xml:space="preserve">
+    <value>On this page you can select where to store the backup data.</value>
+  </data>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Backup storage options</value>
   </data>
 </root>

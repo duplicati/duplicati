@@ -118,24 +118,39 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Description" xml:space="preserve">
-    <value>Ce serveur permet de transférer des fichiers. Les formats autorisés sont "file://nom_d'hôte_/répertoire" ou "file://nom_d'utilisateur:mot_de_passe@nom_d'hôte/répertoire". Vous devez employer des chemins UNC (comme: "file://\\serveur\répertoire") ou des chemins locaux (comme: (win) "file://c:\repertoire", (linux) "file:///usr/pub/files")</value>
+    <value>This backend can read and write data to a Tahoe-LAFS based backend. Allowed format is "tahoe://hostname:port/uri/$DIRCAP".</value>
   </data>
-  <data name="DescriptionFTPPasswordLong" xml:space="preserve">
-    <value>Le mot de passe utilisé pour se connecter au serveur. Egalement accessible via la variable d'environment "FTP_PASSWORD".</value>
+  <data name="DescriptionAcceptAnyCertificateLong" xml:space="preserve">
+    <value>Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible.</value>
   </data>
-  <data name="DescriptionFTPPasswordShort" xml:space="preserve">
-    <value>Mot de passe utilisé pour se connecter au serveur</value>
+  <data name="DescriptionAcceptAnyCertificateShort" xml:space="preserve">
+    <value>Accept any server certificate</value>
   </data>
-  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
-    <value>Le nom d'utilisateur pour se connecter au serveur.  Egalement accessible via la variable d'environment "FTP_USERNAME".</value>
+  <data name="DescriptionAcceptHashLong" xml:space="preserve">
+    <value>If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces.</value>
   </data>
-  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
-    <value>Nom d'utilisateur pour se connecter au serveur</value>
+  <data name="DescriptionAcceptHashShort" xml:space="preserve">
+    <value>Optionally accept a known SSL certificate</value>
   </data>
-  <data name="DisplayName" xml:space="preserve">
-    <value>Basé sur des fichiers</value>
+  <data name="DescriptionUseSSLLong" xml:space="preserve">
+    <value>Use this flag to communicate using Secure Socket Layer (SSL) over http (https).</value>
   </data>
-  <data name="FolderMissingError" xml:space="preserve">
-    <value>The folder {0} does not exist</value>
+  <data name="DescriptionUseSSLShort" xml:space="preserve">
+    <value>Instructs Duplicati to use an SSL (https) connection</value>
+  </data>
+  <data name="Displayname" xml:space="preserve">
+    <value>Tahoe-LAFS based</value>
+  </data>
+  <data name="MissingFolderError" xml:space="preserve">
+    <value>The folder {0} was not found, message: {1}</value>
+  </data>
+  <data name="UnexpectedJsonFragmentType" xml:space="preserve">
+    <value>Found the Json fragment {0} but expected {1}</value>
+  </data>
+  <data name="UnrecognizedUriError" xml:space="preserve">
+    <value>Unsupported URL format, must start with "/uri/URI:DIR2:"</value>
+  </data>
+  <data name="UriHasQueryError" xml:space="preserve">
+    <value>The supplied URL contains a query, which is not allowed</value>
   </data>
 </root>
