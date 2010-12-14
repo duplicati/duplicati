@@ -91,8 +91,21 @@
       </Feature>
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
+    
     <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
       <ComponentRef Id="StartupMenuItem"/>
+    </Feature>
+
+    <Feature Id="LanguageFeature" Title="Duplicati translations" Level="1" Description="Installs user interface translations for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
+      <Feature Id="da_DK_LanguageFeature" Title="Danish translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Danish (da-DK)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
+        <ComponentGroupRef Id="DUPLICATI_LANG_da_DK" />
+      </Feature>
+      <Feature Id="pt_BR_LanguageFeature" Title="Portugese Brazilian translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Portugese Brazilian (pt-BR)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
+        <ComponentGroupRef Id="DUPLICATI_LANG_pt_BR" />
+      </Feature>
+      <Feature Id="fr_FR_LanguageFeature" Title="French translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in French (fr-FR)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
+        <ComponentGroupRef Id="DUPLICATI_LANG_fr_FR" />
+      </Feature>
     </Feature>
 
     <!-- Launch duplicati setup -->
