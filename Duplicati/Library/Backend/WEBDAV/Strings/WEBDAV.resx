@@ -121,7 +121,7 @@
     <value>Supports connections to a WEBDAV enabled web server, using the HTTP protocol. Allowed formats are "webdav://hostname/folder" or "webdav://username:password@hostname/folder".</value>
   </data>
   <data name="DescriptionForceDigestLong" xml:space="preserve">
-    <value>Using the HTTP Digest authentication method allows the user to authenticate with the server, without sending the password in clear. However, a man-in-the-middle attack is easy, because the HTTP protocol specifies a fallback to Basic authentication, which will make the client send the password to the attacker. Using this flag, the client doest not accept this, and always uses Digest authentication or fails to connect.</value>
+    <value>Using the HTTP Digest authentication method allows the user to authenticate with the server, without sending the password in clear. However, a man-in-the-middle attack is easy, because the HTTP protocol specifies a fallback to Basic authentication, which will make the client send the password to the attacker. Using this flag, the client does not accept this, and always uses Digest authentication or fails to connect.</value>
   </data>
   <data name="DescriptionForceDigestShort" xml:space="preserve">
     <value>Force the use of the HTTP Digest authentication method</value>
