@@ -147,4 +147,30 @@
   <data name="DescriptionFTPUsernameLong" xml:space="preserve">
     <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
   </data>
+  <data name="DescriptionUseSSLShort" xml:space="preserve">
+    <value>Instructs Duplicati to use an SSL (https) connection</value>
+  </data>
+  <data name="DescriptionUseSSLLong" xml:space="preserve">
+    <value>Use this flag to communicate using Secure Socket Layer (SSL) over http (https).</value>
+  </data>
+  <data name="DescriptionAcceptHashShort" xml:space="preserve">
+    <value>Optionally accept a known SSL certificate</value>
+  </data>
+  <data name="DescriptionAcceptHashLong" xml:space="preserve">
+    <value>If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces.</value>
+  </data>
+  <data name="DescriptionAcceptAnyCertificateShort" xml:space="preserve">
+    <value>Accept any server certificate</value>
+  </data>
+  <data name="DescriptionAcceptAnyCertificateLong" xml:space="preserve">
+    <value>Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible.</value>
+  </data>
+  <data name="SeenThenNotFoundError" xml:space="preserve">
+    <value>When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.
+This can be because the file is deleted or unavailable, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.
+Error message: {4}</value>
+  </data>
+  <data name="MissingFolderError" xml:space="preserve">
+    <value>The folder {0} was not found, message: {1}</value>
+  </data>
 </root>

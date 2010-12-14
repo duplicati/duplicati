@@ -135,4 +135,7 @@ Backup: {0}
 Data: {1}
 Pasta: {2}</value>
   </data>
+  <data name="RestoreFailedError" xml:space="preserve">
+    <value>The restore operation failed: {0}</value>
+  </data>
 </root>

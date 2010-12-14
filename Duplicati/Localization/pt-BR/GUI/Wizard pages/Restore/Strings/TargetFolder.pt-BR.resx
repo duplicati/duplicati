@@ -142,4 +142,18 @@
     <value>Um erro ocorreu ao verfificar a pasta de destino. Tenha certeza de que ela existe e está acessível.
 Mensagem de erro: {0}</value>
   </data>
+  <data name="FolderValidationError" xml:space="preserve">
+    <value>An error occured while verifying the destination {0}.
+Please make sure it exists and is accessible.
+Error message: {1}</value>
+  </data>
+  <data name="FolderPathIsRelativeError" xml:space="preserve">
+    <value>You must enter the full path of the folder: {0}</value>
+  </data>
+  <data name="FolderIsNotEmptyWarning" xml:space="preserve">
+    <value>The folder {0} is not empty. Do you want to use it anyway?</value>
+  </data>
+  <data name="CreateNewFolderWarning" xml:space="preserve">
+    <value>The folder {0} does not exist. Do you want to create it?</value>
+  </data>
 </root>

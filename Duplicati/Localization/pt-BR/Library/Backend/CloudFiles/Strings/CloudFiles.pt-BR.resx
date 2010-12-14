@@ -159,4 +159,10 @@
   <data name="DescriptionFTPUsernameLong" xml:space="preserve">
     <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
   </data>
+  <data name="FileUploadError" xml:space="preserve">
+    <value>Failed to upload file</value>
+  </data>
+  <data name="FileDeleteError" xml:space="preserve">
+    <value>Failed to delete file</value>
+  </data>
 </root>

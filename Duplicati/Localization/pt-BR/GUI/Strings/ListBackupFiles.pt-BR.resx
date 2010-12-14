@@ -145,4 +145,16 @@
     <value>Pasta existente</value>
     <comment>A mensagem exibida para uma pasta existente</comment>
   </data>
+  <data name="TooltipModifiedFile" xml:space="preserve">
+    <value>Modified file</value>
+    <comment>A tooltip displayed for a modified file</comment>
+  </data>
+  <data name="TooltipIncompleteFile" xml:space="preserve">
+    <value>Incomplete file</value>
+    <comment>A tooltip displayed for incomplete files</comment>
+  </data>
+  <data name="TooltipAddedFile" xml:space="preserve">
+    <value>Added file</value>
+    <comment>A tooltip displayed for an added file</comment>
+  </data>
 </root>

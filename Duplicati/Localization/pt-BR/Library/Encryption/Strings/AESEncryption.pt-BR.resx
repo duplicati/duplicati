@@ -123,4 +123,25 @@
   <data name="UselessEncryptionError" xml:space="preserve">
     <value>Criptografia inútil detectada</value>
   </data>
+  <data name="OptionsAreMutuallyExclusiveError" xml:space="preserve">
+    <value>It is not allowed to specify both --{0} and --{1} </value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>AES-256 encryption, built in</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>This module encrypts all files in the same way that AES Crypt does, using 256 bit AES encryption. Earlier versions of Duplicati used a simpler encryption model (still 256 bits) with no message digest. The commandline option --{0} can be used to revert to the previous model, which is not recommended. This module automatically detects the file format and decrypts it with the appropriate method.</value>
+  </data>
+  <data name="AesencryptiondontuseaescryptShort" xml:space="preserve">
+    <value>Don't use the AES Crypt file format</value>
+  </data>
+  <data name="AesencryptiondontuseaescryptLong" xml:space="preserve">
+    <value>Duplicati uses the AES Crypt file format, but previous versions used a simpler encryption method. Use this flag to force the use of the previous format. This option is mutually exclusive with --{0}.</value>
+  </data>
+  <data name="AesencryptiondontallowfallbackShort" xml:space="preserve">
+    <value>Don't attempt to decrypt fallback</value>
+  </data>
+  <data name="AesencryptiondontallowfallbackLong" xml:space="preserve">
+    <value>If the decryption fails using AES Crypt, dont attempt to use the previous encryption file format. This option is mutually exclusive with --{0}.</value>
+  </data>
 </root>

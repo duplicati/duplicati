@@ -135,4 +135,12 @@ Erro: {1}
 O banco de dados NÃO foi atualizadoDatabase.</value>
     <comment>A mensagem a ser exibida se algum dos comandos de atualização SQL falhar</comment>
   </data>
+  <data name="InvalidVersionError" xml:space="preserve">
+    <value>
+The database has version {0} but the largest supported version is {1}.
+
+This is likely caused by upgrading to a newer version and then downgrading.
+If this is the case, there is likely a backup file of the previous database version in the folder {2}.</value>
+    <comment>An error message that is displayed if the database version number does not match</comment>
+  </data>
 </root>

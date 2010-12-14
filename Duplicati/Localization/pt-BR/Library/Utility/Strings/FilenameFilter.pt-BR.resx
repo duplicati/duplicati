@@ -120,4 +120,7 @@
   <data name="FilterContainsPathSeperator" xml:space="preserve">
     <value>O filtro contém: {0}</value>
   </data>
+  <data name="FilterContainsPathSeparator" xml:space="preserve">
+    <value>Filter contains: {0}</value>
+  </data>
 </root>

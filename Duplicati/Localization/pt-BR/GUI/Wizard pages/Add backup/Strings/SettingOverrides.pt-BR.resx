@@ -130,4 +130,16 @@ Uma versão mais recente do Mono irá ativar esta página.</value>
   <data name="PageTitle" xml:space="preserve">
     <value>Sobrescrever configurações</value>
   </data>
+  <data name="GenericModuleLoadError" xml:space="preserve">
+    <value>An error occured while loading generic module settings: {0}</value>
+  </data>
+  <data name="EncryptionLoadError" xml:space="preserve">
+    <value>An error occured while loading encryption settings: {0}</value>
+  </data>
+  <data name="CompressionLoadError" xml:space="preserve">
+    <value>An error occured while loading compression settings: {0}</value>
+  </data>
+  <data name="BackendLoadError" xml:space="preserve">
+    <value>An error occured while loading backend settings: {0}</value>
+  </data>
 </root>

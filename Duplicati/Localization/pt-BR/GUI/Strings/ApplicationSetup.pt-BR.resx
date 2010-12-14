@@ -152,4 +152,20 @@ Gostaria de usar esta pasta mesmo assim?</value>
     <value>System language, {0}</value>
     <comment>A string displayed to denote the current default language</comment>
   </data>
+  <data name="SettingControlsLoadError" xml:space="preserve">
+    <value>An error occured while loading setting controls: {0}</value>
+    <comment>An error message displayed if the settings control loading fails</comment>
+  </data>
+  <data name="SaveExtensionError" xml:space="preserve">
+    <value>An error occured while saving settings: {0}</value>
+    <comment>An error message displayed if the settings control throws an exception while validating or saving</comment>
+  </data>
+  <data name="EncryptionModuleLoadError" xml:space="preserve">
+    <value>An error occured while loading encryption modules: {0}</value>
+    <comment>An error message displayed if the encryption module loading fails</comment>
+  </data>
+  <data name="DialogTitle" xml:space="preserve">
+    <value>Duplicati Setup, version {0}</value>
+    <comment>The dialog title with version number</comment>
+  </data>
 </root>

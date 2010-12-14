@@ -129,4 +129,10 @@
   <data name="FileNotFoundError" xml:space="preserve">
     <value>Arquivo não encontrado: {0}</value>
   </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>Zip compression</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>This module provides the industry standard Zip compression. Files created with this module can be read by any standard compliant zip application.</value>
+  </data>
 </root>

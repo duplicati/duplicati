@@ -132,4 +132,16 @@
   <data name="TooltipPartialBackup" xml:space="preserve">
     <value>Backup parcial</value>
   </data>
+  <data name="TooltipIncrementalBackupWithSize" xml:space="preserve">
+    <value>Incremental backup - {0}, chain: {1}</value>
+  </data>
+  <data name="TooltipIncrementalBackup" xml:space="preserve">
+    <value>Incremental backup</value>
+  </data>
+  <data name="TooltipFullBackupWithSize" xml:space="preserve">
+    <value>Full backup - {0}</value>
+  </data>
+  <data name="NoDataReceived" xml:space="preserve">
+    <value>No data received</value>
+  </data>
 </root>

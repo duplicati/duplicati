@@ -238,4 +238,40 @@ Mensagem de erro: {1}</value>
   <data name="DescriptionFTPUsernameLong" xml:space="preserve">
     <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
   </data>
+  <data name="UnsupportedKeyfileEncryptionError" xml:space="preserve">
+    <value>Unsupported encryption format for OpenSSH private key, must be 3des-cbc (DES-EDE3-CBC).
+Please include this information in a bug report:
+{0}</value>
+  </data>
+  <data name="StreamingNotSupportedError" xml:space="preserve">
+    <value>The SSH backend does not support streaming when using the unmanaged SSH backend, if you supply --use-sftp-application, you must also specify --disable-streaming-transfers</value>
+  </data>
+  <data name="KeyfileParseError" xml:space="preserve">
+    <value>Unable to parse content of the file. Please include the following information in a bug report (you may omit any key data present):
+{0}</value>
+  </data>
+  <data name="KeyfileNotFoundError" xml:space="preserve">
+    <value>The supplied keyfile was not found: {0}</value>
+  </data>
+  <data name="IncorrectFileHeaderError" xml:space="preserve">
+    <value>File must have the OpenSSH private key header, eg: ---- BEGIN RSA PRIVATE KEY ----</value>
+  </data>
+  <data name="FolderNotFoundManagedError" xml:space="preserve">
+    <value>Unable to set folder to {0}, error message: {1}</value>
+  </data>
+  <data name="DescriptionUnmanagedShort" xml:space="preserve">
+    <value>Use an external sftp application</value>
+  </data>
+  <data name="DescriptionUnmanagedLong" xml:space="preserve">
+    <value>Set this flag to use the sftp command from --sftp-command to communicate with the server. Setting this flag also requires that --disable-streaming-transfers is set</value>
+  </data>
+  <data name="DescriptionSshkeyfileShort" xml:space="preserve">
+    <value>Uses a SSH private key to authenticate</value>
+  </data>
+  <data name="DescriptionSshkeyfileLong" xml:space="preserve">
+    <value>Points to a valid OpenSSH keyfile. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client.</value>
+  </data>
+  <data name="CreateFolderError" xml:space="preserve">
+    <value>Failed to create folder: {0}</value>
+  </data>
 </root>

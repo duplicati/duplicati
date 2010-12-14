@@ -135,4 +135,7 @@
   <data name="DescriptionFTPUsernameLong" xml:space="preserve">
     <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
   </data>
+  <data name="FolderMissingError" xml:space="preserve">
+    <value>The folder {0} does not exist</value>
+  </data>
 </root>

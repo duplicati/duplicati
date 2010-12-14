@@ -201,4 +201,109 @@
   <data name="UnexpectedCompressionError" xml:space="preserve">
     <value>Modo de compressão não reconhecido: {0}</value>
   </data>
+  <data name="UnsupportedTimeValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid time</value>
+  </data>
+  <data name="UnsupportedSizeValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid size</value>
+  </data>
+  <data name="UnsupportedPathValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid path</value>
+  </data>
+  <data name="UnsupportedOptionWarning" xml:space="preserve">
+    <value>The supplied option --{0} is not supported and will be ignored</value>
+  </data>
+  <data name="UnsupportedOptionDisabledModuleWarning" xml:space="preserve">
+    <value>The option --{0} is not supported because the module {1} is not currently loaded</value>
+  </data>
+  <data name="UnsupportedIntegerValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not represent a valid integer</value>
+  </data>
+  <data name="UnsupportedEnumerationValue" xml:space="preserve">
+    <value>The option --{0} does not support the value "{1}", supported values are: {2}</value>
+  </data>
+  <data name="UnsupportedBooleanValue" xml:space="preserve">
+    <value>The value "{1}" supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to "true"</value>
+  </data>
+  <data name="UnexpectedOperationTypeError" xml:space="preserve">
+    <value>The operation mode {0} was not expected</value>
+  </data>
+  <data name="TooManyTargetFoldersWarning" xml:space="preserve">
+    <value>The backup contains {0} folder(s) but {1} target folders were supplied</value>
+  </data>
+  <data name="TooFewTargetFoldersError" xml:space="preserve">
+    <value>The backup contains {0} folders but {1} target folders were supplied</value>
+  </data>
+  <data name="StatusWaitingForUpload" xml:space="preserve">
+    <value>Waiting for upload to complete ...</value>
+  </data>
+  <data name="StatusDownloadingSignatureVolume" xml:space="preserve">
+    <value>Downloading signatures, volume {0}</value>
+  </data>
+  <data name="StatusDownloadingContentVolume" xml:space="preserve">
+    <value>Downloading content, volume {0}</value>
+  </data>
+  <data name="SourceFoldersHasChangedError" xml:space="preserve">
+    <value>The folder {0} is no longer in the source folder set. It is not allowed to change source folders for a backup.</value>
+  </data>
+  <data name="SourceFolderIsMissingError" xml:space="preserve">
+    <value>The source folder {0} does not exist, aborting backup</value>
+  </data>
+  <data name="SourceDirsAreRelatedError" xml:space="preserve">
+    <value>The folder {1} is a subfolder of {0}. It is not allowed to specify the same folder multiple times.</value>
+  </data>
+  <data name="SourceDirIsIncludedMultipleTimesError" xml:space="preserve">
+    <value>The folder {0} is included multiple times</value>
+  </data>
+  <data name="SkippedUnlistedSignatureFileWarning" xml:space="preserve">
+    <value>The signature file {0} was skipped because the signature file was not found in the manifest</value>
+  </data>
+  <data name="SkippedContentVolumeLogMessage" xml:space="preserve">
+    <value>The content volume {0} is not present in the manifest and is not used</value>
+  </data>
+  <data name="SecondaryManifestReadErrorLogMessage" xml:space="preserve">
+    <value>Failed to read the secondary manifest {0}. Error message: {1}</value>
+  </data>
+  <data name="ReadingSecondaryManifestLogMessage" xml:space="preserve">
+    <value>Secondary manifest file found: {0}, attempting read.</value>
+  </data>
+  <data name="PrimaryManifestReadErrorLogMessage" xml:space="preserve">
+    <value>Failed to read the primary manifest {0}, attempting secondary, if available. Error message: {1}</value>
+  </data>
+  <data name="NumberOfSourceFoldersHasChangedError" xml:space="preserve">
+    <value>The number of source folders in the latest backup is {0}, but the number of specified folders is now {1}. It is not allowed to change source folders for a backup.</value>
+  </data>
+  <data name="NotDeletingLastFullMessage" xml:space="preserve">
+    <value>The backup at time {0} is not removed because it is the last full backup, use --allow-full-removal to include this backup in the delete</value>
+  </data>
+  <data name="NoSourceFoldersError" xml:space="preserve">
+    <value>No source folders specified for backup</value>
+  </data>
+  <data name="NoFilesGivenError" xml:space="preserve">
+    <value>No filenames given for find-last-file</value>
+  </data>
+  <data name="MissingSignatureFile" xml:space="preserve">
+    <value>The signature file for a content volume was missing, date: {0}, volumenumber: {1}, content volume filename: {2}</value>
+  </data>
+  <data name="ManifestVersionRequiresRelativeNamesWarning" xml:space="preserve">
+    <value>One or more manifests are from version 1, which requires that filenames searched are relative</value>
+  </data>
+  <data name="ManifestsMustBeReadOnBackups" xml:space="preserve">
+    <value>It is not allowed to disable manifest reading when performing a backup. Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
+  </data>
+  <data name="InternalDeleteCountError" xml:space="preserve">
+    <value>An internal error occured, and the operation was aborted to protect the backup sets</value>
+  </data>
+  <data name="FileHashFailure" xml:space="preserve">
+    <value>A hash check failed, this is an indication of a corrupt file: {0}</value>
+  </data>
+  <data name="DuplicateOptionNameWarning" xml:space="preserve">
+    <value>The option --{0} exists more than once, please report this to the developers</value>
+  </data>
+  <data name="DeprecatedOptionUsedWarning" xml:space="preserve">
+    <value>The option {0} is deprecated: {1}</value>
+  </data>
+  <data name="CannotCleanWithoutHashesError" xml:space="preserve">
+    <value>When using cleanup the manifests and hashes must be verified</value>
+  </data>
 </root>

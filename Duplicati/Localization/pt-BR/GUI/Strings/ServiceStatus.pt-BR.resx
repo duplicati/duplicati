@@ -144,4 +144,7 @@
   <data name="SwitchToSimple" xml:space="preserve">
     <value>Simples &lt;&lt;&lt;</value>
   </data>
+  <data name="StatusPaused" xml:space="preserve">
+    <value>Duplicati is currently paused</value>
+  </data>
 </root>

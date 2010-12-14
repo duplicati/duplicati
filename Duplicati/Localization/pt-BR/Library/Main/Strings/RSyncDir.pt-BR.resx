@@ -150,4 +150,57 @@
   <data name="DeletedFilenameError" xml:space="preserve">
     <value>An error occured while determining file status, filename: {0}, folder name:{1}</value>
   </data>
+  <data name="FileChangedWhileReadWarning" xml:space="preserve">
+    <value>The file {0} changed while being backed up, this may result in a broken file</value>
+  </data>
+  <data name="FileChangedWhileReadError" xml:space="preserve">
+    <value>The file {0} changed while being backed up, omitting file from backup set</value>
+  </data>
+  <data name="UsnNumberingFaultWarning" xml:space="preserve">
+    <value>The stored USN number for volume {0} is {1} but the current USN is {1}, performing full file compare</value>
+  </data>
+  <data name="UsnNotSupportedOnLinuxError" xml:space="preserve">
+    <value>USN is not supported on Linux</value>
+  </data>
+  <data name="UsnJournalIdChangedWarning" xml:space="preserve">
+    <value>The USN journalId for volume {0} was changed from {1} to {2}, performing full file compare</value>
+  </data>
+  <data name="UsnFailedError" xml:space="preserve">
+    <value>Failed to read USN data: {0}</value>
+  </data>
+  <data name="UsnDisposeFailedWarning" xml:space="preserve">
+    <value>Failed to dispose USN helper: {0}</value>
+  </data>
+  <data name="FailedToSetFolderWriteTime" xml:space="preserve">
+    <value>Failed to set the write time for the folder: {0}.
+Error message: {1}</value>
+  </data>
+  <data name="FailedToSetFileWriteTime" xml:space="preserve">
+    <value>Failed to set the write time for the file: {0}.
+Error message: {1}</value>
+  </data>
+  <data name="SnapshotFailedError" xml:space="preserve">
+    <value>Failed to create a snapshot: {0}</value>
+  </data>
+  <data name="InternalPathMappingError" xml:space="preserve">
+    <value>An internal error occured. The path {0} is not a subpath of any of the source folders: {1}.</value>
+  </data>
+  <data name="PartialLeftoverDeleteError" xml:space="preserve">
+    <value>Failed to clean up the partial incomplete file {0}, error message: {1}</value>
+  </data>
+  <data name="PartialFileIncompleteWarning" xml:space="preserve">
+    <value>The partial file {0} was not completed</value>
+  </data>
+  <data name="PartialFileAddedLogMessage" xml:space="preserve">
+    <value>File {0} is partial from byte offset {1}</value>
+  </data>
+  <data name="InvalidPartialRecordError" xml:space="preserve">
+    <value>The partial record file is invalid</value>
+  </data>
+  <data name="InvalidPartialFileEntry" xml:space="preserve">
+    <value>The partial file record for {0} does not match the file</value>
+  </data>
+  <data name="FileShouldBePartialError" xml:space="preserve">
+    <value>The file {0} was marked as partial in a previous volume, but is not marked partial in the current volume</value>
+  </data>
 </root>

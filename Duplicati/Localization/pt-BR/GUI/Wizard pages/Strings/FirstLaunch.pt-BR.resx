@@ -126,4 +126,8 @@
   <data name="PageTitle" xml:space="preserve">
     <value>Bem vindo ao Duplicati</value>
   </data>
+  <data name="ShowAdvancedQuestion" xml:space="preserve">
+    <value>Do you need to modify advanced settings?
+(Most users do not need this)</value>
+  </data>
 </root>

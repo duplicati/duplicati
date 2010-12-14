@@ -168,4 +168,13 @@
   <data name="DescriptionFTPUsernameLong" xml:space="preserve">
     <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
   </data>
+  <data name="S3UseRRSDescriptionShort" xml:space="preserve">
+    <value>Use Reduced Redundancy Storage</value>
+  </data>
+  <data name="S3UseRRSDescriptionLong" xml:space="preserve">
+    <value>This flag toggles the use of the special RRS header. Files stored using RRS are more likely to disapear than those stored normally, but also costs less to store. See the full description here: http://aws.amazon.com/about-aws/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/</value>
+  </data>
+  <data name="InvalidHostnameForSubdomainError" xml:space="preserve">
+    <value>The supplied bucket name, "{0}", is not a valid hostname label, and cannot be used with subdomain urls. The options --{1} or --{2} also toggle subdomain urls.</value>
+  </data>
 </root>

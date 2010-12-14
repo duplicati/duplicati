@@ -168,4 +168,28 @@
   <data name="StatusMessageUploading" xml:space="preserve">
     <value>Enviando: {0} ({1})</value>
   </data>
+  <data name="BackendDoesNotSupportCreateFolder" xml:space="preserve">
+    <value>The backend {0} ({1}) does not support the CreateFolder operation </value>
+  </data>
+  <data name="SaveCacheFileError" xml:space="preserve">
+    <value>Failed to save the cached signature file as {0}</value>
+  </data>
+  <data name="DeleteCacheFileError" xml:space="preserve">
+    <value>An error occured while attempting to delete cache file {0}</value>
+  </data>
+  <data name="CachedSignatureHashMismatchWarning" xml:space="preserve">
+    <value>The cache file {0} did not match the expected hash for the same file, ignoring cache file</value>
+  </data>
+  <data name="UnmatchedFilenameWarning" xml:space="preserve">
+    <value>The file {0} was found on the backend but not recognized by Duplicati</value>
+  </data>
+  <data name="RemoveOrphanFileWarning" xml:space="preserve">
+    <value>Deleting orphan file: {0}</value>
+  </data>
+  <data name="EmptyManifestWarning" xml:space="preserve">
+    <value>Empty backupset detected, this is likely an error: {0}</value>
+  </data>
+  <data name="DuplicateFileEntryWarning" xml:space="preserve">
+    <value>The file {0} was found multiple times in the file list, this is likely an error in the backend, please report it to the developers</value>
+  </data>
 </root>

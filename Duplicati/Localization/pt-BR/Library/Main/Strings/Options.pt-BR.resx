@@ -309,4 +309,154 @@
   <data name="VolsizeShort" xml:space="preserve">
     <value>O tamanho limite em bytes dos arquivos de volume</value>
   </data>
+  <data name="DisabletimetoleranceShort" xml:space="preserve">
+    <value>Deaktivates tolerance when comparing times</value>
+  </data>
+  <data name="DisabletimetoleranceLong" xml:space="preserve">
+    <value>When deciding if a full backup should be made or an old backup should be deleted, Duplicati will adjust the times by a small fraction to ensure that minor time differences do not interfer with expected operation. If the backup is set to produce a full backup each day, and a full backup is made at, say 12:00:01, and the backup is executed again at 12:00:00, a full day has not passed and thus an incremental backup is performed. To avoid this, Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable the tolerance, and use strict time checking</value>
+  </data>
+  <data name="OpenfilepolicyShort" xml:space="preserve">
+    <value>Determines how to handle open files</value>
+  </data>
+  <data name="OpenfilepolicyLong" xml:space="preserve">
+    <value>If Duplicati encounters a file that is opened by another program, it will attempt to read whatever contents that are in the file. Since the file may be written during the backup, this can cause the backup to contain a partially written file. Use this option to disable this, omitting locked files from the backup. This option has no effect if a snapshot is active.</value>
+  </data>
+  <data name="DisableusndiffcheckShort" xml:space="preserve">
+    <value>Disables changelist by USN numbers</value>
+  </data>
+  <data name="DisableusndiffcheckLong" xml:space="preserve">
+    <value>If USN is enabled the USN numbers are used to find all changed files since last backup. Use this option to disable the use of USN numbers, which will make Duplicati investigate all source files. This option is primarily intended for testing and should not be disabled in a production environment. If USN is not enabled, this option has no effect.</value>
+  </data>
+  <data name="UsnpolicyShort" xml:space="preserve">
+    <value>Controls the use of NTFS Update Sequence Numbers</value>
+  </data>
+  <data name="UsnpolicyLong" xml:space="preserve">
+    <value>This settings controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to "off", Duplicati will not attempt to use USN. Setting this to "auto" makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of "on" will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to "required" will make Duplicati abort the backup if the USN usage fails. This feature is only supported on Windows and requires administrative privileges.</value>
+  </data>
+  <data name="VssexcludewritersShort" xml:space="preserve">
+    <value>A semicolon separated list of guids of VSS writers to exclude (Windows only)</value>
+  </data>
+  <data name="VssexcludewritersLong" xml:space="preserve">
+    <value>Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces.</value>
+  </data>
+  <data name="DisableautocreatefolderShort" xml:space="preserve">
+    <value>Disables automatic folder creation</value>
+  </data>
+  <data name="DisableautocreatefolderLong" xml:space="preserve">
+    <value>If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation.</value>
+  </data>
+  <data name="LoglevelShort" xml:space="preserve">
+    <value>Log information level</value>
+  </data>
+  <data name="LoglevelLong" xml:space="preserve">
+    <value>Specifies the amount of log information to write into the file specified by --log-file</value>
+  </data>
+  <data name="LogfileShort" xml:space="preserve">
+    <value>Log internal information</value>
+  </data>
+  <data name="LogfileLong" xml:space="preserve">
+    <value>Specifies the name of a while into which internal log information is written</value>
+  </data>
+  <data name="TimeseparatorDeprecated" xml:space="preserve">
+    <value>Duplicati no longer uses a time separator for the filenames so this option is useless</value>
+  </data>
+  <data name="ShortfilenamesDeprecated" xml:space="preserve">
+    <value>Duplicati now uses a filename format that is portable across all operating systems, so this option should not be used and will be removed in the future</value>
+  </data>
+  <data name="OldfilenamesShort" xml:space="preserve">
+    <value>Uses the old filename format</value>
+  </data>
+  <data name="OldfilenamesLong" xml:space="preserve">
+    <value>By setting this option the filenames generated by Duplicati will contain a time separator as well as a timezone component, which is not cross platform compatible</value>
+  </data>
+  <data name="OldfilenamesDeprecated" xml:space="preserve">
+    <value>This option will be removed in the future but is included for the odd case where the new format breaks something</value>
+  </data>
+  <data name="ExcludeemptyfoldersShort" xml:space="preserve">
+    <value>Controls empty folder actions</value>
+  </data>
+  <data name="ExcludeemptyfoldersLong" xml:space="preserve">
+    <value>By setting this option to true, a folder which has no files that match the filter will be excluded from the backup</value>
+  </data>
+  <data name="DebugoutputShort" xml:space="preserve">
+    <value>Enables debugging output</value>
+  </data>
+  <data name="DebugoutputLong" xml:space="preserve">
+    <value>Activating this option will make some error messages more verbose, which may help you track down a particular issue</value>
+  </data>
+  <data name="AsynchronousuploadlimitShort" xml:space="preserve">
+    <value>The number of volumes to create ahead of time</value>
+  </data>
+  <data name="AsynchronousuploadlimitLong" xml:space="preserve">
+    <value>When performing asynchronous uploads, Duplicati will create volumes that can be uploaded. To prevent Duplicati from generating too many volumes, this option limits the number of pending uploads. Set to zero to disable the limit</value>
+  </data>
+  <data name="AsynchronousuploadfolderShort" xml:space="preserve">
+    <value>The path where ready volumes are placed until uploaded</value>
+  </data>
+  <data name="AsynchronousuploadfolderLong" xml:space="preserve">
+    <value>The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes, despite the name, this also works for synchronous runs</value>
+  </data>
+  <data name="SnapshotpolicyShort" xml:space="preserve">
+    <value>Controls the use of disk snapshots</value>
+  </data>
+  <data name="SnapshotpolicyLong" xml:space="preserve">
+    <value>This settings controls the usage of snapshots, which allows Duplicati to backup files that are locked by other programs. If this is set to "off", Duplicati will not attempt to create a disk snapshot. Setting this to "auto" makes Duplicati attempt to create a snapshot, and fail silently if that was not allowed or supported. A setting of "on" will also make Duplicati attempt to create a snapshot, but will produce a warning message in the log if it fails. Setting it to "required" will make Duplicati abort the backup if the snapshot creation fails. On windows this uses the Volume Shadow Copy Services (VSS) and requires administrative privileges. On linux this uses Logical Volume Management (LVM) and requires root privileges.</value>
+  </data>
+  <data name="EnablemoduleShort" xml:space="preserve">
+    <value>Enables one or more modules</value>
+  </data>
+  <data name="EnablemoduleLong" xml:space="preserve">
+    <value>Supply one or more module names, separated by commas to load them</value>
+  </data>
+  <data name="DisablemoduleShort" xml:space="preserve">
+    <value>Disabled one or more modules</value>
+  </data>
+  <data name="DisablemoduleLong" xml:space="preserve">
+    <value>Supply one or more module names, separated by commas to unload them</value>
+  </data>
+  <data name="GpgencryptionDeprecated" xml:space="preserve">
+    <value>Use --encryption-module=gpg instead</value>
+  </data>
+  <data name="EncryptionmoduleShort" xml:space="preserve">
+    <value>Select what module to use for encryption</value>
+  </data>
+  <data name="EncryptionmoduleLong" xml:space="preserve">
+    <value>Duplicati supports plugable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module.</value>
+  </data>
+  <data name="CompressionmoduleShort" xml:space="preserve">
+    <value>Select what module to use for compression</value>
+  </data>
+  <data name="CompressionmoduleLong" xml:space="preserve">
+    <value>Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module.</value>
+  </data>
+  <data name="FullifsourcefolderchangedShort" xml:space="preserve">
+    <value>Run a full backup if the sourcefolder has changed</value>
+  </data>
+  <data name="FullifsourcefolderchangedLong" xml:space="preserve">
+    <value>It is not allowed to change the sourcefolder or the number of source folders. If this option is enabled, the backup will become a full backup if the source folders have changed, which will then start a new chain of backups with the new folder set. If --allow-sourcefolder-change is also set, a full backup is only issued if the number of of source folders have changed</value>
+  </data>
+  <data name="AllowsourcefolderchangeShort" xml:space="preserve">
+    <value>Skip verifying the source folders</value>
+  </data>
+  <data name="AllowsourcefolderchangeLong" xml:space="preserve">
+    <value>This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing.</value>
+  </data>
+  <data name="DontreadmanifestsShort" xml:space="preserve">
+    <value>An option that prevents verifying the manifests</value>
+  </data>
+  <data name="DontreadmanifestsLong" xml:space="preserve">
+    <value>This option will make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery.</value>
+  </data>
+  <data name="AllowfullremoveShort" xml:space="preserve">
+    <value>Allow removal of the all backups</value>
+  </data>
+  <data name="AllowfullremoveLong" xml:space="preserve">
+    <value>As a precaution, the last full backup will never be removed, even if using the "delete-all-but-n-full 0" command. Set this option to allow removing the last backup.</value>
+  </data>
+  <data name="DisableStreamingShort" xml:space="preserve">
+    <value>Disables use of the streaming transfer method</value>
+  </data>
+  <data name="DisableStreamingLong" xml:space="preserve">
+    <value>Enabling this option will disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored.</value>
+  </data>
 </root>

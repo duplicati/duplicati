@@ -137,4 +137,37 @@ Deseja continuar?</value>
   <data name="TooShortDurationError" xml:space="preserve">
     <value>A duração definida é menor do que cinco minutos. Isto não é aceitável.</value>
   </data>
+  <data name="TooShortScheduleDurationError" xml:space="preserve">
+    <value>The schedule interval must be more than {0} minutes.</value>
+  </data>
+  <data name="TooShortFullDurationError" xml:space="preserve">
+    <value>The interval between full backups must be more than {0} minutes.</value>
+  </data>
+  <data name="TooManyIncrementalsWarning" xml:space="preserve">
+    <value>The settings you have selected will result in {0} incremental backups being created between each full backup.
+This can result in very lengthy restore operations, and increases the probability of a restore failure.
+
+Do you want to keep these settings?</value>
+  </data>
+  <data name="OnlyIncrementalBackupsWarning" xml:space="preserve">
+    <value>You have selected to only produce incremental backups.
+This may result in very lengthy restore operations, and increases the probability of a restore failure.
+
+Are you sure this is what you want?</value>
+  </data>
+  <data name="OnlyFullBackupsWarning" xml:space="preserve">
+    <value>You have selected to only produce full backups.
+This may take up a lot of space on the backend.
+
+Are you sure this is what you want?</value>
+  </data>
+  <data name="NoScheduleWarning" xml:space="preserve">
+    <value>You have selected not to run the backup automatically.
+This means that you have to remember to manually start the backup periodically.
+
+Are you sure this is what you want?</value>
+  </data>
+  <data name="FullDurationShorterThanScheduleDurationError" xml:space="preserve">
+    <value>The interval between each full backup must be larger than the schedule interval.</value>
+  </data>
 </root>

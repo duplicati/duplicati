@@ -151,4 +151,23 @@ Tente desmarcar alguns ítens e criar mais de um backup.</value>
   <data name="PartialSizeCalculated" xml:space="preserve">
     <value>Calculando ... (usando mais de {0})</value>
   </data>
+  <data name="UpgradeWarning" xml:space="preserve">
+    <value>The setup is loaded from an older version of Duplicati. 
+If you save the backup settings, the internal storage will be change to the new version.
+Please verify the content of the backup after the next run to ensure
+that it contains the files and folders that you expect.</value>
+  </data>
+  <data name="RelatedFoldersError" xml:space="preserve">
+    <value>The folder "{0}" is a subfolder of "{1}", which is not allowed</value>
+  </data>
+  <data name="FolderDoesNotExistWarning" xml:space="preserve">
+    <value>The folder "{0}" does not exist.
+How do you want to proceed?</value>
+  </data>
+  <data name="DuplicateFolderError" xml:space="preserve">
+    <value>The folder "{0}" is included twice</value>
+  </data>
+  <data name="CalculatingSizeMarker" xml:space="preserve">
+    <value>(...)</value>
+  </data>
 </root>

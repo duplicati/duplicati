@@ -138,4 +138,7 @@
   <data name="InvalidStrongsizeError" xml:space="preserve">
     <value>Comprimento da assinatura no arquivo de assinatura era: {0}, o que não parece estar correto</value>
   </data>
+  <data name="InvalidFilesizeError" xml:space="preserve">
+    <value>The size of the signature file is invalid</value>
+  </data>
 </root>

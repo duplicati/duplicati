@@ -175,4 +175,42 @@ Mensagem de erro: {0}</value>
     <value>Failed to set the user interface language: {0}</value>
     <comment>An error message displayed if the language cannot be selected</comment>
   </data>
+  <data name="UnencrypteddatabaseCommandDescription" xml:space="preserve">
+    <value>Disables database encryption</value>
+  </data>
+  <data name="ShowstausCommandDescription" xml:space="preserve">
+    <value>Displays the status window</value>
+  </data>
+  <data name="RunbackupCommandDescription" xml:space="preserve">
+    <value>Runs the backup with the name supplied. If no backup name is supplied, the available backups are displayed</value>
+  </data>
+  <data name="ResumeCommandDescription" xml:space="preserve">
+    <value>Resumes operation of Duplicati, if paused</value>
+  </data>
+  <data name="PortablemodeCommandDescription" xml:space="preserve">
+    <value>Activates portable mode where the database is placed below the program executable</value>
+  </data>
+  <data name="PauseCommandDescription" xml:space="preserve">
+    <value>Pauses Duplicati, supply a time eg. 5m to limit pause to 5 minutes</value>
+  </data>
+  <data name="LoglevelCommandDescription" xml:space="preserve">
+    <value>Determines the amount of information written in the log file</value>
+  </data>
+  <data name="LogfileCommandDescription" xml:space="preserve">
+    <value>Outputs log information to the file given</value>
+  </data>
+  <data name="HelpDisplayFormat" xml:space="preserve">
+    <value>--{0}: {1}</value>
+  </data>
+  <data name="HelpDisplayDialog" xml:space="preserve">
+    <value>Supported commandline arguments:
+
+{0}</value>
+  </data>
+  <data name="HelpCommandDescription" xml:space="preserve">
+    <value>Displays this help</value>
+  </data>
+  <data name="FullCommandDescription" xml:space="preserve">
+    <value>Forces the --run-backup command to perform a full backup</value>
+  </data>
 </root>

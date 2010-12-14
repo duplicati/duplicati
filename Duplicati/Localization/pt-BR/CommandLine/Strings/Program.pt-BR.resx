@@ -181,4 +181,61 @@
   <data name="WrongNumberOfArgumentsError" xml:space="preserve">
     <value>Número incorreto de argumentos</value>
   </data>
+  <data name="UnhandledInnerException" xml:space="preserve">
+    <value>The inner error message is: {0}</value>
+  </data>
+  <data name="UnhandledException" xml:space="preserve">
+    <value>An error occured: {0}</value>
+  </data>
+  <data name="SupportedEncryptionModulesHeader" xml:space="preserve">
+    <value>Supported encryption modules:</value>
+  </data>
+  <data name="SupportedCompressionModulesHeader" xml:space="preserve">
+    <value>Supported compression modules:</value>
+  </data>
+  <data name="String1" xml:space="preserve">
+    <value />
+    <comment>There is a space to the left, which makes the output look nicer</comment>
+  </data>
+  <data name="NewFilesHeader" xml:space="preserve">
+    <value>New files</value>
+  </data>
+  <data name="ModuleIsNotLoadedAutomatically" xml:space="preserve">
+    <value>Module is not loaded atomatically, use --enable-module to load it</value>
+  </data>
+  <data name="ModuleIsLoadedAutomatically" xml:space="preserve">
+    <value>Module is loaded atomatically, use --disable-module to prevent this</value>
+  </data>
+  <data name="ModifiedFilesHeader" xml:space="preserve">
+    <value>Modified files</value>
+  </data>
+  <data name="InternalOptionUsedError" xml:space="preserve">
+    <value>The option --{0} was supplied, but it is reserved for internal use and may not be set on the commandline</value>
+  </data>
+  <data name="GenericModulesHeader" xml:space="preserve">
+    <value>Supported generic modules:</value>
+  </data>
+  <data name="FolderCreatedMessage" xml:space="preserve">
+    <value>The folder {0} was created</value>
+  </data>
+  <data name="FindLastVersionHeader" xml:space="preserve">
+    <value>Backuptime\t\tFilename</value>
+  </data>
+  <data name="FindLastVersionEntry" xml:space="preserve">
+    <value>{0}\t{1}</value>
+  </data>
+  <data name="FileEntryNotFound" xml:space="preserve">
+    <value>&lt; not found &gt;</value>
+  </data>
+  <data name="CollectionStatusLineInc" xml:space="preserve">
+    <value> Inc\t{0}\t{1}\t{2}</value>
+  </data>
+  <data name="CollectionStatusLineFull" xml:space="preserve">
+    <value>Full\t{0}\t{1}\t{2}</value>
+  </data>
+  <data name="CollectionStatusHeader" xml:space="preserve">
+    <value>Found {0} backup chains on backend
+
+Type\tTime\t\t\tVolumes\tSize</value>
+  </data>
 </root>
