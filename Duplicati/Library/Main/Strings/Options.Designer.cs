@@ -916,6 +916,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The list of files to back up is normally processed in a random fashion to ensure that all files have an equal probability of being processed. Use this setting to process the files in alphabetical order instead.
+        /// </summary>
+        internal static string SortedfilelistLong {
+            get {
+                return ResourceManager.GetString("SortedfilelistLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sort the list of files.
+        /// </summary>
+        internal static string SortedfilelistShort {
+            get {
+                return ResourceManager.GetString("SortedfilelistShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicati will use the system default temporary folder. This option can be used to supply an alternative folder for temporary storage..
         /// </summary>
         internal static string TempdirLong {

@@ -173,31 +173,31 @@
   <data name="&gt;&gt;SelectCleanup.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
-  <data name="ThrottleOptions.AutoSize" type="System.Boolean, mscorlib">
+  <data name="LimitOptions.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="ThrottleOptions.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="LimitOptions.Location" type="System.Drawing.Point, System.Drawing">
     <value>32, 72</value>
   </data>
-  <data name="ThrottleOptions.Size" type="System.Drawing.Size, System.Drawing">
-    <value>329, 17</value>
+  <data name="LimitOptions.Size" type="System.Drawing.Size, System.Drawing">
+    <value>263, 17</value>
   </data>
-  <data name="ThrottleOptions.TabIndex" type="System.Int32, mscorlib">
+  <data name="LimitOptions.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
   </data>
-  <data name="ThrottleOptions.Text" xml:space="preserve">
-    <value>Select options that limit machine usage, such as bandwidth limits</value>
+  <data name="LimitOptions.Text" xml:space="preserve">
+    <value>Set limits, such as volumesize and bandwidth limits</value>
   </data>
-  <data name="&gt;&gt;ThrottleOptions.Name" xml:space="preserve">
-    <value>ThrottleOptions</value>
+  <data name="&gt;&gt;LimitOptions.Name" xml:space="preserve">
+    <value>LimitOptions</value>
   </data>
-  <data name="&gt;&gt;ThrottleOptions.Type" xml:space="preserve">
+  <data name="&gt;&gt;LimitOptions.Type" xml:space="preserve">
     <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;ThrottleOptions.Parent" xml:space="preserve">
+  <data name="&gt;&gt;LimitOptions.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;ThrottleOptions.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;LimitOptions.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
   <data name="EditFilters.AutoSize" type="System.Boolean, mscorlib">

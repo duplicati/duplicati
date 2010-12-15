@@ -117,6 +117,18 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AlternateDestinationMarkerLong" xml:space="preserve">
+    <value>This option only works when the --{0} option is also specified. If there are alternate paths specified, this option indicates the name of a marker file that must be present in the folder. This can be used to handle situations where an external drive changes drive letter or mount point. By ensuring that a certain file exists, it is possible to prevent writing data to an unwanted external drive. The contents of the file are never examined, only file existence.</value>
+  </data>
+  <data name="AlternateDestinationMarkerShort" xml:space="preserve">
+    <value>Look for a file in the destination folder</value>
+  </data>
+  <data name="AlternateTargetPathsLong" xml:space="preserve">
+    <value>This option allows multiple targets to be specified. The primary target path is placed before the list of paths supplied with this option. Before starting the backup, each folder in the list is checked for existence and optionally the presence of the marker file supplied by --{0}. The first existing path that optionally contains the marker file is then used as the destination. Multiple destinations are separated with a {1},. On Windows, the path may be a UNC path, and the drive letter may be substituted with an asterisk (*), eg.: "*:\backup", which will examine all drive letters. If a username and password is supplied, the same credentials are used for all destinations.</value>
+  </data>
+  <data name="AlternateTargetPathsShort" xml:space="preserve">
+    <value>A list of secondary target paths</value>
+  </data>
   <data name="Description" xml:space="preserve">
     <value>This backend can read and write data to an file based backend. Allowed formats are "file://hostname/folder" or "file://username:password@hostname/folder". You may supply UNC paths (eg: "file://\\server\folder") or local paths (eg: (win) "file://c:\folder", (linux) "file:///usr/pub/files")</value>
   </data>
@@ -137,5 +149,8 @@
   </data>
   <data name="FolderMissingError" xml:space="preserve">
     <value>The folder {0} does not exist</value>
+  </data>
+  <data name="NoDestinationWithMarkerFileError" xml:space="preserve">
+    <value>The marker file "{0}" was not found in any of the examined destinations: {1}</value>
   </data>
 </root>

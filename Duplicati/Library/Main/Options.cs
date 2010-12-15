@@ -160,7 +160,9 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("number-of-retries", CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, "5"),
                     new CommandLineArgument("retry-delay", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, "10s"),
+                    new CommandLineArgument("sorted-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SortedfilelistShort, Strings.Options.SortedfilelistLong, "false"),
                     
+
                     new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false"),
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "2"),
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong),
@@ -631,6 +633,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if use of the streaming interface is disallowed
         /// </summary>
         public bool DisableStreamingTransfers { get { return GetBool("disable-streaming-transfers"); } }
+
+        /// <summary>
+        /// A value indicating if files are processed in a sorted order, rather than random
+        /// </summary>
+        public bool SortedFilelist { get { return GetBool("sorted-filelist"); } }
 
 
         /// <summary>

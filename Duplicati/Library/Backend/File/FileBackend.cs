@@ -26,6 +26,9 @@ namespace Duplicati.Library.Backend
 {
     public class File : IBackend_v2, IStreamingBackend, IBackendGUI
     {
+        private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
+        private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
+
         private string m_path;
         private string m_username;
         private string m_password;
@@ -67,6 +70,58 @@ namespace Duplicati.Library.Backend
             if (!System.IO.Path.IsPathRooted(m_path))
                 m_path = System.IO.Path.GetFullPath(m_path);
 
+            if (options.ContainsKey(OPTION_ALTERNATE_PATHS))
+            {
+                List<string> paths = new List<string>();
+                paths.Add(m_path);
+                paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+
+                //On windows we expand the drive letter * to all drives
+                if (!Utility.Utility.IsClientLinux)
+                {
+                    System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
+                    
+                    for (int i = 0; i < paths.Count; i++)
+                    {
+                        if (paths[i].StartsWith("*:"))
+                        {
+                            string rpl_path = paths[i].Substring(1);
+                            paths.RemoveAt(i);
+                            i--;
+                            foreach (System.IO.DriveInfo di in drives)
+                                paths.Insert(++i, di.Name[0] + rpl_path);
+                        }
+                    }
+                }
+
+                string markerfile = null;
+
+                //If there is a marker file, we do not allow the primary target path
+                // to be accepted, unless it contains the marker file
+                if (options.ContainsKey(OPTION_DESTINATION_MARKER))
+                {
+                    markerfile = options[OPTION_DESTINATION_MARKER];
+                    m_path = null;
+                }
+
+                foreach (string p in paths)
+                {
+                    try
+                    {
+                        if (System.IO.Directory.Exists(p) && (markerfile == null || System.IO.File.Exists(System.IO.Path.Combine(p, markerfile))))
+                        {
+                            m_path = p;
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                if (m_path == null)
+                    throw new Exception(string.Format(Strings.FileBackend.NoDestinationWithMarkerFileError, markerfile, string.Join(System.IO.Path.PathSeparator.ToString(), paths.ToArray())));
+            }
         }
 
         #region IBackendInterface Members
@@ -158,7 +213,9 @@ namespace Duplicati.Library.Backend
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPPasswordShort, Strings.FileBackend.DescriptionFTPPasswordLong),
-                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPUsernameShort, Strings.FileBackend.DescriptionFTPUsernameLong)
+                    new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPUsernameShort, Strings.FileBackend.DescriptionFTPUsernameLong),
+                    new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, string.Format(Strings.FileBackend.AlternateDestinationMarkerLong, OPTION_ALTERNATE_PATHS)),
+                    new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, string.Format(Strings.FileBackend.AlternateTargetPathsLong, OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                 });
 
             }

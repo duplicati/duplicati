@@ -61,6 +61,42 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option only works when the --{0} option is also specified. If there are alternate paths specified, this option indicates the name of a marker file that must be present in the folder. This can be used to handle situations where an external drive changes drive letter or mount point. By ensuring that a certain file exists, it is possible to prevent writing data to an unwanted external drive. The contents of the file are never examined, only file existence..
+        /// </summary>
+        internal static string AlternateDestinationMarkerLong {
+            get {
+                return ResourceManager.GetString("AlternateDestinationMarkerLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look for a file in the destination folder.
+        /// </summary>
+        internal static string AlternateDestinationMarkerShort {
+            get {
+                return ResourceManager.GetString("AlternateDestinationMarkerShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This option allows multiple targets to be specified. The primary target path is placed before the list of paths supplied with this option. Before starting the backup, each folder in the list is checked for existence and optionally the presence of the marker file supplied by --{0}. The first existing path that optionally contains the marker file is then used as the destination. Multiple destinations are separated with a {1},. On Windows, the path may be a UNC path, and the drive letter may be substituted wit [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string AlternateTargetPathsLong {
+            get {
+                return ResourceManager.GetString("AlternateTargetPathsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A list of secondary target paths.
+        /// </summary>
+        internal static string AlternateTargetPathsShort {
+            get {
+                return ResourceManager.GetString("AlternateTargetPathsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This backend can read and write data to an file based backend. Allowed formats are &quot;file://hostname/folder&quot; or &quot;file://username:password@hostname/folder&quot;. You may supply UNC paths (eg: &quot;file://\\server\folder&quot;) or local paths (eg: (win) &quot;file://c:\folder&quot;, (linux) &quot;file:///usr/pub/files&quot;).
         /// </summary>
         internal static string Description {
@@ -120,6 +156,15 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string FolderMissingError {
             get {
                 return ResourceManager.GetString("FolderMissingError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The marker file &quot;{0}&quot; was not found in any of the examined destinations: {1}.
+        /// </summary>
+        internal static string NoDestinationWithMarkerFileError {
+            get {
+                return ResourceManager.GetString("NoDestinationWithMarkerFileError", resourceCulture);
             }
         }
     }

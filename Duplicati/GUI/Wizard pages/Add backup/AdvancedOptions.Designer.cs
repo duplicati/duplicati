@@ -31,7 +31,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AdvancedOptions));
             this.SelectWhen = new System.Windows.Forms.CheckBox();
             this.SelectCleanup = new System.Windows.Forms.CheckBox();
-            this.ThrottleOptions = new System.Windows.Forms.CheckBox();
+            this.LimitOptions = new System.Windows.Forms.CheckBox();
             this.EditFilters = new System.Windows.Forms.CheckBox();
             this.IncludeDuplicatiSetup = new System.Windows.Forms.CheckBox();
             this.EditOverrides = new System.Windows.Forms.CheckBox();
@@ -49,11 +49,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.SelectCleanup.Name = "SelectCleanup";
             this.SelectCleanup.UseVisualStyleBackColor = true;
             // 
-            // ThrottleOptions
+            // LimitOptions
             // 
-            resources.ApplyResources(this.ThrottleOptions, "ThrottleOptions");
-            this.ThrottleOptions.Name = "ThrottleOptions";
-            this.ThrottleOptions.UseVisualStyleBackColor = true;
+            resources.ApplyResources(this.LimitOptions, "LimitOptions");
+            this.LimitOptions.Name = "LimitOptions";
+            this.LimitOptions.UseVisualStyleBackColor = true;
             // 
             // EditFilters
             // 
@@ -82,7 +82,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.Controls.Add(this.EditOverrides);
             this.Controls.Add(this.IncludeDuplicatiSetup);
             this.Controls.Add(this.EditFilters);
-            this.Controls.Add(this.ThrottleOptions);
+            this.Controls.Add(this.LimitOptions);
             this.Controls.Add(this.SelectCleanup);
             this.Controls.Add(this.SelectWhen);
             this.Name = "AdvancedOptions";
@@ -95,7 +95,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         private System.Windows.Forms.CheckBox SelectWhen;
         private System.Windows.Forms.CheckBox SelectCleanup;
-        private System.Windows.Forms.CheckBox ThrottleOptions;
+        private System.Windows.Forms.CheckBox LimitOptions;
         private System.Windows.Forms.CheckBox EditFilters;
         private System.Windows.Forms.CheckBox IncludeDuplicatiSetup;
         private System.Windows.Forms.CheckBox EditOverrides;

@@ -35,6 +35,11 @@ namespace Duplicati.Library.Main.RSync
         private static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
 
         /// <summary>
+        /// The time between each progress event
+        /// </summary>
+        private static readonly TimeSpan PROGRESS_TIMESPAN = TimeSpan.FromSeconds(1);
+
+        /// <summary>
         /// The possible filetypes in an archive
         /// </summary>
         public enum PatchFileType
@@ -575,6 +580,17 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private USNRecord m_lastUSN = null;
 
+        /// <summary>
+        /// A variable that keeps track of the last progress event issued
+        /// </summary>
+        private DateTime m_lastProgressEvent;
+
+        /// <summary>
+        /// A variable that indicates if the file list is sorted, if this variable is false,
+        /// files are picked at random from the file list
+        /// </summary>
+        private bool m_sortedfilelist;
+
         #endregion
 
         /// <summary>
@@ -689,6 +705,7 @@ namespace Duplicati.Library.Main.RSync
             }
             m_stat = stat;
             m_sourcefolder = sourcefolder;
+            m_lastProgressEvent = DateTime.Now.AddYears(-1); //Long time ago
 
             if (m_filter == null)
                 m_filter = new Duplicati.Library.Utility.FilenameFilter(new List<KeyValuePair<bool, string>>());
@@ -966,6 +983,10 @@ namespace Duplicati.Library.Main.RSync
             foreach(string s in m_oldFolders.Keys)
                 if (!m_unproccesed.IsAffectedByError(s))
                     m_deletedfolders.Add(s);
+
+            m_sortedfilelist = options.SortedFilelist;
+            if (m_sortedfilelist)
+                m_unproccesed.Files.Sort(Utility.Utility.ClientFilenameStringComparer);
         }
 
         /// <summary>
@@ -1200,23 +1221,20 @@ namespace Duplicati.Library.Main.RSync
             if (m_lastPartialFile != null)
                 m_lastPartialFile = WritePossiblePartial(m_lastPartialFile, contentfile, signaturefile, volumesize);
 
-            int lastPg = -1;
+            DateTime nextProgressEvent = m_lastProgressEvent;
 
             while (m_unproccesed.Files.Count > 0 && totalSize < volumesize && m_lastPartialFile == null)
             {
-                int next = r.Next(0, m_unproccesed.Files.Count);
+                int next = m_sortedfilelist ? 0 : r.Next(0, m_unproccesed.Files.Count);
                 string s = m_unproccesed.Files[next];
                 m_unproccesed.Files.RemoveAt(next);
 
-                if (ProgressEvent != null)
+                if (ProgressEvent != null && DateTime.Now > nextProgressEvent)
                 {
-                    //Update each 0.5% change, so it is visible that files are being examined
-                    int pg = 200 - ((int)((m_unproccesed.Files.Count / (double)m_totalfiles) * 200));
-                    if (lastPg != pg)
-                    {
-                        ProgressEvent(pg / 2, s);
-                        lastPg = pg;
-                    }
+                    int pg = 100 - ((int)((m_unproccesed.Files.Count / (double)m_totalfiles) * 100));
+                    m_lastProgressEvent = DateTime.Now;
+                    nextProgressEvent = m_lastProgressEvent + PROGRESS_TIMESPAN;
+                    ProgressEvent(pg, s);
                 }
 
                 try
@@ -1288,7 +1306,12 @@ namespace Duplicati.Library.Main.RSync
                             {
                                 //If the file is > 10mb, update the display to show the file being processed
                                 if (ProgressEvent != null && fs.Length > 1024 * 1024 * 10)
-                                    ProgressEvent(lastPg / 2, s);
+                                {
+                                    int pg = 100 - ((int)((m_unproccesed.Files.Count / (double)m_totalfiles) * 100));
+                                    m_lastProgressEvent = DateTime.Now;
+                                    nextProgressEvent = m_lastProgressEvent + PROGRESS_TIMESPAN;
+                                    ProgressEvent(pg, s);
+                                }
 
                                 System.IO.Stream signature = ProccessDiff(fs, s, signaturefile);
                                 if (signature == null)
