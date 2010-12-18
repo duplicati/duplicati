@@ -541,7 +541,11 @@ namespace Duplicati.Library.Backend
         private SFTPCon CreateManagedConnection(bool changeDir)
         {
             SFTPCon con;
-            if (m_options.ContainsKey(SSH_KEYFILE_OPTION))
+            
+            string keyfile;
+            m_options.TryGetValue(SSH_KEYFILE_OPTION, out keyfile);
+            
+            if ((keyfile ?? "").Trim().Length > 0)
             {
                 ValidateKeyFile(m_options[SSH_KEYFILE_OPTION]);
 

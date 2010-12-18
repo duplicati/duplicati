@@ -380,7 +380,10 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                if (guiOptions.ContainsKey(SSH_KEYFILE))
+                string keyfile;
+                guiOptions.TryGetValue(SSH_KEYFILE, out keyfile);
+
+                if ((keyfile ?? "").Trim().Length > 0)
                     commandlineOptions[SSH.SSH_KEYFILE_OPTION] = guiOptions[SSH_KEYFILE];
             }
 
