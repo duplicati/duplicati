@@ -380,5 +380,10 @@ namespace Duplicati.GUI
         {
             Program.LiveControl.Pause((string)((ToolStripItem)sender).Tag);
         }
+
+        private void ServiceStatus_Resize(object sender, EventArgs e)
+        {
+            ProgressMessage.MaximumSize = new Size(WorkProgressbar.Width, ProgressMessage.MaximumSize.Height);
+        }
      }
 }

@@ -119,6 +119,7 @@ namespace Duplicati.GUI
             // 
             // simplePanel
             // 
+            resources.ApplyResources(this.simplePanel, "simplePanel");
             this.simplePanel.Controls.Add(this.SubProgressBar);
             this.simplePanel.Controls.Add(this.WorkProgressbar);
             this.simplePanel.Controls.Add(this.ProgressMessage);
@@ -127,7 +128,6 @@ namespace Duplicati.GUI
             this.simplePanel.Controls.Add(this.ShowAdvanced);
             this.simplePanel.Controls.Add(this.CurrentStatus);
             this.simplePanel.Controls.Add(this.label1);
-            resources.ApplyResources(this.simplePanel, "simplePanel");
             this.simplePanel.Name = "simplePanel";
             // 
             // SubProgressBar
@@ -150,13 +150,13 @@ namespace Duplicati.GUI
             // 
             // recentBackups
             // 
+            resources.ApplyResources(this.recentBackups, "recentBackups");
             this.recentBackups.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
             this.columnHeader2,
             this.columnHeader3});
             this.recentBackups.ContextMenuStrip = this.contextMenuStrip;
             this.recentBackups.FullRowSelect = true;
-            resources.ApplyResources(this.recentBackups, "recentBackups");
             this.recentBackups.MultiSelect = false;
             this.recentBackups.Name = "recentBackups";
             this.recentBackups.ShowItemToolTips = true;
@@ -303,13 +303,14 @@ namespace Duplicati.GUI
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.simplePanel);
             this.Controls.Add(this.advancedPanel);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.KeyPreview = true;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ServiceStatus";
             this.Load += new System.EventHandler(this.ServiceStatus_Load);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.ServiceStatus_KeyUp);
+            this.Resize += new System.EventHandler(this.ServiceStatus_Resize);
             this.advancedPanel.ResumeLayout(false);
             this.advancedPanel.PerformLayout();
             this.simplePanel.ResumeLayout(false);
