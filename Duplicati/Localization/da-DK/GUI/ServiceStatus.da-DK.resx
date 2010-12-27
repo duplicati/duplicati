@@ -157,7 +157,7 @@
     <value>Venter på næste backup</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Seneste aflsuttede backup'er</value>
+    <value>Seneste afsluttede backup'er</value>
   </data>
   <data name="pausePeriodMenuItem.Text" xml:space="preserve">
     <value>Pause periode</value>
