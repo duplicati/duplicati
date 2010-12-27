@@ -129,6 +129,7 @@ namespace Duplicati.GUI
 
                                                 //Free up unused space
                                                 cmd.CommandText = "VACUUM;";
+                                                cmd.ExecuteNonQuery();
                                             }
                                         }
 
