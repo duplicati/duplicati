@@ -932,7 +932,11 @@ namespace Duplicati.Library.Main
                                          }
 
                                          if (!hasFiles)
-                                             continue; //Avoid downloading the content file
+                                         {
+                                             //Avoid downloading the content file
+                                             patchno++;
+                                             continue; 
+                                         }
                                     }
 
                                      OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
