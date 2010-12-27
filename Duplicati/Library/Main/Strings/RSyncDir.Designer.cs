@@ -162,6 +162,16 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to read the file modification timestamp for: {0}.
+        ///Error message: {1}.
+        /// </summary>
+        internal static string FolderModificationTimeReadError {
+            get {
+                return ResourceManager.GetString("FolderModificationTimeReadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Folder was marked for deletion, but did not exist: {0}.
         /// </summary>
         internal static string FolderToDeleteMissingError {

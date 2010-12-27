@@ -960,22 +960,30 @@ namespace Duplicati.Library.Main.RSync
             //Build folder diffs
             foreach(string s in m_unproccesed.Folders)
             {
-                string relpath = GetRelativeName(s);
-                if (relpath.Trim().Length != 0)
+                try
                 {
-                    DateTime lastWrite = Directory.GetLastWriteTimeUtc(s);
-
-                    //Cut off as we only have seconds stored
-                    lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
-
-                    if (!m_oldFolders.ContainsKey(relpath))
-                        m_newfolders.Add(new KeyValuePair<string, DateTime>(relpath, lastWrite));
-                    else
+                    string relpath = GetRelativeName(s);
+                    if (relpath.Trim().Length != 0)
                     {
-                        if (m_oldFolders[relpath] != lastWrite)
-                            m_updatedfolders.Add(new KeyValuePair<string,DateTime>(relpath, lastWrite));
-                        m_oldFolders.Remove(relpath);
+                        DateTime lastWrite = Directory.GetLastWriteTimeUtc(s);
+
+                        //Cut off as we only have seconds stored
+                        lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
+
+                        if (!m_oldFolders.ContainsKey(relpath))
+                            m_newfolders.Add(new KeyValuePair<string, DateTime>(relpath, lastWrite));
+                        else
+                        {
+                            if (m_oldFolders[relpath] != lastWrite)
+                                m_updatedfolders.Add(new KeyValuePair<string, DateTime>(relpath, lastWrite));
+                            m_oldFolders.Remove(relpath);
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    m_unproccesed.Errors.Add(s);
+                    m_stat.LogError(string.Format(Strings.RSyncDir.FolderModificationTimeReadError, s, ex.Message), ex);
                 }
             }
 

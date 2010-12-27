@@ -203,4 +203,8 @@ Error message: {1}</value>
   <data name="FileChangedWhileReadWarning" xml:space="preserve">
     <value>The file {0} changed while being backed up, this may result in a broken file</value>
   </data>
+  <data name="FolderModificationTimeReadError" xml:space="preserve">
+    <value>Failed to read the file modification timestamp for: {0}.
+Error message: {1}</value>
+  </data>
 </root>
