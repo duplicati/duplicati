@@ -157,6 +157,7 @@
     <Compile Include="LicenseEntry.cs" />
     <Compile Include="LicenseReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VersionNumbers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\thirdparty\SharpZipLib\ReadMe.rtf">

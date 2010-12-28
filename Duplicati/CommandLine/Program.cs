@@ -373,11 +373,7 @@ namespace Duplicati.CommandLine
             lines.AddRange(
                 string.Format(
                     Strings.Program.Usage.Replace("\r", ""), 
-#if DEBUG
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " (DEBUG)",
-#else
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-#endif
+                    License.VersionNumbers.Version,
                     isLinux ? Strings.Program.ExampleLinux : Strings.Program.ExampleWindows
                 ).Split('\n')
             );
