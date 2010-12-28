@@ -790,8 +790,10 @@ namespace Duplicati.Library.Main.RSync
                     if (Utility.Utility.IsClientLinux && options.UsnStrategy != Options.OptimizationStrategy.Auto)
                         throw new Exception(Strings.RSyncDir.UsnNotSupportedOnLinuxError);
 
+                    /*
                     if (options.DisableUSNDiffCheck)
                         m_lastUSN = null;
+                    */
 
                     usnHelpers = new Dictionary<string, Duplicati.Library.Snapshots.USNHelper>(Utility.Utility.ClientFilenameStringComparer);
                     foreach (string s in m_sourcefolder)
@@ -812,7 +814,10 @@ namespace Duplicati.Library.Main.RSync
 
                         if (usnHelpers.ContainsKey(rootFolder))
                         {
-                            if (m_lastUSN != null && m_lastUSN.ContainsKey(rootFolder))
+                            //This code is broken, see issue 332:
+                            //http://code.google.com/p/duplicati/issues/detail?id=332
+
+                            /* if (m_lastUSN != null && m_lastUSN.ContainsKey(rootFolder))
                             {
                                 if (m_lastUSN[rootFolder].Key != usnHelpers[rootFolder].JournalID)
                                 {
@@ -832,12 +837,14 @@ namespace Duplicati.Library.Main.RSync
                                 }
                                 else //All good we rely on USN numbers to find a list of changed files
                                 {
-                                    //Find all changed files
+                                    //Find all changed files and folders
                                     Dictionary<string, string> tmp = new Dictionary<string, string>(Utility.Utility.ClientFilenameStringComparer);
                                     foreach (string sx in usnHelpers[rootFolder].GetChangedFileSystemEntries(s, m_lastUSN[rootFolder].Value))
                                     {
                                         tmp.Add(sx, null);
-                                        m_unproccesed.Files.Add(sx);
+                                        
+                                        if (!sx.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                            m_unproccesed.Files.Add(sx);
                                     }
 
                                     //Remove the existing unchanged ones
@@ -846,7 +853,7 @@ namespace Duplicati.Library.Main.RSync
                                             unchanged.Add(x);
                                 }
                             }
-                            else
+                            else */
                             {
                                 usnHelpers[rootFolder].EnumerateFilesAndFolders(s, m_filter, m_unproccesed.Callback);
                             }

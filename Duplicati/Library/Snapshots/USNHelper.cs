@@ -176,6 +176,27 @@ namespace Duplicati.Library.Snapshots
             return result;
         }
 
+        public string GetChangeFlags(string entry)
+        {
+            foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
+                if (r.Key.Equals(entry, Utility.Utility.ClientFilenameStringComparision))
+                    return r.Value.Reason.ToString();
+
+            return "<not found>";
+            
+        }
+
+        public List<string> GetRenamedFileSystemEntries(string sourceFolder, long lastUsn)
+        {
+            List<string> result = new List<string>();
+            foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
+                if (r.Value.Usn >= lastUsn && ((r.Value.Reason & Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME) != 0) &&  r.Key.StartsWith(sourceFolder, Utility.Utility.ClientFilenameStringComparision))
+                    result.Add(r.Key);
+
+            return result;
+        }
+
+
         /// <summary>
         /// Returns a list of all files and folders in a given subfolder
         /// </summary>

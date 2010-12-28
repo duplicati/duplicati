@@ -136,7 +136,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
 
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.String, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
-                    new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
+                    //new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
                     new CommandLineArgument("disable-time-tolerance", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisabletimetoleranceShort, Strings.Options.DisabletimetoleranceLong, "false"),
 
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
@@ -366,7 +366,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A value indicating if USN numbers are used to get list of changed files
         /// </summary>
-        public bool DisableUSNDiffCheck { get { return GetBool("disable-usn-diff-check"); } }
+        //public bool DisableUSNDiffCheck { get { return GetBool("disable-usn-diff-check"); } }
 
         /// <summary>
         /// A value indicating if time tolerance is disabled
