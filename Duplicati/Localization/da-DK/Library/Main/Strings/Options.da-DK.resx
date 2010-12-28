@@ -447,4 +447,10 @@
   <data name="DisabletimetoleranceLong" xml:space="preserve">
     <value>Når det afgøres om der skal dannes en fuld backup, eller om en gammel backup skal slettes, vil Duplicati justere tidspunkterne en smule, for at sikre at mindre afvigelser i tiderne ikke bevirker uventet opførsel. Hvis der dannes en fuld backup hver dag og denne kører f.eks. kl. 12:00:01 og igen kl. 12:00:00, er der ikke gået en hel dag, og der dannes derfor en trinvis backup. For at forhindre dette indsættes der en 1% tolerance (maks. 1 time). Benyt denne indstiling for at deaktivere tolerance og derved benytte præcis tidskontrol.</value>
   </data>
+  <data name="SortedfilelistShort" xml:space="preserve">
+    <value>Sorter listen med filer</value>
+  </data>
+  <data name="SortedfilelistLong" xml:space="preserve">
+    <value>Listen med filer der skal tages backup af læses normalt i en tilfældig rækkefølge for at sikre at alle filer har lige stor sandsynlighed for at blive undersøgt. Aktiver denne indstilling for at benytte en alfabestisk rækkefølge istedet.</value>
+  </data>
 </root>

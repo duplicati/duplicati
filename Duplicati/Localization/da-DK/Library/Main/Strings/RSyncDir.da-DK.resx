@@ -203,4 +203,8 @@ Fejlbesked: {1}</value>
   <data name="UsnDisposeFailedWarning" xml:space="preserve">
     <value>Kunne ikke frigive resource fra USN hjælperen: {0}</value>
   </data>
+  <data name="FolderModificationTimeReadError" xml:space="preserve">
+    <value>Kunne ikke læse ændringsdatoen for: {0}.
+Fejlbesked: {1}</value>
+  </data>
 </root>

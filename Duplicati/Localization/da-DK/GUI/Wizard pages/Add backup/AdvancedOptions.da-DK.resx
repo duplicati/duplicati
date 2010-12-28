@@ -135,4 +135,7 @@
   <data name="EditOverrides.Text" xml:space="preserve">
     <value>Angiv manuelle indstillinger (avanceret)</value>
   </data>
+  <data name="LimitOptions.Text" xml:space="preserve">
+    <value>Sætter grænser, såsom filstørrelse og båndbredde</value>
+  </data>
 </root>

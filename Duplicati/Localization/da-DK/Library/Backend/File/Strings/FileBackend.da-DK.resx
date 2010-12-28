@@ -133,9 +133,24 @@
     <value>Angiver brugernavnet der anvendes til at logge på serveren</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>File baset</value>
+    <value>Fil baseret</value>
   </data>
   <data name="FolderMissingError" xml:space="preserve">
     <value>Mappen {0} findes ikke</value>
+  </data>
+  <data name="NoDestinationWithMarkerFileError" xml:space="preserve">
+    <value>Markør filen "{0}" blev ikke fundet på nogen af de undersøgte destinationer: {1}</value>
+  </data>
+  <data name="AlternateTargetPathsShort" xml:space="preserve">
+    <value>En liste af sekundære destinationer</value>
+  </data>
+  <data name="AlternateTargetPathsLong" xml:space="preserve">
+    <value>Dennet indstilling tillader at flere destinationer angives. Den primære destination placeres foran den liste af destinationer der angives med denne indstilling. Før der startes en backup kontrolleres det hvilke mapper fra listen der findes, og muligvis om en speciel markør fil findes, hvis denne er angivet med {0}. Den første mappe der findes og indeholder markør filen bliver brug som destination. Flere destinationer adskilles med {1}. Under Windows må stien også være en UNC sti, og drevbogstavet kan erstattes med en stjerne (*), f.eks. vil "*:\backup" undersøge alle drev. Hvis et brugernavn og kodeord er angivet bliver det samme brugernavn og kodeord anvendt til alle destinationer.</value>
+  </data>
+  <data name="AlternateDestinationMarkerShort" xml:space="preserve">
+    <value>Led efter en fil i destinationsmappen</value>
+  </data>
+  <data name="AlternateDestinationMarkerLong" xml:space="preserve">
+    <value>Denne indstilling virker kun hvis indstillingen --{0} også er aktiveret. Hvis der er angivet alternative stier angiver denne indstilling at der skal findes en markør fil i destinationsmappen. Dette kan bruges til at håndtere situationer hvor et ekstern drev skifter drevbogstav eller montertingsplacering. Ved at kontrollere at en speciel fil findes er det muligt at forgindre at data gemmes på en uønsket placering. Indholdet af filen undersøges aldrig, kun hvorvidt den findes.</value>
   </data>
 </root>
