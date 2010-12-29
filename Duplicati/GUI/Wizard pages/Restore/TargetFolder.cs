@@ -84,6 +84,13 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             }
             else
             {
+                if (TargetPath.Text.Trim().Length == 0)
+                {
+                    MessageBox.Show(this, Strings.TargetFolder.NoFolderError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    args.Cancel = true;
+                    return;
+                }
+
                 targetpaths = new string[] { TargetPath.Text.Trim() };
                 filesInFolder[TargetPath.Text] = null;
             }
@@ -91,14 +98,14 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             bool anyValids = false;
             for (int i = 0; i < targetpaths.Length; i++)
             {
-                string targetpath = targetpaths[i];
+                string targetpath = targetpaths[i] ?? "";
 
                 try
                 {
                     //Skip the verification for folders with no target files
-                    if (string.IsNullOrEmpty(targetpaths[i]) || !filesInFolder.ContainsKey(targetpath))
+                    if (!filesInFolder.ContainsKey(targetpath))
                     {
-                        targetpaths[i] = Environment.ExpandEnvironmentVariables(new Datamodel.ApplicationSettings(Program.DataConnection).TempPath);
+                        targetpaths[i] = "";
                         continue;
                     }
 
