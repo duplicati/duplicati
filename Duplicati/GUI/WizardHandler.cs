@@ -78,7 +78,7 @@ namespace Duplicati.GUI
             if (wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Add || wrapper.PrimayAction == Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.Edit)
             {
                 bool scheduleRun = wrapper.RunImmediately;
-                bool autoScheduled = wrapper.BackupTimeOffset < DateTime.Now;
+                bool autoScheduled = (wrapper.BackupTimeOffset < DateTime.Now) && !string.IsNullOrEmpty(wrapper.RepeatInterval);
 
                 //Resume Duplicati if the backup is supposed to run
                 if (scheduleRun || autoScheduled)
