@@ -297,7 +297,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a list of files to add to the signature volumes
+        /// Gets the path to the folder where signatures are cached
         /// </summary>
         public string SignatureCachePath
         {
