@@ -66,23 +66,24 @@ namespace Duplicati.GUI.Wizard_pages
             if (m_wrapper.ScheduleID > 0)
                 BackupList.SelectedBackup = (m_wrapper.DataConnection ?? Program.DataConnection).GetObjectById<Schedule>(m_wrapper.ScheduleID);
 
-            if (!m_valuesAutoLoaded)
+            if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
             {
-                if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
-                {
-                    topLabel.Visible = false;
-                    RestoreOptions.Visible = true;
-                }
-                else
-                {
-                    topLabel.Visible = true;
-                    RestoreOptions.Visible = false;
-                    ShowAdvancedPanel.Visible = false;
-                    topLabel.Text = this.Title;
-                }
+                topLabel.Visible = false;
+                RestoreOptions.Visible = true;
             }
             else
+            {
+                topLabel.Visible = true;
+                RestoreOptions.Visible = false;
+                ShowAdvancedPanel.Visible = false;
+                topLabel.Text = this.Title;
+            }
+            
+            if (m_valuesAutoLoaded)
+            {
+
                 m_skipFirstEvent = true;
+            }
 
             args.TreatAsLast = false;
         }
