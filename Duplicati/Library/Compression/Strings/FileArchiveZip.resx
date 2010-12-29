@@ -123,6 +123,12 @@
   <data name="AttemptWriteWhileReadingError" xml:space="preserve">
     <value>Cannot write while reading</value>
   </data>
+  <data name="CompressionlevelLong" xml:space="preserve">
+    <value>This option controls the compression level used. A setting of zero gives no compression, and a setting of 9 gives maximum compression.</value>
+  </data>
+  <data name="CompressionlevelShort" xml:space="preserve">
+    <value>Sets the Zip compression level</value>
+  </data>
   <data name="DeleteUnsupportedError" xml:space="preserve">
     <value>Zip does not support deleting</value>
   </data>

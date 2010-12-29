@@ -33,6 +33,16 @@ namespace Duplicati.Library.Compression
     public class FileArchiveZip : ICompression
     {
         /// <summary>
+        /// The commandline option for toggling the compression level
+        /// </summary>
+        private const string COMPRESSION_LEVEL_OPTION = "compression-level";
+
+        /// <summary>
+        /// The default compression level
+        /// </summary>
+        private const int DEFAULT_COMPRESSION_LEVEL = 9;
+
+        /// <summary>
         /// The archive used for read access
         /// </summary>
         private ICSharpCode.SharpZipLib.Zip.ZipFile m_zip;
@@ -74,6 +84,14 @@ namespace Duplicati.Library.Compression
 #else
                 m_stream = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(System.IO.File.Create(file));
 #endif
+                int compressionLevel = DEFAULT_COMPRESSION_LEVEL;
+                int tmplvl;
+                string cplvl = null;
+
+                if (options.TryGetValue(COMPRESSION_LEVEL_OPTION, out cplvl) && int.TryParse(cplvl, out tmplvl))
+                    compressionLevel = Math.Max(Math.Min(9, tmplvl), 0);
+
+                m_stream.SetLevel(compressionLevel);
             }
             else
             {
@@ -129,6 +147,7 @@ namespace Duplicati.Library.Compression
         public IList<ICommandLineArgument> SupportedCommands
         {
             get { return new List<ICommandLineArgument>( new ICommandLineArgument[] {
+                new CommandLineArgument(COMPRESSION_LEVEL_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"})
             } ); }
         }
 
