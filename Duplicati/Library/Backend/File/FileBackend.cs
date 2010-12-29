@@ -28,11 +28,13 @@ namespace Duplicati.Library.Backend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
+        private const string OPTION_MOVE_FILE = "use-move-for-put";
 
         private string m_path;
         private string m_username;
         private string m_password;
         Dictionary<string, string> m_options;
+        private bool m_moveFile;
 
         public File()
         {
@@ -122,6 +124,29 @@ namespace Duplicati.Library.Backend
                 if (m_path == null)
                     throw new Exception(string.Format(Strings.FileBackend.NoDestinationWithMarkerFileError, markerfile, string.Join(System.IO.Path.PathSeparator.ToString(), paths.ToArray())));
             }
+
+            
+            string tmp;
+            m_moveFile = false;
+
+            if (options.TryGetValue(OPTION_MOVE_FILE, out tmp))
+                m_moveFile = Utility.Utility.ParseBool(tmp, true);
+        }
+
+        private string GetRemoteName(string remotename)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(m_username) && m_password != null)
+                    Win32.PreAuthenticate(m_path, m_username, m_password);
+            }
+            catch
+            { }
+
+            if (!System.IO.Directory.Exists(m_path))
+                throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
+
+            return System.IO.Path.Combine(m_path, remotename);
         }
 
         #region IBackendInterface Members
@@ -150,7 +175,7 @@ namespace Duplicati.Library.Backend
                 Win32.PreAuthenticate(m_path, m_username, m_password);
 
             if (!System.IO.Directory.Exists(m_path))
-                    throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
+                throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
 
             foreach (string s in System.IO.Directory.GetFiles(m_path))
             {
@@ -171,40 +196,38 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            if (!System.IO.Directory.Exists(m_path))
-                throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
-
-            string path = System.IO.Path.Combine(m_path, remotename);
-            using (System.IO.FileStream writestream = System.IO.File.Open(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using (System.IO.FileStream writestream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                 Utility.Utility.CopyStream(stream, writestream);
-        }
-
-        public void Put(string remotename, string filename)
-        {
-            using (System.IO.FileStream readstream = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Put(remotename, readstream);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            if (!System.IO.Directory.Exists(m_path))
-                throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
-
-            string path = System.IO.Path.Combine(m_path, remotename);
-            using (System.IO.FileStream readstream = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            using (System.IO.FileStream readstream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 Utility.Utility.CopyStream(readstream, stream);
+        }
+
+        public void Put(string remotename, string filename)
+        {
+            string path = GetRemoteName(remotename);
+            if (m_moveFile)
+            {
+                if (System.IO.File.Exists(path))
+                    System.IO.File.Delete(path);
+                
+                System.IO.File.Move(filename, path);
+            }
+            else
+                System.IO.File.Copy(filename, path, true);
         }
 
         public void Get(string remotename, string filename)
         {
-            using (System.IO.FileStream writestream = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Get(remotename, writestream);
+            System.IO.File.Copy(GetRemoteName(remotename), filename, true);
         }
 
         public void Delete(string remotename)
         {
-            string path = System.IO.Path.Combine(m_path, remotename);
-            System.IO.File.Delete(path);
+            System.IO.File.Delete(GetRemoteName(remotename));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -216,6 +239,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionFTPUsernameShort, Strings.FileBackend.DescriptionFTPUsernameLong),
                     new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, string.Format(Strings.FileBackend.AlternateDestinationMarkerLong, OPTION_ALTERNATE_PATHS)),
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, string.Format(Strings.FileBackend.AlternateTargetPathsLong, OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
+                    new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
                 });
 
             }

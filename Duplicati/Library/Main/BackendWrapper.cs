@@ -929,7 +929,7 @@ namespace Duplicati.Library.Main
                                 ProgressEvent(50, m_statusmessage);
                         }
 
-                        if (remote is SignatureEntry && !string.IsNullOrEmpty(m_options.SignatureCachePath))
+                        if (remote is SignatureEntry && !string.IsNullOrEmpty(m_options.SignatureCachePath) && System.IO.File.Exists(filename))
                             System.IO.File.Copy(filename, System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote)), true);
 
                         if (remote is ManifestEntry)

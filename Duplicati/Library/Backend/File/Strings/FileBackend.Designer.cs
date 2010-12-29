@@ -167,5 +167,23 @@ namespace Duplicati.Library.Backend.Strings {
                 return ResourceManager.GetString("NoDestinationWithMarkerFileError", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When storing the file, the standard operation is to copy the file and delete the original. This sequence ensures that the operation can be retried if something goes wrong. Activating this option may cause the retry operation to fail.  This option has no effect unless the --disable-streaming-transfers options is activated..
+        /// </summary>
+        internal static string UseMoveForPutLong {
+            get {
+                return ResourceManager.GetString("UseMoveForPutLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Move the file instead of copying it.
+        /// </summary>
+        internal static string UseMoveForPutShort {
+            get {
+                return ResourceManager.GetString("UseMoveForPutShort", resourceCulture);
+            }
+        }
     }
 }
