@@ -328,13 +328,13 @@
     <value>Kør en fuld backup hvis kildemapperne er ændrede</value>
   </data>
   <data name="CompressionmoduleLong" xml:space="preserve">
-    <value>Duplicati understøtter dynamiske kompressionsmoduler. Brug denne indstilling til angive hvilket modul der skal anvendes til at komprimere data. Dette anvendes kun ved oprettelse af nye datasæt. Ved læsning af eksisterede fler benyttes filnavnet til at vælge kompressionsmodul.</value>
+    <value>Duplicati understøtter dynamiske kompressionsmoduler. Brug denne indstilling til angive hvilket modul der skal anvendes til at komprimere data. Dette anvendes kun ved oprettelse af nye datasæt. Ved læsning af eksisterede filer benyttes filnavnet til at vælge kompressionsmodul.</value>
   </data>
   <data name="CompressionmoduleShort" xml:space="preserve">
     <value>Angiv kompressionsmodul</value>
   </data>
   <data name="EncryptionmoduleLong" xml:space="preserve">
-    <value>Duplicati understøtter dynamiske krypteringsmoduler. Brug denne indstilling til angive hvilket modul der skal anvendes til at kryptere data. Dette anvendes kun ved oprettelse af nye datasæt. Ved læsning af eksisterede fler benyttes filnavnet til at vælge krypterinsmodul.</value>
+    <value>Duplicati understøtter dynamiske krypteringsmoduler. Brug denne indstilling til angive hvilket modul der skal anvendes til at kryptere data. Dette anvendes kun ved oprettelse af nye datasæt. Ved læsning af eksisterede filer benyttes filnavnet til at vælge krypterinsmodul.</value>
   </data>
   <data name="EncryptionmoduleShort" xml:space="preserve">
     <value>Angiv krypteringsmodul</value>

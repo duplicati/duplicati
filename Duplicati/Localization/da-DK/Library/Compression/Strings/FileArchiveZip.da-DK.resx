@@ -135,4 +135,10 @@
   <data name="FileNotFoundError" xml:space="preserve">
     <value>Filen blev ikke fundet: {0}</value>
   </data>
+  <data name="CompressionlevelShort" xml:space="preserve">
+    <value>Indstiller Zip kompressionsniveauet</value>
+  </data>
+  <data name="CompressionlevelLong" xml:space="preserve">
+    <value>Denne indstilling styrer kompressionsniveauet. Hvis denne sættes til nul komprimeres filerne ikke, og indstillingen 9 giver maksimal kompression.</value>
+  </data>
 </root>
