@@ -67,7 +67,7 @@ Filtre:
   Duplicati bruger et "første match" system, hvor det først matchende filter angiver om en fil inkluderes eller ekskluderes. Internt anvender Duplicati regulære udtryk som filtre, men understøtter filtre i fil-globbing formatet. Rækkefølgen af filtrene på kommandolinien angiver hvilken rækkefølge de anvendes i. Et eksempel:
     --include=*.txt --exclude=*\Thumbs.db --include=*
 
-  Selvim det sidste filter inkluderer alt, bliver ingen filer med navnet "Thumbs.db" inkluderet, fordi de matcher ekskluderingsreglen før inkluderingsreglen. Stier evalueres i deres fulde format, og som stier der er relative til kildemappen, men inklusiv en foranstillet skråstreg. Et eksempel:
+  Selvom det sidste filter inkluderer alt, bliver ingen filer med navnet "Thumbs.db" inkluderet, fordi de matcher ekskluderingsreglen før inkluderingsreglen. Stier evalueres i deres fulde format, og som stier der er relative til kildemappen, men inklusiv en foranstillet skråstreg. Et eksempel:
 
 {1}
   Hvis en mappe er ekskluderet bliver alle filer i den mappe altid ekskluderet, også selvom der er filtre der inkluederer filer i mappen. Hvis mappen inkluderes med et efterfølgende wildcard, bliver alle filer i mappen inkluderet. Hvis mappen inkluderes uden et wildcard, kan filer inkluderes eller ekskluderes med ekstra filtre.
