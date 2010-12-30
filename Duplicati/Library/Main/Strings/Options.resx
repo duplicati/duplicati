@@ -445,7 +445,7 @@
     <value>When deciding if a full backup should be made or an old backup should be deleted, Duplicati will adjust the times by a small fraction to ensure that minor time differences do not interfer with expected operation. If the backup is set to produce a full backup each day, and a full backup is made at, say 12:00:01, and the backup is executed again at 12:00:00, a full day has not passed and thus an incremental backup is performed. To avoid this, Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable the tolerance, and use strict time checking</value>
   </data>
   <data name="DisabletimetoleranceShort" xml:space="preserve">
-    <value>Deaktivates tolerance when comparing times</value>
+    <value>Deactivates tolerance when comparing times</value>
   </data>
   <data name="SortedfilelistLong" xml:space="preserve">
     <value>The list of files to back up is normally processed in a random fashion to ensure that all files have an equal probability of being processed. Use this setting to process the files in alphabetical order instead</value>

@@ -11,8 +11,11 @@ Usage:
  Cleanup (remove partial and unused files):
   Duplicati.CommandLine cleanup [options] <backend>
 
- List files (backup volume sets):
+ List files:
   Duplicati.CommandLine list [options] <backend>
+
+ List backup sets:
+  Duplicati.CommandLine collection-status [options] <backend>
 
  List content files (files that can be restored):
   Duplicati.CommandLine list-current-files [options] <backend>
@@ -23,6 +26,9 @@ Usage:
  List signature files (files in a single backup volume set):
   Duplicati.CommandLine list-actual-signature-files [options] <backend>
 
+ Find the last version of a file:
+  Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>
+
  Purge signature cache:
   Duplicati.CommandLine purge-signature-cache [options]
 
@@ -30,6 +36,8 @@ Usage:
   Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
   Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>
 
+ Create folder (usually done automatically):
+  Duplicati.CommandLine create-folder [options] <backend>
 
  A <backend> is identified by an url like ftp://host/ or ssh://server/.
  Using this system, Duplicati can detect if you want to backup or restore.
@@ -40,19 +48,13 @@ Usage:
 Option types:
  The following option types are available:
   Integer: a numerical value
-  Boolean: a truth value, --force and --force=true are equivalent. --force=false is the oposite
-  Timespan: a time in the special time format
+  Boolean: a truth value, --force and --force=true are equivalent. --force=false is the opposite
+  Timespan: a time in the special time format (explained below)
   Size: a size like 5mb or 200kb
   Enumeration: any of the listed values
   Path: the path to a folder or file
   String: any other type
   
-Windows filenames:
- Duplicati generates filenames with times in them, eg: 23:11:25+04:00.
- If the remote storage machine uses Windows as the operating system, the character : is not allowed in filenames.
- In this case you can specify the --time-separator="'" option to change the default time separator.
- The GUI version of Duplicati uses ' as the default separator.
-
 Times:
  Duplicati uses the time system from duplicity, where times may be presented as:
   1: the string "now", indicating the current time
