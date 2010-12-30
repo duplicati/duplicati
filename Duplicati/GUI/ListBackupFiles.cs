@@ -78,9 +78,19 @@ namespace Duplicati.GUI
             {
                 object[] args = (object[])e.Argument;
                 DuplicatiRunner r = new DuplicatiRunner();
-                e.Result = r.ListActualFiles((Datamodel.Schedule)args[0], (DateTime)args[1]);
+                IList<string> sourceFolders = r.ListSourceFolders((Datamodel.Schedule)args[0], (DateTime)args[1]);
                 if (r.IsAborted)
                     e.Cancel = true;
+                else
+                {
+                    r = new DuplicatiRunner();
+                    List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> files = r.ListActualFiles((Datamodel.Schedule)args[0], (DateTime)args[1]);
+
+                    e.Result = new KeyValuePair<IList<string>, List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>>>(sourceFolders, files);
+
+                    if (r.IsAborted)
+                        e.Cancel = true;
+                }
             }
             catch (System.Threading.ThreadAbortException)
             {
@@ -116,7 +126,10 @@ namespace Duplicati.GUI
                 try
                 {
                     ContentTree.BeginUpdate();
-                    List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> entries = e.Result as List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>>;
+                    KeyValuePair<IList<string>, List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>>> res = (KeyValuePair<IList<string>, List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>>>)e.Result;
+                    
+                    IList<string> sourcefolders = res.Key;
+                    List<KeyValuePair<Library.Main.RSync.RSyncDir.PatchFileType, string>> entries = res.Value;
 
                     List<string> addedfolders = new List<string>();
                     List<string> removedfolders = new List<string>();
@@ -182,6 +195,23 @@ namespace Duplicati.GUI
                         AddTreeItem(s, CONTROL_FILE_IMAGE_KEY);
                     foreach (string s in deletedfiles)
                         AddTreeItem(s, DELETED_FILE_IMAGE_KEY);
+
+                    //Patch display to show actual source folder rather than the internal enumeration system
+                    if (sourcefolders != null && sourcefolders.Count > 1)
+                    {
+                        foreach (TreeNode t in ContentTree.Nodes)
+                        {
+                            int ix;
+                            if (int.TryParse(t.Text, out ix))
+                            {
+                                if (ix >= 0 && ix < sourcefolders.Count)
+                                    t.Text = sourcefolders[ix];
+                            }
+                        }
+                    }
+
+
+
                 }
                 finally
                 {
