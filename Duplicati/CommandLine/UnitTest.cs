@@ -118,7 +118,7 @@ namespace Duplicati.CommandLine
             //We want all messages in the log
             options["log-level"] = LogMessageType.Profiling.ToString();
             //We cannot rely on USN numbering, but we can use USN enumeration
-            options["disable-usn-diff-check"] = null;
+            //options["disable-usn-diff-check"] = null;
 
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
