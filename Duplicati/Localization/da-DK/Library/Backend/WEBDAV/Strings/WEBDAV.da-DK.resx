@@ -153,7 +153,7 @@
   <data name="SeenThenNotFoundError" xml:space="preserve">
     <value>Da indholdet af mappen {0} blev hentet, fandtes filen {1}, men nu svarer serveren at filen ikke findes.
 Dette kan være fordi file er slettet eller utilgængelig, men det kan også være fordi filendelsen {2} er blokeret af web serveren. IIS blokerer ukendte filendelser som standard.
-Fejlbesked: {4}</value>
+Fejlbesked: {3}</value>
   </data>
   <data name="DescriptionAcceptAnyCertificateLong" xml:space="preserve">
     <value>Brug denne indstilling for at acceptere alle server certifikater, uanset hvilke fejl de har. Benyt venligst --accept-specified-ssl istedet hvis det er muligt.</value>
