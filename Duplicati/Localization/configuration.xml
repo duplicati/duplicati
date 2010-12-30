@@ -26,13 +26,23 @@
 		
 		<assembly name="Duplicati.Library.Backend.FTP" folder="Library\Backend\FTP" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.File" folder="Library\Backend\File" namespace="Duplicati.Library.Backend" />
-		<assembly name="Duplicati.Library.Backend.SSH" folder="Library\Backend\SSH" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.S3" folder="Library\Backend\S3" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.WEBDAV" folder="Library\Backend\WEBDAV" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.CloudFiles" folder="Library\Backend\CloudFiles" namespace="Duplicati.Library.Backend" />
-		<assembly name="Duplicati.Library.Backend.TahoeLAFS" folder="Library\Backend\TahoeLAFS" namespace="Duplicati.Library.Backend" />
+		
 		
 		<keyfile>..\GUI\Duplicati.snk</keyfile>
+		<versionassembly>..\GUI\bin\release\Duplicati.exe</versionassembly>
+		<sourcefolder>..</sourcefolder>
+		<outputfolder>compiled</outputfolder>
+		<productname>Duplicati</productname>
+	</configuration>
+
+	<!-- We need these without a keyfile, because they depend on unsigned dll's -->
+	<configuration name="SSH">
+		<assembly name="Duplicati.Library.Backend.SSH" folder="Library\Backend\SSH" namespace="Duplicati.Library.Backend" />
+		<assembly name="Duplicati.Library.Backend.TahoeLAFS" folder="Library\Backend\TahoeLAFS" namespace="Duplicati.Library.Backend" />		
+		
 		<versionassembly>..\GUI\bin\release\Duplicati.exe</versionassembly>
 		<sourcefolder>..</sourcefolder>
 		<outputfolder>compiled</outputfolder>
