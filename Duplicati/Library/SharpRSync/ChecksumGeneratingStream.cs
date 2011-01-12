@@ -138,5 +138,15 @@ namespace Duplicati.Library.SharpRSync
 
             base.Dispose(disposing);
         }
+
+        /// <summary>
+        /// Returns the number of bytes generated when processing the specified amount of bytes
+        /// </summary>
+        /// <param name="filesize">The size of the file to process</param>
+        /// <returns>The expected size of the signature file</returns>
+        public int BytesGeneratedForSignature(long filesize)
+        {
+            return m_outstream.BytesGeneratedForSignature(filesize);
+        }
     }
 }

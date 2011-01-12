@@ -10,6 +10,23 @@ namespace Duplicati.Library.SharpRSync
     public class ChecksumFileWriter
     {
         /// <summary>
+        /// The number of bytes to include in each checksum
+        /// </summary>
+        public const int DEFAULT_BLOCK_SIZE = 2048;
+        /// <summary>
+        /// The default number of bytes to use from the strong hash
+        /// </summary>
+        public const int DEFAULT_STRONG_LEN = 8;
+        /// <summary>
+        /// The default number of bytes generated per input block
+        /// </summary>
+        public const int DEFAULT_BYTES_PER_BLOCK = DEFAULT_STRONG_LEN + 4;
+        /// <summary>
+        /// The number of bytes used for the rdiff header
+        /// </summary>
+        public static readonly int HEADER_SIZE = RDiffBinary.SIGNATURE_MAGIC.Length + 4 + 4;
+
+        /// <summary>
         /// The length of a datablock
         /// </summary>
         private int m_blocklen;
@@ -31,7 +48,7 @@ namespace Duplicati.Library.SharpRSync
         /// </summary>
         /// <param name="outputstream">The stream into which the checksum data is written</param>
         public ChecksumFileWriter(System.IO.Stream outputstream)
-            : this(outputstream, Adler32Checksum.DEFAULT_BLOCK_SIZE, 8)
+            : this(outputstream, DEFAULT_BLOCK_SIZE, DEFAULT_STRONG_LEN)
         {
         }
 
@@ -112,5 +129,20 @@ namespace Duplicati.Library.SharpRSync
         /// Gets the number of bytes in a signature file
         /// </summary>
         public int StrongLength { get { return m_stronglen; } }
+        /// <summary>
+        /// Gets the number of bytes generated per input block
+        /// </summary>
+        public int BytesPrBlock { get { return m_stronglen + 4; } }
+
+        /// <summary>
+        /// Returns the number of bytes generated when processing the specified amount of bytes
+        /// </summary>
+        /// <param name="filesize">The size of the file to process</param>
+        /// <returns>The expected size of the signature file</returns>
+        public int BytesGeneratedForSignature(long filesize)
+        {
+            return (int)(SharpRSync.ChecksumFileWriter.HEADER_SIZE +
+                (((filesize + m_blocklen - 1) / m_blocklen) * (m_stronglen + 4)));
+        }
     }
 }

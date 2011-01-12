@@ -40,6 +40,12 @@ namespace Duplicati.Library.Main.RSync
         private static readonly TimeSpan PROGRESS_TIMESPAN = TimeSpan.FromSeconds(1);
 
         /// <summary>
+        /// The margin that a file is allowed to grow during signature generation, 
+        /// without incurring a performance penalty
+        /// </summary>
+        private const double FILESIZE_GROW_MARGIN_MULTIPLIER = 1.01;
+
+        /// <summary>
         /// The possible filetypes in an archive
         /// </summary>
         public enum PatchFileType
@@ -1354,6 +1360,7 @@ namespace Duplicati.Library.Main.RSync
                                                 fs.Position = 0;
                                                 using (SharpRSync.ChecksumGeneratingStream ts = new SharpRSync.ChecksumGeneratingStream(newSig, fs))
                                                 {
+                                                    newSig.Capacity = ts.BytesGeneratedForSignature((int)(fs.Length * FILESIZE_GROW_MARGIN_MULTIPLIER));
                                                     fs = new Utility.TempFileStream();
                                                     Utility.Utility.CopyStream(ts, fs, false);
                                                 }
@@ -1376,7 +1383,9 @@ namespace Duplicati.Library.Main.RSync
                                             //Set up for a new round
                                             signature = new System.IO.MemoryStream();
                                             fs.Position = 0;
+                                            long filelen = fs.Length;
                                             fs = new SharpRSync.ChecksumGeneratingStream(signature, fs);
+                                            ((MemoryStream)signature).Capacity = ((SharpRSync.ChecksumGeneratingStream)fs).BytesGeneratedForSignature(filelen);
                                         }
                                     }
 
@@ -1430,10 +1439,15 @@ namespace Duplicati.Library.Main.RSync
         {
             string relpath = GetRelativeName(s);
 
-            System.IO.MemoryStream ms = new MemoryStream();
             m_examinedfilesize += fs.Length;
             m_examinedfiles++;
-            SharpRSync.Interface.GenerateSignature(fs, ms);
+
+            System.IO.MemoryStream ms = new MemoryStream();
+            SharpRSync.ChecksumFileWriter ws = new Duplicati.Library.SharpRSync.ChecksumFileWriter(ms);
+            
+            //Expand the memorystream to contain all bytes, which avoids re-allocation
+            ms.Capacity = ws.BytesGeneratedForSignature((int)(fs.Length * FILESIZE_GROW_MARGIN_MULTIPLIER));
+            ws.AddStream(fs);
             ms.Position = 0;
 
             if (!m_oldSignatures.ContainsKey(relpath))

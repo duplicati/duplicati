@@ -30,10 +30,6 @@ namespace Duplicati.Library.SharpRSync
     public class Adler32Checksum
     {
         /// <summary>
-        /// The number of bytes to include in each checksum
-        /// </summary>
-        public const int DEFAULT_BLOCK_SIZE = 2048;
-        /// <summary>
         /// The charated offset used in the checksum
         /// </summary>
         private const ushort CHAR_OFFSET = 31;
