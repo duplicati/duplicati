@@ -120,7 +120,10 @@ namespace Duplicati.GUI
 
         private void OKBtn_Click(object sender, EventArgs e)
         {
-            foreach(TabPage tab in TabContainer.TabPages)
+            if (UseCommonPassword.Checked && !CommonPassword.VerifyPasswordIfChanged())
+                return;
+
+            foreach (TabPage tab in TabContainer.TabPages)
                 if (tab.Tag as Library.Interface.ISettingsControl != null)
                 {
                     try
@@ -197,7 +200,7 @@ namespace Duplicati.GUI
                 TempPath.Text = m_settings.TempPath;
 
                 UseCommonPassword.Checked = m_settings.UseCommonPassword;
-                CommonPassword.Text = m_settings.CommonPassword;
+                CommonPassword.Text = CommonPassword.InitialPassword = m_settings.CommonPassword;
                 CommonPassword.AskToEnterNewPassword = !string.IsNullOrEmpty(CommonPassword.Text);
 
                 if (EncryptionModule.Items.Count > 0)

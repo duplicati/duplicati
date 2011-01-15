@@ -45,6 +45,7 @@ namespace Duplicati.Library.Backend
         private const string HASWARNEDPATH = "UI: HasWarnedPath";
         private const string HASWARNEDUSERNAME = "UI: HasWarnedUsername";
         private const string HASWARNEDPASSWORD = "UI: HasWarnedPassword";
+        private const string INITIALPASSWORD = "UI: Temp password";
 
         private bool m_warnedPassword = false; 
         private bool m_warnedUsername = false;
@@ -91,6 +92,8 @@ namespace Duplicati.Library.Backend
                 }
 
             SaveSettings();
+
+            m_options.Remove(INITIALPASSWORD);
 
             return true;
         }
@@ -156,11 +159,17 @@ namespace Duplicati.Library.Backend
                 }
             }
 
+            if (Password.Text.Length > 0 && !Password.VerifyPasswordIfChanged())
+                return false;
+
             return true;
         }
 
         private void SaveSettings()
         {
+            string initialPwd;
+            bool hasInitial = m_options.TryGetValue(INITIALPASSWORD, out initialPwd);
+
             m_options.Clear();
             m_options[HASTESTED] = m_hasTested.ToString();
             m_options[HASWARNEDPATH] = m_warnedPath.ToString();
@@ -175,6 +184,8 @@ namespace Duplicati.Library.Backend
             m_options[USE_SSL] = UseSSL.Checked.ToString();
             m_options[ACCEPT_ANY_CERTIFICATE] = AcceptAnyHash.Checked.ToString();
             m_options[ACCEPT_SPECIFIC_CERTIFICATE] = AcceptSpecifiedHash.Checked ? SpecifiedHash.Text : "";
+            if (hasInitial)
+                m_options[INITIALPASSWORD] = initialPwd;
         }
 
         private void LoadSettings()
@@ -188,7 +199,10 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey(PASSWORD))
                 Password.Text = m_options[PASSWORD];
 
-            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(Password.Text);
+            if (!m_options.ContainsKey(INITIALPASSWORD))
+                m_options[INITIALPASSWORD] = m_options.ContainsKey(PASSWORD) ? m_options[PASSWORD] : "";
+            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(m_options[INITIALPASSWORD]);
+            Password.InitialPassword = m_options[INITIALPASSWORD];
 
             bool b;
             if (!m_options.ContainsKey(PASSIVE) || !bool.TryParse(m_options[PASSIVE], out b))

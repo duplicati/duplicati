@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend
             this.label3 = new System.Windows.Forms.Label();
             this.Username = new System.Windows.Forms.TextBox();
             this.API_KEY = new Duplicati.Winforms.Controls.PasswordControl();
-            this.BucketName = new System.Windows.Forms.TextBox();
+            this.ContainerName = new System.Windows.Forms.TextBox();
             this.SignUpLink = new System.Windows.Forms.LinkLabel();
             this.label4 = new System.Windows.Forms.Label();
             this.TestConnection = new System.Windows.Forms.Button();
@@ -74,9 +74,9 @@ namespace Duplicati.Library.Backend
             // 
             // BucketName
             // 
-            resources.ApplyResources(this.BucketName, "BucketName");
-            this.BucketName.Name = "BucketName";
-            this.BucketName.TextChanged += new System.EventHandler(this.BucketName_TextChanged);
+            resources.ApplyResources(this.ContainerName, "BucketName");
+            this.ContainerName.Name = "BucketName";
+            this.ContainerName.TextChanged += new System.EventHandler(this.ContainerName_TextChanged);
             // 
             // SignUpLink
             // 
@@ -112,7 +112,7 @@ namespace Duplicati.Library.Backend
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.SignUpLink);
-            this.Controls.Add(this.BucketName);
+            this.Controls.Add(this.ContainerName);
             this.Controls.Add(this.API_KEY);
             this.Controls.Add(this.Username);
             this.Controls.Add(this.label3);
@@ -132,7 +132,7 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox Username;
         private Duplicati.Winforms.Controls.PasswordControl API_KEY;
-        private System.Windows.Forms.TextBox BucketName;
+        private System.Windows.Forms.TextBox ContainerName;
         private System.Windows.Forms.LinkLabel SignUpLink;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button TestConnection;

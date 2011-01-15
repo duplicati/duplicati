@@ -141,6 +141,13 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_hasGeneratedNewPassword = false;
             }
 
+            if (EnablePassword.Checked && !Password.VerifyPasswordIfChanged())
+            {
+                args.Cancel = true;
+                return;
+            }
+
+
             m_settings["Password:SettingsChanged"] = m_settingsChanged;
             m_settings["Password:WarnedChanged"] = m_warnedChanged;
             m_settings["Password:NewPasswordGenerated"] = m_hasGeneratedNewPassword;
@@ -175,7 +182,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (!m_valuesAutoLoaded)
             {
                 EnablePassword.Checked = !string.IsNullOrEmpty(m_wrapper.BackupPassword) || (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Add || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore);
-                Password.Text = m_wrapper.BackupPassword;
+                Password.Text = Password.InitialPassword = m_wrapper.BackupPassword;
 
                 Password.AskToEnterNewPassword = !string.IsNullOrEmpty(m_wrapper.BackupPassword);
 

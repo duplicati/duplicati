@@ -33,6 +33,7 @@ namespace Duplicati.Library.Backend
         private const string ACCESS_KEY = "Access Key";
         private const string CONTAINER_NAME = "Container name";
         private const string HASTESTED = "UI: Has tested";
+        private const string INITIALPASSWORD = "UI: Temp password";
 
         private const string LOGIN_PAGE = "https://www.rackspacecloud.com/signup";
         private IDictionary<string, string> m_options;
@@ -74,17 +75,26 @@ namespace Duplicati.Library.Backend
                 }
 
             Save();
+
+            m_options.Remove(INITIALPASSWORD);
+
             return true;
         }
 
         private void Save()
         {
+            string initialPwd;
+            bool hasInitial = m_options.TryGetValue(INITIALPASSWORD, out initialPwd);
+
             m_options.Clear();
             m_options[HASTESTED] = m_hasTested.ToString();
 
             m_options[USERNAME] = Username.Text;
             m_options[ACCESS_KEY] = API_KEY.Text;
-            m_options[CONTAINER_NAME] = BucketName.Text;
+            m_options[CONTAINER_NAME] = ContainerName.Text;
+            
+            if (hasInitial)
+                m_options[INITIALPASSWORD] = initialPwd;
         }
 
         void CloudFilesUI_Load(object sender, EventArgs args)
@@ -94,9 +104,12 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey(ACCESS_KEY))
                 API_KEY.Text = m_options[ACCESS_KEY];
             if (m_options.ContainsKey(CONTAINER_NAME))
-                BucketName.Text = m_options[CONTAINER_NAME];
+                ContainerName.Text = m_options[CONTAINER_NAME];
 
-            API_KEY.AskToEnterNewPassword = !string.IsNullOrEmpty(API_KEY.Text);
+            if (!m_options.ContainsKey(INITIALPASSWORD))
+                m_options[INITIALPASSWORD] = m_options.ContainsKey(ACCESS_KEY) ? m_options[ACCESS_KEY] : "";
+            API_KEY.AskToEnterNewPassword = !string.IsNullOrEmpty(m_options[INITIALPASSWORD]);
+            API_KEY.InitialPassword = m_options[INITIALPASSWORD];
 
             if (!m_options.ContainsKey(HASTESTED) || !bool.TryParse(m_options[HASTESTED], out m_hasTested))
                 m_hasTested = false;
@@ -116,11 +129,14 @@ namespace Duplicati.Library.Backend
                 return false;
             }
 
-            if (BucketName.Text.Trim().Length <= 0)
+            if (ContainerName.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Strings.CloudFilesUI.EmptyContainerNameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
+
+            if (!API_KEY.VerifyPasswordIfChanged())
+                return false;
 
             return true;
         }
@@ -182,12 +198,7 @@ namespace Duplicati.Library.Backend
             m_hasTested = false;
         }
 
-        private void BucketName_TextChanged(object sender, EventArgs e)
-        {
-            m_hasTested = false;
-        }
-
-        private void UseEuroBuckets_CheckedChanged(object sender, EventArgs e)
+        private void ContainerName_TextChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
         }

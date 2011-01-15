@@ -32,6 +32,11 @@ namespace Duplicati.Winforms.Controls
         private bool m_askToEnterNewPassword = false;
 
         /// <summary>
+        /// The original password assigned to the control
+        /// </summary>
+        private string m_initialPassword = null;
+
+        /// <summary>
         /// An event that is raised when the password changed
         /// </summary>
         [Browsable(true)]
@@ -68,6 +73,18 @@ namespace Duplicati.Winforms.Controls
 
                 if (changed && TextChanged != null)
                     TextChanged(this, new EventArgs());
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the initial password, used to check if the password was changed
+        /// </summary>
+        public string InitialPassword
+        {
+            get { return m_initialPassword; }
+            set 
+            { 
+                m_initialPassword = value; 
             }
         }
 
@@ -217,6 +234,27 @@ namespace Duplicati.Winforms.Controls
         {
             try { TextBox.Focus(); }
             catch { }
+        }
+
+        /// <summary>
+        /// A helper method that asks the user to verify the password if it was changed and is not show
+        /// </summary>
+        /// <returns>True if the password was verified, false otherwise</returns>
+        public bool VerifyPasswordIfChanged()
+        {
+            if (!ShowPassword.Checked && (string.IsNullOrEmpty(m_initialPassword) != string.IsNullOrEmpty(m_password) || m_initialPassword != m_password))
+            {
+                PasswordConfirmationDialog dlg = new PasswordConfirmationDialog(m_password);
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                {
+                    m_initialPassword = m_password;
+                    return true;
+                }
+                else
+                    return false;
+            }
+            else
+                return true;
         }
     }
 }

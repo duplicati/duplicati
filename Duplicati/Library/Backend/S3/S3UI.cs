@@ -42,6 +42,7 @@ namespace Duplicati.Library.Backend
         private const string HASSUGGESTEDPREFIX = "UI: Has suggested prefix";
         private const string HASSUGGESTEDLOWERCASE = "UI: Has suggested lowercase";
         private const string HASWARNEDINVALIDBUCKETNAME = "UI: Has warned invalid bucket name";
+        private const string INITIALPASSWORD = "UI: Temp password";
 
         private const string S3_PATH = "s3.amazonaws.com";
 
@@ -101,11 +102,16 @@ namespace Duplicati.Library.Backend
             tmp[AWS_ID.Text] = AWS_KEY.Text;
             S3CommonOptions.EncodeAccounts(tmp, m_applicationSettings);
 
+            m_options.Remove(INITIALPASSWORD);
+
             return true;
         }
 
         private void Save()
         {
+            string initialPwd;
+            bool hasInitial = m_options.TryGetValue(INITIALPASSWORD, out initialPwd);
+
             m_options.Clear();
             m_options[HASTESTED] = m_hasTested.ToString();
             m_options[HASCREATEDBUCKET] = m_hasCreatedbucket.ToString();
@@ -131,9 +137,11 @@ namespace Duplicati.Library.Backend
                 m_options[BUCKET_NAME] = bucketname;
             }
 
-            
             bucketname = m_options[BUCKET_NAME];
             m_options[SUBDOMAIN] = (bucketname.ToLower() == bucketname && S3.IsValidHostname(bucketname)).ToString();
+
+            if (hasInitial)
+                m_options[INITIALPASSWORD] = initialPwd;
         }
 
         void S3UI_Load(object sender, EventArgs args)
@@ -151,7 +159,10 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey(PREFIX) && !string.IsNullOrEmpty(m_options[PREFIX]))
                 BucketName.Text += "/" + m_options[PREFIX];
 
-            AWS_KEY.AskToEnterNewPassword = !string.IsNullOrEmpty(AWS_KEY.Text);
+            if (!m_options.ContainsKey(INITIALPASSWORD))
+                m_options[INITIALPASSWORD] = m_options.ContainsKey(ACCESS_KEY) ? m_options[ACCESS_KEY] : "";
+            AWS_KEY.AskToEnterNewPassword = !string.IsNullOrEmpty(m_options[INITIALPASSWORD]);
+            AWS_KEY.InitialPassword = m_options[INITIALPASSWORD];
 
             bool b;
 
@@ -312,6 +323,9 @@ namespace Duplicati.Library.Backend
 
                 m_hasWarnedInvalidBucketname = true;
             }
+
+            if (!AWS_KEY.VerifyPasswordIfChanged())
+                return false;
 
             if (checkForBucket)
                 return EnsureBucketForMono();

@@ -35,6 +35,7 @@ namespace Duplicati.Library.Backend
         private const string USERNAME = "Username";
         private const string PASSWORD = "Password";
         private const string CHECKED_EMPTY = "UI: Checked empty";
+        private const string INITIALPASSWORD = "UI: Temp password";
 
         private bool m_hasCheckedEmpty = false;
 
@@ -51,6 +52,9 @@ namespace Duplicati.Library.Backend
 
         internal bool Save(bool validate)
         {
+            string initialPwd;
+            bool hasInitial = m_options.TryGetValue(INITIALPASSWORD, out initialPwd);
+
             string targetpath;
             if (UsePath.Checked)
                 targetpath = TargetFolder.Text;
@@ -60,10 +64,14 @@ namespace Duplicati.Library.Backend
             if (m_hasCheckedEmpty && m_options.ContainsKey(DESTINATION_FOLDER) && targetpath != m_options[DESTINATION_FOLDER])
                 m_hasCheckedEmpty = false;
 
+
             m_options.Clear();
             m_options[CHECKED_EMPTY] = m_hasCheckedEmpty.ToString();
             m_options[DESTINATION_FOLDER] = targetpath;
-            
+
+            if (hasInitial)
+                m_options[INITIALPASSWORD] = initialPwd;
+
             if (UseCredentials.Checked)
             {
                 m_options[USERNAME] = Username.Text;
@@ -76,14 +84,19 @@ namespace Duplicati.Library.Backend
             }
 
             if (!validate)
-                return false; 
+                return false;
 
             if (UseCredentials.Checked)
+            {
                 if (!Duplicati.Library.Backend.File.PreAuthenticate(targetpath, Username.Text, Password.Text))
                 {
                     MessageBox.Show(this, Strings.FileUI.AuthenticationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                 }
+
+                if (Password.Text.Length > 0 && !Password.VerifyPasswordIfChanged())
+                    return false;
+            }
 
             try
             {
@@ -144,6 +157,8 @@ namespace Duplicati.Library.Backend
                 return false;
             }
 
+            m_options.Remove(INITIALPASSWORD);
+
             return true;
         }
 
@@ -172,14 +187,16 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey(DESTINATION_FOLDER))
                 TargetFolder.Text = m_options[DESTINATION_FOLDER];
 
-
             UseCredentials.Checked = m_options.ContainsKey(USERNAME) && !string.IsNullOrEmpty(m_options[USERNAME]);
             if (m_options.ContainsKey(USERNAME))
                 Username.Text = m_options[USERNAME];
             if (m_options.ContainsKey(PASSWORD))
                 Password.Text = m_options[PASSWORD];
 
-            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(Password.Text);
+            if (!m_options.ContainsKey(INITIALPASSWORD))
+                m_options[INITIALPASSWORD] = m_options.ContainsKey(PASSWORD) ? m_options[PASSWORD] : "";
+            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(m_options[INITIALPASSWORD]);
+            Password.InitialPassword = m_options[INITIALPASSWORD];
 
             if (!m_options.ContainsKey(CHECKED_EMPTY) || !bool.TryParse(m_options[CHECKED_EMPTY], out m_hasCheckedEmpty))
                 m_hasCheckedEmpty = false;

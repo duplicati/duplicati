@@ -56,6 +56,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PasswordConfirmationDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PasswordConfirmationDialog.Designer.cs">
+      <DependentUpon>PasswordConfirmationDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="PasswordControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -68,6 +74,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\PasswordConfirmationDialog.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>PasswordConfirmationDialog.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\PasswordControl.Designer.cs">
       <DependentUpon>PasswordControl.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -76,12 +87,19 @@
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="PasswordConfirmationDialog.resx">
+      <DependentUpon>PasswordConfirmationDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="PasswordControl.resx">
       <DependentUpon>PasswordControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\PasswordConfirmationDialog.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>PasswordConfirmationDialog.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\PasswordControl.resx">
       <Generator>ResXFileCodeGenerator</Generator>

@@ -42,6 +42,7 @@ namespace Duplicati.Library.Backend
         private const string HAS_WARNED_PATH = "UI: Has warned path";
         private const string HAS_TESTED = "UI: Has tested";
         private const string HAS_WARNED_NO_SFTP = "UI: Has warned SFTP";
+        private const string INITIALPASSWORD = "UI: Temp password";
 
         private bool m_warnedPath = false;
         private bool m_hasTested = false;
@@ -87,11 +88,18 @@ namespace Duplicati.Library.Backend
                 }
 
             Save();
+
+            m_options.Remove(INITIALPASSWORD);
+
             return true;
         }
 
         private void Save()
         {
+            string initialPwd;
+            bool hasInitial = m_options.TryGetValue(INITIALPASSWORD, out initialPwd);
+
+            m_options.Clear();
             m_options[HAS_TESTED] = m_hasTested.ToString();
             m_options[HAS_WARNED_PATH] = m_warnedPath.ToString();
             m_options[HAS_WARNED_NO_SFTP] = m_warnedNoSFTP.ToString();
@@ -105,6 +113,8 @@ namespace Duplicati.Library.Backend
             m_options[DEBUG_ENABLED] = GenerateDebugOutput.Checked.ToString();
             m_options[USE_UNMANAGED_SSH] = UseUnmanagedSSH.Checked.ToString();
             m_options[SSH_KEYFILE] = Keyfile.Text;
+            if (hasInitial)
+                m_options[INITIALPASSWORD] = initialPwd;
         }
 
         void SSHUI_PageLoad(object sender, EventArgs args)
@@ -140,8 +150,11 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey(SSH_KEYFILE))
                 Keyfile.Text = m_options[SSH_KEYFILE];
 
-            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(Password.Text);
-            
+            if (!m_options.ContainsKey(INITIALPASSWORD))
+                m_options[INITIALPASSWORD] = m_options.ContainsKey(PASSWORD) ? m_options[PASSWORD] : "";
+            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(m_options[INITIALPASSWORD]);
+            Password.InitialPassword = m_options[INITIALPASSWORD];
+
             Port.Value = port;
             GenerateDebugOutput.Checked = debug;
             UseUnmanagedSSH.Checked = useUnmanaged;
@@ -247,7 +260,6 @@ namespace Duplicati.Library.Backend
                 catch { }
 
                 return false;
-
             }
 
             if (!m_warnedPath && Path.Text.Trim().Length == 0)
@@ -296,6 +308,9 @@ namespace Duplicati.Library.Backend
                     return false;
                 }
             }
+
+            if (UsePassword.Checked && !Password.VerifyPasswordIfChanged())
+                return false;
 
             return true;
         }

@@ -48,6 +48,7 @@ namespace Duplicati.Library.Backend
         private const string HAS_WARNED_PATH = "UI: Has warned path";
         private const string HAS_WARNED_LEADING_SLASH = "UI: Has warned leading slash";
         private const string HAS_TESTED = "UI: Has tested";
+        private const string INITIALPASSWORD = "UI: Temp password";
 
         private bool m_warnedPassword = false;
         private bool m_warnedUsername = false;
@@ -95,6 +96,9 @@ namespace Duplicati.Library.Backend
                 }
 
             Save();
+
+            m_options.Remove(INITIALPASSWORD);
+
             return true;
         }
 
@@ -109,7 +113,10 @@ namespace Duplicati.Library.Backend
             if (m_options.ContainsKey(PASSWORD))
                 Password.Text = m_options[PASSWORD];
 
-            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(Password.Text);
+            if (!m_options.ContainsKey(INITIALPASSWORD))
+                m_options[INITIALPASSWORD] = m_options.ContainsKey(PASSWORD) ? m_options[PASSWORD] : "";
+            Password.AskToEnterNewPassword = !string.IsNullOrEmpty(m_options[INITIALPASSWORD]);
+            Password.InitialPassword = m_options[INITIALPASSWORD];
 
             int port;
             if (!m_options.ContainsKey(PORT) || !int.TryParse(m_options[PORT], out port))
@@ -229,6 +236,10 @@ namespace Duplicati.Library.Backend
                     }
                     m_warnedPassword = true;
                 }
+
+                if (Password.Text.Length > 0 && !Password.VerifyPasswordIfChanged())
+                    return false;
+
             }
 
             if (UseSSL.Checked && AcceptSpecifiedHash.Checked)
@@ -255,6 +266,9 @@ namespace Duplicati.Library.Backend
 
         private void Save()
         {
+            string initialPwd;
+            bool hasInitial = m_options.TryGetValue(INITIALPASSWORD, out initialPwd);
+
             m_options.Clear();
             m_options[HAS_TESTED] = m_hasTested.ToString();
             m_options[HAS_WARNED_PATH] = m_warnedPath.ToString();
@@ -281,6 +295,9 @@ namespace Duplicati.Library.Backend
             m_options[USE_SSL] = UseSSL.Checked.ToString();
             m_options[ACCEPT_ANY_CERTIFICATE] = AcceptAnyHash.Checked.ToString();
             m_options[ACCEPT_SPECIFIC_CERTIFICATE] = AcceptSpecifiedHash.Checked ? SpecifiedHash.Text : "";
+
+            if (hasInitial)
+                m_options[INITIALPASSWORD] = initialPwd;
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
