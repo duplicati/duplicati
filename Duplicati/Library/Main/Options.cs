@@ -141,7 +141,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
                     new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong),
-                    new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"high", "abovenormal", "normal", "belownormal", "low", "idle" }),
+                    new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"highest", "high", "abovenormal", "normal", "belownormal", "low", "lowest", "idle" }),
 
                     new CommandLineArgument("backup-prefix", CommandLineArgument.ArgumentType.String, Strings.Options.BackupprefixShort, Strings.Options.BackupprefixLong, "duplicati"),
 
