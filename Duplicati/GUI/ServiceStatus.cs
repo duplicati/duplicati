@@ -41,6 +41,8 @@ namespace Duplicati.GUI
             imageList.Images.Add(DuplicatiOutputParser.ErrorStatus, Properties.Resources.ErrorStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.PartialStatus, Properties.Resources.PartialStatusIcon);
 
+            //We have the display open in the designer, so we set the right size here
+            this.Size = this.MinimumSize;
 #if DEBUG
             this.Text += " (DEBUG)";
 #endif
@@ -214,23 +216,22 @@ namespace Duplicati.GUI
 
         private void ShowAdvanced_Click(object sender, EventArgs e)
         {
+            int height = simplePanel.Height + (this.Padding.All + simplePanel.Margin.All) * 5;
+            bool reposition = (this.Top == (Screen.PrimaryScreen.WorkingArea.Height - this.Height) && this.Left == (Screen.PrimaryScreen.WorkingArea.Width - this.Width));
+
             if (advancedPanel.Visible)
             {
                 advancedPanel.Visible = false;
-                simplePanel.Top = advancedPanel.Top;
                 ShowAdvanced.Text = Strings.ServiceStatus.SwitchToAdvanced;
             }
             else
             {
                 advancedPanel.Visible = true;
-                simplePanel.Top = advancedPanel.Bottom;
                 ShowAdvanced.Text = Strings.ServiceStatus.SwitchToSimple;
             }
 
-            bool reposition = (this.Top == (Screen.PrimaryScreen.WorkingArea.Height - this.Height) && this.Left == (Screen.PrimaryScreen.WorkingArea.Width - this.Width));
 
-            this.Width = advancedPanel.Left * 2 + simplePanel.Width;
-            this.Height = advancedPanel.Top * 4 + simplePanel.Height + (advancedPanel.Visible ? advancedPanel.Height : 0);
+            this.Height = (advancedPanel.Visible ? (advancedPanel.Height - (this.Padding.All + simplePanel.Margin.All)) : 0) + height;
 
             if (reposition)
                 PlaceAtBottom();

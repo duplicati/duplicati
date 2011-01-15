@@ -215,11 +215,15 @@
   <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="advancedPanel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
   <data name="advancedPanel.Location" type="System.Drawing.Point, System.Drawing">
     <value>8, 8</value>
   </data>
   <data name="advancedPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>328, 160</value>
+    <value>329, 160</value>
   </data>
   <data name="advancedPanel.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
@@ -239,127 +243,6 @@
   <data name="&gt;&gt;advancedPanel.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="simplePanel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Bottom, Left, Right</value>
-  </data>
-  <data name="&gt;&gt;SubProgressBar.Name" xml:space="preserve">
-    <value>SubProgressBar</value>
-  </data>
-  <data name="&gt;&gt;SubProgressBar.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ProgressBar, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;SubProgressBar.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;SubProgressBar.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;WorkProgressbar.Name" xml:space="preserve">
-    <value>WorkProgressbar</value>
-  </data>
-  <data name="&gt;&gt;WorkProgressbar.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ProgressBar, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;WorkProgressbar.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;WorkProgressbar.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;ProgressMessage.Name" xml:space="preserve">
-    <value>ProgressMessage</value>
-  </data>
-  <data name="&gt;&gt;ProgressMessage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ProgressMessage.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;ProgressMessage.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="&gt;&gt;recentBackups.Name" xml:space="preserve">
-    <value>recentBackups</value>
-  </data>
-  <data name="&gt;&gt;recentBackups.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ListView, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;recentBackups.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;recentBackups.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="&gt;&gt;statusImage.Name" xml:space="preserve">
-    <value>statusImage</value>
-  </data>
-  <data name="&gt;&gt;statusImage.Type" xml:space="preserve">
-    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;statusImage.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;statusImage.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="&gt;&gt;ShowAdvanced.Name" xml:space="preserve">
-    <value>ShowAdvanced</value>
-  </data>
-  <data name="&gt;&gt;ShowAdvanced.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ShowAdvanced.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;ShowAdvanced.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
-  <data name="&gt;&gt;CurrentStatus.Name" xml:space="preserve">
-    <value>CurrentStatus</value>
-  </data>
-  <data name="&gt;&gt;CurrentStatus.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CurrentStatus.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;CurrentStatus.ZOrder" xml:space="preserve">
-    <value>6</value>
-  </data>
-  <data name="&gt;&gt;label1.Name" xml:space="preserve">
-    <value>label1</value>
-  </data>
-  <data name="&gt;&gt;label1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;label1.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>7</value>
-  </data>
-  <data name="simplePanel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 8</value>
-  </data>
-  <data name="simplePanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>328, 160</value>
-  </data>
-  <data name="simplePanel.TabIndex" type="System.Int32, mscorlib">
-    <value>11</value>
-  </data>
-  <data name="&gt;&gt;simplePanel.Name" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;simplePanel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;simplePanel.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;simplePanel.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
   <data name="SubProgressBar.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Left, Right</value>
   </data>
@@ -367,7 +250,7 @@
     <value>80, 16</value>
   </data>
   <data name="SubProgressBar.Size" type="System.Drawing.Size, System.Drawing">
-    <value>248, 16</value>
+    <value>249, 16</value>
   </data>
   <data name="SubProgressBar.TabIndex" type="System.Int32, mscorlib">
     <value>18</value>
@@ -394,7 +277,7 @@
     <value>40, 32</value>
   </data>
   <data name="WorkProgressbar.Size" type="System.Drawing.Size, System.Drawing">
-    <value>288, 16</value>
+    <value>289, 16</value>
   </data>
   <data name="WorkProgressbar.TabIndex" type="System.Int32, mscorlib">
     <value>17</value>
@@ -481,7 +364,7 @@
     <value>0, 80</value>
   </data>
   <data name="recentBackups.Size" type="System.Drawing.Size, System.Drawing">
-    <value>328, 80</value>
+    <value>329, 190</value>
   </data>
   <metadata name="imageList.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
@@ -503,21 +386,6 @@
   </data>
   <data name="&gt;&gt;recentBackups.ZOrder" xml:space="preserve">
     <value>3</value>
-  </data>
-  <data name="viewLogToolStripMenuItem.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Tahoma, 8.25pt, style=Bold</value>
-  </data>
-  <data name="viewLogToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>160, 22</value>
-  </data>
-  <data name="viewLogToolStripMenuItem.Text" xml:space="preserve">
-    <value>View log ...</value>
-  </data>
-  <data name="viewFilesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>160, 22</value>
-  </data>
-  <data name="viewFilesToolStripMenuItem.Text" xml:space="preserve">
-    <value>View contents ...</value>
   </data>
   <metadata name="backupTasks.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>346, 17</value>
@@ -552,53 +420,11 @@
   <data name="&gt;&gt;statusImage.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
-  <data name="pauseBackupToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>147, 22</value>
-  </data>
-  <data name="pauseBackupToolStripMenuItem.Text" xml:space="preserve">
-    <value>Pause backup</value>
-  </data>
-  <data name="pausePeriodMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>147, 22</value>
-  </data>
-  <data name="pausePeriodMenuItem.Text" xml:space="preserve">
-    <value>Pause period</value>
-  </data>
-  <data name="PauseDuration05Menu.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
-  </data>
-  <data name="PauseDuration05Menu.Text" xml:space="preserve">
-    <value>5 minutes</value>
-  </data>
-  <data name="PauseDuration15Menu.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
-  </data>
-  <data name="PauseDuration15Menu.Text" xml:space="preserve">
-    <value>15 minutes</value>
-  </data>
-  <data name="PauseDuration30Menu.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
-  </data>
-  <data name="PauseDuration30Menu.Text" xml:space="preserve">
-    <value>30 minutes</value>
-  </data>
-  <data name="PauseDuration60Menu.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
-  </data>
-  <data name="PauseDuration60Menu.Text" xml:space="preserve">
-    <value>1 hour</value>
-  </data>
-  <data name="stopBackupToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>147, 22</value>
-  </data>
-  <data name="stopBackupToolStripMenuItem.Text" xml:space="preserve">
-    <value>Stop backup</value>
-  </data>
   <data name="ShowAdvanced.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
   </data>
   <data name="ShowAdvanced.Location" type="System.Drawing.Point, System.Drawing">
-    <value>232, 56</value>
+    <value>233, 56</value>
   </data>
   <data name="ShowAdvanced.Size" type="System.Drawing.Size, System.Drawing">
     <value>96, 24</value>
@@ -631,7 +457,7 @@
     <value>40, 0</value>
   </data>
   <data name="CurrentStatus.Size" type="System.Drawing.Size, System.Drawing">
-    <value>288, 16</value>
+    <value>289, 16</value>
   </data>
   <data name="CurrentStatus.TabIndex" type="System.Int32, mscorlib">
     <value>12</value>
@@ -681,6 +507,87 @@
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
     <value>7</value>
   </data>
+  <data name="simplePanel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="simplePanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 168</value>
+  </data>
+  <data name="simplePanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>329, 190</value>
+  </data>
+  <data name="simplePanel.TabIndex" type="System.Int32, mscorlib">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;simplePanel.Name" xml:space="preserve">
+    <value>simplePanel</value>
+  </data>
+  <data name="&gt;&gt;simplePanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;simplePanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;simplePanel.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="viewLogToolStripMenuItem.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Tahoma, 8.25pt, style=Bold</value>
+  </data>
+  <data name="viewLogToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>160, 22</value>
+  </data>
+  <data name="viewLogToolStripMenuItem.Text" xml:space="preserve">
+    <value>View log ...</value>
+  </data>
+  <data name="viewFilesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>160, 22</value>
+  </data>
+  <data name="viewFilesToolStripMenuItem.Text" xml:space="preserve">
+    <value>View contents ...</value>
+  </data>
+  <data name="pauseBackupToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>147, 22</value>
+  </data>
+  <data name="pauseBackupToolStripMenuItem.Text" xml:space="preserve">
+    <value>Pause backup</value>
+  </data>
+  <data name="pausePeriodMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>147, 22</value>
+  </data>
+  <data name="pausePeriodMenuItem.Text" xml:space="preserve">
+    <value>Pause period</value>
+  </data>
+  <data name="PauseDuration05Menu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>132, 22</value>
+  </data>
+  <data name="PauseDuration05Menu.Text" xml:space="preserve">
+    <value>5 minutes</value>
+  </data>
+  <data name="PauseDuration15Menu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>132, 22</value>
+  </data>
+  <data name="PauseDuration15Menu.Text" xml:space="preserve">
+    <value>15 minutes</value>
+  </data>
+  <data name="PauseDuration30Menu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>132, 22</value>
+  </data>
+  <data name="PauseDuration30Menu.Text" xml:space="preserve">
+    <value>30 minutes</value>
+  </data>
+  <data name="PauseDuration60Menu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>132, 22</value>
+  </data>
+  <data name="PauseDuration60Menu.Text" xml:space="preserve">
+    <value>1 hour</value>
+  </data>
+  <data name="stopBackupToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>147, 22</value>
+  </data>
+  <data name="stopBackupToolStripMenuItem.Text" xml:space="preserve">
+    <value>Stop backup</value>
+  </data>
   <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>116, 17</value>
   </metadata>
@@ -691,7 +598,7 @@
     <value>6, 13</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>345, 175</value>
+    <value>345, 366</value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -1196,8 +1103,14 @@
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAA==
 </value>
   </data>
+  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="$this.MinimumSize" type="System.Drawing.Size, System.Drawing">
     <value>361, 209</value>
+  </data>
+  <data name="$this.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>8, 8, 8, 8</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
     <value>Duplicati Status</value>

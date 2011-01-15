@@ -119,7 +119,6 @@ namespace Duplicati.GUI
             // 
             // simplePanel
             // 
-            resources.ApplyResources(this.simplePanel, "simplePanel");
             this.simplePanel.Controls.Add(this.SubProgressBar);
             this.simplePanel.Controls.Add(this.WorkProgressbar);
             this.simplePanel.Controls.Add(this.ProgressMessage);
@@ -128,6 +127,7 @@ namespace Duplicati.GUI
             this.simplePanel.Controls.Add(this.ShowAdvanced);
             this.simplePanel.Controls.Add(this.CurrentStatus);
             this.simplePanel.Controls.Add(this.label1);
+            resources.ApplyResources(this.simplePanel, "simplePanel");
             this.simplePanel.Name = "simplePanel";
             // 
             // SubProgressBar
