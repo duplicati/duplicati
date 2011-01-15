@@ -154,9 +154,9 @@
     <value>Denne indstilling virker kun hvis indstillingen --{0} også er aktiveret. Hvis der er angivet alternative stier angiver denne indstilling at der skal findes en markør fil i destinationsmappen. Dette kan bruges til at håndtere situationer hvor et ekstern drev skifter drevbogstav eller montertingsplacering. Ved at kontrollere at en speciel fil findes er det muligt at forgindre at data gemmes på en uønsket placering. Indholdet af filen undersøges aldrig, kun hvorvidt den findes.</value>
   </data>
   <data name="UseMoveForPutShort" xml:space="preserve">
-    <value>Move the file instead of copying it</value>
+    <value>Flyt filen istedet for kopiering</value>
   </data>
   <data name="UseMoveForPutLong" xml:space="preserve">
-    <value>When storing the file, the standard operation is to copy the file and delete the original. This sequence ensures that the operation can be retried if something goes wrong. Activating this option may cause the retry operation to fail.  This option has no effect unless the --disable-streaming-transfers options is activated.</value>
+    <value>Når der skal gemmes en fil, er standard proceduren at kopiere filen og slette originalen. Dette sikrer at operationen kan gentages hvis noget går galt. Hvis denne indstilling aktiveres, vil retry funktionen muligvis fejle. Denne indstilling har ingen effekt medmindre indstillingen --disable-streaming-transfers er aktiveret.</value>
   </data>
 </root>
