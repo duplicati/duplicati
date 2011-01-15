@@ -30,6 +30,7 @@
 		<assembly name="Duplicati.Library.Backend.WEBDAV" folder="Library\Backend\WEBDAV" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.CloudFiles" folder="Library\Backend\CloudFiles" namespace="Duplicati.Library.Backend" />
 		
+		<assembly name="Duplicati.Winforms.Controls" folder="Winforms\Controls" namespace="Duplicati.Winforms.Controls" />
 		
 		<keyfile>..\GUI\Duplicati.snk</keyfile>
 		<versionassembly>..\GUI\bin\release\Duplicati.exe</versionassembly>

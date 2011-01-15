@@ -388,4 +388,10 @@
   <data name="DisableautocreatefolderLong" xml:space="preserve">
     <value>If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation.</value>
   </data>
+  <data name="SortedfilelistShort" xml:space="preserve">
+    <value>Sort the list of files</value>
+  </data>
+  <data name="SortedfilelistLong" xml:space="preserve">
+    <value>The list of files to back up is normally processed in a random fashion to ensure that all files have an equal probability of being processed. Use this setting to process the files in alphabetical order instead</value>
+  </data>
 </root>

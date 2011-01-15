@@ -144,4 +144,10 @@
   <data name="AesencryptiondontallowfallbackLong" xml:space="preserve">
     <value>If the decryption fails using AES Crypt, dont attempt to use the previous encryption file format. This option is mutually exclusive with --{0}.</value>
   </data>
+  <data name="Description_v2" xml:space="preserve">
+    <value>This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption.</value>
+  </data>
+  <data name="AesencryptiondontallowfallbackLong_v2" xml:space="preserve">
+    <value>If the decryption fails using AES Crypt, dont attempt to use the previous encryption file format. </value>
+  </data>
 </root>

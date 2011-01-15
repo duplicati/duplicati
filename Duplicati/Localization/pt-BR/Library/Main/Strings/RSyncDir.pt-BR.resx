@@ -203,4 +203,8 @@ Error message: {1}</value>
   <data name="FileShouldBePartialError" xml:space="preserve">
     <value>The file {0} was marked as partial in a previous volume, but is not marked partial in the current volume</value>
   </data>
+  <data name="FolderModificationTimeReadError" xml:space="preserve">
+    <value>Failed to read the file modification timestamp for: {0}.
+Error message: {1}</value>
+  </data>
 </root>

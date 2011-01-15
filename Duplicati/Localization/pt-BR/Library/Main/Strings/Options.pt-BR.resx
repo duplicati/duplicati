@@ -459,4 +459,10 @@
   <data name="DisableStreamingLong" xml:space="preserve">
     <value>Enabling this option will disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored.</value>
   </data>
+  <data name="SortedfilelistShort" xml:space="preserve">
+    <value>Sort the list of files</value>
+  </data>
+  <data name="SortedfilelistLong" xml:space="preserve">
+    <value>The list of files to back up is normally processed in a random fashion to ensure that all files have an equal probability of being processed. Use this setting to process the files in alphabetical order instead</value>
+  </data>
 </root>
