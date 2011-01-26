@@ -217,7 +217,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                string volsize = "5mb";
+                string volsize = "10mb";
                 if (m_options.ContainsKey("volsize"))
                     volsize = m_options["volsize"];
 
