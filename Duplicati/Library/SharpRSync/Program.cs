@@ -77,7 +77,7 @@ namespace Duplicati.Library.SharpRSync
                 }
                 else if (string.Equals(args[0], "patch", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (args.Count != 3)
+                    if (args.Count != 4)
                     {
                         PrintUsage();
                         return -1;
