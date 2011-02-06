@@ -274,4 +274,10 @@ Please include this information in a bug report:
   <data name="UsernameMissingError" xml:space="preserve">
     <value>A username was expected, but none was supplied</value>
   </data>
+  <data name="DescriptionSshnocdLong" xml:space="preserve">
+    <value>Disable the use of the cd command. This is used to support SSH backends where the cd/pwd is broken. If this option is enabled all paths will be transmitted with full paths.</value>
+  </data>
+  <data name="DescriptionSshnocdShort" xml:space="preserve">
+    <value>Do not use the cd command</value>
+  </data>
 </root>

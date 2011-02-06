@@ -286,6 +286,24 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Disable the use of the cd command. This is used to support SSH backends where the cd/pwd is broken. If this option is enabled all paths will be transmitted with full paths..
+        /// </summary>
+        internal static string DescriptionSshnocdLong {
+            get {
+                return ResourceManager.GetString("DescriptionSshnocdLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not use the cd command.
+        /// </summary>
+        internal static string DescriptionSshnocdShort {
+            get {
+                return ResourceManager.GetString("DescriptionSshnocdShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Supply any extra commandline arguments, which are passed unaltered to the ssh application.  Only used if the --use-sftp-application option is supplied..
         /// </summary>
         internal static string DescriptionSSHOptionsLong {

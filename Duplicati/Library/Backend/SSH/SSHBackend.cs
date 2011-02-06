@@ -30,6 +30,7 @@ namespace Duplicati.Library.Backend
         public const string SFTP_PATH_OPTION = "sftp-command";
         public const string USE_UNMANAGED_OPTION = "use-sftp-application";
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
+        public const string SSH_NO_CD_OPTION = "ssh-no-cd-command";
 
         private string m_server;
         private string m_path;
@@ -46,6 +47,7 @@ namespace Duplicati.Library.Backend
         private bool m_write_log_info = false;
 
         private bool m_useManaged = true;
+        private bool m_noCdCommand = false;
 
         private int m_port = 22;
         
@@ -91,6 +93,9 @@ namespace Duplicati.Library.Backend
 
             if (options.ContainsKey(USE_UNMANAGED_OPTION))
                 m_useManaged = false;
+
+            if (options.ContainsKey(SSH_NO_CD_OPTION))
+                m_noCdCommand = true;
             
             if (m_isLinux)
             {
@@ -162,25 +167,25 @@ namespace Duplicati.Library.Backend
         public void Put(string remotename, string filename)
         {
             if (m_useManaged)
-                PutManaged(remotename, filename);
+                PutManaged(getFullPath(remotename), filename);
             else
-                PutUnmanaged(remotename, filename);
+                PutUnmanaged(getFullPath(remotename), filename);
         }
 
         public void Get(string remotename, string filename)
         {
             if (m_useManaged)
-                GetManaged(remotename, filename);
+                GetManaged(getFullPath(remotename), filename);
             else
-                GetUnmanaged(remotename, filename);
+                GetUnmanaged(getFullPath(remotename), filename);
         }
 
         public void Delete(string remotename)
         {
             if (m_useManaged)
-                DeleteManaged(remotename);
+                DeleteManaged(getFullPath(remotename));
             else
-                DeleteUnmanaged(remotename);
+                DeleteUnmanaged(getFullPath(remotename));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -196,6 +201,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("transfer-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SSHBackend.DescriptionTransferTimeoutShort, Strings.SSHBackend.DescriptionTransferTimeoutLong, "15m"),
                     new CommandLineArgument(USE_UNMANAGED_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionUnmanagedShort, Strings.SSHBackend.DescriptionUnmanagedLong, "false"),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSshkeyfileShort, Strings.SSHBackend.DescriptionSshkeyfileLong),
+                    new CommandLineArgument(SSH_NO_CD_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionSshnocdShort, Strings.SSHBackend.DescriptionSshnocdLong),
                 });
 
             }
@@ -247,10 +253,12 @@ namespace Duplicati.Library.Backend
 
             using (SharpExpect.SharpExpectProcess p = GetUnmanagedConnection(true))
             {
+                string path = m_noCdCommand ? m_path : ".";
+
                 if (m_isLinux)
-                    p.Sendline("ls -la");
+                    p.Sendline("ls -la " + path);
                 else
-                    p.Sendline("ls");
+                    p.Sendline("ls " + path);
                 p.Sendline("exit");
 
                 string s;
@@ -476,7 +484,7 @@ namespace Duplicati.Library.Backend
                     }
                 }
 
-                if (!string.IsNullOrEmpty(m_path) && changeDir)
+                if (!string.IsNullOrEmpty(m_path) && changeDir && !m_noCdCommand)
                 {
                     proc.Sendline("cd \"" + m_path + "\"");
                     if (proc.Expect(".*not found.*", ".*No such file or directory.*", "sftp>", "Remote directory is now") < 2)
@@ -559,7 +567,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                if (!string.IsNullOrEmpty(m_path) && changeDir)
+                if (!m_noCdCommand && !string.IsNullOrEmpty(m_path) && changeDir)
                     con.SetCurrenDir(m_path);
             }
             catch (Exception ex)
@@ -570,6 +578,14 @@ namespace Duplicati.Library.Backend
             return con;
         }
 
+        private string getFullPath(string path)
+        {
+            if (m_noCdCommand)
+                return m_path + path;
+            else
+                return path;
+        }
+
         private List<IFileEntry> ListManaged()
         {
             using (SFTPCon con = CreateManagedConnection(true))
@@ -578,7 +594,9 @@ namespace Duplicati.Library.Backend
 
                 DateTime epochOffset = new DateTime(1970, 1, 1);
 
-                foreach (Tamir.SharpSsh.jsch.ChannelSftp.LsEntry ls in con.ListFiles("."))
+                string path = m_noCdCommand ? m_path : ".";
+
+                foreach (Tamir.SharpSsh.jsch.ChannelSftp.LsEntry ls in con.ListFiles(path))
                     if (ls.getFilename().ToString() != "." && ls.getFilename().ToString() != "..")
                         files.Add(new FileEntry(ls.getFilename().ToString(), ls.getAttrs().getSize(), epochOffset.Add(new TimeSpan(ls.getAttrs().getATime() * TimeSpan.TicksPerSecond)), epochOffset.Add(new TimeSpan(ls.getAttrs().getMTime() * TimeSpan.TicksPerSecond))));
 
@@ -654,7 +672,7 @@ namespace Duplicati.Library.Backend
                 throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
 
             using (SFTPCon con = CreateManagedConnection(true))
-                con.Put(remotename, stream);
+                con.Put(getFullPath(remotename), stream);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -663,7 +681,7 @@ namespace Duplicati.Library.Backend
                 throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
 
             using (SFTPCon con = CreateManagedConnection(true))
-                con.Get(remotename, stream);
+                con.Get(getFullPath(remotename), stream);
         }
 
         #endregion
