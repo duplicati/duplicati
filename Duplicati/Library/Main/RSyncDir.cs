@@ -1360,7 +1360,7 @@ namespace Duplicati.Library.Main.RSync
                                                 fs.Position = 0;
                                                 using (SharpRSync.ChecksumGeneratingStream ts = new SharpRSync.ChecksumGeneratingStream(newSig, fs))
                                                 {
-                                                    newSig.Capacity = ts.BytesGeneratedForSignature((int)(fs.Length * FILESIZE_GROW_MARGIN_MULTIPLIER));
+                                                    newSig.Capacity = Math.Max(ts.BytesGeneratedForSignature((long)(fs.Length * FILESIZE_GROW_MARGIN_MULTIPLIER)), newSig.Capacity);
                                                     fs = new Utility.TempFileStream();
                                                     Utility.Utility.CopyStream(ts, fs, false);
                                                 }
@@ -1385,7 +1385,7 @@ namespace Duplicati.Library.Main.RSync
                                             fs.Position = 0;
                                             long filelen = fs.Length;
                                             fs = new SharpRSync.ChecksumGeneratingStream(signature, fs);
-                                            ((MemoryStream)signature).Capacity = ((SharpRSync.ChecksumGeneratingStream)fs).BytesGeneratedForSignature(filelen);
+                                            ((MemoryStream)signature).Capacity = Math.Max(((SharpRSync.ChecksumGeneratingStream)fs).BytesGeneratedForSignature(filelen), ((MemoryStream)signature).Capacity);
                                         }
                                     }
 
@@ -1444,9 +1444,9 @@ namespace Duplicati.Library.Main.RSync
 
             System.IO.MemoryStream ms = new MemoryStream();
             SharpRSync.ChecksumFileWriter ws = new Duplicati.Library.SharpRSync.ChecksumFileWriter(ms);
-            
+
             //Expand the memorystream to contain all bytes, which avoids re-allocation
-            ms.Capacity = ws.BytesGeneratedForSignature((int)(fs.Length * FILESIZE_GROW_MARGIN_MULTIPLIER));
+            ms.Capacity = Math.Max(ws.BytesGeneratedForSignature((long)(fs.Length * FILESIZE_GROW_MARGIN_MULTIPLIER)), ms.Capacity);
             ws.AddStream(fs);
             ms.Position = 0;
 
