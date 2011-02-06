@@ -160,7 +160,12 @@ namespace Duplicati.Datamodel
             get
             {
                 if (string.IsNullOrEmpty(m_appset[SIGNATURE_CACHE_PATH]))
-                    return System.IO.Path.Combine(Environment.ExpandEnvironmentVariables("%DUPLICATI_HOME%").TrimStart('"').TrimEnd('"'), "Signature Cache");
+                {
+                    if (Duplicati.Library.Utility.Utility.IsClientLinux)
+                        return System.IO.Path.Combine(Environment.ExpandEnvironmentVariables("%DUPLICATI_HOME%").TrimStart('"').TrimEnd('"'), "Signature Cache");
+                    else
+                        return System.IO.Path.Combine(System.IO.Path.Combine(Environment.ExpandEnvironmentVariables(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)), "Duplicati"), "Signature Cache");
+                }
                 else
                     return m_appset[SIGNATURE_CACHE_PATH];
             }
