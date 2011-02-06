@@ -34,6 +34,7 @@ namespace Duplicati.Library.Backend
         private bool m_acceptAllCertificates = false;
         private string m_acceptCertificateHash = null;
         private bool m_useSSL = false;
+        private bool m_noListVerify = false;
 
         public FTP()
         {
@@ -73,6 +74,8 @@ namespace Duplicati.Library.Backend
             m_acceptAllCertificates = options.ContainsKey("accept-any-ssl-certificate");
             if (options.ContainsKey("accept-specified-ssl-hash"))
                 m_acceptCertificateHash = options["accept-specified-ssl-hash"];
+            m_noListVerify = options.ContainsKey("no-list-verify");
+
 
             m_options = options;
             m_url = url;
@@ -194,11 +197,29 @@ namespace Duplicati.Library.Backend
                     req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
                     req.UseBinary = true;
 
-                    //We only depend on the ReadWriteTimeout
-                    req.Timeout = System.Threading.Timeout.Infinite;
-
                     using (System.IO.Stream rs = req.GetRequestStream())
                         Utility.Utility.CopyStream(input, rs, true);
+                }
+
+                if (!m_noListVerify)
+                {
+                    FileEntry m = null;
+                    foreach (FileEntry fe in this.List())
+                        if (fe.Name == remotename) 
+                        {
+                            m = fe;
+                            break;
+                        }
+
+                    if (m == null)
+                        throw new Exception(string.Format(Strings.FTPBackend.UploadVerificationFailure, remotename));
+
+                    long size = -1;
+                    try { size = input.Length; }
+                    catch { }
+
+                    if (size >= 0 && m.Size > 0 && m.Size != size)
+                        throw new Exception(string.Format(Strings.FTPBackend.UploadSizeVerificationFailure, remotename, m.Size, size));
                 }
             }
             catch (System.Net.WebException wex)
@@ -223,9 +244,6 @@ namespace Duplicati.Library.Backend
                 System.Net.FtpWebRequest req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
                 req.UseBinary = true;
-
-                //We only depend on the ReadWriteTimeout
-                req.Timeout = System.Threading.Timeout.Infinite;
 
                 using (System.Net.WebResponse resp = req.GetResponse())
                 using (System.IO.Stream rs = resp.GetResponseStream())
@@ -263,6 +281,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionUseSSLShort, Strings.FTPBackend.DescriptionUseSSLLong),
                     new CommandLineArgument("accept-specified-ssl-hash", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionAcceptHashShort, Strings.FTPBackend.DescriptionAcceptHashLong),
                     new CommandLineArgument("accept-any-ssl-certificate", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionAcceptAnyCertificateShort, Strings.FTPBackend.DescriptionAcceptAnyCertificateLong),
+                    new CommandLineArgument("no-list-verify", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionNolistverifyShort, Strings.FTPBackend.DescriptionNolistverifyLong),
                 });
             }
         }
@@ -311,6 +330,10 @@ namespace Duplicati.Library.Backend
 
             if (m_useSSL)
                 req.EnableSsl = m_useSSL;
+
+            //Set half-hour total timeout and 5 minutes acticity timeout
+            req.Timeout = (int)TimeSpan.FromMinutes(30).TotalMilliseconds;
+            req.ReadWriteTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
 
             return req;
         }

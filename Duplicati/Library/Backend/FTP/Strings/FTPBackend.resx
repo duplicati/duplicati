@@ -162,6 +162,12 @@
   <data name="DescriptionIntegratedAuthenticationShort" xml:space="preserve">
     <value>Use windows integrated authentication to connect to the server</value>
   </data>
+  <data name="DescriptionNolistverifyLong" xml:space="preserve">
+    <value>Since the FTP protocol is unable to determine if an upload was correctly completed or interrupted, the upload is verified after the upload. Use this option to disable the verification, which increases the posibillity of errors, but also increases performance.</value>
+  </data>
+  <data name="DescriptionNolistverifyShort" xml:space="preserve">
+    <value>Do not verify uploads</value>
+  </data>
   <data name="DescriptionUseSSLLong" xml:space="preserve">
     <value>Use this flag to communicate using Secure Socket Layer (SSL) over ftp (ftps).</value>
   </data>
@@ -173,5 +179,11 @@
   </data>
   <data name="MissingFolderError" xml:space="preserve">
     <value>The folder {0} was not found, message: {1}</value>
+  </data>
+  <data name="UploadSizeVerificationFailure" xml:space="preserve">
+    <value>The file {0} was uploaded to the server, but the reported filesize was {1} and the size was expected to be {2}</value>
+  </data>
+  <data name="UploadVerificationFailure" xml:space="preserve">
+    <value>The file {0} was uploaded but not found on the server</value>
   </data>
 </root>
