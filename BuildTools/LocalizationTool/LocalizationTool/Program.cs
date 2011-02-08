@@ -68,6 +68,18 @@ namespace LocalizationTool
                 case "report":
                     Report(loc);
                     break;
+                case "export":
+                    Export(loc);
+                    break;
+                case "import":
+                    if (args.Length != 3)
+                    {
+                        Console.WriteLine("missing locale identifier or input CSV file");
+                        PrintUsage();
+                        return;
+                    }
+                    Import(loc, args[2]);
+                    break;
                 case "guiupdate":
                     Application.EnableVisualStyles();
                     Application.DoEvents();
@@ -81,6 +93,7 @@ namespace LocalizationTool
             }
         }
 
+
         private static void PrintUsage()
         {
             Console.WriteLine("Usage: ");
@@ -91,7 +104,78 @@ namespace LocalizationTool
             Console.WriteLine("LocalizationTool.exe REPORT [locale identifier]");
             Console.WriteLine("LocalizationTool.exe CREATE <locale indentifier>");
             Console.WriteLine("LocalizationTool.exe GUIUPDATE <locale identifier>");
+            Console.WriteLine("LocalizationTool.exe EXPORT [locale identifier]");
+            Console.WriteLine("LocalizationTool.exe IMPORT <locale identifier> <input CSV file>");
         }
+
+        private static void Import(string loc, string p)
+        {
+            //Outer key is filename, inner key is fieldname, inner value is translated text
+            Dictionary<string, Dictionary<string, string>> values = new Dictionary<string, Dictionary<string, string>>();
+
+            using (CSVReader r = new CSVReader(p))
+            {
+                List<string> fields = null;
+                while ((fields = r.AdvanceLine()) != null)
+                    if (fields.Count >= 5)
+                    {
+                        string filename = fields[0];
+                        filename = System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, loc), filename);
+                        string fieldkey = fields[1];
+                        string origvalue = fields[3];
+                        string value = fields[4];
+
+                        if (value.Trim().Length == 0 || value == origvalue)
+                            continue;
+
+                        if (!values.ContainsKey(filename))
+                            values.Add(filename, new Dictionary<string,string>());
+                        
+                        Dictionary<string, string> l = values[filename];
+                        l[fieldkey] = value;
+                    }
+            }
+
+            XNamespace xmlns = "";
+            foreach (ResXFileInfo inf in GetResXList(loc))
+            {
+                if (System.IO.File.Exists(inf.TargetFile) && values.ContainsKey(inf.TargetFile))
+                {
+                    XDocument targetDoc = XDocument.Load(inf.TargetFile);
+                    XNode insertTarget = targetDoc.Element("root").LastNode;
+                    var targetVals = targetDoc.Element("root").Elements("data").ToSafeDictionary(c => c.Attribute("name").Value, inf.TargetFile);
+                    var sourceVals = values[inf.TargetFile];
+                    values.Remove(inf.TargetFile);
+
+                    bool updated = false;
+                    foreach (var item in sourceVals)
+                        if (targetVals.ContainsKey(item.Key))
+                        {
+                            if (targetVals[item.Key].Element("value").Value != item.Value)
+                            {
+                                updated = true;
+                                targetVals[item.Key].Element("value").Value = item.Value;
+                            }
+                        }
+                        else
+                        {
+                            updated = true;
+                            insertTarget.AddAfterSelf(new XElement("data",
+                                new XAttribute("name", item.Key),
+                                new XAttribute(xmlns + "space", "preserve"),
+                                new XElement("value", item.Value)
+                            ));
+                        }
+
+                    if (updated)
+                        targetDoc.Save(inf.TargetFile);
+                }
+            }
+
+            if (values.Count != 0)
+                throw new Exception("The following files were translated but did not exist: " + string.Join(Environment.NewLine, values.Keys.ToArray()));
+        }
+
 
         public static IEnumerable<string> GetLocaleFolders(string locid)
         {
@@ -110,6 +194,60 @@ namespace LocalizationTool
                 }).Select(c => System.IO.Path.GetFileName(c));
             else
                 return new string[] { locid };
+        }
+
+        private static void Export(string cultures)
+        {
+            Update(cultures);
+            Report(cultures);
+
+            foreach (string culture in GetLocaleFolders(cultures))
+            {
+                XDocument doc = XDocument.Load(System.IO.Path.Combine(Application.StartupPath, "report." + culture + ".xml"));
+                string outfile = System.IO.Path.Combine(Application.StartupPath, "report." + culture + ".csv");
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(outfile, false, new System.Text.UTF8Encoding(false)))
+                {
+                    foreach (var file in doc.Element("root").Elements("file"))
+                    {
+                        string filename = file.Attribute("filename").Value.Substring(Duplicati.Library.Utility.Utility.AppendDirSeparator(Application.StartupPath).Length);
+                        filename = filename.Substring(culture.Length + 1);
+
+                        foreach (var item in file.Element("updated").Elements("item"))
+                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Element("original").Value, item.Element("translated").Value);
+
+                        foreach (var item in file.Element("missing").Elements("item"))
+                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Value, "");
+
+                        foreach (var item in file.Element("not-updated").Elements("item"))
+                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Value, "");
+
+                        foreach (var item in file.Element("unused").Elements("item"))
+                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, "", item.Value);
+                    }
+                }
+            }
+        }
+
+        private static string CSV_SEPARATOR = ",";
+
+        private static void WriteCSVLine(System.IO.StreamWriter sw, string filename, string key, string status, string originalText, string translatedText)
+        {
+            sw.Write(EscapeCSVString(filename));
+            sw.Write(CSV_SEPARATOR);
+            sw.Write(EscapeCSVString(key));
+            sw.Write(CSV_SEPARATOR);
+            sw.Write(EscapeCSVString(status));
+            sw.Write(CSV_SEPARATOR);
+            sw.Write(EscapeCSVString(originalText));
+            sw.Write(CSV_SEPARATOR);
+            sw.Write(EscapeCSVString(translatedText));
+            sw.WriteLine();
+        }
+
+        private static string EscapeCSVString(string value)
+        {
+            //.Replace("\\", "\\\\").Replace("\r\n", "\\n").Replace("\r", "\\n").Replace("\n", "\\n").Replace("\t", "\\t")
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
         }
 
         private static void Report(string cultures)
@@ -195,18 +333,29 @@ namespace LocalizationTool
                         targetElements = targetElements.Where(filter);
                     }
 
+                    //Filter the source and target before proceeding
+                    sourceElements = sourceElements.Where(c => !ignores.ContainsKey(c.Element("value").Value.Trim().ToLower()) && !c.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\"));
+                    targetElements = targetElements.Where(c => !ignores.ContainsKey(c.Element("value").Value.Trim().ToLower()) && !c.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\"));
+
                     var sourceVals = sourceElements.ToSafeDictionary(c => c.Attribute("name").Value, inf.SourceFile);
                     var targetVals = targetElements.ToSafeDictionary(c => c.Attribute("name").Value, inf.TargetFile);
-                    var missing = sourceVals.Where(c => !targetVals.ContainsKey(c.Key) && !ignores.ContainsKey(c.Value.Element("value").Value.Trim().ToLower()) && !c.Value.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\"));
-                    var unused = targetVals.Where(c => !sourceVals.ContainsKey(c.Key));
+
+                    var missing = sourceVals.Where(c => !targetVals.ContainsKey(c.Key)).ToList();
+                    var unused = targetVals.Where(c => !sourceVals.ContainsKey(c.Key)).ToList();
                     var notUpdated = sourceVals.Where(c =>
-                        !ignores.ContainsKey(c.Value.Element("value").Value.Trim().ToLower())
-                        &&
-                        !c.Value.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\")
-                        &&
                         targetVals.ContainsKey(c.Key)
                         &&
-                        targetVals[c.Key].Element("value").Value == c.Value.Element("value").Value);
+                        targetVals[c.Key].Element("value").Value == c.Value.Element("value").Value).ToList();
+
+                    var updated = sourceVals.Where(c =>
+                        !missing.Contains(c)
+                        &&
+                        !unused.Contains(c)
+                        &&
+                        !notUpdated.Contains(c)
+                        &&
+                        targetVals.ContainsKey(c.Key)
+                    );
 
                     reportRoot.Add(
                         new XElement("file",
@@ -230,6 +379,18 @@ namespace LocalizationTool
                                 select new XElement("item",
                                     new XAttribute("name", x.Key),
                                     x.Value.Element("value").Value
+                                )
+                            ),
+                            new XElement("updated",
+                                from x in updated
+                                select new XElement("item",
+                                    new XAttribute("name", x.Key),
+                                    new XElement("original", 
+                                        x.Value.Element("value").Value
+                                    ),
+                                    new XElement("translated",
+                                        targetVals[x.Key].Element("value").Value
+                                    )
                                 )
                             )
                         )
