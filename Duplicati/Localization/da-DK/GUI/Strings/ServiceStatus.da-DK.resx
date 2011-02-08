@@ -121,7 +121,7 @@
     <value>Fejlet backup</value>
   </data>
   <data name="BackupStatusOK" xml:space="preserve">
-    <value>Succefuld backup</value>
+    <value>Succesfuld backup</value>
   </data>
   <data name="BackupStatusPartial" xml:space="preserve">
     <value>Backup'en stoppede før alle filer blev undersøgt</value>

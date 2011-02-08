@@ -166,7 +166,7 @@
     <value>Uploader: {0} ({1})</value>
   </data>
   <data name="DuplicateFileEntryWarning" xml:space="preserve">
-    <value>Filen {0} blev fundet mere end én gang i fil listen. Dette er formentlig en fejl i programmet, raporter det venligst til udviklerne</value>
+    <value>Filen {0} blev fundet mere end én gang i fil listen. Dette er formentlig en fejl i programmet, rapporter det venligst til udviklerne</value>
   </data>
   <data name="EmptyManifestWarning" xml:space="preserve">
     <value>Tomt backup fundet, det er formentlig en fejl: {0}</value>

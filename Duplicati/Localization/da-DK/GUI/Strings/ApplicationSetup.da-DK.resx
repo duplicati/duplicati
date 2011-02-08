@@ -126,7 +126,7 @@
     <comment>A string displayed in a status label when calculating the size of the signature cache</comment>
   </data>
   <data name="ConfirmCacheDelete" xml:space="preserve">
-    <value>Slet signature filer i mappen: 
+    <value>Slet signatur filer i mappen: 
 {0}</value>
     <comment>A message displayed in a confirmation dialog before deleting the signature cache</comment>
   </data>

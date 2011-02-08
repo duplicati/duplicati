@@ -136,7 +136,7 @@
     <value>Skriv fejlfindingsoutput</value>
   </data>
   <data name="UseUnmanagedSSH.Text" xml:space="preserve">
-    <value>Brug det installerede sftp program istedet for det indbyggede SSH modul</value>
+    <value>Brug det installerede sftp program i stedet for det indbyggede SSH modul</value>
   </data>
   <data name="CreateFolderButton.Text" xml:space="preserve">
     <value>Opret mappe</value>

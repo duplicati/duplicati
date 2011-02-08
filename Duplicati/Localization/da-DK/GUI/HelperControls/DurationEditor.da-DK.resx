@@ -124,7 +124,7 @@
     <value>Hver uge</value>
   </data>
   <data name="EasyDuration.Items2" xml:space="preserve">
-    <value>Hveranden uge</value>
+    <value>Hver anden uge</value>
   </data>
   <data name="EasyDuration.Items3" xml:space="preserve">
     <value>Hver måned</value>

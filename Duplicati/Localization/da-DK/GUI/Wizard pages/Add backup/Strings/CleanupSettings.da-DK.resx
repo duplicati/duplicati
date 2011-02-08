@@ -123,7 +123,7 @@ Dette kan bevirke at destinationen løber tør for plads.
 Vil du fortsætte uden fjernelse af backup data?</value>
   </data>
   <data name="PageDescription" xml:space="preserve">
-    <value>Duplicati kan automtisk fjerne gamle backup data for at hindre et voksende pladsforbrug.</value>
+    <value>Duplicati kan automatisk fjerne gamle backup data for at hindre et voksende pladsforbrug.</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
     <value>Indstillinger for oprydning</value>

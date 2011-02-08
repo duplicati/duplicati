@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AesencryptiondontallowfallbackLong" xml:space="preserve">
-    <value>Hvis dekryptering fejler mens der bruges AES Crypt, må der ikke forsøges at anvende det forrige krypteringsformat. Denne indstilling kan ikke angives samtidig med --{0}.</value>
+    <value>Hvis dekryptering fejler mens der bruges AESCrypt, må der ikke forsøges at anvende det forrige krypteringsformat. Denne indstilling kan ikke angives samtidig med --{0}.</value>
   </data>
   <data name="AesencryptiondontallowfallbackShort" xml:space="preserve">
     <value>Forsøg ikke at benytte forrige filformat</value>
   </data>
   <data name="AesencryptiondontuseaescryptLong" xml:space="preserve">
-    <value>Duplicati anvender AES Crypt filformatet, men forrige versioner benyttede en simplere krypteringsmetode. Benyt denne indstilling for at tvinge Duplicati til at anvende det forrige format. Denne indstilling kan ikke angives samtidig med --{0}.</value>
+    <value>Duplicati anvender AESCrypt filformatet, men forrige versioner benyttede en simplere krypteringsmetode. Benyt denne indstilling for at tvinge Duplicati til at anvende det forrige format. Denne indstilling kan ikke angives samtidig med --{0}.</value>
   </data>
   <data name="AesencryptiondontuseaescryptShort" xml:space="preserve">
     <value>Benyt ikke AES Crypt formatet</value>
@@ -133,10 +133,10 @@
     <value>Fejl i nøgle udstrækning</value>
   </data>
   <data name="Description" xml:space="preserve">
-    <value>Dette modul krypterer alle filer på samme måde som AES Crypt går, med 256 bit AES kryptering. Tidligere versioner af Duplicati anvendte en simplere krypteringsmetode (stadig 256 bit), uden besked digest. Kommandolinie parameteren --{0} kan bruges til at skifte til det tidligere format, men det anbefales ikke. Dette modul finder automatisk dent anvendte format og dekrypterer det med den korrekte metod.</value>
+    <value>Dette modul krypterer alle filer på samme måde som AESCrypt gør, med 256 bit AES kryptering. Tidligere versioner af Duplicati anvendte en simplere krypteringsmetode (stadig 256 bit), uden besked digest. Kommandolinie parameteren --{0} kan bruges til at skifte til det tidligere format, men det anbefales ikke. Dette modul finder automatisk det anvendte format og dekrypterer det med den korrekte metode.</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>AES-256 encryption, indbygget</value>
+    <value>AES-256 kryptering, indbygget</value>
   </data>
   <data name="OptionsAreMutuallyExclusiveError" xml:space="preserve">
     <value>Det er ikke tilladt at angive både --{0} og --{1} </value>

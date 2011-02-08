@@ -124,7 +124,7 @@
     <value>Mappen findes ikke, vil du oprette den?</value>
   </data>
   <data name="EmptyFolderPathError" xml:space="preserve">
-    <value>Du skal indstaste navnet på den mappe hvor data skal gemmes i</value>
+    <value>Du skal indtaste navnet på den mappe hvor data skal gemmes i</value>
   </data>
   <data name="EmptyFolderPathWarning" xml:space="preserve">
     <value>Du har ikke indtastet en mappe, dette vil gemme alle filer i serverens rod-mappe.

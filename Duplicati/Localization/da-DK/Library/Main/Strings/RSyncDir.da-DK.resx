@@ -139,7 +139,7 @@
     <value>Mappen skulle slettes, men findes ikke: {0}</value>
   </data>
   <data name="MultipassUsageError" xml:space="preserve">
-    <value>Mutipass er ikke initialiseret</value>
+    <value>Multipass er ikke initialiseret</value>
   </data>
   <data name="RestoreFileError" xml:space="preserve">
     <value>Kunne ikke gendanne filen: "{0}", Fejlbesked: {1}</value>
@@ -201,7 +201,7 @@ Fejlbesked: {1}</value>
     <value>Kunne ikke læse USN data: {0}</value>
   </data>
   <data name="UsnDisposeFailedWarning" xml:space="preserve">
-    <value>Kunne ikke frigive resource fra USN hjælperen: {0}</value>
+    <value>Kunne ikke frigive ressource fra USN hjælperen: {0}</value>
   </data>
   <data name="FolderModificationTimeReadError" xml:space="preserve">
     <value>Kunne ikke læse ændringsdatoen for: {0}.

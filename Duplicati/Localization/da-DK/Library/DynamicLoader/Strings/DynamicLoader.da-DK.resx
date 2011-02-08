@@ -121,6 +121,6 @@
     <value>Kunne ikke indlæse assembly {0}, fejlbesked: {1}</value>
   </data>
   <data name="DynamicTypeLoadError" xml:space="preserve">
-    <value>Kunne ikke indslæse typen {0} assembly {1}, fejlbesked: {2}</value>
+    <value>Kunne ikke indlæse typen {0} assembly {1}, fejlbesked: {2}</value>
   </data>
 </root>

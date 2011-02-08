@@ -121,7 +121,7 @@
     <value>Fjern valgte</value>
   </data>
   <data name="RemoveAllButton.Text" xml:space="preserve">
-    <value>Fjern all</value>
+    <value>Fjern alle</value>
   </data>
   <data name="CredentialGroup.Text" xml:space="preserve">
     <value>Gemte loginoplysninger</value>

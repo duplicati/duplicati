@@ -121,7 +121,7 @@
     <value>Bekræft kodeord</value>
   </data>
   <data name="Description" xml:space="preserve">
-    <value>Dette modul vil bede brugeren om et krypterings kordeord på kommandolinien, medmindre kryptering er deaktiveret eller et kodeord er angivet på anden vis.</value>
+    <value>Dette modul vil bede brugeren om et krypterings kodeord på kommandolinien, medmindre kryptering er deaktiveret eller et kodeord er angivet på anden vis.</value>
   </data>
   <data name="Displayname" xml:space="preserve">
     <value>Password indsamler</value>

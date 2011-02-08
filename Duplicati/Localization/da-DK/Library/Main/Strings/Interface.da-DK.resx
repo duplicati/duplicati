@@ -124,7 +124,7 @@
     <value>Ugyldig sortering af filsæt</value>
   </data>
   <data name="CannotCleanWithoutHashesError" xml:space="preserve">
-    <value>Når "cleanup" funktionen køres skal manifest of hash værdier læses</value>
+    <value>Når "cleanup" funktionen køres skal manifest og hash værdier læses</value>
   </data>
   <data name="DeletingBackupSetMessage" xml:space="preserve">
     <value>Sletter backup fra {0}</value>
@@ -148,7 +148,7 @@
     <value>En intern fejl opstod og handlingen blev afsluttet for at beskytte backup data</value>
   </data>
   <data name="ManifestsMustBeReadOnBackups" xml:space="preserve">
-    <value>Det er ikke tilladt at deaktivere manifest læsning mens der udføres en backup. Deaktivering af manifest læstning kan kun bruges med gendannelse og bør kun anvendes som en sidste udvej.</value>
+    <value>Det er ikke tilladt at deaktivere manifest læsning mens der udføres en backup. Deaktivering af manifest læsning kan kun bruges med gendannelse og bør kun anvendes som en sidste udvej.</value>
   </data>
   <data name="ManifestVersionRequiresRelativeNamesWarning" xml:space="preserve">
     <value>En eller flere manifest filer er fra version 1, hvilket kræver at de filnavne der søges angives med relative stier</value>
@@ -283,7 +283,7 @@
     <value>Værdien "{1}" som blev angivet til --{0} angiver ikke et gyldigt heltal</value>
   </data>
   <data name="UnsupportedOptionDisabledModuleWarning" xml:space="preserve">
-    <value>Indstillingen --{0} undersøttes ikke fordi den relevante modul {1} ikke er indlæst</value>
+    <value>Indstillingen --{0} understøttes ikke fordi den relevante modul {1} ikke er indlæst</value>
   </data>
   <data name="UnsupportedOptionWarning" xml:space="preserve">
     <value>Indstillingen --{0} er ikke understøttet og vil blive ignoreret</value>

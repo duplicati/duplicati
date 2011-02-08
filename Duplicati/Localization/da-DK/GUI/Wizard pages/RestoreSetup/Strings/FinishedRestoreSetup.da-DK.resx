@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="PageDescription" xml:space="preserve">
-    <value>Du har nu indtastet de krævede oplysninger og kan nu gendanne opsætningne</value>
+    <value>Du har nu indtastet de krævede oplysninger og kan nu gendanne opsætningen</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
     <value>Klar til at gendanne opsætningen</value>
@@ -131,7 +131,7 @@
     <value>Gendanner opsætning, vent venligst...</value>
   </data>
   <data name="SetupFileMissingError" xml:space="preserve">
-    <value>Forbindelsen lykedes, men der blev ikke funder opsætningsfiler</value>
+    <value>Forbindelsen lykkedes, men der blev ikke funder opsætningsfiler</value>
   </data>
   <data name="SummaryAction" xml:space="preserve">
     <value>Handling</value>

@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ReallyAbortQuestion" xml:space="preserve">
-    <value>Er du sikker på at du vil annulere?</value>
+    <value>Er du sikker på at du vil annullere?</value>
   </data>
   <data name="UserCancelled" xml:space="preserve">
     <value>Brugeren annullerede handlingen</value>

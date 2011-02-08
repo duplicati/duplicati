@@ -160,6 +160,6 @@ Forsæt uden et brugernavn?</value>
     <value>Mappe oprettet!</value>
   </data>
   <data name="FolderMissingError" xml:space="preserve">
-    <value>Den angvinve mappe findes ikke</value>
+    <value>Den angivne mappe findes ikke</value>
   </data>
 </root>

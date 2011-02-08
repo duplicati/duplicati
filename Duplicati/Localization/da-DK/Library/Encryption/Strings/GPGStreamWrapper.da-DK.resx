@@ -124,6 +124,6 @@
     <value>Fejl under start af GnuPG, programmet vil ikke skrive output</value>
   </data>
   <data name="GPGTerminateError" xml:space="preserve">
-    <value>Fejl under start af GnuPG, programmet vil ikke skrive terminere</value>
+    <value>Fejl under start af GnuPG, programmet vil ikke terminere</value>
   </data>
 </root>

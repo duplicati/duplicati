@@ -162,7 +162,7 @@ Fejlbesked: {3}</value>
     <value>Tillad alle server certifikater</value>
   </data>
   <data name="DescriptionAcceptHashLong" xml:space="preserve">
-    <value>Hvis dit server certifikat bliver angivet som ugyldigt (f.eks. med selvudstedte certifikater), kan du angive certifikat hash værdien for at godkende det alligvel. Hash værdien skal angives i haxadecimalt format uden mellemrum</value>
+    <value>Hvis dit server certifikat bliver angivet som ugyldigt (f.eks. med selvudstedte certifikater), kan du angive certifikat hash værdien for at godkende det alligevel. Hash værdien skal angives i hexadecimalt format uden mellemrum</value>
   </data>
   <data name="DescriptionAcceptHashShort" xml:space="preserve">
     <value>Accepter et kendt SSL certifikat</value>

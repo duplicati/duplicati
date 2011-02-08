@@ -122,8 +122,8 @@
   </data>
   <data name="UsageMessage" xml:space="preserve">
     <value>Anvendelse:
-  {0} signature &lt;input-fil&gt; &lt;signature-fil&gt;
-  {0} delta &lt;signature-fil&gt; &lt;input-fil&gt; &lt;delta-fil&gt;
+  {0} signature &lt;input-fil&gt; &lt;signatur-fil&gt;
+  {0} delta &lt;signatur-fil&gt; &lt;input-fil&gt; &lt;delta-fil&gt;
   {0} patch &lt;base-fil&gt; &lt;delta-fil&gt; &lt;output-fil&gt;</value>
   </data>
 </root>

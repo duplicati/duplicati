@@ -134,7 +134,7 @@ Vil du forsætte uden en mappe?</value>
     <value>Hash værdien er ikke gyldig, den skal have et lige antal tegn og må kun indeholde hexadecimale tegn (0-9 og a-f)</value>
   </data>
   <data name="LeadingSlashWarning" xml:space="preserve">
-    <value>Mappennavnet starter med en skråstreg, hvilket ikke er krævet og kan skabe problemer.
+    <value>Mappenavnet starter med en skråstreg, hvilket ikke er krævet og kan skabe problemer.
 Skal skråstregen fjernes?</value>
   </data>
   <data name="PageDescription" xml:space="preserve">

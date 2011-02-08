@@ -121,7 +121,7 @@
     <value>Angiv hvornår og hvor ofte backup'en skal køre</value>
   </data>
   <data name="SelectCleanup.Text" xml:space="preserve">
-    <value>Angiv hvornår gamle bakup'er skal fjernes</value>
+    <value>Angiv hvornår gamle backup'er skal fjernes</value>
   </data>
   <data name="ThrottleOptions.Text" xml:space="preserve">
     <value>Angiv indstillinger der begrænser maskinforbrug, såsom grænser for båndbredde</value>

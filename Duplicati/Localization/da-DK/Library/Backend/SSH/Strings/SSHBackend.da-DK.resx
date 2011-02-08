@@ -254,24 +254,30 @@ Fejlbesked: {1}</value>
     <value>Et brugernavn var ventet, men intet blev angivet</value>
   </data>
   <data name="UnsupportedKeyfileEncryptionError" xml:space="preserve">
-    <value>Krypteringensformatet er ikke undersøttet, der kan kun anvendes 3des-cbc (DES-EDE3-CBC).
+    <value>Krypteringensformatet er ikke understøttet, der kan kun anvendes 3des-cbc (DES-EDE3-CBC).
 Inkluder venligst denne information i en fejlrapport:
 {0}</value>
   </data>
   <data name="KeyfileParseError" xml:space="preserve">
-    <value>Kunne ikke læse indholdet af filen. Inkluder venligst den følgenden information i en fejlrapport (du må gerne udelade nøgle data, hvis det er vist):
+    <value>Kunne ikke læse indholdet af filen. Inkluder venligst den følgende information i en fejlrapport (du må gerne udelade nøgle data, hvis det er vist):
 {0}</value>
   </data>
   <data name="KeyfileNotFoundError" xml:space="preserve">
     <value>Den angivne nøglefil blev ikke fundet: {0}</value>
   </data>
   <data name="IncorrectFileHeaderError" xml:space="preserve">
-    <value>File skal have OpenSSH privat nøglefil headeren, f.eks.: ---- BEGIN RSA PRIVATE KEY ----</value>
+    <value>Filen skal have OpenSSH privat nøglefil headeren, f.eks.: ---- BEGIN RSA PRIVATE KEY ----</value>
   </data>
   <data name="DescriptionSshkeyfileShort" xml:space="preserve">
     <value>Brug en SSH nøgle til at logge på</value>
   </data>
   <data name="DescriptionSshkeyfileLong" xml:space="preserve">
-    <value>Angiver stien til en gyldig OpenSSH nøglefil. Hvis filen er krypteret anvendes det angivne kodeord til at dekryptere filen. Hvis denne indstilling angives bliver kodeordet ikke angvendt til at logge på med. Denne indstilling virker kun med managed SSH.</value>
+    <value>Angiver stien til en gyldig OpenSSH nøglefil. Hvis filen er krypteret anvendes det angivne kodeord til at dekryptere filen. Hvis denne indstilling angives bliver kodeordet ikke anvendt til at logge på med. Denne indstilling virker kun med managed SSH.</value>
+  </data>
+  <data name="DescriptionSshnocdShort" xml:space="preserve">
+    <value>Brug ikke cd kommandoen</value>
+  </data>
+  <data name="DescriptionSshnocdLong" xml:space="preserve">
+    <value>Deaktiver brugen af cd kommandoen. Dette bruges til at understøtte SSH servere hvor cd/pwd kommandoerne bruges. Hvis denne indstilling er aktiveret vil alle stier kommunikeres med den fulde sti.</value>
   </data>
 </root>

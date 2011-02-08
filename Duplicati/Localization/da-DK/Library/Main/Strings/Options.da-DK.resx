@@ -160,7 +160,7 @@
     <value>En liste med filer der skal gendannes</value>
   </data>
   <data name="ForceLong" xml:space="preserve">
-    <value>Når der slettes filer vil Duplicati kun skrive while filer der skal slettes. Angiv denne indstilling for at sørge for at de også fjernes.</value>
+    <value>Når der slettes filer vil Duplicati kun skrive hvilke filer der skal slettes. Angiv denne indstilling for at sørge for at de også fjernes.</value>
   </data>
   <data name="ForceShort" xml:space="preserve">
     <value>Gennemtving sletning af filer</value>
@@ -178,7 +178,7 @@
     <value>En indstilling der gennemtvinger en fuld backup</value>
   </data>
   <data name="GpgencryptionLong" xml:space="preserve">
-    <value>Som standard vil Duplicati bruge AES algortimen til at kryptere backup data. Denne indstilling vil få Duplicati til at benytte GNU Privacy Guard istedet. GnuPG skal være installeret på maskinen for at denne kan fungere</value>
+    <value>Som standard vil Duplicati bruge AES algoritmen til at kryptere backup data. Denne indstilling vil få Duplicati til at benytte GNU Privacy Guard istedet. GnuPG skal være installeret på maskinen for at denne kan fungere</value>
   </data>
   <data name="GpgencryptionShort" xml:space="preserve">
     <value>Benyt GnuPG til kryptering</value>
@@ -196,13 +196,13 @@
     <value>Inkluder filer</value>
   </data>
   <data name="MaxdownloadprsecondLong" xml:space="preserve">
-    <value>Ved at sætte denne indstilling kan du begrænse hvor meget båndbredde Duplicati bruger under download. Hvis denne indstilling er sat kan backup prodceduren tage længere tid, men Duplicati vil være mindre belastende for systemet.</value>
+    <value>Ved at sætte denne indstilling kan du begrænse hvor meget båndbredde Duplicati bruger under download. Hvis denne indstilling er sat kan backup proceduren tage længere tid, men Duplicati vil være mindre belastende for systemet.</value>
   </data>
   <data name="MaxdownloadprsecondShort" xml:space="preserve">
     <value>Maksimalt antal bytes downloaded pr. sekund</value>
   </data>
   <data name="MaxuploadprsecondLong" xml:space="preserve">
-    <value>Ved at sætte denne indstilling kan du begrænse hvor meget båndbredde Duplicati bruger under upload. Hvis denne indstilling er sat kan backup prodceduren tage længere tid, men Duplicati vil være mindre belastende for systemet.</value>
+    <value>Ved at sætte denne indstilling kan du begrænse hvor meget båndbredde Duplicati bruger under upload. Hvis denne indstilling er sat kan backup proceduren tage længere tid, men Duplicati vil være mindre belastende for systemet.</value>
   </data>
   <data name="MaxuploadprsecondShort" xml:space="preserve">
     <value>Maksimalt antal bytes uploaded pr. sekund</value>
@@ -226,7 +226,7 @@
     <value>Kode anvendt til at kryptere backup data</value>
   </data>
   <data name="RestoretimeLong" xml:space="preserve">
-    <value>Som standard vil Duplicati gendanne filer fra den nyeste backup. Brug denne indstilling til at vælge en anden backup. Du kan anvende relative tider, f.eks. "-2M" for at gendanne fra en backup der er 2 måneder gammmel.</value>
+    <value>Som standard vil Duplicati gendanne filer fra den nyeste backup. Brug denne indstilling til at vælge en anden backup. Du kan anvende relative tider, f.eks. "-2M" for at gendanne fra en backup der er 2 måneder gammel.</value>
   </data>
   <data name="RestoretimeShort" xml:space="preserve">
     <value>Tidspunktet filer gendannes fra</value>
@@ -244,22 +244,22 @@
     <value>Brug korte filnavne</value>
   </data>
   <data name="SignaturecachepathLong" xml:space="preserve">
-    <value>Hvis denne sti er angivet vil Duplicati gememe en kopi af alle signatur filer her, så gen-downloads kan forhindres.</value>
+    <value>Hvis denne sti er angivet vil Duplicati gemme en kopi af alle signatur filer her, så gen-downloads kan forhindres.</value>
   </data>
   <data name="SignaturecachepathShort" xml:space="preserve">
     <value>Sti til en mappe med signatur filer</value>
   </data>
   <data name="SignaturecontrolfilesLong" xml:space="preserve">
-    <value>Angiv filer der skal tilføjes til hver backup, adskildt med semikolon. Duplicati GUI programmet anvender denne indstilling til at gemme indstillingsdatabasen i en backup.</value>
+    <value>Angiv filer der skal tilføjes til hver backup, adskilt med semikolon. Duplicati GUI programmet anvender denne indstilling til at gemme indstillingsdatabasen i en backup.</value>
   </data>
   <data name="SignaturecontrolfilesShort" xml:space="preserve">
     <value>En liste med kontrolfiler der indlejres i en backup</value>
   </data>
   <data name="SkipfilehashchecksLong" xml:space="preserve">
-    <value>Hvis hash værdien for et backup sæt ikke passer, vil Duplicati nægte at anvende backup data. Brug denne indstilling for at tillade at Duplicati fortsætter alligvel.</value>
+    <value>Hvis hash værdien for et backup sæt ikke passer, vil Duplicati nægte at anvende backup data. Brug denne indstilling for at tillade at Duplicati fortsætter alligevel.</value>
   </data>
   <data name="SkipfilehashchecksShort" xml:space="preserve">
-    <value>Angiv denne instilling for at deaktivere hash kontrol</value>
+    <value>Angiv denne indstilling for at deaktivere hash kontrol</value>
   </data>
   <data name="SkipfileslargerthanLong" xml:space="preserve">
     <value>Denne indstilling muliggør ekskludering af filer der er større end den givne værdi. Benyt dette til at forhindre at backup sæt bliver ekstremt store.</value>
@@ -280,10 +280,10 @@
     <value>Tråd prioritet</value>
   </data>
   <data name="TimeseparatorLong" xml:space="preserve">
-    <value>Som standard vil Duplicati bruge kolon (":") tegnet for at adskilde tidsfelter i filnavnet. På nogle systemer, særligt Windows, er dette tegn ikke tilladt. Brug denne indstilling til for at tillade et andet tegn.</value>
+    <value>Som standard vil Duplicati bruge kolon (":") tegnet for at adskille tidsfelter i filnavnet. På nogle systemer, særligt Windows, er dette tegn ikke tilladt. Brug denne indstilling til for at tillade et andet tegn.</value>
   </data>
   <data name="TimeseparatorShort" xml:space="preserve">
-    <value>Backup filnavn tidsseperator</value>
+    <value>Backup filnavn tidsseparator</value>
   </data>
   <data name="TotalsizeLong" xml:space="preserve">
     <value>Denne indstilling begrænser den totale størrelse af en backup. Bemærk at hvis denne indstilling kan bevirke at en backup ikke indeholder alle filer, selv hvis der udføres en fuld backup.</value>
@@ -343,13 +343,13 @@
     <value>Benyt --encryption-module=gpg instedet</value>
   </data>
   <data name="DisablemoduleLong" xml:space="preserve">
-    <value>Angiv et eller modulnavne, adskildt med komma, for at deaktivere dem</value>
+    <value>Angiv et eller modulnavne, adskilt med komma, for at deaktivere dem</value>
   </data>
   <data name="DisablemoduleShort" xml:space="preserve">
     <value>Deaktiver et eller flere moduler</value>
   </data>
   <data name="EnablemoduleLong" xml:space="preserve">
-    <value>Angiv et eller modulnavne, adskildt med komma, for at aktivere dem</value>
+    <value>Angiv et eller modulnavne, adskilt med komma, for at aktivere dem</value>
   </data>
   <data name="EnablemoduleShort" xml:space="preserve">
     <value>Aktiver et eller flere moduler</value>
@@ -388,16 +388,16 @@
     <value>Denne indstilling bliver fjernet på et tidspunkt, men er inkluderet i tilfælde af at den er krævet for at løse et problem</value>
   </data>
   <data name="OldfilenamesLong" xml:space="preserve">
-    <value>Ved at aktivere denne indstilling vil filnavne der dannes af Duplicati indeholde en tidsseperator og en tidszone, hvilket ikke er kompatibelt med alle platforme</value>
+    <value>Ved at aktivere denne indstilling vil filnavne der dannes af Duplicati indeholde en tidsseparator og en tidszone, hvilket ikke er kompatibelt med alle platforme</value>
   </data>
   <data name="OldfilenamesShort" xml:space="preserve">
     <value>Benyt det gamle format til filnavne</value>
   </data>
   <data name="ShortfilenamesDeprecated" xml:space="preserve">
-    <value>Duplicati benytter nu et format til filnavne der virker på tværs af alle platforme, så denne indstilling bør ikke anvedes og vil blive fjernet på et tidspunkt</value>
+    <value>Duplicati benytter nu et format til filnavne der virker på tværs af alle platforme, så denne indstilling bør ikke anvendes og vil blive fjernet på et tidspunkt</value>
   </data>
   <data name="TimeseparatorDeprecated" xml:space="preserve">
-    <value>Duplicati benytter ikke længere en tidsseperator i filnavne, så denne indstilling er ubrugelig</value>
+    <value>Duplicati benytter ikke længere en tidsseparator i filnavne, så denne indstilling er ubrugelig</value>
   </data>
   <data name="LogfileLong" xml:space="preserve">
     <value>Angiver navnet på en fil hvori der skrives intern lognings information</value>
@@ -415,13 +415,13 @@
     <value>Hvis Duplicati opdager at destinationsmappen mangler bliver den automatisk oprettet. Aktiver denne indstilling for at forhindre automatisk mappe oprettelse</value>
   </data>
   <data name="DisableautocreatefolderShort" xml:space="preserve">
-    <value>Dekativer automatisk mappe oprettelse</value>
+    <value>Deaktiver automatisk mappe oprettelse</value>
   </data>
   <data name="VssexcludewritersShort" xml:space="preserve">
     <value>En liste med GUID værdier for VSS skrivere der skal ekskluderes (kun til Windows)</value>
   </data>
   <data name="VssexcludewritersLong" xml:space="preserve">
-    <value>Brug denne indstilling til at ekskludere defekte skrivere fra et snapshot. Dette fungerer på samme måde som -wx indstillingen i værktøjet vshadow.exe, men der accepteres kun skriverens klasse GUID værdier og ikke komponent navne eller instans GUID værdier. Flere GUID værdier kan angives med et semikolon, og de fleste formater accepteres, både med og uden krølleparanteser.</value>
+    <value>Brug denne indstilling til at ekskludere defekte skrivere fra et snapshot. Dette fungerer på samme måde som -wx indstillingen i værktøjet vshadow.exe, men der accepteres kun skriverens klasse GUID værdier og ikke komponent navne eller instans GUID værdier. Flere GUID værdier kan angives med et semikolon, og de fleste formater accepteres, både med og uden krølleparenteser</value>
   </data>
   <data name="OpenfilepolicyShort" xml:space="preserve">
     <value>Angiver hvordan åbne filer håndteres</value>

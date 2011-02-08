@@ -149,7 +149,7 @@ Det kortere format "cloudfiles://container/folder" kan bruges hvis containernavn
     <value>CloudFiles</value>
   </data>
   <data name="ETagVerificationError" xml:space="preserve">
-    <value>MD5 Hash (ETag) verifkation fejlede</value>
+    <value>MD5 Hash (ETag) verifikation fejlede</value>
   </data>
   <data name="FileDeleteError" xml:space="preserve">
     <value />

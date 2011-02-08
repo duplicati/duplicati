@@ -142,6 +142,6 @@
     <value>Vælg mapper der skal inkluderes</value>
   </data>
   <data name="InvalidCharsInFilenameError" xml:space="preserve">
-    <value>Filenavnet {0} indeholder ugyldige tegn</value>
+    <value>Filnavnet {0} indeholder ugyldige tegn</value>
   </data>
 </root>

@@ -136,6 +136,6 @@
     <value>Trinvis backup</value>
   </data>
   <data name="TooltipIncrementalBackupWithSize" xml:space="preserve">
-    <value>Trinvisl backup - {0}, kæde: {1}</value>
+    <value>Trinvis backup - {0}, kæde: {1}</value>
   </data>
 </root>
