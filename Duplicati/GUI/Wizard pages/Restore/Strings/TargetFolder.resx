@@ -143,4 +143,9 @@ Error message: {1}</value>
   <data name="PageTitle" xml:space="preserve">
     <value>Select restore folder</value>
   </data>
+  <data name="PathTooLongWarning" xml:space="preserve">
+    <value>The restored files will use a path that is {0} characters long, but Windows only supports paths up to around 250 characters. If you proceed some files may not be restored.
+
+Do you want to continue with the restore procedure anyway?</value>
+  </data>
 </root>

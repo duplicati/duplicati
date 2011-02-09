@@ -95,6 +95,44 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 filesInFolder[TargetPath.Text] = null;
             }
 
+            //if the filelist is loaded, we can verify the file length
+            if (!Library.Utility.Utility.IsClientLinux)
+            {
+                if (backupFileList.LoadedFileList != null && backupFileList.LoadedFileList.Count != 0)
+                {
+                    long maxPath = 0;
+                    List<string> files = PartialRestore.Checked ? m_wrapper.RestoreFileSelection : backupFileList.LoadedFileList;
+
+                    if (backupFileList.TargetFolders.Count > 1)
+                    {
+                        string[] restorefolders = PartialRestore.Checked ? targetpaths : backupFileList.TargetSuggestions;
+                        foreach (string s in files)
+                        {
+                            int sepIndx = s.IndexOf(System.IO.Path.DirectorySeparatorChar) + 1;
+                            int index = int.Parse(s.Substring(0, s.IndexOf(System.IO.Path.DirectorySeparatorChar)));
+                            if (index >= 0 && index < restorefolders.Length && !string.IsNullOrEmpty(restorefolders[index]))
+                                maxPath = Math.Max(restorefolders[index].Length + s.Length + 1 - sepIndx, maxPath);
+                        }
+                    }
+                    else
+                    {
+                        foreach (string s in files)
+                            maxPath = Math.Max(TargetPath.Text.Length + s.Length + 1, maxPath);
+                    }
+
+
+                    if (maxPath > 245)
+                    {
+                        if (MessageBox.Show(this, string.Format(Strings.TargetFolder.PathTooLongWarning, maxPath), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                        {
+                            args.Cancel = true;
+                            return;
+                        }
+                    }
+
+                }
+            }
+
             bool anyValids = false;
             for (int i = 0; i < targetpaths.Length; i++)
             {
@@ -198,7 +236,8 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 if (m_wrapper.RestoreTargetFolders == null)
                     m_wrapper.RestoreTargetFolders = new List<string>();
 
-                backupFileList.LoadFileList(m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID), m_wrapper.RestoreTime, m_wrapper.RestoreFileList, m_wrapper.RestoreTargetFolders, TargetPath.Text);
+                if (backupFileList.LoadedFileList == null || backupFileList.LoadedFileList.Count == 0)
+                    backupFileList.LoadFileList(m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID), m_wrapper.RestoreTime, m_wrapper.RestoreFileList, m_wrapper.RestoreTargetFolders, TargetPath.Text);
             }
         }
 

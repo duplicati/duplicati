@@ -301,6 +301,8 @@ namespace Duplicati.GUI.HelperControls
             }
         }
 
+        public List<string> LoadedFileList { get { return m_files; } }
+
         public List<string> CheckedFiles
         {
             get
