@@ -200,7 +200,7 @@ namespace Duplicati.GUI.HelperControls
                 }
 
                 //This call updates the names of the nodes to fit their source/target
-                RefreshRootDisplay();
+                RefreshRootDisplay(true);
 
                 //TODO: Apparently it is much faster to sort nodes when the tree is detached
                 treeView.Sort();
@@ -292,7 +292,7 @@ namespace Duplicati.GUI.HelperControls
                 try
                 {
                     treeView.BeginUpdate();
-                    RefreshRootDisplay();
+                    RefreshRootDisplay(false);
                 }
                 finally
                 {
@@ -342,7 +342,7 @@ namespace Duplicati.GUI.HelperControls
                 finally
                 {
                     //HACK: Rename them back
-                    RefreshRootDisplay();
+                    RefreshRootDisplay(false);
                     treeView.EndUpdate();
                 }
             }
@@ -387,7 +387,7 @@ namespace Duplicati.GUI.HelperControls
                 finally
                 {
                     //HACK: Rename them back
-                    RefreshRootDisplay();
+                    RefreshRootDisplay(false);
                     treeView.EndUpdate();
                 }
             }
@@ -414,7 +414,7 @@ namespace Duplicati.GUI.HelperControls
 
         public int CheckedCount { get { return this.CheckedFiles.Count; } }
 
-        private void RefreshRootDisplay()
+        private void RefreshRootDisplay(bool sort)
         {
             if (m_sourcefolders == null || m_sourcefolders.Count <= 1)
                 return;
@@ -426,7 +426,8 @@ namespace Duplicati.GUI.HelperControls
                 m_rootnodes[index].ToolTipText = string.Format(Strings.BackupFileList.RootNodeTooltip, m_sourcefolders[index], string.IsNullOrEmpty(m_targetfolders[index]) ? targets[index] : m_targetfolders[index]);
             }
 
-            treeView.Sort();
+            if (sort)
+                treeView.Sort();
         }
 
         public string[] TargetSuggestions
@@ -498,7 +499,7 @@ namespace Duplicati.GUI.HelperControls
                 try
                 {
                     treeView.BeginUpdate();
-                    RefreshRootDisplay();
+                    RefreshRootDisplay(false);
                 }
                 finally
                 {

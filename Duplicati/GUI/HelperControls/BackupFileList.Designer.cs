@@ -29,29 +29,26 @@ namespace Duplicati.GUI.HelperControls
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BackupFileList));
             this.treeView = new System.Windows.Forms.TreeView();
+            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.changeDestinationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.LoadingIndicator = new System.Windows.Forms.GroupBox();
             this.progressBar = new System.Windows.Forms.ProgressBar();
             this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
-            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.changeDestinationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-            this.LoadingIndicator.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
+            this.LoadingIndicator.SuspendLayout();
             this.SuspendLayout();
             // 
             // treeView
             // 
             this.treeView.CheckBoxes = true;
             this.treeView.ContextMenuStrip = this.contextMenuStrip;
-            this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
+            resources.ApplyResources(this.treeView, "treeView");
             this.treeView.LabelEdit = true;
-            this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
             this.treeView.ShowNodeToolTips = true;
-            this.treeView.Size = new System.Drawing.Size(449, 214);
-            this.treeView.TabIndex = 0;
-            this.treeView.Visible = false;
             this.treeView.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.treeView_AfterCheck);
             this.treeView.AfterCollapse += new System.Windows.Forms.TreeViewEventHandler(this.treeView_AfterCollapse);
             this.treeView.DoubleClick += new System.EventHandler(this.treeView_DoubleClick);
@@ -59,26 +56,32 @@ namespace Duplicati.GUI.HelperControls
             this.treeView.BeforeLabelEdit += new System.Windows.Forms.NodeLabelEditEventHandler(this.treeView_BeforeLabelEdit);
             this.treeView.AfterExpand += new System.Windows.Forms.TreeViewEventHandler(this.treeView_AfterExpand);
             // 
+            // contextMenuStrip
+            // 
+            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.changeDestinationToolStripMenuItem});
+            this.contextMenuStrip.Name = "contextMenuStrip";
+            resources.ApplyResources(this.contextMenuStrip, "contextMenuStrip");
+            this.contextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_Opening);
+            // 
+            // changeDestinationToolStripMenuItem
+            // 
+            this.changeDestinationToolStripMenuItem.Name = "changeDestinationToolStripMenuItem";
+            resources.ApplyResources(this.changeDestinationToolStripMenuItem, "changeDestinationToolStripMenuItem");
+            this.changeDestinationToolStripMenuItem.Click += new System.EventHandler(this.changeDestinationToolStripMenuItem_Click);
+            // 
             // LoadingIndicator
             // 
-            this.LoadingIndicator.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            resources.ApplyResources(this.LoadingIndicator, "LoadingIndicator");
             this.LoadingIndicator.Controls.Add(this.progressBar);
-            this.LoadingIndicator.Location = new System.Drawing.Point(16, 72);
             this.LoadingIndicator.Name = "LoadingIndicator";
-            this.LoadingIndicator.Size = new System.Drawing.Size(416, 64);
-            this.LoadingIndicator.TabIndex = 1;
             this.LoadingIndicator.TabStop = false;
-            this.LoadingIndicator.Text = "Reading filelist, please wait ...";
-            this.LoadingIndicator.Visible = false;
             // 
             // progressBar
             // 
-            this.progressBar.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.progressBar.Location = new System.Drawing.Point(8, 24);
+            resources.ApplyResources(this.progressBar, "progressBar");
             this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(400, 23);
             this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
-            this.progressBar.TabIndex = 0;
             // 
             // backgroundWorker
             // 
@@ -86,35 +89,19 @@ namespace Duplicati.GUI.HelperControls
             this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker_DoWork);
             this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
             // 
-            // contextMenuStrip
-            // 
-            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.changeDestinationToolStripMenuItem});
-            this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(187, 26);
-            this.contextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_Opening);
-            // 
-            // changeDestinationToolStripMenuItem
-            // 
-            this.changeDestinationToolStripMenuItem.Name = "changeDestinationToolStripMenuItem";
-            this.changeDestinationToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
-            this.changeDestinationToolStripMenuItem.Text = "Change destination...";
-            this.changeDestinationToolStripMenuItem.Click += new System.EventHandler(this.changeDestinationToolStripMenuItem_Click);
-            // 
             // folderBrowserDialog
             // 
-            this.folderBrowserDialog.Description = "Select the folder to restore to";
+            resources.ApplyResources(this.folderBrowserDialog, "folderBrowserDialog");
             // 
             // BackupFileList
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.LoadingIndicator);
             this.Controls.Add(this.treeView);
             this.Name = "BackupFileList";
-            this.Size = new System.Drawing.Size(449, 214);
-            this.LoadingIndicator.ResumeLayout(false);
             this.contextMenuStrip.ResumeLayout(false);
+            this.LoadingIndicator.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
