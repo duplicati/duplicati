@@ -364,7 +364,7 @@
     <value>0, 80</value>
   </data>
   <data name="recentBackups.Size" type="System.Drawing.Size, System.Drawing">
-    <value>329, 190</value>
+    <value>329, 110</value>
   </data>
   <metadata name="imageList.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
@@ -1102,9 +1102,6 @@
         qn+qqqp/qqqqf6qqqn+qqqp/qqqqf6qqqn+pqal/m5ubZGBgYA0AAAAAgAEAAAAAAAAAAAAAAAAAAAAA
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAA==
 </value>
-  </data>
-  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
   </data>
   <data name="$this.MinimumSize" type="System.Drawing.Size, System.Drawing">
     <value>361, 209</value>
