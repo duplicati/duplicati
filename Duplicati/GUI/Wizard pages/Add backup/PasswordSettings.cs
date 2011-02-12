@@ -229,7 +229,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private void EnablePassword_CheckedChanged(object sender, EventArgs e)
         {
             Password.Enabled = EncryptionModule.Enabled = GeneratePasswordButton.Enabled = EncryptionControlContainer.Enabled = EnablePassword.Checked;
-            m_wrapper.PasswordSettingsUI.WarnedNoPassword = false;
+            if (m_wrapper != null)
+                m_wrapper.PasswordSettingsUI.WarnedNoPassword = false;
             m_settingsChanged = true;
         }
 
