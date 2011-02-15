@@ -146,6 +146,7 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private class PartialFileEntry : IDisposable
         {
+            public readonly string fullname;
             public readonly string relativeName;
             private System.IO.Stream m_fs;
             private System.IO.Stream m_signatureStream;
@@ -153,10 +154,11 @@ namespace Duplicati.Library.Main.RSync
             private string m_signaturePath;
             private DateTime m_lastWrite;
 
-            public PartialFileEntry(System.IO.Stream fs, string relname, long position, System.IO.Stream signatureFile, string signaturePath, DateTime lastWrite)
+            public PartialFileEntry(System.IO.Stream fs, string relname, string fullname, long position, System.IO.Stream signatureFile, string signaturePath, DateTime lastWrite)
             {
                 m_fs = fs;
                 m_fs.Position = position;
+                this.fullname = fullname;
                 this.relativeName = relname;
                 this.m_signatureStream = signatureFile;
                 this.m_signaturePath = signaturePath;
@@ -587,11 +589,6 @@ namespace Duplicati.Library.Main.RSync
         private USNRecord m_lastUSN = null;
 
         /// <summary>
-        /// A variable that keeps track of the last progress event issued
-        /// </summary>
-        private DateTime m_lastProgressEvent;
-
-        /// <summary>
         /// A variable that indicates if the file list is sorted, if this variable is false,
         /// files are picked at random from the file list
         /// </summary>
@@ -711,7 +708,6 @@ namespace Duplicati.Library.Main.RSync
             }
             m_stat = stat;
             m_sourcefolder = sourcefolder;
-            m_lastProgressEvent = DateTime.Now.AddYears(-1); //Long time ago
 
             if (m_filter == null)
                 m_filter = new Duplicati.Library.Utility.FilenameFilter(new List<KeyValuePair<bool, string>>());
@@ -1239,10 +1235,21 @@ namespace Duplicati.Library.Main.RSync
                 m_isfirstmultipass = false;
             }
 
-            if (m_lastPartialFile != null)
-                m_lastPartialFile = WritePossiblePartial(m_lastPartialFile, contentfile, signaturefile, volumesize);
+            //Last update was a looong time ago
+            DateTime nextProgressEvent = DateTime.Now.AddYears(-1);
 
-            DateTime nextProgressEvent = m_lastProgressEvent;
+            if (m_lastPartialFile != null)
+            {
+                if (ProgressEvent != null)
+                {
+                    int pg = 100 - ((int)((m_unproccesed.Files.Count / (double)m_totalfiles) * 100));
+                    nextProgressEvent = DateTime.Now + PROGRESS_TIMESPAN;
+                    ProgressEvent(pg, m_lastPartialFile.fullname);
+                }
+
+                m_lastPartialFile = WritePossiblePartial(m_lastPartialFile, contentfile, signaturefile, volumesize);
+            }
+
 
             while (m_unproccesed.Files.Count > 0 && totalSize < volumesize && m_lastPartialFile == null)
             {
@@ -1253,8 +1260,7 @@ namespace Duplicati.Library.Main.RSync
                 if (ProgressEvent != null && DateTime.Now > nextProgressEvent)
                 {
                     int pg = 100 - ((int)((m_unproccesed.Files.Count / (double)m_totalfiles) * 100));
-                    m_lastProgressEvent = DateTime.Now;
-                    nextProgressEvent = m_lastProgressEvent + PROGRESS_TIMESPAN;
+                    nextProgressEvent = DateTime.Now + PROGRESS_TIMESPAN;
                     ProgressEvent(pg, s);
                 }
 
@@ -1329,8 +1335,7 @@ namespace Duplicati.Library.Main.RSync
                                 if (ProgressEvent != null && fs.Length > 1024 * 1024 * 10)
                                 {
                                     int pg = 100 - ((int)((m_unproccesed.Files.Count / (double)m_totalfiles) * 100));
-                                    m_lastProgressEvent = DateTime.Now;
-                                    nextProgressEvent = m_lastProgressEvent + PROGRESS_TIMESPAN;
+                                    nextProgressEvent = DateTime.Now + PROGRESS_TIMESPAN;
                                     ProgressEvent(pg, s);
                                 }
 
@@ -1515,7 +1520,7 @@ namespace Duplicati.Library.Main.RSync
                         SharpRSync.Interface.GenerateDelta(sigfs, fs, deltaTemp);
                         deltaTemp.Position = 0;
 
-                        m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(deltaTemp, target, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
+                        m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(deltaTemp, target, s, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
                     }
                     catch
                     {
@@ -1539,7 +1544,7 @@ namespace Duplicati.Library.Main.RSync
                 string target = System.IO.Path.Combine(CONTENT_ROOT, relpath);
 
                 long size = fs.Length;
-                m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(fs, target, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
+                m_lastPartialFile = WritePossiblePartial(new PartialFileEntry(fs, target, s, 0, signature, signaturepath, lastWrite), contentfile, signaturefile, volumesize);
                 
                 m_addedfiles++;
                 m_addedfilessize += size;
