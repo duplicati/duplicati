@@ -85,7 +85,7 @@ namespace Duplicati.GUI.Wizard_pages.Restore
                 Strings.FinishedRestore.SummaryText,
                 m_wrapper.ScheduleName,
                 (m_wrapper.RestoreTime.Ticks == 0 ? Strings.FinishedRestore.MostRecent : m_wrapper.RestoreTime.ToString()),
-                m_wrapper.RestorePath
+                m_wrapper.DisplayRestorePath
             );
 
             args.TreatAsLast = true;
@@ -103,17 +103,12 @@ namespace Duplicati.GUI.Wizard_pages.Restore
             //TODO: add a Try-Catch here
             Schedule s = m_wrapper.DataConnection.GetObjectById<Schedule>(m_wrapper.ScheduleID);
 
-            RestoreTask task = new RestoreTask(s, m_wrapper.RestorePath, m_wrapper.RestoreFilter, m_wrapper.RestoreTime);
+            RestoreTask task = new RestoreTask(s, m_wrapper.FullRestorePath, m_wrapper.RestoreFilter, m_wrapper.RestoreTime);
             Dictionary<string, string> options = new Dictionary<string, string>();
             string destination = task.GetConfiguration(options);
             if (options.ContainsKey("filter"))
                 options.Remove("filter");
 
-            //TODO: Should not be replicated here, but executed in the DuplicatiRunner
-            ApplicationSettings appSet = new ApplicationSettings(task.Schedule.DataParent);
-            if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
-                options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), task.Schedule.ID.ToString());
-            
             using (Library.Main.Interface i = new Duplicati.Library.Main.Interface(destination, options))
             {
                 i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(i_OperationProgress);

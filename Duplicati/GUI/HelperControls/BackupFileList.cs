@@ -418,7 +418,7 @@ namespace Duplicati.GUI.HelperControls
 
         private void RefreshRootDisplay(bool sort)
         {
-            if (m_sourcefolders == null || m_sourcefolders.Count <= 1)
+            if (m_sourcefolders == null || m_sourcefolders.Count <= 1 || m_rootnodes == null)
                 return;
 
             string[] targets = this.TargetSuggestions;

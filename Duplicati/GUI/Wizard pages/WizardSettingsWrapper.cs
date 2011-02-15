@@ -532,10 +532,26 @@ namespace Duplicati.GUI.Wizard_pages
         /// <summary>
         /// A value indicating where to place the restored files
         /// </summary>
-        public string RestorePath
+        public string DisplayRestorePath
         {
             get { return GetItem<string>("RestorePath", ""); }
             set { SetItem("RestorePath", value); }
+        }
+
+        /// <summary>
+        /// Gets a set of folders to restore to
+        /// </summary>
+        public string FullRestorePath
+        {
+            get
+            {
+                //If some paths are unused, we map them to the temporary folder
+                string[] targets = DisplayRestorePath.Split(System.IO.Path.PathSeparator);
+                for (int i = 0; i < targets.Length; i++)
+                    if (string.IsNullOrEmpty(targets[i]))
+                        targets[i] = Environment.ExpandEnvironmentVariables(new Datamodel.ApplicationSettings(Program.DataConnection).TempPath);
+                return String.Join(System.IO.Path.PathSeparator.ToString(), targets);
+            }
         }
 
         /// <summary>

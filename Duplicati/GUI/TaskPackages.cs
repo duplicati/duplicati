@@ -102,7 +102,7 @@ namespace Duplicati.GUI
             //Now setup the environment
             ApplicationSettings appSet = new ApplicationSettings(this.Task.DataParent);
 
-            if (appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
+            if (this.Task.ExistsInDb && appSet.SignatureCacheEnabled && !string.IsNullOrEmpty(appSet.SignatureCachePath))
                 options["signature-cache-path"] = System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables(appSet.SignatureCachePath), this.Task.Schedule.ID.ToString());
 
             if (!string.IsNullOrEmpty(appSet.TempPath))

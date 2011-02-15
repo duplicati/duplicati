@@ -130,15 +130,8 @@ namespace Duplicati.GUI
                 Schedule schedule = wrapper.DataConnection.GetObjectById<Schedule>(wrapper.ScheduleID);
 
                 DateTime when = wrapper.RestoreTime;
-                string target = wrapper.RestorePath;
+                string target = wrapper.FullRestorePath;
                 string restoreFilter = wrapper.RestoreFilter;
-
-                //If some paths are unused, we map them to the temporary folder
-                string[] targets = target.Split(System.IO.Path.PathSeparator);
-                for (int i = 0; i < targets.Length; i++)
-                    if (string.IsNullOrEmpty(targets[i]))
-                        targets[i] = Environment.ExpandEnvironmentVariables(new Datamodel.ApplicationSettings(Program.DataConnection).TempPath);
-                target = String.Join(System.IO.Path.PathSeparator.ToString(), targets);
 
                 if (when.Ticks == 0)
                     Program.WorkThread.AddTask(new RestoreTask(schedule, target, restoreFilter));

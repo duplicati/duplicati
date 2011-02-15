@@ -200,12 +200,12 @@ namespace Duplicati.GUI.Wizard_pages.Restore
 
             if (PartialRestore.Checked)
             {
-                m_wrapper.RestorePath = string.Join(System.IO.Path.PathSeparator.ToString(), targetpaths);
+                m_wrapper.DisplayRestorePath = string.Join(System.IO.Path.PathSeparator.ToString(), targetpaths);
                 m_wrapper.RestoreFilter = string.Join(System.IO.Path.PathSeparator.ToString(), backupFileList.CheckedFiles.ToArray());
             }
             else
             {
-                m_wrapper.RestorePath = targetpaths[0];
+                m_wrapper.DisplayRestorePath = targetpaths[0];
                 m_wrapper.RestoreFilter = "";
             }
             args.NextPage = new FinishedRestore();
