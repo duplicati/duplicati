@@ -859,6 +859,8 @@ namespace Duplicati.Library.Main
             if (lastEx != null)
                 if (lastEx is HashMismathcException)
                     throw lastEx;
+                else if (lastEx is System.Security.Cryptography.CryptographicException)
+                    throw lastEx;
                 else
                     throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError, lastEx.Message), lastEx);
 
