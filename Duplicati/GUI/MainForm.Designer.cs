@@ -56,6 +56,7 @@
             // 
             this.TrayIcon.ContextMenuStrip = this.TrayMenu;
             resources.ApplyResources(this.TrayIcon, "TrayIcon");
+            this.TrayIcon.BalloonTipClicked += new System.EventHandler(this.TrayIcon_BalloonTipClicked);
             this.TrayIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(this.TrayIcon_MouseClick);
             this.TrayIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.TrayIcon_MouseDoubleClick);
             // 

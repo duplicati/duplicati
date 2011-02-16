@@ -26,6 +26,16 @@ namespace Duplicati.Datamodel
 {
     public class ApplicationSettings
     {
+        public enum NotificationLevel
+        {
+            Off,
+            Start,
+            StartAndStop,
+            Continous,
+            Warnings,
+            Errors
+        }
+
         private SettingsHelper<ApplicationSetting, string, string> m_appset;
 
         private const string RECENT_DURATION = "Recent duration";
@@ -46,6 +56,8 @@ namespace Duplicati.Datamodel
         private const string DOWNLOAD_SPEED_LIMIT = "Download speed limit";
 
         private const string HIDE_DONATE_BUTTON = "Hide donate button";
+
+        private const string BALLON_NOTIFICATION_LEVEL = "Balloon notification level";
 
         public ApplicationSettings(IDataFetcher dataparent)
         {
@@ -264,6 +276,24 @@ namespace Duplicati.Datamodel
                 return Duplicati.Library.Utility.Utility.ParseBool(tmp, false);
             }
             set { m_appset[HIDE_DONATE_BUTTON] = value.ToString(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the balloon notification level
+        /// </summary>
+        public NotificationLevel BallonNotificationLevel
+        {
+            get
+            {
+                string v;
+                m_appset.TryGetValue(BALLON_NOTIFICATION_LEVEL, out v);
+                if (!string.IsNullOrEmpty(v))
+                    try { return (NotificationLevel)Enum.Parse(typeof(NotificationLevel), v); }
+                    catch { }
+
+                return NotificationLevel.Warnings;
+            }
+            set { m_appset[BALLON_NOTIFICATION_LEVEL] = value.ToString(); }
         }
     }
 }

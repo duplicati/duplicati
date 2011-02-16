@@ -38,8 +38,19 @@ namespace Duplicati.GUI
             Stopped,
         }
 
-        public delegate void DuplicatiRunnerProgress(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress);
-        public event DuplicatiRunnerProgress DuplicatiProgress;
+        public enum RunnerResult
+        {
+            OK,
+            Partial,
+            Warning,
+            Error
+        }
+
+        public delegate void ResultEventDelegate(RunnerResult result, string parsedMessage, string message);
+        public event ResultEventDelegate ResultEvent;
+
+        public delegate void ProgressEventDelegate(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress);
+        public event ProgressEventDelegate ProgressEvent;
 
         private const int PERCENT_PR_EXTRA_OPERATION = 2;
         private int m_extraOperations = 0;
@@ -100,8 +111,8 @@ namespace Duplicati.GUI
                                 Library.Utility.TempFolder tf = null;
                                 try
                                 {
-                                    if (DuplicatiProgress != null)
-                                        DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Started, task.Schedule.Name, "", 0, -1);
+                                    if (ProgressEvent != null)
+                                        ProgressEvent(DuplicatiOperation.Backup, RunnerState.Started, task.Schedule.Name, "", 0, -1);
 
                                     if (task.Task.IncludeSetup)
                                     {
@@ -153,8 +164,8 @@ namespace Duplicati.GUI
                                     if (tf != null)
                                         tf.Dispose();
 
-                                    if (DuplicatiProgress != null)
-                                        DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
+                                    if (ProgressEvent != null)
+                                        ProgressEvent(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                                 }
                                 break;
                             }
@@ -195,14 +206,14 @@ namespace Duplicati.GUI
 
                             try
                             {
-                                if (DuplicatiProgress != null)
-                                    DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
+                                if (ProgressEvent != null)
+                                    ProgressEvent(DuplicatiOperation.Restore, RunnerState.Started, task.Schedule.Name, "", 0, -1);
                                 results = i.Restore(task.LocalPath.Split(System.IO.Path.PathSeparator));
                             }
                             finally
                             {
-                                if (DuplicatiProgress != null)
-                                    DuplicatiProgress(DuplicatiOperation.Restore, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
+                                if (ProgressEvent != null)
+                                    ProgressEvent(DuplicatiOperation.Restore, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                             }
                             break;
 
@@ -304,8 +315,8 @@ namespace Duplicati.GUI
                     if (task.Schedule.Task.KeepFull > 0 || !string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
                         ReinvokeLastProgressEvent();
 
-                    if (DuplicatiProgress != null)
-                        DuplicatiProgress(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
+                    if (ProgressEvent != null)
+                        ProgressEvent(DuplicatiOperation.Backup, RunnerState.Stopped, task.Schedule.Name, "", 100, -1);
                 }
             }
             catch (Exception ex)
@@ -316,6 +327,26 @@ namespace Duplicati.GUI
             task.IsAborted = m_isAborted;
             task.Result = results;
             task.RaiseTaskCompleted(results, parsedMessage);
+
+            if (ResultEvent != null && task is FullBackupTask || task is IncrementalBackupTask)
+            {
+                Log[] logs = Program.DataConnection.GetObjects<Log>("TaskID = ? AND SubAction LIKE ? ORDER BY EndTime DESC", task.Task.ID, "Primary");
+                if (logs != null && logs.Length > 0)
+                {
+                    Datamodel.Log l = logs[0];
+                    RunnerResult r = RunnerResult.Error;
+                    if (l.ParsedStatus == DuplicatiOutputParser.ErrorStatus)
+                        r = RunnerResult.Error;
+                    else if (l.ParsedStatus == DuplicatiOutputParser.OKStatus)
+                        r = RunnerResult.OK;
+                    else if (l.ParsedStatus == DuplicatiOutputParser.PartialStatus)
+                        r = RunnerResult.Partial;
+                    else if (l.ParsedStatus == DuplicatiOutputParser.WarningStatus)
+                        r = RunnerResult.Warning;
+
+                    ResultEvent(r, parsedMessage, results);
+                }
+            }
 
             if (task.Schedule != null && !m_isAborted)
                 task.Schedule.ScheduledRunCompleted(); //Register as completed if not aborted
@@ -334,8 +365,8 @@ namespace Duplicati.GUI
             if (m_extraOperations > 0 && progress > 0)
                 progress = (int)((m_lastPGProgress / 100.0) * (100 - (m_extraOperations * PERCENT_PR_EXTRA_OPERATION)));
 
-            if (DuplicatiProgress != null)
-                try { DuplicatiProgress(operation, RunnerState.Running, message, submessage, progress, subprogress); }
+            if (ProgressEvent != null)
+                try { ProgressEvent(operation, RunnerState.Running, message, submessage, progress, subprogress); }
                 catch { }
         }
 

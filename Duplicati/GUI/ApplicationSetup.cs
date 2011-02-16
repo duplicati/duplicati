@@ -67,6 +67,15 @@ namespace Duplicati.GUI
                     new KeyValuePair<string, string>(Strings.Common.ThirtyMinutes, "30m"),
                 }));
 
+            BalloonNotificationLevel.Items.AddRange(new object[] {
+                new ComboBoxItemPair<ApplicationSettings.NotificationLevel>(Strings.ApplicationSetup.BalloonNotification_Off, ApplicationSettings.NotificationLevel.Off),
+                new ComboBoxItemPair<ApplicationSettings.NotificationLevel>(Strings.ApplicationSetup.BalloonNotification_Errors, ApplicationSettings.NotificationLevel.Errors),
+                new ComboBoxItemPair<ApplicationSettings.NotificationLevel>(Strings.ApplicationSetup.BalloonNotification_Warnings, ApplicationSettings.NotificationLevel.Warnings),
+                new ComboBoxItemPair<ApplicationSettings.NotificationLevel>(Strings.ApplicationSetup.BalloonNotification_Start, ApplicationSettings.NotificationLevel.Start),
+                new ComboBoxItemPair<ApplicationSettings.NotificationLevel>(Strings.ApplicationSetup.BalloonNotification_StartAndStop, ApplicationSettings.NotificationLevel.StartAndStop),
+                new ComboBoxItemPair<ApplicationSettings.NotificationLevel>(Strings.ApplicationSetup.BalloonNotification_Continous, ApplicationSettings.NotificationLevel.Continous),
+            });
+
             try
             {
                 LanguageSelection.Items.Clear();
@@ -236,6 +245,14 @@ namespace Duplicati.GUI
                 Bandwidth.DownloadLimit = m_settings.DownloadSpeedLimit;
 
                 HideDonateButton.Checked = m_settings.HideDonateButton;
+
+                BalloonNotificationLevel.SelectedItem = null;
+                foreach(ComboBoxItemPair<ApplicationSettings.NotificationLevel> p in BalloonNotificationLevel.Items)
+                    if (p.Value == m_settings.BallonNotificationLevel)
+                    {
+                        BalloonNotificationLevel.SelectedItem = p;
+                        break;
+                    }
 
                 if (string.IsNullOrEmpty(m_settings.DisplayLanguage))
                     LanguageSelection.SelectedIndex = 0;
@@ -526,6 +543,15 @@ namespace Duplicati.GUI
                 if (!string.IsNullOrEmpty(l.Url))
                     Duplicati.Library.Utility.UrlUtillity.OpenUrl(l.Url);
             }
+        }
+
+        private void BalloonNotificationLevel_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (m_isUpdating)
+                return;
+
+            if (BalloonNotificationLevel.SelectedItem as ComboBoxItemPair<ApplicationSettings.NotificationLevel> != null)
+                m_settings.BallonNotificationLevel = (BalloonNotificationLevel.SelectedItem as ComboBoxItemPair<ApplicationSettings.NotificationLevel>).Value;
         }
     }
 }

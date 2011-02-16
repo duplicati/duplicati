@@ -32,14 +32,20 @@ namespace Duplicati.GUI
     /// </summary>
     public partial class MainForm : Form
     {
+        private static readonly int BALLOON_SHOW_TIME = (int)TimeSpan.FromSeconds(60).TotalMilliseconds;
         private ServiceStatus StatusDialog;
         private WizardHandler WizardDialog;
+        private Datamodel.ApplicationSettings m_settings;
 
         private delegate void EmptyDelegate();
 		
 		private string[] m_initialArguments;
 
         private bool m_hasAttemptedBackupTermination = false;
+
+        private DuplicatiRunner.RunnerResult m_currentIconState;
+        private Icon m_currentIcon;
+        private string m_currentTooltip;
 
         public string[] InitialArguments
         {
@@ -51,13 +57,138 @@ namespace Duplicati.GUI
         {
             InitializeComponent();
 
+            m_currentIcon = Properties.Resources.TrayNormal;
+            m_currentTooltip = Strings.MainForm.TrayStatusReady;
+
             Program.LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
             Program.WorkThread.StartingWork += new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
             Program.SingleInstance.SecondInstanceDetected += new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected);
+
+            m_settings = new Duplicati.Datamodel.ApplicationSettings(Program.DataConnection);
+            Program.DataConnection.AfterDataChange += new System.Data.LightDatamodel.DataChangeEventHandler(DataConnection_AfterDataChange);
+
+            Program.Runner.ProgressEvent += new DuplicatiRunner.ProgressEventDelegate(Runner_DuplicatiProgress);
+            Program.Runner.ResultEvent += new DuplicatiRunner.ResultEventDelegate(Runner_ResultEvent);
 #if DEBUG
             this.Text += " (DEBUG)";
 #endif
+        }
+
+        public void SetCurrentIcon(DuplicatiRunner.RunnerResult icon, string message)
+        {
+            if (icon == DuplicatiRunner.RunnerResult.Error)
+            {
+                m_currentIcon = Properties.Resources.TrayNormalError;
+                m_currentIconState = icon;
+                m_currentTooltip = message;
+
+            }
+            else if ((icon == DuplicatiRunner.RunnerResult.Warning || icon == DuplicatiRunner.RunnerResult.Partial) && m_currentIconState != DuplicatiRunner.RunnerResult.Error)
+            {
+                m_currentIcon = Properties.Resources.TrayNormalWarning;
+                m_currentIconState = icon;
+                m_currentTooltip = message;
+            }
+            
+            UpdateTrayIcon();
+        }
+
+        public void ResetCurrentIcon()
+        {
+            m_currentIcon = Properties.Resources.TrayNormal;
+            m_currentTooltip = Strings.MainForm.TrayStatusReady;
+            m_currentIconState = DuplicatiRunner.RunnerResult.OK;
+            UpdateTrayIcon();
+        }
+
+        private void UpdateTrayIcon()
+        {
+            //TODO: Hard to maintain consistent state because the number of cases here can change
+            if (Program.LiveControl.State == LiveControls.LiveControlState.Running && !Program.WorkThread.Active)
+            {
+                TrayIcon.Icon = m_currentIcon;
+                SetTrayIconText(m_currentTooltip);
+            }
+        }
+
+        void Runner_ResultEvent(DuplicatiRunner.RunnerResult result, string parsedMessage, string message)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new DuplicatiRunner.ResultEventDelegate(Runner_ResultEvent), result, parsedMessage, message);
+                return;
+            }
+
+            string name = "";
+
+            //Dirty read of the instance variable
+            try { name = Program.WorkThread.CurrentTask.Schedule.Name; }
+            catch { }
+
+            if (result == DuplicatiRunner.RunnerResult.Error)
+                SetCurrentIcon(result, String.Format(Strings.MainForm.BalloonTip_Error, name, parsedMessage));
+            else if (result == DuplicatiRunner.RunnerResult.Partial || result == DuplicatiRunner.RunnerResult.Warning)
+                SetCurrentIcon(result, String.Format(Strings.MainForm.BalloonTip_Warning, name));
+                
+
+            if (result == DuplicatiRunner.RunnerResult.OK || m_settings.BallonNotificationLevel == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Off)
+                return;
+
+            if (result == DuplicatiRunner.RunnerResult.Error)
+                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Error, name, parsedMessage), ToolTipIcon.Error);
+
+            else if (result == DuplicatiRunner.RunnerResult.Warning || result == DuplicatiRunner.RunnerResult.Partial)
+                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Warning, name), ToolTipIcon.Warning);
+        }
+
+        void DataConnection_AfterDataChange(object sender, string propertyname, object oldvalue, object newvalue)
+        {
+            if (sender as Datamodel.ApplicationSetting == null)
+                return;
+
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new System.Data.LightDatamodel.DataChangeEventHandler(DataConnection_AfterDataChange), sender, propertyname, oldvalue, newvalue);
+                return;
+            }
+
+            m_settings = new Duplicati.Datamodel.ApplicationSettings(Program.DataConnection);
+        }
+
+        void Runner_DuplicatiProgress(Duplicati.Library.Main.DuplicatiOperation operation, DuplicatiRunner.RunnerState state, string message, string submessage, int progress, int subprogress)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new DuplicatiRunner.ProgressEventDelegate(Runner_DuplicatiProgress), operation, state, message, submessage, progress, subprogress);
+                return;
+            }
+
+            Datamodel.ApplicationSettings.NotificationLevel level = m_settings.BallonNotificationLevel;
+
+            string name = "";
+
+            //Dirty read of the instance variable
+            try { name = Program.WorkThread.CurrentTask.Schedule.Name; }
+            catch  {}
+
+
+            if (state == DuplicatiRunner.RunnerState.Started && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Start || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
+            {
+                //Show start balloon
+                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Started, name), ToolTipIcon.Info);
+            }
+            else if (state == DuplicatiRunner.RunnerState.Stopped && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
+            {
+                //Show stop balloon
+                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Stopped, name), ToolTipIcon.Info);
+            }
+            else if (state == DuplicatiRunner.RunnerState.Running && level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous)
+            {
+                //Show update balloon
+                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Running, message), ToolTipIcon.Info);
+
+            }
         }
 
         void LiveControl_StateChanged(object sender, EventArgs e)
@@ -75,7 +206,7 @@ namespace Duplicati.GUI
                     pauseToolStripMenuItem.Checked = true;
 
                     TrayIcon.Icon = Program.WorkThread.Active ? Properties.Resources.TrayWorkingPause : Properties.Resources.TrayNormalPause;
-                    TrayIcon.Text = Strings.MainForm.TrayStatusPause;
+                    SetTrayIconText(Strings.MainForm.TrayStatusPause);
                     break;
                 case LiveControls.LiveControlState.Running:
                     //Restore the icon and tooltip
@@ -92,8 +223,8 @@ namespace Duplicati.GUI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            TrayIcon.Icon = Properties.Resources.TrayNormal;
-            TrayIcon.Text = Strings.MainForm.TrayStatusReady;
+            TrayIcon.Icon = m_currentIcon;
+            SetTrayIconText(m_currentTooltip);
 
             LiveControl_StateChanged(Program.LiveControl, null);
             TrayIcon.Visible = true;
@@ -149,6 +280,17 @@ namespace Duplicati.GUI
             Program.Runner.Stop(CloseReason.UserClosing);
         }
 
+        private void SetTrayIconText(string text)
+        {
+            //Strange 64 character limit on linux: http://code.google.com/p/duplicati/issues/detail?id=298
+            try { TrayIcon.Text = text; }
+            catch
+            {
+                if (text.Length >= 64)
+                    TrayIcon.Text = text.Substring(0, 60) + "...";
+            }
+        }
+
         private void WorkThread_StartingWork(object sender, EventArgs e)
         {
             if (InvokeRequired)
@@ -159,14 +301,7 @@ namespace Duplicati.GUI
 
             TrayIcon.Icon = Properties.Resources.TrayWorking;
             string tmp = string.Format(Strings.MainForm.TrayStatusRunning, Program.WorkThread.CurrentTask == null ? "" : Program.WorkThread.CurrentTask.Schedule.Name);
-
-            //Strange 64 character limit on linux: http://code.google.com/p/duplicati/issues/detail?id=298
-            try { TrayIcon.Text = tmp; }
-            catch 
-            { 
-                if (tmp.Length >= 64 )
-                    TrayIcon.Text = tmp.Substring(0, 60) + "..."; 
-            }
+            SetTrayIconText(tmp);
             stopToolStripMenuItem.Enabled = true;
         }
 
@@ -180,8 +315,8 @@ namespace Duplicati.GUI
 
             if (Program.LiveControl.State != LiveControls.LiveControlState.Paused)
             {
-                TrayIcon.Icon = Properties.Resources.TrayNormal;
-                TrayIcon.Text = Strings.MainForm.TrayStatusReady;
+                TrayIcon.Icon = m_currentIcon;
+                SetTrayIconText(m_currentTooltip);
             }
 
             stopToolStripMenuItem.Enabled = false;
@@ -445,6 +580,11 @@ namespace Duplicati.GUI
                     }
                 }
             }
+        }
+
+        private void TrayIcon_BalloonTipClicked(object sender, EventArgs e)
+        {
+            ShowStatus();
         }
     }
 }

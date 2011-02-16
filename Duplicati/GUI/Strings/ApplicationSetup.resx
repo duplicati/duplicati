@@ -117,6 +117,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BalloonNotification_Continous" xml:space="preserve">
+    <value>While backup is running (and on errors/warnings)</value>
+  </data>
+  <data name="BalloonNotification_Errors" xml:space="preserve">
+    <value>On backup errors</value>
+  </data>
+  <data name="BalloonNotification_Off" xml:space="preserve">
+    <value>No balloon notifications</value>
+  </data>
+  <data name="BalloonNotification_Start" xml:space="preserve">
+    <value>On backup start (and errors/warnings)</value>
+  </data>
+  <data name="BalloonNotification_StartAndStop" xml:space="preserve">
+    <value>On backup start and stop (and errors/warnings)</value>
+  </data>
+  <data name="BalloonNotification_Warnings" xml:space="preserve">
+    <value>On backup errors and warnings</value>
+  </data>
   <data name="CacheSize" xml:space="preserve">
     <value>Cache size: {0}</value>
     <comment>A string displaying the current size of the disk cache</comment>

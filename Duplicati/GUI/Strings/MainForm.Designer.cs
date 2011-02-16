@@ -61,6 +61,51 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to run backup {0}: {1}.
+        /// </summary>
+        internal static string BalloonTip_Error {
+            get {
+                return ResourceManager.GetString("BalloonTip_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}.
+        /// </summary>
+        internal static string BalloonTip_Running {
+            get {
+                return ResourceManager.GetString("BalloonTip_Running", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Running {0}.
+        /// </summary>
+        internal static string BalloonTip_Started {
+            get {
+                return ResourceManager.GetString("BalloonTip_Started", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Finished {0}.
+        /// </summary>
+        internal static string BalloonTip_Stopped {
+            get {
+                return ResourceManager.GetString("BalloonTip_Stopped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Backup {0} gave a warning.
+        /// </summary>
+        internal static string BalloonTip_Warning {
+            get {
+                return ResourceManager.GetString("BalloonTip_Warning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A backup is currently running, do you want to stop the backup so Duplicati can exit?.
         /// </summary>
         internal static string ExitWhileBackupIsRunningQuestion {

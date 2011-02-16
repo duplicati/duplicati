@@ -333,9 +333,23 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Icon TrayNormalError {
+            get {
+                object obj = ResourceManager.GetObject("TrayNormalError", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
         internal static System.Drawing.Icon TrayNormalPause {
             get {
                 object obj = ResourceManager.GetObject("TrayNormalPause", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Icon TrayNormalWarning {
+            get {
+                object obj = ResourceManager.GetObject("TrayNormalWarning", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }

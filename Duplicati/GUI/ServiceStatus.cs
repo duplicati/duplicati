@@ -55,7 +55,7 @@ namespace Duplicati.GUI
             Program.WorkThread.CompletedWork += new EventHandler(WorkThread_CompletedWork);
             Program.WorkThread.WorkQueueChanged += new EventHandler(WorkThread_WorkQueueChanged);
             Program.Scheduler.NewSchedule += new EventHandler(Scheduler_NewSchedule);
-            Program.Runner.DuplicatiProgress += new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
+            Program.Runner.ProgressEvent += new DuplicatiRunner.ProgressEventDelegate(Runner_DuplicatiProgress);
             Program.LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
             Program.DataConnection.AfterDataConnection += new System.Data.LightDatamodel.DataConnectionEventHandler(DataConnection_AfterDataConnection);
 
@@ -108,7 +108,7 @@ namespace Duplicati.GUI
         void Runner_DuplicatiProgress(Duplicati.Library.Main.DuplicatiOperation operation, DuplicatiRunner.RunnerState state, string message, string submessage, int progress, int subprogress)
         {
             if (this.InvokeRequired)
-                this.Invoke(new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress), operation, state, message, submessage, progress, subprogress);
+                this.Invoke(new DuplicatiRunner.ProgressEventDelegate(Runner_DuplicatiProgress), operation, state, message, submessage, progress, subprogress);
             else
             {
                 WorkProgressbar.Visible = ProgressMessage.Visible = state != DuplicatiRunner.RunnerState.Stopped;
@@ -155,7 +155,7 @@ namespace Duplicati.GUI
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
             Program.WorkThread.WorkQueueChanged -= new EventHandler(WorkThread_WorkQueueChanged);
             Program.Scheduler.NewSchedule -= new EventHandler(Scheduler_NewSchedule);
-            Program.Runner.DuplicatiProgress -= new DuplicatiRunner.DuplicatiRunnerProgress(Runner_DuplicatiProgress);
+            Program.Runner.ProgressEvent -= new DuplicatiRunner.ProgressEventDelegate(Runner_DuplicatiProgress);
             Program.LiveControl.StateChanged -= new EventHandler(LiveControl_StateChanged);
         }
 
@@ -385,6 +385,11 @@ namespace Duplicati.GUI
         private void ServiceStatus_Resize(object sender, EventArgs e)
         {
             ProgressMessage.MaximumSize = new Size(WorkProgressbar.Width, ProgressMessage.MaximumSize.Height);
+        }
+
+        private void ServiceStatus_Activated(object sender, EventArgs e)
+        {
+            Program.DisplayHelper.ResetCurrentIcon();
         }
      }
 }

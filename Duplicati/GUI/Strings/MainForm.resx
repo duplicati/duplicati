@@ -117,6 +117,21 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BalloonTip_Error" xml:space="preserve">
+    <value>Failed to run backup {0}: {1}</value>
+  </data>
+  <data name="BalloonTip_Running" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="BalloonTip_Started" xml:space="preserve">
+    <value>Running {0}</value>
+  </data>
+  <data name="BalloonTip_Stopped" xml:space="preserve">
+    <value>Finished {0}</value>
+  </data>
+  <data name="BalloonTip_Warning" xml:space="preserve">
+    <value>Backup {0} gave a warning</value>
+  </data>
   <data name="ExitWhileBackupIsRunningQuestion" xml:space="preserve">
     <value>A backup is currently running, do you want to stop the backup so Duplicati can exit?</value>
     <comment>A question displayed when the user attempts to exit Duplicati while a backup is running</comment>

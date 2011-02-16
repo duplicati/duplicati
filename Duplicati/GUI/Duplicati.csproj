@@ -1138,6 +1138,8 @@
     <None Include="Resources\donate_button.gif" />
     <None Include="Resources\help.png" />
     <None Include="Resources\Wizard.png" />
+    <None Include="Resources\TrayNormalError.ico" />
+    <None Include="Resources\TrayNormalWarning.ico" />
     <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

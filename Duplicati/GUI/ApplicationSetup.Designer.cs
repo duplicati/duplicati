@@ -32,10 +32,14 @@ namespace Duplicati.GUI
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ApplicationSetup));
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.BalloonNotificationLevel = new System.Windows.Forms.ComboBox();
+            this.label8 = new System.Windows.Forms.Label();
             this.HideDonateButton = new System.Windows.Forms.CheckBox();
+            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.label7 = new System.Windows.Forms.Label();
             this.LanguageSelection = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -61,18 +65,16 @@ namespace Duplicati.GUI
             this.BasicTab = new System.Windows.Forms.TabPage();
             this.AdvancedTab = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.LicenseTab = new System.Windows.Forms.TabPage();
-            this.LicenseSections = new System.Windows.Forms.ListBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.LicenseText = new System.Windows.Forms.TextBox();
-            this.label6 = new System.Windows.Forms.Label();
-            this.LicenseLink = new System.Windows.Forms.LinkLabel();
-            this.toolTip = new System.Windows.Forms.ToolTip(this.components);
-            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.Bandwidth = new Duplicati.GUI.HelperControls.BandwidthLimit();
             this.ThreadPriorityPicker = new Duplicati.GUI.HelperControls.ThreadPriorityPicker();
+            this.LicenseTab = new System.Windows.Forms.TabPage();
+            this.LicenseLink = new System.Windows.Forms.LinkLabel();
+            this.label6 = new System.Windows.Forms.Label();
+            this.LicenseText = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.LicenseSections = new System.Windows.Forms.ListBox();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.PasswordDefaultsGroup.SuspendLayout();
@@ -81,8 +83,8 @@ namespace Duplicati.GUI
             this.BasicTab.SuspendLayout();
             this.AdvancedTab.SuspendLayout();
             this.groupBox4.SuspendLayout();
-            this.panel1.SuspendLayout();
             this.LicenseTab.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -93,6 +95,8 @@ namespace Duplicati.GUI
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.BalloonNotificationLevel);
+            this.groupBox1.Controls.Add(this.label8);
             this.groupBox1.Controls.Add(this.HideDonateButton);
             this.groupBox1.Controls.Add(this.StartupDelayDuration);
             this.groupBox1.Controls.Add(this.label7);
@@ -104,6 +108,21 @@ namespace Duplicati.GUI
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.TabStop = false;
             // 
+            // BalloonNotificationLevel
+            // 
+            resources.ApplyResources(this.BalloonNotificationLevel, "BalloonNotificationLevel");
+            this.BalloonNotificationLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.BalloonNotificationLevel.FormattingEnabled = true;
+            this.BalloonNotificationLevel.Name = "BalloonNotificationLevel";
+            this.toolTip.SetToolTip(this.BalloonNotificationLevel, resources.GetString("BalloonNotificationLevel.ToolTip"));
+            this.BalloonNotificationLevel.SelectedIndexChanged += new System.EventHandler(this.BalloonNotificationLevel_SelectedIndexChanged);
+            // 
+            // label8
+            // 
+            resources.ApplyResources(this.label8, "label8");
+            this.label8.Name = "label8";
+            this.toolTip.SetToolTip(this.label8, resources.GetString("label8.ToolTip"));
+            // 
             // HideDonateButton
             // 
             resources.ApplyResources(this.HideDonateButton, "HideDonateButton");
@@ -111,6 +130,14 @@ namespace Duplicati.GUI
             this.toolTip.SetToolTip(this.HideDonateButton, resources.GetString("HideDonateButton.ToolTip"));
             this.HideDonateButton.UseVisualStyleBackColor = true;
             this.HideDonateButton.CheckedChanged += new System.EventHandler(this.HideDonateButton_CheckedChanged);
+            // 
+            // StartupDelayDuration
+            // 
+            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
+            this.StartupDelayDuration.Name = "StartupDelayDuration";
+            this.toolTip.SetToolTip(this.StartupDelayDuration, resources.GetString("StartupDelayDuration.ToolTip"));
+            this.StartupDelayDuration.Value = "";
+            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
             // 
             // label7
             // 
@@ -132,6 +159,14 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
             this.toolTip.SetToolTip(this.label3, resources.GetString("label3.ToolTip"));
+            // 
+            // RecentDuration
+            // 
+            resources.ApplyResources(this.RecentDuration, "RecentDuration");
+            this.RecentDuration.Name = "RecentDuration";
+            this.toolTip.SetToolTip(this.RecentDuration, resources.GetString("RecentDuration.ToolTip"));
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
             // 
             // groupBox2
             // 
@@ -259,7 +294,12 @@ namespace Duplicati.GUI
             // 
             // CommonPassword
             // 
+            this.CommonPassword.AskToEnterNewPassword = false;
+            this.CommonPassword.InitialPassword = null;
+            this.CommonPassword.IsPasswordVisible = false;
             resources.ApplyResources(this.CommonPassword, "CommonPassword");
+            this.CommonPassword.MaximumSize = new System.Drawing.Size(5000, 20);
+            this.CommonPassword.MinimumSize = new System.Drawing.Size(150, 20);
             this.CommonPassword.Name = "CommonPassword";
             this.toolTip.SetToolTip(this.CommonPassword, resources.GetString("CommonPassword.ToolTip"));
             this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
@@ -311,72 +351,6 @@ namespace Duplicati.GUI
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.TabStop = false;
             // 
-            // panel1
-            // 
-            this.panel1.Controls.Add(this.OKBtn);
-            this.panel1.Controls.Add(this.CancelBtn);
-            resources.ApplyResources(this.panel1, "panel1");
-            this.panel1.Name = "panel1";
-            // 
-            // LicenseTab
-            // 
-            this.LicenseTab.Controls.Add(this.LicenseLink);
-            this.LicenseTab.Controls.Add(this.label6);
-            this.LicenseTab.Controls.Add(this.LicenseText);
-            this.LicenseTab.Controls.Add(this.label2);
-            this.LicenseTab.Controls.Add(this.LicenseSections);
-            resources.ApplyResources(this.LicenseTab, "LicenseTab");
-            this.LicenseTab.Name = "LicenseTab";
-            this.LicenseTab.UseVisualStyleBackColor = true;
-            // 
-            // LicenseSections
-            // 
-            this.LicenseSections.FormattingEnabled = true;
-            resources.ApplyResources(this.LicenseSections, "LicenseSections");
-            this.LicenseSections.Name = "LicenseSections";
-            this.toolTip.SetToolTip(this.LicenseSections, resources.GetString("LicenseSections.ToolTip"));
-            this.LicenseSections.SelectedIndexChanged += new System.EventHandler(this.LicenseSections_SelectedIndexChanged);
-            // 
-            // label2
-            // 
-            resources.ApplyResources(this.label2, "label2");
-            this.label2.Name = "label2";
-            // 
-            // LicenseText
-            // 
-            resources.ApplyResources(this.LicenseText, "LicenseText");
-            this.LicenseText.Name = "LicenseText";
-            this.LicenseText.ReadOnly = true;
-            // 
-            // label6
-            // 
-            resources.ApplyResources(this.label6, "label6");
-            this.label6.Name = "label6";
-            // 
-            // LicenseLink
-            // 
-            resources.ApplyResources(this.LicenseLink, "LicenseLink");
-            this.LicenseLink.Name = "LicenseLink";
-            this.LicenseLink.TabStop = true;
-            this.toolTip.SetToolTip(this.LicenseLink, resources.GetString("LicenseLink.ToolTip"));
-            this.LicenseLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.LicenseLink_LinkClicked);
-            // 
-            // StartupDelayDuration
-            // 
-            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
-            this.StartupDelayDuration.Name = "StartupDelayDuration";
-            this.toolTip.SetToolTip(this.StartupDelayDuration, resources.GetString("StartupDelayDuration.ToolTip"));
-            this.StartupDelayDuration.Value = "";
-            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
-            // 
-            // RecentDuration
-            // 
-            resources.ApplyResources(this.RecentDuration, "RecentDuration");
-            this.RecentDuration.Name = "RecentDuration";
-            this.toolTip.SetToolTip(this.RecentDuration, resources.GetString("RecentDuration.ToolTip"));
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
-            // 
             // Bandwidth
             // 
             this.Bandwidth.DownloadLimit = null;
@@ -395,6 +369,56 @@ namespace Duplicati.GUI
             this.ThreadPriorityPicker.Name = "ThreadPriorityPicker";
             this.toolTip.SetToolTip(this.ThreadPriorityPicker, resources.GetString("ThreadPriorityPicker.ToolTip"));
             this.ThreadPriorityPicker.SelectedPriorityChanged += new System.EventHandler(this.ThreadPriorityPicker_SelectedPriorityChanged);
+            // 
+            // LicenseTab
+            // 
+            this.LicenseTab.Controls.Add(this.LicenseLink);
+            this.LicenseTab.Controls.Add(this.label6);
+            this.LicenseTab.Controls.Add(this.LicenseText);
+            this.LicenseTab.Controls.Add(this.label2);
+            this.LicenseTab.Controls.Add(this.LicenseSections);
+            resources.ApplyResources(this.LicenseTab, "LicenseTab");
+            this.LicenseTab.Name = "LicenseTab";
+            this.LicenseTab.UseVisualStyleBackColor = true;
+            // 
+            // LicenseLink
+            // 
+            resources.ApplyResources(this.LicenseLink, "LicenseLink");
+            this.LicenseLink.Name = "LicenseLink";
+            this.LicenseLink.TabStop = true;
+            this.toolTip.SetToolTip(this.LicenseLink, resources.GetString("LicenseLink.ToolTip"));
+            this.LicenseLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.LicenseLink_LinkClicked);
+            // 
+            // label6
+            // 
+            resources.ApplyResources(this.label6, "label6");
+            this.label6.Name = "label6";
+            // 
+            // LicenseText
+            // 
+            resources.ApplyResources(this.LicenseText, "LicenseText");
+            this.LicenseText.Name = "LicenseText";
+            this.LicenseText.ReadOnly = true;
+            // 
+            // label2
+            // 
+            resources.ApplyResources(this.label2, "label2");
+            this.label2.Name = "label2";
+            // 
+            // LicenseSections
+            // 
+            this.LicenseSections.FormattingEnabled = true;
+            resources.ApplyResources(this.LicenseSections, "LicenseSections");
+            this.LicenseSections.Name = "LicenseSections";
+            this.toolTip.SetToolTip(this.LicenseSections, resources.GetString("LicenseSections.ToolTip"));
+            this.LicenseSections.SelectedIndexChanged += new System.EventHandler(this.LicenseSections_SelectedIndexChanged);
+            // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.OKBtn);
+            this.panel1.Controls.Add(this.CancelBtn);
+            resources.ApplyResources(this.panel1, "panel1");
+            this.panel1.Name = "panel1";
             // 
             // ApplicationSetup
             // 
@@ -421,9 +445,9 @@ namespace Duplicati.GUI
             this.BasicTab.ResumeLayout(false);
             this.AdvancedTab.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
-            this.panel1.ResumeLayout(false);
             this.LicenseTab.ResumeLayout(false);
             this.LicenseTab.PerformLayout();
+            this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -473,5 +497,7 @@ namespace Duplicati.GUI
         private System.Windows.Forms.LinkLabel LicenseLink;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.TextBox LicenseText;
+        private System.Windows.Forms.ComboBox BalloonNotificationLevel;
+        private System.Windows.Forms.Label label8;
     }
 }
