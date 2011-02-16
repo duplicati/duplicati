@@ -168,4 +168,22 @@ Vil du bruge mappen alligevel?</value>
     <value>En fejl opstod under indlæsning af indstillingskomponenterne: {0}</value>
     <comment>An error message displayed if the settings control loading fails</comment>
   </data>
+  <data name="BalloonNotification_Warnings" xml:space="preserve">
+    <value>Ved backup fejl og advarsler</value>
+  </data>
+  <data name="BalloonNotification_StartAndStop" xml:space="preserve">
+    <value>Ved backup start og stop (og fejl/advarsler)</value>
+  </data>
+  <data name="BalloonNotification_Start" xml:space="preserve">
+    <value>Ved backup start (og fejl/advarsler)</value>
+  </data>
+  <data name="BalloonNotification_Off" xml:space="preserve">
+    <value>Ingen ballon oplysninger</value>
+  </data>
+  <data name="BalloonNotification_Errors" xml:space="preserve">
+    <value>Ved backup fejl</value>
+  </data>
+  <data name="BalloonNotification_Continous" xml:space="preserve">
+    <value>Mens backup'en kører (og ved fejl/advarsler)</value>
+  </data>
 </root>

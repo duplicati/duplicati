@@ -152,10 +152,10 @@ Det kortere format "cloudfiles://container/folder" kan bruges hvis containernavn
     <value>MD5 Hash (ETag) verifikation fejlede</value>
   </data>
   <data name="FileDeleteError" xml:space="preserve">
-    <value />
+    <value>Kunne ikke slette fil</value>
   </data>
   <data name="FileUploadError" xml:space="preserve">
-    <value />
+    <value>Kunne ikke uploade fil</value>
   </data>
   <data name="NoAPIKeyError" xml:space="preserve">
     <value>Der mangler en CloudFiles API Access Key</value>

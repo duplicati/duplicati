@@ -151,4 +151,19 @@ Skal Duplicati vente på at backup'en er færdig før programmet afsluttes?
     <value>Duplicati kører {0}</value>
     <comment>Text displayed as a tooltip on the tray icon when Duplicati is running a task</comment>
   </data>
+  <data name="BalloonTip_Warning" xml:space="preserve">
+    <value>Backup {0} gav en advarsel</value>
+  </data>
+  <data name="BalloonTip_Stopped" xml:space="preserve">
+    <value>Afsluttet {0}</value>
+  </data>
+  <data name="BalloonTip_Started" xml:space="preserve">
+    <value>Kører {0}</value>
+  </data>
+  <data name="BalloonTip_Running" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="BalloonTip_Error" xml:space="preserve">
+    <value>Kunne ikke køre backup {0}: {1}</value>
+  </data>
 </root>

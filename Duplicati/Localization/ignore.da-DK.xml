@@ -40,4 +40,5 @@
 	<ignore>{0}\t{1}</ignore>
 	<ignore>argument</ignore>
 	<ignore>Dialog</ignore>
+	<ignore>{0}</ignore>
 </root>

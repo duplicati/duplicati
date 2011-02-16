@@ -255,4 +255,13 @@
   <data name="$this.Text" xml:space="preserve">
     <value>Duplicati opsætning</value>
   </data>
+  <data name="BalloonNotificationLevel.ToolTip" xml:space="preserve">
+    <value>Angiv hvor ofte der skal vises oplysninger via ballontips</value>
+  </data>
+  <data name="label8.ToolTip" xml:space="preserve">
+    <value>Angiv hvor ofte der skal vises oplysninger via ballontips</value>
+  </data>
+  <data name="label8.Text" xml:space="preserve">
+    <value>Ballon oplysninger</value>
+  </data>
 </root>

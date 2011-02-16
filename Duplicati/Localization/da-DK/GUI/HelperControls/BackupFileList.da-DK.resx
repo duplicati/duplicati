@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,4 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="changeDestinationToolStripMenuItem.Text" xml:space="preserve">
+    <value>Skift destination...</value>
+  </data>
+  <data name="LoadingIndicator.Text" xml:space="preserve">
+    <value>Læser filliste, vent venligst ...</value>
+  </data>
+  <data name="folderBrowserDialog.Description" xml:space="preserve">
+    <value>Angiv mappen der skal gendannes til</value>
+  </data>
 </root>

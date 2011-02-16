@@ -143,4 +143,9 @@ Fejlbesked: {1}</value>
   <data name="PageTitle" xml:space="preserve">
     <value>Angiv mappe til gendannelse</value>
   </data>
+  <data name="PathTooLongWarning" xml:space="preserve">
+    <value>De gendannede filer vil bruge en sti der er {0} tegn lang, men Windows understøtter kun stier op til omkring 250 tegn. Hvis du fortsætter kan nogle filer måske ikke gendannes.
+
+Vil du forsætte med gendannelsen alligevel?</value>
+  </data>
 </root>
