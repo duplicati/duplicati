@@ -169,7 +169,7 @@
     <value>8</value>
   </data>
   <data name="BalloonNotificationLevel.ToolTip" xml:space="preserve">
-    <value>Choose the language for the user interface (requires restart)</value>
+    <value>Choose the level of notification given by balloon tips</value>
   </data>
   <data name="&gt;&gt;BalloonNotificationLevel.Name" xml:space="preserve">
     <value>BalloonNotificationLevel</value>
@@ -202,7 +202,7 @@
     <value>Balloon notifications</value>
   </data>
   <data name="label8.ToolTip" xml:space="preserve">
-    <value>Choose the language for the user interface (requires restart)</value>
+    <value>Choose the level of notification given by balloon tips</value>
   </data>
   <data name="&gt;&gt;label8.Name" xml:space="preserve">
     <value>label8</value>
