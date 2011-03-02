@@ -305,7 +305,7 @@ namespace Duplicati.Library.Main
                     
                     CheckLiveControl();
 
-                    List<ManifestEntry> backupsets = backend.GetBackupSets();
+                    List<ManifestEntry> backupsets = full ? new List<ManifestEntry>() : backend.GetBackupSets();
 
                     if (backupsets.Count == 0)
                         full = true;
