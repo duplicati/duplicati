@@ -172,6 +172,15 @@ namespace Duplicati.GUI.HelperControls
                 return;
             }
 
+            if (basepath.Equals(filename, Library.Utility.Utility.ClientFilenameStringComparision))
+            {
+                SetTooltipMessage(string.Format(Strings.FilterEditor.FolderIsRootFolder, filename));
+                TestResults.Image = imageList.Images[0];
+                TestResults.Visible = true;
+                return;
+            }
+
+
             //Build a list of parent folders to check
             List<string> parentFolders = new List<string>();
             string folder = filename;
@@ -188,6 +197,11 @@ namespace Duplicati.GUI.HelperControls
             Library.Utility.FilenameFilter fn = new Duplicati.Library.Utility.FilenameFilter(GetFilterList(true));
             Library.Utility.IFilenameFilter match;
             foreach (string s in parentFolders)
+            {
+                //Skip rootpath
+                if (basepath.Equals(s, Library.Utility.Utility.ClientFilenameStringComparision))
+                    continue;
+
                 if (!fn.ShouldInclude(basepath, s, out match))
                 {
                     SetTooltipMessage(string.Format(Strings.FilterEditor.FolderIsExcluded, s, ((Library.Utility.RegularExpressionFilter)match).Expression.ToString()));
@@ -195,6 +209,7 @@ namespace Duplicati.GUI.HelperControls
                     TestResults.Visible = true;
                     return;
                 }
+            }
 
             //Update image based on the inclusion status
             TestResults.Image = imageList.Images[fn.ShouldInclude(basepath, filename, out match) ? 0 : 1];
