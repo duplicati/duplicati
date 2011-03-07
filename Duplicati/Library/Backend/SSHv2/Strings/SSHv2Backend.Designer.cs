@@ -22,14 +22,14 @@ namespace Duplicati.Library.Backend.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class WEBDAV {
+    internal class SSHv2Backend {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal WEBDAV() {
+        internal SSHv2Backend() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Backend.Strings.WEBDAV", typeof(WEBDAV).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Backend.Strings.SSHv2Backend", typeof(SSHv2Backend).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,7 +61,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supports connections to a WEBDAV enabled web server, using the HTTP protocol. Allowed formats are &quot;webdav://hostname/folder&quot; or &quot;webdav://username:password@hostname/folder&quot;..
+        ///   Looks up a localized string similar to This backend can read and write data to an SSH based backend, using SFTP. Allowed formats are &quot;ssh://hostname/folder&quot; or &quot;ssh://username:password@hostname/folder&quot;..
         /// </summary>
         internal static string Description {
             get {
@@ -70,56 +70,20 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible..
+        ///   Looks up a localized string similar to The SSH backend relies on an external program (sftp) to work. Since the external program may change at any time, this may break the backend. Enable this option to get debug information about the ssh connection written to the console. Only used if the --use-sftp-application option is supplied..
         /// </summary>
-        internal static string DescriptionAcceptAnyCertificateLong {
+        internal static string DescriptionDebugToConsoleLong {
             get {
-                return ResourceManager.GetString("DescriptionAcceptAnyCertificateLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionDebugToConsoleLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Accept any server certificate.
+        ///   Looks up a localized string similar to Prints debug info to the console.
         /// </summary>
-        internal static string DescriptionAcceptAnyCertificateShort {
+        internal static string DescriptionDebugToConsoleShort {
             get {
-                return ResourceManager.GetString("DescriptionAcceptAnyCertificateShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces..
-        /// </summary>
-        internal static string DescriptionAcceptHashLong {
-            get {
-                return ResourceManager.GetString("DescriptionAcceptHashLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Optionally accept a known SSL certificate.
-        /// </summary>
-        internal static string DescriptionAcceptHashShort {
-            get {
-                return ResourceManager.GetString("DescriptionAcceptHashShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Using the HTTP Digest authentication method allows the user to authenticate with the server, without sending the password in clear. However, a man-in-the-middle attack is easy, because the HTTP protocol specifies a fallback to Basic authentication, which will make the client send the password to the attacker. Using this flag, the client does not accept this, and always uses Digest authentication or fails to connect..
-        /// </summary>
-        internal static string DescriptionForceDigestLong {
-            get {
-                return ResourceManager.GetString("DescriptionForceDigestLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Force the use of the HTTP Digest authentication method.
-        /// </summary>
-        internal static string DescriptionForceDigestShort {
-            get {
-                return ResourceManager.GetString("DescriptionForceDigestShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionDebugToConsoleShort", resourceCulture);
             }
         }
         
@@ -160,43 +124,61 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only available with windows servers and clients..
+        ///   Looks up a localized string similar to Points to a valid OpenSSH keyfile. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client..
         /// </summary>
-        internal static string DescriptionIntegratedAuthenticationLong {
+        internal static string DescriptionSshkeyfileLong {
             get {
-                return ResourceManager.GetString("DescriptionIntegratedAuthenticationLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionSshkeyfileLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use windows integrated authentication to connect to the server.
+        ///   Looks up a localized string similar to Uses a SSH private key to authenticate.
         /// </summary>
-        internal static string DescriptionIntegratedAuthenticationShort {
+        internal static string DescriptionSshkeyfileShort {
             get {
-                return ResourceManager.GetString("DescriptionIntegratedAuthenticationShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionSshkeyfileShort", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use this flag to communicate using Secure Socket Layer (SSL) over http (https)..
+        ///   Looks up a localized string similar to Supply any extra commandline arguments, which are passed unaltered to the ssh application.  Only used if the --use-sftp-application option is supplied..
         /// </summary>
-        internal static string DescriptionUseSSLLong {
+        internal static string DescriptionSSHOptionsLong {
             get {
-                return ResourceManager.GetString("DescriptionUseSSLLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionSSHOptionsLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Instructs Duplicati to use an SSL (https) connection.
+        ///   Looks up a localized string similar to Extra options to the ssh commands.
         /// </summary>
-        internal static string DescriptionUseSSLShort {
+        internal static string DescriptionSSHOptionsShort {
             get {
-                return ResourceManager.GetString("DescriptionUseSSLShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionSSHOptionsShort", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to WEBDAV based.
+        ///   Looks up a localized string similar to The SSH backend relies on an external program (sftp) to work. Since the external program may hang, Duplicati must use a timeout to detect a stall in the external program. Use this option to adjust the timeout. Minimum allowed value is one minute, maximum allowed is one hour. Only used if the --use-sftp-application option is supplied..
+        /// </summary>
+        internal static string DescriptionTransferTimeoutLong {
+            get {
+                return ResourceManager.GetString("DescriptionTransferTimeoutLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sets the timeout for transfering a file.
+        /// </summary>
+        internal static string DescriptionTransferTimeoutShort {
+            get {
+                return ResourceManager.GetString("DescriptionTransferTimeoutShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SSH based on SSH.NET.
         /// </summary>
         internal static string DisplayName {
             get {
@@ -205,22 +187,11 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The folder {0} was not found, message: {1}.
+        ///   Looks up a localized string similar to Unable to set folder to {0}, error message: {1}.
         /// </summary>
-        internal static string MissingFolderError {
+        internal static string FolderNotFoundManagedError {
             get {
-                return ResourceManager.GetString("MissingFolderError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.
-        ///This can be because the file is deleted or unavailable, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.
-        ///Error message: {3}.
-        /// </summary>
-        internal static string SeenThenNotFoundError {
-            get {
-                return ResourceManager.GetString("SeenThenNotFoundError", resourceCulture);
+                return ResourceManager.GetString("FolderNotFoundManagedError", resourceCulture);
             }
         }
     }

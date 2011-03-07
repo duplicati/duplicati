@@ -1,6 +1,6 @@
 namespace Duplicati.Library.Backend
 {
-    partial class SSHUI
+    partial class SSHv2UI
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SSHUI));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SSHv2UI));
             this.TestConnection = new System.Windows.Forms.Button();
             this.Port = new System.Windows.Forms.NumericUpDown();
             this.Password = new Duplicati.Winforms.Controls.PasswordControl();
@@ -41,7 +41,6 @@ namespace Duplicati.Library.Backend
             this.label1 = new System.Windows.Forms.Label();
             this.UsePassword = new System.Windows.Forms.CheckBox();
             this.GenerateDebugOutput = new System.Windows.Forms.CheckBox();
-            this.UseUnmanagedSSH = new System.Windows.Forms.CheckBox();
             this.CreateFolderButton = new System.Windows.Forms.Button();
             this.Keyfile = new System.Windows.Forms.TextBox();
             this.Keyfilelabel = new System.Windows.Forms.Label();
@@ -81,6 +80,7 @@ namespace Duplicati.Library.Backend
             // Password
             // 
             this.Password.AskToEnterNewPassword = false;
+            this.Password.InitialPassword = null;
             this.Password.IsPasswordVisible = false;
             resources.ApplyResources(this.Password, "Password");
             this.Password.MaximumSize = new System.Drawing.Size(5000, 20);
@@ -141,13 +141,6 @@ namespace Duplicati.Library.Backend
             this.GenerateDebugOutput.Name = "GenerateDebugOutput";
             this.GenerateDebugOutput.UseVisualStyleBackColor = true;
             // 
-            // UseUnmanagedSSH
-            // 
-            resources.ApplyResources(this.UseUnmanagedSSH, "UseUnmanagedSSH");
-            this.UseUnmanagedSSH.Name = "UseUnmanagedSSH";
-            this.UseUnmanagedSSH.UseVisualStyleBackColor = true;
-            this.UseUnmanagedSSH.CheckedChanged += new System.EventHandler(this.UseUnmanagedSSH_CheckedChanged);
-            // 
             // CreateFolderButton
             // 
             resources.ApplyResources(this.CreateFolderButton, "CreateFolderButton");
@@ -177,7 +170,7 @@ namespace Duplicati.Library.Backend
             // 
             resources.ApplyResources(this.OpenSSHKeyFileDialog, "OpenSSHKeyFileDialog");
             // 
-            // SSHUI
+            // SSHv2UI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -185,7 +178,6 @@ namespace Duplicati.Library.Backend
             this.Controls.Add(this.Keyfile);
             this.Controls.Add(this.Keyfilelabel);
             this.Controls.Add(this.CreateFolderButton);
-            this.Controls.Add(this.UseUnmanagedSSH);
             this.Controls.Add(this.GenerateDebugOutput);
             this.Controls.Add(this.UsePassword);
             this.Controls.Add(this.TestConnection);
@@ -198,7 +190,7 @@ namespace Duplicati.Library.Backend
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Name = "SSHUI";
+            this.Name = "SSHv2UI";
             this.Load += new System.EventHandler(this.SSHUI_PageLoad);
             ((System.ComponentModel.ISupportInitialize)(this.Port)).EndInit();
             this.ResumeLayout(false);
@@ -220,7 +212,6 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox UsePassword;
         private System.Windows.Forms.CheckBox GenerateDebugOutput;
-        private System.Windows.Forms.CheckBox UseUnmanagedSSH;
         private System.Windows.Forms.Button CreateFolderButton;
         private System.Windows.Forms.TextBox Keyfile;
         private System.Windows.Forms.Label Keyfilelabel;

@@ -112,15 +112,54 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="PageDescription" xml:space="preserve">
-    <value>Settings for the SSH backend</value>
+  <data name="Description" xml:space="preserve">
+    <value>This backend can read and write data to an SSH based backend, using SFTP. Allowed formats are "ssh://hostname/folder" or "ssh://username:password@hostname/folder".</value>
   </data>
-  <data name="PageTitle" xml:space="preserve">
-    <value>SSH Settings</value>
+  <data name="DescriptionDebugToConsoleLong" xml:space="preserve">
+    <value>The SSH backend relies on an external program (sftp) to work. Since the external program may change at any time, this may break the backend. Enable this option to get debug information about the ssh connection written to the console. Only used if the --use-sftp-application option is supplied.</value>
+  </data>
+  <data name="DescriptionDebugToConsoleShort" xml:space="preserve">
+    <value>Prints debug info to the console</value>
+  </data>
+  <data name="DescriptionFTPPasswordLong" xml:space="preserve">
+    <value>The password used to connect to the server. This may also be supplied as the environment variable "FTP_PASSWORD".</value>
+  </data>
+  <data name="DescriptionFTPPasswordShort" xml:space="preserve">
+    <value>Supplies the password used to connect to the server</value>
+  </data>
+  <data name="DescriptionFTPUsernameLong" xml:space="preserve">
+    <value>The username used to connect to the server. This may also be supplied as the environment variable "FTP_USERNAME".</value>
+  </data>
+  <data name="DescriptionFTPUsernameShort" xml:space="preserve">
+    <value>Supplies the username used to connect to the server</value>
+  </data>
+  <data name="DescriptionSshkeyfileLong" xml:space="preserve">
+    <value>Points to a valid OpenSSH keyfile. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client.</value>
+  </data>
+  <data name="DescriptionSshkeyfileShort" xml:space="preserve">
+    <value>Uses a SSH private key to authenticate</value>
+  </data>
+  <data name="DescriptionSSHOptionsLong" xml:space="preserve">
+    <value>Supply any extra commandline arguments, which are passed unaltered to the ssh application.  Only used if the --use-sftp-application option is supplied.</value>
+  </data>
+  <data name="DescriptionSSHOptionsShort" xml:space="preserve">
+    <value>Extra options to the ssh commands</value>
+  </data>
+  <data name="DescriptionTransferTimeoutLong" xml:space="preserve">
+    <value>The SSH backend relies on an external program (sftp) to work. Since the external program may hang, Duplicati must use a timeout to detect a stall in the external program. Use this option to adjust the timeout. Minimum allowed value is one minute, maximum allowed is one hour. Only used if the --use-sftp-application option is supplied.</value>
+  </data>
+  <data name="DescriptionTransferTimeoutShort" xml:space="preserve">
+    <value>Sets the timeout for transfering a file</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>SSH based on SSH.NET</value>
+  </data>
+  <data name="FolderNotFoundManagedError" xml:space="preserve">
+    <value>Unable to set folder to {0}, error message: {1}</value>
   </data>
 </root>

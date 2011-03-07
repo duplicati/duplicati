@@ -27,7 +27,7 @@ using System.Windows.Forms;
 
 namespace Duplicati.Library.Backend
 {
-    public partial class SSHUI : UserControl
+    public partial class SSHv2UI : UserControl
     {
         private const string USERNAME = "Username";
         private const string PASSWORD = "Password";
@@ -36,29 +36,26 @@ namespace Duplicati.Library.Backend
         private const string PASWORDLESS = "Passwordless";
         private const string PORT = "Port";
         private const string DEBUG_ENABLED = "Debug enabled";
-        private const string USE_UNMANAGED_SSH = "Use Unmanaged SSH";
         private const string SSH_KEYFILE = "Keyfile";
 
         private const string HAS_WARNED_PATH = "UI: Has warned path";
         private const string HAS_TESTED = "UI: Has tested";
-        private const string HAS_WARNED_NO_SFTP = "UI: Has warned SFTP";
         private const string INITIALPASSWORD = "UI: Temp password";
 
         private bool m_warnedPath = false;
         private bool m_hasTested = false;
-        private bool m_warnedNoSFTP = false;
 
         private IDictionary<string, string> m_options;
         private IDictionary<string, string> m_applicationSettings;
 
-        public SSHUI(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
+        public SSHv2UI(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
             : this()
         {
             m_applicationSettings = applicationSettings;
             m_options = options;
         }
 
-        private SSHUI()
+        private SSHv2UI()
         {
             InitializeComponent();
         }
@@ -102,7 +99,6 @@ namespace Duplicati.Library.Backend
             m_options.Clear();
             m_options[HAS_TESTED] = m_hasTested.ToString();
             m_options[HAS_WARNED_PATH] = m_warnedPath.ToString();
-            m_options[HAS_WARNED_NO_SFTP] = m_warnedNoSFTP.ToString();
 
             m_options[PASWORDLESS]= (!UsePassword.Checked).ToString();
             m_options[PASSWORD] = UsePassword.Checked ? Password.Text : "";
@@ -111,7 +107,6 @@ namespace Duplicati.Library.Backend
             m_options[FOLDER] = Path.Text;
             m_options[USERNAME] = Username.Text;
             m_options[DEBUG_ENABLED] = GenerateDebugOutput.Checked.ToString();
-            m_options[USE_UNMANAGED_SSH] = UseUnmanagedSSH.Checked.ToString();
             m_options[SSH_KEYFILE] = Keyfile.Text;
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
@@ -121,7 +116,6 @@ namespace Duplicati.Library.Backend
         {
             bool passwordless;
             bool debug;
-            bool useUnmanaged;
             int port;
 
             if (!m_options.ContainsKey(PASWORDLESS) || !bool.TryParse(m_options[PASWORDLESS], out passwordless))
@@ -130,13 +124,6 @@ namespace Duplicati.Library.Backend
                 port = 22;
             if (!m_options.ContainsKey(DEBUG_ENABLED) || !bool.TryParse(m_options[DEBUG_ENABLED], out debug))
                 debug = false;
-
-            if (!m_options.ContainsKey(USE_UNMANAGED_SSH) || !bool.TryParse(m_options[USE_UNMANAGED_SSH], out useUnmanaged))
-            {
-                useUnmanaged = false;
-                if (m_applicationSettings.ContainsKey(SSHCommonOptions.DEFAULT_MANAGED))
-                    useUnmanaged = !Utility.Utility.ParseBool(m_applicationSettings[SSHCommonOptions.DEFAULT_MANAGED], true);
-            }
 
             if (m_options.ContainsKey(HOST))
                 Servername.Text = m_options[HOST];
@@ -157,23 +144,11 @@ namespace Duplicati.Library.Backend
 
             Port.Value = port;
             GenerateDebugOutput.Checked = debug;
-            UseUnmanagedSSH.Checked = useUnmanaged;
 
             if (!m_options.ContainsKey(HAS_TESTED) || !bool.TryParse(m_options[HAS_TESTED], out m_hasTested))
                 m_hasTested = false;
             if (!m_options.ContainsKey(HAS_WARNED_PATH) || !bool.TryParse(m_options[HAS_WARNED_PATH], out m_warnedPath))
                 m_warnedPath = false;
-
-            if (Library.Utility.Utility.IsClientLinux)
-            {
-                //sftp is likely present on linux/mac
-                m_warnedNoSFTP = true;
-            }
-            else
-            {
-                if (!m_options.ContainsKey(HAS_WARNED_NO_SFTP) || !bool.TryParse(m_options[HAS_WARNED_NO_SFTP], out m_warnedNoSFTP))
-                    m_warnedNoSFTP = false;
-            }
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -191,7 +166,7 @@ namespace Duplicati.Library.Backend
 
                     options["debug-to-console"] = "";
 
-                    SSH ssh = new SSH(destination, options);
+                    SSHv2 ssh = new SSHv2(destination, options);
                     ssh.List();
 
                     MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -199,7 +174,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch (Interface.FolderMissingException)
                 {
-                    switch (MessageBox.Show(this, Strings.SSHUI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
+                    switch (MessageBox.Show(this, Strings.SSHv2UI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
                     {
                         case DialogResult.Yes:
                             CreateFolderButton.PerformClick();
@@ -242,7 +217,7 @@ namespace Duplicati.Library.Backend
 
             if (Password.Text.Trim().Length <= 0 && UsePassword.Checked)
             {
-                if (!UseUnmanagedSSH.Checked && Keyfile.Text.Trim().Length == 0)
+                if (Keyfile.Text.Trim().Length == 0)
                 {
                     MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     try { Password.Focus(); }
@@ -252,9 +227,9 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            if (!UsePassword.Checked && !UseUnmanagedSSH.Checked && Keyfile.Text.Trim().Length == 0)
+            if (!UsePassword.Checked && Keyfile.Text.Trim().Length == 0)
             {
-                MessageBox.Show(this, Strings.SSHUI.PasswordRequiredManagedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Strings.SSHv2UI.PasswordRequiredManagedError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 UsePassword.Checked = true;
                 try { Password.Focus(); }
                 catch { }
@@ -271,32 +246,11 @@ namespace Duplicati.Library.Backend
                 m_warnedPath = true;
             }
 
-            if (!m_warnedNoSFTP && UseUnmanagedSSH.Checked)
-            {
-                string sftpPath = "";
-                if (m_applicationSettings.ContainsKey(SSHCommonOptions.SFTP_PATH))
-                    sftpPath = m_applicationSettings[SSHCommonOptions.SFTP_PATH];
-
-                System.IO.FileInfo fi = null;
-                try { fi = new System.IO.FileInfo(System.Environment.ExpandEnvironmentVariables(sftpPath)); }
-                catch { }
-
-                if (fi == null || !fi.Exists)
-                {
-                    if (MessageBox.Show(this, Strings.SSHUI.MissingSCPWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
-                    {
-                        return false;
-                    }
-
-                    m_warnedNoSFTP = true;
-                }
-            }
-
-            if (!UseUnmanagedSSH.Checked && !string.IsNullOrEmpty(Keyfile.Text))
+            if (!string.IsNullOrEmpty(Keyfile.Text))
             {
                 try
                 {
-                    SSH.ValidateKeyFile(Keyfile.Text);
+                    SSHv2.ValidateKeyFile(Keyfile.Text);
                 }
                 catch (Exception ex)
                 {
@@ -349,12 +303,12 @@ namespace Duplicati.Library.Backend
 
         public static string PageTitle
         {
-            get { return Strings.SSHUI.PageTitle; }
+            get { return Strings.SSHv2UI.PageTitle; }
         }
 
         public static string PageDescription
         {
-            get { return Strings.SSHUI.PageDescription; }
+            get { return Strings.SSHv2UI.PageDescription; }
         }
 
         public static string GetConfiguration(IDictionary<string, string> applicationSettings, IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
@@ -376,9 +330,6 @@ namespace Duplicati.Library.Backend
             if (!guiOptions.ContainsKey(PORT) || !int.TryParse(guiOptions[PORT], out port))
                 port = 22;
 
-            if (applicationSettings.ContainsKey(SSHCommonOptions.SFTP_PATH))
-                commandlineOptions[SSH.SFTP_PATH_OPTION] = applicationSettings[SSHCommonOptions.SFTP_PATH];
-
             bool debug;
             if (!guiOptions.ContainsKey(DEBUG_ENABLED) || !bool.TryParse(guiOptions[DEBUG_ENABLED], out debug))
                 debug = false;
@@ -386,34 +337,16 @@ namespace Duplicati.Library.Backend
             if (debug)
                 commandlineOptions["debug-to-console"] = "";
 
-            bool useUnmanaged = guiOptions.ContainsKey(USE_UNMANAGED_SSH) ? Utility.Utility.ParseBool(guiOptions[USE_UNMANAGED_SSH], false) : false;
+            string keyfile;
+            guiOptions.TryGetValue(SSH_KEYFILE, out keyfile);
 
-            if (useUnmanaged)
-            {
-                commandlineOptions[SSH.USE_UNMANAGED_OPTION] = "";
-                commandlineOptions["disable-streaming-transfers"] = "";
-            }
-            else
-            {
-                string keyfile;
-                guiOptions.TryGetValue(SSH_KEYFILE, out keyfile);
-
-                if ((keyfile ?? "").Trim().Length > 0)
-                    commandlineOptions[SSH.SSH_KEYFILE_OPTION] = guiOptions[SSH_KEYFILE];
-            }
+            if ((keyfile ?? "").Trim().Length > 0)
+                commandlineOptions[SSHv2.SSH_KEYFILE_OPTION] = guiOptions[SSH_KEYFILE];
 
             if (!guiOptions.ContainsKey(HOST))
                 throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, HOST));
 
             return "ssh://" + guiOptions[HOST] + ":" + port.ToString() + "/" + (guiOptions.ContainsKey(FOLDER) ? guiOptions[FOLDER] : "");
-        }
-
-        private void UseUnmanagedSSH_CheckedChanged(object sender, EventArgs e)
-        {
-            Keyfilelabel.Enabled =
-            Keyfile.Enabled =
-            BrowseForKeyFileButton.Enabled =
-                !UseUnmanagedSSH.Checked;
         }
 
         private void CreateFolderButton_Click(object sender, EventArgs e)
@@ -431,7 +364,7 @@ namespace Duplicati.Library.Backend
 
                     options["debug-to-console"] = "";
 
-                    SSH ssh = new SSH(destination, options);
+                    SSHv2 ssh = new SSHv2(destination, options);
                     ssh.CreateFolder();
 
                     MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -454,7 +387,7 @@ namespace Duplicati.Library.Backend
             {
                 try
                 {
-                    SSH.ValidateKeyFile(OpenSSHKeyFileDialog.FileName);
+                    SSHv2.ValidateKeyFile(OpenSSHKeyFileDialog.FileName);
                 }
                 catch (Exception ex)
                 {
