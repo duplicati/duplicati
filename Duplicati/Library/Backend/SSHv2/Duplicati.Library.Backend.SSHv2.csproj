@@ -37,7 +37,8 @@
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Renci.SshClient">
+    <Reference Include="Renci.SshClient, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\thirdparty\SSH.NET\Renci.SshClient.dll</HintPath>
     </Reference>
     <Reference Include="System" />

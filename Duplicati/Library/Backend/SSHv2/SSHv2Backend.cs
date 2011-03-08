@@ -238,7 +238,7 @@ namespace Duplicati.Library.Backend
             m_options.TryGetValue(SSH_KEYFILE_OPTION, out keyfile);
 
             if ((keyfile ?? "").Trim().Length > 0)
-                con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(m_options[SSH_KEYFILE_OPTION]));
+                con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(m_options[SSH_KEYFILE_OPTION], m_password));
             else
                 con = new SftpClient(m_server, m_username, m_password);
 
@@ -273,11 +273,14 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public static Renci.SshClient.PrivateKeyFile ValidateKeyFile(string filename)
+        public static Renci.SshClient.PrivateKeyFile ValidateKeyFile(string filename, string password)
         {
             try
             {
-                return new Renci.SshClient.PrivateKeyFile(filename);
+                if (String.IsNullOrEmpty(password))
+                    return new Renci.SshClient.PrivateKeyFile(filename);
+                else
+                    return new Renci.SshClient.PrivateKeyFile(filename, password);
             }
             catch (Exception ex)
             {

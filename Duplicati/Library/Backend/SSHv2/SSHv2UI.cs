@@ -172,6 +172,13 @@ namespace Duplicati.Library.Backend
                     MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
                 }
+                /*
+                catch (Renci.SshClient.Common.SshPasswordNeededForEncryptedKeyfile ex)
+                {
+                    // TODO: If we get this exception, we should promt the user for the password!
+                    throw ex;
+                }
+                */ 
                 catch (Interface.FolderMissingException)
                 {
                     switch (MessageBox.Show(this, Strings.SSHv2UI.CreateMissingFolderQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question))
@@ -250,7 +257,7 @@ namespace Duplicati.Library.Backend
             {
                 try
                 {
-                    SSHv2.ValidateKeyFile(Keyfile.Text);
+                    SSHv2.ValidateKeyFile(Keyfile.Text, UsePassword.Checked ? Password.Text : "");
                 }
                 catch (Exception ex)
                 {
@@ -387,7 +394,7 @@ namespace Duplicati.Library.Backend
             {
                 try
                 {
-                    SSHv2.ValidateKeyFile(OpenSSHKeyFileDialog.FileName);
+                    SSHv2.ValidateKeyFile(OpenSSHKeyFileDialog.FileName, UsePassword.Checked ? Password.Text : "");
                 }
                 catch (Exception ex)
                 {
