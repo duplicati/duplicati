@@ -2097,7 +2097,15 @@ namespace Duplicati.Library.Main.RSync
                         }
 
                         System.IO.File.Delete(target);
-                        System.IO.File.Move(tempfile, target);
+
+                        try { System.IO.File.Move(tempfile, target); }
+                        catch
+                        {
+                            //The OS sometimes reports the file as existing even after a delete
+                            // this seems to be related to MS Security Essentials?
+                            System.Threading.Thread.Sleep(500);
+                            System.IO.File.Move(tempfile, target);
+                        }
                     }
 
                     if (File.Exists(target))

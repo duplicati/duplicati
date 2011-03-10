@@ -329,6 +329,48 @@ namespace Duplicati.CommandLine
                     foreach(KeyValuePair<string, DateTime> k in results)
                         Console.WriteLine(string.Format(Strings.Program.FindLastVersionEntry.Replace("\\t", "\t"), k.Value.Ticks == 0 ? Strings.Program.FileEntryNotFound : k.Value.ToLocalTime().ToString("yyyyMMdd hhmmss"), k.Key));
                 }
+                else if (source.Trim().ToLower() == "verify")
+                {
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        return;
+                    }
+
+                    List<KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception>> results = Duplicati.Library.Main.Interface.VerifyBackup(cargs[0], options);
+
+                    int manifests = 0;
+                    int signatures = 0;
+                    int contentfiles = 0;
+                    int errors = 0;
+
+                    foreach (KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception> x in results)
+                    {
+                        if (x.Key is Duplicati.Library.Main.ManifestEntry)
+                            manifests++;
+                        else if (x.Key is Duplicati.Library.Main.SignatureEntry)
+                            signatures++;
+                        else if (x.Key is Duplicati.Library.Main.ContentEntry)
+                            contentfiles++;
+
+                        if (x.Value != null)
+                            errors++;
+                    }
+
+                    Console.WriteLine(string.Format(Strings.Program.VerificationCompleted, manifests, signatures, contentfiles, errors));
+                    if (errors > 0)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine(Strings.Program.VerificationErrorHeader);
+                        Console.WriteLine();
+
+                        foreach (KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception> x in results)
+                            if (x.Value != null)
+                                Console.WriteLine(string.Format("{0}: {1}", x.Key.Filename, x.Value.Message));
+                    }
+                }
                 else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
                 {
                     Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target.Split(System.IO.Path.PathSeparator), options));

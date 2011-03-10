@@ -71,6 +71,7 @@ namespace Duplicati.Library.Main
         private Regex m_oldFilenameRegExp;
         private Regex m_filenameRegExp;
         private Regex m_shortRegExp;
+        private Regex m_verificationRegExp;
 
         /// <summary>
         /// A cache used to ensure that filenames are consistent, 
@@ -143,6 +144,14 @@ namespace Duplicati.Library.Main
                     @"\d{8}T\d{6}Z" //Timestamp format is YYYYMMDDTHHMMSSZ
                 )
             );
+
+            m_verificationRegExp = new Regex(
+                string.Format(@"(?<prefix>{0})\.(?<time>{1}).verification",
+                    Regex.Escape(m_prefix),
+                    @"\d{8}T\d{6}Z" //Timestamp format is YYYYMMDDTHHMMSSZ
+                )
+            );
+
             //The short filenames and new filenames are UTC so there is no timezone attached
             if (!m_useShortFilenames && m_useOldFilenames)
                 m_timeStringCache = new Dictionary<DateTime, string>();
@@ -164,6 +173,8 @@ namespace Duplicati.Library.Main
                 t = m_useShortFilenames ? CONTENT_SHORT : CONTENT;
             else if (type is SignatureEntry)
                 t = m_useShortFilenames ? SIGNATURE_SHORT : SIGNATURE;
+            else if (type is VerificationEntry)
+                return m_prefix + "." + type.Time.ToUniversalTime().ToString(TIMESTAMP_FORMAT) + ".verification";
             else
                 throw new Exception(string.Format(Strings.FilenameStrategy.InvalidEntryTypeError, type));
 
@@ -207,6 +218,16 @@ namespace Duplicati.Library.Main
                 m = m_oldFilenameRegExp.Match(fe.Name);
                 oldFilename = true;
             }
+            if (!m.Success)
+            {
+                m = m_verificationRegExp.Match(fe.Name);
+                if (m.Success && m.Value == fe.Name)
+                {
+                    DateTime verificationtime = DateTime.ParseExact(m.Groups["time"].Value, TIMESTAMP_FORMAT, System.Globalization.CultureInfo.InvariantCulture).ToLocalTime();
+                    return new VerificationEntry(fe.Name, fe, verificationtime, m.Groups["time"].Value);
+                }
+            }
+
             if (!m.Success)
                 return null;
             if (m.Value != fe.Name)

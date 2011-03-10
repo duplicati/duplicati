@@ -453,4 +453,16 @@
   <data name="SortedfilelistShort" xml:space="preserve">
     <value>Sort the list of files</value>
   </data>
+  <data name="CreateverificationfileLong" xml:space="preserve">
+    <value>If the backup is encrypted, the remote backend cannot verify the backup contents without the password. If this option is activated, Duplicati stores an unencrypted file on the backend. The file is never read by Duplicati, but allows the remote server to verify the backup integrity without requiring a password. The file contains no sensitive information, only a list of files that are expected to exist on the backend and their respective hashes. This option only has an effect when creating a backup and when verifying a backup set.</value>
+  </data>
+  <data name="CreateverificationfileShort" xml:space="preserve">
+    <value>Create verification file on server</value>
+  </data>
+  <data name="VerificationLevelLong" xml:space="preserve">
+    <value>Use this option to change the level of verifiation done by the verify command. The setting "manifest" will only verify the manifest chain. The settings "signature" will also download and verify all signature files. The setting "full", will download all files, including content files, and verify that they are unchanged.</value>
+  </data>
+  <data name="VerificationLevelShort" xml:space="preserve">
+    <value>Level of verification</value>
+  </data>
 </root>

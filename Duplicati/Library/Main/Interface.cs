@@ -110,7 +110,30 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A search for files in signature files
         /// </summary>
-        FindLastFileVersion
+        FindLastFileVersion,
+        /// <summary>
+        /// Verifies the hashes and backup chain
+        /// </summary>
+        Verify
+    }
+
+    /// <summary>
+    /// An enum that describes the level of verification done by the verify command
+    /// </summary>
+    public enum VerificationLevel
+    {
+        /// <summary>
+        /// Just verify the manifest chain
+        /// </summary>
+        Manifest,
+        /// <summary>
+        /// Verify the manifest chain and all signature files
+        /// </summary>
+        Signature,
+        /// <summary>
+        /// Verify everything, including the content files, requires download of all files
+        /// </summary>
+        Full,
     }
 
     /// <summary>
@@ -253,9 +276,12 @@ namespace Duplicati.Library.Main
             SetupCommonOptions(bs);
 
             BackendWrapper backend = null;
+            VerificationFile verification = null;
 
             if (m_options.DontReadManifests)
                 throw new Exception(Strings.Interface.ManifestsMustBeReadOnBackups);
+            if (m_options.SkipFileHashChecks)
+                throw new Exception(Strings.Interface.CannotSkipHashChecksOnBackup);
 
             if (sources == null || sources.Length == 0)
                 throw new Exception(Strings.Interface.NoSourceFoldersError);
@@ -283,6 +309,8 @@ namespace Duplicati.Library.Main
                 m_allowUploadProgress = false;
             }
 
+            Library.Interface.IEncryption encryptionModule = m_options.NoEncryption ? null : DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
+
             using (new Logging.Timer("Backup from " + string.Join(";", sources) + " to " + m_backend))
             {
                 try
@@ -308,7 +336,9 @@ namespace Duplicati.Library.Main
                     List<ManifestEntry> backupsets = full ? new List<ManifestEntry>() : backend.GetBackupSets();
 
                     if (backupsets.Count == 0)
+                    {
                         full = true;
+                    }
                     else
                     {
                         //A prioir backup exists, extract the compression and encryption modules used in the most recent entry
@@ -321,12 +351,18 @@ namespace Duplicati.Library.Main
                                 {
                                     compression = backupsets[i].Incrementals[j].Volumes[k].Key.Compression;
                                     encryption = backupsets[i].Incrementals[j].Volumes[k].Key.EncryptionMode;
+
+                                    if (compression != null)
+                                        break;
                                 }
 
                             for (int k = backupsets[i].Volumes.Count - 1; compression == null && k >= 0; k--)
                             {
                                 compression = backupsets[i].Volumes[k].Key.Compression;
                                 encryption = backupsets[i].Volumes[k].Key.EncryptionMode;
+
+                                if (compression != null)
+                                    break;
                             }
                         }
 
@@ -361,7 +397,11 @@ namespace Duplicati.Library.Main
 
                             //Check before we start the download
                             CheckLiveControl();
-                            patches = FindPatches(backend, entries, tempfolder, true, bs);
+
+                            VerifyBackupChainWithFiles(backend, entries[entries.Count - 1]);
+                            if (m_options.CreateVerificationFile)
+                                verification = new VerificationFile(entries, backend.FilenameStrategy);
+                            patches = FindPatches(backend, entries, tempfolder, false, bs);
 
                             //Check before we start the download
                             CheckLiveControl();
@@ -416,16 +456,28 @@ namespace Duplicati.Library.Main
                                     manifest.SourceDirs = sources;
                                 }
                             }
+
                         }
+
+                        DateTime backuptime = DateTime.Now;
+                        DateTime backupchaintime;
 
                         if (full)
                         {
                             patches.Clear();
                             m_incrementalFraction = 0.0;
                             manifest.SourceDirs = sources;
+                            if (m_options.CreateVerificationFile)
+                                verification = new VerificationFile(new ManifestEntry[0], backend.FilenameStrategy);
+                            backupchaintime = backuptime;
+                        }
+                        else
+                        {
+                            backupchaintime = patches[0].Key.Time;
+                            manifest.PreviousManifestFilename = patches[patches.Count - 1].Key.Filename;
+                            manifest.PreviousManifestHash = patches[patches.Count - 1].Key.RemoteHash;
                         }
 
-                        DateTime backuptime = DateTime.Now;
 
                         OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, -1, -1, Strings.Interface.StatusBuildingFilelist, "");
 
@@ -498,31 +550,59 @@ namespace Duplicati.Library.Main
                                     signaturefile.Protected = true;
                                     contentfile.Protected = true;
 
-                                    manifest.ContentHashes.Add(Utility.Utility.CalculateHash(contentfile));
                                     using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
-                                        backend.Put(new ContentEntry(backuptime, full, vol + 1), contentfile);
+                                    {
+                                        ContentEntry ce = new ContentEntry(backuptime, full, vol + 1);
+                                        manifest.ContentHashes.Add(backend.Put(ce, contentfile));
+                                        if (verification != null)
+                                            verification.AddFile(ce);
+                                    }
 
                                     if (!m_options.AsynchronousUpload)
                                         OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
-                                    
-                                    manifest.SignatureHashes.Add(Utility.Utility.CalculateHash(signaturefile));
+
                                     using (new Logging.Timer("Writing remote signatures"))
-                                        backend.Put(new SignatureEntry(backuptime, full, vol + 1), signaturefile);
+                                    {
+                                        SignatureEntry se = new SignatureEntry(backuptime, full, vol + 1);
+                                        manifest.SignatureHashes.Add(backend.Put(se, signaturefile));
+                                        if (verification != null)
+                                            verification.AddFile(se);
+                                    }
                                 }
 
                                 //The backend wrapper will remove these
                                 Utility.TempFile mf = new Duplicati.Library.Utility.TempFile();
-                                mf.Protected = true;
 
                                 using (new Logging.Timer("Writing manifest " + backuptime.ToUniversalTime().ToString("yyyyMMddTHHmmssK")))
                                 {
+                                    //Alternate primary/secondary
+                                    ManifestEntry mfe = new ManifestEntry(backuptime, full, manifest.SignatureHashes.Count % 2 != 0);
+                                    manifest.SelfFilename = backend.GenerateFilename(mfe);
                                     manifest.Save(mf);
 
                                     if (!m_options.AsynchronousUpload)
                                         OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingManifestVolume, vol + 1), "");
 
-                                    //Alternate primary/secondary
-                                    backend.Put(new ManifestEntry(backuptime, full, manifest.SignatureHashes.Count % 2 != 0), mf);
+                                    //Write the file
+                                    mf.Protected = true;
+                                    backend.Put(mfe, mf);
+
+                                    if (verification != null)
+                                        verification.UpdateManifest(mfe);
+                                }
+
+                                if (verification != null)
+                                {
+                                    using (new Logging.Timer("Writing verification " + backuptime.ToUniversalTime().ToString("yyyyMMddTHHmmssK")))
+                                    {
+                                        Utility.TempFile vt = new Duplicati.Library.Utility.TempFile();
+
+                                        verification.Save(vt);
+
+                                        vt.Protected = true;
+                                        backend.Put(new VerificationEntry(backupchaintime), vt);
+                                    }
+
                                 }
 
                                 if (m_options.AsynchronousUpload)
@@ -684,6 +764,66 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Validates the manifest chain, starting by evaluating the current manifest and going backwards in the chain
+        /// </summary>
+        /// <param name="backend">The backend wrapper</param>
+        /// <param name="entry">The entry to verify</param>
+        private void VerifyManifestChain(BackendWrapper backend, ManifestEntry entry)
+        {
+            if (m_options.DontReadManifests)
+                throw new InvalidOperationException(Strings.Interface.CannotVerifyChain);
+
+            while (entry.Previous != null)
+            {
+                if (entry.ParsedManifest == null)
+                    GetManifest(backend, entry);
+
+                //If this manifest is not version 3, the chain verification stops here
+                if (entry.ParsedManifest.Version < 3)
+                    return;
+
+                ManifestEntry previous = entry.Previous;
+                if (entry.Previous.Alternate != null && entry.Previous.Alternate.Filename == entry.ParsedManifest.PreviousManifestFilename)
+                    previous = entry.Previous.Alternate;
+
+                if (previous.ParsedManifest == null)
+                    GetManifest(backend, previous);
+
+                if (entry.ParsedManifest.PreviousManifestFilename != previous.Filename)
+                    throw new System.IO.InvalidDataException(string.Format(Strings.Interface.PreviousManifestFilenameMismatchError, entry.Filename, entry.ParsedManifest.PreviousManifestFilename, previous.Filename));
+
+                if (!m_options.SkipFileHashChecks)
+                {
+                    if (entry.ParsedManifest.PreviousManifestHash != previous.RemoteHash)
+                        throw new System.IO.InvalidDataException(string.Format(Strings.Interface.PreviousManifestHashMismatchError, entry.Filename, entry.ParsedManifest.PreviousManifestHash, previous.RemoteHash));
+                }
+
+                entry = previous;
+            }
+        }
+
+        /// <summary>
+        /// Verifies the backup chain for producing a new backup on top.
+        /// This will check that all files are accounted for in the file list.
+        /// </summary>
+        /// <param name="entry"></param>
+        private void VerifyBackupChainWithFiles(BackendWrapper backend, ManifestEntry entry)
+        {
+            VerifyManifestChain(backend, entry);
+
+            while (entry != null)
+            {
+                if (entry.ParsedManifest == null)
+                    GetManifest(backend, entry); 
+                
+                if (entry.Volumes.Count != entry.ParsedManifest.SignatureHashes.Count || entry.Volumes.Count != entry.ParsedManifest.ContentHashes.Count)
+                    throw new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchWarning, entry.Filename, entry.Volumes.Count, entry.ParsedManifest.SignatureHashes.Count));
+
+                entry = entry.Previous;
+            }
+        }
+
+        /// <summary>
         /// Will attempt to read the manifest file, optionally reverting to the secondary manifest if reading one fails.
         /// </summary>
         /// <param name="backend">The backendwrapper to read from</param>
@@ -699,6 +839,11 @@ namespace Duplicati.Library.Main
                 return mf;
             }
 
+            if (entry.ParsedManifest != null)
+                return entry.ParsedManifest;
+            else if (entry.Alternate != null && entry.Alternate.ParsedManifest != null)
+                return entry.Alternate.ParsedManifest;
+
             bool parsingError = false;
 
             using (new Logging.Timer("Get " + entry.Filename))
@@ -706,17 +851,23 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    backend.Get(entry, tf, null);
+                    backend.Get(entry, null, tf, null);
                     
                     //We now have the file decrypted, if the next step fails,
                     // its a broken xml or invalid content
                     parsingError = true;
-                    Manifestfile mf = new Manifestfile(tf);
+                    Manifestfile mf = new Manifestfile(tf, m_options.SkipFileHashChecks);
                     if (m_options.SkipFileHashChecks)
                     {
                         mf.SignatureHashes = null;
                         mf.ContentHashes = null;
                     }
+
+                    entry.ParsedManifest = mf;
+
+                    if (string.IsNullOrEmpty(mf.SelfFilename))
+                        mf.SelfFilename = entry.Filename;
+
                     return mf;
                 }
                 catch (Exception ex)
@@ -778,6 +929,15 @@ namespace Duplicati.Library.Main
                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementals, "");
 
                     ManifestEntry bestFit = backend.GetBackupSet(m_options.RestoreTime);
+
+                    //We will need all the manifests downloaded anyway
+                    if (!m_options.DontReadManifests)
+                    {
+                        if (bestFit.Incrementals.Count > 0)
+                            VerifyManifestChain(backend, bestFit.Incrementals[bestFit.Incrementals.Count - 1]);
+                        else
+                            VerifyManifestChain(backend, bestFit);
+                    }
 
                     m_progress = INCREMENAL_COST;
 
@@ -909,7 +1069,7 @@ namespace Duplicati.Library.Main
                                              try
                                              {
                                                  using (new Logging.Timer("Get " + signatureVol.Filename))
-                                                     backend.Get(signatureVol, sigFile, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[signatureVol.Volumenumber - 1]);
+                                                     backend.Get(signatureVol, manifest, sigFile, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[signatureVol.Volumenumber - 1]);
                                              }
                                              catch (BackendWrapper.HashMismathcException hme)
                                              {
@@ -942,7 +1102,7 @@ namespace Duplicati.Library.Main
                                      OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
 
                                     using (new Logging.Timer("Get " + contentVol.Filename))
-                                        backend.Get(contentVol, patchzip, manifest.ContentHashes == null ? null : manifest.ContentHashes[contentVol.Volumenumber - 1]);
+                                        backend.Get(contentVol, manifest, patchzip, manifest.ContentHashes == null ? null : manifest.ContentHashes[contentVol.Volumenumber - 1]);
 
                                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
                                     
@@ -1022,7 +1182,7 @@ namespace Duplicati.Library.Main
                                 Manifestfile mf = GetManifest(backend, be);
 
                                 using (new Logging.Timer("Get " + be.Volumes[0].Key.Filename))
-                                    backend.Get(be.Volumes[0].Key, z, mf.SignatureHashes == null ? null : mf.SignatureHashes[0]);
+                                    backend.Get(be.Volumes[0].Key, mf, z, mf.SignatureHashes == null ? null : mf.SignatureHashes[0]);
                                 
                                 using(Library.Interface.ICompression fz = DynamicLoader.CompressionLoader.GetModule(be.Volumes[0].Key.Compression, z, m_options.RawOptions))
                                 {
@@ -1192,6 +1352,9 @@ namespace Duplicati.Library.Main
 
                     backend.Delete(me);
 
+                    if (me.Verification != null)
+                        backend.Delete(me.Verification);
+
                     foreach (KeyValuePair<SignatureEntry, ContentEntry> kx in me.Volumes)
                     {
                         backend.Delete(kx.Key);
@@ -1242,12 +1405,16 @@ namespace Duplicati.Library.Main
                 foreach (ManifestEntry be in sorted)
                     entries.AddRange(be.Incrementals);
 
-                backend.DeleteOrphans();
+                backend.DeleteOrphans(false);
 
                 if (m_options.SkipFileHashChecks)
                     throw new Exception(Strings.Interface.CannotCleanWithoutHashesError);
                 if (m_options.DontReadManifests)
                     throw new Exception(Strings.Interface.CannotCleanWithoutHashesError);
+
+                //We need the manifests anyway, so we verify the chain
+                if (entries.Count > 0)
+                    VerifyManifestChain(backend, entries[0]);
 
                 //Now compare the actual filelist with the manifest
                 foreach (ManifestEntry be in entries)
@@ -1315,6 +1482,9 @@ namespace Duplicati.Library.Main
             RestoreStatistics rs = new RestoreStatistics(DuplicatiOperationMode.ListSourceFolders);
             SetupCommonOptions(rs);
 
+            if (m_options.DontReadManifests)
+                throw new Exception(Strings.Interface.ManifestsMustBeRead);
+
             DateTime timelimit = m_options.RestoreTime;
 
             if (OperationStarted != null)
@@ -1327,8 +1497,8 @@ namespace Duplicati.Library.Main
             {
                 ManifestEntry bestFit = backend.GetBackupSet(timelimit);
 
-                backend.Get(bestFit, mfile, null);
-                res = new Manifestfile(mfile).SourceDirs;
+                backend.Get(bestFit, null, mfile, null);
+                res = new Manifestfile(mfile, m_options.SkipFileHashChecks).SourceDirs;
             }
 
             if (OperationCompleted != null)
@@ -1410,6 +1580,11 @@ namespace Duplicati.Library.Main
                 //The incremental part has a fixed cost, and each file has a fixed fraction of that
                 double unitCost = m_incrementalFraction / incCount;
 
+                //Ensure that the manifest chain has not been tampered with
+                // since we will read all manifest files anyway, there is no harm in doing it here
+                if (!m_options.DontReadManifests && entries.Count > 0)
+                    VerifyManifestChain(backend, entries[entries.Count - 1]);
+
                 foreach (ManifestEntry be in entries)
                 {
                     m_progress += unitCost;
@@ -1439,7 +1614,7 @@ namespace Duplicati.Library.Main
                         try
                         {
                             using (new Logging.Timer("Get " + bes.Key.Filename))
-                                backend.Get(bes.Key, filename, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[bes.Key.Volumenumber - 1]);
+                                backend.Get(bes.Key, manifest, filename, manifest.SignatureHashes == null ? null : manifest.SignatureHashes[bes.Key.Volumenumber - 1]);
                         }
                         catch (BackendWrapper.HashMismathcException hme)
                         {
@@ -1458,7 +1633,7 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            backend.DeleteOrphans();
+            backend.DeleteOrphans(true);
 
             return patches;
         }
@@ -1513,6 +1688,108 @@ namespace Duplicati.Library.Main
                 backend.CreateFolder();
         }
 
+        public List<KeyValuePair<BackupEntryBase, Exception>> VerifyBackupChain()
+        {
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.Verify);
+            SetupCommonOptions(stats);
+
+            List<KeyValuePair<BackupEntryBase, Exception>> results = new List<KeyValuePair<BackupEntryBase, Exception>>();
+
+            if (m_options.DontReadManifests)
+                throw new InvalidOperationException(Strings.Interface.ManifestsMustBeRead);
+            if (m_options.SkipFileHashChecks)
+                throw new InvalidOperationException(Strings.Interface.CannotVerifyWithoutHashes);
+
+            if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
+            {
+                stats.LogWarning(Strings.Interface.DisablingSignatureCacheForVerification, null);
+                m_options.SignatureCachePath = null;
+            }
+
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
+            {
+                //Find the spot in the chain where we start
+                ManifestEntry bestFit = backend.GetBackupSet(m_options.RestoreTime);
+
+                //Get the list of manifests to validate
+                List<ManifestEntry> entries = new List<ManifestEntry>();
+                entries.Add(bestFit);
+                entries.AddRange(bestFit.Incrementals);
+
+                entries.Reverse();
+
+                foreach (ManifestEntry me in entries)
+                {
+                    Manifestfile mf = null;
+
+                    try
+                    {
+                        mf = GetManifest(backend, me);
+                        VerifyManifestChain(backend, me);
+
+                        if (mf.SignatureHashes.Count != me.Volumes.Count)
+                            results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchWarning, mf.SelfFilename, mf.SignatureHashes.Count, me.Volumes.Count))));
+                        else
+                            results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, null));
+                    }
+                    catch (Exception ex)
+                    {
+                        results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, ex));
+                    }
+
+                    if (mf != null)
+                    {
+                        int volumes = Math.Min(mf.SignatureHashes.Count, me.Volumes.Count);
+                        for(int i = 0; i <volumes; i++)
+                        {
+                            if (m_options.Verificationlevel == VerificationLevel.Signature || m_options.Verificationlevel == VerificationLevel.Full)
+                            {
+                                try 
+                                { 
+                                    using(Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
+                                        backend.Get(me.Volumes[i].Key, mf, tf, mf.SignatureHashes[i]); 
+                                    results.Add(new KeyValuePair<BackupEntryBase, Exception>(me.Volumes[i].Key, null));
+                                }
+                                catch (Exception ex) { results.Add(new KeyValuePair<BackupEntryBase,Exception>(me.Volumes[i].Key, ex)); }
+                            }
+
+                            if (m_options.Verificationlevel == VerificationLevel.Full)
+                            {
+                                try 
+                                { 
+                                    using(Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
+                                        backend.Get(me.Volumes[i].Value, mf, tf, mf.ContentHashes[i]); 
+                                    results.Add(new KeyValuePair<BackupEntryBase, Exception>(me.Volumes[i].Value, null));
+                                }
+                                catch (Exception ex) { results.Add(new KeyValuePair<BackupEntryBase,Exception>(me.Volumes[i].Value, ex)); }
+
+                            }
+                        }
+                    }
+
+                }
+
+                //Re-generate verification file
+                if (m_options.CreateVerificationFile)
+                {
+                    //Stop any async operations
+                    if (m_options.AsynchronousUpload)
+                        backend.ExtractPendingUploads();
+
+                    VerificationFile vf = new VerificationFile(entries, new FilenameStrategy(m_options));
+                    using (Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
+                    {
+                        vf.Save(tf);
+                        tf.Protected = true;
+                        backend.Put(new VerificationEntry(entries[entries.Count - 1].Time), tf);
+                    }
+                }
+
+            }
+
+            return results;
+        }
+
 
         /// <summary>
         /// Reads through a backup and finds the last backup entry that has a specific file
@@ -1524,7 +1801,7 @@ namespace Duplicati.Library.Main
             SetupCommonOptions(stats);
 
             if (m_options.DontReadManifests)
-                throw new Exception(Strings.Interface.ManifestsMustBeReadOnBackups);
+                throw new Exception(Strings.Interface.ManifestsMustBeRead);
 
             if (string.IsNullOrEmpty(m_options.FileToRestore))
                 throw new Exception(Strings.Interface.NoFilesGivenError);
@@ -1561,8 +1838,8 @@ namespace Duplicati.Library.Main
 
                     using(Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
                     {
-                        backend.Get(mf, tf, null);
-                        mfi = new Manifestfile(tf);
+                        backend.Get(mf, null, tf, null);
+                        mfi = new Manifestfile(tf, m_options.SkipFileHashChecks);
                         if (!m_options.SkipFileHashChecks)
                             signatureHashes = mfi.SignatureHashes;
                     }
@@ -1586,7 +1863,7 @@ namespace Duplicati.Library.Main
                                 continue;
                             }
 
-                            backend.Get(e.Key, tf, signatureHashes == null ? null : signatureHashes[e.Key.Volumenumber - 1]);
+                            backend.Get(e.Key, mfi, tf, signatureHashes == null ? null : signatureHashes[e.Key.Volumenumber - 1]);
 
                             any_unmatched = false;
 
@@ -1898,6 +2175,12 @@ namespace Duplicati.Library.Main
         {
             using (Interface i = new Interface(target, options))
                 return i.FindLastFileVersion();
+        }
+
+        public static List<KeyValuePair<BackupEntryBase, Exception>> VerifyBackup(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.VerifyBackupChain();
         }
 
         #endregion

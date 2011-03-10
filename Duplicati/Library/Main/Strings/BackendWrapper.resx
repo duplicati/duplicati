@@ -189,4 +189,10 @@
   <data name="BackendDoesNotSupportCreateFolder" xml:space="preserve">
     <value>The backend {0} ({1}) does not support the CreateFolder operation </value>
   </data>
+  <data name="CachedSignatureDecryptWarning" xml:space="preserve">
+    <value>Attempt to decrypt file {0} failed with error: {1}</value>
+  </data>
+  <data name="TooManyOrphansFoundError" xml:space="preserve">
+    <value>Auto-cleanup specified but there are {0} orphan files, and there should not be more than 2</value>
+  </data>
 </root>

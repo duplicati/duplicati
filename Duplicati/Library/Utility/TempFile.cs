@@ -81,5 +81,16 @@ namespace Duplicati.Library.Utility
         }
 
         #endregion
+
+        /// <summary>
+        /// Swaps two instances of temporary files, equivalent to renaming the files but requires no IO
+        /// </summary>
+        /// <param name="tf">The temp file to swap with</param>
+        public void Swap(TempFile tf)
+        {
+            string p = m_path;
+            m_path = tf.m_path;
+            tf.m_path = p;
+        }
     }
 }

@@ -29,6 +29,11 @@ namespace Duplicati.Library.Main
     /// </summary>
     public class Manifestfile
     {
+        /// <summary>
+        /// A placeholder for the empty hash value with the same length as a real hash value
+        /// </summary>
+        private const string EMPTY_HASH_VALUE = "00000000000000000000000000000000000000000000";
+
 		/// <summary>
 		///The list of signature hashes 
 		/// </summary>
@@ -38,7 +43,17 @@ namespace Duplicati.Library.Main
 		///The list of content hashes 
 		/// </summary>
 		private List<string> m_contentHashes;
-		
+
+        /// <summary>
+        /// The manifest hash of the previous manifest file
+        /// </summary>
+        private string m_previousManifestHash;
+
+        /// <summary>
+        /// The filename of the previous manifest file
+        /// </summary>
+        private string m_previousManifestFilename;
+
 		/// <summary>
 		///The list of source dirs 
 		/// </summary>
@@ -53,7 +68,17 @@ namespace Duplicati.Library.Main
         /// The hash algorithm used for content and signature hashes
         /// </summary>
         private string m_hashAlgorithm = Utility.Utility.HashAlgorithm;
-		
+
+        /// <summary>
+        /// The self-hash of the manifest
+        /// </summary>
+        private string m_selfHash = null;
+
+        /// <summary>
+        /// The filename of this manifest file
+        /// </summary>
+        private string m_selfFilename = null;
+
         /// <summary>
         /// The list of signature hashes
         /// </summary>
@@ -100,9 +125,44 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the self hash of the file
+        /// </summary>
+        public string SelfHash
+        {
+            get { return m_selfHash; }
+        }
+
+        /// <summary>
+        /// Gets or sets the filename of the current file
+        /// </summary>
+        public string SelfFilename
+        {
+            get { return m_selfFilename; }
+            set { m_selfFilename = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the hash of the previous manifest file
+        /// </summary>
+        public string PreviousManifestHash
+        {
+            get { return m_previousManifestHash; }
+            set { m_previousManifestHash = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the filename of the previous manifest
+        /// </summary>
+        public string PreviousManifestFilename
+        {
+            get { return m_previousManifestFilename; }
+            set { m_previousManifestFilename = value; }
+        }
+
+        /// <summary>
         /// The largest supported version
         /// </summary>
-        public const int MaxSupportedVersion = 2;
+        public const int MaxSupportedVersion = 3;
 
         /// <summary>
         /// Constructs a blank manifest file
@@ -118,81 +178,136 @@ namespace Duplicati.Library.Main
         /// Reads the supplied file and initializes the manifest file class
         /// </summary>
         /// <param name="filename">The file to read the manifest from</param>
-        public Manifestfile(string filename)
+        public Manifestfile(string filename, bool skipHashCheck)
             : this()
         {
-            Read(filename);
+            Read(filename, skipHashCheck);
         }
 
         /// <summary>
         /// Reads the supplied stream and initializes the manifest file class
         /// </summary>
         /// <param name="source">The stream to read the manifest from</param>
-        public Manifestfile(System.IO.Stream source)
+        public Manifestfile(System.IO.Stream source, bool skipHashCheck)
             : this()
         {
-            Read(source);
+            Read(source, skipHashCheck);
         }
 
         /// <summary>
         /// Reads the manifest document
         /// </summary>
         /// <param name="s">The stream to read the manifest from</param>
-        public void Read(string filename)
+        public void Read(string filename, bool skipHashCheck)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Read(fs);
+                Read(fs, skipHashCheck);
         }
 
         /// <summary>
         /// Reads the manifest document
         /// </summary>
         /// <param name="s">The stream to read the manifest from</param>
-        public void Read(System.IO.Stream s)
+        public void Read(System.IO.Stream s, bool skipHashCheck)
         {
             SignatureHashes = new List<string>();
             ContentHashes = new List<string>();
 
-            XmlDocument doc = new XmlDocument();
-            doc.Load(s);
-
-            XmlNode root = doc["Manifest"] == null ? doc["ManifestRoot"] : doc["Manifest"];
-            if (root == null || root.Attributes["version"] == null)
-                throw new Exception(string.Format(Strings.Manifestfile.InvalidManifestError, doc.OuterXml));
-
-            int v;
-            if (!int.TryParse(root.Attributes["version"].Value, out v))
-                throw new Exception(string.Format(Strings.Manifestfile.InvalidManifestError, doc.OuterXml));
-
-            Version = v;
-            if (Version > MaxSupportedVersion)
-                throw new Exception(string.Format(Strings.Manifestfile.UnsupportedVersionError, Version, MaxSupportedVersion));
-
-            if (root.Attributes["hash-algorithm"] != null)
-                m_hashAlgorithm = root.Attributes["hash-algorithm"].Value;
-
-            if (m_hashAlgorithm != Utility.Utility.HashAlgorithm)
-                throw new Exception(string.Format(Strings.Manifestfile.UnsupportedHashAlgorithmError, m_hashAlgorithm));
-
-            List<string> paths = new List<string>();
-            foreach (XmlNode n in root.SelectNodes("ContentFiles/Hash"))
-                ContentHashes.Add(n.InnerText);
-            foreach (XmlNode n in root.SelectNodes("SignatureFiles/Hash"))
-                SignatureHashes.Add(n.InnerText);
-            foreach (XmlNode n in root.SelectNodes("SourcePaths/Path"))
-                paths.Add(n.InnerText);
-
-            if (SignatureHashes.Count == 0 || SignatureHashes.Count != ContentHashes.Count)
-                throw new Exception(string.Format(Strings.Manifestfile.WrongCountError, SignatureHashes.Count, ContentHashes.Count));
-            if (paths.Count == 0)
+            using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
             {
-                if (Version == 1)
-                    this.SourceDirs = null;
+                Utility.Utility.CopyStream(s, ms);
+
+                ms.Position = 0;
+                XmlDocument doc = new XmlDocument();
+                doc.Load(ms);
+                ms.Position = 0;
+
+                XmlNode root = doc["Manifest"] == null ? doc["ManifestRoot"] : doc["Manifest"];
+                if (root == null || root.Attributes["version"] == null)
+                    throw new System.IO.InvalidDataException(string.Format(Strings.Manifestfile.InvalidManifestError, doc.OuterXml));
+
+                int v;
+                if (!int.TryParse(root.Attributes["version"].Value, out v))
+                    throw new System.IO.InvalidDataException(string.Format(Strings.Manifestfile.InvalidManifestError, doc.OuterXml));
+
+                Version = v;
+                if (Version > MaxSupportedVersion)
+                    throw new System.IO.InvalidDataException(string.Format(Strings.Manifestfile.UnsupportedVersionError, Version, MaxSupportedVersion));
+
+                if (root.Attributes["hash-algorithm"] != null)
+                    m_hashAlgorithm = root.Attributes["hash-algorithm"].Value;
+
+                if (m_hashAlgorithm != Utility.Utility.HashAlgorithm)
+                    throw new System.IO.InvalidDataException(string.Format(Strings.Manifestfile.UnsupportedHashAlgorithmError, m_hashAlgorithm));
+
+                List<string> paths = new List<string>();
+                foreach (XmlNode n in root.SelectNodes("ContentFiles/Hash"))
+                    ContentHashes.Add(n.InnerText);
+                foreach (XmlNode n in root.SelectNodes("SignatureFiles/Hash"))
+                    SignatureHashes.Add(n.InnerText);
+                foreach (XmlNode n in root.SelectNodes("SourcePaths/Path"))
+                    paths.Add(n.InnerText);
+
+                if (SignatureHashes.Count == 0 || SignatureHashes.Count != ContentHashes.Count)
+                    throw new Exception(string.Format(Strings.Manifestfile.WrongCountError, SignatureHashes.Count, ContentHashes.Count));
+                if (paths.Count == 0)
+                {
+                    if (Version == 1)
+                        this.SourceDirs = null;
+                    else
+                        throw new System.IO.InvalidDataException(Strings.Manifestfile.InvalidSourcePathError);
+                }
                 else
-                    throw new Exception(Strings.Manifestfile.InvalidSourcePathError);
+                    this.SourceDirs = paths.ToArray();
+
+                if (Version > 2)
+                {
+                    if (root.Attributes["hash"] != null)
+                        m_selfHash = root.Attributes["hash"].Value;
+
+                    if (string.IsNullOrEmpty(m_selfHash) || m_selfHash == EMPTY_HASH_VALUE)
+                        throw new System.IO.InvalidDataException(Strings.Manifestfile.MainfestIsMissingSelfHash);
+
+                    if (root.Attributes["filename"] != null)
+                        m_selfFilename = root.Attributes["filename"].Value;
+
+                    if (string.IsNullOrEmpty(m_selfFilename))
+                        throw new System.IO.InvalidDataException(Strings.Manifestfile.MainfestIsMissingSelfFilename);
+
+                    XmlNode manifest = root["PreviousManifest"];
+                    if (manifest != null)
+                    {
+                        if (manifest.Attributes["filename"] != null)
+                            m_previousManifestFilename = manifest.Attributes["filename"].Value;
+                        if (manifest.Attributes["hash"] != null)
+                            m_previousManifestHash = manifest.Attributes["hash"].Value;
+
+                        if (string.IsNullOrEmpty(m_previousManifestFilename))
+                            throw new System.IO.InvalidDataException(Strings.Manifestfile.MissingPreviousManifestFilename);
+                        if (string.IsNullOrEmpty(m_previousManifestFilename))
+                            throw new System.IO.InvalidDataException(Strings.Manifestfile.MissingPreviousManifestHash);
+                    }
+
+                    if (!skipHashCheck)
+                    {
+                        //Validate self-hash
+                        ms.Position = 0;
+                        SeekToSelfHash(ms);
+                        byte[] dummy_value = System.Text.Encoding.UTF8.GetBytes(EMPTY_HASH_VALUE);
+                        ms.Write(dummy_value, 0, dummy_value.Length);
+                        ms.Position = 0;
+                        string selfHash = Utility.Utility.CalculateHash(ms);
+                        if (m_selfHash != selfHash)
+                            throw new System.IO.InvalidDataException(string.Format(Strings.Manifestfile.SelfhashMismatch, m_selfHash, selfHash));
+                    }
+                }
+                else
+                {
+                    //For previous versions, we just hash the file
+                    m_selfHash = Utility.Utility.CalculateHash(ms);
+                }
+
             }
-            else
-                this.SourceDirs = paths.ToArray();
         }
 
         /// <summary>
@@ -223,9 +338,9 @@ namespace Duplicati.Library.Main
         public void Save(System.IO.Stream stream)
         {
             if (Version > MaxSupportedVersion)
-                throw new Exception(string.Format(Strings.Manifestfile.UnsupportedVersionError, Version, MaxSupportedVersion));
+                throw new System.IO.InvalidDataException(string.Format(Strings.Manifestfile.UnsupportedVersionError, Version, MaxSupportedVersion));
             if (SignatureHashes.Count == 0 || SignatureHashes.Count != ContentHashes.Count)
-                throw new Exception(string.Format(Strings.Manifestfile.WrongCountError, SignatureHashes.Count, ContentHashes.Count));
+                throw new System.IO.InvalidDataException(string.Format(Strings.Manifestfile.WrongCountError, SignatureHashes.Count, ContentHashes.Count));
 
             XmlDocument doc = new XmlDocument();
             XmlNode root;
@@ -250,7 +365,72 @@ namespace Duplicati.Library.Main
             foreach (string s in SourceDirs)
                 sourcePathRoot.AppendChild(doc.CreateElement("Path")).InnerText = s;
 
-            doc.Save(stream);
+            if (Version > 2)
+            {
+                root.Attributes.Append(doc.CreateAttribute("hash")).Value = EMPTY_HASH_VALUE;
+                root.Attributes.Append(doc.CreateAttribute("filename")).Value = m_selfFilename;
+
+                if (!string.IsNullOrEmpty(m_previousManifestFilename))
+                {
+                    XmlNode manifest = root.AppendChild(doc.CreateElement("PreviousManifest"));
+                    manifest.Attributes.Append(doc.CreateAttribute("filename")).Value = m_previousManifestFilename;
+                    manifest.Attributes.Append(doc.CreateAttribute("hash")).Value = m_previousManifestHash;
+                }
+
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+                {
+                    doc.Save(ms);
+                    ms.Position = 0;
+                    string base64hash = Utility.Utility.CalculateHash(ms);
+                    byte[] hash = System.Text.Encoding.UTF8.GetBytes(base64hash);
+                    ms.Position = 0;
+                    SeekToSelfHash(ms);
+                    ms.Write(hash, 0, hash.Length);
+                    ms.Position = 0;
+
+                    //Verify that we did not break the document!
+                    try
+                    {
+                        XmlDocument testdoc = new XmlDocument();
+                        testdoc.Load(ms);
+                        if (base64hash != testdoc["ManifestRoot"].Attributes["hash"].Value)
+                            throw new Exception(string.Format(Strings.Manifestfile.HashGenerationFailure, testdoc["ManifestRoot"].Attributes["hash"].Value, base64hash));
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new System.IO.InvalidDataException(string.Format(Strings.Manifestfile.ManifestValidationError, ex.ToString()), ex);
+                    }
+
+                    Utility.Utility.CopyStream(ms, stream, true);
+                }
+            }
+            else
+                doc.Save(stream);
+        }
+
+        private static readonly byte[] SELF_HASH_SIGNATURE = System.Text.Encoding.UTF8.GetBytes(" hash=\"");
+        private static void SeekToSelfHash(System.IO.Stream s)
+        {
+            int nextIx = 0;
+            int v;
+            while ((v = s.ReadByte()) != -1)
+            {
+                if (SELF_HASH_SIGNATURE[nextIx] == (byte)v)
+                {
+                    nextIx++;
+                    if (nextIx >= SELF_HASH_SIGNATURE.Length)
+                        return;
+                }
+                else
+                {
+                    if ((byte)v == SELF_HASH_SIGNATURE[0])
+                        nextIx = 1;
+                    else
+                        nextIx = 0;
+                }
+            }
+
+            throw new Exception(Strings.Manifestfile.EofInManifestFile);
         }
     }
 }

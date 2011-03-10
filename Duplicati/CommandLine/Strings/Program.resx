@@ -186,10 +186,6 @@ Type\tTime\t\t\tVolumes\tSize</value>
   <data name="NewOrModifiedFilesHeader" xml:space="preserve">
     <value>New/Modified files</value>
   </data>
-  <data name="String1" xml:space="preserve">
-    <value />
-    <comment>There is a space to the left, which makes the output look nicer</comment>
-  </data>
   <data name="SupportedBackendsHeader" xml:space="preserve">
     <value>Supported backends:</value>
   </data>
@@ -213,6 +209,16 @@ Type\tTime\t\t\tVolumes\tSize</value>
   </data>
   <data name="Usage" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Usage.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="VerificationCompleted" xml:space="preserve">
+    <value>Verification completed, summary:
+Manifest files verified: {0}
+Signature files verified: {1}
+Content files verified: {2}
+Errors: {3}</value>
+  </data>
+  <data name="VerificationErrorHeader" xml:space="preserve">
+    <value>Reported error messages:</value>
   </data>
   <data name="WrongNumberOfArgumentsError" xml:space="preserve">
     <value>Wrong number of aguments</value>

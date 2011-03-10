@@ -192,6 +192,9 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileShort),
                     new CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+
+                    new CommandLineArgument("verification-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.VerificationLevelShort, Strings.Options.VerificationLevelLong, "Manifest", null, Enum.GetNames(typeof(Duplicati.Library.Main.VerificationLevel))),
+                    new CommandLineArgument("create-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CreateverificationfileShort, Strings.Options.CreateverificationfileLong, "false"),
                 });
             }
         }
@@ -307,6 +310,11 @@ namespace Duplicati.Library.Main
                     return null;
                 else
                     return m_options["signature-cache-path"];
+            }
+            set
+            {
+                if (m_options.ContainsKey("signature-cache-path"))
+                    m_options.Remove("signature-cache-path");
             }
         }
 
@@ -862,7 +870,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the logfile filename
+        /// Gets the log detail level
         /// </summary>
         public Duplicati.Library.Logging.LogMessageType Loglevel
         {
@@ -879,6 +887,31 @@ namespace Duplicati.Library.Main
                 return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
+
+        /// <summary>
+        /// Gets the verification detail level
+        /// </summary>
+        public Duplicati.Library.Main.VerificationLevel Verificationlevel
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("verification-level", out value))
+                    value = null;
+
+                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Main.VerificationLevel)))
+                    if (s.Equals(value, StringComparison.InvariantCultureIgnoreCase))
+                        return (Duplicati.Library.Main.VerificationLevel)Enum.Parse(typeof(Duplicati.Library.Main.VerificationLevel), s);
+
+                return Duplicati.Library.Main.VerificationLevel.Manifest;
+            }
+        }
+
+        /// <summary>
+        /// A value indicating if a verification file is placed on the server
+        /// </summary>
+        public bool CreateVerificationFile { get { return GetBool("create-verification-file"); } }
+
 
         /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 

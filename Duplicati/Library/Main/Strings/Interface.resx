@@ -297,4 +297,28 @@
   <data name="UnsupportedTimeValue" xml:space="preserve">
     <value>The value "{1}" supplied to --{0} does not represent a valid time</value>
   </data>
+  <data name="CannotSkipHashChecksOnBackup" xml:space="preserve">
+    <value>Hash checks cannot be disabled while performing a backup</value>
+  </data>
+  <data name="CannotVerifyChain" xml:space="preserve">
+    <value>Unable to verfiy the backup chain when the option --dont-read-manifests is active</value>
+  </data>
+  <data name="CannotVerifyWithoutHashes" xml:space="preserve">
+    <value>Hash checks cannot be disabled while performing a verification</value>
+  </data>
+  <data name="DisablingSignatureCacheForVerification" xml:space="preserve">
+    <value>The signature cache is disabled when performing verification</value>
+  </data>
+  <data name="ManifestAndFileCountMismatchWarning" xml:space="preserve">
+    <value>The manifest file {0} indicates that there should be {1} volumes, but the file list indicates {2}</value>
+  </data>
+  <data name="ManifestsMustBeRead" xml:space="preserve">
+    <value>Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
+  </data>
+  <data name="PreviousManifestFilenameMismatchError" xml:space="preserve">
+    <value>The manifest file {0} indicates that the previous manifest file should be {1} but it was {2}</value>
+  </data>
+  <data name="PreviousManifestHashMismatchError" xml:space="preserve">
+    <value>The manifest file {0} indicates that the previous manifest hash should be {1} but it was {2}</value>
+  </data>
 </root>

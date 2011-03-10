@@ -114,6 +114,11 @@ namespace Duplicati.Library.Main
         public long FileSizeOverhead { get { return m_encryption == null ? 0 : m_encryption.SizeOverhead(m_options.VolumeSize); } }
 
         /// <summary>
+        /// Gets the filename strategy used by the backend wrapper
+        /// </summary>
+        public FilenameStrategy FilenameStrategy { get { return m_filenamestrategy; } }
+
+        /// <summary>
         /// Class to represent hash failures
         /// </summary>
         public class HashMismathcException : Exception
@@ -259,6 +264,7 @@ namespace Duplicati.Library.Main
             List<ManifestEntry> fulls = new List<ManifestEntry>();
             Dictionary<string, List<SignatureEntry>> signatures = new Dictionary<string, List<SignatureEntry>>();
             Dictionary<string, List<ContentEntry>> contents = new Dictionary<string, List<ContentEntry>>();
+            Dictionary<string, VerificationEntry> verifications = new Dictionary<string, VerificationEntry>();
 
             //First we parse all files into their respective classes
             foreach (Duplicati.Library.Interface.IFileEntry fe in files)
@@ -298,6 +304,10 @@ namespace Duplicati.Library.Main
                         signatures[key] = new List<SignatureEntry>();
                     signatures[key].Add((SignatureEntry)be);
                 }
+                else if (be is VerificationEntry)
+                {
+                    verifications[be.TimeString] = (VerificationEntry)be;
+                }
                 else
                     throw new Exception(string.Format(Strings.BackendWrapper.InvalidEntryTypeError, be.GetType().FullName));
             }
@@ -331,6 +341,12 @@ namespace Duplicati.Library.Main
                 ManifestEntry be = fulls[i];
 
                 string key = be.TimeString;
+                if (verifications.ContainsKey(key))
+                {
+                    be.Verification = verifications[key];
+                    verifications.Remove(key);
+                }
+
                 if (contents.ContainsKey(key) && signatures.ContainsKey(key))
                 {
                     List<SignatureEntry> signature = signatures[key];
@@ -392,6 +408,9 @@ namespace Duplicati.Library.Main
                 }
             }
 
+            foreach (VerificationEntry ve in verifications.Values)
+                AddOrphan(ve);
+
             foreach (List<ContentEntry> lb in contents.Values)
                 foreach (ContentEntry be in lb)
                     AddOrphan(be);
@@ -399,6 +418,18 @@ namespace Duplicati.Library.Main
             foreach (List<SignatureEntry> lb in signatures.Values)
                 foreach (SignatureEntry be in lb)
                     AddOrphan(be);
+
+            //Assign the manifest to allow traversing the chain of manifests
+            foreach (ManifestEntry me in fulls)
+            {
+                ManifestEntry previous = me;
+                foreach (ManifestEntry me2 in me.Incrementals)
+                {
+                    me2.Previous = previous;
+                    previous = me2;
+                }
+            }
+
 
             if (m_statistics != null)
             {
@@ -441,13 +472,36 @@ namespace Duplicati.Library.Main
                 return SortAndPairSets((List<Duplicati.Library.Interface.IFileEntry>)ProtectedInvoke("ListInternal"));
         }
 
-        public void Put(BackupEntryBase remote, string filename)
+        public string Put(BackupEntryBase remote, string filename)
         {
+            if (!remote.IsEncrypted && !m_options.NoEncryption && remote as VerificationEntry == null)
+            {
+                if (m_encryption == null)
+                    m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
+
+                using (Utility.TempFile raw = new Duplicati.Library.Utility.TempFile(filename))
+                using (Utility.TempFile enc = new Duplicati.Library.Utility.TempFile())
+                {
+                    m_encryption.Encrypt(raw, enc);
+                    filename = enc;
+                    enc.Protected = true;
+                    raw.Protected = false;
+                }
+
+                remote.IsEncrypted = true;
+            }
+
+            remote.RemoteHash = Utility.Utility.CalculateHash(filename);
+            remote.Filename = GenerateFilename(remote);
+
             if (!m_async)
                 PutInternal(remote, filename);
             else
             {
                 bool waitForCompletion;
+                
+                //There are 3 files in a volume (signature, content and manifest) + a verification file
+                int uploads_in_set = m_options.CreateVerificationFile ? 4 : 3;
 
                 lock (m_queuelock)
                 {
@@ -457,8 +511,7 @@ namespace Duplicati.Library.Main
                     m_pendingOperations.Enqueue(new KeyValuePair<BackupEntryBase, string>( remote, filename ));
                     m_asyncItemReady.Set();
 
-                    //The *3 is there because a volume consists of 3 files (signature, content and manifest)
-                    waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * 3);
+                    waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * uploads_in_set);
                 }
 
                 while (waitForCompletion)
@@ -470,15 +523,24 @@ namespace Duplicati.Library.Main
                         if (m_workerException != null)
                             throw m_workerException;
 
-                        waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * 3);
+                        waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * uploads_in_set);
                     }
                 }
             }
+
+            return remote.RemoteHash;
         }
 
-        public void Get(BackupEntryBase remote, string filename, string filehash)
+        /// <summary>
+        /// Gets a file from the remote store, verifies the hash and decrypts the content
+        /// </summary>
+        /// <param name="remote">The entry to get</param>
+        /// <param name="manifest">The manifest that protectes the file</param>
+        /// <param name="filename">The remote filename</param>
+        /// <param name="filehash">The hash of the remote file</param>
+        public void Get(BackupEntryBase remote, Manifestfile manifest, string filename, string filehash)
         {
-            ProtectedInvoke("GetInternal", remote, filename, filehash);
+            ProtectedInvoke("GetInternal", remote, manifest, filename, filehash);
         }
 
         public void Delete(BackupEntryBase remote)
@@ -564,10 +626,27 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void DeleteOrphans()
+        public void DeleteOrphans(bool protectedCleanup)
         {
             if (m_orphans == null)
                 return;
+
+            if (protectedCleanup && m_orphans.Count > 2)
+            {
+                //Figure out how many are verification files
+                int count = m_orphans.Count;
+                foreach (BackupEntryBase be in m_orphans)
+                    if (be is VerificationEntry)
+                        count--;
+
+                if (count > 2)
+                {
+                    if (m_statistics != null)
+                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.TooManyOrphansFoundError, m_orphans.Count), null);
+
+                    return;
+                }
+            }
 
             foreach (BackupEntryBase be in m_orphans)
             {
@@ -726,7 +805,7 @@ namespace Duplicati.Library.Main
             return null;
         }
 
-        private void GetInternal(BackupEntryBase remote, string filename, string filehash)
+        private void GetInternal(BackupEntryBase remote, Manifestfile manifest, string filename, string filehash)
         {
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
@@ -736,25 +815,41 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
+                    if (manifest != null && !string.IsNullOrEmpty(m_options.SignatureCachePath) && filehash != null && remote is SignatureEntry)
                     {
                         string cachefilename = FindCacheEntry(remote as SignatureEntry);
                         if (cachefilename != null && System.IO.File.Exists(cachefilename))
                         {
-                            if (filehash != null)
+                            if (Utility.Utility.CalculateHash(cachefilename) == filehash)
                             {
-                                if (Utility.Utility.CalculateHash(cachefilename) == filehash)
+                                if (manifest.Version > 2 && !string.IsNullOrEmpty(remote.EncryptionMode))
+                                {
+                                    try
+                                    {
+                                        using (Library.Interface.IEncryption enc = DynamicLoader.EncryptionLoader.GetModule(remote.EncryptionMode, m_options.Passphrase, m_options.RawOptions))
+                                            enc.Decrypt(cachefilename, filename);
+
+                                        return;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        m_statistics.LogWarning(string.Format(Strings.BackendWrapper.CachedSignatureDecryptWarning, cachefilename, ex.Message), null);
+                                        try { System.IO.File.Delete(cachefilename); }
+                                        catch { }
+                                    }
+                                }
+                                else
                                 {
                                     //TODO: Don't copy, but just return it as write protected
                                     System.IO.File.Copy(cachefilename, filename, true);
                                     return;
                                 }
-                                else
-                                {
-                                    m_statistics.LogWarning(string.Format(Strings.BackendWrapper.CachedSignatureHashMismatchWarning, cachefilename), null);
-                                    try { System.IO.File.Delete(cachefilename); }
-                                    catch { }
-                                }
+                            }
+                            else
+                            {
+                                m_statistics.LogWarning(string.Format(Strings.BackendWrapper.CachedSignatureHashMismatchWarning, cachefilename), null);
+                                try { System.IO.File.Delete(cachefilename); }
+                                catch { }
                             }
                         }
                     }
@@ -788,6 +883,22 @@ namespace Duplicati.Library.Main
                                 ProgressEvent(100, m_statusmessage);
                         }
 
+                        remote.RemoteHash = Utility.Utility.CalculateHash(tempfile);
+                        
+                        //Manifest version 3 has hashes WITH encryption
+                        if (manifest != null && manifest.Version > 2)
+                        {
+                            if (filehash != null && remote.RemoteHash != filehash)
+                                throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Utility.Utility.CalculateHash(tempfile)));
+
+                            if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
+                            {
+                                string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
+                                try { System.IO.File.Copy(tempfile, cachefilename, true); }
+                                catch (Exception ex) { m_statistics.LogWarning(string.Format(Strings.BackendWrapper.SaveCacheFileError, cachefilename), ex); }
+                            }
+                        }
+
                         if (!string.IsNullOrEmpty(remote.EncryptionMode))
                         {
                             try
@@ -810,19 +921,18 @@ namespace Duplicati.Library.Main
                             tempfile = new Duplicati.Library.Utility.TempFile(filename);
                         }
 
-                        if (filehash != null && Utility.Utility.CalculateHash(tempfile) != filehash)
-                            throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Utility.Utility.CalculateHash(tempfile)));
 
-                        if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
+                        //Manifest version 1+2 has hashes WITHOUT encryption
+                        if (manifest != null && manifest.Version <= 2)
                         {
-                            string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
-                            try
+                            if (filehash != null && Utility.Utility.CalculateHash(tempfile) != filehash)
+                                throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Utility.Utility.CalculateHash(tempfile)));
+
+                            if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                             {
-                                System.IO.File.Copy(tempfile, cachefilename, true);
-                            }
-                            catch (Exception ex)
-                            {
-                                m_statistics.LogWarning(string.Format(Strings.BackendWrapper.SaveCacheFileError, cachefilename), ex);
+                                string cachefilename = System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote));
+                                try { System.IO.File.Copy(tempfile, cachefilename, true); }
+                                catch (Exception ex) { m_statistics.LogWarning(string.Format(Strings.BackendWrapper.SaveCacheFileError, cachefilename), ex); }
                             }
                         }
 
@@ -869,27 +979,11 @@ namespace Duplicati.Library.Main
 
         private void PutInternal(BackupEntryBase remote, string filename)
         {
-            string remotename = GenerateFilename(remote);
+            string remotename = remote.Filename;
             m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageUploading, remotename, Utility.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length));
-
-            string encryptedFile = filename;
 
             try
             {
-                if (!m_options.NoEncryption)
-                {
-                    if (m_encryption == null)
-                        m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
-
-                    using (Utility.TempFile tf = new Duplicati.Library.Utility.TempFile()) //If exception is thrown, tf will be deleted
-                    {
-                        m_encryption.Encrypt(filename, tf);
-                        tf.Protected = true; //Done, keep file
-                        encryptedFile = tf;
-                    }
-
-                }
-
                 int retries = m_options.NumberOfRetries;
                 bool success = false;
                 Exception lastEx = null;
@@ -904,7 +998,7 @@ namespace Duplicati.Library.Main
 #if DEBUG_THROTTLE
                             DateTime begin = DateTime.Now;
 #endif
-                            using (System.IO.FileStream fs = System.IO.File.Open(encryptedFile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                             using (Utility.ProgressReportingStream pgs = new Duplicati.Library.Utility.ProgressReportingStream(fs, fs.Length))
                             {   
                                 pgs.Progress += new Duplicati.Library.Utility.ProgressReportingStream.ProgressDelegate(pgs_Progress);
@@ -926,7 +1020,7 @@ namespace Duplicati.Library.Main
                         {
                             if (ProgressEvent != null)
                                 ProgressEvent(50, m_statusmessage);
-                            m_backend.Put(remotename, encryptedFile);
+                            m_backend.Put(remotename, filename);
                             if (ProgressEvent != null)
                                 ProgressEvent(50, m_statusmessage);
                         }
@@ -987,13 +1081,6 @@ namespace Duplicati.Library.Main
 
                 try
                 {
-                    if (System.IO.File.Exists(encryptedFile))
-                        System.IO.File.Delete(encryptedFile);
-                }
-                catch { }
-
-                try
-                {
                     if (ProgressEvent != null)
                         ProgressEvent(-1, "");
                 }
@@ -1027,11 +1114,13 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="remote">The entry to create a filename for</param>
         /// <returns>A filename with extensions</returns>
-        private string GenerateFilename(BackupEntryBase remote)
+        public string GenerateFilename(BackupEntryBase remote)
         {
             string remotename = m_filenamestrategy.GenerateFilename(remote);
             if (remote is ManifestEntry)
                 remotename += ".manifest";
+            else if (remote is VerificationEntry)
+                return remotename;
             else
                 remotename += "." + m_options.CompressionModule;
 
