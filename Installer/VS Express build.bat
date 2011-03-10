@@ -20,6 +20,8 @@ move sqlite-3.6.12.so libsqlite3.so.0
 xcopy /I /Y "..\..\..\linux help\*" .
 del "*.vshost.*" /Q
 xcopy /Y ..\..\..\..\Duplicati\GUI\StartDuplicati.sh .
+mkdir Tools
+xcopy /I /Y /E ..\..\..\..\Tools .\Tools
 
 REM This dll enables Mono on Windows support
 xcopy /I /Y ..\..\..\..\thirdparty\SQLite\Bin\sqlite3.dll .

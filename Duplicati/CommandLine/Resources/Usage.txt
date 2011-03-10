@@ -29,6 +29,9 @@ Usage:
  Find the last version of a file:
   Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>
 
+ Verify backup integrity:
+  Duplicati.CommandLine verify <backend> --verification-level=manifest|signatures|full
+  
  Purge signature cache:
   Duplicati.CommandLine purge-signature-cache [options]
 
