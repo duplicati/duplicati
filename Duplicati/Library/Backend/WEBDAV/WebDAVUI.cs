@@ -317,8 +317,12 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        WEBDAV webDAV = new WEBDAV(destination, options);
-                        webDAV.List();
+                        using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
+                        {
+                            httpconf.Configure(m_options);
+                            WEBDAV webDAV = new WEBDAV(destination, options);
+                            webDAV.List();
+                        }
 
                         MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Duplicati.Library.Backend.Strings {
+namespace Duplicati.Library.Modules.Builtin.Strings {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Duplicati.Library.Backend.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "2.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class TahoeBackend {
+    internal class HttpOptions {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal TahoeBackend() {
+        internal HttpOptions() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Strings {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Backend.Strings.TahoeBackend", typeof(TahoeBackend).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Duplicati.Library.Modules.Builtin.Strings.HttpOptions", typeof(HttpOptions).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,7 +61,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This backend can read and write data to a Tahoe-LAFS based backend. Allowed format is &quot;tahoe://hostname:port/uri/$DIRCAP&quot;..
+        ///   Looks up a localized string similar to This module exposes a number of properties that can be used to change the way http requests are issued.
         /// </summary>
         internal static string Description {
             get {
@@ -70,65 +70,83 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use this flag to communicate using Secure Socket Layer (SSL) over http (https)..
+        ///   Looks up a localized string similar to Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible..
         /// </summary>
-        internal static string DescriptionUseSSLLong {
+        internal static string DescriptionAcceptAnyCertificateLong {
             get {
-                return ResourceManager.GetString("DescriptionUseSSLLong", resourceCulture);
+                return ResourceManager.GetString("DescriptionAcceptAnyCertificateLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Instructs Duplicati to use an SSL (https) connection.
+        ///   Looks up a localized string similar to Accept any server certificate.
         /// </summary>
-        internal static string DescriptionUseSSLShort {
+        internal static string DescriptionAcceptAnyCertificateShort {
             get {
-                return ResourceManager.GetString("DescriptionUseSSLShort", resourceCulture);
+                return ResourceManager.GetString("DescriptionAcceptAnyCertificateShort", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tahoe-LAFS based.
+        ///   Looks up a localized string similar to If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces..
         /// </summary>
-        internal static string Displayname {
+        internal static string DescriptionAcceptHashLong {
             get {
-                return ResourceManager.GetString("Displayname", resourceCulture);
+                return ResourceManager.GetString("DescriptionAcceptHashLong", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The folder {0} was not found, message: {1}.
+        ///   Looks up a localized string similar to Optionally accept a known SSL certificate.
         /// </summary>
-        internal static string MissingFolderError {
+        internal static string DescriptionAcceptHashShort {
             get {
-                return ResourceManager.GetString("MissingFolderError", resourceCulture);
+                return ResourceManager.GetString("DescriptionAcceptHashShort", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Found the Json fragment {0} but expected {1}.
+        ///   Looks up a localized string similar to The default HTTP request has the header &quot;Expect: 100-Continue&quot; attached, which allows some optimizations when authenticating, but also breaks some web servers, causing them to report &quot;417 - Expectation failed&quot;.
         /// </summary>
-        internal static string UnexpectedJsonFragmentType {
+        internal static string DisableExpect100Long {
             get {
-                return ResourceManager.GetString("UnexpectedJsonFragmentType", resourceCulture);
+                return ResourceManager.GetString("DisableExpect100Long", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unsupported URL format, must start with &quot;/uri/URI:DIR2:&quot;.
+        ///   Looks up a localized string similar to Disable the expect header.
         /// </summary>
-        internal static string UnrecognizedUriError {
+        internal static string DisableExpect100Short {
             get {
-                return ResourceManager.GetString("UnrecognizedUriError", resourceCulture);
+                return ResourceManager.GetString("DisableExpect100Short", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The supplied URL contains a query, which is not allowed.
+        ///   Looks up a localized string similar to By default the http requests use the RFC 896 nagling algorithm to support transfer of small packages more effeciently..
         /// </summary>
-        internal static string UriHasQueryError {
+        internal static string DisableNagleLong {
             get {
-                return ResourceManager.GetString("UriHasQueryError", resourceCulture);
+                return ResourceManager.GetString("DisableNagleLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disable the nagling.
+        /// </summary>
+        internal static string DisableNagleShort {
+            get {
+                return ResourceManager.GetString("DisableNagleShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure http requests.
+        /// </summary>
+        internal static string DisplayName {
+            get {
+                return ResourceManager.GetString("DisplayName", resourceCulture);
             }
         }
     }

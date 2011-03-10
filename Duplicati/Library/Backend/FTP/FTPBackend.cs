@@ -31,8 +31,6 @@ namespace Duplicati.Library.Backend
         private string m_url;
         Dictionary<string, string> m_options;
 
-        private bool m_acceptAllCertificates = false;
-        private string m_acceptCertificateHash = null;
         private bool m_useSSL = false;
         private bool m_noListVerify = false;
 
@@ -70,10 +68,9 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            m_useSSL = options.ContainsKey("use-ssl");
-            m_acceptAllCertificates = options.ContainsKey("accept-any-ssl-certificate");
-            if (options.ContainsKey("accept-specified-ssl-hash"))
-                m_acceptCertificateHash = options["accept-specified-ssl-hash"];
+            string sslString;
+            m_options.TryGetValue("use-ssl", out sslString);
+            m_useSSL = Utility.Utility.ParseBool(sslString, false);
             m_noListVerify = options.ContainsKey("no-list-verify");
 
 
@@ -150,39 +147,36 @@ namespace Duplicati.Library.Backend
         {
             get { return true; }
         }
-        
+
         public List<IFileEntry> List()
         {
-            using (ActivateCertificateValidator())
-            {
-                System.Net.FtpWebRequest req = CreateRequest("");
-                req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
-                req.UseBinary = false;
+            System.Net.FtpWebRequest req = CreateRequest("");
+            req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
+            req.UseBinary = false;
 
-                try
+            try
+            {
+                List<IFileEntry> lst = new List<IFileEntry>();
+                using (System.Net.WebResponse resp = req.GetResponse())
+                using (System.IO.Stream rs = resp.GetResponseStream())
+                using (System.IO.StreamReader sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
                 {
-                    List<IFileEntry> lst = new List<IFileEntry>();
-                    using (System.Net.WebResponse resp = req.GetResponse())
-                    using (System.IO.Stream rs = resp.GetResponseStream())
-                    using (System.IO.StreamReader sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
                     {
-                        string line;
-                        while ((line = sr.ReadLine()) != null)
-                        {
-                            FileEntry f = ParseLine(line);
-                            if (f != null)
-                                lst.Add(f);
-                        }
+                        FileEntry f = ParseLine(line);
+                        if (f != null)
+                            lst.Add(f);
                     }
-                    return lst;
                 }
-                catch (System.Net.WebException wex)
-                {
-                    if (wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
-                        throw new Interface.FolderMissingException(string.Format(Strings.FTPBackend.MissingFolderError, req.RequestUri.PathAndQuery, wex.Message), wex);
-                    else
-                        throw;
-                }
+                return lst;
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
+                    throw new Interface.FolderMissingException(string.Format(Strings.FTPBackend.MissingFolderError, req.RequestUri.PathAndQuery, wex.Message), wex);
+                else
+                    throw;
             }
         }
 
@@ -191,15 +185,12 @@ namespace Duplicati.Library.Backend
             System.Net.FtpWebRequest req = null;
             try
             {
-                using (ActivateCertificateValidator())
-                {
-                    req = CreateRequest(remotename);
-                    req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
-                    req.UseBinary = true;
+                req = CreateRequest(remotename);
+                req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
+                req.UseBinary = true;
 
-                    using (System.IO.Stream rs = req.GetRequestStream())
-                        Utility.Utility.CopyStream(input, rs, true);
-                }
+                using (System.IO.Stream rs = req.GetRequestStream())
+                    Utility.Utility.CopyStream(input, rs, true);
 
                 if (!m_noListVerify)
                 {
@@ -239,16 +230,13 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            using (ActivateCertificateValidator())
-            {
-                System.Net.FtpWebRequest req = CreateRequest(remotename);
-                req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
-                req.UseBinary = true;
+            System.Net.FtpWebRequest req = CreateRequest(remotename);
+            req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
+            req.UseBinary = true;
 
-                using (System.Net.WebResponse resp = req.GetResponse())
-                using (System.IO.Stream rs = resp.GetResponseStream())
-                    Utility.Utility.CopyStream(rs, output, false);
-            }
+            using (System.Net.WebResponse resp = req.GetResponse())
+            using (System.IO.Stream rs = resp.GetResponseStream())
+                Utility.Utility.CopyStream(rs, output, false);
         }
 
         public void Get(string remotename, string localname)
@@ -259,13 +247,10 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            using (ActivateCertificateValidator())
-            {
-                System.Net.FtpWebRequest req = CreateRequest(remotename);
-                req.Method = System.Net.WebRequestMethods.Ftp.DeleteFile;
-                using (req.GetResponse())
-                { }
-            }
+            System.Net.FtpWebRequest req = CreateRequest(remotename);
+            req.Method = System.Net.WebRequestMethods.Ftp.DeleteFile;
+            using (req.GetResponse())
+            { }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -279,8 +264,6 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPUsernameShort, Strings.FTPBackend.DescriptionFTPUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionIntegratedAuthenticationShort, Strings.FTPBackend.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionUseSSLShort, Strings.FTPBackend.DescriptionUseSSLLong),
-                    new CommandLineArgument("accept-specified-ssl-hash", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionAcceptHashShort, Strings.FTPBackend.DescriptionAcceptHashLong),
-                    new CommandLineArgument("accept-any-ssl-certificate", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionAcceptAnyCertificateShort, Strings.FTPBackend.DescriptionAcceptAnyCertificateLong),
                     new CommandLineArgument("no-list-verify", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionNolistverifyShort, Strings.FTPBackend.DescriptionNolistverifyLong),
                 });
             }
@@ -307,13 +290,6 @@ namespace Duplicati.Library.Backend
         }
 
         #endregion
-
-        private IDisposable ActivateCertificateValidator()
-        {
-            return m_useSSL ?
-                new Utility.SslCertificateValidator(m_acceptAllCertificates, m_acceptCertificateHash) :
-                null;
-        }
 
         private System.Net.FtpWebRequest CreateRequest(string remotename)
         {
@@ -347,14 +323,11 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            using (ActivateCertificateValidator())
-            {
-                System.Net.FtpWebRequest req = CreateRequest("");
-                req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
-                req.KeepAlive = false;
-                using (req.GetResponse())
-                { }
-            }
+            System.Net.FtpWebRequest req = CreateRequest("");
+            req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
+            req.KeepAlive = false;
+            using (req.GetResponse())
+            { }
         }
 
         #endregion

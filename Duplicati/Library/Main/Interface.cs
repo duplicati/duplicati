@@ -2189,6 +2189,14 @@ namespace Duplicati.Library.Main
 
         public void Dispose()
         {
+            if (m_options != null && m_options.LoadedModules != null)
+            {
+                foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
+                    if (mx.Key && mx.Value is IDisposable)
+                        ((IDisposable)mx.Value).Dispose();
+
+                m_options.LoadedModules.Clear();
+            }
         }
 
         #endregion

@@ -118,6 +118,10 @@
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
+      <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
+      <Name>Duplicati.Library.Modules.Builtin</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
