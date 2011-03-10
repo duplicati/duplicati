@@ -465,4 +465,10 @@
   <data name="VerificationLevelShort" xml:space="preserve">
     <value>Level of verification</value>
   </data>
+  <data name="ListverifyuploadsLong" xml:space="preserve">
+    <value>Some protocols, like FTP, and some servers have problems detecting an interrupted transfer and will assume that the transfer completed, even if it did not. If this option is enabled Duplicati will list the contents of the backend after each upload and verify that the file exists and has the expected size.</value>
+  </data>
+  <data name="ListverifyuploadsShort" xml:space="preserve">
+    <value>Verify uploads by listing contents</value>
+  </data>
 </root>

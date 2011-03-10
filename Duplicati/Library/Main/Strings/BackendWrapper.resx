@@ -195,4 +195,10 @@
   <data name="TooManyOrphansFoundError" xml:space="preserve">
     <value>Auto-cleanup specified but there are {0} orphan files, and there should not be more than 2</value>
   </data>
+  <data name="UploadSizeVerificationFailure" xml:space="preserve">
+    <value>The file {0} was uploaded to the server, but the reported filesize was {1} and the size was expected to be {2}</value>
+  </data>
+  <data name="UploadVerificationFailure" xml:space="preserve">
+    <value>The file {0} was uploaded but not found on the server</value>
+  </data>
 </root>

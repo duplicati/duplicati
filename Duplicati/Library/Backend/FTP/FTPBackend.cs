@@ -32,7 +32,6 @@ namespace Duplicati.Library.Backend
         Dictionary<string, string> m_options;
 
         private bool m_useSSL = false;
-        private bool m_noListVerify = false;
 
         public FTP()
         {
@@ -71,7 +70,6 @@ namespace Duplicati.Library.Backend
             string sslString;
             m_options.TryGetValue("use-ssl", out sslString);
             m_useSSL = Utility.Utility.ParseBool(sslString, false);
-            m_noListVerify = options.ContainsKey("no-list-verify");
 
 
             m_options = options;
@@ -191,27 +189,6 @@ namespace Duplicati.Library.Backend
 
                 using (System.IO.Stream rs = req.GetRequestStream())
                     Utility.Utility.CopyStream(input, rs, true);
-
-                if (!m_noListVerify)
-                {
-                    FileEntry m = null;
-                    foreach (FileEntry fe in this.List())
-                        if (fe.Name == remotename) 
-                        {
-                            m = fe;
-                            break;
-                        }
-
-                    if (m == null)
-                        throw new Exception(string.Format(Strings.FTPBackend.UploadVerificationFailure, remotename));
-
-                    long size = -1;
-                    try { size = input.Length; }
-                    catch { }
-
-                    if (size >= 0 && m.Size > 0 && m.Size != size)
-                        throw new Exception(string.Format(Strings.FTPBackend.UploadSizeVerificationFailure, remotename, m.Size, size));
-                }
             }
             catch (System.Net.WebException wex)
             {
@@ -264,7 +241,6 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPUsernameShort, Strings.FTPBackend.DescriptionFTPUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionIntegratedAuthenticationShort, Strings.FTPBackend.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionUseSSLShort, Strings.FTPBackend.DescriptionUseSSLLong),
-                    new CommandLineArgument("no-list-verify", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionNolistverifyShort, Strings.FTPBackend.DescriptionNolistverifyLong),
                 });
             }
         }

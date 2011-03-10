@@ -610,6 +610,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Some protocols, like FTP, and some servers have problems detecting an interrupted transfer and will assume that the transfer completed, even if it did not. If this option is enabled Duplicati will list the contents of the backend after each upload and verify that the file exists and has the expected size..
+        /// </summary>
+        internal static string ListverifyuploadsLong {
+            get {
+                return ResourceManager.GetString("ListverifyuploadsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verify uploads by listing contents.
+        /// </summary>
+        internal static string ListverifyuploadsShort {
+            get {
+                return ResourceManager.GetString("ListverifyuploadsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Specifies the name of a while into which internal log information is written.
         /// </summary>
         internal static string LogfileLong {

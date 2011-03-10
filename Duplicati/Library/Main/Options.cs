@@ -195,6 +195,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("verification-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.VerificationLevelShort, Strings.Options.VerificationLevelLong, "Manifest", null, Enum.GetNames(typeof(Duplicati.Library.Main.VerificationLevel))),
                     new CommandLineArgument("create-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CreateverificationfileShort, Strings.Options.CreateverificationfileLong, "false"),
+                    new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
                 });
             }
         }
@@ -912,6 +913,10 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool CreateVerificationFile { get { return GetBool("create-verification-file"); } }
 
+        /// <summary>
+        /// A value indicating if server uploads are verified by listing the folder contents
+        /// </summary>
+        public bool ListVerifyUploads { get { return GetBool("list-verify-uploads"); } }
 
         /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 

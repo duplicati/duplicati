@@ -6,8 +6,6 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class HttpOptions : Duplicati.Library.Interface.IGenericModule, IDisposable
     {
-        //TODO: Figure out if this is activated for the TestConnection/CreateFolder.
-
         private const string OPTION_DISABLE_EXPECT100 = "disable-expect100-continue";
         private const string OPTION_DISABLE_NAGLING = "disable-nagling";
         private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash";

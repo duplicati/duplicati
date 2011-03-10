@@ -1025,6 +1025,24 @@ namespace Duplicati.Library.Main
                                 ProgressEvent(50, m_statusmessage);
                         }
 
+                        if (!m_options.ListVerifyUploads)
+                        {
+                            Library.Interface.FileEntry m = null;
+                            foreach (Library.Interface.FileEntry fe in m_backend.List())
+                                if (fe.Name == remotename)
+                                {
+                                    m = fe;
+                                    break;
+                                }
+
+                            if (m == null)
+                                throw new Exception(string.Format(Strings.BackendWrapper.UploadVerificationFailure, remotename));
+                            
+                            long size = new System.IO.FileInfo(filename).Length;
+                            if (m.Size > 0 && m.Size != size)
+                                throw new Exception(string.Format(Strings.BackendWrapper.UploadSizeVerificationFailure, remotename, m.Size, size));
+                        }
+
                         if (remote is SignatureEntry && !string.IsNullOrEmpty(m_options.SignatureCachePath) && System.IO.File.Exists(filename))
                             System.IO.File.Copy(filename, System.IO.Path.Combine(m_options.SignatureCachePath, m_cachefilenamestrategy.GenerateFilename(remote)), true);
 

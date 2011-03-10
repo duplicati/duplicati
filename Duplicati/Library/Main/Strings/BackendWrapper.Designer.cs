@@ -293,5 +293,23 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("UnmatchedFilenameWarning", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} was uploaded to the server, but the reported filesize was {1} and the size was expected to be {2}.
+        /// </summary>
+        internal static string UploadSizeVerificationFailure {
+            get {
+                return ResourceManager.GetString("UploadSizeVerificationFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} was uploaded but not found on the server.
+        /// </summary>
+        internal static string UploadVerificationFailure {
+            get {
+                return ResourceManager.GetString("UploadVerificationFailure", resourceCulture);
+            }
+        }
     }
 }

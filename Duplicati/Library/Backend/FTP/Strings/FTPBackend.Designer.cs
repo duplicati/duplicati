@@ -160,24 +160,6 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Since the FTP protocol is unable to determine if an upload was correctly completed or interrupted, the upload is verified after the upload. Use this option to disable the verification, which increases the posibillity of errors, but also increases performance..
-        /// </summary>
-        internal static string DescriptionNolistverifyLong {
-            get {
-                return ResourceManager.GetString("DescriptionNolistverifyLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Do not verify uploads.
-        /// </summary>
-        internal static string DescriptionNolistverifyShort {
-            get {
-                return ResourceManager.GetString("DescriptionNolistverifyShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Use this flag to communicate using Secure Socket Layer (SSL) over ftp (ftps)..
         /// </summary>
         internal static string DescriptionUseSSLLong {
@@ -210,24 +192,6 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string MissingFolderError {
             get {
                 return ResourceManager.GetString("MissingFolderError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The file {0} was uploaded to the server, but the reported filesize was {1} and the size was expected to be {2}.
-        /// </summary>
-        internal static string UploadSizeVerificationFailure {
-            get {
-                return ResourceManager.GetString("UploadSizeVerificationFailure", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The file {0} was uploaded but not found on the server.
-        /// </summary>
-        internal static string UploadVerificationFailure {
-            get {
-                return ResourceManager.GetString("UploadVerificationFailure", resourceCulture);
             }
         }
     }
