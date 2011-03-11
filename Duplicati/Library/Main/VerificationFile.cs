@@ -9,12 +9,9 @@ namespace Duplicati.Library.Main
     /// </summary>
     public class VerificationFile
     {
-        private ManifestEntry m_currentManifest;
         private System.Xml.XmlDocument m_doc;
         private System.Xml.XmlNode m_node;
         private System.Xml.XmlNode m_manifestEntry;
-        private List<System.Xml.XmlNode> m_registedNodes;
-        private int m_volumeCount;
 
         internal VerificationFile(IEnumerable<ManifestEntry> parentChain, FilenameStrategy str)
         {
