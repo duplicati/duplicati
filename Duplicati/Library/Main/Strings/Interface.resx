@@ -327,4 +327,7 @@
   <data name="FilenameMismatchError" xml:space="preserve">
     <value>The manifest report that the file should be named {0} but it was named {1}</value>
   </data>
+  <data name="StatusUploadingVerificationVolume" xml:space="preserve">
+    <value>Uploading verification file</value>
+  </data>
 </root>

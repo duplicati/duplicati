@@ -574,6 +574,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Uploading verification file.
+        /// </summary>
+        internal static string StatusUploadingVerificationVolume {
+            get {
+                return ResourceManager.GetString("StatusUploadingVerificationVolume", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Waiting for upload to complete ....
         /// </summary>
         internal static string StatusWaitingForUpload {

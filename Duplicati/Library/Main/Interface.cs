@@ -228,11 +228,14 @@ namespace Duplicati.Library.Main
                 case DuplicatiOperationMode.ListCurrentFiles:
                 case DuplicatiOperationMode.ListSourceFolders:
                 case DuplicatiOperationMode.ListActualSignatureFiles:
+                case DuplicatiOperationMode.FindLastFileVersion:
+                case DuplicatiOperationMode.Verify:
                     return DuplicatiOperation.List;
                 case DuplicatiOperationMode.DeleteAllButNFull:
                 case DuplicatiOperationMode.DeleteOlderThan:
                 case DuplicatiOperationMode.CleanUp:
                     return DuplicatiOperation.Remove;
+                
                 default:
                     throw new Exception(string.Format(Strings.Interface.UnexpectedOperationTypeError, m_options.MainAction));
             }
@@ -600,6 +603,9 @@ namespace Duplicati.Library.Main
 
                                         verification.Save(vt);
 
+                                    if (!m_options.AsynchronousUpload)
+                                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusUploadingVerificationVolume, "");
+
                                         vt.Protected = true;
                                         backend.Put(new VerificationEntry(backupchaintime), vt);
                                     }
@@ -650,6 +656,8 @@ namespace Duplicati.Library.Main
                                     //We allow a stop or pause request here
                                     CheckLiveControl();
                                 }
+                                else if (p.Key is VerificationEntry)
+                                    msg = Strings.Interface.StatusUploadingVerificationVolume;
                                 else
                                     throw new InvalidOperationException();
 
