@@ -472,7 +472,7 @@ namespace Duplicati.Library.Main
                 return SortAndPairSets((List<Duplicati.Library.Interface.IFileEntry>)ProtectedInvoke("ListInternal"));
         }
 
-        public string Put(BackupEntryBase remote, string filename)
+        public void Put(BackupEntryBase remote, string filename)
         {
             if (!remote.IsEncrypted && !m_options.NoEncryption && remote as VerificationEntry == null)
             {
@@ -493,6 +493,7 @@ namespace Duplicati.Library.Main
 
             remote.RemoteHash = Utility.Utility.CalculateHash(filename);
             remote.Filename = GenerateFilename(remote);
+            remote.Filesize = new System.IO.FileInfo(filename).Length;
 
             if (!m_async)
                 PutInternal(remote, filename);
@@ -527,8 +528,6 @@ namespace Duplicati.Library.Main
                     }
                 }
             }
-
-            return remote.RemoteHash;
         }
 
         /// <summary>
@@ -538,9 +537,9 @@ namespace Duplicati.Library.Main
         /// <param name="manifest">The manifest that protectes the file</param>
         /// <param name="filename">The remote filename</param>
         /// <param name="filehash">The hash of the remote file</param>
-        public void Get(BackupEntryBase remote, Manifestfile manifest, string filename, string filehash)
+        public void Get(BackupEntryBase remote, Manifestfile manifest, string filename, Manifestfile.HashEntry hash)
         {
-            ProtectedInvoke("GetInternal", remote, manifest, filename, filehash);
+            ProtectedInvoke("GetInternal", remote, manifest, filename, hash);
         }
 
         public void Delete(BackupEntryBase remote)
@@ -805,7 +804,7 @@ namespace Duplicati.Library.Main
             return null;
         }
 
-        private void GetInternal(BackupEntryBase remote, Manifestfile manifest, string filename, string filehash)
+        private void GetInternal(BackupEntryBase remote, Manifestfile manifest, string filename, Manifestfile.HashEntry hash)
         {
             int retries = m_options.NumberOfRetries;
             Exception lastEx = null;
@@ -815,12 +814,12 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    if (manifest != null && !string.IsNullOrEmpty(m_options.SignatureCachePath) && filehash != null && remote is SignatureEntry)
+                    if (manifest != null && !string.IsNullOrEmpty(m_options.SignatureCachePath) && hash != null && remote is SignatureEntry)
                     {
                         string cachefilename = FindCacheEntry(remote as SignatureEntry);
                         if (cachefilename != null && System.IO.File.Exists(cachefilename))
                         {
-                            if (Utility.Utility.CalculateHash(cachefilename) == filehash)
+                            if ((hash.Size < 0 || new System.IO.FileInfo(cachefilename).Length == hash.Size) && Utility.Utility.CalculateHash(cachefilename) == hash.Hash)
                             {
                                 if (manifest.Version > 2 && !string.IsNullOrEmpty(remote.EncryptionMode))
                                 {
@@ -888,8 +887,8 @@ namespace Duplicati.Library.Main
                         //Manifest version 3 has hashes WITH encryption
                         if (manifest != null && manifest.Version > 2)
                         {
-                            if (filehash != null && remote.RemoteHash != filehash)
-                                throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Utility.Utility.CalculateHash(tempfile)));
+                            if (hash != null && remote.RemoteHash != hash.Hash)
+                                throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, hash.Hash, Utility.Utility.CalculateHash(tempfile)));
 
                             if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                             {
@@ -925,8 +924,8 @@ namespace Duplicati.Library.Main
                         //Manifest version 1+2 has hashes WITHOUT encryption
                         if (manifest != null && manifest.Version <= 2)
                         {
-                            if (filehash != null && Utility.Utility.CalculateHash(tempfile) != filehash)
-                                throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, filehash, Utility.Utility.CalculateHash(tempfile)));
+                            if (hash != null && Utility.Utility.CalculateHash(tempfile) != hash.Hash)
+                                throw new HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, remote.Filename, hash.Hash, Utility.Utility.CalculateHash(tempfile)));
 
                             if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && remote is SignatureEntry)
                             {
@@ -1039,7 +1038,7 @@ namespace Duplicati.Library.Main
                                 throw new Exception(string.Format(Strings.BackendWrapper.UploadVerificationFailure, remotename));
                             
                             long size = new System.IO.FileInfo(filename).Length;
-                            if (m.Size > 0 && m.Size != size)
+                            if (m.Size >= 0 && m.Size != size)
                                 throw new Exception(string.Format(Strings.BackendWrapper.UploadSizeVerificationFailure, remotename, m.Size, size));
                         }
 

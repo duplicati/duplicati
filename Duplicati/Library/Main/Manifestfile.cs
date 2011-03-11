@@ -30,6 +30,86 @@ namespace Duplicati.Library.Main
     public class Manifestfile
     {
         /// <summary>
+        /// An entry that describes a hash entry in the manifest file
+        /// </summary>
+        public class HashEntry
+        {
+            /// <summary>
+            /// The file hash
+            /// </summary>
+            private string m_hash;
+            /// <summary>
+            /// The file name
+            /// </summary>
+            private string m_name;
+            /// <summary>
+            /// The file size
+            /// </summary>
+            private long m_size;
+
+            /// <summary>
+            /// Gets the file hash
+            /// </summary>
+            public string Hash { get { return m_hash; } }
+            /// <summary>
+            /// Gets the file name
+            /// </summary>
+            public string Name { get { return m_name; } }
+            /// <summary>
+            /// Gets the file size
+            /// </summary>
+            public long Size { get { return m_size; } }
+
+            /// <summary>
+            /// Constructs a HashEntry from a previously serialized xml node
+            /// </summary>
+            /// <param name="node">The node to deserialize</param>
+            /// <param name="version">The manifest version</param>
+            public HashEntry(XmlNode node, int version)
+            {
+                m_hash = node.InnerText;
+                if (version > 2)
+                {
+                    m_name = node.Attributes["name"].Value;
+                    m_size = long.Parse(node.Attributes["size"].Value);
+                }
+                else
+                {
+                    m_size = -1;
+                    m_name = null;
+                }
+            }
+
+            /// <summary>
+            /// Constructs a HashEntry from a remote file descriptor
+            /// </summary>
+            /// <param name="item">The remote file to mimic</param>
+            public HashEntry(BackupEntryBase item)
+            {
+                m_hash = item.RemoteHash;
+                m_name = item.Filename;
+                m_size = item.Filesize;
+
+                if (string.IsNullOrEmpty(m_hash) || m_size < 0 || string.IsNullOrEmpty(m_name))
+                    throw new Exception(Strings.Manifestfile.InternalError);
+            }
+
+            /// <summary>
+            /// Saves the HashEntry to a xml node
+            /// </summary>
+            /// <param name="node">The node to save to</param>
+            public void Save(XmlNode node)
+            {
+                if (string.IsNullOrEmpty(m_hash) || m_size < 0 || string.IsNullOrEmpty(m_name))
+                    throw new Exception(Strings.Manifestfile.InternalError);
+
+                node.InnerText = m_hash;
+                node.Attributes.Append(node.OwnerDocument.CreateAttribute("name")).Value = m_name;
+                node.Attributes.Append(node.OwnerDocument.CreateAttribute("size")).Value = m_size.ToString();
+            }
+        }
+
+        /// <summary>
         /// A placeholder for the empty hash value with the same length as a real hash value
         /// </summary>
         private const string EMPTY_HASH_VALUE = "00000000000000000000000000000000000000000000";
@@ -37,12 +117,12 @@ namespace Duplicati.Library.Main
 		/// <summary>
 		///The list of signature hashes 
 		/// </summary>
-		private List<string> m_signatureHashes;
+        private List<HashEntry> m_signatureHashes;
 		
 		/// <summary>
 		///The list of content hashes 
 		/// </summary>
-		private List<string> m_contentHashes;
+        private List<HashEntry> m_contentHashes;
 
         /// <summary>
         /// The manifest hash of the previous manifest file
@@ -82,7 +162,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The list of signature hashes
         /// </summary>
-        public List<string> SignatureHashes 
+        public List<HashEntry> SignatureHashes 
 		{ 
 			get { return m_signatureHashes; }
 			set { m_signatureHashes = value; }
@@ -91,7 +171,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The list of content hashes
         /// </summary>
-        public List<string> ContentHashes 
+        public List<HashEntry> ContentHashes 
 		{ 
 			get { return m_contentHashes; }
 			set { m_contentHashes = value; }
@@ -169,8 +249,8 @@ namespace Duplicati.Library.Main
         /// </summary>
         public Manifestfile()
         {
-            SignatureHashes = new List<string>();
-            ContentHashes = new List<string>();
+            SignatureHashes = new List<HashEntry>();
+            ContentHashes = new List<HashEntry>();
             Version = MaxSupportedVersion;
         }
 
@@ -210,8 +290,8 @@ namespace Duplicati.Library.Main
         /// <param name="s">The stream to read the manifest from</param>
         public void Read(System.IO.Stream s, bool skipHashCheck)
         {
-            SignatureHashes = new List<string>();
-            ContentHashes = new List<string>();
+            SignatureHashes = new List<HashEntry>();
+            ContentHashes = new List<HashEntry>();
 
             using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
             {
@@ -242,9 +322,9 @@ namespace Duplicati.Library.Main
 
                 List<string> paths = new List<string>();
                 foreach (XmlNode n in root.SelectNodes("ContentFiles/Hash"))
-                    ContentHashes.Add(n.InnerText);
+                    ContentHashes.Add(new HashEntry(n, Version));
                 foreach (XmlNode n in root.SelectNodes("SignatureFiles/Hash"))
-                    SignatureHashes.Add(n.InnerText);
+                    SignatureHashes.Add(new HashEntry(n, Version));
                 foreach (XmlNode n in root.SelectNodes("SourcePaths/Path"))
                     paths.Add(n.InnerText);
 
@@ -315,10 +395,10 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="contenthash">The content hash</param>
         /// <param name="signaturehash">The signature hash</param>
-        public void AddEntries(string contenthash, string signaturehash)
+        public void AddEntries(ContentEntry contenthash, SignatureEntry signaturehash)
         {
-            SignatureHashes.Add(signaturehash);
-            ContentHashes.Add(contenthash);
+            SignatureHashes.Add(new HashEntry(signaturehash));
+            ContentHashes.Add(new HashEntry(contenthash));
         }
 
         /// <summary>
@@ -358,10 +438,10 @@ namespace Duplicati.Library.Main
             XmlNode signatureRoot = root.AppendChild(doc.CreateElement("SignatureFiles"));
             XmlNode sourcePathRoot = root.AppendChild(doc.CreateElement("SourcePaths"));
 
-            foreach (string s in ContentHashes)
-                contentRoot.AppendChild(doc.CreateElement("Hash")).InnerText = s;
-            foreach (string s in SignatureHashes)
-                signatureRoot.AppendChild(doc.CreateElement("Hash")).InnerText = s;
+            foreach (HashEntry h in ContentHashes)
+                h.Save(contentRoot.AppendChild(doc.CreateElement("Hash")));
+            foreach (HashEntry h in SignatureHashes)
+                h.Save(signatureRoot.AppendChild(doc.CreateElement("Hash")));
             foreach (string s in SourceDirs)
                 sourcePathRoot.AppendChild(doc.CreateElement("Path")).InnerText = s;
 

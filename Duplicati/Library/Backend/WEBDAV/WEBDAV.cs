@@ -170,7 +170,7 @@ namespace Duplicati.Library.Backend
 
                     name = name.Substring(cmp_path.Length);
 
-                    long size = 0;
+                    long size = -1;
                     DateTime lastAccess = new DateTime();
                     DateTime lastModified = new DateTime();
                     bool isCollection = false;

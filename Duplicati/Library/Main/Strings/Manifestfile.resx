@@ -123,6 +123,9 @@
   <data name="HashGenerationFailure" xml:space="preserve">
     <value>The hash generation for the manifest file resulted in the hash value {0} but should have been {1}</value>
   </data>
+  <data name="InternalError" xml:space="preserve">
+    <value>An internal error occured when creating the manifest, please report this to the developers</value>
+  </data>
   <data name="InvalidManifestError" xml:space="preserve">
     <value>The manifest file did not have the expected root Xml element: {0}</value>
   </data>

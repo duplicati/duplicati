@@ -34,35 +34,39 @@ namespace Duplicati.Library.Main
 
                 for (int i = 0; i < mfe.ParsedManifest.SignatureHashes.Count; i++)
                 {
-                    string sigfilename;
-                    string contentfilename;
-                    bool missing;
-                    if (i < mfe.Volumes.Count)
+                    string sigfilename = mfe.ParsedManifest.SignatureHashes[i].Name;
+                    string contentfilename = mfe.ParsedManifest.ContentHashes[i].Name;
+                    bool missing = i >= mfe.Volumes.Count;
+
+                    if (string.IsNullOrEmpty(sigfilename) || string.IsNullOrEmpty(contentfilename))
                     {
-                        sigfilename = mfe.Volumes[i].Key.Filename;
-                        contentfilename = mfe.Volumes[i].Value.Filename;
-                        missing = false;
-                    }
-                    else
-                    {
-                        //TODO: These are not 100% correct filenames as they do not have the compression and encryption extensions
-                        sigfilename = str.GenerateFilename(new SignatureEntry(mfe.Time, mfe.IsFull, i + 1));
-                        contentfilename = str.GenerateFilename(new ContentEntry(mfe.Time, mfe.IsFull, i + 1));
-                        missing = true;
+                        if (missing)
+                        {
+                            sigfilename = mfe.Volumes[i].Key.Filename;
+                            contentfilename = mfe.Volumes[i].Value.Filename;
+                        }
+                        else
+                        {
+                            //TODO: These are not 100% correct filenames as they do not have the compression and encryption extensions
+                            sigfilename = str.GenerateFilename(new SignatureEntry(mfe.Time, mfe.IsFull, i + 1));
+                            contentfilename = str.GenerateFilename(new ContentEntry(mfe.Time, mfe.IsFull, i + 1));
+                        }
                     }
 
                     f = m_node.AppendChild(m_doc.CreateElement("File"));
                     f.Attributes.Append(m_doc.CreateAttribute("type")).Value = "signature";
                     f.Attributes.Append(m_doc.CreateAttribute("name")).Value = sigfilename;
+                    f.Attributes.Append(m_doc.CreateAttribute("size")).Value = mfe.ParsedManifest.SignatureHashes[i].Size.ToString();
                     if (missing) f.Attributes.Append(m_doc.CreateAttribute("missing")).Value = "true";
-                    f.InnerText = Utility.Utility.ByteArrayAsHexString(Convert.FromBase64String(mfe.ParsedManifest.SignatureHashes[i]));
+                    f.InnerText = Utility.Utility.ByteArrayAsHexString(Convert.FromBase64String(mfe.ParsedManifest.SignatureHashes[i].Hash));
                     
 
                     f = m_node.AppendChild(m_doc.CreateElement("File"));
                     f.Attributes.Append(m_doc.CreateAttribute("type")).Value = "content";
                     f.Attributes.Append(m_doc.CreateAttribute("name")).Value = contentfilename;
+                    f.Attributes.Append(m_doc.CreateAttribute("size")).Value = mfe.ParsedManifest.ContentHashes[i].Size.ToString();
                     if (missing) f.Attributes.Append(m_doc.CreateAttribute("missing")).Value = "true";
-                    f.InnerText = Utility.Utility.ByteArrayAsHexString(Convert.FromBase64String(mfe.ParsedManifest.ContentHashes[i]));
+                    f.InnerText = Utility.Utility.ByteArrayAsHexString(Convert.FromBase64String(mfe.ParsedManifest.ContentHashes[i].Hash));
                 }
             }
         }
@@ -70,9 +74,18 @@ namespace Duplicati.Library.Main
         public void UpdateManifest(ManifestEntry manifest)
         {
             if (m_manifestEntry == null)
+            {
                 m_manifestEntry = m_node.AppendChild(m_doc.CreateElement("File"));
-            m_manifestEntry.Attributes.Append(m_doc.CreateAttribute("type")).Value = "manifest";
-            m_manifestEntry.Attributes.Append(m_doc.CreateAttribute("name")).Value = manifest.Filename;
+                m_manifestEntry.Attributes.Append(m_doc.CreateAttribute("type")).Value = "manifest";
+                m_manifestEntry.Attributes.Append(m_doc.CreateAttribute("name")).Value = manifest.Filename;
+                m_manifestEntry.Attributes.Append(m_doc.CreateAttribute("size")).Value = manifest.Filesize.ToString();
+            }
+            else
+            {
+                m_manifestEntry.Attributes["type"].Value = "manifest";
+                m_manifestEntry.Attributes["name"].Value = manifest.Filename;
+                m_manifestEntry.Attributes["size"].Value = manifest.Filesize.ToString();
+            }
             m_manifestEntry.InnerText = Utility.Utility.ByteArrayAsHexString(Convert.FromBase64String(manifest.RemoteHash));
         }
 
@@ -86,6 +99,7 @@ namespace Duplicati.Library.Main
             else if (file is ContentEntry)
                 f.Attributes.Append(m_doc.CreateAttribute("type")).Value = "content";
             f.Attributes.Append(m_doc.CreateAttribute("name")).Value = file.Filename;
+            f.Attributes.Append(m_doc.CreateAttribute("size")).Value = file.Filesize.ToString();
             f.InnerText = Utility.Utility.ByteArrayAsHexString(Convert.FromBase64String(file.RemoteHash));
         }
 

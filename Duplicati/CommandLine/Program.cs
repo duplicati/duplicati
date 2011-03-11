@@ -226,17 +226,17 @@ namespace Duplicati.CommandLine
                     {
                         Console.WriteLine();
 
-                        long size = m.Fileentry.Size;
+                        long size = Math.Max(m.Fileentry.Size ,0);
                         foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in m.Volumes)
-                            size += x.Key.Fileentry.Size + x.Value.Fileentry.Size;
+                            size += Math.Max(x.Key.Fileentry.Size, 0) + Math.Max(x.Value.Fileentry.Size, 0);
 
                         Console.WriteLine(Strings.Program.CollectionStatusLineFull.Replace("\\t", "\t"), m.Time.ToString(), m.Volumes.Count, Library.Utility.Utility.FormatSizeString(size));
 
                         foreach (Duplicati.Library.Main.ManifestEntry mi in m.Incrementals)
                         {
-                            size = mi.Fileentry.Size;
+                            size = Math.Max(mi.Fileentry.Size, 0);
                             foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in mi.Volumes)
-                                size += x.Key.Fileentry.Size + x.Value.Fileentry.Size;
+                                size += Math.Max(x.Key.Fileentry.Size, 0) + Math.Max(x.Value.Fileentry.Size, 0);
 
                             Console.WriteLine(Strings.Program.CollectionStatusLineInc.Replace("\\t", "\t"), mi.Time.ToString(), mi.Volumes.Count, Library.Utility.Utility.FormatSizeString(size));
                         }

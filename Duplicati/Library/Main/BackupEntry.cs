@@ -81,6 +81,7 @@ namespace Duplicati.Library.Main
         protected bool m_isFull;
         protected bool m_isEncrypted;
         protected string m_remoteHash;
+        protected long m_size = -1;
 
         /// <summary>
         /// Gets the filename that represents this entry
@@ -115,6 +116,10 @@ namespace Duplicati.Library.Main
         /// Gets or sets a value indicating if the associated file has been encrypted
         /// </summary>
         public bool IsEncrypted { get { return m_isEncrypted; } set { m_isEncrypted = value; } }
+        /// <summary>
+        /// Gets or sets the size of the remote file
+        /// </summary>
+        public long Filesize { get { return m_size; } set { m_size = value; } }
 
         protected BackupEntryBase(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, bool isFull, string timeString, string encryption)
         {

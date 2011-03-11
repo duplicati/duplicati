@@ -135,9 +135,9 @@ namespace Duplicati.GUI.HelperControls
 
                     foreach (Library.Main.ManifestEntry ef in (List<Library.Main.ManifestEntry>)e.Result)
                     {
-                        long fullSize = ef.Fileentry.Size;
+                        long fullSize = Math.Max(ef.Fileentry.Size, 0);
                         foreach (KeyValuePair<Library.Main.SignatureEntry, Library.Main.ContentEntry> v in ef.Volumes)
-                            fullSize += v.Key.Fileentry.Size + v.Value.Fileentry.Size;
+                            fullSize += Math.Max(v.Key.Fileentry.Size, 0) + Math.Max(v.Value.Fileentry.Size, 0);
 
                         ListViewItem n = new ListViewItem(ef.Time.ToLongDateString() + " " + ef.Time.ToLongTimeString(), 0);
                         n.Tag = ef;
@@ -151,9 +151,9 @@ namespace Duplicati.GUI.HelperControls
 
                         foreach (Library.Main.ManifestEntry i in ef.Incrementals)
                         {
-                            long incSize = i.Fileentry.Size;
+                            long incSize = Math.Max(i.Fileentry.Size, 0);
                             foreach (KeyValuePair<Library.Main.SignatureEntry, Library.Main.ContentEntry> v in i.Volumes)
-                                incSize += v.Key.Fileentry.Size + v.Value.Fileentry.Size;
+                                incSize += Math.Max(v.Key.Fileentry.Size, 0) + Math.Max(v.Value.Fileentry.Size, 0);
 
                             ListViewItem nn = new ListViewItem(i.Time.ToLongDateString() + " " + i.Time.ToLongTimeString(), 1);
                             nn.Tag = i;

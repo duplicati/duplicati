@@ -169,11 +169,29 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The manifest report that the file should be named {0} but it was named {1}.
+        /// </summary>
+        internal static string FilenameMismatchError {
+            get {
+                return ResourceManager.GetString("FilenameMismatchError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Files are not deleted, use the --force command to actually remove files.
         /// </summary>
         internal static string FilesAreNotForceDeletedMessage {
             get {
                 return ResourceManager.GetString("FilesAreNotForceDeletedMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} has size {1} but should have size {2}.
+        /// </summary>
+        internal static string FileSizeMismatchError {
+            get {
+                return ResourceManager.GetString("FileSizeMismatchError", resourceCulture);
             }
         }
         
@@ -189,9 +207,9 @@ namespace Duplicati.Library.Main.Strings {
         /// <summary>
         ///   Looks up a localized string similar to The manifest file {0} indicates that there should be {1} volumes, but the file list indicates {2}.
         /// </summary>
-        internal static string ManifestAndFileCountMismatchWarning {
+        internal static string ManifestAndFileCountMismatchError {
             get {
-                return ResourceManager.GetString("ManifestAndFileCountMismatchWarning", resourceCulture);
+                return ResourceManager.GetString("ManifestAndFileCountMismatchError", resourceCulture);
             }
         }
         

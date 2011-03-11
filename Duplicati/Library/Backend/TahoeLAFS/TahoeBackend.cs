@@ -144,7 +144,7 @@ namespace Duplicati.Library.Backend
                 if (!isDir && !isFile)
                     continue;
 
-                FileEntry fe = new FileEntry(key, -1);
+                FileEntry fe = new FileEntry(key);
                 fe.IsFolder = isDir;
 
                 if (((System.Collections.IDictionary)entry[1]).Contains("metadata"))

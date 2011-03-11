@@ -550,23 +550,24 @@ namespace Duplicati.Library.Main
                                     signaturefile.Protected = true;
                                     contentfile.Protected = true;
 
+                                    ContentEntry ce = new ContentEntry(backuptime, full, vol + 1);
+                                    SignatureEntry se = new SignatureEntry(backuptime, full, vol + 1);
+
                                     using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
-                                    {
-                                        ContentEntry ce = new ContentEntry(backuptime, full, vol + 1);
-                                        manifest.ContentHashes.Add(backend.Put(ce, contentfile));
-                                        if (verification != null)
-                                            verification.AddFile(ce);
-                                    }
+                                        backend.Put(ce, contentfile);
 
                                     if (!m_options.AsynchronousUpload)
                                         OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
 
                                     using (new Logging.Timer("Writing remote signatures"))
+                                        backend.Put(se, signaturefile);
+
+                                    manifest.AddEntries(ce, se);
+
+                                    if (verification != null)
                                     {
-                                        SignatureEntry se = new SignatureEntry(backuptime, full, vol + 1);
-                                        manifest.SignatureHashes.Add(backend.Put(se, signaturefile));
-                                        if (verification != null)
-                                            verification.AddFile(se);
+                                        verification.AddFile(ce);
+                                        verification.AddFile(se);
                                     }
                                 }
 
@@ -602,7 +603,6 @@ namespace Duplicati.Library.Main
                                         vt.Protected = true;
                                         backend.Put(new VerificationEntry(backupchaintime), vt);
                                     }
-
                                 }
 
                                 if (m_options.AsynchronousUpload)
@@ -806,7 +806,7 @@ namespace Duplicati.Library.Main
         /// Verifies the backup chain for producing a new backup on top.
         /// This will check that all files are accounted for in the file list.
         /// </summary>
-        /// <param name="entry"></param>
+        /// <param name="entry">The newest entry to check</param>
         private void VerifyBackupChainWithFiles(BackendWrapper backend, ManifestEntry entry)
         {
             VerifyManifestChain(backend, entry);
@@ -817,7 +817,22 @@ namespace Duplicati.Library.Main
                     GetManifest(backend, entry); 
                 
                 if (entry.Volumes.Count != entry.ParsedManifest.SignatureHashes.Count || entry.Volumes.Count != entry.ParsedManifest.ContentHashes.Count)
-                    throw new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchWarning, entry.Filename, entry.Volumes.Count, entry.ParsedManifest.SignatureHashes.Count));
+                    throw new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, entry.Volumes.Count, entry.ParsedManifest.SignatureHashes.Count));
+
+                for(int i = 0; i < entry.Volumes.Count; i++)
+                {
+                    if (entry.Volumes[i].Key.Filesize > 0 && entry.ParsedManifest.SignatureHashes[i].Size > 0 && entry.Volumes[i].Key.Filesize != entry.ParsedManifest.SignatureHashes[i].Size)
+                        throw new Exception(string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Key.Filename, entry.Volumes[i].Key.Filesize, entry.ParsedManifest.SignatureHashes[i].Size));
+
+                    if (entry.Volumes[i].Value.Filesize >= 0 && entry.ParsedManifest.ContentHashes[i].Size >= 0 && entry.Volumes[i].Value.Filesize != entry.ParsedManifest.ContentHashes[i].Size)
+                        throw new Exception(string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Value.Filename, entry.Volumes[i].Value.Filesize, entry.ParsedManifest.ContentHashes[i].Size));
+
+                    if (!string.IsNullOrEmpty(entry.ParsedManifest.SignatureHashes[i].Name) && !entry.ParsedManifest.SignatureHashes[i].Name.Equals(entry.Volumes[i].Key.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
+                        throw new Exception(string.Format(Strings.Interface.FilenameMismatchError,entry.ParsedManifest.SignatureHashes[i].Name, entry.Volumes[i].Key.Fileentry.Name));
+
+                    if (!string.IsNullOrEmpty(entry.ParsedManifest.ContentHashes[i].Name) && !entry.ParsedManifest.ContentHashes[i].Name.Equals(entry.Volumes[i].Value.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
+                        throw new Exception(string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.ContentHashes[i].Name, entry.Volumes[i].Value.Fileentry.Name));
+                }
 
                 entry = entry.Previous;
             }
@@ -1728,7 +1743,7 @@ namespace Duplicati.Library.Main
                         VerifyManifestChain(backend, me);
 
                         if (mf.SignatureHashes.Count != me.Volumes.Count)
-                            results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchWarning, mf.SelfFilename, mf.SignatureHashes.Count, me.Volumes.Count))));
+                            results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchError, mf.SelfFilename, mf.SignatureHashes.Count, me.Volumes.Count))));
                         else
                             results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, null));
                     }
@@ -1833,7 +1848,7 @@ namespace Duplicati.Library.Main
 
                 foreach (ManifestEntry mf in workList)
                 {
-                    List<string> signatureHashes = null;
+                    List<Manifestfile.HashEntry> signatureHashes = null;
                     Manifestfile mfi;
 
                     using(Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())

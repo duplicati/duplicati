@@ -79,6 +79,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An internal error occured when creating the manifest, please report this to the developers.
+        /// </summary>
+        internal static string InternalError {
+            get {
+                return ResourceManager.GetString("InternalError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The manifest file did not have the expected root Xml element: {0}.
         /// </summary>
         internal static string InvalidManifestError {

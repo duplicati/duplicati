@@ -309,7 +309,7 @@
   <data name="DisablingSignatureCacheForVerification" xml:space="preserve">
     <value>The signature cache is disabled when performing verification</value>
   </data>
-  <data name="ManifestAndFileCountMismatchWarning" xml:space="preserve">
+  <data name="ManifestAndFileCountMismatchError" xml:space="preserve">
     <value>The manifest file {0} indicates that there should be {1} volumes, but the file list indicates {2}</value>
   </data>
   <data name="ManifestsMustBeRead" xml:space="preserve">
@@ -320,5 +320,11 @@
   </data>
   <data name="PreviousManifestHashMismatchError" xml:space="preserve">
     <value>The manifest file {0} indicates that the previous manifest hash should be {1} but it was {2}</value>
+  </data>
+  <data name="FileSizeMismatchError" xml:space="preserve">
+    <value>The file {0} has size {1} but should have size {2}</value>
+  </data>
+  <data name="FilenameMismatchError" xml:space="preserve">
+    <value>The manifest report that the file should be named {0} but it was named {1}</value>
   </data>
 </root>

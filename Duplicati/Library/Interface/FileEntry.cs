@@ -87,7 +87,7 @@ namespace Duplicati.Library.Interface
             m_name = null;
             m_lastAccess = new DateTime();
             m_lastModification = new DateTime();
-            m_size = 0;
+            m_size = -1;
             m_isFolder = false;
         }
 
