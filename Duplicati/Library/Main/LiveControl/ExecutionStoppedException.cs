@@ -23,6 +23,7 @@ using System.Text;
 
 namespace Duplicati.Library.Main.LiveControl
 {
+    [Serializable]
     public class ExecutionStoppedException : Exception
     {
         public ExecutionStoppedException()

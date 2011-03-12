@@ -404,6 +404,9 @@ namespace Duplicati.Library.Main
                             VerifyBackupChainWithFiles(backend, entries[entries.Count - 1]);
                             if (m_options.CreateVerificationFile)
                                 verification = new VerificationFile(entries, backend.FilenameStrategy);
+
+                            OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementals, "");
+
                             patches = FindPatches(backend, entries, tempfolder, false, bs);
 
                             //Check before we start the download
@@ -867,6 +870,9 @@ namespace Duplicati.Library.Main
             else if (entry.Alternate != null && entry.Alternate.ParsedManifest != null)
                 return entry.Alternate.ParsedManifest;
 
+            if (OperationProgress != null && backend.Statistics != null)
+                OperationProgress(this, GetOperationType(), backend.Statistics.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, entry.Time.ToShortDateString() + " " + entry.Time.ToShortTimeString()), "");
+
             bool parsingError = false;
 
             using (new Logging.Timer("Get " + entry.Filename))
@@ -960,6 +966,8 @@ namespace Duplicati.Library.Main
                             VerifyManifestChain(backend, bestFit.Incrementals[bestFit.Incrementals.Count - 1]);
                         else
                             VerifyManifestChain(backend, bestFit);
+
+                        OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusReadingIncrementals, "");
                     }
 
                     m_progress = INCREMENAL_COST;
@@ -1051,8 +1059,6 @@ namespace Duplicati.Library.Main
                         {
                             m_progress = ((1.0 - INCREMENAL_COST) * (patchno / (double)m_restorePatches)) + INCREMENAL_COST;
 
-                            OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, be.Filename), "");
-                            
                             CheckLiveControl();
 
                             Manifestfile manifest = be == bestFit ? rootManifest : GetManifest(backend, be);
@@ -1203,6 +1209,8 @@ namespace Duplicati.Library.Main
                                 OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, 0, -1, string.Format(Strings.Interface.StatusReadingIncrementalFile, be.Volumes[0].Key.Filename), "");
 
                                 Manifestfile mf = GetManifest(backend, be);
+
+                                OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, 0, -1, string.Format(Strings.Interface.StatusReadingIncrementalFile, be.Volumes[0].Key.Filename), "");
 
                                 using (new Logging.Timer("Get " + be.Volumes[0].Key.Filename))
                                     backend.Get(be.Volumes[0].Key, mf, z, mf.SignatureHashes == null ? null : mf.SignatureHashes[0]);
@@ -1612,8 +1620,6 @@ namespace Duplicati.Library.Main
                 {
                     m_progress += unitCost;
 
-                    OperationProgress(this, GetOperationType(), stat.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, be.Time.ToShortDateString() + " " + be.Time.ToShortTimeString()), "");
-
                     Manifestfile manifest = GetManifest(backend, be);
 
                     foreach (KeyValuePair<SignatureEntry, ContentEntry> bes in be.Volumes)
@@ -1748,7 +1754,7 @@ namespace Duplicati.Library.Main
                     try
                     {
                         mf = GetManifest(backend, me);
-                        VerifyManifestChain(backend, me);
+                        VerifyBackupChainWithFiles(backend, me);
 
                         if (mf.SignatureHashes.Count != me.Volumes.Count)
                             results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchError, mf.SelfFilename, mf.SignatureHashes.Count, me.Volumes.Count))));

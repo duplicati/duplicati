@@ -119,8 +119,14 @@ namespace Duplicati.Library.Main
         public FilenameStrategy FilenameStrategy { get { return m_filenamestrategy; } }
 
         /// <summary>
+        /// Gets the communication statistics assigned to the wrapper
+        /// </summary>
+        public CommunicationStatistics Statistics { get { return m_statistics; } }
+
+        /// <summary>
         /// Class to represent hash failures
         /// </summary>
+        [Serializable]
         public class HashMismathcException : Exception
         {
             /// <summary>

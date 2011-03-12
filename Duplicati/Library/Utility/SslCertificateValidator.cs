@@ -27,6 +27,7 @@ namespace Duplicati.Library.Utility
 {
     public class SslCertificateValidator : IDisposable
     {
+        [Serializable]
         public class InvalidCertificateException : Exception
         {
             private string m_certificate = null;
