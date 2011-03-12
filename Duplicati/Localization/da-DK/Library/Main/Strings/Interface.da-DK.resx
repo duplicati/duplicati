@@ -297,4 +297,37 @@
   <data name="UnsupportedTimeValue" xml:space="preserve">
     <value>Værdien "{1}" som er angivet til --{0} angiver ikke en gyldig tid</value>
   </data>
+  <data name="StatusUploadingVerificationVolume" xml:space="preserve">
+    <value>Uploader verifikationsfil</value>
+  </data>
+  <data name="FilenameMismatchError" xml:space="preserve">
+    <value>Manifest filen indikerer at filen skulle hedde {0} men den hedder {1}</value>
+  </data>
+  <data name="FileSizeMismatchError" xml:space="preserve">
+    <value>Filen {0} har størrelsen {1} men den burde have størrelsen {2}</value>
+  </data>
+  <data name="PreviousManifestHashMismatchError" xml:space="preserve">
+    <value>Manifest filen {0} indikerer at hash værdien for den forrige manifest file skulle være {1} men den var {2}</value>
+  </data>
+  <data name="PreviousManifestFilenameMismatchError" xml:space="preserve">
+    <value>Manifest filen {0} indikerer at den forrige manifest fil skulle være {1} men den var {2}</value>
+  </data>
+  <data name="ManifestsMustBeRead" xml:space="preserve">
+    <value>Deaktivering af manifest filer er kun muligt under gendannelse, og bør kun bruges som en sidste udvej.</value>
+  </data>
+  <data name="ManifestAndFileCountMismatchError" xml:space="preserve">
+    <value>Manifest filen {0} indikerer at der skal være {1} filsæt, men fil listen indikerer {2}</value>
+  </data>
+  <data name="DisablingSignatureCacheForVerification" xml:space="preserve">
+    <value>Signature cachen er deaktiveret under verifikation</value>
+  </data>
+  <data name="CannotVerifyWithoutHashes" xml:space="preserve">
+    <value>Hash check kan ikke deaktiveres hvis der køres en verifikation</value>
+  </data>
+  <data name="CannotVerifyChain" xml:space="preserve">
+    <value>Kan ikke kontrollere backup kæden når indstillingen --dont-read-manifests er aktiveret</value>
+  </data>
+  <data name="CannotSkipHashChecksOnBackup" xml:space="preserve">
+    <value>Hash check kan ikke deaktiveres hvis der køres en backup</value>
+  </data>
 </root>

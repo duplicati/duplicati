@@ -144,4 +144,7 @@
   <data name="InvalidCharsInFilenameError" xml:space="preserve">
     <value>Filnavnet {0} indeholder ugyldige tegn</value>
   </data>
+  <data name="FolderIsRootFolder" xml:space="preserve">
+    <value>Mappen {0} er inkluderet fordi den er en kilde mappe</value>
+  </data>
 </root>

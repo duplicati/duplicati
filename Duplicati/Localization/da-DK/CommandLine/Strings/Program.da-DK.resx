@@ -217,4 +217,14 @@ Type\tTime\t\t\tVolumes\tSize</value>
   <data name="WrongNumberOfArgumentsError" xml:space="preserve">
     <value>Forkert antal argumenter</value>
   </data>
+  <data name="VerificationErrorHeader" xml:space="preserve">
+    <value>Fejl beskeder fundet:</value>
+  </data>
+  <data name="VerificationCompleted" xml:space="preserve">
+    <value>Verificationen er afsluttet, opsumering:
+Manifest filer kontrolleret: {0}
+Signature filer kontrolleret: {1}
+Content filer kontrolleret: {2}
+Fejl: {3}</value>
+  </data>
 </root>

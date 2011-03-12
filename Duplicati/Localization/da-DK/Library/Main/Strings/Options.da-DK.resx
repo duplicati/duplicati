@@ -453,4 +453,22 @@
   <data name="SortedfilelistLong" xml:space="preserve">
     <value>Listen med filer der skal tages backup af læses normalt i en tilfældig rækkefølge for at sikre at alle filer har lige stor sandsynlighed for at blive undersøgt. Aktiver denne indstilling for at benytte en alfabestisk rækkefølge istedet.</value>
   </data>
+  <data name="ListverifyuploadsShort" xml:space="preserve">
+    <value>Kontroller uploads ved at liste indhold</value>
+  </data>
+  <data name="ListverifyuploadsLong" xml:space="preserve">
+    <value>Nogle protokoller, såsom FTP, og nogle servere har problemer med at opdage en afbrudt overførsel, og vil antage at overførslen blev afsluttet, selvom dette ikke er tilfældet. Hvis denne indstilling er aktiveret vil Duplicati hente en liste med alle filer efter hver upload og kontrollere at filen eksisterer og har den forventede størrelse.</value>
+  </data>
+  <data name="VerificationLevelShort" xml:space="preserve">
+    <value>Verifikationsniveau</value>
+  </data>
+  <data name="VerificationLevelLong" xml:space="preserve">
+    <value>Brug denne indstilling til at angive hvor meget verifikation der skal udføres når der køres en "verify" kommando. Værdien "manifest" vil kun kontrollere at manifest filerne i kæden er i orden. Værdien "signature" vil også downloade og kontrollere alle signatur filer. Hvis værdien "full" angives, downloades alle filer, inklusiv signatur og indholdsfiler, og all kontrolleres for ændringer.</value>
+  </data>
+  <data name="CreateverificationfileShort" xml:space="preserve">
+    <value>Skriv en verifikationsfil på serveren</value>
+  </data>
+  <data name="CreateverificationfileLong" xml:space="preserve">
+    <value>Hvis en backup er krypteret kan backup integriteten ikke kontrolleres på serveren uden kodeordet. Hvis denne indstilling er aktiveret vil Duplicati gemme en ukrypteret fil på serveren. Filen læses aldrig af Duplicati men tillader at serveren kan kontrollere backup integriteten uden et kodeord. Filen indeholder ingen følsom information, kun en liste over filer der bør findes på serveren og deres respektive hash værdier. Denne indstilling har kun en effekt under dannelse af backup og ved verifikation af en backup.</value>
+  </data>
 </root>
