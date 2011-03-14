@@ -32,8 +32,10 @@ namespace Duplicati.Library.Backend
                 throw new Exception(Strings.TahoeBackend.UriHasQueryError);
 
             string sslString;
-            m_options.TryGetValue("use-ssl", out sslString);
-            m_useSSL = Utility.Utility.ParseBool(sslString, false);
+            if (m_options.TryGetValue("use-ssl", out sslString))
+                m_useSSL = Utility.Utility.ParseBool(sslString, true);
+            else
+                m_useSSL = false;
 
             m_options = options;
 

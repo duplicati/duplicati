@@ -88,8 +88,10 @@ namespace Duplicati.Library.Backend
             m_useIntegratedAuthentication = m_options.ContainsKey("integrated-authentication");
             m_forceDigestAuthentication = m_options.ContainsKey("force-digest-authentication");
             string sslString;
-            m_options.TryGetValue("use-ssl", out sslString);
-            m_useSSL = Utility.Utility.ParseBool(sslString, false);
+            if (m_options.TryGetValue("use-ssl", out sslString))
+                m_useSSL = Utility.Utility.ParseBool(sslString, true);
+            else
+                m_useSSL = false;
 
             m_url = (m_useSSL ? "https" : "http") + url.Substring(u.Scheme.Length);
             if (!m_url.EndsWith("/"))
