@@ -115,6 +115,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If this error cannot be resolved, you can either create a new full backup or delete the offending manifests manually, followed by a cleanup command. The offending manifest files are:.
+        /// </summary>
+        internal static string DeleteManifestsSuggestion {
+            get {
+                return ResourceManager.GetString("DeleteManifestsSuggestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Deleting backup at {0}.
         /// </summary>
         internal static string DeletingBackupSetMessage {

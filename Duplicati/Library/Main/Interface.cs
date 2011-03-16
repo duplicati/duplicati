@@ -822,27 +822,48 @@ namespace Duplicati.Library.Main
         {
             VerifyManifestChain(backend, entry);
 
+            string errorMessage = Environment.NewLine + Strings.Interface.DeleteManifestsSuggestion + Environment.NewLine + Environment.NewLine;
+
             while (entry != null)
             {
                 if (entry.ParsedManifest == null)
-                    GetManifest(backend, entry); 
-                
+                    GetManifest(backend, entry);
+
+                errorMessage += entry.Filename + Environment.NewLine;
+
                 if (entry.Volumes.Count != entry.ParsedManifest.SignatureHashes.Count || entry.Volumes.Count != entry.ParsedManifest.ContentHashes.Count)
-                    throw new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, entry.ParsedManifest.SignatureHashes.Count, entry.Volumes.Count));
+                {
+                    throw new Exception(
+                        string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, entry.ParsedManifest.SignatureHashes.Count, entry.Volumes.Count)
+                        + errorMessage
+                        );
+                }
 
                 for(int i = 0; i < entry.Volumes.Count; i++)
                 {
                     if (entry.Volumes[i].Key.Filesize > 0 && entry.ParsedManifest.SignatureHashes[i].Size > 0 && entry.Volumes[i].Key.Filesize != entry.ParsedManifest.SignatureHashes[i].Size)
-                        throw new Exception(string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Key.Filename, entry.Volumes[i].Key.Filesize, entry.ParsedManifest.SignatureHashes[i].Size));
+                        throw new Exception(
+                            string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Key.Filename, entry.Volumes[i].Key.Filesize, entry.ParsedManifest.SignatureHashes[i].Size)
+                            + errorMessage
+                            );
 
                     if (entry.Volumes[i].Value.Filesize >= 0 && entry.ParsedManifest.ContentHashes[i].Size >= 0 && entry.Volumes[i].Value.Filesize != entry.ParsedManifest.ContentHashes[i].Size)
-                        throw new Exception(string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Value.Filename, entry.Volumes[i].Value.Filesize, entry.ParsedManifest.ContentHashes[i].Size));
+                        throw new Exception(
+                            string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Value.Filename, entry.Volumes[i].Value.Filesize, entry.ParsedManifest.ContentHashes[i].Size)
+                            + errorMessage
+                            );
 
                     if (!string.IsNullOrEmpty(entry.ParsedManifest.SignatureHashes[i].Name) && !entry.ParsedManifest.SignatureHashes[i].Name.Equals(entry.Volumes[i].Key.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
-                        throw new Exception(string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.SignatureHashes[i].Name, entry.Volumes[i].Key.Fileentry.Name));
+                        throw new Exception(
+                            string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.SignatureHashes[i].Name, entry.Volumes[i].Key.Fileentry.Name)
+                            + errorMessage
+                            );
 
                     if (!string.IsNullOrEmpty(entry.ParsedManifest.ContentHashes[i].Name) && !entry.ParsedManifest.ContentHashes[i].Name.Equals(entry.Volumes[i].Value.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
-                        throw new Exception(string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.ContentHashes[i].Name, entry.Volumes[i].Value.Fileentry.Name));
+                        throw new Exception(
+                            string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.ContentHashes[i].Name, entry.Volumes[i].Value.Fileentry.Name)
+                            + errorMessage
+                            );
                 }
 
                 entry = entry.Previous;
