@@ -209,7 +209,7 @@ namespace Duplicati.Library.Main
         /// <returns>All files in the target backend</returns>
         public List<Library.Interface.IFileEntry> List()
         {
-            return m_backend.List();
+            return (List<Library.Interface.IFileEntry>)ProtectedInvoke("ListInternal");
         }
 
         /// <summary>
@@ -475,7 +475,7 @@ namespace Duplicati.Library.Main
         public List<ManifestEntry> GetBackupSets()
         {
             using (new Logging.Timer("Getting and sorting filelist from " + m_backend.DisplayName))
-                return SortAndPairSets((List<Duplicati.Library.Interface.IFileEntry>)ProtectedInvoke("ListInternal"));
+                return SortAndPairSets(List());
         }
 
         public void Put(BackupEntryBase remote, string filename)
@@ -1033,7 +1033,7 @@ namespace Duplicati.Library.Main
                         if (!m_options.ListVerifyUploads)
                         {
                             Library.Interface.FileEntry m = null;
-                            foreach (Library.Interface.FileEntry fe in m_backend.List())
+                            foreach (Library.Interface.FileEntry fe in ListInternal())
                                 if (fe.Name == remotename)
                                 {
                                     m = fe;
