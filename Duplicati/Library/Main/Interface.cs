@@ -828,7 +828,7 @@ namespace Duplicati.Library.Main
                     GetManifest(backend, entry); 
                 
                 if (entry.Volumes.Count != entry.ParsedManifest.SignatureHashes.Count || entry.Volumes.Count != entry.ParsedManifest.ContentHashes.Count)
-                    throw new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, entry.Volumes.Count, entry.ParsedManifest.SignatureHashes.Count));
+                    throw new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, entry.ParsedManifest.SignatureHashes.Count, entry.Volumes.Count));
 
                 for(int i = 0; i < entry.Volumes.Count; i++)
                 {
@@ -839,7 +839,7 @@ namespace Duplicati.Library.Main
                         throw new Exception(string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Value.Filename, entry.Volumes[i].Value.Filesize, entry.ParsedManifest.ContentHashes[i].Size));
 
                     if (!string.IsNullOrEmpty(entry.ParsedManifest.SignatureHashes[i].Name) && !entry.ParsedManifest.SignatureHashes[i].Name.Equals(entry.Volumes[i].Key.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
-                        throw new Exception(string.Format(Strings.Interface.FilenameMismatchError,entry.ParsedManifest.SignatureHashes[i].Name, entry.Volumes[i].Key.Fileentry.Name));
+                        throw new Exception(string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.SignatureHashes[i].Name, entry.Volumes[i].Key.Fileentry.Name));
 
                     if (!string.IsNullOrEmpty(entry.ParsedManifest.ContentHashes[i].Name) && !entry.ParsedManifest.ContentHashes[i].Name.Equals(entry.Volumes[i].Value.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
                         throw new Exception(string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.ContentHashes[i].Name, entry.Volumes[i].Value.Fileentry.Name));
