@@ -27,6 +27,7 @@ namespace Duplicati.Library.Main
                 System.Xml.XmlNode f = m_node.AppendChild(m_doc.CreateElement("File"));
                 f.Attributes.Append(m_doc.CreateAttribute("type")).Value = "manifest";
                 f.Attributes.Append(m_doc.CreateAttribute("name")).Value = mfe.Filename;
+                f.Attributes.Append(m_doc.CreateAttribute("size")).Value = mfe.Filesize.ToString();
                 f.InnerText = Utility.Utility.ByteArrayAsHexString(Convert.FromBase64String(mfe.RemoteHash));
 
                 for (int i = 0; i < mfe.ParsedManifest.SignatureHashes.Count; i++)
@@ -39,14 +40,26 @@ namespace Duplicati.Library.Main
                     {
                         if (missing)
                         {
-                            sigfilename = mfe.Volumes[i].Key.Filename;
-                            contentfilename = mfe.Volumes[i].Value.Filename;
+                            sigfilename = str.GenerateFilename(new SignatureEntry(mfe.Time, mfe.IsFull, i + 1));
+                            contentfilename = str.GenerateFilename(new ContentEntry(mfe.Time, mfe.IsFull, i + 1));
+
+                            //Since these files are missing, we have to guess what their real names were
+                            string compressionGuess;
+                            if (mfe.Volumes.Count <= 0)
+                                compressionGuess = ".zip"; //Default if we have no knowledge
+                            else
+                                compressionGuess = "." + mfe.Volumes[0].Key.Compression; //Most likely the same as all the others
+
+                            //Encryption will likely be the same as the one the manifest uses
+                            string encryptionGuess = string.IsNullOrEmpty(mfe.EncryptionMode) ? "" : "." + mfe.EncryptionMode;
+
+                            sigfilename += compressionGuess + encryptionGuess;
+                            contentfilename += compressionGuess + encryptionGuess;
                         }
                         else
                         {
-                            //TODO: These are not 100% correct filenames as they do not have the compression and encryption extensions
-                            sigfilename = str.GenerateFilename(new SignatureEntry(mfe.Time, mfe.IsFull, i + 1));
-                            contentfilename = str.GenerateFilename(new ContentEntry(mfe.Time, mfe.IsFull, i + 1));
+                            sigfilename = mfe.Volumes[i].Key.Filename;
+                            contentfilename = mfe.Volumes[i].Value.Filename;
                         }
                     }
 
