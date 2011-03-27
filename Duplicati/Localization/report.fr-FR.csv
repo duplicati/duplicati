@@ -70,7 +70,7 @@
 "GUI\RestoreBackup.fr-FR.resx","CancelBtn.Text","updated","Cancel","Annuler"
 "GUI\RestoreBackup.fr-FR.resx","$this.Text","updated","RestoreBackup","Restaurer une sauvegarde"
 "GUI\RestoreBackup.fr-FR.resx","folderBrowserDialog.Description","updated","Select the folder where the data will be restored to","Spécifiez le chemin où les données à restaurer doivent êtres copiées"
-"GUI\RestoreBackup.fr-FR.resx","label2.Text","not-updated","Destination",""
+"GUI\RestoreBackup.fr-FR.resx","label2.Text","missing","Destination",""
 "GUI\ServiceStatus.fr-FR.resx","label3.Text","updated","Scheduled backups","Sauvegardes programmées:"
 "GUI\ServiceStatus.fr-FR.resx","label5.Text","updated","Pending backups","Sauvegardes en attente:"
 "GUI\ServiceStatus.fr-FR.resx","columnHeader1.Text","updated","Time","Temps"
@@ -86,10 +86,9 @@
 "GUI\ServiceStatus.fr-FR.resx","CurrentStatus.Text","updated","Waiting for next backup","En attente de la sauvegarde suivante..."
 "GUI\ServiceStatus.fr-FR.resx","label1.Text","updated","Recently completed backups","Sauvegardes récemment effectuées:"
 "GUI\ServiceStatus.fr-FR.resx","$this.Text","updated","Duplicati Status","Moniteur de tâches effectuées / à faire"
-"GUI\ServiceStatus.fr-FR.resx","PauseDuration05Menu.Text","not-updated","5 minutes",""
-"GUI\ServiceStatus.fr-FR.resx","PauseDuration15Menu.Text","not-updated","15 minutes",""
-"GUI\ServiceStatus.fr-FR.resx","PauseDuration30Menu.Text","not-updated","30 minutes",""
-"GUI\ServiceStatus.fr-FR.resx","label1.ToolTip","unused","",":"
+"GUI\ServiceStatus.fr-FR.resx","PauseDuration05Menu.Text","missing","5 minutes",""
+"GUI\ServiceStatus.fr-FR.resx","PauseDuration15Menu.Text","missing","15 minutes",""
+"GUI\ServiceStatus.fr-FR.resx","PauseDuration30Menu.Text","missing","30 minutes",""
 "GUI\HelperControls\BackupFileList.fr-FR.resx","changeDestinationToolStripMenuItem.Text","missing","Change destination...",""
 "GUI\HelperControls\BackupFileList.fr-FR.resx","LoadingIndicator.Text","missing","Reading filelist, please wait ...",""
 "GUI\HelperControls\BackupFileList.fr-FR.resx","folderBrowserDialog.Description","missing","Select the folder to restore to",""
@@ -100,14 +99,14 @@
 "GUI\HelperControls\CommandLineOptionGrid.fr-FR.resx","enabledDataGridViewCheckBoxColumn.HeaderText","updated","Enabled","Activé"
 "GUI\HelperControls\CommandLineOptionGrid.fr-FR.resx","nameDataGridViewTextBoxColumn.HeaderText","updated","Name","Nom"
 "GUI\HelperControls\CommandLineOptionGrid.fr-FR.resx","valueDataGridViewTextBoxColumn.HeaderText","updated","Value","Valeur"
+"GUI\HelperControls\CommandLineOptionGrid.fr-FR.resx","argumentDataGridViewTextBoxColumn.HeaderText","missing","argument",""
 "GUI\HelperControls\CommandLineOptionGrid.fr-FR.resx","dataGridViewTextBoxColumn1.HeaderText","missing","argument",""
-"GUI\HelperControls\CommandLineOptionGrid.fr-FR.resx","argumentDataGridViewTextBoxColumn.HeaderText","not-updated","argument",""
 "GUI\HelperControls\DurationEditor.fr-FR.resx","EasyDuration.Items","updated","Each day","Chaque jour"
 "GUI\HelperControls\DurationEditor.fr-FR.resx","EasyDuration.Items1","updated","Each week","Chaque semaine"
 "GUI\HelperControls\DurationEditor.fr-FR.resx","EasyDuration.Items2","updated","Each second week","Tout les 15 jours"
 "GUI\HelperControls\DurationEditor.fr-FR.resx","EasyDuration.Items3","updated","Each month","Chaque mois"
 "GUI\HelperControls\DurationEditor.fr-FR.resx","EasyDuration.Items4","updated","Custom ...","Personnalisé ..."
-"GUI\HelperControls\DurationEditor.fr-FR.resx","CustomDuration.Error","not-updated","s",""
+"GUI\HelperControls\DurationEditor.fr-FR.resx","CustomDuration.Error","missing","s",""
 "GUI\HelperControls\FilterDialog.fr-FR.resx","Inclusive.Text","updated","Include files matching the filter","INCLURE les fichiers correspondant au filtre"
 "GUI\HelperControls\FilterDialog.fr-FR.resx","Exclusive.Text","updated","Exclude files matching the filter","EXCLURE les fichiers correspondant au filtre"
 "GUI\HelperControls\FilterDialog.fr-FR.resx","label1.Text","updated","Filter","Filtre"
@@ -354,7 +353,6 @@ A newer version of Mono will enable this page.","Cette fenêtre n'est pas suppor
 "GUI\Wizard pages\Add backup\AdvancedOptions.fr-FR.resx","IncludeDuplicatiSetup.Text","updated","Include the current Duplicati setup in the backup","Stocker les paramètres de cette sauvegarde dans le répertoire de destination"
 "GUI\Wizard pages\Add backup\AdvancedOptions.fr-FR.resx","EditOverrides.Text","updated","Manually override settings (advanced)","Accéder à la configuration manuelle des paramètres (mode expert)"
 "GUI\Wizard pages\Add backup\AdvancedOptions.fr-FR.resx","LimitOptions.Text","missing","Set limits, such as volumesize and bandwidth limits",""
-"GUI\Wizard pages\Add backup\AdvancedOptions.fr-FR.resx","ThrottleOptions.Text","unused","","Ajuster les options pour limiter l'usage des ressources systèmes, (Vitesse réseau...)"
 "GUI\Wizard pages\Add backup\CleanupSettings.fr-FR.resx","EnableFullBackupClean.Text","updated","Never keep more than this many full backups","Nombre max de sauvegardes complètes à conserver"
 "GUI\Wizard pages\Add backup\CleanupSettings.fr-FR.resx","CleanFullBackupHelptext.Text","updated","To prevent the backups from growing indefinetly, old backups should be deleted regularly","Pour éviter de saturer l'espace disque où sont stockées les sauvegardes, les anciennes devraient êtres supprimées régulièrement"
 "GUI\Wizard pages\Add backup\CleanupSettings.fr-FR.resx","EnableCleanupDuration.Text","updated","Never keep backups older than this","Ne pas conserver les sauvegardes plus vieilles que"
@@ -497,7 +495,6 @@ How do you want to proceed?","Le répertoire ""{0}"" n'existe pas. Comment voule
 If you save the backup settings, the internal storage will be change to the new version.
 Please verify the content of the backup after the next run to ensure
 that it contains the files and folders that you expect.","La configuration est chargée depuis une ancienne version de Duplicati.  Si vous enregistrez la configuration de la sauvegarde maintenant, elle sera mise à jour avec la version actuelle de Duplicati. Vérifiez que le contenu des fichiers sauvegardés, après exécution de la prochaine tâche de sauvegarde, correspondent toujours à ce que vous attendez."
-"GUI\Wizard pages\Add backup\Strings\SelectFiles.fr-FR.resx","MultipleSourcesError","unused","","Vu la configuration de votre machine, il n'est pas possible de sauvegarder les répertoires sélectionnés dans une même sauvegarde. Désélectionnez quelques éléments et créez plus d'une sauvegarde."
 "GUI\Wizard pages\Add backup\Strings\SelectName.fr-FR.resx","DuplicateNameEnteredError","updated","There already exists a backup with that name","Il existe déjà une tâche de sauvegarde portant ce nom"
 "GUI\Wizard pages\Add backup\Strings\SelectName.fr-FR.resx","NoNameEnteredError","updated","You must enter a name for the backup","Vous devez entrer un nom pour la tâche de sauvegarde"
 "GUI\Wizard pages\Add backup\Strings\SelectName.fr-FR.resx","PageDescription","updated","On this page you can enter a name for the backup, so you can find and modify it later","Dans cette fenêtre, vous pouvez spécifier un nom pour la tâche de sauvegarde, que vous pourrez retrouver et modifier plus tard au besoin"
@@ -678,82 +675,6 @@ Signature files verified: {1}
 Content files verified: {2}
 Errors: {3}",""
 "CommandLine\Strings\Program.fr-FR.resx","VerificationErrorHeader","not-updated","Reported error messages:",""
-"CommandLine\Strings\Program.fr-FR.resx","ProgramUsage","unused","","********** Duplicati v. {0} **********
-
-Usage:
-
- Backup (make a full or incremental backup):
-  Duplicati.CommandLine [full] [options] <sourcefolder> <backend>
-
- Restore (restore all or some files):
-  Duplicati.CommandLine [options] <backend> <destinationfolder>
-
- Cleanup (remove partial and unused files):
-  Duplicati.CommandLine cleanup [options] <backend>
-
- List files:
-  Duplicati.CommandLine list [options] <backend>
-
- List backup sets:
-  Duplicati.CommandLine collection-status [options] <backend>
-
- List content files (files that can be restored):
-  Duplicati.CommandLine list-current-files [options] <backend>
-
- List source folders (folders backed up from):
-  Duplicati.CommandLine list-source-folders [options] <backend>
-
- List signature files (files in a single backup volume set):
-  Duplicati.CommandLine list-actual-signature-files [options] <backend>
-
- Find the last version of a file:
-  Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>
-
- Verify backup integrity:
-  Duplicati.CommandLine verify <backend> --verification-level=manifest|signatures|full
-  
- Purge signature cache:
-  Duplicati.CommandLine purge-signature-cache [options]
-
- Delete old backups:
-  Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
-  Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>
-
- Create folder (usually done automatically):
-  Duplicati.CommandLine create-folder [options] <backend>
-
- A <backend> is identified by an url like ftp://host/ or ssh://server/.
- Using this system, Duplicati can detect if you want to backup or restore.
- The cleanup and delete commands do not delete files, unless the --force option is specified, so you may examine what files are affected, before actually deleting the files.
- The cleanup command should not be used unless a backup was interrupted and has left partial files. Duplicati will inform you if this happens.
- The delete command can be used to remove backup sets when newer backups are present.
-
-Option types:
- The following option types are available:
-  Integer: a numerical value
-  Boolean: a truth value, --force and --force=true are equivalent. --force=false is the opposite
-  Timespan: a time in the special time format (explained below)
-  Size: a size like 5mb or 200kb
-  Enumeration: any of the listed values
-  Path: the path to a folder or file
-  String: any other type
-  
-Times:
- Duplicati uses the time system from duplicity, where times may be presented as:
-  1: the string ""now"", indicating the current time
-  2: the number of seconds after epoch, eg: 123456890
-  3: a string like ""2009-03-26T08:30:00+01:00""
-  4: an interval string, using Y, M, W, D, h, m, s for Year, Month, Week, Day, hour, minute or second, eg: ""1M4D"" for one month and four days, or ""5m"" for five minutes.
-
-Filters:
- Duplicati uses filters to include and exclude files.
-  Duplicati uses a ""first-touch"" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplicati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:
-    --include=*.txt --exclude=*\Thumbs.db --include=*
-
-  Even though the last filter includes everything, no files named ""Thumbs.db"" are included because they match the exclude rule before the include rule. Paths are evaluated in full, and as paths that are relative to folder being backed up, but including a leading slash. An example:
-
-{1}
-  If a folder is excluded, files in that folder are always excluded, even if there are filters that include files in that folder. If a folder is included with a wildcard at the end, all files are included, if the folder is included without a wildcard, files may be excluded or included with extra rules."
 "CommandLine\Decrypter\Strings\Program.fr-FR.resx","ProgramUsage","not-updated","Usage: Duplicati.CommandLine.Decrypter.exe <passphrase> <inputfile> <outputfile>",""
 "Library\Utility\Strings\FilenameFilter.fr-FR.resx","FilterContainsPathSeparator","updated","Filter contains: {0}","Contenu du filtre: {0}"
 "Library\Utility\Strings\Sizeparser.fr-FR.resx","InvalidSizeValueError","updated","Invalid size value: {0}","Taille incorrecte: {0}"
@@ -1049,11 +970,6 @@ Error message: {1}",""
 "Library\Encryption\Strings\AESEncryption.fr-FR.resx","DisplayName","updated","AES-256 encryption, built in","Cryptage AES-256 intégré"
 "Library\Encryption\Strings\AESEncryption.fr-FR.resx","AesencryptiondontallowfallbackLong_v2","not-updated","If the decryption fails using AES Crypt, dont attempt to use the previous encryption file format. ",""
 "Library\Encryption\Strings\AESEncryption.fr-FR.resx","Description_v2","not-updated","This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption.",""
-"Library\Encryption\Strings\AESEncryption.fr-FR.resx","AesencryptiondontallowfallbackLong","unused","","Si le cryptage AES  à échoué, ne tente pas d'utiliser le format de cryptage précédent. Cette option est mutuellement exclusive avec --{0}."
-"Library\Encryption\Strings\AESEncryption.fr-FR.resx","AesencryptiondontuseaescryptLong","unused","","Duplicati utilise le format de cryptage AES, mais d'anciennes version du programme utilisaient une méthode de cryptage plus simple. Utilisez ce drapeau pour forcer l'utilisation de cette ancienne méthode. Cette option est mutuellement exclusive avec --{0}."
-"Library\Encryption\Strings\AESEncryption.fr-FR.resx","AesencryptiondontuseaescryptShort","unused","","Ne pas crypter en AES"
-"Library\Encryption\Strings\AESEncryption.fr-FR.resx","Description","unused","","Ce module crypte tout les fichiers de la même manière que le fait AES, utilisant un codage AES 256 bits. Les anciennes versions de Duplicati utilisaient un modèle plus simple (également de 256 bits). L'option de commande --{0} permet de réutiliser cet ancien modèle, ce qui n'est pas recommandé. Ce module détecte automatiquement le type de cryptage du fichier et utilise la bonne méthode de décryptage."
-"Library\Encryption\Strings\AESEncryption.fr-FR.resx","OptionsAreMutuallyExclusiveError","unused","","Il est interdit de  d'utiliser --{0} et --{1} simultanément"
 "Library\Encryption\Strings\EncryptionBase.fr-FR.resx","DecryptionError","updated","Failed to decrypt data (invalid passphrase?): {0}","Impossible de décrypter les données (Clef erronée?): {0}"
 "Library\Encryption\Strings\GPGCommonOptions.fr-FR.resx","GpgAutodetectedInfo","updated","Leave empty to use the gpg application found: {0}","Laissez vide pour utiliser le module GPG trouvé: {0}"
 "Library\Encryption\Strings\GPGCommonOptions.fr-FR.resx","GpgNotAutodetectedWarning","updated","The gpg application could not be located, please enter the path manually","Le module externe GPG ne peut être trouvé, veillez entrer son chemin d'accès manuellement"
@@ -1220,10 +1136,6 @@ Proceed without a username?",""
 "Library\Backend\FTP\Strings\FTPBackend.fr-FR.resx","DescriptionUseSSLShort","updated","Instructs Duplicati to use an SSL (ftps) connection","Demande à Duplicati d'utiliser une connexion SSL (ftps)"
 "Library\Backend\FTP\Strings\FTPBackend.fr-FR.resx","DisplayName","updated","FTP based","Basé sur FTP"
 "Library\Backend\FTP\Strings\FTPBackend.fr-FR.resx","MissingFolderError","updated","The folder {0} was not found, message: {1}","Le répertoire {0} est introuvable, message: {1}"
-"Library\Backend\FTP\Strings\FTPBackend.fr-FR.resx","DescriptionAcceptAnyCertificateLong","unused","","Utilisez cette option pour accepter tout certificats de serveurs, même ceux comportant des erreurs. Veuillez utiliser autant que possible --accept-specified-ssl-hash à la place."
-"Library\Backend\FTP\Strings\FTPBackend.fr-FR.resx","DescriptionAcceptAnyCertificateShort","unused","","Accepte tout certificat de serveur"
-"Library\Backend\FTP\Strings\FTPBackend.fr-FR.resx","DescriptionAcceptHashLong","unused","","Si votre serveur de certificat est reporté comme invalide (comme les certificats signés soi-même), vous pouvez fournir le hachage de certificat pour l'approuver quand même. Le hachage doit être rentré en format hexadécimal, sans espaces."
-"Library\Backend\FTP\Strings\FTPBackend.fr-FR.resx","DescriptionAcceptHashShort","unused","","Accepte en option un certificat SSL connu"
 "Library\Backend\FTP\Strings\FTPUI.fr-FR.resx","ApproveCertificateHashQuestion","updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?","Le certificat n'était pas valide ({0}). Voulez vous quand même accepter le certificat et réessayer?"
 "Library\Backend\FTP\Strings\FTPUI.fr-FR.resx","CreateMissingFolderQuestion","updated","The folder does not exist, do you want to create it?","Le répertoire n'existe pas, voulez-vous le créer?"
 "Library\Backend\FTP\Strings\FTPUI.fr-FR.resx","EmptyHashError","updated","You have not entered a hash string","Vous n'avez pas entré de chaine de hachage"
@@ -1363,10 +1275,6 @@ This can be because the file is deleted or unavailable, but it can also be becau
 Error message: {3}","En analysant précédemment le répertoire {0} le fichier {1} à été trouvé, mais le serveur indique à présent que ce fichier est introuvable. Cela peut être causé par la suppression du fichier ou son utilisation, mais également parce que l'extension du fichier {2} est bloquée par le serveur web. Les serveurs IIS bloquent les extensions inconnues par défaut. Message d’erreur: {3}"
 "Library\Backend\WEBDAV\Strings\WEBDAV.fr-FR.resx","DescriptionUseSSLLong","updated","Use this flag to communicate using Secure Socket Layer (SSL) over http (https).","Utiliser ce commutateur pour dialoguer en utilisant le protocole SSL sur http (https)."
 "Library\Backend\WEBDAV\Strings\WEBDAV.fr-FR.resx","DescriptionUseSSLShort","updated","Instructs Duplicati to use an SSL (https) connection","Demande à Duplicati d'utiliser une connexion SSL (https)"
-"Library\Backend\WEBDAV\Strings\WEBDAV.fr-FR.resx","DescriptionAcceptAnyCertificateLong","unused","","Utilisez cette option pour accepter n'importe quels certificats de serveur, même ceux qui sont erronés. Utilisez si possible --accept-specified-ssl-hash à la place."
-"Library\Backend\WEBDAV\Strings\WEBDAV.fr-FR.resx","DescriptionAcceptAnyCertificateShort","unused","","Accepte tout certificats"
-"Library\Backend\WEBDAV\Strings\WEBDAV.fr-FR.resx","DescriptionAcceptHashLong","unused","","Si votre serveur de certificat est reporté comme invalide (comme les certificats signés soi-même), vous pouvez fournir le hachage de certificat pour l'approuver quand même. Le hachage doit être rentré en format hexadécimal, sans espaces."
-"Library\Backend\WEBDAV\Strings\WEBDAV.fr-FR.resx","DescriptionAcceptHashShort","unused","","Accepte en option un certificat SSL connu"
 "Library\Backend\WEBDAV\Strings\WebDAVUI.fr-FR.resx","ApproveCertificateHashQuestion","updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?","Ce certificat est invalide ({0}). Voulez-vous quand même l'accepter et recommencer?"
 "Library\Backend\WEBDAV\Strings\WebDAVUI.fr-FR.resx","CreateMissingFolderQuestion","updated","The folder does not exist, do you want to create it?","Le répertoire n'existe pas, voulez-vous le créer?"
 "Library\Backend\WEBDAV\Strings\WebDAVUI.fr-FR.resx","EmptyFolderPathWarning","updated","You have not entered a folder, this will store all files in the root directory of the server.
@@ -1400,9 +1308,9 @@ The shorter format ""cloudfiles://container/folder"" may be used as long as  the
 "Library\Backend\CloudFiles\Strings\CloudFiles.fr-FR.resx","NoAPIKeyError","updated","No CloudFiles API Access Key given","Pas de clef d'accès API CloudFiles fournie"
 "Library\Backend\CloudFiles\Strings\CloudFiles.fr-FR.resx","NoUserIDError","updated","No CloudFiles userID given","Pas d'identifiant CloudFiles  fournis"
 "Library\Backend\CloudFiles\Strings\CloudFiles.fr-FR.resx","UnexpectedResponseError","updated","Unexpected CloudFiles response, perhaps the API has changed?","Réponse du serveur CloudFiles inconnue, peut être que la version du serveur à évoluée?"
-"Library\Backend\CloudFiles\Strings\CloudFiles.fr-FR.resx","FileDeleteError","missing","Failed to delete file",""
-"Library\Backend\CloudFiles\Strings\CloudFiles.fr-FR.resx","FileUploadError","missing","Failed to upload file",""
 "Library\Backend\CloudFiles\Strings\CloudFiles.fr-FR.resx","DisplayName","not-updated","CloudFiles",""
+"Library\Backend\CloudFiles\Strings\CloudFiles.fr-FR.resx","FileDeleteError","not-updated","Failed to delete file",""
+"Library\Backend\CloudFiles\Strings\CloudFiles.fr-FR.resx","FileUploadError","not-updated","Failed to upload file",""
 "Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","PageDescription","updated","On this page you can select where to store the backup data.","Dans cette fenêtre vous pouvez indiquer où enregistrer vos sauvegardes."
 "Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","PageTitle","updated","Backup storage options","Options d'enregistrement des sauvegardes."
 "Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","CreateMissingContainer","not-updated","The container does not exist, do you want to create it?",""
@@ -1415,15 +1323,6 @@ to open the CloudFiles login page, and retrieve it.",""
 "Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","EmptyContainerNameError","not-updated","You must enter a name for the Container.
 You must use a unique name for each backup.
 You may enter any name you like.",""
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","BucketnameCaseWarning","unused","","Le nom de l'espace de stockage ne doit pas comporter de majuscules. {0} Voulez vous convertir le nom en minuscules?"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","BucketnameNotPrefixedWarning","unused","","Le nom de l'espace de stockage ne commence pas par votre identifiant. Pour éviter d'utiliser l'espace appartenant à un autre utilisateur, Il est recommandé de le mettre en début de nom. Voulez vous que Duplicati le fasse pour vous?"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","CreateMissingBucket","unused","","L'espace de stockage n'existe pas, voulez-vous le créer?"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","EmptyAWSIDError","unused","","Vous devez entrer votre identifiant AWS. Cliquez sur le lien de droite pour ouvrir la page de connexion  AWS et récupérer votre identifiant."
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","EmptyAWSKeyError","unused","","Vous devez entrer votre mot de passe AWS. Cliquez sur le lien de droite pour ouvrir la page de connexion  AWS et récupérer votre identifiant."
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","EmptyBucketnameError","unused","","Vous devez spécifier un nom unique pour chaque sauvegarde. Vous pouvez mettre le nom que vous voulez."
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","EuroBucketsRequireLowerCaseError","unused","","Le nom des espaces de stockages Européens ne doivent pas comporter de majuscules."
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","MonoRequiresExistingBucket","unused","","Un bug dans les versions de Mono antérieures à la 2.4.3,  empêche le serveur distant de détecter les espaces de stockages manquants. A cause de cela, il est recommandé de créer les espaces de stockages. Voulez vous le faire maintenant?"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.fr-FR.resx","NewS3RequiresLowerCaseError","unused","","La nouvelle version de l'API Amazon s3 demande à ce que les noms des espaces de stockages soient en minuscules."
 "Library\Backend\CloudFiles\Strings\MD5CalculatingStream.fr-FR.resx","IncorrectUsageError","updated","Cannot read and write on the same stream","Ne peut pas lire et écrire dans le même flux"
 "Winforms\Controls\PasswordConfirmationDialog.fr-FR.resx","label1.Text","missing","Password",""
 "Winforms\Controls\PasswordConfirmationDialog.fr-FR.resx","CancelBtn.Text","missing","Cancel",""
@@ -1534,7 +1433,6 @@ Do you want to continue anyway?","Duplicati n'a pas pu vérifier l'existence du 
 "Library\Backend\SSH\Strings\SSHUI.fr-FR.resx","PageDescription","updated","On this page you can select where to store the backup data.","Sur cette page vous pouvez spécifier où enregistrer les sauvegardes."
 "Library\Backend\SSH\Strings\SSHUI.fr-FR.resx","PageTitle","updated","Backup storage options","Options de sauvegarde"
 "Library\Backend\SSH\Strings\SSHUI.fr-FR.resx","PasswordRequiredManagedError","not-updated","A password is required when using the managed SSH option and no keyfile is supplied",""
-"Library\Backend\SSH\Strings\SSHUI.fr-FR.resx","PasswordRequiredError","unused","","Un mot de passe est requis lorsque l'on utilise l'option SSH"
 "Library\Backend\TahoeLAFS\TahoeUI.fr-FR.resx","TestConnection.Text","missing","Test connection",""
 "Library\Backend\TahoeLAFS\TahoeUI.fr-FR.resx","label1.Text","missing","Server",""
 "Library\Backend\TahoeLAFS\TahoeUI.fr-FR.resx","label5.Text","missing","Port (optional)",""
@@ -1551,10 +1449,6 @@ Do you want to continue anyway?","Duplicati n'a pas pu vérifier l'existence du 
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.fr-FR.resx","UnexpectedJsonFragmentType","not-updated","Found the Json fragment {0} but expected {1}",""
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.fr-FR.resx","UnrecognizedUriError","not-updated","Unsupported URL format, must start with ""/uri/URI:DIR2:""",""
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.fr-FR.resx","UriHasQueryError","not-updated","The supplied URL contains a query, which is not allowed",""
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.fr-FR.resx","DescriptionAcceptAnyCertificateLong","unused","","Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible."
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.fr-FR.resx","DescriptionAcceptAnyCertificateShort","unused","","Accept any server certificate"
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.fr-FR.resx","DescriptionAcceptHashLong","unused","","If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces."
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.fr-FR.resx","DescriptionAcceptHashShort","unused","","Optionally accept a known SSL certificate"
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.fr-FR.resx","ApproveCertificateHashQuestion","not-updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?",""
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.fr-FR.resx","CreateMissingFolderQuestion","not-updated","The folder does not exist, do you want to create it?",""
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.fr-FR.resx","EmptyFolderPathError","not-updated","You must enter the name of the folder where the data should be stored",""

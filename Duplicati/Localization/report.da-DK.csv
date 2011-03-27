@@ -91,7 +91,6 @@
 "GUI\HelperControls\CommandLineOptionGrid.da-DK.resx","enabledDataGridViewCheckBoxColumn.HeaderText","updated","Enabled","Aktiveret"
 "GUI\HelperControls\CommandLineOptionGrid.da-DK.resx","nameDataGridViewTextBoxColumn.HeaderText","updated","Name","Navn"
 "GUI\HelperControls\CommandLineOptionGrid.da-DK.resx","valueDataGridViewTextBoxColumn.HeaderText","updated","Value","Værdi"
-"GUI\HelperControls\CommandLineOptionGrid.da-DK.resx","argumentDataGridViewTextBoxColumn.HeaderText","unused","","argumentet"
 "GUI\HelperControls\DurationEditor.da-DK.resx","EasyDuration.Items","updated","Each day","Hver dag"
 "GUI\HelperControls\DurationEditor.da-DK.resx","EasyDuration.Items1","updated","Each week","Hver uge"
 "GUI\HelperControls\DurationEditor.da-DK.resx","EasyDuration.Items2","updated","Each second week","Hver anden uge"
@@ -351,7 +350,6 @@ En nyere version af Mono aktiverer denne side."
 "GUI\Wizard pages\Add backup\AdvancedOptions.da-DK.resx","EditFilters.Text","updated","Modify filters that control what files are included in the backup","Rediger de filtre som styrer indholdet af backup'en"
 "GUI\Wizard pages\Add backup\AdvancedOptions.da-DK.resx","IncludeDuplicatiSetup.Text","updated","Include the current Duplicati setup in the backup","Inkluder Duplicati opsætningen i backup'en"
 "GUI\Wizard pages\Add backup\AdvancedOptions.da-DK.resx","EditOverrides.Text","updated","Manually override settings (advanced)","Angiv manuelle indstillinger (avanceret)"
-"GUI\Wizard pages\Add backup\AdvancedOptions.da-DK.resx","ThrottleOptions.Text","unused","","Angiv indstillinger der begrænser maskinforbrug, såsom grænser for båndbredde"
 "GUI\Wizard pages\Add backup\CleanupSettings.da-DK.resx","EnableFullBackupClean.Text","updated","Never keep more than this many full backups","Gem aldrig mere end dette antal fulde backup'er"
 "GUI\Wizard pages\Add backup\CleanupSettings.da-DK.resx","CleanFullBackupHelptext.Text","updated","To prevent the backups from growing indefinetly, old backups should be deleted regularly","For at forhindre at en backup bruger ubegrænset plads, bør gamle backup data slettes regelmæssigt"
 "GUI\Wizard pages\Add backup\CleanupSettings.da-DK.resx","EnableCleanupDuration.Text","updated","Never keep backups older than this","Behold aldrig backup data ældre end"
@@ -391,7 +389,6 @@ En nyere version af Mono aktiverer denne side."
 "GUI\Wizard pages\Add backup\SelectWhen.da-DK.resx","NeverFullRadio.Text","updated","Always perform an incremental backup, never full (not recommended)","Dan altid en trinvis backup, aldrig en fuld (ikke anbefalet)"
 "GUI\Wizard pages\Add backup\SelectWhen.da-DK.resx","IncrementalPeriodRadio.Text","updated","Incremental, then full after this period:","Trinvis, men fuld efter denne periode:"
 "GUI\Wizard pages\Add backup\SelectWhen.da-DK.resx","FullStrategyPanel.Text","updated","Full / Incremental strategy","Strategi for fuld / trinvis kørsel"
-"GUI\Wizard pages\Add backup\SettingOverrides.da-DK.resx","dataGridViewTextBoxColumn1.HeaderText","unused","","argumentet"
 "GUI\Wizard pages\Add backup\ThrottleOptions.da-DK.resx","BackupLimitEnabled.Text","updated","Each backup size limit ","Størrelsesgrænse for hver backup"
 "GUI\Wizard pages\Add backup\ThrottleOptions.da-DK.resx","AsyncEnabled.Text","updated","Upload asyncronosly","Upload asynkront"
 "GUI\Wizard pages\Add backup\ThrottleOptions.da-DK.resx","label1.Text","updated","Size of each volume","Maksimal filstørrelse"
@@ -509,9 +506,6 @@ that it contains the files and folders that you expect.","Opsætningen er indlæ
 Hvis du gemmer opsætningen vil opsætningen gemmes i et nyt format.
 Kontroller venligst indholdet af næste backup, for at
 sikre at denne indeholder de forventede filer."
-"GUI\Wizard pages\Add backup\Strings\SelectFiles.da-DK.resx","MultipleSourcesError","unused","","Due to your machine setup, it is not possible to backup
-the selected folders in the same backup.
-Try unchecking some items, and create more than one backup."
 "GUI\Wizard pages\Add backup\Strings\SelectName.da-DK.resx","DuplicateNameEnteredError","updated","There already exists a backup with that name","Der findes allerede en backup med samme navn"
 "GUI\Wizard pages\Add backup\Strings\SelectName.da-DK.resx","InvalidNameEnteredError","updated","Failed to validate the backup name: {0}","Kunne ikke validere backup navnet: {0}"
 "GUI\Wizard pages\Add backup\Strings\SelectName.da-DK.resx","NoNameEnteredError","updated","You must enter a name for the backup","Du skal angive et navn til backup'en"
@@ -767,82 +761,6 @@ Content filer kontrolleret: {2}
 Fejl: {3}"
 "CommandLine\Strings\Program.da-DK.resx","VerificationErrorHeader","updated","Reported error messages:","Fejl beskeder fundet:"
 "CommandLine\Strings\Program.da-DK.resx","WrongNumberOfArgumentsError","updated","Wrong number of aguments","Forkert antal argumenter"
-"CommandLine\Strings\Program.da-DK.resx","ProgramUsage","unused","","********** Duplicati v. {0} **********
-
-Anvendelse:
-
- Backup (udfør en fuld eller trinvis backup):
-  Duplicati.CommandLine [full] [options] <kilde mappe> <backend>
-
- Gendan (gendan alle eller nogle filer):
-  Duplicati.CommandLine [options] <backend> <destinationsmappe>
-
- Oprydning (fjern delvise og ubrugte filer):
-  Duplicati.CommandLine cleanup [options] <backend>
-
- Liste med filer:
-  Duplicati.CommandLine list [options] <backend>
-
- Liste med backup sæt:
-  Duplicati.CommandLine collection-status [options] <backend>
-
- Liste med indhold (filer der kan gendannes):
-  Duplicati.CommandLine list-current-files [options] <backend>
-
- Liste med kildemapper (mapper der er taget backup af):
-  Duplicati.CommandLine list-source-folders [options] <backend>
-
- Liste med signature filer (filer i et enkelt backup sæt):
-  Duplicati.CommandLine list-actual-signature-files [options] <backend>
-
- Find sidste version af en fil:
-  Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>
-
- Ryd signatur cache:
-  Duplicati.CommandLine purge-signature-cache [options]
-
- Kontroler backup integritet:
-  Duplicati.CommandLine verify <backend> --verification-level=manifest|signatures|full
-
- Slet gamle backup sæt:
-  Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
-  Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>
-
- Opret mappe (gøres normalt automatisk):
-  Duplicati.CommandLine create-folder [options] <backend>
-
- En <backend> genkendes ved en url, såsom ftp://host/ eller ssh://server/.
- Ved at bruge dette system kan Duplicati afgøre om der skal tages en backup eller gendannes filer.
- Kommandoerne til oprydning og sletning, fjerner ikke filer medmindre indstillingen --force er sat, så du kan undersøge hvilke filer der bliver slettet, før de rent faktisk bliver slettet.
- Oprydningskommandoen bør ikke bruges medmindre en backup blev afbrudt og der derfor er delvise efterladte filer. Duplicati vil vise en besked hvis dette er sket.
- Kommandoen til sletning kan bruges til at fjerne gamle backup sæt efterhånden som nyere backup sæt dannes.
-
-Indstillings typer:
- Der findes følgende indstillingstyper:
-  Heltal: en numerisk værdi
-  Boolsk værdi: en sandhedsværdi, --force og --force=true er det samme. --force=false er det modsatte
-  Tidsinterval: en tid angivet i det specielle tidsformat (beskrevet herunder)
-  Størrelse: en størrelse, såsom 5mb eller 200kb
-  Valgmulighed: en af de angivne muligheder
-  Sti: stien til en mappe eller fil
-  Tekst: enhver anden type
-  
-Tider:
- Duplicati bruger samme tidssystem som duplicity, hvor tider kan angives som:
-  1: teksten ""now"", som angiver det nuværende tidspunkt
-  2: antallet af sekunder efter epoch, f.eks.: 123456890
-  3: en tekst såsom ""2009-03-26T08:30:00+01:00""
-  4: en interval tekst med Y, M, W, D, h, m, s for År, Måned, Uge, Dag, time, minut og sekund, f.eks.: ""1M4D"" for en måned og fire dage, eller ""5m"" for fem minutter.
-
-Filtre:
- Duplicati bruger filtre til at inkludere og ekskludere filer.
-  Duplicati bruger et ""første match"" system, hvor det først matchende filter angiver om en fil inkluderes eller ekskluderes. Internt anvender Duplicati regulære udtryk som filtre, men understøtter filtre i fil-globbing formatet. Rækkefølgen af filtrene på kommandolinien angiver hvilken rækkefølge de anvendes i. Et eksempel:
-    --include=*.txt --exclude=*\Thumbs.db --include=*
-
-  Selvom det sidste filter inkluderer alt, bliver ingen filer med navnet ""Thumbs.db"" inkluderet, fordi de matcher ekskluderingsreglen før inkluderingsreglen. Stier evalueres i deres fulde format, og som stier der er relative til kildemappen, men inklusiv en foranstillet skråstreg. Et eksempel:
-
-{1}
-  Hvis en mappe er ekskluderet bliver alle filer i den mappe altid ekskluderet, også selvom der er filtre der inkluederer filer i mappen. Hvis mappen inkluderes med et efterfølgende wildcard, bliver alle filer i mappen inkluderet. Hvis mappen inkluderes uden et wildcard, kan filer inkluderes eller ekskluderes med ekstra filtre."
 "CommandLine\Decrypter\Strings\Program.da-DK.resx","ProgramUsage","updated","Usage: Duplicati.CommandLine.Decrypter.exe <passphrase> <inputfile> <outputfile>","Anvendelse: Duplicati.CommandLine.Decrypter.exe <passphrase> <inputfile> <outputfile>"
 "Library\Utility\Strings\FilenameFilter.da-DK.resx","FilterContainsPathSeparator","updated","Filter contains: {0}","Filter indeholder: {0}"
 "Library\Utility\Strings\Sizeparser.da-DK.resx","InvalidSizeValueError","updated","Invalid size value: {0}","Ugyldig størrelsesværdi: {0}"
@@ -1139,11 +1057,6 @@ Fejlbesked: {1}"
 "Library\Encryption\Strings\AESEncryption.da-DK.resx","BadKeyStretchError","updated","Bad key stretch","Fejl i nøgle udstrækning"
 "Library\Encryption\Strings\AESEncryption.da-DK.resx","Description_v2","updated","This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption.","Dette modul krypterer alle filer i samme format som AESCrypt, og bruger 256 bit AES kryptering"
 "Library\Encryption\Strings\AESEncryption.da-DK.resx","DisplayName","updated","AES-256 encryption, built in","AES-256 kryptering, indbygget"
-"Library\Encryption\Strings\AESEncryption.da-DK.resx","AesencryptiondontallowfallbackLong","unused","","Hvis dekryptering fejler mens der bruges AESCrypt, må der ikke forsøges at anvende det forrige krypteringsformat. Denne indstilling kan ikke angives samtidig med --{0}."
-"Library\Encryption\Strings\AESEncryption.da-DK.resx","AesencryptiondontuseaescryptLong","unused","","Duplicati anvender AESCrypt filformatet, men forrige versioner benyttede en simplere krypteringsmetode. Benyt denne indstilling for at tvinge Duplicati til at anvende det forrige format. Denne indstilling kan ikke angives samtidig med --{0}."
-"Library\Encryption\Strings\AESEncryption.da-DK.resx","AesencryptiondontuseaescryptShort","unused","","Benyt ikke AES Crypt formatet"
-"Library\Encryption\Strings\AESEncryption.da-DK.resx","Description","unused","","Dette modul krypterer alle filer på samme måde som AESCrypt gør, med 256 bit AES kryptering. Tidligere versioner af Duplicati anvendte en simplere krypteringsmetode (stadig 256 bit), uden besked digest. Kommandolinie parameteren --{0} kan bruges til at skifte til det tidligere format, men det anbefales ikke. Dette modul finder automatisk det anvendte format og dekrypterer det med den korrekte metode."
-"Library\Encryption\Strings\AESEncryption.da-DK.resx","OptionsAreMutuallyExclusiveError","unused","","Det er ikke tilladt at angive både --{0} og --{1} "
 "Library\Encryption\Strings\EncryptionBase.da-DK.resx","DecryptionError","updated","Failed to decrypt data (invalid passphrase?): {0}","Kunne ikke dekryptere data (forkert kode?): {0}"
 "Library\Encryption\Strings\GPGCommonOptions.da-DK.resx","GpgAutodetectedInfo","updated","Leave empty to use the gpg application found: {0}","Hvis der ikke indtastes en sti, anvendes det fundne gpg program: {0}"
 "Library\Encryption\Strings\GPGCommonOptions.da-DK.resx","GpgNotAutodetectedWarning","updated","The gpg application could not be located, please enter the path manually","Der blev ikke fundet et gpg program, indtast venligst stien manuelt"
@@ -1327,14 +1240,6 @@ Forsæt uden et brugernavn?"
 "Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","DescriptionUseSSLShort","updated","Instructs Duplicati to use an SSL (ftps) connection","Brug SSL (ftps) forbindelse"
 "Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","DisplayName","updated","FTP based","FTP baseret"
 "Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","MissingFolderError","updated","The folder {0} was not found, message: {1}","Mappen {0} blev ikke fundet, besked: {1}"
-"Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","DescriptionAcceptAnyCertificateLong","unused","","Brug denne indstilling for at acceptere alle server certifikater, uanset hvilke fejl de har. Benyt venligst –accept-specified-ssl istedet hvis det er muligt."
-"Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","DescriptionAcceptAnyCertificateShort","unused","","Tillad alle server certifikater"
-"Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","DescriptionAcceptHashLong","unused","","Hvis dit server certifikat bliver angivet som ugyldigt (f.eks. med selvudstedte certifikater), kan du angive certifikat hash værdien for at godkende det alligevel. Hash værdien skal angives i hexadecimalt format uden mellemrum"
-"Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","DescriptionAcceptHashShort","unused","","Accepter et kendt SSL certifikat"
-"Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","UploadVerificationFailure","unused","","Filen {0} blev uploaded til serveren, men blev ikke fundet på serveren"
-"Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","UploadSizeVerificationFailure","unused","","Filen {0} blev uploaded til serveren, men den rapporterede filstørrelse var {1} og burde være {2}"
-"Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","DescriptionNolistverifyShort","unused","","Kontroller ikke uploads"
-"Library\Backend\FTP\Strings\FTPBackend.da-DK.resx","DescriptionNolistverifyLong","unused","","Fordi FTP protokollen ikke kan afgøre om en upload blev afsluttet korrekt eller afbrudt, bliver upload informationen kontrolleret efter upload. Brug denne indstilling for at deaktivere kontrollen, hvilket øger muligheden for at en fejl opstår, men øger også ydelsen."
 "Library\Backend\FTP\Strings\FTPUI.da-DK.resx","ApproveCertificateHashQuestion","updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?","Certifikatet var ikke gyldigt ({0}). Vil du godkende certifikatet alligevel og forsøge igen?"
 "Library\Backend\FTP\Strings\FTPUI.da-DK.resx","CreateMissingFolderQuestion","updated","The folder does not exist, do you want to create it?","Mappen findes ikke, vil du oprette den?"
 "Library\Backend\FTP\Strings\FTPUI.da-DK.resx","EmptyHashError","updated","You have not entered a hash string","Du har ikke angivet en hash værdi"
@@ -1494,10 +1399,6 @@ Dette kan være fordi file er slettet eller utilgængelig, men det kan også væ
 Fejlbesked: {3}"
 "Library\Backend\WEBDAV\Strings\WEBDAV.da-DK.resx","DescriptionUseSSLLong","updated","Use this flag to communicate using Secure Socket Layer (SSL) over http (https).","Brug denne indstilling for at kommunikere med Secure Socket Layer (SSL) over http (https)"
 "Library\Backend\WEBDAV\Strings\WEBDAV.da-DK.resx","DescriptionUseSSLShort","updated","Instructs Duplicati to use an SSL (https) connection","Brug SSL (https) forbindelse"
-"Library\Backend\WEBDAV\Strings\WEBDAV.da-DK.resx","DescriptionAcceptAnyCertificateLong","unused","","Brug denne indstilling for at acceptere alle server certifikater, uanset hvilke fejl de har. Benyt venligst --accept-specified-ssl istedet hvis det er muligt."
-"Library\Backend\WEBDAV\Strings\WEBDAV.da-DK.resx","DescriptionAcceptAnyCertificateShort","unused","","Tillad alle server certifikater"
-"Library\Backend\WEBDAV\Strings\WEBDAV.da-DK.resx","DescriptionAcceptHashLong","unused","","Hvis dit server certifikat bliver angivet som ugyldigt (f.eks. med selvudstedte certifikater), kan du angive certifikat hash værdien for at godkende det alligevel. Hash værdien skal angives i hexadecimalt format uden mellemrum"
-"Library\Backend\WEBDAV\Strings\WEBDAV.da-DK.resx","DescriptionAcceptHashShort","unused","","Accepter et kendt SSL certifikat"
 "Library\Backend\WEBDAV\Strings\WebDAVUI.da-DK.resx","ApproveCertificateHashQuestion","updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?","Certifikatet var ikke gyldigt ({0}). Vil du godkende certifikatet alligevel og forsøge igen?"
 "Library\Backend\WEBDAV\Strings\WebDAVUI.da-DK.resx","CreateMissingFolderQuestion","updated","The folder does not exist, do you want to create it?","Mappen findes ikke, vil du oprette den?"
 "Library\Backend\WEBDAV\Strings\WebDAVUI.da-DK.resx","EmptyFolderPathWarning","updated","You have not entered a folder, this will store all files in the root directory of the server.
@@ -1551,29 +1452,6 @@ Du skal angive et unikt container navn til hver backup.
 Du kan indtaste et vilkårligt navn."
 "Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","PageDescription","updated","On this page you can select where to store the backup data.","På denne side kan du angive hvor data skal gemmes"
 "Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","PageTitle","updated","Backup storage options","Backup destination"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","BucketnameCaseWarning","unused","","The bucket name is not in all lower case.
-{0}
-Do you want to convert the bucket name to lower case?"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","BucketnameNotPrefixedWarning","unused","","The bucket name does not start with your user ID.
-To avoid using a bucket owned by another user,
-it is recommended that you put your user ID in front of the bucket name.
-Do you want to insert the user ID in front of the bucket name?"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","CreateMissingBucket","unused","","The bucket does not exist, do you want to create it?"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","EmptyAWSIDError","unused","","You must enter your AWS Access ID.
-You may click the link to the right
-to open the AWS login page, and retrieve it."
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","EmptyAWSKeyError","unused","","You must enter your AWS Secret Key.
-You may click the link to the right
-to open the AWS login page, and retrieve it."
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","EmptyBucketnameError","unused","","You must enter a name for the bucket.
-You must use a unique name for each backup.
-You may enter any name you like."
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","EuroBucketsRequireLowerCaseError","unused","","The european buckets require that the bucket name is in lower case."
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","MonoRequiresExistingBucket","unused","","A bug in Mono versions older than 2.4.3,
- prevents the backend from detecting and missing buckets.
-Due to this, it is recommended that you create the bucket.
-Do you want to create the bucket now?"
-"Library\Backend\CloudFiles\Strings\CloudFilesUI.da-DK.resx","NewS3RequiresLowerCaseError","unused","","The new amazon s3 API requires that bucket names are all lower case."
 "Library\Backend\CloudFiles\Strings\MD5CalculatingStream.da-DK.resx","IncorrectUsageError","updated","Cannot read and write on the same stream","Kan ikke læse og skrive til samme stream"
 "Winforms\Controls\PasswordConfirmationDialog.da-DK.resx","label1.Text","updated","Password","Kodeord"
 "Winforms\Controls\PasswordConfirmationDialog.da-DK.resx","CancelBtn.Text","updated","Cancel","Annuller"
@@ -1699,7 +1577,6 @@ Vil du fortsætte alligevel?"
 "Library\Backend\SSH\Strings\SSHUI.da-DK.resx","PageDescription","updated","On this page you can select where to store the backup data.","På denne side kan du angive hvor data skal gemmes"
 "Library\Backend\SSH\Strings\SSHUI.da-DK.resx","PageTitle","updated","Backup storage options","Backup destination"
 "Library\Backend\SSH\Strings\SSHUI.da-DK.resx","PasswordRequiredManagedError","updated","A password is required when using the managed SSH option and no keyfile is supplied","Et kodeord er krævet når der anvendes managed SSH og der ikke anvendes nøglefil"
-"Library\Backend\SSH\Strings\SSHUI.da-DK.resx","PasswordRequiredError","unused","","A password is required when using the managed SSH option"
 "Library\Backend\TahoeLAFS\TahoeUI.da-DK.resx","TestConnection.Text","updated","Test connection","Test forbindelse"
 "Library\Backend\TahoeLAFS\TahoeUI.da-DK.resx","label5.Text","updated","Port (optional)","Port (valgfri)"
 "Library\Backend\TahoeLAFS\TahoeUI.da-DK.resx","label2.Text","updated","Path","Sti"
@@ -1715,10 +1592,6 @@ Vil du fortsætte alligevel?"
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.da-DK.resx","UnexpectedJsonFragmentType","updated","Found the Json fragment {0} but expected {1}","Fandt Json fragmentet {0} men forventede {1}"
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.da-DK.resx","UnrecognizedUriError","updated","Unsupported URL format, must start with ""/uri/URI:DIR2:""","URL'en skal starte med ""/uri/URI:DIR2:"""
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.da-DK.resx","UriHasQueryError","updated","The supplied URL contains a query, which is not allowed","URL'en indeholder en query, hvilket ikke er tilladt"
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.da-DK.resx","DescriptionAcceptAnyCertificateLong","unused","","Brug denne indstilling for at acceptere alle server certifikater, uanset hvilke fejl de har. Benyt venligst --accept-specified-ssl istedet hvis det er muligt."
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.da-DK.resx","DescriptionAcceptAnyCertificateShort","unused","","Tillad alle server certifikater"
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.da-DK.resx","DescriptionAcceptHashLong","unused","","Hvis dit server certifikat bliver angivet som ugyldigt (f.eks. med selvudstedte certifikater), kan du angive certifikat hash værdien for at godkende det alligevel. Hash værdien skal angives i hexadecimalt format uden mellemrum"
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.da-DK.resx","DescriptionAcceptHashShort","unused","","Accepter et kendt SSL certifikat"
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.da-DK.resx","ApproveCertificateHashQuestion","updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?","Certifikatet var ikke gyldigt ({0}). Vil du godkende certifikatet alligevel og forsøge igen?"
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.da-DK.resx","CreateMissingFolderQuestion","updated","The folder does not exist, do you want to create it?","Mappen findes ikke, vil du oprette den?"
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.da-DK.resx","EmptyFolderPathError","updated","You must enter the name of the folder where the data should be stored","Du skal indtaste navnet på den mappe hvor data skal gemmes i"

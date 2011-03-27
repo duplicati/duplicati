@@ -50,11 +50,6 @@
 "GUI\ApplicationSetup.pt-BR.resx","LicenseLink.Text","missing","Homepage",""
 "GUI\ApplicationSetup.pt-BR.resx","LicenseLink.ToolTip","missing","Click to go to the homepage of the currently selected section",""
 "GUI\ApplicationSetup.pt-BR.resx","LicenseSections.ToolTip","missing","Lists the available license sections",""
-"GUI\ApplicationSetup.pt-BR.resx","UseGPGEncryption.Text","unused","","GNU Privacy Guard (externo)"
-"GUI\ApplicationSetup.pt-BR.resx","BrowseSFTPDialog.Title","unused","","Selecione o executável do SFTP"
-"GUI\ApplicationSetup.pt-BR.resx","BrowseGPGDialog.Title","unused","","Selecione o executável do GNU PG"
-"GUI\ApplicationSetup.pt-BR.resx","groupBox3.Text","unused","","Configuração de senha aplicada a novos backups"
-"GUI\ApplicationSetup.pt-BR.resx","UseAESEncryption.Text","unused","","AES (interno)"
 "GUI\ListBackupFiles.pt-BR.resx","groupBox1.Text","updated","Loading file list, please wait ...","Carregando lista de arquivos, aguarde ..."
 "GUI\ListBackupFiles.pt-BR.resx","CancelBtn.Text","updated","Close","Fechar"
 "GUI\ListBackupFiles.pt-BR.resx","$this.Text","updated","Files in selected backup","Arquivos no backup selecionado"
@@ -270,14 +265,6 @@ Mensagem de erro: {0}"
 "GUI\Strings\Program.pt-BR.resx","RunbackupCommandDescription","not-updated","Runs the backup with the name supplied. If no backup name is supplied, the available backups are displayed",""
 "GUI\Strings\Program.pt-BR.resx","ShowstausCommandDescription","not-updated","Displays the status window",""
 "GUI\Strings\Program.pt-BR.resx","UnencrypteddatabaseCommandDescription","not-updated","Disables database encryption",""
-"GUI\Strings\Program.pt-BR.resx","MenuQuit","unused","","Finalizar"
-"GUI\Strings\Program.pt-BR.resx","MenuSettings","unused","","Configurações"
-"GUI\Strings\Program.pt-BR.resx","MenuStatus","unused","","Status"
-"GUI\Strings\Program.pt-BR.resx","MenuWizard","unused","","Assistente ..."
-"GUI\Strings\Program.pt-BR.resx","TrayStatusReady","unused","","Duplicati está pronto"
-"GUI\Strings\Program.pt-BR.resx","TrayStatusRunning","unused","","Duplicati está executando {0}"
-"GUI\Strings\Program.pt-BR.resx","NamedBackupNotFound","unused","","The backup named ""{0}"" was not found"
-"GUI\Strings\Program.pt-BR.resx","MultipleNamedBackupsFound","unused","","The backup named ""{0}"" was found {1} times"
 "GUI\Strings\Scheduler.pt-BR.resx","InvalidTimeSetupError","not-updated","Unable to find a valid date, given the start date {0}, the repetition interval {1} and the allowed days {2}",""
 "GUI\Strings\ServiceStatus.pt-BR.resx","BackupStatusError","updated","Failed backup","O backup falhou"
 "GUI\Strings\ServiceStatus.pt-BR.resx","BackupStatusOK","updated","Successfull backup","Backup realizado com sucesso"
@@ -319,10 +306,6 @@ Press ""Finish"" to attempt the delete again.",""
 "GUI\Wizard pages\FirstLaunch.pt-BR.resx","RestoreSettingsHelp.Text","missing","You have used Duplicati before, and want to restore your setup",""
 "GUI\Wizard pages\FirstLaunch.pt-BR.resx","RestoreFilesHelp.Text","missing","You do not want to set up Duplicati, but just want to restore some files",""
 "GUI\Wizard pages\FirstLaunch.pt-BR.resx","RestoreFiles.Text","missing","Restore files from a backup",""
-"GUI\Wizard pages\FirstLaunch.pt-BR.resx","label1.Text","unused","","Selecione uma das opções abaixo e clique em próximo"
-"GUI\Wizard pages\FirstLaunch.pt-BR.resx","label2.Text","unused","","Selecione esta opção caso não tenha utilizado o Duplicati anteriormente"
-"GUI\Wizard pages\FirstLaunch.pt-BR.resx","label3.Text","unused","","Selecione esta opção para recuperar as configurações utilizadas anteriormente"
-"GUI\Wizard pages\FirstLaunch.pt-BR.resx","Restore.Text","unused","","Restaurar configurações de uma instalação anterior do Duplicati"
 "GUI\Wizard pages\MainPage.pt-BR.resx","label1.Text","updated","What do you want to do?","O que você deseja fazer?"
 "GUI\Wizard pages\MainPage.pt-BR.resx","Backup.Text","updated","Run a backup immediately","Executar um backup imediatamente"
 "GUI\Wizard pages\MainPage.pt-BR.resx","Remove.Text","updated","Remove an existing backup","Remover um backup existente"
@@ -333,11 +316,6 @@ Press ""Finish"" to attempt the delete again.",""
 "GUI\Wizard pages\MainPage.pt-BR.resx","donate_link.ToolTip","missing","Show your appreciation by donating, any amount is accepted",""
 "GUI\Wizard pages\MainPage.pt-BR.resx","donate_button.ToolTip","missing","Show your appreciation by donating, any amount is accepted",""
 "GUI\Wizard pages\SelectBackend.pt-BR.resx","Question.Text","updated","Where do you want to store the backups?","Onde você deseja armazenar seus backups?"
-"GUI\Wizard pages\SelectBackend.pt-BR.resx","File.Text","unused","","Um disco externo ou de rede"
-"GUI\Wizard pages\SelectBackend.pt-BR.resx","WebDAV.Text","unused","","WEBDAV em um servidor remoto"
-"GUI\Wizard pages\SelectBackend.pt-BR.resx","S3.Text","unused","","Armazenamento Amazon S3"
-"GUI\Wizard pages\SelectBackend.pt-BR.resx","FTP.Text","unused","","FTP em um servidor remoto"
-"GUI\Wizard pages\SelectBackend.pt-BR.resx","SSH.Text","unused","","SSH (SFTP) em um servidor remoto"
 "GUI\Wizard pages\SelectBackup.pt-BR.resx","topLabel.Text","updated","Select backup to modify","Selecione o backup que deseja modificar"
 "GUI\Wizard pages\SelectBackup.pt-BR.resx","ShowAdvanced.Text","missing","Show advanced options",""
 "GUI\Wizard pages\SelectBackup.pt-BR.resx","DirectRestore.Text","missing","Restore files directly",""
@@ -352,8 +330,6 @@ Right click to change target folder",""
 "GUI\HelperControls\Strings\BackupItems.pt-BR.resx","TooltipFullBackupWithSize","not-updated","Full backup - {0}",""
 "GUI\HelperControls\Strings\BackupItems.pt-BR.resx","TooltipIncrementalBackup","not-updated","Incremental backup",""
 "GUI\HelperControls\Strings\BackupItems.pt-BR.resx","TooltipIncrementalBackupWithSize","not-updated","Incremental backup - {0}, chain: {1}",""
-"GUI\HelperControls\Strings\BackupItems.pt-BR.resx","NoDataRecieved","unused","","Nenhum arquivo recebido"
-"GUI\HelperControls\Strings\BackupItems.pt-BR.resx","TooltipPartialBackup","unused","","Backup parcial"
 "GUI\HelperControls\Strings\BackupTreeView.pt-BR.resx","ConfirmDeleteFolder","updated","Do you want to delete the folder {0} and all the backups contained in it?","Deseja apagar a pasta {0} e todos os backups contidos nela?"
 "GUI\HelperControls\Strings\BackupTreeView.pt-BR.resx","ConfirmRemoveBackup","updated","Remove the backup '{0}' ?","Remover o backup '{0}' ?"
 "GUI\HelperControls\Strings\BackupTreeView.pt-BR.resx","NewBackup","updated","New Backup","Novo backup"
@@ -391,9 +367,6 @@ A newer version of Mono will enable this page.",""
 "GUI\Wizard pages\Add backup\AdvancedOptions.pt-BR.resx","EditOverrides.Text","updated","Manually override settings (advanced)","Alterar opções manualmente (muito avançado)"
 "GUI\Wizard pages\Add backup\AdvancedOptions.pt-BR.resx","SelectCleanup.Text","missing","Select when to remove old backups",""
 "GUI\Wizard pages\Add backup\AdvancedOptions.pt-BR.resx","LimitOptions.Text","missing","Set limits, such as volumesize and bandwidth limits",""
-"GUI\Wizard pages\Add backup\AdvancedOptions.pt-BR.resx","SelectIncremental.Text","unused","","Selecionar a periodicidade dos backups complestos e quando devem ser removidos"
-"GUI\Wizard pages\Add backup\AdvancedOptions.pt-BR.resx","ThrottleOptions.Text","unused","","Selecionar opções para limitar o uso de CPU e rede"
-"GUI\Wizard pages\Add backup\AdvancedOptions.pt-BR.resx","EditVolumeFilenames.Text","unused","","Alterar os nomes dos arquivos gerados no backup (avançado)"
 "GUI\Wizard pages\Add backup\CleanupSettings.pt-BR.resx","EnableFullBackupClean.Text","missing","Never keep more than this many full backups",""
 "GUI\Wizard pages\Add backup\CleanupSettings.pt-BR.resx","CleanFullBackupHelptext.Text","missing","To prevent the backups from growing indefinetly, old backups should be deleted regularly",""
 "GUI\Wizard pages\Add backup\CleanupSettings.pt-BR.resx","EnableCleanupDuration.Text","missing","Never keep backups older than this",""
@@ -407,13 +380,6 @@ A newer version of Mono will enable this page.",""
 "GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","EncryptionModuleLabel.Text","missing","Encryption method",""
 "GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","EncryptionModule.ToolTip","missing","Choose the encryption method",""
 "GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","GeneratePasswordButton.ToolTip","missing","Click here to generate a random password",""
-"GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","UseGPGEncryption.Text","unused","","GnuPG (requer que o GnuPG esteja instalado)"
-"GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","PasswordGeneratorSettings.Text","unused","","Criar uma senha"
-"GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","EncryptionMethod.Text","unused","","Método de criptografia"
-"GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","label2.Text","unused","","Caracteres"
-"GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","label3.Text","unused","","Caracteres"
-"GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","GeneratePassword.Text","unused","","Gerar senha"
-"GUI\Wizard pages\Add backup\PasswordSettings.pt-BR.resx","UseAESEncryption.Text","unused","","AES (interno)"
 "GUI\Wizard pages\Add backup\SelectFiles.pt-BR.resx","IncludeDocuments.Text","updated","Include documents","Documentos"
 "GUI\Wizard pages\Add backup\SelectFiles.pt-BR.resx","IncludeSettings.Text","updated","Include application settings","Configurações de aplicativos"
 "GUI\Wizard pages\Add backup\SelectFiles.pt-BR.resx","IncludeDesktop.Text","updated","Include files on the desktop","Arquivos no desktop"
@@ -446,15 +412,10 @@ A newer version of Mono will enable this page.",""
 "GUI\Wizard pages\Add backup\SelectWhen.pt-BR.resx","NeverFullRadio.Text","missing","Always perform an incremental backup, never full (not recommended)",""
 "GUI\Wizard pages\Add backup\SelectWhen.pt-BR.resx","IncrementalPeriodRadio.Text","missing","Incremental, then full after this period:",""
 "GUI\Wizard pages\Add backup\SelectWhen.pt-BR.resx","FullStrategyPanel.Text","missing","Full / Incremental strategy",""
-"GUI\Wizard pages\Add backup\SelectWhen.pt-BR.resx","EnableRepeat.Text","unused","","Repetir o backup regularmente"
 "GUI\Wizard pages\Add backup\SettingOverrides.pt-BR.resx","dataGridViewTextBoxColumn1.HeaderText","missing","argument",""
-"GUI\Wizard pages\Add backup\SettingOverrides.pt-BR.resx","InfoLabel.Text","unused","","Painel de descrição"
 "GUI\Wizard pages\Add backup\ThrottleOptions.pt-BR.resx","BackupLimitEnabled.Text","updated","Each backup size limit ","Tamanho limite do backup"
 "GUI\Wizard pages\Add backup\ThrottleOptions.pt-BR.resx","AsyncEnabled.Text","updated","Upload asyncronosly","Upload assíncrono"
 "GUI\Wizard pages\Add backup\ThrottleOptions.pt-BR.resx","label1.Text","updated","Size of each volume","Tamanho de cada volume"
-"GUI\Wizard pages\Add backup\ThrottleOptions.pt-BR.resx","ThreadPriorityEnabled.Text","unused","","Definir prioridade de execução"
-"GUI\Wizard pages\Add backup\ThrottleOptions.pt-BR.resx","UploadLimitEnabled.Text","unused","","Limite de upload (backup)"
-"GUI\Wizard pages\Add backup\ThrottleOptions.pt-BR.resx","DownloadLimitEnabled.Text","unused","","Limite de download (recuperação)"
 "GUI\Wizard pages\Backends\RawContainer.pt-BR.resx","label1.Text","missing","Destination",""
 "GUI\Wizard pages\Delete backup\DeleteFinished.pt-BR.resx","label1.Text","updated","Summary","Resumo"
 "GUI\Wizard pages\Delete backup\DeleteFinished.pt-BR.resx","label2.Text","updated","Warning: You cannot restore the files after the backup is deleted!!!","Atenção: Não será possível restaurar os arquivos após o backup ser apagado!!!"
@@ -542,10 +503,6 @@ You cannot recover the password from within Duplicati after saving this setup.
 
 Are you sure you have a safely stored copy of the generated password?",""
 "GUI\Wizard pages\Add backup\Strings\PasswordSettings.pt-BR.resx","NoEncryptionMethodSelected","not-updated","You must select an encryption method.",""
-"GUI\Wizard pages\Add backup\Strings\PasswordSettings.pt-BR.resx","GPGNotFoundWarning","unused","","O Duplicati não conseguiu verificar a presença do GNU Privacy Guard.
-GPG pode funcionar mesmo assim se estiver na pasta do sistema.
-Se a criptografia falhar, não será feito backup de nenhum arquivo
-Gostaria de continuar mesmo assim?"
 "GUI\Wizard pages\Add backup\Strings\SelectFiles.pt-BR.resx","CalculatingSize","updated","Calculating size ...","Calculando tamanho ..."
 "GUI\Wizard pages\Add backup\Strings\SelectFiles.pt-BR.resx","FinalSizeCalculated","updated","The selected items take up {0} of space","Os ítens selecionados ocupam {0}"
 "GUI\Wizard pages\Add backup\Strings\SelectFiles.pt-BR.resx","NoFilesSelectedError","updated","You have not included any files.","Você não incluiu nenhum arquivo."
@@ -561,16 +518,6 @@ How do you want to proceed?",""
 If you save the backup settings, the internal storage will be change to the new version.
 Please verify the content of the backup after the next run to ensure
 that it contains the files and folders that you expect.",""
-"GUI\Wizard pages\Add backup\Strings\SelectFiles.pt-BR.resx","FolderDoesNotExistError","unused","","A pasta ""{0}"" não existe."
-"GUI\Wizard pages\Add backup\Strings\SelectFiles.pt-BR.resx","ModifiedFiltersWarning","unused","","Você modificou os filtros e selecionou arquivos por grupos.
-Considerando que esta funcionalidade utiliza filtros existe a possibilidade de que
-seus filtros sejamremovidos após isso.
-Se você optar por selecionar somente uma pasta, seus filtros não serão modificados.
-
-Deseja continuar, e possivelmente perder seus filtros?"
-"GUI\Wizard pages\Add backup\Strings\SelectFiles.pt-BR.resx","MultipleSourcesError","unused","","Devido as configurações do computador, não é possível
-fazer o backup das pastas selecionadas.
-Tente desmarcar alguns ítens e criar mais de um backup."
 "GUI\Wizard pages\Add backup\Strings\SelectName.pt-BR.resx","DuplicateNameEnteredError","updated","There already exists a backup with that name","Já existe um backup com este nome"
 "GUI\Wizard pages\Add backup\Strings\SelectName.pt-BR.resx","NoNameEnteredError","updated","You must enter a name for the backup","Você precisa escolher um nome para o backup"
 "GUI\Wizard pages\Add backup\Strings\SelectName.pt-BR.resx","PageDescription","updated","On this page you can enter a name for the backup, so you can find and modify it later","Nesta página você pode selecionar o nome para o backup, assim você pode encontrar e modificá-lo posteriormente"
@@ -599,19 +546,12 @@ This can result in very lengthy restore operations, and increases the probabilit
 Do you want to keep these settings?",""
 "GUI\Wizard pages\Add backup\Strings\SelectWhen.pt-BR.resx","TooShortFullDurationError","not-updated","The interval between full backups must be more than {0} minutes.",""
 "GUI\Wizard pages\Add backup\Strings\SelectWhen.pt-BR.resx","TooShortScheduleDurationError","not-updated","The schedule interval must be more than {0} minutes.",""
-"GUI\Wizard pages\Add backup\Strings\SelectWhen.pt-BR.resx","NoRepetitionWarning","unused","","Não foi definida uma repetição, seu backup não será executado.
-Se você for executar o backup manualmente não há problema, mas não é recomendado..
-Deseja continuar?"
-"GUI\Wizard pages\Add backup\Strings\SelectWhen.pt-BR.resx","TooShortDurationError","unused","","A duração definida é menor do que cinco minutos. Isto não é aceitável."
 "GUI\Wizard pages\Add backup\Strings\SettingOverrides.pt-BR.resx","PageDescription","updated","On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!","Nesta página você pode sobrescrever todas as configurações do Duplicati. Isto é muito avançcado, tenha cuidado!"
 "GUI\Wizard pages\Add backup\Strings\SettingOverrides.pt-BR.resx","PageTitle","updated","Override settings","Sobrescrever configurações"
 "GUI\Wizard pages\Add backup\Strings\SettingOverrides.pt-BR.resx","BackendLoadError","not-updated","An error occured while loading backend settings: {0}",""
 "GUI\Wizard pages\Add backup\Strings\SettingOverrides.pt-BR.resx","CompressionLoadError","not-updated","An error occured while loading compression settings: {0}",""
 "GUI\Wizard pages\Add backup\Strings\SettingOverrides.pt-BR.resx","EncryptionLoadError","not-updated","An error occured while loading encryption settings: {0}",""
 "GUI\Wizard pages\Add backup\Strings\SettingOverrides.pt-BR.resx","GenericModuleLoadError","not-updated","An error occured while loading generic module settings: {0}",""
-"GUI\Wizard pages\Add backup\Strings\SettingOverrides.pt-BR.resx","InfoLabelFormat","unused","","Valor do tipo: {0}. {1}. {2}"
-"GUI\Wizard pages\Add backup\Strings\SettingOverrides.pt-BR.resx","PageNotSupportedWarning","unused","","Esta página não é suportada na plataforma atual, este problema é conhecido.
-Uma versão mais recente do Mono irá ativar esta página."
 "GUI\Wizard pages\Add backup\Strings\ThrottleOptions.pt-BR.resx","PageDescription","updated","On this page you may select limits that prevent the backup procedure from using too many resources","Nesta página você pode definir limites para previnir que o backup utilize todos os recursos disponíveis do seu computador"
 "GUI\Wizard pages\Add backup\Strings\ThrottleOptions.pt-BR.resx","PageTitle","updated","Select how to limit the backup","Selecione como limitar o backup"
 "GUI\Wizard pages\Delete backup\Strings\DeleteFinished.pt-BR.resx","PageDescription","updated","You are now ready to delete the backup. Please note that you cannot restore the backup ever again","Você está pronto para apagar o backup. Após esta operação não será mais possível restaurar o backup"
@@ -647,11 +587,6 @@ Error message: {1}",""
 "GUI\Wizard pages\Restore\Strings\TargetFolder.pt-BR.resx","PathTooLongWarning","not-updated","The restored files will use a path that is {0} characters long, but Windows only supports paths up to around 250 characters. If you proceed some files may not be restored.
 
 Do you want to continue with the restore procedure anyway?",""
-"GUI\Wizard pages\Restore\Strings\TargetFolder.pt-BR.resx","CreateFolderWarning","unused","","A pasta selecionada não existe. Deseja criá-la?"
-"GUI\Wizard pages\Restore\Strings\TargetFolder.pt-BR.resx","FolderNotEmptyWarning","unused","","A pasta selecionada não está vazia. Deseja utilizá-la mesmo assim?"
-"GUI\Wizard pages\Restore\Strings\TargetFolder.pt-BR.resx","FolderPathRelativeError","unused","","Você precisa definir o caminho completo para a pasta"
-"GUI\Wizard pages\Restore\Strings\TargetFolder.pt-BR.resx","ValidatingFolderError","unused","","Um erro ocorreu ao verfificar a pasta de destino. Tenha certeza de que ela existe e está acessível.
-Mensagem de erro: {0}"
 "GUI\Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.pt-BR.resx","PageDescription","updated","You have now entered all the required data, and can now restore the setup.","Você definiu todos os parâmetros necessários, agora pode restaurar as configurações."
 "GUI\Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.pt-BR.resx","PageTitle","updated","Ready to restore settings","Pronto para restaurar configurações"
 "GUI\Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.pt-BR.resx","RestoreFailedError","updated","Failed to restore setup files, the error message was:
@@ -769,92 +704,8 @@ Signature files verified: {1}
 Content files verified: {2}
 Errors: {3}",""
 "CommandLine\Strings\Program.pt-BR.resx","VerificationErrorHeader","not-updated","Reported error messages:",""
-"CommandLine\Strings\Program.pt-BR.resx","AliasesHeader","unused","","apelidos"
-"CommandLine\Strings\Program.pt-BR.resx","ConfirmPassphrasePrompt","unused","","Confirme a senha"
-"CommandLine\Strings\Program.pt-BR.resx","DefaultValueHeader","unused","","valor padrão"
-"CommandLine\Strings\Program.pt-BR.resx","EmptyPassphraseError","unused","","Senhas em branco não são permitidas"
-"CommandLine\Strings\Program.pt-BR.resx","EnterPassphrasePrompt","unused","","Digite a senha"
-"CommandLine\Strings\Program.pt-BR.resx","PassphraseMismatchError","unused","","A senha não coincide"
-"CommandLine\Strings\Program.pt-BR.resx","ValuesHeader","unused","","valores"
-"CommandLine\Strings\Program.pt-BR.resx","ProgramUsage","unused","","********** Duplicati v. {0} **********
-
-Usage:
-
- Backup (make a full or incremental backup):
-  Duplicati.CommandLine [full] [options] <sourcefolder> <backend>
-
- Restore (restore all or some files):
-  Duplicati.CommandLine [options] <backend> <destinationfolder>
-
- Cleanup (remove partial and unused files):
-  Duplicati.CommandLine cleanup [options] <backend>
-
- List files:
-  Duplicati.CommandLine list [options] <backend>
-
- List backup sets:
-  Duplicati.CommandLine collection-status [options] <backend>
-
- List content files (files that can be restored):
-  Duplicati.CommandLine list-current-files [options] <backend>
-
- List source folders (folders backed up from):
-  Duplicati.CommandLine list-source-folders [options] <backend>
-
- List signature files (files in a single backup volume set):
-  Duplicati.CommandLine list-actual-signature-files [options] <backend>
-
- Find the last version of a file:
-  Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>
-
- Verify backup integrity:
-  Duplicati.CommandLine verify <backend> --verification-level=manifest|signatures|full
-  
- Purge signature cache:
-  Duplicati.CommandLine purge-signature-cache [options]
-
- Delete old backups:
-  Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
-  Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>
-
- Create folder (usually done automatically):
-  Duplicati.CommandLine create-folder [options] <backend>
-
- A <backend> is identified by an url like ftp://host/ or ssh://server/.
- Using this system, Duplicati can detect if you want to backup or restore.
- The cleanup and delete commands do not delete files, unless the --force option is specified, so you may examine what files are affected, before actually deleting the files.
- The cleanup command should not be used unless a backup was interrupted and has left partial files. Duplicati will inform you if this happens.
- The delete command can be used to remove backup sets when newer backups are present.
-
-Option types:
- The following option types are available:
-  Integer: a numerical value
-  Boolean: a truth value, --force and --force=true are equivalent. --force=false is the opposite
-  Timespan: a time in the special time format (explained below)
-  Size: a size like 5mb or 200kb
-  Enumeration: any of the listed values
-  Path: the path to a folder or file
-  String: any other type
-  
-Times:
- Duplicati uses the time system from duplicity, where times may be presented as:
-  1: the string ""now"", indicating the current time
-  2: the number of seconds after epoch, eg: 123456890
-  3: a string like ""2009-03-26T08:30:00+01:00""
-  4: an interval string, using Y, M, W, D, h, m, s for Year, Month, Week, Day, hour, minute or second, eg: ""1M4D"" for one month and four days, or ""5m"" for five minutes.
-
-Filters:
- Duplicati uses filters to include and exclude files.
-  Duplicati uses a ""first-touch"" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplicati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:
-    --include=*.txt --exclude=*\Thumbs.db --include=*
-
-  Even though the last filter includes everything, no files named ""Thumbs.db"" are included because they match the exclude rule before the include rule. Paths are evaluated in full, and as paths that are relative to folder being backed up, but including a leading slash. An example:
-
-{1}
-  If a folder is excluded, files in that folder are always excluded, even if there are filters that include files in that folder. If a folder is included with a wildcard at the end, all files are included, if the folder is included without a wildcard, files may be excluded or included with extra rules."
 "CommandLine\Decrypter\Strings\Program.pt-BR.resx","ProgramUsage","not-updated","Usage: Duplicati.CommandLine.Decrypter.exe <passphrase> <inputfile> <outputfile>",""
 "Library\Utility\Strings\FilenameFilter.pt-BR.resx","FilterContainsPathSeparator","not-updated","Filter contains: {0}",""
-"Library\Utility\Strings\FilenameFilter.pt-BR.resx","FilterContainsPathSeperator","unused","","O filtro contém: {0}"
 "Library\Utility\Strings\Sizeparser.pt-BR.resx","InvalidSizeValueError","updated","Invalid size value: {0}","Valor de tamanho inválido: {0}"
 "Library\Utility\Strings\SslCertificateValidator.pt-BR.resx","InvalidCallSequence","not-updated","The SSL certificate validator was called in an incorrect order",""
 "Library\Utility\Strings\SslCertificateValidator.pt-BR.resx","VerifyCertificateException","not-updated","The server certificate had the error {0} and the hash {1}
@@ -902,7 +753,6 @@ Use the commandline option --accept-specified-ssl-hash={1} to accept the server 
 "Library\Main\Strings\BackendWrapper.pt-BR.resx","TooManyOrphansFoundError","not-updated","Auto-cleanup specified but there are {0} orphan files, and there should not be more than 2",""
 "Library\Main\Strings\BackendWrapper.pt-BR.resx","UploadSizeVerificationFailure","not-updated","The file {0} was uploaded to the server, but the reported filesize was {1} and the size was expected to be {2}",""
 "Library\Main\Strings\BackendWrapper.pt-BR.resx","UploadVerificationFailure","not-updated","The file {0} was uploaded but not found on the server",""
-"Library\Main\Strings\BackendWrapper.pt-BR.resx","PassphraseMissingError","unused","","Passphrase não foi definida"
 "Library\Main\Strings\ExecutionStoppedException.pt-BR.resx","DefaultMessage","not-updated","The user has stopped the operation",""
 "Library\Main\Strings\FilenameStrategy.pt-BR.resx","InvalidEntryTypeError","updated","Invalid entry type:{0}","Tipo de entrada inválida:{0}"
 "Library\Main\Strings\Interface.pt-BR.resx","BadSortingDetectedError","updated","Bad sorting of backup times detected","Detectada classificação incorreta dos tempos de backup"
@@ -977,9 +827,6 @@ Use the commandline option --accept-specified-ssl-hash={1} to accept the server 
 "Library\Main\Strings\Interface.pt-BR.resx","FilenameMismatchError","not-updated","The manifest report that the file should be named {0} but it was named {1}",""
 "Library\Main\Strings\Interface.pt-BR.resx","StatusUploadingVerificationVolume","not-updated","Uploading verification file",""
 "Library\Main\Strings\Interface.pt-BR.resx","DeleteManifestsSuggestion","not-updated","If this error cannot be resolved, you can either create a new full backup or delete the offending manifests manually, followed by a cleanup command. The offending manifest files are:",""
-"Library\Main\Strings\Interface.pt-BR.resx","BackendNotFoundError","unused","","Protocolo não encontrado: {0}"
-"Library\Main\Strings\Interface.pt-BR.resx","ManifestNoFilesError","unused","","Lista de arquivos inválida, nenhum arquivo encontrado: {0}"
-"Library\Main\Strings\Interface.pt-BR.resx","ManifestWrongCountError","unused","","Lista de arquivos inválida, contagem incorreta: {0}"
 "Library\Main\Strings\Manifestfile.pt-BR.resx","EofInManifestFile","not-updated","Got EOF while attempting to locate the self-hash of a manifest",""
 "Library\Main\Strings\Manifestfile.pt-BR.resx","HashGenerationFailure","not-updated","The hash generation for the manifest file resulted in the hash value {0} but should have been {1}",""
 "Library\Main\Strings\Manifestfile.pt-BR.resx","InternalError","not-updated","An internal error occured when creating the manifest, please report this to the developers",""
@@ -1113,10 +960,6 @@ Use the commandline option --accept-specified-ssl-hash={1} to accept the server 
 "Library\Main\Strings\Options.pt-BR.resx","VerificationLevelShort","not-updated","Level of verification",""
 "Library\Main\Strings\Options.pt-BR.resx","ListverifyuploadsLong","not-updated","Some protocols, like FTP, and some servers have problems detecting an interrupted transfer and will assume that the transfer completed, even if it did not. If this option is enabled Duplicati will list the contents of the backend after each upload and verify that the file exists and has the expected size.",""
 "Library\Main\Strings\Options.pt-BR.resx","ListverifyuploadsShort","not-updated","Verify uploads by listing contents",""
-"Library\Main\Strings\Options.pt-BR.resx","GpgprogrampathLong","unused","","O caminho para o programa GNU Privacy Guard. Se não for informado, o Duplicati irá assumir que o programa ""gpg"" está disponível na pasta do sistema."
-"Library\Main\Strings\Options.pt-BR.resx","GpgprogrampathShort","unused","","O caminho para o GnuPG"
-"Library\Main\Strings\Options.pt-BR.resx","SignkeyLong","unused","","O GNU Privacy Guard pode opcionalmente assinar os volumes com uma chave especial. Esta função não está atualmente ativa no Duplicati."
-"Library\Main\Strings\Options.pt-BR.resx","SignkeyShort","unused","","Assinar chave para o GnuPG"
 "Library\Main\Strings\RSyncDir.pt-BR.resx","CreateFolderError","updated","Failed to create folder: ""{0}"", Error message: {1}","Falha ao criar a pasta: ""{0}"", Mensagem de erro: {1}"
 "Library\Main\Strings\RSyncDir.pt-BR.resx","DeleteFileError","updated","Failed to delete file: ""{0}"", Error message: {1}","Falha ao apagar arquivo: ""{0}"", Mensagem de erro: {1}"
 "Library\Main\Strings\RSyncDir.pt-BR.resx","DeleteFolderError","updated","Failed to remove folder: ""{0}"", Error message: {1}","Falha ao remover pasta: ""{0}"", Mensagem de erro: {1}"
@@ -1157,12 +1000,6 @@ Error message: {1}",""
 "Library\Encryption\Strings\AESEncryption.pt-BR.resx","AesencryptiondontallowfallbackLong_v2","not-updated","If the decryption fails using AES Crypt, dont attempt to use the previous encryption file format. ",""
 "Library\Encryption\Strings\AESEncryption.pt-BR.resx","Description_v2","not-updated","This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption.",""
 "Library\Encryption\Strings\AESEncryption.pt-BR.resx","DisplayName","not-updated","AES-256 encryption, built in",""
-"Library\Encryption\Strings\AESEncryption.pt-BR.resx","UselessEncryptionError","unused","","Criptografia inútil detectada"
-"Library\Encryption\Strings\AESEncryption.pt-BR.resx","OptionsAreMutuallyExclusiveError","unused","","It is not allowed to specify both --{0} and --{1} "
-"Library\Encryption\Strings\AESEncryption.pt-BR.resx","Description","unused","","This module encrypts all files in the same way that AES Crypt does, using 256 bit AES encryption. Earlier versions of Duplicati used a simpler encryption model (still 256 bits) with no message digest. The commandline option --{0} can be used to revert to the previous model, which is not recommended. This module automatically detects the file format and decrypts it with the appropriate method."
-"Library\Encryption\Strings\AESEncryption.pt-BR.resx","AesencryptiondontuseaescryptShort","unused","","Don't use the AES Crypt file format"
-"Library\Encryption\Strings\AESEncryption.pt-BR.resx","AesencryptiondontuseaescryptLong","unused","","Duplicati uses the AES Crypt file format, but previous versions used a simpler encryption method. Use this flag to force the use of the previous format. This option is mutually exclusive with --{0}."
-"Library\Encryption\Strings\AESEncryption.pt-BR.resx","AesencryptiondontallowfallbackLong","unused","","If the decryption fails using AES Crypt, dont attempt to use the previous encryption file format. This option is mutually exclusive with --{0}."
 "Library\Encryption\Strings\EncryptionBase.pt-BR.resx","DecryptionError","updated","Failed to decrypt data (invalid passphrase?): {0}","Não foi possível descriptografar os dados (chave incorreta?): {0}"
 "Library\Encryption\Strings\GPGCommonOptions.pt-BR.resx","GpgAutodetectedInfo","not-updated","Leave empty to use the gpg application found: {0}",""
 "Library\Encryption\Strings\GPGCommonOptions.pt-BR.resx","GpgNotAutodetectedWarning","not-updated","The gpg application could not be located, please enter the path manually",""
@@ -1329,10 +1166,6 @@ Proceed without a username?",""
 "Library\Backend\FTP\Strings\FTPBackend.pt-BR.resx","DescriptionUseSSLLong","not-updated","Use this flag to communicate using Secure Socket Layer (SSL) over ftp (ftps).",""
 "Library\Backend\FTP\Strings\FTPBackend.pt-BR.resx","DescriptionUseSSLShort","not-updated","Instructs Duplicati to use an SSL (ftps) connection",""
 "Library\Backend\FTP\Strings\FTPBackend.pt-BR.resx","MissingFolderError","not-updated","The folder {0} was not found, message: {1}",""
-"Library\Backend\FTP\Strings\FTPBackend.pt-BR.resx","DescriptionAcceptHashShort","unused","","Optionally accept a known SSL certificate"
-"Library\Backend\FTP\Strings\FTPBackend.pt-BR.resx","DescriptionAcceptHashLong","unused","","If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces."
-"Library\Backend\FTP\Strings\FTPBackend.pt-BR.resx","DescriptionAcceptAnyCertificateShort","unused","","Accept any server certificate"
-"Library\Backend\FTP\Strings\FTPBackend.pt-BR.resx","DescriptionAcceptAnyCertificateLong","unused","","Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible."
 "Library\Backend\FTP\Strings\FTPUI.pt-BR.resx","ApproveCertificateHashQuestion","not-updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?",""
 "Library\Backend\FTP\Strings\FTPUI.pt-BR.resx","CreateMissingFolderQuestion","not-updated","The folder does not exist, do you want to create it?",""
 "Library\Backend\FTP\Strings\FTPUI.pt-BR.resx","EmptyHashError","not-updated","You have not entered a hash string",""
@@ -1473,10 +1306,6 @@ This can be because the file is deleted or unavailable, but it can also be becau
 Error message: {3}",""
 "Library\Backend\WEBDAV\Strings\WEBDAV.pt-BR.resx","DescriptionUseSSLLong","not-updated","Use this flag to communicate using Secure Socket Layer (SSL) over http (https).",""
 "Library\Backend\WEBDAV\Strings\WEBDAV.pt-BR.resx","DescriptionUseSSLShort","not-updated","Instructs Duplicati to use an SSL (https) connection",""
-"Library\Backend\WEBDAV\Strings\WEBDAV.pt-BR.resx","DescriptionAcceptHashShort","unused","","Optionally accept a known SSL certificate"
-"Library\Backend\WEBDAV\Strings\WEBDAV.pt-BR.resx","DescriptionAcceptHashLong","unused","","If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces."
-"Library\Backend\WEBDAV\Strings\WEBDAV.pt-BR.resx","DescriptionAcceptAnyCertificateShort","unused","","Accept any server certificate"
-"Library\Backend\WEBDAV\Strings\WEBDAV.pt-BR.resx","DescriptionAcceptAnyCertificateLong","unused","","Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible."
 "Library\Backend\WEBDAV\Strings\WebDAVUI.pt-BR.resx","ApproveCertificateHashQuestion","not-updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?",""
 "Library\Backend\WEBDAV\Strings\WebDAVUI.pt-BR.resx","CreateMissingFolderQuestion","not-updated","The folder does not exist, do you want to create it?",""
 "Library\Backend\WEBDAV\Strings\WebDAVUI.pt-BR.resx","EmptyFolderPathWarning","not-updated","You have not entered a folder, this will store all files in the root directory of the server.
@@ -1656,10 +1485,6 @@ Do you want to continue anyway?",""
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.pt-BR.resx","UnexpectedJsonFragmentType","not-updated","Found the Json fragment {0} but expected {1}",""
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.pt-BR.resx","UnrecognizedUriError","not-updated","Unsupported URL format, must start with ""/uri/URI:DIR2:""",""
 "Library\Backend\TahoeLAFS\Strings\TahoeBackend.pt-BR.resx","UriHasQueryError","not-updated","The supplied URL contains a query, which is not allowed",""
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.pt-BR.resx","DescriptionAcceptAnyCertificateLong","unused","","Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible."
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.pt-BR.resx","DescriptionAcceptAnyCertificateShort","unused","","Accept any server certificate"
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.pt-BR.resx","DescriptionAcceptHashLong","unused","","If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces."
-"Library\Backend\TahoeLAFS\Strings\TahoeBackend.pt-BR.resx","DescriptionAcceptHashShort","unused","","Optionally accept a known SSL certificate"
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.pt-BR.resx","ApproveCertificateHashQuestion","not-updated","The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?",""
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.pt-BR.resx","CreateMissingFolderQuestion","not-updated","The folder does not exist, do you want to create it?",""
 "Library\Backend\TahoeLAFS\Strings\TahoeUI.pt-BR.resx","EmptyFolderPathError","not-updated","You must enter the name of the folder where the data should be stored",""
