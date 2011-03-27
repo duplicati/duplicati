@@ -127,6 +127,8 @@ namespace LocalizationTool
             public string Value;
             public string Status;
 
+            public string[] extraFields;
+
             public CSVEntry(List<string> fields)
             {
                 Filename = fields[0];
@@ -134,6 +136,14 @@ namespace LocalizationTool
                 Status = fields[2];
                 Origvalue = fields[3];
                 Value = fields[4];
+
+                if (fields.Count > 5)
+                {
+                    extraFields = new string[fields.Count - 5];
+                    fields.CopyTo(5, extraFields, 0, extraFields.Length);
+                }
+                else
+                    extraFields = null;
             }
         }
 
@@ -259,16 +269,16 @@ namespace LocalizationTool
                         filename = filename.Substring(culture.Length + 1);
 
                         foreach (var item in file.Element("updated").Elements("item"))
-                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Element("original").Value, item.Element("translated").Value);
+                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Element("original").Value, item.Element("translated").Value, null);
 
                         foreach (var item in file.Element("missing").Elements("item"))
-                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Value, "");
+                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Value, "", null);
 
                         foreach (var item in file.Element("not-updated").Elements("item"))
-                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Value, "");
+                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Value, "", null);
 
                         foreach (var item in file.Element("unused").Elements("item"))
-                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, "", item.Value);
+                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, "", item.Value, null);
                     }
                 }
             }
@@ -325,11 +335,11 @@ namespace LocalizationTool
                 foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in added)
                     foreach (KeyValuePair<string, CSVEntry> s in f.Value)
                         if (s.Value.Origvalue == s.Value.Value || s.Value.Value.Trim().Length == 0)
-                            WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, "not-updated", s.Value.Origvalue, s.Value.Value);
+                            WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, "not-updated", s.Value.Origvalue, s.Value.Value, s.Value.extraFields);
 
                 foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in removed)
                     foreach (KeyValuePair<string, CSVEntry> s in f.Value)
-                        WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, "unused", s.Value.Origvalue, s.Value.Value);
+                        WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, "unused", s.Value.Origvalue, s.Value.Value, s.Value.extraFields);
             }
 
             //Re-read the file
@@ -370,14 +380,14 @@ namespace LocalizationTool
 
                 foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in inputValues)
                     foreach (KeyValuePair<string, CSVEntry> s in f.Value)
-                        WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, s.Value.Status, s.Value.Origvalue, s.Value.Value);
+                        WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, s.Value.Status, s.Value.Origvalue, s.Value.Value, s.Value.extraFields);
             }
 
         }
 
         private static string CSV_SEPARATOR = ",";
 
-        private static void WriteCSVLine(System.IO.StreamWriter sw, string filename, string key, string status, string originalText, string translatedText)
+        private static void WriteCSVLine(System.IO.StreamWriter sw, string filename, string key, string status, string originalText, string translatedText, string[] extraFields)
         {
             sw.Write(EscapeCSVString(filename));
             sw.Write(CSV_SEPARATOR);
@@ -388,6 +398,14 @@ namespace LocalizationTool
             sw.Write(EscapeCSVString(originalText));
             sw.Write(CSV_SEPARATOR);
             sw.Write(EscapeCSVString(translatedText));
+
+            if (extraFields != null && extraFields.Length > 0)
+                foreach (string s in extraFields)
+                {
+                    sw.Write(CSV_SEPARATOR);
+                    sw.Write(EscapeCSVString(s));
+                }
+
             sw.WriteLine();
         }
 
