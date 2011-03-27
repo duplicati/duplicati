@@ -414,11 +414,36 @@ namespace Duplicati.CommandLine
             List<string> lines = new List<string>();
             lines.AddRange(
                 string.Format(
-                    Strings.Program.Usage.Replace("\r", ""), 
-                    License.VersionNumbers.Version,
-                    isLinux ? Strings.Program.ExampleLinux : Strings.Program.ExampleWindows
+                    Strings.Program.ProgramUsageHeader.Replace("\r", ""), 
+                    License.VersionNumbers.Version
                 ).Split('\n')
             );
+
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageBackup.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageRestore.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageCleanup.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListFiles.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListSets.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListContentFiles.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListSourceFolders.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListSignatureFiles.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageFindLastVersion.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageVerify.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsagePurgeCache.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageDeleteOld.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageCreateFolders.Replace("\r", "")).Split('\n'));
+
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageBackend.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n" + Strings.Program.ProgramUsageOptionTypes.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n" + Strings.Program.ProgramUsageTimes.Replace("\r", "")).Split('\n'));
+            lines.AddRange(
+                string.Format( 
+                    "\n" + Strings.Program.ProgramUsageFilters.Replace("\r", ""), 
+                    isLinux ? Strings.Program.UsageExampleLinux : Strings.Program.UsageExampleWindows
+                ).Split('\n')
+            );
+
+            lines.Add("");
 
             lines.Add(Strings.Program.DuplicatiOptionsHeader);
             Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());

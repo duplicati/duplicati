@@ -81,7 +81,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
-    <None Include="Resources\Usage.txt" />
     <Content Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>

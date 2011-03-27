@@ -142,7 +142,7 @@
     <value>By default the http requests use the RFC 896 nagling algorithm to support transfer of small packages more effeciently.</value>
   </data>
   <data name="DisableNagleShort" xml:space="preserve">
-    <value>Disable the nagling</value>
+    <value>Disable nagling</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
     <value>Configure http requests</value>

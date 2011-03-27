@@ -145,9 +145,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="Resources\Usage.txt" />
-    <None Include="Resources\ExampleLinux.txt" />
-    <None Include="Resources\ExampleWindows.txt" />
     <Content Include="..\..\thirdparty\gpg\gpg.exe">
       <Link>win-tools\gpg.exe</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

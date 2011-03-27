@@ -30,7 +30,7 @@ namespace Duplicati.CommandLine.Decrypter
         {
             if (args.Length != 3)
             {
-                Console.WriteLine(Strings.Program.Usage);
+                Console.WriteLine(Strings.Program.ProgramUsage);
                 return;
             }
 
