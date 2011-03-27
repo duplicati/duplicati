@@ -209,7 +209,7 @@ namespace LocalizationTool
                             insertTarget.AddAfterSelf(new XElement("data",
                                 new XAttribute("name", item.Key),
                                 new XAttribute(xmlns + "space", "preserve"),
-                                new XElement("value", item.Value)
+                                new XElement("value", item.Value.Value)
                             ));
                         }
 
