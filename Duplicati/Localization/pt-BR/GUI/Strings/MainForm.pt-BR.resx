@@ -150,4 +150,19 @@ Do you want Duplicati to continue waiting for the backup to stop?</value>
     <value>Duplicati is running {0}</value>
     <comment>Text displayed as a tooltip on the tray icon when Duplicati is running a task</comment>
   </data>
+  <data name="BalloonTip_Warning" xml:space="preserve">
+    <value>Backup {0} gave a warning</value>
+  </data>
+  <data name="BalloonTip_Stopped" xml:space="preserve">
+    <value>Finished {0}</value>
+  </data>
+  <data name="BalloonTip_Started" xml:space="preserve">
+    <value>Running {0}</value>
+  </data>
+  <data name="BalloonTip_Running" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="BalloonTip_Error" xml:space="preserve">
+    <value>Failed to run backup {0}: {1}</value>
+  </data>
 </root>

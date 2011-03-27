@@ -168,4 +168,22 @@ Gostaria de usar esta pasta mesmo assim?</value>
     <value>Duplicati Setup, version {0}</value>
     <comment>The dialog title with version number</comment>
   </data>
+  <data name="BalloonNotification_Warnings" xml:space="preserve">
+    <value>On backup errors and warnings</value>
+  </data>
+  <data name="BalloonNotification_StartAndStop" xml:space="preserve">
+    <value>On backup start and stop (and errors/warnings)</value>
+  </data>
+  <data name="BalloonNotification_Start" xml:space="preserve">
+    <value>On backup start (and errors/warnings)</value>
+  </data>
+  <data name="BalloonNotification_Off" xml:space="preserve">
+    <value>No balloon notifications</value>
+  </data>
+  <data name="BalloonNotification_Errors" xml:space="preserve">
+    <value>On backup errors</value>
+  </data>
+  <data name="BalloonNotification_Continous" xml:space="preserve">
+    <value>While backup is running (and on errors/warnings)</value>
+  </data>
 </root>

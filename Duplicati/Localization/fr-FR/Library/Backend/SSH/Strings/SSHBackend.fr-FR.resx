@@ -211,4 +211,10 @@ Please include this information in a bug report:
   <data name="DescriptionSshkeyfileLong" xml:space="preserve">
     <value>Points to a valid OpenSSH keyfile. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client.</value>
   </data>
+  <data name="DescriptionSshnocdShort" xml:space="preserve">
+    <value>Do not use the cd command</value>
+  </data>
+  <data name="DescriptionSshnocdLong" xml:space="preserve">
+    <value>Disable the use of the cd command. This is used to support SSH backends where the cd/pwd is broken. If this option is enabled all paths will be transmitted with full paths.</value>
+  </data>
 </root>

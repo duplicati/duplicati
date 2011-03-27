@@ -330,4 +330,7 @@
   <data name="CannotSkipHashChecksOnBackup" xml:space="preserve">
     <value>Hash check kan ikke deaktiveres hvis der køres en backup</value>
   </data>
+  <data name="DeleteManifestsSuggestion" xml:space="preserve">
+    <value>Hvis dette problem ikke kan løses, kan du enten danne en nu fuld backup eller slette de problematiske manifest filter manuelt, efterfulgt af en cleanup kommando. De problematisk manifest filer er:</value>
+  </data>
 </root>

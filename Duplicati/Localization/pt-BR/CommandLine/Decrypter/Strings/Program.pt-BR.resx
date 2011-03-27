@@ -121,4 +121,7 @@
   <data name="Usage" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Usage.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
   </data>
+  <data name="ProgramUsage" xml:space="preserve">
+    <value>Usage: Duplicati.CommandLine.Decrypter.exe &lt;passphrase&gt; &lt;inputfile&gt; &lt;outputfile&gt;</value>
+  </data>
 </root>

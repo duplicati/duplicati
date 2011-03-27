@@ -156,4 +156,9 @@ Error message: {1}</value>
   <data name="CreateNewFolderWarning" xml:space="preserve">
     <value>The folder {0} does not exist. Do you want to create it?</value>
   </data>
+  <data name="PathTooLongWarning" xml:space="preserve">
+    <value>The restored files will use a path that is {0} characters long, but Windows only supports paths up to around 250 characters. If you proceed some files may not be restored.
+
+Do you want to continue with the restore procedure anyway?</value>
+  </data>
 </root>

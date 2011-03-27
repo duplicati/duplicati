@@ -1,3 +1,0 @@
-    Duplicati.CommandLine /home/user/ ftp://host/folder --exclude=/file.txt
-
-  In this example the file "/home/user/file.txt" is excluded.

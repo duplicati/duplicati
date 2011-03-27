@@ -394,4 +394,22 @@
   <data name="SortedfilelistLong" xml:space="preserve">
     <value>The list of files to back up is normally processed in a random fashion to ensure that all files have an equal probability of being processed. Use this setting to process the files in alphabetical order instead</value>
   </data>
+  <data name="ListverifyuploadsShort" xml:space="preserve">
+    <value>Verify uploads by listing contents</value>
+  </data>
+  <data name="ListverifyuploadsLong" xml:space="preserve">
+    <value>Some protocols, like FTP, and some servers have problems detecting an interrupted transfer and will assume that the transfer completed, even if it did not. If this option is enabled Duplicati will list the contents of the backend after each upload and verify that the file exists and has the expected size.</value>
+  </data>
+  <data name="VerificationLevelShort" xml:space="preserve">
+    <value>Level of verification</value>
+  </data>
+  <data name="VerificationLevelLong" xml:space="preserve">
+    <value>Use this option to change the level of verifiation done by the verify command. The setting "manifest" will only verify the manifest chain. The settings "signature" will also download and verify all signature files. The setting "full", will download all files, including content files, and verify that they are unchanged.</value>
+  </data>
+  <data name="CreateverificationfileShort" xml:space="preserve">
+    <value>Create verification file on server</value>
+  </data>
+  <data name="CreateverificationfileLong" xml:space="preserve">
+    <value>If the backup is encrypted, the remote backend cannot verify the backup contents without the password. If this option is activated, Duplicati stores an unencrypted file on the backend. The file is never read by Duplicati, but allows the remote server to verify the backup integrity without requiring a password. The file contains no sensitive information, only a list of files that are expected to exist on the backend and their respective hashes. This option only has an effect when creating a backup and when verifying a backup set.</value>
+  </data>
 </root>

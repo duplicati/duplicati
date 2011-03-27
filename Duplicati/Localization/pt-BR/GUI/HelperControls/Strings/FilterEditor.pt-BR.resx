@@ -144,4 +144,7 @@
   <data name="InvalidCharsInFilenameError" xml:space="preserve">
     <value>The filename {0} has invalid characters</value>
   </data>
+  <data name="FolderIsRootFolder" xml:space="preserve">
+    <value>The folder {0} is included because it is a source folder</value>
+  </data>
 </root>

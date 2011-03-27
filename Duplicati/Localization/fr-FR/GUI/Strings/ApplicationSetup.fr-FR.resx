@@ -1,2 +1,127 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<root><schema id="root" xmlns="http://www.w3.org/2001/XMLSchema"><import namespace="http://www.w3.org/XML/1998/namespace"></import><element name="root" NS2:IsDataSet="true" xmlns:NS2="urn:schemas-microsoft-com:xml-msdata"><complexType><choice maxOccurs="unbounded"><element name="metadata"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0"></element></sequence><attribute name="name" use="required" type="xsd:string"></attribute><attribute name="type" type="xsd:string"></attribute><attribute name="mimetype" type="xsd:string"></attribute><attribute ref="xml:space"></attribute></complexType></element><element name="assembly"><complexType><attribute name="alias" type="xsd:string"></attribute><attribute name="name" type="xsd:string"></attribute></complexType></element><element name="data"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element><element name="comment" type="xsd:string" minOccurs="0" NS2:Ordinal="2"></element></sequence><attribute name="name" type="xsd:string" use="required" NS2:Ordinal="1"></attribute><attribute name="type" type="xsd:string" NS2:Ordinal="3"></attribute><attribute name="mimetype" type="xsd:string" NS2:Ordinal="4"></attribute><attribute ref="xml:space"></attribute></complexType></element><element name="resheader"><complexType><sequence><element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element></sequence><attribute name="name" type="xsd:string" use="required"></attribute></complexType></element></choice></complexType></element></schema><resheader name="resmimetype"><value>text/microsoft-resx</value></resheader><resheader name="version"><value>2.0</value></resheader><resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader><data name="CacheSize">     <value>Taille du repertoire cache: {0}</value>     <comment>A string displaying the current size of the disk cache</comment>   </data><data name="CalculatingCacheSize">     <value>Calcule la taille du cache ...</value>     <comment>A string displayed in a status label when calculating the size of the signature cache</comment>   </data><data name="ConfirmCacheDelete">     <value>Supprime les fichiers de signature du répertoire: {0}</value>     <comment>A message displayed in a confirmation dialog before deleting the signature cache</comment>   </data><data name="DefaultLanguage">     <value>Langue, {0}</value>     <comment>A string displayed to denote the current default language</comment>   </data><data name="DialogTitle">     <value>Paramètres de Duplicati, version {0}</value>     <comment>The dialog title with version number</comment>   </data><data name="EncryptionModuleLoadError">     <value>Une erreur est survenue durant le chargement du module de cryptage: {0}</value>     <comment>An error message displayed if the encryption module loading fails</comment>   </data><data name="ErrorWhileExaminingFolder">     <value>Une erreur est apparue durant l'analyse du répertoire: {0}. Voulez-vous continuer d'utiliser ce répertoire?</value>     <comment>A string displayed in a messagebox if an error occurs while checking for the existence of a required file</comment>   </data><data name="FolderIsMissingFile">     <value>Le répertoire sélectionné ne contient pas le fichier: {0}. Voulez-vous continuer d'utiliser ce répertoire?</value>     <comment>A string displayed in a messagebox asking the user to approve the use of a folder that does not contain the required file</comment>   </data><data name="LanguageChangedWarning">     <value>La langue à changée, redémarrez le programme pour appliquer les changements.</value>     <comment>A warning displayed to the user when the language has been changed, informing the user that the language change will not be visible until after a restart</comment>   </data><data name="OperationCancelled">     <value>Annulé</value>     <comment>A string displayed in a status label, when an operation is cancelled</comment>   </data><data name="SaveExtensionError">     <value>Une erreur est apparue durant l'enregistrement du paramètre: {0}</value>     <comment>An error message displayed if the settings control throws an exception while validating or saving</comment>   </data><data name="SettingControlsLoadError">     <value>Une erreur est apparue durant le chargement du paramètre:  {0}</value>     <comment>An error message displayed if the settings control loading fails</comment>   </data></root>
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <schema id="root" xmlns="http://www.w3.org/2001/XMLSchema">
+    <import namespace="http://www.w3.org/XML/1998/namespace"></import>
+    <element name="root" NS2:IsDataSet="true" xmlns:NS2="urn:schemas-microsoft-com:xml-msdata">
+      <complexType>
+        <choice maxOccurs="unbounded">
+          <element name="metadata">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0"></element>
+              </sequence>
+              <attribute name="name" use="required" type="xsd:string"></attribute>
+              <attribute name="type" type="xsd:string"></attribute>
+              <attribute name="mimetype" type="xsd:string"></attribute>
+              <attribute ref="xml:space"></attribute>
+            </complexType>
+          </element>
+          <element name="assembly">
+            <complexType>
+              <attribute name="alias" type="xsd:string"></attribute>
+              <attribute name="name" type="xsd:string"></attribute>
+            </complexType>
+          </element>
+          <element name="data">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element>
+                <element name="comment" type="xsd:string" minOccurs="0" NS2:Ordinal="2"></element>
+              </sequence>
+              <attribute name="name" type="xsd:string" use="required" NS2:Ordinal="1"></attribute>
+              <attribute name="type" type="xsd:string" NS2:Ordinal="3"></attribute>
+              <attribute name="mimetype" type="xsd:string" NS2:Ordinal="4"></attribute>
+              <attribute ref="xml:space"></attribute>
+            </complexType>
+          </element>
+          <element name="resheader">
+            <complexType>
+              <sequence>
+                <element name="value" type="xsd:string" minOccurs="0" NS2:Ordinal="1"></element>
+              </sequence>
+              <attribute name="name" type="xsd:string" use="required"></attribute>
+            </complexType>
+          </element>
+        </choice>
+      </complexType>
+    </element>
+  </schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CacheSize">
+    <value>Taille du repertoire cache: {0}</value>
+    <comment>A string displaying the current size of the disk cache</comment>
+  </data>
+  <data name="CalculatingCacheSize">
+    <value>Calcule la taille du cache ...</value>
+    <comment>A string displayed in a status label when calculating the size of the signature cache</comment>
+  </data>
+  <data name="ConfirmCacheDelete">
+    <value>Supprime les fichiers de signature du répertoire: {0}</value>
+    <comment>A message displayed in a confirmation dialog before deleting the signature cache</comment>
+  </data>
+  <data name="DefaultLanguage">
+    <value>Langue, {0}</value>
+    <comment>A string displayed to denote the current default language</comment>
+  </data>
+  <data name="DialogTitle">
+    <value>Paramètres de Duplicati, version {0}</value>
+    <comment>The dialog title with version number</comment>
+  </data>
+  <data name="EncryptionModuleLoadError">
+    <value>Une erreur est survenue durant le chargement du module de cryptage: {0}</value>
+    <comment>An error message displayed if the encryption module loading fails</comment>
+  </data>
+  <data name="ErrorWhileExaminingFolder">
+    <value>Une erreur est apparue durant l'analyse du répertoire: {0}. Voulez-vous continuer d'utiliser ce répertoire?</value>
+    <comment>A string displayed in a messagebox if an error occurs while checking for the existence of a required file</comment>
+  </data>
+  <data name="FolderIsMissingFile">
+    <value>Le répertoire sélectionné ne contient pas le fichier: {0}. Voulez-vous continuer d'utiliser ce répertoire?</value>
+    <comment>A string displayed in a messagebox asking the user to approve the use of a folder that does not contain the required file</comment>
+  </data>
+  <data name="LanguageChangedWarning">
+    <value>La langue à changée, redémarrez le programme pour appliquer les changements.</value>
+    <comment>A warning displayed to the user when the language has been changed, informing the user that the language change will not be visible until after a restart</comment>
+  </data>
+  <data name="OperationCancelled">
+    <value>Annulé</value>
+    <comment>A string displayed in a status label, when an operation is cancelled</comment>
+  </data>
+  <data name="SaveExtensionError">
+    <value>Une erreur est apparue durant l'enregistrement du paramètre: {0}</value>
+    <comment>An error message displayed if the settings control throws an exception while validating or saving</comment>
+  </data>
+  <data name="SettingControlsLoadError">
+    <value>Une erreur est apparue durant le chargement du paramètre:  {0}</value>
+    <comment>An error message displayed if the settings control loading fails</comment>
+  </data>
+  <data name="BalloonNotification_Warnings" xml:space="preserve">
+    <value>On backup errors and warnings</value>
+  </data>
+  <data name="BalloonNotification_StartAndStop" xml:space="preserve">
+    <value>On backup start and stop (and errors/warnings)</value>
+  </data>
+  <data name="BalloonNotification_Start" xml:space="preserve">
+    <value>On backup start (and errors/warnings)</value>
+  </data>
+  <data name="BalloonNotification_Off" xml:space="preserve">
+    <value>No balloon notifications</value>
+  </data>
+  <data name="BalloonNotification_Errors" xml:space="preserve">
+    <value>On backup errors</value>
+  </data>
+  <data name="BalloonNotification_Continous" xml:space="preserve">
+    <value>While backup is running (and on errors/warnings)</value>
+  </data>
+</root>
