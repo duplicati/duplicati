@@ -50,6 +50,7 @@ REM TODO: Make this dynamic wiht report.*.csv
 LocalizationTool.exe import da-DK report.da-DK.csv
 LocalizationTool.exe import fr-FR report.fr-FR.csv
 LocalizationTool.exe import pt-BR report.pt-BR.csv
+LocalizationTool.exe import de-DE report.de-DE.csv
 
 LocalizationTool.exe update
 LocalizationTool.exe build
