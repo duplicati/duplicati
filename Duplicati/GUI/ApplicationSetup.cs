@@ -94,6 +94,16 @@ namespace Duplicati.GUI
                         {
                         }
 
+                bool hasEnglish = false;
+                foreach (ComboBoxItemPair<CultureInfo> c in LanguageSelection.Items)
+                    if (c.Value.Name.Equals("en-US", StringComparison.InvariantCultureIgnoreCase))
+                        hasEnglish = true;
+
+                if (!hasEnglish)
+                {
+                    CultureInfo ci = CultureInfo.GetCultureInfo("en-US");
+                    LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(ci.DisplayName, ci));
+                }
             }
             finally
             {
