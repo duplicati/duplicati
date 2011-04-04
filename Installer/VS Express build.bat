@@ -69,7 +69,9 @@ if exist incBinFiles.PARAFFIN xcopy /I /Y incBinFiles.PARAFFIN incBinFiles.wxs
 if exist incBinFiles.PARAFFIN del incBinFiles.PARAFFIN
 
 xcopy /I /Y /E "..\Duplicati\Localization\compiled\*" "bin\Release\Duplicati"
-"%PROGRAMFILES%\7-zip\7z.exe" a -r "bin\Release\Duplicati.zip" bin\Release\Duplicati
+cd "bin\Release"
+"%PROGRAMFILES%\7-zip\7z.exe" a -r "Duplicati.zip" Duplicati
+cd "..\.."
 
 WixProjBuilder.exe --wixpath="C:\Program Files (x86)\Windows Installer XML v3\bin" WixInstaller.wixproj
 move "bin\Release\Duplicati.msi" "bin\Release\Duplicati.x86.msi"
