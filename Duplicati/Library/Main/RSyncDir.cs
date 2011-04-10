@@ -695,10 +695,9 @@ namespace Duplicati.Library.Main.RSync
         public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Utility.FilenameFilter filter)
         {
             m_filter = filter;
-            //TODO: These should theoretically use the file systems case sensitivity
-            m_oldSignatures = new Dictionary<string, ArchiveWrapper>();
-            m_oldFolders = new Dictionary<string, DateTime>();
-            m_lastVerificationTime = new Dictionary<string, DateTime>();
+            m_oldSignatures = new Dictionary<string, ArchiveWrapper>(Utility.Utility.ClientFilenameStringComparer);
+            m_oldFolders = new Dictionary<string, DateTime>(Utility.Utility.ClientFilenameStringComparer);
+            m_lastVerificationTime = new Dictionary<string, DateTime>(Utility.Utility.ClientFilenameStringComparer);
 
             for (int i = 0; i < sourcefolder.Length; i++)
             {
