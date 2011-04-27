@@ -196,6 +196,24 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The SSH backend can either keep the SSH connection open between commands (GET, PUT, etc.) or it can close the connection. Set this flag to close the connection between commands. This results in slower overall communication with the SSHserver, but may increase the reliability of the connection..
+        /// </summary>
+        internal static string DescriptionCloseConnectionLong {
+            get {
+                return ResourceManager.GetString("DescriptionCloseConnectionLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Close the SSH connection between commands..
+        /// </summary>
+        internal static string DescriptionCloseConnectionShort {
+            get {
+                return ResourceManager.GetString("DescriptionCloseConnectionShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The SSH backend relies on an external program (sftp) to work. Since the external program may change at any time, this may break the backend. Enable this option to get debug information about the ssh connection written to the console. Only used if the --use-sftp-application option is supplied..
         /// </summary>
         internal static string DescriptionDebugToConsoleLong {

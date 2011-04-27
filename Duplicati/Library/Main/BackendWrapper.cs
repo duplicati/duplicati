@@ -13,6 +13,9 @@ namespace Duplicati.Library.Main
         /// The actual backend that this class is wrapping
         /// </summary>
         private Duplicati.Library.Interface.IBackend m_backend;
+
+        private string m_backendUrl;
+
         /// <summary>
         /// The statistics gathering object
         /// </summary>
@@ -161,9 +164,10 @@ namespace Duplicati.Library.Main
 
             m_filenamestrategy = new FilenameStrategy(m_options);
 
-            m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(backend, m_options.RawOptions);
-            if (m_backend == null)
-                throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, m_backend));
+            // Cache the URL for the backend, in case we need to create a new one later
+            m_backendUrl = backend;
+
+            CreateBackend();
 
             if (m_options.AutoCleanup)
                 m_orphans = new List<BackupEntryBase>();
@@ -185,6 +189,15 @@ namespace Duplicati.Library.Main
                 m_queuelock = new object();
                 m_workerThread.Start();
             }
+        }
+
+        private void CreateBackend()
+        {
+            if (m_backend != null)
+                m_backend.Dispose();
+            m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(m_backendUrl, m_options.RawOptions);
+            if (m_backend == null)
+                throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, m_backend));
         }
 
         public void AddOrphan(BackupEntryBase entry)
@@ -562,7 +575,7 @@ namespace Duplicati.Library.Main
         /// <returns>The return value of the invoked function</returns>
         private object ProtectedInvoke(string methodname, params object[] arguments)
         {
-            System.Reflection.MethodInfo method = this.GetType().GetMethod(methodname);
+            System.Reflection.MethodInfo method = GetType().GetMethod(methodname);
             if (method == null)
                 method = this.GetType().GetMethod(methodname, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             if (method == null)
@@ -716,6 +729,9 @@ namespace Duplicati.Library.Main
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
                         System.Threading.Thread.Sleep(m_options.RetryDelay);
+
+                    if (retries > 0)
+                        this.CreateBackend(); // tear down and re-create a backend object
                 }
             } while (retries > 0);
 
@@ -747,6 +763,9 @@ namespace Duplicati.Library.Main
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
                         System.Threading.Thread.Sleep(m_options.RetryDelay);
+
+                    if (retries > 0)
+                        this.CreateBackend(); // tear down and re-create a backend object
                 }
             } while (lastEx != null && retries > 0);
 
@@ -968,6 +987,9 @@ namespace Duplicati.Library.Main
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
                         System.Threading.Thread.Sleep(m_options.RetryDelay);
+
+                    if (retries > 0)
+                        this.CreateBackend(); // tear down and re-create a backend object
                 }
             } while (lastEx != null && retries > 0);
 
@@ -1083,6 +1105,9 @@ namespace Duplicati.Library.Main
                         retries--;
                         if (retries > 0 && m_options.RetryDelay.Ticks > 0)
                             System.Threading.Thread.Sleep(m_options.RetryDelay);
+
+                        if (retries > 0)
+                            this.CreateBackend(); // tear down and re-create a backend object
                     }
                 } while (!success && retries > 0);
 

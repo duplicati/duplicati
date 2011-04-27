@@ -32,6 +32,7 @@ namespace Duplicati.Library.Backend
         public const string SFTP_PATH = "SFTP Path";
         public const string DEFAULT_MANAGED = "Default Managed";
         public const string PATH_TESTED = "SFTP Path Tested";
+        public const string DEFAULT_KEEP_CONNECTION_OPEN = "Default Keep Connection Open";
 
         private IDictionary<string, string> m_applicationSettings;
         private IDictionary<string, string> m_options;
@@ -79,6 +80,7 @@ namespace Duplicati.Library.Backend
             m_options[SFTP_PATH] = SFTPPath.Text;
             m_options[DEFAULT_MANAGED] = UseManagedAsDefault.Checked.ToString();
             m_options[PATH_TESTED] = m_pathTested.ToString();
+            m_options[DEFAULT_KEEP_CONNECTION_OPEN] = DefaultKeepConnectionOpen.Checked.ToString();
 
             return true;
         }
@@ -111,6 +113,11 @@ namespace Duplicati.Library.Backend
                     b = true;
 
                 UseManagedAsDefault.Checked = b;
+
+                if (!m_options.ContainsKey(DEFAULT_KEEP_CONNECTION_OPEN) || !bool.TryParse(m_options[DEFAULT_KEEP_CONNECTION_OPEN], out b))
+                    b = true;
+
+                DefaultKeepConnectionOpen.Checked = b;
 
                 if (!m_options.ContainsKey(PATH_TESTED))
                     m_pathTested = true; //Initially true because we don't want to prompt if there has been no change
@@ -153,7 +160,17 @@ namespace Duplicati.Library.Backend
                 applicationSettings[DEFAULT_MANAGED] = guiOptions[DEFAULT_MANAGED];
             }
 
+            if (guiOptions.ContainsKey(DEFAULT_KEEP_CONNECTION_OPEN))
+            {
+                applicationSettings[DEFAULT_KEEP_CONNECTION_OPEN] = guiOptions[DEFAULT_KEEP_CONNECTION_OPEN];
+            }
+
             return null;
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

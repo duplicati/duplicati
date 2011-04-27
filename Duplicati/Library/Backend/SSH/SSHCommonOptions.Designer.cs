@@ -36,6 +36,7 @@
             this.SFTPPath = new System.Windows.Forms.ComboBox();
             this.BrowseForSFTPDialog = new System.Windows.Forms.OpenFileDialog();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.DefaultKeepConnectionOpen = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -73,10 +74,20 @@
             this.BrowseForSFTPDialog.FileName = "psftp.exe";
             resources.ApplyResources(this.BrowseForSFTPDialog, "BrowseForSFTPDialog");
             // 
+            // DefaultKeepConnectionOpen
+            // 
+            resources.ApplyResources(this.DefaultKeepConnectionOpen, "DefaultKeepConnectionOpen");
+            this.DefaultKeepConnectionOpen.Checked = true;
+            this.DefaultKeepConnectionOpen.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.DefaultKeepConnectionOpen.Name = "DefaultKeepConnectionOpen";
+            this.DefaultKeepConnectionOpen.UseVisualStyleBackColor = true;
+            this.DefaultKeepConnectionOpen.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            // 
             // SSHCommonOptions
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.DefaultKeepConnectionOpen);
             this.Controls.Add(this.SFTPPath);
             this.Controls.Add(this.BrowseForSFTPButton);
             this.Controls.Add(this.UseManagedAsDefault);
@@ -96,5 +107,6 @@
         private System.Windows.Forms.ComboBox SFTPPath;
         private System.Windows.Forms.OpenFileDialog BrowseForSFTPDialog;
         private System.Windows.Forms.ToolTip toolTip;
+        private System.Windows.Forms.CheckBox DefaultKeepConnectionOpen;
     }
 }
