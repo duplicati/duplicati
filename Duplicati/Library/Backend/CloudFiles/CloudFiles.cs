@@ -27,7 +27,8 @@ namespace Duplicati.Library.Backend
 {
     public class CloudFiles : IBackend_v2, IStreamingBackend, IBackendGUI
     {
-        private const string AUTH_URL = "https://api.mosso.com/auth";
+        private const string AUTH_URL_US = "https://api.mosso.com/auth";
+        private const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
 
         private const int ITEM_LIST_LIMIT = 1000;
@@ -37,6 +38,7 @@ namespace Duplicati.Library.Backend
 
         private string m_storageUrl = null;
         private string m_authToken = null;
+        private string m_authUrl;
 
         public CloudFiles()
         {
@@ -92,6 +94,16 @@ namespace Duplicati.Library.Backend
                 m_path = m_path.Substring(0, m_path.Length - 1);
             if (!m_path.StartsWith("/"))
                 m_path = "/" + m_path;
+
+            if (!options.TryGetValue("cloudfiles-authentication-url", out m_authUrl))
+            {
+                string v;
+                if (options.TryGetValue("cloudfiles-uk-account", out v) && Utility.Utility.ParseBool(v, true))
+                    m_authUrl = AUTH_URL_UK;
+                else
+                    m_authUrl = AUTH_URL_US;
+            }
+                
         }
 
         #region IBackend Members
@@ -193,6 +205,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionFTPUsernameShort, Strings.CloudFiles.DescriptionFTPUsernameLong),
                     new CommandLineArgument("cloudfiles-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong),
                     new CommandLineArgument("cloudfiles-accesskey", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong),
+                    new CommandLineArgument("cloudfiles-uk-account", CommandLineArgument.ArgumentType.Boolean, Strings.CloudFiles.DescriptionUKAccountShort, string.Format(Strings.CloudFiles.DescriptionUKAccountLong, "cloudfiles-authentication-url", AUTH_URL_UK)),
+                    new CommandLineArgument("cloudfiles-authentication-url", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthenticationURLShort, string.Format(Strings.CloudFiles.DescriptionAuthenticationURLLong, "cloudfiles-uk-account")),
                 });
             }
         }
@@ -342,7 +356,7 @@ namespace Duplicati.Library.Backend
             //If this is the first call, get an authentication token
             if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
             {
-                HttpWebRequest authReq = (HttpWebRequest)HttpWebRequest.Create(AUTH_URL);
+                HttpWebRequest authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
                 authReq.Headers.Add("X-Auth-User", UrlEncode(m_username));
                 authReq.Headers.Add("X-Auth-Key", UrlEncode(m_password));
                 authReq.Method = "GET";

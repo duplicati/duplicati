@@ -121,6 +121,12 @@
     <value>Supports connections to the CloudFiles backend. Allowed formats are "cloudfiles://api.mosso.com/container/folder" or "cloudfiles://username:password@api.mosso.com/container/folder".
 The shorter format "cloudfiles://container/folder" may be used as long as  the container name is a legal hostname, eg. a container name with no spaces.</value>
   </data>
+  <data name="DescriptionAuthenticationURLLong" xml:space="preserve">
+    <value>Cloudfiles use different servers for authentification based on where the account was purchased, use this option to set an alternate authentication URL. This option overrides --{0}.</value>
+  </data>
+  <data name="DescriptionAuthenticationURLShort" xml:space="preserve">
+    <value>Provide another authentication URL</value>
+  </data>
   <data name="DescriptionFTPPasswordLong" xml:space="preserve">
     <value>The password used to connect to the server. This may also be supplied as the environment variable "FTP_PASSWORD".</value>
   </data>
@@ -138,6 +144,12 @@ The shorter format "cloudfiles://container/folder" may be used as long as  the c
   </data>
   <data name="DescriptionPasswordShort" xml:space="preserve">
     <value>Supplies the access key used to connect to the server</value>
+  </data>
+  <data name="DescriptionUKAccountLong" xml:space="preserve">
+    <value>Duplicati will assume that the credentials given are for a US account, use this option if the account is a UK based account. Note that this is equivalent to setting --{0}={1}.</value>
+  </data>
+  <data name="DescriptionUKAccountShort" xml:space="preserve">
+    <value>Use a UK account</value>
   </data>
   <data name="DescriptionUsernameLong" xml:space="preserve">
     <value>Supplies the username used to authenticate with CloudFiles.</value>

@@ -39,6 +39,7 @@ namespace Duplicati.Library.Backend
             this.label4 = new System.Windows.Forms.Label();
             this.TestConnection = new System.Windows.Forms.Button();
             this.CreateContainer = new System.Windows.Forms.Button();
+            this.UKAccount = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -56,26 +57,27 @@ namespace Duplicati.Library.Backend
             resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
             // 
-            // AWS_ID
+            // Username
             // 
-            resources.ApplyResources(this.Username, "AWS_ID");
-            this.Username.Name = "AWS_ID";
+            resources.ApplyResources(this.Username, "Username");
+            this.Username.Name = "Username";
             this.Username.TextChanged += new System.EventHandler(this.Username_TextChanged);
             // 
-            // AWS_KEY
+            // API_KEY
             // 
             this.API_KEY.AskToEnterNewPassword = false;
+            this.API_KEY.InitialPassword = null;
             this.API_KEY.IsPasswordVisible = false;
-            resources.ApplyResources(this.API_KEY, "AWS_KEY");
+            resources.ApplyResources(this.API_KEY, "API_KEY");
             this.API_KEY.MaximumSize = new System.Drawing.Size(5000, 20);
             this.API_KEY.MinimumSize = new System.Drawing.Size(150, 20);
-            this.API_KEY.Name = "AWS_KEY";
+            this.API_KEY.Name = "API_KEY";
             this.API_KEY.TextChanged += new System.EventHandler(this.API_KEY_TextChanged);
             // 
-            // BucketName
+            // ContainerName
             // 
-            resources.ApplyResources(this.ContainerName, "BucketName");
-            this.ContainerName.Name = "BucketName";
+            resources.ApplyResources(this.ContainerName, "ContainerName");
+            this.ContainerName.Name = "ContainerName";
             this.ContainerName.TextChanged += new System.EventHandler(this.ContainerName_TextChanged);
             // 
             // SignUpLink
@@ -104,10 +106,18 @@ namespace Duplicati.Library.Backend
             this.CreateContainer.UseVisualStyleBackColor = true;
             this.CreateContainer.Click += new System.EventHandler(this.CreateContainer_Click);
             // 
+            // UKAccount
+            // 
+            resources.ApplyResources(this.UKAccount, "UKAccount");
+            this.UKAccount.Name = "UKAccount";
+            this.UKAccount.UseVisualStyleBackColor = true;
+            this.UKAccount.CheckedChanged += new System.EventHandler(this.UKAccount_CheckedChanged);
+            // 
             // CloudFilesUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.UKAccount);
             this.Controls.Add(this.CreateContainer);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.label4);
@@ -137,5 +147,6 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button TestConnection;
         private System.Windows.Forms.Button CreateContainer;
+        private System.Windows.Forms.CheckBox UKAccount;
     }
 }

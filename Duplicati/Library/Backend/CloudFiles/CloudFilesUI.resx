@@ -144,7 +144,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>10</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -171,7 +171,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>9</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -198,70 +198,70 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>8</value>
   </data>
-  <data name="AWS_ID.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="Username.Location" type="System.Drawing.Point, System.Drawing">
     <value>144, 8</value>
   </data>
-  <data name="AWS_ID.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="Username.Size" type="System.Drawing.Size, System.Drawing">
     <value>152, 20</value>
   </data>
-  <data name="AWS_ID.TabIndex" type="System.Int32, mscorlib">
+  <data name="Username.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
   </data>
-  <data name="&gt;&gt;AWS_ID.Name" xml:space="preserve">
-    <value>AWS_ID</value>
+  <data name="&gt;&gt;Username.Name" xml:space="preserve">
+    <value>Username</value>
   </data>
-  <data name="&gt;&gt;AWS_ID.Type" xml:space="preserve">
+  <data name="&gt;&gt;Username.Type" xml:space="preserve">
     <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;AWS_ID.Parent" xml:space="preserve">
+  <data name="&gt;&gt;Username.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;AWS_ID.ZOrder" xml:space="preserve">
-    <value>6</value>
+  <data name="&gt;&gt;Username.ZOrder" xml:space="preserve">
+    <value>7</value>
   </data>
-  <data name="AWS_KEY.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="API_KEY.Location" type="System.Drawing.Point, System.Drawing">
     <value>144, 32</value>
   </data>
-  <data name="AWS_KEY.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="API_KEY.Size" type="System.Drawing.Size, System.Drawing">
     <value>150, 20</value>
   </data>
-  <data name="AWS_KEY.TabIndex" type="System.Int32, mscorlib">
+  <data name="API_KEY.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
   </data>
-  <data name="&gt;&gt;AWS_KEY.Name" xml:space="preserve">
-    <value>AWS_KEY</value>
+  <data name="&gt;&gt;API_KEY.Name" xml:space="preserve">
+    <value>API_KEY</value>
   </data>
-  <data name="&gt;&gt;AWS_KEY.Type" xml:space="preserve">
+  <data name="&gt;&gt;API_KEY.Type" xml:space="preserve">
     <value>Duplicati.Winforms.Controls.PasswordControl, Duplicati.Winforms.Controls, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8bfe994a39631a7b</value>
   </data>
-  <data name="&gt;&gt;AWS_KEY.Parent" xml:space="preserve">
+  <data name="&gt;&gt;API_KEY.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;AWS_KEY.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
-  <data name="BucketName.Location" type="System.Drawing.Point, System.Drawing">
-    <value>144, 56</value>
-  </data>
-  <data name="BucketName.Size" type="System.Drawing.Size, System.Drawing">
-    <value>152, 20</value>
-  </data>
-  <data name="BucketName.TabIndex" type="System.Int32, mscorlib">
+  <data name="&gt;&gt;API_KEY.ZOrder" xml:space="preserve">
     <value>6</value>
   </data>
-  <data name="&gt;&gt;BucketName.Name" xml:space="preserve">
-    <value>BucketName</value>
+  <data name="ContainerName.Location" type="System.Drawing.Point, System.Drawing">
+    <value>144, 56</value>
   </data>
-  <data name="&gt;&gt;BucketName.Type" xml:space="preserve">
+  <data name="ContainerName.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 20</value>
+  </data>
+  <data name="ContainerName.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;ContainerName.Name" xml:space="preserve">
+    <value>ContainerName</value>
+  </data>
+  <data name="&gt;&gt;ContainerName.Type" xml:space="preserve">
     <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;BucketName.Parent" xml:space="preserve">
+  <data name="&gt;&gt;ContainerName.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;BucketName.ZOrder" xml:space="preserve">
-    <value>4</value>
+  <data name="&gt;&gt;ContainerName.ZOrder" xml:space="preserve">
+    <value>5</value>
   </data>
   <data name="SignUpLink.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -288,7 +288,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;SignUpLink.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="label4.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 8.25pt, style=Italic</value>
@@ -315,7 +315,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="TestConnection.Location" type="System.Drawing.Point, System.Drawing">
     <value>360, 120</value>
@@ -339,7 +339,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;TestConnection.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="CreateContainer.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
@@ -367,6 +367,33 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;CreateContainer.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="UKAccount.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="UKAccount.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 120</value>
+  </data>
+  <data name="UKAccount.Size" type="System.Drawing.Size, System.Drawing">
+    <value>115, 17</value>
+  </data>
+  <data name="UKAccount.TabIndex" type="System.Int32, mscorlib">
+    <value>13</value>
+  </data>
+  <data name="UKAccount.Text" xml:space="preserve">
+    <value>Use a UK Account</value>
+  </data>
+  <data name="&gt;&gt;UKAccount.Name" xml:space="preserve">
+    <value>UKAccount</value>
+  </data>
+  <data name="&gt;&gt;UKAccount.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;UKAccount.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;UKAccount.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
