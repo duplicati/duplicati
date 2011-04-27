@@ -295,7 +295,7 @@
     <value>Bottom</value>
   </data>
   <data name="_ButtonPanel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 336</value>
+    <value>0, 306</value>
   </data>
   <data name="_ButtonPanel.Size" type="System.Drawing.Size, System.Drawing">
     <value>506, 48</value>
@@ -319,7 +319,7 @@
     <value>-1, 61</value>
   </data>
   <data name="_ContentPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>509, 273</value>
+    <value>509, 244</value>
   </data>
   <data name="_ContentPanel.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -343,7 +343,7 @@
     <value>6, 13</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>506, 384</value>
+    <value>506, 354</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>

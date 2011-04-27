@@ -280,10 +280,4 @@ Please include this information in a bug report:
   <data name="DescriptionSshnocdShort" xml:space="preserve">
     <value>Do not use the cd command</value>
   </data>
-  <data name="DescriptionCloseConnectionLong" xml:space="preserve">
-    <value>The SSH backend can either keep the SSH connection open between commands (GET, PUT, etc.) or it can close the connection. Set this flag to close the connection between commands. This results in slower overall communication with the SSHserver, but may increase the reliability of the connection.</value>
-  </data>
-  <data name="DescriptionCloseConnectionShort" xml:space="preserve">
-    <value>Close the SSH connection between commands.</value>
-  </data>
 </root>

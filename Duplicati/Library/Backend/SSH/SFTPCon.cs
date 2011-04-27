@@ -49,7 +49,6 @@ namespace Duplicati.Library.Backend
         /// <param name="path">The path to list files from</param>
         /// <returns></returns>
         public List<Tamir.SharpSsh.jsch.ChannelSftp.LsEntry> ListFiles(string path)
-
         {
             List<Tamir.SharpSsh.jsch.ChannelSftp.LsEntry> files = new List<Tamir.SharpSsh.jsch.ChannelSftp.LsEntry>();
             foreach (Tamir.SharpSsh.jsch.ChannelSftp.LsEntry e in this.SFTPChannel.ls(path))
@@ -63,24 +62,9 @@ namespace Duplicati.Library.Backend
             this.SFTPChannel.rm(filename);
         }
 
-        public Boolean isCurrentDirHome()
-        {
-            return this.SFTPChannel.pwd() == this.SFTPChannel.getHome();
-        }
-
         public void SetCurrenDir(string path)
         {
             this.SFTPChannel.cd(path);
-        }
-
-        public string getCurrenDir()
-        {
-            return this.SFTPChannel.pwd();
-        }
-
-        public void setCurrentDirHome()
-        {
-            this.SFTPChannel.cd(this.SFTPChannel.getHome());
         }
 
         public void Get(string filename, System.IO.Stream outputstream)

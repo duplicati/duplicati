@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Interface;
 
@@ -30,7 +31,6 @@ namespace Duplicati.Library.Backend
         public const string USE_UNMANAGED_OPTION = "use-sftp-application";
         public const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         public const string SSH_NO_CD_OPTION = "ssh-no-cd-command";
-        public const string SSH_CLOSE_CONNECTION = "ssh-close-connection";
 
         private string m_server;
         private string m_path;
@@ -48,12 +48,9 @@ namespace Duplicati.Library.Backend
 
         private bool m_useManaged = true;
         private bool m_noCdCommand = false;
-        private bool m_closeConnection = false;
 
         private int m_port = 22;
-
-        private SFTPCon m_con;
-
+        
         /// <summary>
         /// A value indicating if the *CLIENT* is a linux client.
         /// Fortunately the sftp program seems to be client dependent, and not server dependant like the ftp program.
@@ -68,7 +65,6 @@ namespace Duplicati.Library.Backend
         public SSH(string url, Dictionary<string, string> options)
             : this()
         {
-            System.Console.WriteLine("SSH: " + url);
             m_options = options;
             Uri u = new Uri(url);
             if (!string.IsNullOrEmpty(u.UserInfo))
@@ -100,16 +96,13 @@ namespace Duplicati.Library.Backend
 
             if (options.ContainsKey(SSH_NO_CD_OPTION))
                 m_noCdCommand = true;
-
-            if (options.ContainsKey(SSH_CLOSE_CONNECTION))
-                m_closeConnection = true;
-
+            
             if (m_isLinux)
             {
                 //HACK: "AbsolutePath" strips extra slashes under mono, so we re-add them here
                 int ix = url.IndexOf(m_path);
                 if (ix > 0 && url[ix - 1] == '/')
-                    m_path = "/" + m_path;
+                        m_path = "/" + m_path;
             }
 
             //Remove 1 leading slash so server/path is mapped to "path",
@@ -123,7 +116,7 @@ namespace Duplicati.Library.Backend
 
             if (options.ContainsKey(SFTP_PATH_OPTION))
                 m_sftp = options[SFTP_PATH_OPTION];
-
+            
             if (string.IsNullOrEmpty(m_sftp))
             {
                 if (m_isLinux)
@@ -207,7 +200,6 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("debug-to-console", CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionDebugToConsoleShort, Strings.SSHBackend.DescriptionDebugToConsoleLong),
                     new CommandLineArgument("transfer-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.SSHBackend.DescriptionTransferTimeoutShort, Strings.SSHBackend.DescriptionTransferTimeoutLong, "15m"),
                     new CommandLineArgument(USE_UNMANAGED_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionUnmanagedShort, Strings.SSHBackend.DescriptionUnmanagedLong, "false"),
-                    new CommandLineArgument(SSH_CLOSE_CONNECTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionCloseConnectionShort, Strings.SSHBackend.DescriptionCloseConnectionLong, "false"),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHBackend.DescriptionSshkeyfileShort, Strings.SSHBackend.DescriptionSshkeyfileLong),
                     new CommandLineArgument(SSH_NO_CD_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHBackend.DescriptionSshnocdShort, Strings.SSHBackend.DescriptionSshnocdLong),
                 });
@@ -229,7 +221,6 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            System.Console.WriteLine("Test()");
             List();
         }
 
@@ -247,15 +238,12 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            System.Console.WriteLine("SSH - Dispose()");
-            if (m_con != null)
-                m_con.Dispose();
         }
 
         #endregion
 
         #region Unmanaged Implementation
-
+        
         private List<IFileEntry> ListUnmanaged()
         {
 
@@ -536,7 +524,7 @@ namespace Duplicati.Library.Backend
                 throw;
             }
 
-            return proc;
+           return proc;
         }
 
         private void CreateFolderUnmanaged()
@@ -558,15 +546,13 @@ namespace Duplicati.Library.Backend
 
         #region Managed Implementation
 
-        private SFTPCon CreateManagedConnection()
+        private SFTPCon CreateManagedConnection(bool changeDir)
         {
             SFTPCon con;
-
-            System.Console.WriteLine("Creating new SSH connection");
-
+            
             string keyfile;
             m_options.TryGetValue(SSH_KEYFILE_OPTION, out keyfile);
-
+            
             if ((keyfile ?? "").Trim().Length > 0)
             {
                 ValidateKeyFile(m_options[SSH_KEYFILE_OPTION]);
@@ -576,47 +562,21 @@ namespace Duplicati.Library.Backend
             }
             else
                 con = new SFTPCon(m_server, m_username, m_password);
-
+            
             con.Connect(m_port);
+
+            try
+            {
+                if (!m_noCdCommand && !string.IsNullOrEmpty(m_path) && changeDir)
+                    con.SetCurrenDir(m_path);
+            }
+            catch (Exception ex)
+            {
+                throw new Interface.FolderMissingException(string.Format(Strings.SSHBackend.FolderNotFoundManagedError, m_path, ex.Message), ex);
+            }
 
             return con;
         }
-
-        private void DestroyManagedConnection()
-        {
-            m_con.Dispose();
-            m_con = null;
-        }
-
-        private SFTPCon GetManagedConnection(bool changeDir)
-        {
-            System.Console.WriteLine("GetManagedConnection : " + changeDir);
-            if (m_con == null)
-            {
-                m_con = CreateManagedConnection();
-            }
-
-            if (changeDir && m_con.isCurrentDirHome() && !m_noCdCommand && !string.IsNullOrEmpty(m_path))
-            {
-                try
-                {
-                    System.Console.WriteLine("Setting current dir : " + m_path);
-                    m_con.SetCurrenDir(m_path);
-                }
-                catch (Exception ex)
-                {
-                    throw new Interface.FolderMissingException(string.Format(Strings.SSHBackend.FolderNotFoundManagedError, m_path, ex.Message), ex);
-                }
-            }
-            else if (!changeDir && !m_con.isCurrentDirHome() && !m_noCdCommand)
-            {
-                System.Console.WriteLine("Setting current dir to home");
-                m_con.setCurrentDirHome();
-            }
-
-            return m_con;
-        }
-
 
         private string getFullPath(string path)
         {
@@ -628,12 +588,9 @@ namespace Duplicati.Library.Backend
 
         private List<IFileEntry> ListManaged()
         {
-            List<IFileEntry> files = new List<IFileEntry>(); 
-
-            try
+            using (SFTPCon con = CreateManagedConnection(true))
             {
-                System.Console.WriteLine("Start ListManaged");
-                SFTPCon con = GetManagedConnection(true);
+                List<IFileEntry> files = new List<IFileEntry>();
 
                 DateTime epochOffset = new DateTime(1970, 1, 1);
 
@@ -643,74 +600,32 @@ namespace Duplicati.Library.Backend
                     if (ls.getFilename().ToString() != "." && ls.getFilename().ToString() != "..")
                         files.Add(new FileEntry(ls.getFilename().ToString(), ls.getAttrs().getSize(), epochOffset.Add(new TimeSpan(ls.getAttrs().getATime() * TimeSpan.TicksPerSecond)), epochOffset.Add(new TimeSpan(ls.getAttrs().getMTime() * TimeSpan.TicksPerSecond))));
 
-                System.Console.WriteLine("Done with ListManaged");
+                return files;
             }
-            finally
-            {
-                if (m_closeConnection)
-                    DestroyManagedConnection();
-            }
-
-            return files;
         }
 
         private void PutManaged(string remotename, string filename)
         {
-            try
-            {
-                System.Console.WriteLine("PutManaged: " + remotename + " - " + filename);
-                using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                    Put(remotename, fs);
-            }
-            finally
-            {
-                if (m_closeConnection)
-                    DestroyManagedConnection();
-            }
-           
+            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                Put(remotename, fs);
         }
 
         private void GetManaged(string remotename, string filename)
         {
-            try
-            {
-                System.Console.WriteLine("GetManaged: " + remotename + " - " + filename);
-                using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                    Get(remotename, fs);
-            }
-            finally
-            {
-                if (m_closeConnection)
-                    DestroyManagedConnection();
-            }
+            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                Get(remotename, fs);
         }
 
         private void DeleteManaged(string remotename)
         {
-            try
-            {
-                System.Console.WriteLine("DeleteManged: " + remotename);
-                GetManagedConnection(true).Delete(remotename);
-            }
-            finally
-            {
-                if (m_closeConnection)
-                    DestroyManagedConnection();
-            }
+            using (SFTPCon con = CreateManagedConnection(true))
+                con.Delete(remotename);
         }
 
         private void CreateFolderManaged()
         {
-            try
-            {
-                System.Console.WriteLine("CreateFolderManaged: " + m_path);
-                GetManagedConnection(false).Mkdir(m_path);
-            }
-            finally
-            {
-                if (m_closeConnection)
-                    DestroyManagedConnection();
-            }
+            using (SFTPCon con = CreateManagedConnection(false))
+                con.Mkdir(m_path);
 
         }
 
@@ -756,15 +671,8 @@ namespace Duplicati.Library.Backend
             if (!m_useManaged)
                 throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
 
-            try
-            {
-                GetManagedConnection(true).Put(getFullPath(remotename), stream);
-            }
-            finally
-            {
-                if (m_closeConnection)
-                    DestroyManagedConnection();
-            }
+            using (SFTPCon con = CreateManagedConnection(true))
+                con.Put(getFullPath(remotename), stream);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -772,15 +680,8 @@ namespace Duplicati.Library.Backend
             if (!m_useManaged)
                 throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
 
-            try
-            {
-                GetManagedConnection(true).Get(getFullPath(remotename), stream);
-            }
-            finally
-            {
-                if (m_closeConnection)
-                    DestroyManagedConnection();
-            }
+            using (SFTPCon con = CreateManagedConnection(true))
+                con.Get(getFullPath(remotename), stream);
         }
 
         #endregion

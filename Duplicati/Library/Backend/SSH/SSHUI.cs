@@ -37,7 +37,6 @@ namespace Duplicati.Library.Backend
         private const string PORT = "Port";
         private const string DEBUG_ENABLED = "Debug enabled";
         private const string USE_UNMANAGED_SSH = "Use Unmanaged SSH";
-        private const string CLOSE_CONNECTION = "Close SSH Connection Between Commands";
         private const string SSH_KEYFILE = "Keyfile";
 
         private const string HAS_WARNED_PATH = "UI: Has warned path";
@@ -113,7 +112,6 @@ namespace Duplicati.Library.Backend
             m_options[USERNAME] = Username.Text;
             m_options[DEBUG_ENABLED] = GenerateDebugOutput.Checked.ToString();
             m_options[USE_UNMANAGED_SSH] = UseUnmanagedSSH.Checked.ToString();
-            m_options[CLOSE_CONNECTION] = CloseConnection.Checked.ToString();
             m_options[SSH_KEYFILE] = Keyfile.Text;
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
@@ -124,7 +122,6 @@ namespace Duplicati.Library.Backend
             bool passwordless;
             bool debug;
             bool useUnmanaged;
-            bool closeConnection;
             int port;
 
             if (!m_options.ContainsKey(PASWORDLESS) || !bool.TryParse(m_options[PASWORDLESS], out passwordless))
@@ -139,13 +136,6 @@ namespace Duplicati.Library.Backend
                 useUnmanaged = false;
                 if (m_applicationSettings.ContainsKey(SSHCommonOptions.DEFAULT_MANAGED))
                     useUnmanaged = !Utility.Utility.ParseBool(m_applicationSettings[SSHCommonOptions.DEFAULT_MANAGED], true);
-            }
-
-            if (!m_options.ContainsKey(CLOSE_CONNECTION) || !bool.TryParse(m_options[CLOSE_CONNECTION], out closeConnection))
-            {
-                closeConnection = false;
-                if (m_applicationSettings.ContainsKey(SSHCommonOptions.DEFAULT_KEEP_CONNECTION_OPEN))
-                    closeConnection = !Utility.Utility.ParseBool(m_applicationSettings[SSHCommonOptions.DEFAULT_KEEP_CONNECTION_OPEN], true);
             }
 
             if (m_options.ContainsKey(HOST))
@@ -168,7 +158,6 @@ namespace Duplicati.Library.Backend
             Port.Value = port;
             GenerateDebugOutput.Checked = debug;
             UseUnmanagedSSH.Checked = useUnmanaged;
-            CloseConnection.Checked = closeConnection;
 
             if (!m_options.ContainsKey(HAS_TESTED) || !bool.TryParse(m_options[HAS_TESTED], out m_hasTested))
                 m_hasTested = false;
@@ -202,8 +191,8 @@ namespace Duplicati.Library.Backend
 
                     options["debug-to-console"] = "";
 
-                    using (SSH ssh = new SSH(destination, options))
-                        ssh.List();
+                    SSH ssh = new SSH(destination, options);
+                    ssh.List();
 
                     MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;
@@ -413,11 +402,6 @@ namespace Duplicati.Library.Backend
                     commandlineOptions[SSH.SSH_KEYFILE_OPTION] = guiOptions[SSH_KEYFILE];
             }
 
-            bool closeConnection = guiOptions.ContainsKey(CLOSE_CONNECTION) ? Utility.Utility.ParseBool(guiOptions[CLOSE_CONNECTION], false) : false;
-
-            if (closeConnection)
-                commandlineOptions[SSH.SSH_CLOSE_CONNECTION] = "";
-
             if (!guiOptions.ContainsKey(HOST))
                 throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, HOST));
 
@@ -426,7 +410,7 @@ namespace Duplicati.Library.Backend
 
         private void UseUnmanagedSSH_CheckedChanged(object sender, EventArgs e)
         {
-            CloseConnection.Enabled = Keyfilelabel.Enabled =
+            Keyfilelabel.Enabled =
             Keyfile.Enabled =
             BrowseForKeyFileButton.Enabled =
                 !UseUnmanagedSSH.Checked;
@@ -447,8 +431,8 @@ namespace Duplicati.Library.Backend
 
                     options["debug-to-console"] = "";
 
-                    using (SSH ssh = new SSH(destination, options))
-                        ssh.CreateFolder();
+                    SSH ssh = new SSH(destination, options);
+                    ssh.CreateFolder();
 
                     MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     m_hasTested = true;

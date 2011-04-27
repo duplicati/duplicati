@@ -144,7 +144,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>3</value>
   </data>
   <data name="UseManagedAsDefault.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -171,14 +171,14 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;UseManagedAsDefault.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>2</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="BrowseForSFTPButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
   </data>
   <data name="BrowseForSFTPButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>238, 8</value>
+    <value>184, 8</value>
   </data>
   <data name="BrowseForSFTPButton.Size" type="System.Drawing.Size, System.Drawing">
     <value>24, 20</value>
@@ -199,7 +199,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;BrowseForSFTPButton.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>1</value>
   </data>
   <data name="SFTPPath.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Left, Right</value>
@@ -208,7 +208,7 @@
     <value>80, 8</value>
   </data>
   <data name="SFTPPath.Size" type="System.Drawing.Size, System.Drawing">
-    <value>158, 21</value>
+    <value>104, 21</value>
   </data>
   <data name="SFTPPath.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -223,7 +223,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;SFTPPath.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>0</value>
   </data>
   <metadata name="BrowseForSFTPDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
@@ -234,36 +234,6 @@
   <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>187, 17</value>
   </metadata>
-  <data name="DefaultKeepConnectionOpen.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="DefaultKeepConnectionOpen.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="DefaultKeepConnectionOpen.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 63</value>
-  </data>
-  <data name="DefaultKeepConnectionOpen.Size" type="System.Drawing.Size, System.Drawing">
-    <value>211, 17</value>
-  </data>
-  <data name="DefaultKeepConnectionOpen.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
-  </data>
-  <data name="DefaultKeepConnectionOpen.Text" xml:space="preserve">
-    <value>Keep SSH Connection Open as default</value>
-  </data>
-  <data name="&gt;&gt;DefaultKeepConnectionOpen.Name" xml:space="preserve">
-    <value>DefaultKeepConnectionOpen</value>
-  </data>
-  <data name="&gt;&gt;DefaultKeepConnectionOpen.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;DefaultKeepConnectionOpen.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;DefaultKeepConnectionOpen.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
@@ -271,7 +241,7 @@
     <value>6, 13</value>
   </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
-    <value>266, 90</value>
+    <value>212, 67</value>
   </data>
   <data name="&gt;&gt;BrowseForSFTPDialog.Name" xml:space="preserve">
     <value>BrowseForSFTPDialog</value>

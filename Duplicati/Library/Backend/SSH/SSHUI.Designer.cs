@@ -47,7 +47,6 @@ namespace Duplicati.Library.Backend
             this.Keyfilelabel = new System.Windows.Forms.Label();
             this.BrowseForKeyFileButton = new System.Windows.Forms.Button();
             this.OpenSSHKeyFileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.CloseConnection = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
             this.SuspendLayout();
             // 
@@ -82,7 +81,6 @@ namespace Duplicati.Library.Backend
             // Password
             // 
             this.Password.AskToEnterNewPassword = false;
-            this.Password.InitialPassword = null;
             this.Password.IsPasswordVisible = false;
             resources.ApplyResources(this.Password, "Password");
             this.Password.MaximumSize = new System.Drawing.Size(5000, 20);
@@ -179,17 +177,10 @@ namespace Duplicati.Library.Backend
             // 
             resources.ApplyResources(this.OpenSSHKeyFileDialog, "OpenSSHKeyFileDialog");
             // 
-            // CloseConnection
-            // 
-            resources.ApplyResources(this.CloseConnection, "CloseConnection");
-            this.CloseConnection.Name = "CloseConnection";
-            this.CloseConnection.UseVisualStyleBackColor = true;
-            // 
             // SSHUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.CloseConnection);
             this.Controls.Add(this.BrowseForKeyFileButton);
             this.Controls.Add(this.Keyfile);
             this.Controls.Add(this.Keyfilelabel);
@@ -235,6 +226,5 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label Keyfilelabel;
         private System.Windows.Forms.Button BrowseForKeyFileButton;
         private System.Windows.Forms.OpenFileDialog OpenSSHKeyFileDialog;
-        private System.Windows.Forms.CheckBox CloseConnection;
     }
 }
