@@ -1,4 +1,4 @@
-﻿Duplicati is an Open Source project, 
+ Duplicati is an Open Source project, 
 originally written and maintained by
 Kenneth Skovhede
 
@@ -11,12 +11,12 @@ Artwork:
 
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
-  French, fr-FR: Matthieu Weber
-  German, de-DE: Ernest Mair
-               : Mathias Block
-               : DooM ElHado
-               : Leo Zen
-  Danish, da-DK: Kenneth Skovhede
+  French,    fr-FR: Matthieu Weber
+  German,    de-DE: Ernest Mair
+                  : Mathias Block
+                  : DooM ElHado
+                  : Leo Zen
+  Danish,    da-DK: Kenneth Skovhede
 
 A special thanks to the many users
 who continues to report problems
