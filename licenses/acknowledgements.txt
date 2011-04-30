@@ -10,8 +10,13 @@ Artwork:
   Kenneth Skovhede
 
 Translations:
-  Gabriell Hahmann - Brazilian, pt-BR
-  Matthieu Weber - French, fr-FR
+  Brazilian, pt-BR: Gabriell Hahmann
+  French, fr-FR: Matthieu Weber
+  German, de-DE: Ernest Mair
+               : Mathias Block
+               : DooM ElHado
+               : Leo Zen
+  Danish, da-DK: Kenneth Skovhede
 
 A special thanks to the many users
 who continues to report problems
