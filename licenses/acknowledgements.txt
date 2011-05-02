@@ -12,7 +12,7 @@ Artwork:
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
   French,    fr-FR: Matthieu Weber
-  German,    de-DE: Ernest Mair
+  German,    de-DE: Ernst Mair
                   : Mathias Block
                   : DooM ElHado
                   : Leo Zen
