@@ -15,7 +15,7 @@ Translations:
   German,    de-DE: Ernst Mair
                   : Mathias Block
                   : DooM ElHado
-                  : Leo Zen
+                  : Leo nowhere
   Danish,    da-DK: Kenneth Skovhede
 
 A special thanks to the many users
