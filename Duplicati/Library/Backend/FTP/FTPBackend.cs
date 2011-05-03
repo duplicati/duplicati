@@ -68,7 +68,7 @@ namespace Duplicati.Library.Backend
             }
 
             string sslString;
-            if (m_options.TryGetValue("use-ssl", out sslString))
+            if (options.TryGetValue("use-ssl", out sslString))
                 m_useSSL = Utility.Utility.ParseBool(sslString, true);
             else
                 m_useSSL = false;
