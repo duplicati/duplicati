@@ -1592,7 +1592,7 @@ Das kürzere Format ""cloudfiles://container/ordner"" kann benutzt werden, solan
 "Library\Backend\CloudFiles\Strings\CloudFiles.de-DE.resx","DescriptionAuthenticationURLShort","not-updated","Provide another authentication URL",""
 "Library\Backend\CloudFiles\Strings\CloudFiles.de-DE.resx","DescriptionUKAccountLong","not-updated","Duplicati will assume that the credentials given are for a US account, use this option if the account is a UK based account. Note that this is equivalent to setting --{0}={1}.",""
 "Library\Backend\CloudFiles\Strings\CloudFiles.de-DE.resx","DescriptionUKAccountShort","not-updated","Use a UK account",""
-"Library\Backend\CloudFiles\Strings\CloudFiles.de-DE.resx","DisplayName","not-updated",CloudFiles (Rackspace)",""
+"Library\Backend\CloudFiles\Strings\CloudFiles.de-DE.resx","DisplayName","not-updated","CloudFiles (Rackspace)",""
 "Library\Backend\CloudFiles\Strings\CloudFilesUI.de-DE.resx","CreateMissingContainer","updated","The container does not exist, do you want to create it?","Der Container ist nicht vorhanden. Wollen Sie einen neuen erstellen?"
 "Library\Backend\CloudFiles\Strings\CloudFilesUI.de-DE.resx","EmptyAPIKeyError","updated","You must enter your CloudFiles API Access Key.
 You may click the link to the right
