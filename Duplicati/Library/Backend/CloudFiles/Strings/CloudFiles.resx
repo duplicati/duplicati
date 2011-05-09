@@ -158,7 +158,7 @@ The shorter format "cloudfiles://container/folder" may be used as long as  the c
     <value>Supplies the username used to authenticate with CloudFiles</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>CloudFiles</value>
+    <value>CloudFiles (Rackspace)</value>
   </data>
   <data name="ETagVerificationError" xml:space="preserve">
     <value>MD5 Hash (ETag) verification failed</value>
