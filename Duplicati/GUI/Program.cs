@@ -267,17 +267,20 @@ namespace Duplicati.GUI
 
                 DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
 
-                if (!string.IsNullOrEmpty(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage))
+                string displayLanguage = new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage;
+                if (!string.IsNullOrEmpty(displayLanguage) && displayLanguage != Library.Utility.Utility.DefaultCulture.Name)
+                {
                     try
                     {
-                        System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
-                        System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo(new Datamodel.ApplicationSettings(DataConnection).DisplayLanguage);
+                        System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(displayLanguage);
+                        System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo(displayLanguage);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         MessageBox.Show(string.Format(Strings.Program.LanguageSelectionError, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         //This is non-fatal, just keep running with system default language
                     }
+                }
 
                 LiveControl = new LiveControls(new ApplicationSettings(DataConnection));
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
