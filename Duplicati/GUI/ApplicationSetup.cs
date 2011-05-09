@@ -123,7 +123,7 @@ namespace Duplicati.GUI
 
         private void RecentDuration_TextChanged(object sender, EventArgs e)
         {
-            if (m_isUpdating)
+            if (m_isUpdating || m_settings == null)
                 return;
             m_settings.RecentBackupDuration = RecentDuration.Value;
         }
