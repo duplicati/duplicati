@@ -56,10 +56,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="HttpServer">
-      <HintPath>..\thirdparty\HttpServer\HttpServer.dll</HintPath>
+      <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
     </Reference>
     <Reference Include="HttpServer.MVC">
-      <HintPath>..\thirdparty\HttpServer\HttpServer.MVC.dll</HintPath>
+      <HintPath>..\..\thirdparty\HttpServer\HttpServer.MVC.dll</HintPath>
     </Reference>
     <Reference Include="LightDatamodel">
       <HintPath>..\..\thirdparty\LightDataModel\LightDatamodel.dll</HintPath>
