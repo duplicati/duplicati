@@ -108,6 +108,7 @@
     <Compile Include="Timeparser.cs" />
     <Compile Include="UrlUtillity.cs" />
     <Compile Include="Utility.cs" />
+    <Compile Include="WorkerThread.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
