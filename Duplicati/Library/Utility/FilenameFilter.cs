@@ -45,14 +45,14 @@ namespace Duplicati.Library.Utility
             //and the exclude variants (all work on the lines in a file)
 
             List<KeyValuePair<bool, string>> lst = new List<KeyValuePair<bool, string>>();
-            Regex includeOrExclude = new Regex(@"(?<prefix>(\-\-include\=)|(\-\-exclude\=)|(\-\-include\-regexp\=)|(\-\-exclude\-regexp\=))(?<content>.+)", RegexOptions.IgnoreCase);
+            Regex includeOrExclude = new Regex(@"(?<prefix>(\-\-include)|(\-\-exclude)|(\-\-include\-regexp)|(\-\-exclude\-regexp))(?<eq>\=)(?<content>.+)", RegexOptions.IgnoreCase);
             for (int i = 0; i < commandline.Count; i++ )
             {
                 string s = commandline[i];
                 Match m = includeOrExclude.Match(s.ToLower());
                 if (m.Success)
                 {
-                    bool include = m.Groups["prefix"].Value.ToLower() == "--include=" || m.Groups["prefix"].Value.ToLower() == "--include-regexp=";
+                    bool include = m.Groups["prefix"].Value.ToLower() == "--include" || m.Groups["prefix"].Value.ToLower() == "--include-regexp";
                     string cmd = m.Groups["content"].Value;
                     if (!m.Groups["prefix"].Value.ToLower().EndsWith("-regexp"))
                         cmd = ConvertGlobbingToRegExp(cmd);
