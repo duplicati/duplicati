@@ -178,7 +178,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
-                    new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, Library.Utility.Utility.IsClientLinux ? "off" : "auto", null, new string[] {"auto", "off", "on", "required"}),
+                    new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("open-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.OpenfilepolicyShort, Strings.Options.OpenfilepolicyLong, "snapshot", null, new string[] { "ignore", "snapshot", "copy" }),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
@@ -788,7 +788,7 @@ namespace Duplicati.Library.Main
                 else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
                     return OptimizationStrategy.Required;
                 else
-                    return Utility.Utility.IsClientLinux ? OptimizationStrategy.Off : OptimizationStrategy.Auto;
+                    return OptimizationStrategy.Off;
             }
         }
 
