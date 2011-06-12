@@ -54,6 +54,8 @@ namespace Duplicati.License
                     return "1.2 beta 2";
                 else if (v == new Version(1, 1, 99, 779))
                     return "1.2 RC";
+                else if (v == new Version(1, 1, 99, 793))
+                    return "1.2 Final";
                 else
                     return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             }
