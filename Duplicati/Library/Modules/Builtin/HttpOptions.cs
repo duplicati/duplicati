@@ -80,7 +80,8 @@ namespace Duplicati.Library.Modules.Builtin
             string certHash;
             commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
 
-            m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash);
+            if (accepAllCertificates || !string.IsNullOrEmpty(certHash))
+                m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash);
             
             commandlineOptions.TryGetValue(OPTION_DISABLE_NAGLING, out opt);
             bool disableNagle = Utility.Utility.ParseBool(opt, false);
