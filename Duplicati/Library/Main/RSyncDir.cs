@@ -1271,20 +1271,28 @@ namespace Duplicati.Library.Main.RSync
                         string relpath = GetRelativeName(s);
                         if (m_oldSignatures.ContainsKey(relpath))
                         {
-                            DateTime lastFileWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
-                            //Cut off as we only preserve precision in seconds after compression
-                            lastFileWrite = new DateTime(lastFileWrite.Year, lastFileWrite.Month, lastFileWrite.Day, lastFileWrite.Hour, lastFileWrite.Minute, lastFileWrite.Second, DateTimeKind.Utc);
-
-                            DateTime lastCheck;
-                            if (!m_lastVerificationTime.TryGetValue(relpath, out lastCheck))
-                                lastCheck = m_oldSignatures[relpath].CreateTime;
-
-                            //Compare with the modification time of the last known check time
-                            if (lastFileWrite <= lastCheck)
+                            try
                             {
-                                m_oldSignatures.Remove(relpath);
-                                m_examinedfiles++;
-                                continue;
+                                //Reports show that the file time can be missing :(
+                                DateTime lastFileWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
+                                //Cut off as we only preserve precision in seconds after compression
+                                lastFileWrite = new DateTime(lastFileWrite.Year, lastFileWrite.Month, lastFileWrite.Day, lastFileWrite.Hour, lastFileWrite.Minute, lastFileWrite.Second, DateTimeKind.Utc);
+
+                                DateTime lastCheck;
+                                if (!m_lastVerificationTime.TryGetValue(relpath, out lastCheck))
+                                    lastCheck = m_oldSignatures[relpath].CreateTime;
+
+                                //Compare with the modification time of the last known check time
+                                if (lastFileWrite <= lastCheck)
+                                {
+                                    m_oldSignatures.Remove(relpath);
+                                    m_examinedfiles++;
+                                    continue;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.InvalidTimeStampError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                             }
                         }
                     }
@@ -1317,11 +1325,20 @@ namespace Duplicati.Library.Main.RSync
                                 else
                                     throw;
                             }
-                            
-                            //Record the change time after we opened (and thus locked) the file
-                            DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
-                            //Cut off as we only preserve precision in seconds
-                            lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
+
+
+                            DateTime lastWrite = EPOCH;
+                            try 
+                            {
+                                //Record the change time after we opened (and thus locked) the file
+                                lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
+                                //Cut off as we only preserve precision in seconds
+                                lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.InvalidTimeStampError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                            }
 
 
                             if (fs.Length > m_maxFileSize)
