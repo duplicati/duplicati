@@ -125,15 +125,34 @@ namespace Duplicati.Library.Snapshots
         /// <param name="callback">The callback function that collects the output</param>
         public void EnumerateFilesAndFolders(string rootpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
+            //Under normal enumeration, the filter will prevent visiting subfolders for excluded folders
+            //But when using USN all files/folders are present in the list, so we have to maintain
+            // a list of subfolders that are excluded from the set
+            System.Text.StringBuilder local_filter = new StringBuilder();
+            System.Text.RegularExpressions.Regex excludedFolders = null;
+
             foreach (KeyValuePair<string, Win32USN.USN_RECORD> r in this.Records)
                 if (r.Key.StartsWith(rootpath, Utility.Utility.ClientFilenameStringComparision))
                 {
                     bool isFolder = (r.Value.FileAttributes & Win32USN.EFileAttributes.Directory) != 0;
 
+                    if (excludedFolders != null && excludedFolders.Match(r.Key).Success)
+                        continue;
+
                     if (isFolder)
                     {
                         if (filter == null || filter.ShouldInclude(rootpath, Utility.Utility.AppendDirSeparator(r.Key)))
                             callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.Folder);
+                        else
+                        {
+                            if (local_filter.Length != 0)
+                                local_filter.Append("|");
+                            local_filter.Append("(");
+                            local_filter.Append(Utility.FilenameFilter.ConvertGlobbingToRegExp(r.Key + "*"));
+                            local_filter.Append(")");
+
+                            excludedFolders = new System.Text.RegularExpressions.Regex(local_filter.ToString());
+                        }
                     }
                     else
                     {
