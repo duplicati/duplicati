@@ -35,6 +35,7 @@ namespace Duplicati.Library.Backend
         private bool m_useIntegratedAuthentication = false;
         private bool m_forceDigestAuthentication = false;
         private bool m_useSSL = false;
+        private string m_debugPropfindFile = null;
 
         /// <summary>
         /// A list of files seen in the last List operation.
@@ -109,6 +110,7 @@ namespace Duplicati.Library.Backend
                 port = m_useSSL ? 443 : 80;
 
             m_rawurlPort = (m_useSSL ? "https://" : "http://") + u.Host + ":" + port + m_path;
+            m_options.TryGetValue("debug-propfind-file", out m_debugPropfindFile);
         }
 
         #region IBackend Members
@@ -144,7 +146,15 @@ namespace Duplicati.Library.Backend
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                    doc.Load(resp.GetResponseStream());
+                    if (!string.IsNullOrEmpty(m_debugPropfindFile))
+                    {
+                        using (System.IO.FileStream fs = new System.IO.FileStream(m_debugPropfindFile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                            Utility.Utility.CopyStream(resp.GetResponseStream(), fs, false);
+
+                        doc.Load(m_debugPropfindFile);
+                    }
+                    else
+                        doc.Load(resp.GetResponseStream());
                 }
 
                 System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
@@ -252,6 +262,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseSSLShort, Strings.WEBDAV.DescriptionUseSSLLong),
+                    new CommandLineArgument("debug-propfind-file", CommandLineArgument.ArgumentType.Path, Strings.WEBDAV.DescriptionDebugPropfindShort, Strings.WEBDAV.DescriptionDebugPropfindLong),
                 });
             }
         }

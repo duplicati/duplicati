@@ -161,4 +161,10 @@ Error message: {3}</value>
   <data name="DescriptionUseSSLShort" xml:space="preserve">
     <value>Instructs Duplicati to use an SSL (https) connection</value>
   </data>
+  <data name="DescriptionDebugPropfindLong" xml:space="preserve">
+    <value>To aid in debugging issues, it is possible to set a path to a file that will be overwritten with the PROPFIND response</value>
+  </data>
+  <data name="DescriptionDebugPropfindShort" xml:space="preserve">
+    <value>Dump the PROPFIND response</value>
+  </data>
 </root>
