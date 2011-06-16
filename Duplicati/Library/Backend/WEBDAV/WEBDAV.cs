@@ -103,7 +103,12 @@ namespace Duplicati.Library.Backend
 
             m_path = System.Web.HttpUtility.UrlDecode(m_path);
             m_rawurl = (m_useSSL ? "https://" : "http://") + u.Host + m_path;
-            m_rawurlPort = (m_useSSL ? "https://" : "http://") + u.Host + ":" + u.Port + m_path;
+
+            int port = u.Port;
+            if (port <= 0)
+                port = m_useSSL ? 443 : 80;
+
+            m_rawurlPort = (m_useSSL ? "https://" : "http://") + u.Host + ":" + port + m_path;
         }
 
         #region IBackend Members
