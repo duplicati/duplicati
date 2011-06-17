@@ -6,6 +6,7 @@ You can reach the author at opensource@hexad.dk.
 
 Programming:
   Kenneth Skovhede
+  Livio Bertacco
 Artwork:
   Kenneth Skovhede
 
