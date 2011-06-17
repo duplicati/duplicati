@@ -56,6 +56,11 @@ namespace Duplicati.Library.Main.LiveControl
         private volatile bool m_stopRequested = false;
 
         /// <summary>
+        /// The flag used to signal a pause has been requested
+        /// </summary>
+        private volatile bool m_pauseRequested = false;
+
+        /// <summary>
         /// An event that is invoked when the backup state changes
         /// </summary>
         public event BackupStateChangedDelegate BackupStateChanged;
@@ -117,6 +122,15 @@ namespace Duplicati.Library.Main.LiveControl
         }
 
         /// <summary>
+        /// Gets a value indicating if pause has been requested
+        /// </summary>
+        /// <returns></returns>
+        public bool IsPauseRequested
+        {
+            get { return m_pauseRequested; }
+        }
+
+        /// <summary>
         /// Helper method to pause the current backup
         /// </summary>
         internal void PauseIfRequested()
@@ -132,7 +146,12 @@ namespace Duplicati.Library.Main.LiveControl
         /// </summary>
         public void Pause()
         {
-            m_pauseEvent.Reset();
+            lock (m_pauseEvent)
+                if (!m_stopRequested)                
+                {
+                    m_pauseRequested = true;
+                    m_pauseEvent.Reset();
+                }
         }
 
         /// <summary>
@@ -140,7 +159,11 @@ namespace Duplicati.Library.Main.LiveControl
         /// </summary>
         public void Resume()
         {
-            m_pauseEvent.Set();
+            lock (m_pauseEvent)
+            {
+                m_pauseRequested = false;
+                m_pauseEvent.Set();
+            }
         }
 
         /// <summary>
@@ -149,8 +172,11 @@ namespace Duplicati.Library.Main.LiveControl
         /// </summary>
         public void Stop()
         {
-            m_stopRequested = true;
-            m_pauseEvent.Set();
+            lock (m_pauseEvent)
+            {
+                m_stopRequested = true;
+                if (m_pauseRequested) Resume();
+            }
         }
 
         /// <summary>

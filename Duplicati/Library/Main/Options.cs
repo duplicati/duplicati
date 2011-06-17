@@ -196,6 +196,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("verification-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.VerificationLevelShort, Strings.Options.VerificationLevelLong, "Manifest", null, Enum.GetNames(typeof(Duplicati.Library.Main.VerificationLevel))),
                     new CommandLineArgument("create-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CreateverificationfileShort, Strings.Options.CreateverificationfileLong, "false"),
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
+                    new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepShort, "false"),
+                    
                 });
             }
         }
@@ -639,6 +641,11 @@ namespace Duplicati.Library.Main
         public bool AsynchronousUpload { get { return GetBool("asynchronous-upload"); } }
 
         /// <summary>
+        /// A value indicating if system is allowed to enter sleep power states during backup/restore ops (win32 only)
+        /// </summary>
+        public bool AllowSleep { get { return GetBool("allow-sleep"); } }
+
+        /// <summary>
         /// A value indicating if use of the streaming interface is disallowed
         /// </summary>
         public bool DisableStreamingTransfers { get { return GetBool("disable-streaming-transfers"); } }
@@ -932,9 +939,8 @@ namespace Duplicati.Library.Main
         /// <returns>The interpreted value of the option</returns>
         private bool GetBool(string name)
         {
-            string value;
-            
-            if (m_options.TryGetValue(name, out value))
+            string value;           
+            if (m_options.TryGetValue(name, out value))            
                 return Utility.Utility.ParseBool(value, true);
             else
                 return false;

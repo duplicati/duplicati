@@ -195,6 +195,9 @@
   <data name="IncludeShort" xml:space="preserve">
     <value>Include files</value>
   </data>
+  <data name="AllowsleepShort" xml:space="preserve">
+    <value>Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only)</value>
+  </data>
   <data name="MaxdownloadprsecondLong" xml:space="preserve">
     <value>By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive.</value>
   </data>

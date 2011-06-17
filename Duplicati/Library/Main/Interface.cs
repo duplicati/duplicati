@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
 {
@@ -209,6 +210,20 @@ namespace Duplicati.Library.Main
         private LiveControl.LiveControl m_liveControl;
 
         /// <summary>
+        /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
+        /// </summary>
+        /// <param name="isRunning">Flag indicating execution state</param>
+        private void OperationRunning(bool isRunning)
+        {          
+            if (m_options!=null && !m_options.AllowSleep && !Duplicati.Library.Utility.Utility.IsClientLinux)
+                try
+                {
+                    Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
+                }
+                catch { } //TODO: Report this somehow
+        }   
+
+        /// <summary>
         /// Returns the current overall operation mode based on the actual operation mode
         /// </summary>
         /// <returns>The overall operation type</returns>
@@ -267,7 +282,12 @@ namespace Duplicati.Library.Main
         /// </summary>
         private void CheckLiveControl()
         {
-            m_liveControl.PauseIfRequested();
+            if (m_liveControl.IsPauseRequested) 
+            {
+                OperationRunning(false);
+                try { m_liveControl.PauseIfRequested(); }
+                finally { OperationRunning(true); }
+            }
 
             if (m_liveControl.IsStopRequested)
                 throw new LiveControl.ExecutionStoppedException();
@@ -317,7 +337,7 @@ namespace Duplicati.Library.Main
             using (new Logging.Timer("Backup from " + string.Join(";", sources) + " to " + m_backend))
             {
                 try
-                {
+                {                    
                     if (OperationStarted != null)
                         OperationStarted(this, DuplicatiOperation.Backup, bs.OperationMode, -1, -1, Strings.Interface.StatusLoadingFilelist, "");
                     OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, -1, -1, Strings.Interface.StatusLoadingFilelist, "");
@@ -714,11 +734,12 @@ namespace Duplicati.Library.Main
                     if (OperationCompleted != null)
                         OperationCompleted(this, DuplicatiOperation.Backup, bs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
                     
-                    OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
+                    OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");                    
                 }
             }
 
             bs.EndTime = DateTime.Now;
+
             return bs.ToString();
         }
 
@@ -956,7 +977,7 @@ namespace Duplicati.Library.Main
             using (new Logging.Timer("Restore from " + m_backend + " to " + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
             {
                 try
-                {
+                {                    
                     if (OperationStarted != null)
                         OperationStarted(this, DuplicatiOperation.Restore, rs.OperationMode, -1, -1, Strings.Interface.StatusStarted, "");
                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, -1, -1, Strings.Interface.StatusStarted, "");
@@ -1176,12 +1197,12 @@ namespace Duplicati.Library.Main
                     if (OperationCompleted != null)
                         OperationCompleted(this, DuplicatiOperation.Restore, rs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
 
-                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
+                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");                    
                 }
             } 
 
             rs.EndTime = DateTime.Now;
-
+            
             //TODO: The RS should have the number of restored files, and the size of those
             //but that is a little difficult, because some may be restored, and then removed
 
@@ -1326,7 +1347,7 @@ namespace Duplicati.Library.Main
             SetupCommonOptions(stats);
 
             DateTime expires = m_options.RemoveOlderThan;
-
+            
             using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             try
             {
@@ -1427,6 +1448,7 @@ namespace Duplicati.Library.Main
             SetupCommonOptions(stats);
 
             List<string> res = new List<string>();
+
             using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             {
                 if (OperationStarted != null)
@@ -1561,10 +1583,12 @@ namespace Duplicati.Library.Main
 
 
         private void SetupCommonOptions(CommunicationStatistics stats)
-        {
+        {            
             m_options.MainAction = stats.OperationMode;
 
             Library.Logging.Log.LogLevel = m_options.Loglevel;
+
+            OperationRunning(true);
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
                 Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
@@ -2246,6 +2270,7 @@ namespace Duplicati.Library.Main
                         ((IDisposable)mx.Value).Dispose();
 
                 m_options.LoadedModules.Clear();
+                OperationRunning(false);
             }
         }
 
@@ -2276,6 +2301,11 @@ namespace Duplicati.Library.Main
         public bool IsStopRequested
         {
             get { return m_liveControl.IsStopRequested; } 
+        }
+
+        public bool IsPauseRequested
+        {
+            get { return m_liveControl.IsPauseRequested; }
         }
 
         public void SetUploadLimit(string limit)
