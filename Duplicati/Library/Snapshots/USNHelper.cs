@@ -151,7 +151,10 @@ namespace Duplicati.Library.Snapshots
                             local_filter.Append(Utility.FilenameFilter.ConvertGlobbingToRegExp(r.Key + "*"));
                             local_filter.Append(")");
 
-                            excludedFolders = new System.Text.RegularExpressions.Regex(local_filter.ToString());
+                            if (Utility.Utility.IsFSCaseSensitive)
+                                excludedFolders = new System.Text.RegularExpressions.Regex(local_filter.ToString());
+                            else
+                                excludedFolders = new System.Text.RegularExpressions.Regex(local_filter.ToString(), System.Text.RegularExpressions.RegexOptions.IgnoreCase);
                         }
                     }
                     else
