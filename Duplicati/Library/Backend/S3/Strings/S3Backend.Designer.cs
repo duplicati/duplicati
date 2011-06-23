@@ -133,6 +133,24 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this flag to communicate using Secure Socket Layer (SSL) over http (https). Note that bucket names containing a period has problems with SSL connections..
+        /// </summary>
+        internal static string DescriptionUseSSLLong {
+            get {
+                return ResourceManager.GetString("DescriptionUseSSLLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Instructs Duplicati to use an SSL (https) connection.
+        /// </summary>
+        internal static string DescriptionUseSSLShort {
+            get {
+                return ResourceManager.GetString("DescriptionUseSSLShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Amazon S3 based.
         /// </summary>
         internal static string DisplayName {

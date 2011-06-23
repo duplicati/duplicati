@@ -32,6 +32,7 @@ namespace Duplicati.Library.Backend
         public const string SUBDOMAIN_OPTION = "s3-use-new-style";
         public const string SERVER_NAME = "s3-server-name";
         public const string LOCATION_OPTION = "s3-location-constraint";
+        public const string SSL_OPTION = "use-ssl";
 
         public static readonly KeyValuePair<string, string>[] KNOWN_S3_PROVIDERS = new KeyValuePair<string,string>[] {
             new KeyValuePair<string, string>("Amazon S3", "s3.amazonaws.com"),
@@ -55,7 +56,8 @@ namespace Duplicati.Library.Backend
         private string m_bucket;
         private string m_prefix;
         private string m_locationConstraint;
-        private bool m_useRRS;
+        private bool m_useRRS = false;
+        private bool m_useSSL = false;
 
         private readonly System.Text.RegularExpressions.Regex URL_PARSING = new Regex("s3://(?<hostname>[^/]+)(/(?<prefix>.+))?"); 
         public const string DEFAULT_S3_HOST  = "s3.amazonaws.com";
@@ -95,6 +97,7 @@ namespace Duplicati.Library.Backend
 
             bool euBuckets = Utility.Utility.ParseBoolOption(options, EU_BUCKETS_OPTION);
             m_useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
+            m_useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
 
             options.TryGetValue(LOCATION_OPTION, out m_locationConstraint);
 
@@ -299,6 +302,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(RRS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3UseRRSDescriptionShort, Strings.S3Backend.S3UseRRSDescriptionLong, "false"),
                     new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, string.Format(Strings.S3Backend.S3ServerNameDescriptionLong, hostnames.ToString()), DEFAULT_S3_HOST),
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, string.Format(Strings.S3Backend.S3LocationDescriptionLong, locations.ToString())),
+                    new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.S3Backend.FTPPasswordDescriptionShort, Strings.S3Backend.FTPPasswordDescriptionLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.DescriptionFTPUsernameShort, Strings.S3Backend.DescriptionFTPUsernameLong)
                 });
@@ -348,7 +352,7 @@ namespace Duplicati.Library.Backend
 
         private S3Wrapper CreateRequest()
         {
-            return new S3Wrapper(m_awsID, m_awsKey, m_locationConstraint, m_host, m_useRRS);
+            return new S3Wrapper(m_awsID, m_awsKey, m_locationConstraint, m_host, m_useRRS, m_useSSL);
         }
 
         private string GetFullKey(string name)

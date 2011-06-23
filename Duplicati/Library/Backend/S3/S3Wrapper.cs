@@ -38,11 +38,11 @@ namespace Duplicati.Library.Backend
         protected bool m_useRRS;
 		protected AmazonS3Client m_client;
 
-        public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, bool useRRS)
+        public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, bool useRRS, bool useSSL)
         {
             AmazonS3Config cfg = new AmazonS3Config();
             
-            cfg.CommunicationProtocol = Amazon.S3.Model.Protocol.HTTPS;
+            cfg.CommunicationProtocol = useSSL ? Amazon.S3.Model.Protocol.HTTPS : Amazon.S3.Model.Protocol.HTTP;
             cfg.ServiceURL = servername;
             cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
             cfg.UseSecureStringForAwsSecretKey = false;

@@ -203,4 +203,10 @@
   <data name="S3NewStyleDeprecation" xml:space="preserve">
     <value>The subdomain calling option does nothing, the library will pick the right calling convention</value>
   </data>
+  <data name="DescriptionUseSSLLong" xml:space="preserve">
+    <value>Use this flag to communicate using Secure Socket Layer (SSL) over http (https). Note that bucket names containing a period has problems with SSL connections.</value>
+  </data>
+  <data name="DescriptionUseSSLShort" xml:space="preserve">
+    <value>Instructs Duplicati to use an SSL (https) connection</value>
+  </data>
 </root>
