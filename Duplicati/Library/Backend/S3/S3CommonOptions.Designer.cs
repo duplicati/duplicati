@@ -34,9 +34,12 @@
             this.RemoveAllButton = new System.Windows.Forms.Button();
             this.CredentialList = new System.Windows.Forms.ListBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.UseEUBuckets = new System.Windows.Forms.CheckBox();
-            this.AllowCredentialStorage = new System.Windows.Forms.CheckBox();
+            this.DefaultServername = new System.Windows.Forms.ComboBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.DefaultBucketRegion = new System.Windows.Forms.ComboBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.UseRRS = new System.Windows.Forms.CheckBox();
+            this.AllowCredentialStorage = new System.Windows.Forms.CheckBox();
             this.CredentialGroup.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -74,16 +77,43 @@
             // groupBox2
             // 
             resources.ApplyResources(this.groupBox2, "groupBox2");
+            this.groupBox2.Controls.Add(this.DefaultServername);
+            this.groupBox2.Controls.Add(this.label2);
+            this.groupBox2.Controls.Add(this.DefaultBucketRegion);
+            this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Controls.Add(this.UseRRS);
-            this.groupBox2.Controls.Add(this.UseEUBuckets);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.TabStop = false;
             // 
-            // UseEUBuckets
+            // DefaultServername
             // 
-            resources.ApplyResources(this.UseEUBuckets, "UseEUBuckets");
-            this.UseEUBuckets.Name = "UseEUBuckets";
-            this.UseEUBuckets.UseVisualStyleBackColor = true;
+            resources.ApplyResources(this.DefaultServername, "DefaultServername");
+            this.DefaultServername.FormattingEnabled = true;
+            this.DefaultServername.Name = "DefaultServername";
+            this.DefaultServername.SelectedIndexChanged += new System.EventHandler(this.DefaultServername_SelectedIndexChanged);
+            // 
+            // label2
+            // 
+            resources.ApplyResources(this.label2, "label2");
+            this.label2.Name = "label2";
+            // 
+            // DefaultBucketRegion
+            // 
+            resources.ApplyResources(this.DefaultBucketRegion, "DefaultBucketRegion");
+            this.DefaultBucketRegion.FormattingEnabled = true;
+            this.DefaultBucketRegion.Name = "DefaultBucketRegion";
+            this.DefaultBucketRegion.SelectedIndexChanged += new System.EventHandler(this.DefaultBucketRegion_SelectedIndexChanged);
+            // 
+            // label1
+            // 
+            resources.ApplyResources(this.label1, "label1");
+            this.label1.Name = "label1";
+            // 
+            // UseRRS
+            // 
+            resources.ApplyResources(this.UseRRS, "UseRRS");
+            this.UseRRS.Name = "UseRRS";
+            this.UseRRS.UseVisualStyleBackColor = true;
             // 
             // AllowCredentialStorage
             // 
@@ -93,12 +123,6 @@
             this.AllowCredentialStorage.Name = "AllowCredentialStorage";
             this.AllowCredentialStorage.UseVisualStyleBackColor = true;
             this.AllowCredentialStorage.CheckedChanged += new System.EventHandler(this.AllowCredentialStorage_CheckedChanged);
-            // 
-            // UseRRS
-            // 
-            resources.ApplyResources(this.UseRRS, "UseRRS");
-            this.UseRRS.Name = "UseRRS";
-            this.UseRRS.UseVisualStyleBackColor = true;
             // 
             // S3CommonOptions
             // 
@@ -124,8 +148,11 @@
         private System.Windows.Forms.Button RemoveAllButton;
         private System.Windows.Forms.ListBox CredentialList;
         private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.CheckBox UseEUBuckets;
         private System.Windows.Forms.CheckBox AllowCredentialStorage;
         private System.Windows.Forms.CheckBox UseRRS;
+        private System.Windows.Forms.ComboBox DefaultBucketRegion;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.ComboBox DefaultServername;
+        private System.Windows.Forms.Label label2;
     }
 }

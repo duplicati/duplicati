@@ -54,9 +54,9 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Affirma.ThreeSharp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
+    <Reference Include="AWSSDK, Version=1.3.6.0, Culture=neutral, PublicKeyToken=cd2d24cd2bace800, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\thirdparty\Affirma.ThreeSharp\Affirma.ThreeSharp.dll</HintPath>
+      <HintPath>..\..\..\..\thirdparty\AWS SDK\AWSSDK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -97,11 +97,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>S3UI.resx</DependentUpon>
     </Compile>
-    <Compile Include="Strings\S3Wrapper.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>S3Wrapper.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
@@ -140,11 +135,6 @@
     <EmbeddedResource Include="Strings\S3UI.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>S3UI.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\S3Wrapper.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>S3Wrapper.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

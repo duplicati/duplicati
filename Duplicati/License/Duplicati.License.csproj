@@ -59,14 +59,6 @@
   </Target>
   -->
   <ItemGroup>
-    <Content Include="..\..\thirdparty\Affirma.ThreeSharp\Homepage.txt">
-      <Link>licenses\Affirma.ThreeSharp\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Affirma.ThreeSharp\License.txt">
-      <Link>licenses\Affirma.ThreeSharp\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\..\thirdparty\alphavss\Homepage.txt">
       <Link>licenses\alphavss\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -74,6 +66,12 @@
     <Content Include="..\..\thirdparty\alphavss\License.txt">
       <Link>licenses\alphavss\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AWS SDK\download.txt">
+      <Link>licenses\AWSSDK\download.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\AWS SDK\license.txt">
+      <Link>licenses\AWSSDK\license.txt</Link>
     </Content>
     <Content Include="..\..\thirdparty\gpg\Homepage.txt">
       <Link>licenses\gpg\Homepage.txt</Link>

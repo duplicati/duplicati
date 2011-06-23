@@ -503,6 +503,22 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Parses an option from the option set, using the convention that if the option is set, it is true unless it parses to false, and false otherwise
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <returns></returns>
+        public static bool ParseBoolOption(IDictionary<string, string> options, string value)
+        {
+            string opt;
+            if (options.TryGetValue(value, out opt))
+                return ParseBool(opt, true);
+            else
+                return false;
+
+        }
+
+        /// <summary>
         /// A helper for converting byte arrays to hex, vice versa
         /// </summary>
         private const string HEX_DIGITS_UPPER = "0123456789ABCDEF";

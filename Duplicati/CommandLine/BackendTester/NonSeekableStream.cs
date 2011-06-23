@@ -47,18 +47,6 @@ namespace Duplicati.CommandLine.BackendTester
             throw new NotImplementedException();
         }
 
-        public override long Position
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
         public override void SetLength(long value)
         {
             throw new NotImplementedException();

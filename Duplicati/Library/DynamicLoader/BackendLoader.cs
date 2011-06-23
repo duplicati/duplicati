@@ -63,7 +63,12 @@ namespace Duplicati.Library.DynamicLoader
                 if (string.IsNullOrEmpty(url))
                     throw new ArgumentNullException("url");
 
-                string scheme = new Uri(url).Scheme.ToLower();
+                string scheme;
+                //If possible, we avoid parsing the string as a URL to allow flexible string handling
+                if (url.IndexOf("://") > 0)
+                    scheme = url.Substring(0, url.IndexOf("://"));
+                else
+                    scheme = new Uri(url).Scheme.ToLower();
 
                 LoadInterfaces();
 
