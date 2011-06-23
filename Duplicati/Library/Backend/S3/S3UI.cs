@@ -564,5 +564,14 @@ namespace Duplicati.Library.Backend
                 BeginInvoke(new SetComboTextDelegate(SetComboText), Bucketregions, (Bucketregions.SelectedItem as Utility.ComboBoxItemPair<string>).Value);
         }
 
+        private void Servernames_TextChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+            m_hasCreatedbucket = false;
+            m_hasSuggestedPrefix = false;
+            m_hasSuggestedLowerCase = false;
+            m_hasWarnedInvalidBucketname = false;
+        }
+
     }
 }

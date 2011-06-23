@@ -146,6 +146,7 @@ namespace Duplicati.Library.Backend
             resources.ApplyResources(this.Servernames, "Servernames");
             this.Servernames.Name = "Servernames";
             this.Servernames.SelectedIndexChanged += new System.EventHandler(this.Servernames_SelectedIndexChanged);
+            this.Servernames.TextChanged += new System.EventHandler(this.Servernames_TextChanged);
             // 
             // label7
             // 
