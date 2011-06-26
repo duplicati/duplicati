@@ -117,12 +117,8 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Description" xml:space="preserve">
-    <value>Supports connections to the CloudFiles backend. Allowed formats are "cloudfiles://api.mosso.com/container/folder" or "cloudfiles://username:password@api.mosso.com/container/folder".
-The shorter format "cloudfiles://container/folder" may be used as long as  the container name is a legal hostname, eg. a container name with no spaces.</value>
-  </data>
-  <data name="DescriptionAuthenticationURLLong" xml:space="preserve">
-    <value>Cloudfiles use different servers for authentification based on where the account was purchased, use this option to set an alternate authentication URL. This option overrides --{0}.</value>
+  <data name="DescriptionAuthenticationURLLong_v2" xml:space="preserve">
+    <value>Cloudfiles use different servers for authentification based on where the account was resides, use this option to set an alternate authentication URL. This option overrides --{0}.</value>
   </data>
   <data name="DescriptionAuthenticationURLShort" xml:space="preserve">
     <value>Provide another authentication URL</value>
@@ -157,6 +153,9 @@ The shorter format "cloudfiles://container/folder" may be used as long as  the c
   <data name="DescriptionUsernameShort" xml:space="preserve">
     <value>Supplies the username used to authenticate with CloudFiles</value>
   </data>
+  <data name="Description_v2" xml:space="preserve">
+    <value>Supports connections to the CloudFiles backend. Allowed formats is "cloudfiles://container/folder".</value>
+  </data>
   <data name="DisplayName" xml:space="preserve">
     <value>CloudFiles (Rackspace)</value>
   </data>
@@ -168,6 +167,9 @@ The shorter format "cloudfiles://container/folder" may be used as long as  the c
   </data>
   <data name="FileUploadError" xml:space="preserve">
     <value>Failed to upload file</value>
+  </data>
+  <data name="InvalidUrlError" xml:space="preserve">
+    <value>Invalid URL: {0}</value>
   </data>
   <data name="NoAPIKeyError" xml:space="preserve">
     <value>No CloudFiles API Access Key given</value>

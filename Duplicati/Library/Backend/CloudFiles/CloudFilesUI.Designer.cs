@@ -39,7 +39,8 @@ namespace Duplicati.Library.Backend
             this.label4 = new System.Windows.Forms.Label();
             this.TestConnection = new System.Windows.Forms.Button();
             this.CreateContainer = new System.Windows.Forms.Button();
-            this.UKAccount = new System.Windows.Forms.CheckBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.Servernames = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // label1
@@ -106,18 +107,25 @@ namespace Duplicati.Library.Backend
             this.CreateContainer.UseVisualStyleBackColor = true;
             this.CreateContainer.Click += new System.EventHandler(this.CreateContainer_Click);
             // 
-            // UKAccount
+            // label5
             // 
-            resources.ApplyResources(this.UKAccount, "UKAccount");
-            this.UKAccount.Name = "UKAccount";
-            this.UKAccount.UseVisualStyleBackColor = true;
-            this.UKAccount.CheckedChanged += new System.EventHandler(this.UKAccount_CheckedChanged);
+            resources.ApplyResources(this.label5, "label5");
+            this.label5.Name = "label5";
+            // 
+            // Servernames
+            // 
+            this.Servernames.FormattingEnabled = true;
+            resources.ApplyResources(this.Servernames, "Servernames");
+            this.Servernames.Name = "Servernames";
+            this.Servernames.SelectedIndexChanged += new System.EventHandler(this.Servernames_SelectedIndexChanged);
+            this.Servernames.TextChanged += new System.EventHandler(this.Servernames_TextChanged);
             // 
             // CloudFilesUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.UKAccount);
+            this.Controls.Add(this.Servernames);
+            this.Controls.Add(this.label5);
             this.Controls.Add(this.CreateContainer);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.label4);
@@ -147,6 +155,7 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button TestConnection;
         private System.Windows.Forms.Button CreateContainer;
-        private System.Windows.Forms.CheckBox UKAccount;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.ComboBox Servernames;
     }
 }

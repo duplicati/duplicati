@@ -123,7 +123,7 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 8</value>
+    <value>24, 32</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
     <value>106, 13</value>
@@ -144,13 +144,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>11</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 32</value>
+    <value>24, 56</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>96, 13</value>
@@ -171,13 +171,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>10</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
   <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 56</value>
+    <value>24, 80</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
     <value>81, 13</value>
@@ -198,10 +198,10 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>9</value>
   </data>
   <data name="Username.Location" type="System.Drawing.Point, System.Drawing">
-    <value>144, 8</value>
+    <value>144, 32</value>
   </data>
   <data name="Username.Size" type="System.Drawing.Size, System.Drawing">
     <value>152, 20</value>
@@ -219,10 +219,10 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;Username.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>8</value>
   </data>
   <data name="API_KEY.Location" type="System.Drawing.Point, System.Drawing">
-    <value>144, 32</value>
+    <value>144, 56</value>
   </data>
   <data name="API_KEY.Size" type="System.Drawing.Size, System.Drawing">
     <value>150, 20</value>
@@ -240,10 +240,10 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;API_KEY.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>7</value>
   </data>
   <data name="ContainerName.Location" type="System.Drawing.Point, System.Drawing">
-    <value>144, 56</value>
+    <value>144, 80</value>
   </data>
   <data name="ContainerName.Size" type="System.Drawing.Size, System.Drawing">
     <value>152, 20</value>
@@ -261,7 +261,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;ContainerName.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="SignUpLink.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -288,13 +288,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;SignUpLink.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>5</value>
   </data>
   <data name="label4.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 8.25pt, style=Italic</value>
   </data>
   <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 80</value>
+    <value>24, 104</value>
   </data>
   <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
     <value>440, 32</value>
@@ -315,10 +315,10 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="TestConnection.Location" type="System.Drawing.Point, System.Drawing">
-    <value>360, 120</value>
+    <value>360, 144</value>
   </data>
   <data name="TestConnection.Size" type="System.Drawing.Size, System.Drawing">
     <value>112, 24</value>
@@ -339,7 +339,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;TestConnection.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="CreateContainer.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
@@ -367,33 +367,57 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;CreateContainer.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
-  <data name="UKAccount.AutoSize" type="System.Boolean, mscorlib">
+  <data name="label5.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="UKAccount.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 120</value>
+  <data name="label5.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
-  <data name="UKAccount.Size" type="System.Drawing.Size, System.Drawing">
-    <value>115, 17</value>
+  <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 8</value>
   </data>
-  <data name="UKAccount.TabIndex" type="System.Int32, mscorlib">
+  <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>115, 13</value>
+  </data>
+  <data name="label5.TabIndex" type="System.Int32, mscorlib">
     <value>13</value>
   </data>
-  <data name="UKAccount.Text" xml:space="preserve">
-    <value>Use a UK Account</value>
+  <data name="label5.Text" xml:space="preserve">
+    <value>CloudFiles Servername</value>
   </data>
-  <data name="&gt;&gt;UKAccount.Name" xml:space="preserve">
-    <value>UKAccount</value>
+  <data name="&gt;&gt;label5.Name" xml:space="preserve">
+    <value>label5</value>
   </data>
-  <data name="&gt;&gt;UKAccount.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="&gt;&gt;label5.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;UKAccount.Parent" xml:space="preserve">
+  <data name="&gt;&gt;label5.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;UKAccount.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="Servernames.Location" type="System.Drawing.Point, System.Drawing">
+    <value>144, 8</value>
+  </data>
+  <data name="Servernames.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 21</value>
+  </data>
+  <data name="Servernames.TabIndex" type="System.Int32, mscorlib">
+    <value>14</value>
+  </data>
+  <data name="&gt;&gt;Servernames.Name" xml:space="preserve">
+    <value>Servernames</value>
+  </data>
+  <data name="&gt;&gt;Servernames.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Servernames.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;Servernames.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
