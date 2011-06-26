@@ -1049,7 +1049,7 @@ namespace Duplicati.Library.Main
                                 ProgressEvent(50, m_statusmessage);
                         }
 
-                        if (!m_options.ListVerifyUploads)
+                        if (m_options.ListVerifyUploads)
                         {
                             Library.Interface.FileEntry m = null;
                             foreach (Library.Interface.FileEntry fe in ListInternal())

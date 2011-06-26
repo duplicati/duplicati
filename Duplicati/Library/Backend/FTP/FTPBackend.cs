@@ -78,6 +78,11 @@ namespace Duplicati.Library.Backend
             m_url = url;
             if (!m_url.EndsWith("/"))
                 m_url += "/";
+
+            //HACK: We modify the commandline options to alter the setting it the ftp backend is loaded
+            if (!options.ContainsKey("list-verify-uploads"))
+                options.Add("list-verify-uploads", "true");
+
         }
 
         #region Regular expression to parse list lines
