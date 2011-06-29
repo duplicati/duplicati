@@ -227,7 +227,7 @@ namespace Duplicati.Library.Backend
 
                 if (Password.Text.Trim().Length <= 0 && !m_warnedPassword)
                 {
-                    if (MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
                     {
                         try { Password.Focus(); }
                         catch { }
@@ -417,9 +417,13 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        WEBDAV webdav = new WEBDAV(destination, options);
-                        webdav.CreateFolder();
-
+                        using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
+                        {
+                            httpconf.Configure(m_options);
+                            WEBDAV webDAV = new WEBDAV(destination, options);
+                            webDAV.CreateFolder();
+                        }
+                        
                         MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;
                     }

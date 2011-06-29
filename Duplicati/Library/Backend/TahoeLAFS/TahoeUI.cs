@@ -278,8 +278,12 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        TahoeBackend tahoe = new TahoeBackend(destination, options);
-                        tahoe.CreateFolder();
+                        using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
+                        {
+                            httpconf.Configure(m_options);
+                            TahoeBackend tahoe = new TahoeBackend(destination, options);
+                            tahoe.CreateFolder();
+                        }
 
                         MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;

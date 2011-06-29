@@ -248,8 +248,12 @@ namespace Duplicati.Library.Backend
         {
             System.Net.HttpWebRequest req = CreateRequest(remotename);
             req.Method = "DELETE";
-            using (req.GetResponse())
-            { }
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+            {
+                int code = (int)resp.StatusCode;
+                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+            }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -286,8 +290,12 @@ namespace Duplicati.Library.Backend
             System.Net.HttpWebRequest req = CreateRequest("");
             req.Method = System.Net.WebRequestMethods.Http.MkCol;
             req.KeepAlive = false;
-            using (req.GetResponse())
-            { }
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+            {
+                int code = (int)resp.StatusCode;
+                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+            }
         }
 
         #endregion
@@ -326,18 +334,13 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public void Put(string remotename, System.IO.Stream stream)
         {
             try
             {
                 System.Net.HttpWebRequest req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Http.Put;
-                req.ContentType = "application/binary";
+                req.ContentType = "application/octet-stream";
                 //We only depend on the ReadWriteTimeout
                 req.Timeout = System.Threading.Timeout.Infinite;
 

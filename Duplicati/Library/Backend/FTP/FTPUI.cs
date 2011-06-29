@@ -356,8 +356,12 @@ namespace Duplicati.Library.Backend
 
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string hostname = GetConfiguration(m_options, options);
-                        FTP f = new FTP(hostname, options);
-                        f.CreateFolder();
+                        using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
+                        {
+                            httpconf.Configure(m_options);
+                            FTP f = new FTP(hostname, options);
+                            f.CreateFolder();
+                        }
 
                         MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
