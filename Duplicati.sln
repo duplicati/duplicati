@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Modules.B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TahoeLAFS", "Duplicati\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj", "{C0270709-2A40-43B5-8CF1-69581B9FA2A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SkyDrive", "Duplicati\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj", "{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -493,6 +495,21 @@ Global
 		{C0270709-2A40-43B5-8CF1-69581B9FA2A1}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{C0270709-2A40-43B5-8CF1-69581B9FA2A1}.Test|Mixed Platforms.Build.0 = Release|Any CPU
 		{C0270709-2A40-43B5-8CF1-69581B9FA2A1}.Test|x86.ActiveCfg = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Release|x86.ActiveCfg = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Test|Any CPU.ActiveCfg = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Test|Any CPU.Build.0 = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Test|Mixed Platforms.Build.0 = Release|Any CPU
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Test|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
