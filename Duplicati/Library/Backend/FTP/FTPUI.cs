@@ -261,7 +261,7 @@ namespace Duplicati.Library.Backend
                         string hostname = GetConfiguration(m_options, options);
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
-                            httpconf.Configure(m_options);
+                            httpconf.Configure(options);
                             FTP f = new FTP(hostname, options);
                             f.List();
                         }
@@ -358,7 +358,7 @@ namespace Duplicati.Library.Backend
                         string hostname = GetConfiguration(m_options, options);
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
-                            httpconf.Configure(m_options);
+                            httpconf.Configure(options);
                             FTP f = new FTP(hostname, options);
                             f.CreateFolder();
                         }

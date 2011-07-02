@@ -319,7 +319,7 @@ namespace Duplicati.Library.Backend
 
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
-                            httpconf.Configure(m_options);
+                            httpconf.Configure(options);
                             WEBDAV webDAV = new WEBDAV(destination, options);
                             webDAV.List();
                         }
@@ -419,7 +419,7 @@ namespace Duplicati.Library.Backend
 
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
-                            httpconf.Configure(m_options);
+                            httpconf.Configure(options);
                             WEBDAV webDAV = new WEBDAV(destination, options);
                             webDAV.CreateFolder();
                         }
