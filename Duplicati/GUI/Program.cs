@@ -303,6 +303,18 @@ namespace Duplicati.GUI
                 MessageBox.Show(string.Format(Strings.Program.SeriousError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
+            try
+            {
+                //Compress the database
+                using (System.Data.IDbCommand vaccum_cmd = DataConnection.Provider.Connection.CreateCommand())
+                {
+                    vaccum_cmd.CommandText = "VACUUM;";
+                    vaccum_cmd.ExecuteNonQuery();
+                }
+            }
+            catch 
+            { }
+
 
             if (Scheduler != null)
                 Scheduler.Terminate(true);
