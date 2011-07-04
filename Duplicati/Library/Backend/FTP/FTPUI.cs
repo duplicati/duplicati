@@ -257,16 +257,33 @@ namespace Duplicati.Library.Backend
                         this.Cursor = Cursors.WaitCursor;
                         SaveSettings();
 
+                        bool existingBackup = false;
+
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string hostname = GetConfiguration(m_options, options);
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
                             httpconf.Configure(options);
                             FTP f = new FTP(hostname, options);
-                            f.List();
+                            
+                            foreach (Interface.IFileEntry n in f.List())
+                                if (n.Name.StartsWith("duplicati-"))
+                                {
+                                    existingBackup = true;
+                                    break;
+                                }
                         }
 
-                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        if (existingBackup) 
+                        {
+                            if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                                return;
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+
                         m_hasTested = true;
                     }
                     catch (Interface.FolderMissingException)

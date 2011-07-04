@@ -405,10 +405,25 @@ namespace Duplicati.Library.Backend
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     string destination = GetConfiguration(m_options, options);
 
+                    bool existingBackup = false;
                     S3 s3 = new S3(destination, options);
-                    s3.Test();
+                    foreach (Interface.IFileEntry n in s3.List())
+                        if (n.Name.StartsWith("duplicati-"))
+                        {
+                            existingBackup = true;
+                            break;
+                        }
 
-                    MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    if (existingBackup)
+                    {
+                        if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                            return;
+                    }
+                    else
+                    {
+                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+
                     m_hasTested = true;
                     m_hasCreatedbucket = true; //If the test succeeds, the bucket exists
                 }

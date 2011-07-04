@@ -317,14 +317,29 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
+                        bool existingBackup = false;
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
                             httpconf.Configure(options);
                             WEBDAV webDAV = new WEBDAV(destination, options);
-                            webDAV.List();
+                            foreach (Interface.IFileEntry n in webDAV.List())
+                                if (n.Name.StartsWith("duplicati-"))
+                                {
+                                    existingBackup = true;
+                                    break;
+                                }
                         }
 
-                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        if (existingBackup)
+                        {
+                            if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                                return;
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+
                         m_hasTested = true;
                     }
                     catch (Interface.FolderMissingException)

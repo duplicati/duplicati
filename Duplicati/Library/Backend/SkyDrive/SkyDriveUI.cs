@@ -152,9 +152,25 @@ namespace Duplicati.Library.Backend
                         string destination = GetConfiguration(m_options, options);
 
                         SkyDrive skyDrive = new SkyDrive(destination, options);
-                        skyDrive.List();
+                        
+                        bool existingBackup = false;
+                        foreach (Interface.IFileEntry n in skyDrive.List())
+                            if (n.Name.StartsWith("duplicati-"))
+                            {
+                                existingBackup = true;
+                                break;
+                            }
 
-                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        if (existingBackup)
+                        {
+                            if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                                return;
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+
                         m_hasTested = true;
                     }
                     catch (Interface.FolderMissingException)
