@@ -46,11 +46,14 @@ REM Build translations
 cd "..\Duplicati\Localization"
 rmdir /S /Q compiled
 
-REM TODO: Make this dynamic wiht report.*.csv
+REM TODO: Make this dynamic with report.*.csv
+LocalizationTool.exe update
+
 LocalizationTool.exe import da-DK report.da-DK.csv
 LocalizationTool.exe import fr-FR report.fr-FR.csv
 LocalizationTool.exe import pt-BR report.pt-BR.csv
 LocalizationTool.exe import de-DE report.de-DE.csv
+LocalizationTool.exe import es-ES report.es-ES.csv
 
 LocalizationTool.exe update
 LocalizationTool.exe build
