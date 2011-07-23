@@ -315,7 +315,8 @@ Errors: {3}</value>
   <data name="VerificationErrorHeader" xml:space="preserve">
     <value>Reported error messages:</value>
   </data>
-  <data name="WrongNumberOfArgumentsError" xml:space="preserve">
-    <value>Wrong number of aguments</value>
+  <data name="WrongNumberOfCommandsError_v2" xml:space="preserve">
+    <value>Found {0} commands but expected {1}, commands: 
+{2}</value>
   </data>
 </root>
