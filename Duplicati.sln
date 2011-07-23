@@ -53,6 +53,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SkyDrive", "Duplicati\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj", "{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleDocs", "Duplicati\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj", "{42C91180-11EB-4590-82EA-80FE9D4DEBEC}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -510,6 +512,21 @@ Global
 		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Test|Mixed Platforms.Build.0 = Release|Any CPU
 		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}.Test|x86.ActiveCfg = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Release|x86.ActiveCfg = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Test|Any CPU.ActiveCfg = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Test|Any CPU.Build.0 = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Test|Mixed Platforms.Build.0 = Release|Any CPU
+		{42C91180-11EB-4590-82EA-80FE9D4DEBEC}.Test|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
