@@ -59,7 +59,7 @@ namespace Duplicati.Library.Backend
         private bool m_useRRS = false;
         private bool m_useSSL = false;
 
-        private readonly System.Text.RegularExpressions.Regex URL_PARSING = new Regex("s3://(?<hostname>[^/]+)(/(?<prefix>.+))?"); 
+        private readonly System.Text.RegularExpressions.Regex URL_PARSING = new Regex("s3://(?<hostname>[^/]+)(/(?<prefix>.+))?", RegexOptions.IgnoreCase); 
         public const string DEFAULT_S3_HOST  = "s3.amazonaws.com";
         public const string S3_EU_REGION_NAME = "eu-west-1";
 

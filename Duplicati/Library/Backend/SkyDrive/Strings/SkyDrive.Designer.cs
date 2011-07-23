@@ -124,7 +124,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This option supplies the password used to authenticate with Passport, also known as Windows Live ID, MSN Account, SkyDrive and others.  This can also be supplied through the &quot;ftp-username&quot; property..
+        ///   Looks up a localized string similar to This option supplies the username used to authenticate with Passport, also known as Windows Live ID, MSN Account, SkyDrive and others.  This can also be supplied through the &quot;ftp-username&quot; property..
         /// </summary>
         internal static string DescriptionPassportUsernameLong {
             get {

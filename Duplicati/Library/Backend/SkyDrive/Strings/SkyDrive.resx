@@ -139,7 +139,7 @@
     <value>The Microsoft Passport password</value>
   </data>
   <data name="DescriptionPassportUsernameLong" xml:space="preserve">
-    <value>This option supplies the password used to authenticate with Passport, also known as Windows Live ID, MSN Account, SkyDrive and others.  This can also be supplied through the "ftp-username" property.</value>
+    <value>This option supplies the username used to authenticate with Passport, also known as Windows Live ID, MSN Account, SkyDrive and others.  This can also be supplied through the "ftp-username" property.</value>
   </data>
   <data name="DescriptionPassportUsernameShort" xml:space="preserve">
     <value>The Microsoft Passport username</value>

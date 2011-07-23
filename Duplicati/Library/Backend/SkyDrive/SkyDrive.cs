@@ -14,7 +14,7 @@ namespace Duplicati.Library.Backend
         private const string USERNAME_OPTION = "passport-username";
         private const string PASSWORD_OPTION = "passport-password";
 
-        private static readonly Regex URL_PARSER = new Regex("skydrive://(?<rootfolder>[^/]+)(?<prefix>.*)");
+        private static readonly Regex URL_PARSER = new Regex("skydrive://(?<rootfolder>[^/]+)(?<prefix>.*)", RegexOptions.IgnoreCase);
 
         private string m_username;
         private string m_password;
