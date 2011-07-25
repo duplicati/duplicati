@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SkyDriveUI));
             this.CreateFolderButton = new System.Windows.Forms.Button();
             this.TestConnection = new System.Windows.Forms.Button();
             this.SignUpLink = new System.Windows.Forms.LinkLabel();
@@ -42,44 +43,29 @@
             // 
             // CreateFolderButton
             // 
-            this.CreateFolderButton.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.CreateFolderButton.Location = new System.Drawing.Point(362, 79);
+            resources.ApplyResources(this.CreateFolderButton, "CreateFolderButton");
             this.CreateFolderButton.Name = "CreateFolderButton";
-            this.CreateFolderButton.Size = new System.Drawing.Size(112, 24);
-            this.CreateFolderButton.TabIndex = 8;
-            this.CreateFolderButton.Text = "Create folder";
             this.CreateFolderButton.UseVisualStyleBackColor = true;
             this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
             // 
             // TestConnection
             // 
-            this.TestConnection.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.TestConnection.Location = new System.Drawing.Point(360, 160);
+            resources.ApplyResources(this.TestConnection, "TestConnection");
             this.TestConnection.Name = "TestConnection";
-            this.TestConnection.Size = new System.Drawing.Size(112, 24);
-            this.TestConnection.TabIndex = 9;
-            this.TestConnection.Text = "Test Connection";
             this.TestConnection.UseVisualStyleBackColor = true;
             this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
             // SignUpLink
             // 
-            this.SignUpLink.AutoSize = true;
-            this.SignUpLink.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.SignUpLink.Location = new System.Drawing.Point(330, 39);
+            resources.ApplyResources(this.SignUpLink, "SignUpLink");
             this.SignUpLink.Name = "SignUpLink";
-            this.SignUpLink.Size = new System.Drawing.Size(151, 13);
-            this.SignUpLink.TabIndex = 7;
             this.SignUpLink.TabStop = true;
-            this.SignUpLink.Text = "Click here for the sign up page";
             this.SignUpLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.SignUpLink_LinkClicked);
             // 
             // Path
             // 
-            this.Path.Location = new System.Drawing.Point(136, 80);
+            resources.ApplyResources(this.Path, "Path");
             this.Path.Name = "Path";
-            this.Path.Size = new System.Drawing.Size(152, 20);
-            this.Path.TabIndex = 6;
             this.Path.TextChanged += new System.EventHandler(this.Path_TextChanged);
             // 
             // Password
@@ -87,66 +73,41 @@
             this.Password.AskToEnterNewPassword = false;
             this.Password.InitialPassword = null;
             this.Password.IsPasswordVisible = false;
-            this.Password.Location = new System.Drawing.Point(136, 56);
+            resources.ApplyResources(this.Password, "Password");
             this.Password.MaximumSize = new System.Drawing.Size(5000, 20);
             this.Password.MinimumSize = new System.Drawing.Size(150, 20);
             this.Password.Name = "Password";
-            this.Password.Size = new System.Drawing.Size(152, 20);
-            this.Password.TabIndex = 4;
             this.Password.TextChanged += new System.EventHandler(this.Password_TextChanged);
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label3.Location = new System.Drawing.Point(24, 80);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(103, 13);
-            this.label3.TabIndex = 5;
-            this.label3.Text = "SkyDrive folder path";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label2.Location = new System.Drawing.Point(24, 56);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(97, 13);
-            this.label2.TabIndex = 3;
-            this.label2.Text = "Passport Password";
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label1.Location = new System.Drawing.Point(24, 32);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(99, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Passport Username";
             // 
             // Username
             // 
-            this.Username.Location = new System.Drawing.Point(136, 32);
+            resources.ApplyResources(this.Username, "Username");
             this.Username.Name = "Username";
-            this.Username.Size = new System.Drawing.Size(152, 20);
-            this.Username.TabIndex = 2;
             this.Username.TextChanged += new System.EventHandler(this.Username_TextChanged);
             // 
             // label4
             // 
-            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(24, 144);
+            resources.ApplyResources(this.label4, "label4");
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(304, 48);
-            this.label4.TabIndex = 0;
-            this.label4.Text = "Please note that there is no official API and accessing SkyDrive through this bac" +
-                "kend may violate the ToS and may stop to work if Microsoft decides to change the" +
-                " API.";
             // 
             // SkyDriveUI
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.label4);
             this.Controls.Add(this.Username);
@@ -159,7 +120,6 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "SkyDriveUI";
-            this.Size = new System.Drawing.Size(506, 242);
             this.Load += new System.EventHandler(this.SkyDriveUI_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GoogleDocsUI));
             this.CreateFolderButton = new System.Windows.Forms.Button();
             this.TestConnection = new System.Windows.Forms.Button();
             this.SignUpLink = new System.Windows.Forms.LinkLabel();
@@ -43,46 +44,30 @@
             // 
             // CreateFolderButton
             // 
-            this.CreateFolderButton.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.CreateFolderButton.Location = new System.Drawing.Point(362, 79);
+            resources.ApplyResources(this.CreateFolderButton, "CreateFolderButton");
             this.CreateFolderButton.Name = "CreateFolderButton";
-            this.CreateFolderButton.Size = new System.Drawing.Size(112, 24);
-            this.CreateFolderButton.TabIndex = 8;
-            this.CreateFolderButton.Text = "Create folder";
             this.CreateFolderButton.UseVisualStyleBackColor = true;
             this.CreateFolderButton.Click += new System.EventHandler(this.CreateFolderButton_Click);
             // 
             // TestConnection
             // 
-            this.TestConnection.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.TestConnection.Location = new System.Drawing.Point(360, 160);
+            resources.ApplyResources(this.TestConnection, "TestConnection");
             this.TestConnection.Name = "TestConnection";
-            this.TestConnection.Size = new System.Drawing.Size(112, 24);
-            this.TestConnection.TabIndex = 9;
-            this.TestConnection.Text = "Test Connection";
             this.TestConnection.UseVisualStyleBackColor = true;
             this.TestConnection.Click += new System.EventHandler(this.TestConnection_Click);
             // 
             // SignUpLink
             // 
-            this.SignUpLink.AutoSize = true;
-            this.SignUpLink.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.SignUpLink.Location = new System.Drawing.Point(330, 39);
+            resources.ApplyResources(this.SignUpLink, "SignUpLink");
             this.SignUpLink.Name = "SignUpLink";
-            this.SignUpLink.Size = new System.Drawing.Size(151, 13);
-            this.SignUpLink.TabIndex = 7;
             this.SignUpLink.TabStop = true;
-            this.SignUpLink.Text = "Click here for the sign up page";
             this.SignUpLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.SignUpLink_LinkClicked);
             // 
             // Path
             // 
-            this.Path.Location = new System.Drawing.Point(160, 80);
+            resources.ApplyResources(this.Path, "Path");
             this.Path.Name = "Path";
-            this.Path.Size = new System.Drawing.Size(152, 20);
-            this.Path.TabIndex = 6;
-            this.toolTip1.SetToolTip(this.Path, "Enter the collection where backups are stored, you can use / to separate subfolde" +
-                    "rs, e.g.: Backups/Pictures");
+            this.toolTip1.SetToolTip(this.Path, resources.GetString("Path.ToolTip"));
             this.Path.TextChanged += new System.EventHandler(this.Path_TextChanged);
             // 
             // Password
@@ -90,57 +75,38 @@
             this.Password.AskToEnterNewPassword = false;
             this.Password.InitialPassword = null;
             this.Password.IsPasswordVisible = false;
-            this.Password.Location = new System.Drawing.Point(160, 56);
+            resources.ApplyResources(this.Password, "Password");
             this.Password.MaximumSize = new System.Drawing.Size(5000, 20);
             this.Password.MinimumSize = new System.Drawing.Size(150, 20);
             this.Password.Name = "Password";
-            this.Password.Size = new System.Drawing.Size(152, 20);
-            this.Password.TabIndex = 4;
-            this.toolTip1.SetToolTip(this.Password, "Enter your google account password");
+            this.toolTip1.SetToolTip(this.Password, resources.GetString("Password.ToolTip"));
             this.Password.TextChanged += new System.EventHandler(this.Password_TextChanged);
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label3.Location = new System.Drawing.Point(24, 80);
+            resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(114, 13);
-            this.label3.TabIndex = 5;
-            this.label3.Text = "GoogleDocs collection";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label2.Location = new System.Drawing.Point(24, 56);
+            resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(90, 13);
-            this.label2.TabIndex = 3;
-            this.label2.Text = "Google Password";
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label1.Location = new System.Drawing.Point(24, 32);
+            resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(92, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Google Username";
             // 
             // Username
             // 
-            this.Username.Location = new System.Drawing.Point(160, 32);
+            resources.ApplyResources(this.Username, "Username");
             this.Username.Name = "Username";
-            this.Username.Size = new System.Drawing.Size(152, 20);
-            this.Username.TabIndex = 2;
-            this.toolTip1.SetToolTip(this.Username, "Enter your google account name, usually your email address");
+            this.toolTip1.SetToolTip(this.Username, resources.GetString("Username.ToolTip"));
             this.Username.TextChanged += new System.EventHandler(this.Username_TextChanged);
             // 
             // GoogleDocsUI
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.Username);
             this.Controls.Add(this.CreateFolderButton);
@@ -152,7 +118,6 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "GoogleDocsUI";
-            this.Size = new System.Drawing.Size(506, 242);
             this.Load += new System.EventHandler(this.GoogleDocsUI_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

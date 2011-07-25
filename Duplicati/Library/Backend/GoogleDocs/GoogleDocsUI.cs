@@ -231,7 +231,7 @@ namespace Duplicati.Library.Backend
                         GoogleDocs GoogleDocs = new GoogleDocs(destination, options);
                         GoogleDocs.CreateFolder();
 
-                        MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(this, Strings.GoogleDocsUI.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;
                     }
                     catch (Exception ex)

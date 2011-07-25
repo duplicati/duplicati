@@ -61,7 +61,7 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The folder does not exist, do you want to create it?.
+        ///   Looks up a localized string similar to The collection does not exist, do you want to create it?.
         /// </summary>
         internal static string CreateMissingFolderQuestion {
             get {
@@ -70,11 +70,20 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to You must enter a folder to store the backup in.
+        ///   Looks up a localized string similar to You must enter a collection to store the backup in.
         /// </summary>
         internal static string EmptyFolderPathError {
             get {
                 return ResourceManager.GetString("EmptyFolderPathError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Collection created!.
+        /// </summary>
+        internal static string FolderCreated {
+            get {
+                return ResourceManager.GetString("FolderCreated", resourceCulture);
             }
         }
         
