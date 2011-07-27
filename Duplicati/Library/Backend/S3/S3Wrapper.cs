@@ -70,6 +70,8 @@ namespace Duplicati.Library.Backend
             GetObjectRequest objectGetRequest = new GetObjectRequest();
             objectGetRequest.BucketName = bucketName;
             objectGetRequest.Key = keyName;
+            //TODO: Should be set for ReadWriteTimeout ONLY
+            objectGetRequest.Timeout = (int)TimeSpan.FromMinutes(15).TotalMilliseconds;
             
             using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
             using (System.IO.Stream s = objectGetResponse.ResponseStream)
@@ -96,6 +98,8 @@ namespace Duplicati.Library.Backend
             objectAddRequest.InputStream = source;
             objectAddRequest.StorageClass = m_useRRS ? S3StorageClass.ReducedRedundancy : S3StorageClass.Standard;
             objectAddRequest.GenerateMD5Digest = false;
+            //TODO: Should be set for ReadWriteTimeout ONLY
+            objectAddRequest.Timeout = (int)TimeSpan.FromMinutes(15).TotalMilliseconds;
 
             using (PutObjectResponse objectAddResponse = m_client.PutObject(objectAddRequest))
             { }
