@@ -474,4 +474,10 @@
   <data name="ListverifyuploadsShort" xml:space="preserve">
     <value>Verify uploads by listing contents</value>
   </data>
+  <data name="FullifmorethannincrementalsLong" xml:space="preserve">
+    <value>Use this option to limit the length of the backup chain to a certain number. The number supplied here indicates the maximum number of incrementals a chain can contain (not counting the root full backup)</value>
+  </data>
+  <data name="FullifmorethannincrementalsShort" xml:space="preserve">
+    <value>The max number of incrementals in a chain</value>
+  </data>
 </root>

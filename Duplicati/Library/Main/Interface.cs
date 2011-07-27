@@ -398,6 +398,8 @@ namespace Duplicati.Library.Main
 
                     if (!full)
                         full = DateTime.Now > m_options.FullIfOlderThan(backupsets[backupsets.Count - 1].Time);
+                    if (!full && m_options.FullIfMoreThanNInvcrementals > 0)
+                        full = backupsets[backupsets.Count - 1].Incrementals.Count >= m_options.FullIfMoreThanNInvcrementals;
                     bs.Full = full;
 
                     List<string> controlfiles = new List<string>();

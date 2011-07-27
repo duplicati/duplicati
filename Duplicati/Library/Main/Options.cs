@@ -125,6 +125,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("totalsize", CommandLineArgument.ArgumentType.Size, Strings.Options.TotalsizeShort, Strings.Options.TotalsizeLong),
                     new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong),
                     new CommandLineArgument("full-if-older-than", CommandLineArgument.ArgumentType.Timespan, Strings.Options.FullifolderthanShort, Strings.Options.FullifolderthanLong),
+                    new CommandLineArgument("full-if-more-than-n-incrementals", CommandLineArgument.ArgumentType.Integer, Strings.Options.FullifmorethannincrementalsShort, Strings.Options.FullifmorethannincrementalsLong),
                     new CommandLineArgument("allow-full-removal", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremoveShort, Strings.Options.AllowfullremoveLong),
 
                     new CommandLineArgument("signature-control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecontrolfilesShort, Strings.Options.SignaturecontrolfilesLong),
@@ -280,6 +281,24 @@ namespace Duplicati.Library.Main
                     TimeSpan.FromSeconds(Math.Min(Utility.Timeparser.ParseTimeSpan(m_options["full-if-older-than"]).TotalSeconds / 100, 60.0 * 60.0));
 
                 return Utility.Timeparser.ParseTimeInterval(m_options["full-if-older-than"], offsettime) - tolerance;
+            }
+        }
+
+        /// <summary>
+        /// A value indicating how many incrementals are required to trigger a full backup
+        /// </summary>
+        public int FullIfMoreThanNInvcrementals
+        {
+            get
+            {
+                string countdata;
+                int count;
+                if (!m_options.TryGetValue("full-if-more-than-n-incrementals", out countdata))
+                    return 0;
+                if (int.TryParse(countdata, out count))
+                    return count;
+
+                return 0;
             }
         }
 

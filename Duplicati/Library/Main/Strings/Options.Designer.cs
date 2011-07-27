@@ -502,6 +502,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to limit the length of the backup chain to a certain number. The number supplied here indicates the maximum number of incrementals a chain can contain (not counting the root full backup).
+        /// </summary>
+        internal static string FullifmorethannincrementalsLong {
+            get {
+                return ResourceManager.GetString("FullifmorethannincrementalsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The max number of incrementals in a chain.
+        /// </summary>
+        internal static string FullifmorethannincrementalsShort {
+            get {
+                return ResourceManager.GetString("FullifmorethannincrementalsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If the last full backup is older than the duration supplied here, Duplicati will make a full backup, otherwise an incremental.
         /// </summary>
         internal static string FullifolderthanLong {
