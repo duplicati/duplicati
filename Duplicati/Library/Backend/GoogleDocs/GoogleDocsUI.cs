@@ -266,7 +266,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(folder))
                 throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, FOLDER));
 
-            return "GoogleDocs://" + guiOptions[FOLDER];
+            return "googledocs://" + guiOptions[FOLDER];
         }
 
         public static string PageTitle
