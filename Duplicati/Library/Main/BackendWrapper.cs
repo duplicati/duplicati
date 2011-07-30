@@ -182,7 +182,7 @@ namespace Duplicati.Library.Main
 
             m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(backend, m_options.RawOptions);
             if (m_backend == null)
-                throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, m_backend));
+                throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, backend));
 
             if (m_options.AutoCleanup)
                 m_orphans = new List<BackupEntryBase>();
