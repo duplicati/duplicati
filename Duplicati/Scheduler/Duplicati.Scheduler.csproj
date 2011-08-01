@@ -31,46 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Duplicati, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.exe</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.Backend.File, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.Backend.File.dll</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.Backend.FTP, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.Backend.FTP.dll</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.Backend.SSH, Version=1.1.99.794, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.Backend.SSH.dll</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.Compression, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.Compression.dll</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.DynamicLoader, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.DynamicLoader.dll</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.Interface, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.Interface.dll</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.Logging, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.Logging.dll</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.Main, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.Main.dll</HintPath>
-    </Reference>
-    <Reference Include="Duplicati.Library.Utility, Version=1.1.99.794, Culture=neutral, PublicKeyToken=8bfe994a39631a7b, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\Duplicati.Library.Utility.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.ExceptionMessageBox, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.Win32.TaskScheduler, Version=1.6.4186.14621, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -82,10 +42,6 @@
     </Reference>
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Forms.Wizard, Version=1.1.99.794, Culture=neutral, PublicKeyToken=ae51c3db610c5381, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Duplicati\System.Windows.Forms.Wizard.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -264,9 +220,53 @@
       <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
       <Name>Utility</Name>
     </ProjectReference>
+    <ProjectReference Include="..\GUI\Datamodel\Datamodel.csproj">
+      <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
+      <Name>Datamodel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GUI\Duplicati.csproj">
+      <Project>{1470F75F-D364-4010-91D0-FD4DDA1C5159}</Project>
+      <Name>Duplicati</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
+      <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
+      <Name>Duplicati.Library.Backend.File</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
+      <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
+      <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
+      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
+      <Name>Duplicati.Library.Compression</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.DynamicLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Main\Duplicati.Library.Main.csproj">
+      <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
+      <Name>Duplicati.Library.Main</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
     <ProjectReference Include="..\RunBackup\Duplicati.RunBackup.csproj">
       <Project>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</Project>
       <Name>Duplicati.RunBackup</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
+      <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
+      <Name>Duplicati.Winforms.Controls</Name>
     </ProjectReference>
     <ProjectReference Include="Data\Duplicati.Scheduler.Data.csproj">
       <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>

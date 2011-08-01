@@ -79,7 +79,7 @@ namespace Duplicati.Scheduler
             // Find the checked radio button and assign the GUI from the tag
             GuiControl = ((RadioButton)sender).Tag as Library.Interface.IGUIControl;
             // Show the new user interface
-            GuiInterface = GuiControl.GetControl(new Dictionary<string, string>(), Row.Options);
+            GuiInterface = GuiControl.GetControl(new Dictionary<string, string>(), Row.GuiOptions);
             GuiInterface.SetBounds(0, 0, this.UIFPanel.Width, this.UIFPanel.Height);
             GuiInterface.Visible = true;
             this.UIFPanel.Controls.Clear();
@@ -126,7 +126,7 @@ namespace Duplicati.Scheduler
             if (!Row.IsDestinationNull())
             {
                 foreach (Control C in this.BackEndTableLayoutPanel.Controls)
-                    ((RadioButton)C).Checked = Row.Destination.StartsWith(((Duplicati.Library.Interface.IBackend)C.Tag).ProtocolKey); //((RadioButton)C).Text + @":\\");
+                    ((RadioButton)C).Checked = Row.Destination.StartsWith(((Duplicati.Library.Interface.IBackend)C.Tag).ProtocolKey);
             }
         }
         /// <summary>
@@ -135,11 +135,12 @@ namespace Duplicati.Scheduler
         /// <param name="outOptions">The Options from the control</param>
         /// <param name="outDestination">The backup destination</param>
         /// <returns></returns>
-        private bool GetConfiguration(out Dictionary<string, string> outOptions, out string outDestination)
+        private bool GetConfiguration(out Dictionary<string, string> outOptions, out Dictionary<string, string> outGuiOptions, out string outDestination)
         {
             // This makes me feel like a kiddie, and out args are evil
             outDestination = null;
             outOptions = null;
+            outGuiOptions = null;
             if (GuiControl == null) return false;
             // First, call the 'Leave' thing
             GuiControl.Leave(GuiInterface);
@@ -150,11 +151,10 @@ namespace Duplicati.Scheduler
                 System.Reflection.FieldInfo fld = GuiInterface.GetType().GetField("m_options", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 if (fld != null)
                 {
-                    Dictionary<string, string> Options = (Dictionary<string, string>)fld.GetValue(GuiInterface);
+                    outGuiOptions = (Dictionary<string, string>)fld.GetValue(GuiInterface);
                     outOptions = new Dictionary<string,string>();
                     // Now, we can call the GetConfiguration thing and convert the Options to usable ones.
-                    outDestination = GuiControl.GetConfiguration(new Dictionary<string, string>(),
-                        Options, outOptions);
+                    outDestination = GuiControl.GetConfiguration(new Dictionary<string, string>(), outGuiOptions, outOptions);
                     Result = true;
                 }
             }
@@ -191,10 +191,12 @@ namespace Duplicati.Scheduler
             if (GuiControl != null && VisitedDestination)
             {
                 Dictionary<string, string> Opts = new Dictionary<string, string>();
+                Dictionary<string, string> GuiOpts = new Dictionary<string, string>();
                 string Dest = string.Empty;
-                if (GetConfiguration(out Opts, out Dest))
+                if (GetConfiguration(out Opts, out GuiOpts, out Dest))
                 {
                     aRow.SetOptions(Opts);
+                    aRow.SetGuiOptions(GuiOpts);
                     aRow.Destination = Dest;
                 }
             }

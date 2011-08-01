@@ -142,6 +142,18 @@ namespace Duplicati.Scheduler.Data
                 }
             }
             /// <summary>
+            /// Returns the GuiOptions
+            /// </summary>
+            public Dictionary<string, string> GuiOptions
+            {
+                get
+                {
+                    return (from GuiOptionsRow qRow in this.GetGuiOptionsRows()
+                            select new { Key = qRow.Parameter, Value = qRow.Value }).
+                            ToDictionary(n => n.Key, n => n.Value);
+                }
+            }
+            /// <summary>
             /// This is only local and is not saved in XML - Enabled should be fetched from the trigger
             /// But, this is used for temporary storage by the editor
             /// </summary>
@@ -180,6 +192,22 @@ namespace Duplicati.Scheduler.Data
                     Row.Delete();
                 foreach (KeyValuePair<string, string> kvp in aOptions)
                     ChildTable.AddOptionsRow(this, kvp.Key, kvp.Value);
+                return true;
+            }
+            /// <summary>
+            /// Save as GuiOptions
+            /// </summary>
+            /// <param name="aOptions">Options to save</param>
+            /// <returns>OK if saved</returns>
+            public bool SetGuiOptions(Dictionary<string, string> aOptions)
+            {
+                System.Data.DataRelation dr = this.tableJobs.ChildRelations["Jobs_GuiOptions"];
+                if (dr == null) return false;
+                SchedulerDataSet.GuiOptionsDataTable ChildTable = (SchedulerDataSet.GuiOptionsDataTable)dr.ChildTable;
+                foreach (SchedulerDataSet.GuiOptionsRow Row in this.GetGuiOptionsRows())
+                    Row.Delete();
+                foreach (KeyValuePair<string, string> kvp in aOptions)
+                    ChildTable.AddGuiOptionsRow(this, kvp.Key, kvp.Value);
                 return true;
             }
             /// <summary>
@@ -292,6 +320,8 @@ namespace Duplicati.Scheduler.Data
                 // Get rid of the options
                 foreach (OptionsRow oRow in GetOptionsRows())
                     oRow.Delete();
+                foreach (GuiOptionsRow oRow in GetGuiOptionsRows())
+                    oRow.Delete();
                 // And the maps
                 foreach (DriveMapsRow dRow in GetDriveMapsRows())
                     dRow.Delete();
@@ -322,6 +352,17 @@ namespace Duplicati.Scheduler.Data
                 JobsRow Row = this.FindByName(aName);
                 if (Row == null) return new Dictionary<string, string>();
                 return Row.Options;
+            }
+            /// <summary>
+            /// Get GuiOptions
+            /// </summary>
+            /// <param name="aName">Job name</param>
+            /// <returns>Options</returns>
+            public Dictionary<string, string> GetGuiOptions(string aName)
+            {
+                JobsRow Row = this.FindByName(aName);
+                if (Row == null) return new Dictionary<string, string>();
+                return Row.GuiOptions;
             }
             /// <summary>
             /// Create a new row with defaults

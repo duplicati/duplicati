@@ -33,9 +33,13 @@ namespace Duplicati.Scheduler.Data {
         
         private SettingsDataTable tableSettings;
         
+        private GuiOptionsDataTable tableGuiOptions;
+        
         private global::System.Data.DataRelation relationJobs_Options;
         
         private global::System.Data.DataRelation relationJobs_DriveMaps;
+        
+        private global::System.Data.DataRelation relationJobs_GuiOptions;
         
         private global::System.Data.SchemaSerializationMode _schemaSerializationMode = global::System.Data.SchemaSerializationMode.IncludeSchema;
         
@@ -74,6 +78,9 @@ namespace Duplicati.Scheduler.Data {
                 }
                 if ((ds.Tables["Settings"] != null)) {
                     base.Tables.Add(new SettingsDataTable(ds.Tables["Settings"]));
+                }
+                if ((ds.Tables["GuiOptions"] != null)) {
+                    base.Tables.Add(new GuiOptionsDataTable(ds.Tables["GuiOptions"]));
                 }
                 this.DataSetName = ds.DataSetName;
                 this.Prefix = ds.Prefix;
@@ -126,6 +133,15 @@ namespace Duplicati.Scheduler.Data {
         public SettingsDataTable Settings {
             get {
                 return this.tableSettings;
+            }
+        }
+        
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.ComponentModel.Browsable(false)]
+        [global::System.ComponentModel.DesignerSerializationVisibility(global::System.ComponentModel.DesignerSerializationVisibility.Content)]
+        public GuiOptionsDataTable GuiOptions {
+            get {
+                return this.tableGuiOptions;
             }
         }
         
@@ -200,6 +216,9 @@ namespace Duplicati.Scheduler.Data {
                 if ((ds.Tables["Settings"] != null)) {
                     base.Tables.Add(new SettingsDataTable(ds.Tables["Settings"]));
                 }
+                if ((ds.Tables["GuiOptions"] != null)) {
+                    base.Tables.Add(new GuiOptionsDataTable(ds.Tables["GuiOptions"]));
+                }
                 this.DataSetName = ds.DataSetName;
                 this.Prefix = ds.Prefix;
                 this.Namespace = ds.Namespace;
@@ -254,8 +273,15 @@ namespace Duplicati.Scheduler.Data {
                     this.tableSettings.InitVars();
                 }
             }
+            this.tableGuiOptions = ((GuiOptionsDataTable)(base.Tables["GuiOptions"]));
+            if ((initTable == true)) {
+                if ((this.tableGuiOptions != null)) {
+                    this.tableGuiOptions.InitVars();
+                }
+            }
             this.relationJobs_Options = this.Relations["Jobs_Options"];
             this.relationJobs_DriveMaps = this.Relations["Jobs_DriveMaps"];
+            this.relationJobs_GuiOptions = this.Relations["Jobs_GuiOptions"];
         }
         
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -273,6 +299,8 @@ namespace Duplicati.Scheduler.Data {
             base.Tables.Add(this.tableDriveMaps);
             this.tableSettings = new SettingsDataTable();
             base.Tables.Add(this.tableSettings);
+            this.tableGuiOptions = new GuiOptionsDataTable();
+            base.Tables.Add(this.tableGuiOptions);
             this.relationJobs_Options = new global::System.Data.DataRelation("Jobs_Options", new global::System.Data.DataColumn[] {
                         this.tableJobs.NameColumn}, new global::System.Data.DataColumn[] {
                         this.tableOptions.NameColumn}, false);
@@ -281,6 +309,10 @@ namespace Duplicati.Scheduler.Data {
                         this.tableJobs.NameColumn}, new global::System.Data.DataColumn[] {
                         this.tableDriveMaps.NameColumn}, false);
             this.Relations.Add(this.relationJobs_DriveMaps);
+            this.relationJobs_GuiOptions = new global::System.Data.DataRelation("Jobs_GuiOptions", new global::System.Data.DataColumn[] {
+                        this.tableJobs.NameColumn}, new global::System.Data.DataColumn[] {
+                        this.tableGuiOptions.NameColumn}, false);
+            this.Relations.Add(this.relationJobs_GuiOptions);
         }
         
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -300,6 +332,11 @@ namespace Duplicati.Scheduler.Data {
         
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         private bool ShouldSerializeSettings() {
+            return false;
+        }
+        
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        private bool ShouldSerializeGuiOptions() {
             return false;
         }
         
@@ -363,6 +400,8 @@ namespace Duplicati.Scheduler.Data {
         public delegate void DriveMapsRowChangeEventHandler(object sender, DriveMapsRowChangeEvent e);
         
         public delegate void SettingsRowChangeEventHandler(object sender, SettingsRowChangeEvent e);
+        
+        public delegate void GuiOptionsRowChangeEventHandler(object sender, GuiOptionsRowChangeEvent e);
         
         /// <summary>
         ///Represents the strongly named DataTable class.
@@ -1563,6 +1602,259 @@ namespace Duplicati.Scheduler.Data {
         }
         
         /// <summary>
+        ///Represents the strongly named DataTable class.
+        ///</summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "2.0.0.0")]
+        [global::System.Serializable()]
+        [global::System.Xml.Serialization.XmlSchemaProviderAttribute("GetTypedTableSchema")]
+        public partial class GuiOptionsDataTable : global::System.Data.TypedTableBase<GuiOptionsRow> {
+            
+            private global::System.Data.DataColumn columnName;
+            
+            private global::System.Data.DataColumn columnParameter;
+            
+            private global::System.Data.DataColumn columnValue;
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public GuiOptionsDataTable() {
+                this.TableName = "GuiOptions";
+                this.BeginInit();
+                this.InitClass();
+                this.EndInit();
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            internal GuiOptionsDataTable(global::System.Data.DataTable table) {
+                this.TableName = table.TableName;
+                if ((table.CaseSensitive != table.DataSet.CaseSensitive)) {
+                    this.CaseSensitive = table.CaseSensitive;
+                }
+                if ((table.Locale.ToString() != table.DataSet.Locale.ToString())) {
+                    this.Locale = table.Locale;
+                }
+                if ((table.Namespace != table.DataSet.Namespace)) {
+                    this.Namespace = table.Namespace;
+                }
+                this.Prefix = table.Prefix;
+                this.MinimumCapacity = table.MinimumCapacity;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            protected GuiOptionsDataTable(global::System.Runtime.Serialization.SerializationInfo info, global::System.Runtime.Serialization.StreamingContext context) : 
+                    base(info, context) {
+                this.InitVars();
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public global::System.Data.DataColumn NameColumn {
+                get {
+                    return this.columnName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public global::System.Data.DataColumn ParameterColumn {
+                get {
+                    return this.columnParameter;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public global::System.Data.DataColumn ValueColumn {
+                get {
+                    return this.columnValue;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.ComponentModel.Browsable(false)]
+            public int Count {
+                get {
+                    return this.Rows.Count;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public GuiOptionsRow this[int index] {
+                get {
+                    return ((GuiOptionsRow)(this.Rows[index]));
+                }
+            }
+            
+            public event GuiOptionsRowChangeEventHandler GuiOptionsRowChanging;
+            
+            public event GuiOptionsRowChangeEventHandler GuiOptionsRowChanged;
+            
+            public event GuiOptionsRowChangeEventHandler GuiOptionsRowDeleting;
+            
+            public event GuiOptionsRowChangeEventHandler GuiOptionsRowDeleted;
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public void AddGuiOptionsRow(GuiOptionsRow row) {
+                this.Rows.Add(row);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public GuiOptionsRow AddGuiOptionsRow(JobsRow parentJobsRowByJobs_GuiOptions, string Parameter, string Value) {
+                GuiOptionsRow rowGuiOptionsRow = ((GuiOptionsRow)(this.NewRow()));
+                object[] columnValuesArray = new object[] {
+                        null,
+                        Parameter,
+                        Value};
+                if ((parentJobsRowByJobs_GuiOptions != null)) {
+                    columnValuesArray[0] = parentJobsRowByJobs_GuiOptions[0];
+                }
+                rowGuiOptionsRow.ItemArray = columnValuesArray;
+                this.Rows.Add(rowGuiOptionsRow);
+                return rowGuiOptionsRow;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public override global::System.Data.DataTable Clone() {
+                GuiOptionsDataTable cln = ((GuiOptionsDataTable)(base.Clone()));
+                cln.InitVars();
+                return cln;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            protected override global::System.Data.DataTable CreateInstance() {
+                return new GuiOptionsDataTable();
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            internal void InitVars() {
+                this.columnName = base.Columns["Name"];
+                this.columnParameter = base.Columns["Parameter"];
+                this.columnValue = base.Columns["Value"];
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            private void InitClass() {
+                this.columnName = new global::System.Data.DataColumn("Name", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnName);
+                this.columnParameter = new global::System.Data.DataColumn("Parameter", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnParameter);
+                this.columnValue = new global::System.Data.DataColumn("Value", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnValue);
+                this.columnName.AllowDBNull = false;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public GuiOptionsRow NewGuiOptionsRow() {
+                return ((GuiOptionsRow)(this.NewRow()));
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            protected override global::System.Data.DataRow NewRowFromBuilder(global::System.Data.DataRowBuilder builder) {
+                return new GuiOptionsRow(builder);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            protected override global::System.Type GetRowType() {
+                return typeof(GuiOptionsRow);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            protected override void OnRowChanged(global::System.Data.DataRowChangeEventArgs e) {
+                base.OnRowChanged(e);
+                if ((this.GuiOptionsRowChanged != null)) {
+                    this.GuiOptionsRowChanged(this, new GuiOptionsRowChangeEvent(((GuiOptionsRow)(e.Row)), e.Action));
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            protected override void OnRowChanging(global::System.Data.DataRowChangeEventArgs e) {
+                base.OnRowChanging(e);
+                if ((this.GuiOptionsRowChanging != null)) {
+                    this.GuiOptionsRowChanging(this, new GuiOptionsRowChangeEvent(((GuiOptionsRow)(e.Row)), e.Action));
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            protected override void OnRowDeleted(global::System.Data.DataRowChangeEventArgs e) {
+                base.OnRowDeleted(e);
+                if ((this.GuiOptionsRowDeleted != null)) {
+                    this.GuiOptionsRowDeleted(this, new GuiOptionsRowChangeEvent(((GuiOptionsRow)(e.Row)), e.Action));
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            protected override void OnRowDeleting(global::System.Data.DataRowChangeEventArgs e) {
+                base.OnRowDeleting(e);
+                if ((this.GuiOptionsRowDeleting != null)) {
+                    this.GuiOptionsRowDeleting(this, new GuiOptionsRowChangeEvent(((GuiOptionsRow)(e.Row)), e.Action));
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public void RemoveGuiOptionsRow(GuiOptionsRow row) {
+                this.Rows.Remove(row);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public static global::System.Xml.Schema.XmlSchemaComplexType GetTypedTableSchema(global::System.Xml.Schema.XmlSchemaSet xs) {
+                global::System.Xml.Schema.XmlSchemaComplexType type = new global::System.Xml.Schema.XmlSchemaComplexType();
+                global::System.Xml.Schema.XmlSchemaSequence sequence = new global::System.Xml.Schema.XmlSchemaSequence();
+                SchedulerDataSet ds = new SchedulerDataSet();
+                global::System.Xml.Schema.XmlSchemaAny any1 = new global::System.Xml.Schema.XmlSchemaAny();
+                any1.Namespace = "http://www.w3.org/2001/XMLSchema";
+                any1.MinOccurs = new decimal(0);
+                any1.MaxOccurs = decimal.MaxValue;
+                any1.ProcessContents = global::System.Xml.Schema.XmlSchemaContentProcessing.Lax;
+                sequence.Items.Add(any1);
+                global::System.Xml.Schema.XmlSchemaAny any2 = new global::System.Xml.Schema.XmlSchemaAny();
+                any2.Namespace = "urn:schemas-microsoft-com:xml-diffgram-v1";
+                any2.MinOccurs = new decimal(1);
+                any2.ProcessContents = global::System.Xml.Schema.XmlSchemaContentProcessing.Lax;
+                sequence.Items.Add(any2);
+                global::System.Xml.Schema.XmlSchemaAttribute attribute1 = new global::System.Xml.Schema.XmlSchemaAttribute();
+                attribute1.Name = "namespace";
+                attribute1.FixedValue = ds.Namespace;
+                type.Attributes.Add(attribute1);
+                global::System.Xml.Schema.XmlSchemaAttribute attribute2 = new global::System.Xml.Schema.XmlSchemaAttribute();
+                attribute2.Name = "tableTypeName";
+                attribute2.FixedValue = "GuiOptionsDataTable";
+                type.Attributes.Add(attribute2);
+                type.Particle = sequence;
+                global::System.Xml.Schema.XmlSchema dsSchema = ds.GetSchemaSerializable();
+                if (xs.Contains(dsSchema.TargetNamespace)) {
+                    global::System.IO.MemoryStream s1 = new global::System.IO.MemoryStream();
+                    global::System.IO.MemoryStream s2 = new global::System.IO.MemoryStream();
+                    try {
+                        global::System.Xml.Schema.XmlSchema schema = null;
+                        dsSchema.Write(s1);
+                        for (global::System.Collections.IEnumerator schemas = xs.Schemas(dsSchema.TargetNamespace).GetEnumerator(); schemas.MoveNext(); ) {
+                            schema = ((global::System.Xml.Schema.XmlSchema)(schemas.Current));
+                            s2.SetLength(0);
+                            schema.Write(s2);
+                            if ((s1.Length == s2.Length)) {
+                                s1.Position = 0;
+                                s2.Position = 0;
+                                for (; ((s1.Position != s1.Length) 
+                                            && (s1.ReadByte() == s2.ReadByte())); ) {
+                                    ;
+                                }
+                                if ((s1.Position == s1.Length)) {
+                                    return type;
+                                }
+                            }
+                        }
+                    }
+                    finally {
+                        if ((s1 != null)) {
+                            s1.Close();
+                        }
+                        if ((s2 != null)) {
+                            s2.Close();
+                        }
+                    }
+                }
+                xs.Add(dsSchema);
+                return type;
+            }
+        }
+        
+        /// <summary>
         ///Represents strongly named DataRow class.
         ///</summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "2.0.0.0")]
@@ -1955,6 +2247,16 @@ namespace Duplicati.Scheduler.Data {
                     return ((DriveMapsRow[])(base.GetChildRows(this.Table.ChildRelations["Jobs_DriveMaps"])));
                 }
             }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public GuiOptionsRow[] GetGuiOptionsRows() {
+                if ((this.Table.ChildRelations["Jobs_GuiOptions"] == null)) {
+                    return new GuiOptionsRow[0];
+                }
+                else {
+                    return ((GuiOptionsRow[])(base.GetChildRows(this.Table.ChildRelations["Jobs_GuiOptions"])));
+                }
+            }
         }
         
         /// <summary>
@@ -2283,6 +2585,91 @@ namespace Duplicati.Scheduler.Data {
         }
         
         /// <summary>
+        ///Represents strongly named DataRow class.
+        ///</summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "2.0.0.0")]
+        public partial class GuiOptionsRow : global::System.Data.DataRow {
+            
+            private GuiOptionsDataTable tableGuiOptions;
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            internal GuiOptionsRow(global::System.Data.DataRowBuilder rb) : 
+                    base(rb) {
+                this.tableGuiOptions = ((GuiOptionsDataTable)(this.Table));
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public string Name {
+                get {
+                    return ((string)(this[this.tableGuiOptions.NameColumn]));
+                }
+                set {
+                    this[this.tableGuiOptions.NameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public string Parameter {
+                get {
+                    if (this.IsParameterNull()) {
+                        return string.Empty;
+                    }
+                    else {
+                        return ((string)(this[this.tableGuiOptions.ParameterColumn]));
+                    }
+                }
+                set {
+                    this[this.tableGuiOptions.ParameterColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public string Value {
+                get {
+                    if (this.IsValueNull()) {
+                        return string.Empty;
+                    }
+                    else {
+                        return ((string)(this[this.tableGuiOptions.ValueColumn]));
+                    }
+                }
+                set {
+                    this[this.tableGuiOptions.ValueColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public JobsRow JobsRow {
+                get {
+                    return ((JobsRow)(this.GetParentRow(this.Table.ParentRelations["Jobs_GuiOptions"])));
+                }
+                set {
+                    this.SetParentRow(value, this.Table.ParentRelations["Jobs_GuiOptions"]);
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public bool IsParameterNull() {
+                return this.IsNull(this.tableGuiOptions.ParameterColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public void SetParameterNull() {
+                this[this.tableGuiOptions.ParameterColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public bool IsValueNull() {
+                return this.IsNull(this.tableGuiOptions.ValueColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public void SetValueNull() {
+                this[this.tableGuiOptions.ValueColumn] = global::System.Convert.DBNull;
+            }
+        }
+        
+        /// <summary>
         ///Row event argument class
         ///</summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "2.0.0.0")]
@@ -2393,6 +2780,37 @@ namespace Duplicati.Scheduler.Data {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             public SettingsRow Row {
+                get {
+                    return this.eventRow;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public global::System.Data.DataRowAction Action {
+                get {
+                    return this.eventAction;
+                }
+            }
+        }
+        
+        /// <summary>
+        ///Row event argument class
+        ///</summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "2.0.0.0")]
+        public class GuiOptionsRowChangeEvent : global::System.EventArgs {
+            
+            private GuiOptionsRow eventRow;
+            
+            private global::System.Data.DataRowAction eventAction;
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public GuiOptionsRowChangeEvent(GuiOptionsRow row, global::System.Data.DataRowAction action) {
+                this.eventRow = row;
+                this.eventAction = action;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            public GuiOptionsRow Row {
                 get {
                     return this.eventRow;
                 }
