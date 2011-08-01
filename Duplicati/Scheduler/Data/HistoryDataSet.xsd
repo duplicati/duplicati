@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="HistoryDataSet" targetNamespace="http://tempuri.org/HistoryDataSet.xsd" xmlns:mstns="http://tempuri.org/HistoryDataSet.xsd" xmlns="http://tempuri.org/HistoryDataSet.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:appinfo source="urn:schemas-microsoft-com:xml-msdatasource">
+      <DataSource DefaultConnectionIndex="0" FunctionsComponentName="QueriesTableAdapter" Modifier="AutoLayout, AnsiClass, Class, Public" SchemaSerializationMode="IncludeSchema" xmlns="urn:schemas-microsoft-com:xml-msdatasource">
+        <Connections />
+        <Tables />
+        <Sources />
+      </DataSource>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:element name="HistoryDataSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:Generator_UserDSName="HistoryDataSet" msprop:Generator_DataSetName="HistoryDataSet" msprop:EnableTableAdapterManager="true">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="History" msprop:Generator_UserTableName="History" msprop:Generator_RowDeletedName="HistoryRowDeleted" msprop:Generator_RowChangedName="HistoryRowChanged" msprop:Generator_RowClassName="HistoryRow" msprop:Generator_RowChangingName="HistoryRowChanging" msprop:Generator_RowEvArgName="HistoryRowChangeEvent" msprop:Generator_RowEvHandlerName="HistoryRowChangeEventHandler" msprop:Generator_TableClassName="HistoryDataTable" msprop:Generator_TableVarName="tableHistory" msprop:Generator_RowDeletingName="HistoryRowDeleting" msprop:Generator_TablePropName="History">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Name" msprop:Generator_UserColumnName="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnPropNameInTable="NameColumn" type="xs:string" />
+              <xs:element name="ActionDate" msdata:Caption="Date" msprop:Generator_UserColumnName="ActionDate" msprop:Generator_ColumnVarNameInTable="columnActionDate" msprop:Generator_ColumnPropNameInRow="ActionDate" msprop:Generator_ColumnPropNameInTable="ActionDateColumn" type="xs:dateTime" />
+              <xs:element name="Action" msprop:Generator_UserColumnName="Action" msprop:Generator_ColumnVarNameInTable="columnAction" msprop:Generator_ColumnPropNameInRow="Action" msprop:Generator_ColumnPropNameInTable="ActionColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="Full" msprop:Generator_UserColumnName="Full" msprop:Generator_ColumnVarNameInTable="columnFull" msprop:Generator_ColumnPropNameInRow="Full" msprop:Generator_ColumnPropNameInTable="FullColumn" type="xs:boolean" minOccurs="0" />
+              <xs:element name="Success" msprop:Generator_UserColumnName="Success" msprop:Generator_ColumnVarNameInTable="columnSuccess" msprop:Generator_ColumnPropNameInRow="Success" msprop:Generator_ColumnPropNameInTable="SuccessColumn" type="xs:boolean" minOccurs="0" />
+              <xs:element name="LogFileName" msprop:Generator_UserColumnName="LogFileName" msprop:Generator_ColumnVarNameInTable="columnLogFileName" msprop:Generator_ColumnPropNameInRow="LogFileName" msprop:Generator_ColumnPropNameInTable="LogFileNameColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="Checksum" msprop:Generator_UserColumnName="Checksum" msprop:Generator_ColumnVarNameInTable="columnChecksum" msprop:Generator_ColumnPropNameInRow="Checksum" msprop:Generator_ColumnPropNameInTable="ChecksumColumn" type="xs:base64Binary" minOccurs="0" />
+              <xs:element name="CheckMod" msprop:Generator_UserColumnName="CheckMod" msprop:Generator_ColumnVarNameInTable="columnCheckMod" msprop:Generator_ColumnPropNameInRow="CheckMod" msprop:Generator_ColumnPropNameInTable="CheckModColumn" type="xs:string" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Stats" msprop:Generator_UserTableName="Stats" msprop:Generator_RowDeletedName="StatsRowDeleted" msprop:Generator_RowChangedName="StatsRowChanged" msprop:Generator_RowClassName="StatsRow" msprop:Generator_RowChangingName="StatsRowChanging" msprop:Generator_RowEvArgName="StatsRowChangeEvent" msprop:Generator_RowEvHandlerName="StatsRowChangeEventHandler" msprop:Generator_TableClassName="StatsDataTable" msprop:Generator_TableVarName="tableStats" msprop:Generator_RowDeletingName="StatsRowDeleting" msprop:Generator_TablePropName="Stats">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="LogFileName" msdata:Caption="Name" msprop:Generator_UserColumnName="LogFileName" msprop:Generator_ColumnVarNameInTable="columnLogFileName" msprop:Generator_ColumnPropNameInRow="LogFileName" msprop:Generator_ColumnPropNameInTable="LogFileNameColumn" type="xs:string" />
+              <xs:element name="ActionDate" msdata:Caption="Date" msprop:Generator_UserColumnName="ActionDate" msprop:Generator_ColumnVarNameInTable="columnActionDate" msprop:Generator_ColumnPropNameInRow="ActionDate" msprop:Generator_ColumnPropNameInTable="ActionDateColumn" type="xs:dateTime" />
+              <xs:element name="AddedFiles" msprop:Generator_UserColumnName="AddedFiles" msprop:Generator_ColumnVarNameInTable="columnAddedFiles" msprop:Generator_ColumnPropNameInRow="AddedFiles" msprop:Generator_ColumnPropNameInTable="AddedFilesColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="AddedFolders" msprop:Generator_UserColumnName="AddedFolders" msprop:Generator_ColumnVarNameInTable="columnAddedFolders" msprop:Generator_ColumnPropNameInRow="AddedFolders" msprop:Generator_ColumnPropNameInTable="AddedFoldersColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="ExaminedFiles" msprop:Generator_UserColumnName="ExaminedFiles" msprop:Generator_ColumnVarNameInTable="columnExaminedFiles" msprop:Generator_ColumnPropNameInRow="ExaminedFiles" msprop:Generator_ColumnPropNameInTable="ExaminedFilesColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="OpenedFiles" msprop:Generator_UserColumnName="OpenedFiles" msprop:Generator_ColumnVarNameInTable="columnOpenedFiles" msprop:Generator_ColumnPropNameInRow="OpenedFiles" msprop:Generator_ColumnPropNameInTable="OpenedFilesColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="SizeOfModified" msprop:Generator_UserColumnName="SizeOfModified" msprop:Generator_ColumnVarNameInTable="columnSizeOfModified" msprop:Generator_ColumnPropNameInRow="SizeOfModified" msprop:Generator_ColumnPropNameInTable="SizeOfModifiedColumn" type="xs:long" minOccurs="0" />
+              <xs:element name="SizeOfAdded" msprop:Generator_UserColumnName="SizeOfAdded" msprop:Generator_ColumnVarNameInTable="columnSizeOfAdded" msprop:Generator_ColumnPropNameInRow="SizeOfAdded" msprop:Generator_ColumnPropNameInTable="SizeOfAddedColumn" type="xs:long" minOccurs="0" />
+              <xs:element name="SizeOfExamined" msprop:Generator_UserColumnName="SizeOfExamined" msprop:Generator_ColumnVarNameInTable="columnSizeOfExamined" msprop:Generator_ColumnPropNameInRow="SizeOfExamined" msprop:Generator_ColumnPropNameInTable="SizeOfExaminedColumn" type="xs:long" minOccurs="0" />
+              <xs:element name="Unprocessed" msprop:Generator_UserColumnName="Unprocessed" msprop:Generator_ColumnVarNameInTable="columnUnprocessed" msprop:Generator_ColumnPropNameInRow="Unprocessed" msprop:Generator_ColumnPropNameInTable="UnprocessedColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="TooLargeFiles" msprop:Generator_UserColumnName="TooLargeFiles" msprop:Generator_ColumnVarNameInTable="columnTooLargeFiles" msprop:Generator_ColumnPropNameInRow="TooLargeFiles" msprop:Generator_ColumnPropNameInTable="TooLargeFilesColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="FilesWithError" msprop:Generator_UserColumnName="FilesWithError" msprop:Generator_ColumnVarNameInTable="columnFilesWithError" msprop:Generator_ColumnPropNameInRow="FilesWithError" msprop:Generator_ColumnPropNameInTable="FilesWithErrorColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="BeginTime" msprop:Generator_UserColumnName="BeginTime" msprop:Generator_ColumnVarNameInTable="columnBeginTime" msprop:Generator_ColumnPropNameInRow="BeginTime" msprop:Generator_ColumnPropNameInTable="BeginTimeColumn" type="xs:dateTime" minOccurs="0" />
+              <xs:element name="EndTime" msprop:Generator_UserColumnName="EndTime" msprop:Generator_ColumnVarNameInTable="columnEndTime" msprop:Generator_ColumnPropNameInRow="EndTime" msprop:Generator_ColumnPropNameInTable="EndTimeColumn" type="xs:dateTime" minOccurs="0" />
+              <xs:element name="Duration" msprop:Generator_UserColumnName="Duration" msprop:Generator_ColumnVarNameInTable="columnDuration" msprop:Generator_ColumnPropNameInRow="Duration" msprop:Generator_ColumnPropNameInTable="DurationColumn" type="xs:string" minOccurs="0" />
+              <xs:element name="DeletedFiles" msprop:Generator_UserColumnName="DeletedFiles" msprop:Generator_ColumnVarNameInTable="columnDeletedFiles" msprop:Generator_ColumnPropNameInRow="DeletedFiles" msprop:Generator_ColumnPropNameInTable="DeletedFilesColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="DeletedFolders" msprop:Generator_UserColumnName="DeletedFolders" msprop:Generator_ColumnVarNameInTable="columnDeletedFolders" msprop:Generator_ColumnPropNameInRow="DeletedFolders" msprop:Generator_ColumnPropNameInTable="DeletedFoldersColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="ModifiedFiles" msprop:Generator_UserColumnName="ModifiedFiles" msprop:Generator_ColumnVarNameInTable="columnModifiedFiles" msprop:Generator_ColumnPropNameInRow="ModifiedFiles" msprop:Generator_ColumnPropNameInTable="ModifiedFilesColumn" type="xs:int" minOccurs="0" />
+              <xs:element name="BackupType" msprop:Generator_UserColumnName="BackupType" msprop:Generator_ColumnVarNameInTable="columnBackupType" msprop:Generator_ColumnPropNameInRow="BackupType" msprop:Generator_ColumnPropNameInTable="BackupTypeColumn" type="xs:string" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+    <xs:unique name="Constraint1" msdata:PrimaryKey="true">
+      <xs:selector xpath=".//mstns:History" />
+      <xs:field xpath="mstns:Name" />
+      <xs:field xpath="mstns:ActionDate" />
+    </xs:unique>
+    <xs:unique name="Stats_Constraint1" msdata:ConstraintName="Constraint1" msdata:PrimaryKey="true">
+      <xs:selector xpath=".//mstns:Stats" />
+      <xs:field xpath="mstns:LogFileName" />
+    </xs:unique>
+  </xs:element>
+  <xs:annotation>
+    <xs:appinfo>
+      <msdata:Relationship name="History_Stats" msdata:parent="History" msdata:child="Stats" msdata:parentkey="LogFileName" msdata:childkey="LogFileName" msprop:Generator_UserRelationName="History_Stats" msprop:Generator_RelationVarName="relationHistory_Stats" msprop:Generator_UserChildTable="Stats" msprop:Generator_UserParentTable="History" msprop:Generator_ParentPropName="HistoryRow" msprop:Generator_ChildPropName="GetStatsRows" />
+    </xs:appinfo>
+  </xs:annotation>
+</xs:schema>
