@@ -60,7 +60,7 @@
             this.SecureGroupBox.Controls.Add(this.PasswordHelptext);
             this.SecureGroupBox.Location = new System.Drawing.Point(6, 16);
             this.SecureGroupBox.Name = "SecureGroupBox";
-            this.SecureGroupBox.Size = new System.Drawing.Size(503, 118);
+            this.SecureGroupBox.Size = new System.Drawing.Size(503, 110);
             this.SecureGroupBox.TabIndex = 28;
             this.SecureGroupBox.TabStop = false;
             // 

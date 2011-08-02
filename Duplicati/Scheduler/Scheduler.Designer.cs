@@ -37,7 +37,6 @@
             this.DelToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.EditToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.helpToolStripButton = new System.Windows.Forms.ToolStripButton();
-            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.LogToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.FilesToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -75,7 +74,6 @@
             this.DelToolStripButton,
             this.EditToolStripButton,
             this.helpToolStripButton,
-            this.toolStripLabel1,
             this.LogToolStripButton,
             this.FilesToolStripButton,
             this.toolStripSeparator1,
@@ -150,14 +148,8 @@
             this.helpToolStripButton.Name = "helpToolStripButton";
             this.helpToolStripButton.Size = new System.Drawing.Size(23, 22);
             this.helpToolStripButton.Text = "He&lp";
-            // 
-            // toolStripLabel1
-            // 
-            this.toolStripLabel1.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.toolStripLabel1.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(57, 22);
-            this.toolStripLabel1.Text = "Schedule";
+            this.helpToolStripButton.Visible = false;
+            this.helpToolStripButton.Click += new System.EventHandler(this.helpToolStripButton_Click);
             // 
             // LogToolStripButton
             // 
@@ -348,7 +340,6 @@
         private System.Windows.Forms.ToolStripButton AddToolStripButton;
         private System.Windows.Forms.ToolStripButton DelToolStripButton;
         private System.Windows.Forms.ToolStripButton EditToolStripButton;
-        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
         private System.Windows.Forms.ToolStripButton LogToolStripButton;
         private System.ServiceProcess.ServiceController serviceController1;
         private System.Windows.Forms.ToolStripButton FilesToolStripButton;
