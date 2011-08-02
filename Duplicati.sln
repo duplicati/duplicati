@@ -59,9 +59,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.Data", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler", "Duplicati\Scheduler\Duplicati.Scheduler.csproj", "{D1D503E8-5CF7-413B-81FB-403D65B43AAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utility", "Utility\Utility.csproj", "{0E3DF716-5657-4B51-9BF2-3791880930E1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.Utility", "Duplicati\Scheduler\Utility\Duplicati.Scheduler.Utility.csproj", "{0E3DF716-5657-4B51-9BF2-3791880930E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.RunBackup", "Duplicati\RunBackup\Duplicati.RunBackup.csproj", "{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.RunBackup", "Duplicati\Scheduler\RunBackup\Duplicati.Scheduler.RunBackup.csproj", "{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
