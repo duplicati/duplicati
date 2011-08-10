@@ -2,6 +2,16 @@
 SET PARAFFIN_EXE=%CD%\paraffin.exe
 SET ORIGIN_PATH=%CD%
 
+if exist "%PARAFFIN_EXE%" goto paraffin_found
+echo *****************************************************
+echo Missing Paraffin.exe, download from here: 
+echo http://www.wintellect.com/CS/files/folders/sample_files/entry7420.aspx
+echo *****************************************************
+pause
+goto end_of_program
+
+:paraffin_found
+
 rmdir /S /Q "bin\Release\Duplicati"
 
 mkdir bin
