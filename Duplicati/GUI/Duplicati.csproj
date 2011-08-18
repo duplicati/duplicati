@@ -664,6 +664,10 @@
       <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
       <Name>Duplicati.License</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Scheduler\Duplicati.Scheduler.csproj">
+      <Project>{D1D503E8-5CF7-413B-81FB-403D65B43AAB}</Project>
+      <Name>Duplicati.Scheduler</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
       <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
       <Name>Duplicati.Winforms.Controls</Name>

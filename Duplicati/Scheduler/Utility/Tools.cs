@@ -5,7 +5,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Security.Cryptography;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     public static class Tools
     {
@@ -81,7 +81,7 @@ namespace Utility
         public static byte[] SecureProtect(System.Security.SecureString aValue)
         {
             if (aValue == null || aValue.Length == 0) return new byte[0];
-            return Utility.Tools.Protect(System.Text.ASCIIEncoding.ASCII.GetBytes(
+            return Duplicati.Scheduler.Utility.Tools.Protect(System.Text.ASCIIEncoding.ASCII.GetBytes(
                 System.Runtime.InteropServices.Marshal.PtrToStringAuto(
                 System.Runtime.InteropServices.Marshal.SecureStringToBSTR(aValue))));
         }
@@ -220,8 +220,8 @@ namespace Utility
         /// <returns>Path to log files</returns>
         public static string LogFileDirectory(string aPackage)
         {
-            Utility.User.GetApplicationDirectory(aPackage);
-            return Utility.User.GetApplicationDirectory(System.IO.Path.Combine(aPackage, "Logs"));
+            Duplicati.Scheduler.Utility.User.GetApplicationDirectory(aPackage);
+            return Duplicati.Scheduler.Utility.User.GetApplicationDirectory(System.IO.Path.Combine(aPackage, "Logs"));
         }
         /// <summary>
         /// A file filter that may be used to find log files
@@ -260,7 +260,7 @@ namespace Utility
             if (string.IsNullOrEmpty(aLogFile)) 
                 aLogFile = LogFileName(aPackage);
             // Use the power of the Con
-            bool OK = Utility.Tools.NoException((Action)delegate()
+            bool OK = Duplicati.Scheduler.Utility.Tools.NoException((Action)delegate()
             {
                 Console.SetError(System.IO.File.AppendText(aLogFile));
                 Console.Error.WriteLine(aEx);

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     public class PipeServer
     {
@@ -120,8 +120,8 @@ namespace Utility
             // The close will abort the thread and interrupt the blocked reads
             //
             RunThread = false; // Chances are small this will stop the thread, but the closes will
-            if (itsWriter != null) Utility.Tools.TryCatch((Action)delegate() { itsWriter.Close(); });
-            if (itsPipes != null) Utility.Tools.TryCatch((Action)delegate() { itsPipes.Close(); }); 
+            if (itsWriter != null) Duplicati.Scheduler.Utility.Tools.TryCatch((Action)delegate() { itsWriter.Close(); });
+            if (itsPipes != null) Duplicati.Scheduler.Utility.Tools.TryCatch((Action)delegate() { itsPipes.Close(); }); 
         }
         public bool SendCommand(string aCommand)
         {

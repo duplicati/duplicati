@@ -19,7 +19,7 @@
 #endregion
 using System;
 
-namespace Duplicati.RunBackup
+namespace Duplicati.Scheduler.RunBackup
 {
     /// <summary>
     /// Put that pesky little icon in the system tray

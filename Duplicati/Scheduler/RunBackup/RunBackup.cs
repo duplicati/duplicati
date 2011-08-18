@@ -23,7 +23,7 @@ using System.Diagnostics;
 using System.Linq;
 
 [assembly: System.Security.Permissions.PermissionSetAttribute(System.Security.Permissions.SecurityAction.RequestMinimum, Name = "FullTrust")]
-namespace Duplicati.RunBackup
+namespace Duplicati.Scheduler.RunBackup
 {
     class Program
     {
@@ -77,7 +77,7 @@ namespace Duplicati.RunBackup
             // Be nice
             System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.BelowNormal;
             // Get a log file
-            string LogFile = Utility.Tools.LogFileName(Package);
+            string LogFile = Duplicati.Scheduler.Utility.Tools.LogFileName(Package);
             using (new Notifier())  // Attempt to put that little thingy in the tray
             // Create the log
             using (Duplicati.Library.Logging.AppendLog Log = new Duplicati.Library.Logging.AppendLog(LogFile, Job))
@@ -124,7 +124,7 @@ namespace Duplicati.RunBackup
         private static bool RunBackup(string[] args, Duplicati.Scheduler.Data.HistoryDataSet.HistoryRow aHistoryRow)
         {
             // Log the start
-            Library.Logging.Log.WriteMessage(Name + " " + String.Join(" ", args) + (itsDryRun ? " DryRun as" : " as ") + Utility.User.UserName,
+            Library.Logging.Log.WriteMessage(Name + " " + String.Join(" ", args) + (itsDryRun ? " DryRun as" : " as ") + Duplicati.Scheduler.Utility.User.UserName,
                 Duplicati.Library.Logging.LogMessageType.Information);
 
             // See if the XML file name was on the command line
@@ -138,12 +138,12 @@ namespace Duplicati.RunBackup
             // Get the signature file temp
             Duplicati.Library.Utility.TempFolder SigTemp = new Duplicati.Library.Utility.TempFolder();
             string SigThingy = System.IO.Path.Combine(SigTemp, Duplicati.Scheduler.Data.SchedulerDataSet.DefaultName);
-            if (Utility.Tools.NoException((Action)delegate() { System.IO.File.Copy(Duplicati.Scheduler.Data.SchedulerDataSet.DefaultPath(), SigThingy); }))
+            if (Duplicati.Scheduler.Utility.Tools.NoException((Action)delegate() { System.IO.File.Copy(Duplicati.Scheduler.Data.SchedulerDataSet.DefaultPath(), SigThingy); }))
                 BackupOptions["signature-control-files"] = SigThingy;
 
             // See if there is a pipe server listening, if so, connect to it for progress messages
-            bool HasPipe = Utility.NamedPipeServerStream.ServerIsUp(
-                Utility.NamedPipeServerStream.MakePipeName(PipeBaseName, Utility.User.UserName, System.IO.Pipes.PipeDirection.In));
+            bool HasPipe = Duplicati.Scheduler.Utility.NamedPipeServerStream.ServerIsUp(
+                Duplicati.Scheduler.Utility.NamedPipeServerStream.MakePipeName(PipeBaseName, Duplicati.Scheduler.Utility.User.UserName, System.IO.Pipes.PipeDirection.In));
             if (HasPipe) Pipe.Connecter();
             // Run the dern thing already
             string Result = "Not started";
@@ -196,10 +196,10 @@ namespace Duplicati.RunBackup
         private static void LimitLogFiles(int aMaxDays)
         {
             if (aMaxDays <= 0) return;
-            foreach (string Entry in System.IO.Directory.GetFiles(Utility.Tools.LogFileDirectory(Package), Utility.Tools.LogFileFilter))
+            foreach (string Entry in System.IO.Directory.GetFiles(Duplicati.Scheduler.Utility.Tools.LogFileDirectory(Package), Duplicati.Scheduler.Utility.Tools.LogFileFilter))
             {
                 if ((DateTime.Now - (new System.IO.FileInfo(Entry).LastWriteTime)).TotalDays > aMaxDays)
-                    Utility.Tools.TryCatch((Action)delegate()
+                    Duplicati.Scheduler.Utility.Tools.TryCatch((Action)delegate()
                         {
                             System.IO.File.SetAttributes(Entry, System.IO.FileAttributes.Normal);
                             System.IO.File.Delete(Entry);

@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 
-namespace Duplicati.RunBackup
+namespace Duplicati.Scheduler.RunBackup
 {
     /// <summary>
     /// Manipulate Options to be Duplicati ready
@@ -90,7 +90,7 @@ namespace Duplicati.RunBackup
                     {
                         System.IO.DriveInfo di = new System.IO.DriveInfo(dRow.DriveLetter);
                         if (di != null && !di.IsReady)
-                            MapResults += Utility.User.Run("net.exe", "use " + di.Name + ' ' + dRow.UNC) + '\n';
+                            MapResults += Duplicati.Scheduler.Utility.User.Run("net.exe", "use " + di.Name + ' ' + dRow.UNC) + '\n';
                     }
                 }
                 // Take care of the filters
@@ -125,7 +125,7 @@ namespace Duplicati.RunBackup
             {
                 Checksum = System.Convert.FromBase64String(this["Checksum"]);
                 // Unprotect will only work if process is the same user as it was protected; which this one should be.
-                this["passphrase"] = System.Text.ASCIIEncoding.ASCII.GetString(Utility.Tools.Unprotect(this.Checksum));
+                this["passphrase"] = System.Text.ASCIIEncoding.ASCII.GetString(Duplicati.Scheduler.Utility.Tools.Unprotect(this.Checksum));
                 this.Remove("Checksum");
             }
         }

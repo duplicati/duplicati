@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     /// <summary>
     /// Puts up a generic calander and allows selection of multiple days and/or 'last day'

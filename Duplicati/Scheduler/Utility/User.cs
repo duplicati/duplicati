@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     /// <summary>
     /// Some user tools
@@ -206,7 +206,7 @@ namespace Utility
         public static bool RunAs(string aExe, string aArgs)
         {
             string Redir = string.Empty;
-            if (!Utility.Tools.NoException((Action)delegate() { Redir = System.IO.Path.GetTempFileName(); }))
+            if (!Duplicati.Scheduler.Utility.Tools.NoException((Action)delegate() { Redir = System.IO.Path.GetTempFileName(); }))
                 return false;
             bool Result = false;
             try

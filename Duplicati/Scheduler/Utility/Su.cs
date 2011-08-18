@@ -20,7 +20,7 @@ using System.Diagnostics;
 
 [assembly: SecurityPermissionAttribute(SecurityAction.RequestMinimum, UnmanagedCode = true)]
 [assembly: PermissionSetAttribute(SecurityAction.RequestMinimum, Name = "FullTrust")]
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     public class Su
     {
@@ -41,7 +41,7 @@ namespace Utility
         private static WindowsImpersonationContext itsImpersonatedUser = null;
         public static Exception Impersonate(string aUserName)
         {
-            return Impersonate(aUserName, Utility.User.UserDomain);
+            return Impersonate(aUserName, Duplicati.Scheduler.Utility.User.UserDomain);
         }
         public static Exception Impersonate(string aUserName, string aDomainName, string aPass)
         {
@@ -66,7 +66,7 @@ namespace Utility
             try
             {
                 string userName = aUserName;
-                string domainName = string.IsNullOrEmpty( aDomainName ) ? Utility.User.UserDomain : aDomainName;
+                string domainName = string.IsNullOrEmpty( aDomainName ) ? Duplicati.Scheduler.Utility.User.UserDomain : aDomainName;
 
                 const int LOGON32_PROVIDER_DEFAULT = 0;
                 //This parameter causes LogonUser to create a primary token.

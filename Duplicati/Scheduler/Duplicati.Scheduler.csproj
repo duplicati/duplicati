@@ -54,6 +54,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\thirdparty\ShellIcons\ShellIcons.cs">
+      <Link>ShellIcons.cs</Link>
+    </Compile>
     <Compile Include="AdvancedDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -216,17 +219,13 @@
     <Compile Include="TaskScheduler.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Utility\Duplicati.Scheduler.Utility.csproj">
-      <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
-      <Name>Utility</Name>
+    <ProjectReference Include="RunBackup\Duplicati.Scheduler.RunBackup.csproj">
+      <Project>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</Project>
+      <Name>Duplicati.Scheduler.RunBackup</Name>
     </ProjectReference>
     <ProjectReference Include="..\GUI\Datamodel\Datamodel.csproj">
       <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
       <Name>Datamodel</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\GUI\Duplicati.csproj">
-      <Project>{1470F75F-D364-4010-91D0-FD4DDA1C5159}</Project>
-      <Name>Duplicati</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
@@ -260,10 +259,6 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
-    <ProjectReference Include="RunBackup\Duplicati.Scheduler.RunBackup.csproj">
-      <Project>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</Project>
-      <Name>Duplicati.RunBackup</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
       <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
       <Name>Duplicati.Winforms.Controls</Name>
@@ -271,6 +266,10 @@
     <ProjectReference Include="Data\Duplicati.Scheduler.Data.csproj">
       <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>
       <Name>Duplicati.Scheduler.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="Utility\Duplicati.Scheduler.Utility.csproj">
+      <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
+      <Name>Duplicati.Scheduler.Utility</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

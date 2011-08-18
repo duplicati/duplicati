@@ -23,7 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 
-namespace Duplicati.RunBackup
+namespace Duplicati.Scheduler.RunBackup
 {
     public static class Pipe
     {
@@ -98,7 +98,7 @@ namespace Duplicati.RunBackup
         }
         private static void Thread()
         {
-            string PipeName = Utility.NamedPipeServerStream.MakePipeName(Program.PipeBaseName, Utility.User.UserName, System.IO.Pipes.PipeDirection.In);
+            string PipeName = Duplicati.Scheduler.Utility.NamedPipeServerStream.MakePipeName(Program.PipeBaseName, Duplicati.Scheduler.Utility.User.UserName, System.IO.Pipes.PipeDirection.In);
             while (true)
             {
                 lock (Locker) itsPipe = new System.IO.Pipes.NamedPipeClientStream(".", PipeName, System.IO.Pipes.PipeDirection.Out);

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     public partial class GetCheck : Form
     {

@@ -8,8 +8,8 @@
     <ProjectGuid>{0E3DF716-5657-4B51-9BF2-3791880930E1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Utility</RootNamespace>
-    <AssemblyName>Utility</AssemblyName>
+    <RootNamespace>Duplicati.Scheduler.Utility</RootNamespace>
+    <AssemblyName>Duplicati.Scheduler.Utility</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

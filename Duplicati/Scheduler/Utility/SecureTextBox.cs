@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Windows.Forms;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     public partial class SecureTextBox : System.Windows.Forms.TextBox
     {
@@ -27,11 +27,11 @@ namespace Utility
         {
             get
             {
-                return Utility.Tools.SecureProtect(itsValue);
+                return Duplicati.Scheduler.Utility.Tools.SecureProtect(itsValue);
             }
             private set
             {
-                itsValue = Utility.Tools.SecureUnprotect(value);
+                itsValue = Duplicati.Scheduler.Utility.Tools.SecureUnprotect(value);
                 base.Text = new string('*', itsValue.Length);
             }
         }

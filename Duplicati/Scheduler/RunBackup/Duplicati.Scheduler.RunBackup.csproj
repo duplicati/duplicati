@@ -8,11 +8,11 @@
     <ProjectGuid>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.RunBackup</RootNamespace>
-    <AssemblyName>Duplicati.RunBackup</AssemblyName>
+    <RootNamespace>Duplicati.Scheduler.RunBackup</RootNamespace>
+    <AssemblyName>Duplicati.Scheduler.RunBackup</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <StartupObject>Duplicati.RunBackup.Program</StartupObject>
+    <StartupObject>Duplicati.Scheduler.RunBackup.Program</StartupObject>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>

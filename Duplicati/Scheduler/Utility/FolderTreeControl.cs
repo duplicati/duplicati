@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     /// <summary>
     /// A folder tree with 3-state checkboxes
@@ -103,7 +103,7 @@ namespace Utility
         private string[] GetDirectories(string aRoot, out Exception outError)
         {
             string[] Result = new string[0];
-            outError = Utility.Tools.TryCatch((Action)delegate() { Result = System.IO.Directory.GetDirectories(aRoot); });
+            outError = Duplicati.Scheduler.Utility.Tools.TryCatch((Action)delegate() { Result = System.IO.Directory.GetDirectories(aRoot); });
             return Result;
         }
         /// <summary>

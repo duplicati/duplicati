@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     public class NamedPipeServerStream : IDisposable
     {
@@ -13,7 +13,7 @@ namespace Utility
         public System.IO.Pipes.PipeDirection Direction { get; set; }
         public NamedPipeServerStream(string aBasePipeName, string aUserName, System.IO.Pipes.PipeDirection aDir)
         {
-            UserName = string.IsNullOrEmpty(aUserName) ? Utility.User.UserName : aUserName;
+            UserName = string.IsNullOrEmpty(aUserName) ? Duplicati.Scheduler.Utility.User.UserName : aUserName;
             Name = MakePipeName(aBasePipeName, UserName, aDir);
             Direction = aDir;
             Server = GetPipeServer(Name, aDir);
@@ -34,8 +34,12 @@ namespace Utility
         }
         private static System.IO.Pipes.NamedPipeServerStream GetPipeServer(string aPipeName, System.IO.Pipes.PipeDirection aDir)
         {
+            //Get "Everyone" for localized OS: http://social.msdn.microsoft.com/forums/en-US/netfxbcl/thread/0737f978-a998-453d-9a6a-c348285d7ea3/
+            System.Security.Principal.SecurityIdentifier sid = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.WorldSid, null);
+            System.Security.Principal.NTAccount acct = sid.Translate(typeof(System.Security.Principal.NTAccount)) as System.Security.Principal.NTAccount;
+
             System.IO.Pipes.PipeSecurity ps = new System.IO.Pipes.PipeSecurity();
-            System.IO.Pipes.PipeAccessRule par = new System.IO.Pipes.PipeAccessRule("Everyone",
+            System.IO.Pipes.PipeAccessRule par = new System.IO.Pipes.PipeAccessRule(acct,
                 System.IO.Pipes.PipeAccessRights.ReadWrite,
                 System.Security.AccessControl.AccessControlType.Allow);
             ps.AddAccessRule(par);

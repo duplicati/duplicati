@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 
-namespace Utility
+namespace Duplicati.Scheduler.Utility
 {
     public class PipeClient
     {

@@ -91,7 +91,7 @@ namespace Duplicati.Scheduler
                 Result = Utility.Tools.NoException((Action)delegate()
                 {
                     TaskScheduler.CreateOrUpdateTask(aRow.TaskName,
-                        System.IO.Path.Combine(Application.StartupPath, "Duplicati.RunBackup.exe"),
+                        System.IO.Path.Combine(Application.StartupPath, "Duplicati.Scheduler.RunBackup.exe"),
                         "Duplicati backup task", Utility.User.UserName, ss, aTrigger,
                         "\"" + aRow.Name + "\" \"" + Duplicati.Scheduler.Data.SchedulerDataSet.DefaultPath() + "\"");
                 });
@@ -313,7 +313,7 @@ namespace Duplicati.Scheduler
         {
             if (!this.IsHandleCreated || string.IsNullOrEmpty(aMessage)) return;
             // Decode the message
-            Duplicati.RunBackup.Pipe.ProgressArguments pa = new Duplicati.RunBackup.Pipe.ProgressArguments(aMessage);
+            Duplicati.Scheduler.RunBackup.Pipe.ProgressArguments pa = new Duplicati.Scheduler.RunBackup.Pipe.ProgressArguments(aMessage);
             // Update the screen, be sure to use the forms thread
             if (pa.OK) this.BeginInvoke((Action)delegate()
                 { SetProgress(pa.Progress, pa.Job + ":" + pa.Operation + ":" + pa.Message); });

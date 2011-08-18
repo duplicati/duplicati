@@ -1,4 +1,4 @@
-﻿namespace Utility
+﻿namespace Duplicati.Scheduler.Utility
 {
     partial class GetCheck
     {
