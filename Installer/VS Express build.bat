@@ -5,7 +5,7 @@ SET ORIGIN_PATH=%CD%
 if exist "%PARAFFIN_EXE%" goto paraffin_found
 echo *****************************************************
 echo Missing Paraffin.exe, download from here: 
-echo http://www.wintellect.com/CS/files/folders/sample_files/entry7420.aspx
+echo http://www.wintellect.com/CS/files/folders/8198/download.aspx
 echo *****************************************************
 pause
 goto end_of_program
