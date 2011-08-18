@@ -126,10 +126,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Utility\Duplicati.Scheduler.Utility.csproj">
-      <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
-      <Name>Utility</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
       <Name>Duplicati.Library.Backend.File</Name>
@@ -161,6 +157,10 @@
     <ProjectReference Include="..\Data\Duplicati.Scheduler.Data.csproj">
       <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>
       <Name>Duplicati.Scheduler.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Utility\Duplicati.Scheduler.Utility.csproj">
+      <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
+      <Name>Duplicati.Scheduler.Utility</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

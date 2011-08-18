@@ -70,6 +70,12 @@ namespace Duplicati.Scheduler.RunBackup
                 Environment.SetEnvironmentVariable("TMP", "C:\\temp"); // TEST
             }
 #endif
+            if (ArgList.Count == 0)
+            {
+                System.Windows.Forms.MessageBox.Show("This program must be executed with a job name and should not be executed manually");
+                return;
+            }
+
             itsDryRun = ArgList.Contains("DryRun"); // Good for debugging
             if(itsDryRun) ArgList.Remove("DryRun");
             // The job name
