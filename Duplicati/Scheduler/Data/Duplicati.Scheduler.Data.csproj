@@ -98,7 +98,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Scheduler.Utility.csproj">
       <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
-      <Name>Utility</Name>
+      <Name>Duplicati.Scheduler.Utility</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
