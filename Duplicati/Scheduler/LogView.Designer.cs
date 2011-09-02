@@ -47,6 +47,7 @@
             System.Windows.Forms.Label modifiedFilesLabel;
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.Label label1;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LogView));
             this.historyBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.historyDataSet = new Duplicati.Scheduler.Data.HistoryDataSet();
@@ -82,6 +83,7 @@
             this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.BackupType = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.TypeTextBox = new System.Windows.Forms.TextBox();
             addedFilesLabel = new System.Windows.Forms.Label();
             addedFoldersLabel = new System.Windows.Forms.Label();
             examinedFilesLabel = new System.Windows.Forms.Label();
@@ -98,6 +100,7 @@
             deletedFilesLabel = new System.Windows.Forms.Label();
             deletedFoldersLabel = new System.Windows.Forms.Label();
             modifiedFilesLabel = new System.Windows.Forms.Label();
+            label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.historyBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.historyDataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.logListBindingSource)).BeginInit();
@@ -155,7 +158,7 @@
             // 
             sizeOfModifiedLabel.AutoSize = true;
             sizeOfModifiedLabel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            sizeOfModifiedLabel.Location = new System.Drawing.Point(181, 87);
+            sizeOfModifiedLabel.Location = new System.Drawing.Point(186, 110);
             sizeOfModifiedLabel.Name = "sizeOfModifiedLabel";
             sizeOfModifiedLabel.Size = new System.Drawing.Size(88, 13);
             sizeOfModifiedLabel.TabIndex = 55;
@@ -165,7 +168,7 @@
             // 
             sizeOfAddedLabel.AutoSize = true;
             sizeOfAddedLabel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            sizeOfAddedLabel.Location = new System.Drawing.Point(190, 108);
+            sizeOfAddedLabel.Location = new System.Drawing.Point(195, 131);
             sizeOfAddedLabel.Name = "sizeOfAddedLabel";
             sizeOfAddedLabel.Size = new System.Drawing.Size(79, 13);
             sizeOfAddedLabel.TabIndex = 57;
@@ -175,7 +178,7 @@
             // 
             sizeOfExaminedLabel.AutoSize = true;
             sizeOfExaminedLabel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            sizeOfExaminedLabel.Location = new System.Drawing.Point(175, 129);
+            sizeOfExaminedLabel.Location = new System.Drawing.Point(180, 152);
             sizeOfExaminedLabel.Name = "sizeOfExaminedLabel";
             sizeOfExaminedLabel.Size = new System.Drawing.Size(94, 13);
             sizeOfExaminedLabel.TabIndex = 59;
@@ -195,7 +198,7 @@
             // 
             tooLargeFilesLabel.AutoSize = true;
             tooLargeFilesLabel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            tooLargeFilesLabel.Location = new System.Drawing.Point(186, 150);
+            tooLargeFilesLabel.Location = new System.Drawing.Point(191, 173);
             tooLargeFilesLabel.Name = "tooLargeFilesLabel";
             tooLargeFilesLabel.Size = new System.Drawing.Size(83, 13);
             tooLargeFilesLabel.TabIndex = 63;
@@ -205,7 +208,7 @@
             // 
             filesWithErrorLabel.AutoSize = true;
             filesWithErrorLabel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            filesWithErrorLabel.Location = new System.Drawing.Point(185, 171);
+            filesWithErrorLabel.Location = new System.Drawing.Point(13, 192);
             filesWithErrorLabel.Name = "filesWithErrorLabel";
             filesWithErrorLabel.Size = new System.Drawing.Size(84, 13);
             filesWithErrorLabel.TabIndex = 65;
@@ -245,7 +248,7 @@
             // 
             deletedFilesLabel.AutoSize = true;
             deletedFilesLabel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            deletedFilesLabel.Location = new System.Drawing.Point(197, 24);
+            deletedFilesLabel.Location = new System.Drawing.Point(202, 47);
             deletedFilesLabel.Name = "deletedFilesLabel";
             deletedFilesLabel.Size = new System.Drawing.Size(72, 13);
             deletedFilesLabel.TabIndex = 73;
@@ -255,7 +258,7 @@
             // 
             deletedFoldersLabel.AutoSize = true;
             deletedFoldersLabel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            deletedFoldersLabel.Location = new System.Drawing.Point(183, 45);
+            deletedFoldersLabel.Location = new System.Drawing.Point(188, 68);
             deletedFoldersLabel.Name = "deletedFoldersLabel";
             deletedFoldersLabel.Size = new System.Drawing.Size(86, 13);
             deletedFoldersLabel.TabIndex = 75;
@@ -265,7 +268,7 @@
             // 
             modifiedFilesLabel.AutoSize = true;
             modifiedFilesLabel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            modifiedFilesLabel.Location = new System.Drawing.Point(194, 66);
+            modifiedFilesLabel.Location = new System.Drawing.Point(199, 89);
             modifiedFilesLabel.Name = "modifiedFilesLabel";
             modifiedFilesLabel.Size = new System.Drawing.Size(75, 13);
             modifiedFilesLabel.TabIndex = 77;
@@ -377,6 +380,8 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.TypeTextBox);
+            this.groupBox2.Controls.Add(label1);
             this.groupBox2.Controls.Add(this.TimeBeginTextBox);
             this.groupBox2.Controls.Add(this.TimeEndTextBox);
             this.groupBox2.Controls.Add(addedFilesLabel);
@@ -497,7 +502,7 @@
             // 
             this.sizeOfModifiedTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "SizeOfModified", true));
             this.sizeOfModifiedTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.sizeOfModifiedTextBox.Location = new System.Drawing.Point(275, 84);
+            this.sizeOfModifiedTextBox.Location = new System.Drawing.Point(280, 107);
             this.sizeOfModifiedTextBox.Name = "sizeOfModifiedTextBox";
             this.sizeOfModifiedTextBox.ReadOnly = true;
             this.sizeOfModifiedTextBox.Size = new System.Drawing.Size(68, 21);
@@ -508,7 +513,7 @@
             // 
             this.sizeOfAddedTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "SizeOfAdded", true));
             this.sizeOfAddedTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.sizeOfAddedTextBox.Location = new System.Drawing.Point(275, 105);
+            this.sizeOfAddedTextBox.Location = new System.Drawing.Point(280, 128);
             this.sizeOfAddedTextBox.Name = "sizeOfAddedTextBox";
             this.sizeOfAddedTextBox.ReadOnly = true;
             this.sizeOfAddedTextBox.Size = new System.Drawing.Size(68, 21);
@@ -519,7 +524,7 @@
             // 
             this.sizeOfExaminedTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "SizeOfExamined", true));
             this.sizeOfExaminedTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.sizeOfExaminedTextBox.Location = new System.Drawing.Point(275, 126);
+            this.sizeOfExaminedTextBox.Location = new System.Drawing.Point(280, 149);
             this.sizeOfExaminedTextBox.Name = "sizeOfExaminedTextBox";
             this.sizeOfExaminedTextBox.ReadOnly = true;
             this.sizeOfExaminedTextBox.Size = new System.Drawing.Size(68, 21);
@@ -541,7 +546,7 @@
             // 
             this.tooLargeFilesTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "TooLargeFiles", true));
             this.tooLargeFilesTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tooLargeFilesTextBox.Location = new System.Drawing.Point(275, 147);
+            this.tooLargeFilesTextBox.Location = new System.Drawing.Point(280, 170);
             this.tooLargeFilesTextBox.Name = "tooLargeFilesTextBox";
             this.tooLargeFilesTextBox.ReadOnly = true;
             this.tooLargeFilesTextBox.Size = new System.Drawing.Size(68, 21);
@@ -552,7 +557,7 @@
             // 
             this.filesWithErrorTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "FilesWithError", true));
             this.filesWithErrorTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.filesWithErrorTextBox.Location = new System.Drawing.Point(275, 168);
+            this.filesWithErrorTextBox.Location = new System.Drawing.Point(103, 189);
             this.filesWithErrorTextBox.Name = "filesWithErrorTextBox";
             this.filesWithErrorTextBox.ReadOnly = true;
             this.filesWithErrorTextBox.Size = new System.Drawing.Size(68, 21);
@@ -574,7 +579,7 @@
             // 
             this.deletedFilesTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "DeletedFiles", true));
             this.deletedFilesTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.deletedFilesTextBox.Location = new System.Drawing.Point(275, 21);
+            this.deletedFilesTextBox.Location = new System.Drawing.Point(280, 44);
             this.deletedFilesTextBox.Name = "deletedFilesTextBox";
             this.deletedFilesTextBox.ReadOnly = true;
             this.deletedFilesTextBox.Size = new System.Drawing.Size(68, 21);
@@ -585,7 +590,7 @@
             // 
             this.deletedFoldersTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "DeletedFolders", true));
             this.deletedFoldersTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.deletedFoldersTextBox.Location = new System.Drawing.Point(275, 42);
+            this.deletedFoldersTextBox.Location = new System.Drawing.Point(280, 65);
             this.deletedFoldersTextBox.Name = "deletedFoldersTextBox";
             this.deletedFoldersTextBox.ReadOnly = true;
             this.deletedFoldersTextBox.Size = new System.Drawing.Size(68, 21);
@@ -596,7 +601,7 @@
             // 
             this.modifiedFilesTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "ModifiedFiles", true));
             this.modifiedFilesTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.modifiedFilesTextBox.Location = new System.Drawing.Point(275, 63);
+            this.modifiedFilesTextBox.Location = new System.Drawing.Point(280, 86);
             this.modifiedFilesTextBox.Name = "modifiedFilesTextBox";
             this.modifiedFilesTextBox.ReadOnly = true;
             this.modifiedFilesTextBox.Size = new System.Drawing.Size(68, 21);
@@ -655,6 +660,27 @@
             this.BackupType.HeaderText = "";
             this.BackupType.Name = "BackupType";
             this.BackupType.Width = 19;
+            // 
+            // TypeTextBox
+            // 
+            this.TypeTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "BackupType", true));
+            this.TypeTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.TypeTextBox.Location = new System.Drawing.Point(280, 21);
+            this.TypeTextBox.Name = "TypeTextBox";
+            this.TypeTextBox.ReadOnly = true;
+            this.TypeTextBox.Size = new System.Drawing.Size(68, 21);
+            this.TypeTextBox.TabIndex = 82;
+            this.TypeTextBox.TabStop = false;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            label1.Location = new System.Drawing.Point(239, 24);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(35, 13);
+            label1.TabIndex = 81;
+            label1.Text = "Type:";
             // 
             // LogView
             // 
@@ -719,5 +745,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn7;
         private System.Windows.Forms.BindingSource StatsBindingSource;
         private System.Windows.Forms.BindingSource historyStatsBindingSource;
+        private System.Windows.Forms.TextBox TypeTextBox;
     }
 }
