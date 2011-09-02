@@ -197,7 +197,7 @@ namespace Duplicati.Scheduler.Data
                         string Field = Line.Substring(0, Colon).Trim();
                         string Value = Line.Substring(Colon + 1).Trim();
                         if (sRow.Table.Columns.Contains(Field))
-                            sRow[Field] = System.Convert.ChangeType(Value, this.Table.Columns[Field].DataType);
+                            sRow[Field] = System.Convert.ChangeType(Value, sRow.Table.Columns[Field].DataType);
                     }
                 }
             }
