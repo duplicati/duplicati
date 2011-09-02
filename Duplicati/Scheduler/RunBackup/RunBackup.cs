@@ -91,7 +91,9 @@ namespace Duplicati.Scheduler.RunBackup
                 Duplicati.Library.Logging.Log.CurrentLog = Log;
                 // Hard code level to info, deal with filters in the forms level
                 Duplicati.Library.Logging.Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Information;
+#if !DEBUG
                 try
+#endif
                 {
                     // Load the history XML dataset
                     using (Duplicati.Scheduler.Data.HistoryDataSet hds = new Duplicati.Scheduler.Data.HistoryDataSet())
@@ -109,20 +111,26 @@ namespace Duplicati.Scheduler.RunBackup
                         hds.Save();     // Save the XML (later: make so the whole db need not be loaded (XMLReader)
                     }
                 }
+#if !DEBUG
                 catch (Exception Ex)        // Log error
                 {
                     Library.Logging.Log.WriteMessage(Ex.Message, Duplicati.Library.Logging.LogMessageType.Error);
                 }
-#if TESTPHONEHOME
-                // Tell big brother
-                Exception phEx = Utility.Tools.TryCatch((Action)delegate() {
-                    PhoneHome.Update.Scheduler();
-                    PhoneHome.Update.History();
-                    PhoneHome.Update.Log(System.IO.File.GetLastWriteTime(LogFile), Duplicati.Library.Logging.AppendLog.LogFileToXML(LogFile));
-                });
-                if (phEx != null)
-                    Library.Logging.Log.WriteMessage("Update failed", Duplicati.Library.Logging.LogMessageType.Warning, phEx);
 #endif
+                if (System.IO.File.Exists(
+                    System.IO.Path.Combine(
+                        System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), 
+                        "HomeConnection.xml")))
+                {
+                    // Tell big brother
+                    Exception phEx = Utility.Tools.TryCatch((Action)delegate() {
+                        PhoneHome.Update.Scheduler();
+                        PhoneHome.Update.History();
+                        PhoneHome.Update.Log(System.IO.File.GetLastWriteTime(LogFile), Duplicati.Library.Logging.AppendLog.LogFileToXML(LogFile));
+                    });
+                    if (phEx != null)
+                        Library.Logging.Log.WriteMessage("Update failed", Duplicati.Library.Logging.LogMessageType.Warning, phEx);
+                }
             }
             // All done, set the log file (filewathers are looking for AttributeChange)
             System.IO.File.SetAttributes(LogFile, System.IO.FileAttributes.ReadOnly);
