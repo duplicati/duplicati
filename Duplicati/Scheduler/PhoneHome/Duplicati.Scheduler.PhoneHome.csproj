@@ -8,8 +8,8 @@
     <ProjectGuid>{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PhoneHome</RootNamespace>
-    <AssemblyName>PhoneHome</AssemblyName>
+    <RootNamespace>Duplicati.Scheduler.PhoneHome</RootNamespace>
+    <AssemblyName>Duplicati.Scheduler.PhoneHome</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <StartupObject>
@@ -71,6 +71,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="app.config" />
     <None Include="BackupsDataSet.xsc">
