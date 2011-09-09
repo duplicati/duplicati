@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C# Express 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WixProjBuilder", "WixProjBuilder.csproj", "{794CD060-AB3B-4885-B23B-6B26272C84E0}"
 EndProject
 Global
