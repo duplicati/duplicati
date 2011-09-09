@@ -63,7 +63,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.Utility
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.RunBackup", "Duplicati\Scheduler\RunBackup\Duplicati.Scheduler.RunBackup.csproj", "{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.PhoneHome", "Duplicati\Scheduler\PhoneHome\Duplicati.Scheduler.PhoneHome.csproj", "{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}"
+EndProject
 Global
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -591,12 +597,23 @@ Global
 		{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}.Test|Mixed Platforms.Build.0 = Release|Any CPU
 		{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}.Test|x86.ActiveCfg = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Release|x86.ActiveCfg = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Test|Any CPU.ActiveCfg = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Test|Any CPU.Build.0 = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Test|Mixed Platforms.Build.0 = Release|Any CPU
+		{0D11F6DE-B31E-43C2-BCB7-CF2237448C84}.Test|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(SubversionScc) = preSolution
-		Svn-Managed = True
-		Manager = AnkhSVN - Subversion Support for Visual Studio
 	EndGlobalSection
 EndGlobal
