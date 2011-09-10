@@ -44,6 +44,12 @@ namespace Duplicati.Scheduler.RunBackup
         /// </summary>
         public const string ClientThreadName = "Duplicati.PipeClient";
         /// <summary>
+        /// Where Monitor plugins live
+        /// </summary>
+        public static string StartupPath = 
+            System.IO.Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
+
+        /// <summary>
         /// Name of this job
         /// </summary>
         public static string Job = "<none>";
@@ -117,24 +123,51 @@ namespace Duplicati.Scheduler.RunBackup
                     Library.Logging.Log.WriteMessage(Ex.Message, Duplicati.Library.Logging.LogMessageType.Error);
                 }
 #endif
-                if (System.IO.File.Exists(
-                    System.IO.Path.Combine(
-                        System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), 
-                        "HomeConnection.xml")))
+                UpdateMonitors(LogFile);
+                // All done, set the log file (filewathers are looking for AttributeChange)
+                System.IO.File.SetAttributes(LogFile, System.IO.FileAttributes.ReadOnly);
+            }
+        }
+        /// <summary>
+        /// Update any Monitor plugins
+        /// </summary>
+        /// <param name="aLogFile"></param>
+        private static void UpdateMonitors(string aLogFile)
+        {
+            // Each plugin
+            foreach(string Plug in System.IO.Directory.GetFiles(StartupPath, "Duplicati.Scheduler.Monitor.*.dll"))
+            {
+                // Load the assembly, get the type, create an instance
+                System.Reflection.Assembly Ass = System.Reflection.Assembly.LoadFile(Plug);
+                Type ClassType = Ass.GetTypes().Where(qR=>qR.Name == "Plugin").First();
+                Duplicati.Scheduler.Data.IMonitorPlugin Monitor = Activator.CreateInstance(ClassType, null) as Duplicati.Scheduler.Data.IMonitorPlugin;
+                if (Monitor != null && (DisabledMonitors == null || !DisabledMonitors.Contains(Monitor.Name)))
                 {
                     // Tell big brother
-                    Exception phEx = Utility.Tools.TryCatch((Action)delegate() {
-                        PhoneHome.Update.Scheduler();
-                        PhoneHome.Update.History();
-                        PhoneHome.Update.Log(System.IO.File.GetLastWriteTime(LogFile), Duplicati.Library.Logging.AppendLog.LogFileToXML(LogFile));
-                    });
+                    Exception phEx = 
+#if !DEBUG
+                        Utility.Tools.TryCatch((Action)delegate()
+#else
+                        null;
+#endif
+                    {
+                        // Update the scheduler
+                        Monitor.UpdateScheduler(Duplicati.Scheduler.Data.SchedulerDataSet.DefaultPath());
+                        // Update the history
+                        Monitor.UpdateHistory(Duplicati.Scheduler.Data.HistoryDataSet.DefaultPath());
+                        // Update the log file
+                        Monitor.UpdateLog(System.IO.File.GetLastWriteTime(aLogFile), Duplicati.Library.Logging.AppendLog.LogFileToXML(aLogFile));
+                    }
+#if !DEBUG
+                    );
+#endif
                     if (phEx != null)
-                        Library.Logging.Log.WriteMessage("Update failed", Duplicati.Library.Logging.LogMessageType.Warning, phEx);
+                        Library.Logging.Log.WriteMessage("Monitor Update failed "+Monitor.Name, 
+                            Duplicati.Library.Logging.LogMessageType.Warning, phEx);
                 }
             }
-            // All done, set the log file (filewathers are looking for AttributeChange)
-            System.IO.File.SetAttributes(LogFile, System.IO.FileAttributes.ReadOnly);
         }
+        private static string[] DisabledMonitors = null;
         private static bool RunBackup(string[] args, Duplicati.Scheduler.Data.HistoryDataSet.HistoryRow aHistoryRow)
         {
             // Log the start
@@ -145,6 +178,8 @@ namespace Duplicati.Scheduler.RunBackup
             string XML = (args.Length > 1) ? XML = args[1] : Duplicati.Scheduler.Data.SchedulerDataSet.DefaultPath();
             // Convert our options to Duplicati options
             Options BackupOptions = new Options(Job, XML);
+            // Get disabled monitors
+            DisabledMonitors = BackupOptions.DisabledMonitors;
             // Complain about any results from the drive mapping
             if (!string.IsNullOrEmpty(BackupOptions.MapResults))
                 Library.Logging.Log.WriteMessage(BackupOptions.MapResults, Duplicati.Library.Logging.LogMessageType.Information);
