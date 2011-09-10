@@ -420,7 +420,7 @@ namespace Duplicati.Scheduler.Data
                 get
                 {
                     if (this.Count == 0)
-                        this.AddSettingsRow(0, new byte[0], string.Empty, true, false);
+                        this.AddSettingsRow(0, new byte[0], string.Empty, true, false, string.Empty);
                     return (SettingsRow)this.Rows[0];
                 }
             }
@@ -428,6 +428,16 @@ namespace Duplicati.Scheduler.Data
             /// Is the global password set?
             /// </summary>
             public bool UseGlobalPassword { get { return Values.CheckSrc && Values.Checksum.Length > 0; } }
+            public string[] DisabledMonitors
+            {
+                get { return Values.DisabledMonitors.Split(';'); }
+                set { Values.DisabledMonitors = string.Join(";", value); }
+            }
+            public void EnableMonitor(string aName, bool aEnable)
+            {
+                if (aEnable && DisabledMonitors.Contains(aName)) DisabledMonitors = DisabledMonitors.Where(qR => qR != aName).ToArray();
+                else if (!aEnable && !DisabledMonitors.Contains(aName)) DisabledMonitors = DisabledMonitors.Concat(new string[] { aName }).ToArray();
+            }
         }
         /// <summary>
         /// Options
