@@ -331,10 +331,73 @@ namespace Duplicati.Scheduler
         {
 
         }
-
-        private void toolStripButton2_Click(object sender, EventArgs e)
+        /// <summary>
+        /// The settings drop down is coming down, load the items
+        /// </summary>
+        private void SettingsToolStripDropDownButton_DropDownOpening(object sender, EventArgs e)
         {
-
+            // If the drop downs are empty, make them
+            if (this.monitorSettingsToolStripMenuItem.Enabled && this.monitorSettingsToolStripMenuItem.DropDownItems.Count == 0)
+            {
+                // Look for plug in's
+                string[] Plugins = System.IO.Directory.GetFiles(Application.StartupPath, "Duplicati.Scheduler.Monitor.*.dll");
+                // No plugins?  Disable the settings
+                if (Plugins.Length == 0)
+                {
+                    this.monitorSettingsToolStripMenuItem.Enabled = false;
+                    this.monitorSettingsToolStripMenuItem.Visible = false;
+                }
+                else
+                {
+                    // Load a drop down for each plugin
+                    foreach (string Plug in Plugins)
+                    {
+                        // Load the assembly [ Shouldn't there be an Unload? ]
+                        System.Reflection.Assembly Ass = System.Reflection.Assembly.LoadFile(Plug);
+                        if (Ass != null)
+                        {
+                            // Get the update type
+                            Type ClassType = Ass.GetTypes().Where(qR => qR.Name == "Plugin").First();
+                            Duplicati.Scheduler.Data.IMonitorPlugin Monitor = Activator.CreateInstance(ClassType, null) 
+                                as Duplicati.Scheduler.Data.IMonitorPlugin;
+                            bool Disabled = this.SchedulerDataSet.Settings.DisabledMonitors.Contains(Monitor.Name);
+                            ToolStripMenuItem tsi = new ToolStripMenuItem(Monitor.Name) 
+                            { 
+                                Tag = Monitor, 
+                                Checked = !Disabled, 
+                                ForeColor = Disabled ? System.Drawing.Color.Gray : this.ForeColor 
+                            };
+                            tsi.MouseUp += new MouseEventHandler(tsi_MouseUp);
+                            this.monitorSettingsToolStripMenuItem.DropDownItems.Add(tsi);
+                        }
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// Use the mouse up event to determine if user is pressing the check mark area or the drop down
+        /// </summary>
+        private void tsi_MouseUp(object sender, MouseEventArgs e)
+        {
+            // Only interested in left clicks
+            if (e.Button != MouseButtons.Left) return;
+            ToolStripMenuItem tsi = (ToolStripMenuItem)sender;
+            // The monitor is in the tag
+            Duplicati.Scheduler.Data.IMonitorPlugin Mon = (Duplicati.Scheduler.Data.IMonitorPlugin)tsi.Tag;
+            // X < 28, user clicked check mark area
+            if (e.X < 28 || !tsi.Checked)
+            {
+                // Toggle checked
+                tsi.Checked = !tsi.Checked;
+                // Enable/Disable the monitor
+                this.SchedulerDataSet.Settings.EnableMonitor(Mon.Name, tsi.Checked);
+                this.SchedulerDataSet.Save();
+            }
+            // Clicked the sweet spot, show the configuration menu from the monitor
+            else if (tsi.Checked)
+                Mon.Configure();
+            // Turn gray if not selected
+            tsi.ForeColor = tsi.Checked ? this.ForeColor : System.Drawing.Color.Gray;
         }
     }
 }

@@ -31,7 +31,9 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Scheduler));
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.SettingsToolStripButton = new System.Windows.Forms.ToolStripButton();
+            this.SettingsToolStripDropDownButton = new System.Windows.Forms.ToolStripDropDownButton();
+            this.setupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.monitorSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.AddToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.DelToolStripButton = new System.Windows.Forms.ToolStripButton();
@@ -48,13 +50,13 @@
             this.serviceController1 = new System.ServiceProcess.ServiceController();
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.jobSummary1 = new Duplicati.Scheduler.JobSummary();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripProgressBar1 = new System.Windows.Forms.ToolStripProgressBar();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.JobsBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.SchedulerDataSet = new Duplicati.Scheduler.Data.SchedulerDataSet();
             this.optionsBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.jobSummary1 = new Duplicati.Scheduler.JobSummary();
             this.toolStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -68,7 +70,7 @@
             // 
             this.toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.SettingsToolStripButton,
+            this.SettingsToolStripDropDownButton,
             this.toolStripSeparator3,
             this.AddToolStripButton,
             this.DelToolStripButton,
@@ -88,16 +90,34 @@
             this.toolStrip1.TabIndex = 1;
             this.toolStrip1.Text = "toolStrip1";
             // 
-            // SettingsToolStripButton
+            // SettingsToolStripDropDownButton
             // 
-            this.SettingsToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.SettingsToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("SettingsToolStripButton.Image")));
-            this.SettingsToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.SettingsToolStripButton.Name = "SettingsToolStripButton";
-            this.SettingsToolStripButton.Size = new System.Drawing.Size(62, 22);
-            this.SettingsToolStripButton.Text = "Settings...";
-            this.SettingsToolStripButton.ToolTipText = "Change program settings";
-            this.SettingsToolStripButton.Click += new System.EventHandler(this.SettingsToolStripButton_Click);
+            this.SettingsToolStripDropDownButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.SettingsToolStripDropDownButton.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.setupToolStripMenuItem,
+            this.monitorSettingsToolStripMenuItem});
+            this.SettingsToolStripDropDownButton.Image = ((System.Drawing.Image)(resources.GetObject("SettingsToolStripDropDownButton.Image")));
+            this.SettingsToolStripDropDownButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.SettingsToolStripDropDownButton.Name = "SettingsToolStripDropDownButton";
+            this.SettingsToolStripDropDownButton.Size = new System.Drawing.Size(62, 22);
+            this.SettingsToolStripDropDownButton.Text = "Settings";
+            this.SettingsToolStripDropDownButton.DropDownOpening += new System.EventHandler(this.SettingsToolStripDropDownButton_DropDownOpening);
+            // 
+            // setupToolStripMenuItem
+            // 
+            this.setupToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("setupToolStripMenuItem.Image")));
+            this.setupToolStripMenuItem.Name = "setupToolStripMenuItem";
+            this.setupToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.setupToolStripMenuItem.Text = "Setup";
+            this.setupToolStripMenuItem.Click += new System.EventHandler(this.SettingsToolStripButton_Click);
+            // 
+            // monitorSettingsToolStripMenuItem
+            // 
+            this.monitorSettingsToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("monitorSettingsToolStripMenuItem.Image")));
+            this.monitorSettingsToolStripMenuItem.Name = "monitorSettingsToolStripMenuItem";
+            this.monitorSettingsToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.monitorSettingsToolStripMenuItem.Text = "Monitor Settings";
+            this.monitorSettingsToolStripMenuItem.ToolTipText = "Configure Monitors";
             // 
             // toolStripSeparator3
             // 
@@ -230,7 +250,6 @@
             this.toolStripButton2.Size = new System.Drawing.Size(23, 22);
             this.toolStripButton2.Text = "toolStripButton2";
             this.toolStripButton2.Visible = false;
-            this.toolStripButton2.Click += new System.EventHandler(this.toolStripButton2_Click);
             // 
             // serviceController1
             // 
@@ -256,16 +275,6 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(624, 442);
             this.panel2.TabIndex = 14;
-            // 
-            // jobSummary1
-            // 
-            this.jobSummary1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.jobSummary1.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.jobSummary1.Location = new System.Drawing.Point(0, 25);
-            this.jobSummary1.Margin = new System.Windows.Forms.Padding(4);
-            this.jobSummary1.Name = "jobSummary1";
-            this.jobSummary1.Size = new System.Drawing.Size(620, 391);
-            this.jobSummary1.TabIndex = 2;
             // 
             // statusStrip1
             // 
@@ -306,6 +315,16 @@
             // 
             this.optionsBindingSource.DataMember = "Options";
             this.optionsBindingSource.DataSource = this.SchedulerDataSet;
+            // 
+            // jobSummary1
+            // 
+            this.jobSummary1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.jobSummary1.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.jobSummary1.Location = new System.Drawing.Point(0, 25);
+            this.jobSummary1.Margin = new System.Windows.Forms.Padding(4);
+            this.jobSummary1.Name = "jobSummary1";
+            this.jobSummary1.Size = new System.Drawing.Size(620, 391);
+            this.jobSummary1.TabIndex = 2;
             // 
             // Scheduler
             // 
@@ -356,8 +375,10 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripProgressBar toolStripProgressBar1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
-        private System.Windows.Forms.ToolStripButton SettingsToolStripButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripButton toolStripButton2;
+        private System.Windows.Forms.ToolStripDropDownButton SettingsToolStripDropDownButton;
+        private System.Windows.Forms.ToolStripMenuItem setupToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem monitorSettingsToolStripMenuItem;
     }
 }
