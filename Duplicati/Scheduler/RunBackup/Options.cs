@@ -57,6 +57,7 @@ namespace Duplicati.Scheduler.RunBackup
         /// CheckMod
         /// </summary>
         public string CheckMod { get; private set; }
+        public string[] DisabledMonitors { get; private set; }
         /// <summary>
         /// Parse Options ready for Duplicati backup run
         /// </summary>
@@ -70,6 +71,8 @@ namespace Duplicati.Scheduler.RunBackup
                 // Let this throw...
                 Exception Ex = sds.Load(aXML);  // Load database from XML
                 if (Ex != null) Library.Logging.Log.WriteMessage(aXML + ":" + Ex.Message, Duplicati.Library.Logging.LogMessageType.Error);
+                // Fetch turned off monitors
+                this.DisabledMonitors = sds.Settings.DisabledMonitors;
                 // Find the job
                 Duplicati.Scheduler.Data.SchedulerDataSet.JobsRow Row = sds.Jobs.FindByName(aJob);
                 if (Row == null) throw new ArgumentException("No such job: " + aJob);
