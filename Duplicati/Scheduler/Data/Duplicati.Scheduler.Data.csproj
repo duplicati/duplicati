@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConnectionFromXML.cs" />
     <Compile Include="HistoryDataSet.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -60,6 +61,7 @@
     <Compile Include="HistoryDataSetSupport.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="IMonitorPlugin.cs" />
     <Compile Include="SchedulerDataSet.cs">
       <DependentUpon>SchedulerDataSet.xsd</DependentUpon>
       <SubType>Component</SubType>
