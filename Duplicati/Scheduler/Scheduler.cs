@@ -23,6 +23,9 @@ using System.Linq;
 using System.Windows.Forms;
 using System.Diagnostics;
 
+// This is a x86 exe - If you are using Express, see this:
+// http://social.msdn.microsoft.com/Forums/en-US/Vsexpressvcs/thread/4650481d-b385-43f3-89c7-c07546a7f7cd
+//
 namespace Duplicati.Scheduler
 {
     /// <summary>
