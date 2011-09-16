@@ -436,5 +436,22 @@ namespace Duplicati.GUI.HelperControls
                 FilenameTester_TextChanged(sender, e);
             }
         }
+
+        private void btnTestSearch_Click(object sender, EventArgs e) {
+            TestSearchSelection dlg = new TestSearchSelection();
+            dlg.Paths = BasePath;
+            dlg.Filters = GetFilterList(false);
+            dlg.DynamicFilters = m_dynamicFilter;
+
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                listView.Items.Clear();
+                foreach (var filter in dlg.Filters)
+                {
+                    listView.Items.Add(filter.Value, filter.Key ? 0 : 1);
+                }
+            }
+                    
+        }
     }
 }

@@ -132,6 +132,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SizeSelector.resx</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\Strings\TestSearchSelection.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TestSearchSelection.resx</DependentUpon>
+    </Compile>
     <Compile Include="HelperControls\Strings\WaitForOperation.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -215,6 +220,13 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="HelperControls\Strings\TestSearchSelection.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>TestSearchSelection.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\TestSearchSelection.resx">
+      <DependentUpon>TestSearchSelection.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -329,6 +341,12 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\FinishedAdd.Designer.cs">
       <DependentUpon>FinishedAdd.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\TestSearchSelection.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="HelperControls\TestSearchSelection.Designer.cs">
+      <DependentUpon>TestSearchSelection.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Add backup\SettingOverrides.cs">
       <SubType>UserControl</SubType>
