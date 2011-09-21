@@ -106,6 +106,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Asynchronous upload is now default, you can turn it off by using the flag --{0}.
+        /// </summary>
+        internal static string AsynchronousuploadDeprecated {
+            get {
+                return ResourceManager.GetString("AsynchronousuploadDeprecated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes, despite the name, this also works for synchronous runs.
         /// </summary>
         internal static string AsynchronousuploadfolderLong {
@@ -993,6 +1002,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string SortedfilelistShort {
             get {
                 return ResourceManager.GetString("SortedfilelistShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Duplicati will upload files while scanning the disk and producing volumes, which usually makes the backup faster. Use this flag to turn the behavior off, so that Duplicati will wait for each volume to complete..
+        /// </summary>
+        internal static string SynchronousuploadLong {
+            get {
+                return ResourceManager.GetString("SynchronousuploadLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Upload files synchronously.
+        /// </summary>
+        internal static string SynchronousuploadShort {
+            get {
+                return ResourceManager.GetString("SynchronousuploadShort", resourceCulture);
             }
         }
         

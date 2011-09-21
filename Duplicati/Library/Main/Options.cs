@@ -164,7 +164,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("sorted-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SortedfilelistShort, Strings.Options.SortedfilelistLong, "false"),
                     
 
-                    new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false"),
+                    new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
+                    new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false", null, null, string.Format(Strings.Options.AsynchronousuploadDeprecated, "synchronous-upload")),
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "2"),
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong),
 
@@ -657,7 +658,18 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A value indicating if backups are transmitted on a separate thread
         /// </summary>
-        public bool AsynchronousUpload { get { return GetBool("asynchronous-upload"); } }
+        public bool AsynchronousUpload 
+        { 
+            get 
+            {
+                if (m_options.ContainsKey("synchronous-upload"))
+                    return !GetBool("synchronous-upload");
+                else if (m_options.ContainsKey("asynchronous-upload"))
+                    return GetBool("asynchronous-upload");
+                else
+                    return true;
+            } 
+        }
 
         /// <summary>
         /// A value indicating if system is allowed to enter sleep power states during backup/restore ops (win32 only)

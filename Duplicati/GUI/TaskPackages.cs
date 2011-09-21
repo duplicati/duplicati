@@ -219,8 +219,8 @@ namespace Duplicati.GUI
                 options["max-upload-pr-second"] = ext.UploadBandwidth;
             if (!string.IsNullOrEmpty(ext.ThreadPriority))
                 options["thread-priority"] = ext.ThreadPriority;
-            if (ext.AsyncTransfer)
-                options["asynchronous-upload"] = "";
+            if (!ext.AsyncTransfer)
+                options["synchronous-upload"] = "true";
             if (ext.IgnoreTimestamps)
                 options["disable-filetime-check"] = "";
 

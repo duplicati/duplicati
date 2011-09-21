@@ -480,4 +480,13 @@
   <data name="FullifmorethannincrementalsShort" xml:space="preserve">
     <value>The max number of incrementals in a chain</value>
   </data>
+  <data name="AsynchronousuploadDeprecated" xml:space="preserve">
+    <value>Asynchronous upload is now default, you can turn it off by using the flag --{0}</value>
+  </data>
+  <data name="SynchronousuploadLong" xml:space="preserve">
+    <value>Duplicati will upload files while scanning the disk and producing volumes, which usually makes the backup faster. Use this flag to turn the behavior off, so that Duplicati will wait for each volume to complete.</value>
+  </data>
+  <data name="SynchronousuploadShort" xml:space="preserve">
+    <value>Upload files synchronously</value>
+  </data>
 </root>

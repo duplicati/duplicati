@@ -274,7 +274,7 @@ namespace Duplicati.Datamodel
 
             public bool AsyncTransfer
             {
-                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[ASYNC_TRANSFER], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[ASYNC_TRANSFER], true); }
                 set { m_owner.TaskExtensionsLookup[ASYNC_TRANSFER] = value.ToString(); }
             }
 
