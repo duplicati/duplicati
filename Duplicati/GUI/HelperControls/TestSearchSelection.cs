@@ -94,11 +94,26 @@ namespace Duplicati.GUI.HelperControls {
         bool sortingOrderAsc = true;
 
         private string[] m_paths;
-        private List<KeyValuePair<bool, string>> m_filters;
         private string m_dynamicFilters;
 
         public string[] Paths { get { return m_paths; } set { m_paths = value; } }
-        public List<KeyValuePair<bool, string>> Filters { get { return m_filters; } set { m_filters = value; } }
+        public List<FilterDialog.FilterEntry> Filters 
+        { 
+            get 
+            {
+                List<FilterDialog.FilterEntry> filters = new List<FilterDialog.FilterEntry>();
+                foreach (ListViewItem lvi in lvFilters.Items)
+                    filters.Add((FilterDialog.FilterEntry)lvi.Tag);
+                
+                return filters;
+            } 
+            set 
+            {
+                lvFilters.Items.Clear();
+                foreach (FilterDialog.FilterEntry fe in value)
+                    lvFilters.Items.Add(fe.CreateListViewItem());
+            } 
+        }
         public string DynamicFilters { get { return m_dynamicFilters; } set { m_dynamicFilters = value; } }
 
         List<ResultItem> _results = new List<ResultItem>();
@@ -115,9 +130,6 @@ namespace Duplicati.GUI.HelperControls {
 
             currentSortingColumn = 2;
             lvFiles.Columns[currentSortingColumn].ImageIndex = SORT_ASC_IMAGEINDEX + ( sortingOrderAsc ? 0 : 1 );
-
-            foreach (KeyValuePair<bool, string> f in Filters)
-                lvFilters.Items.Add(new ListViewItem(f.Value, f.Key ? 0 : 1));
 
             StartScanThread();
         }
@@ -194,9 +206,12 @@ namespace Duplicati.GUI.HelperControls {
             }
         }
 
-        private void DoTestSearchSelection() {
+        private List<ResultItem> DoTestSearchSelection(List<FilterDialog.FilterEntry> filters) {
 
-            List<KeyValuePair<bool, string>> dyn_filters = new List<KeyValuePair<bool, string>>(Filters);
+            List<KeyValuePair<bool, string>> dyn_filters = new List<KeyValuePair<bool, string>>();
+            foreach (FilterDialog.FilterEntry fe in filters)
+                dyn_filters.Add(new KeyValuePair<bool, string>(fe.Include, fe.Filter));
+
             if (!string.IsNullOrEmpty(DynamicFilters))
                 dyn_filters.AddRange(Library.Utility.FilenameFilter.DecodeFilter(DynamicFilters));
             
@@ -204,30 +219,46 @@ namespace Duplicati.GUI.HelperControls {
 
             try
             {
+                CallbackHandler handler = new CallbackHandler(scanWorker);
                 foreach (string scanDir in Paths)
                 {
                     if (!scanWorker.CancellationPending)
-                        Library.Utility.Utility.EnumerateFileSystemEntries(scanDir, fn, AddFileToList_Callback);
+                        Library.Utility.Utility.EnumerateFileSystemEntries(scanDir, fn, handler.AddFileToList_Callback);
                 }
+
+                return handler.Results;
             }
             catch (AbortException)
             {
+                return null;
             }
         }
 
-        void AddFileToList_Callback(string rootpath, string path, Duplicati.Library.Utility.Utility.EnumeratedFileStatus status)
+
+        private class CallbackHandler
         {
+            public List<ResultItem> Results = new List<ResultItem>();
+            private BackgroundWorker Worker;
 
-            if (scanWorker.CancellationPending)
-                throw new AbortException();
-
-            if (status == Utility.EnumeratedFileStatus.File)
+            public CallbackHandler(BackgroundWorker worker)
             {
-                _results.Add(new ResultItem(path));
+                Worker = worker;
             }
-            else if (status == Utility.EnumeratedFileStatus.Folder)
+
+            public void AddFileToList_Callback(string rootpath, string path, Duplicati.Library.Utility.Utility.EnumeratedFileStatus status)
             {
-                //Should be displayed in tree so the user can exclude with right click?
+
+                if (Worker.CancellationPending)
+                    throw new AbortException();
+
+                if (status == Utility.EnumeratedFileStatus.File)
+                {
+                    Results.Add(new ResultItem(path));
+                }
+                else if (status == Utility.EnumeratedFileStatus.Folder)
+                {
+                    //Should be displayed in tree so the user can exclude with right click?
+                }
             }
         }
 
@@ -291,34 +322,18 @@ namespace Duplicati.GUI.HelperControls {
             lvFiles.Invalidate();
         }
 
-        bool ExtractLastDirectory(StringBuilder path, StringBuilder dest) {
-            if( path.Length == 0 )
-                return false;
-
-            int i = path.Length;
-
-            while( --i > -1 ) {
-                if( path[i] == '\\' ) {
-                    if( i != path.Length - 1 && i > 3 )
-                        break;
-                    else continue;
-                }
-
-                dest.Insert(0, path[i]);
-            }
-            i = i > -1 ? i : 0;
-
-            path.Remove(i, path.Length - i);
-
-            return true;
-        }
         void AddFilter(bool include, string filter) {
-            Filters.Add(new KeyValuePair<bool, string>(include, filter));
-            lvFilters.Items.Add(filter, include ? 0 : 1);
+            FilterDialog.FilterEntry fe = new FilterDialog.FilterEntry(include, FilenameFilter.ConvertGlobbingToRegExp(filter), filter);
+            lvFilters.Items.Add(fe.CreateListViewItem());
         }
+
         string GetFileFilterStr(string filename, string ext) {
-            return string.Format(@".*\\{0}.{1}", filename, ext);
+            if (filename == "*")
+                return string.Format("*.{0}", ext);
+            else
+                return string.Format("*\\{0}.{1}", filename, ext);
         }
+
         void _AddSelectedFilter(bool include, bool anyFileName) {
             if( lvFiles.SelectedIndices.Count > 0 ) {
                 foreach( int index in lvFiles.SelectedIndices ) {
@@ -343,7 +358,7 @@ namespace Duplicati.GUI.HelperControls {
             _AddSelectedFilter(false, true);			
         }
 
-        // Exlude File Path
+        // Exclude File Path
         private void ctxSelection_Opened(object sender, EventArgs e) {
             if( lvFiles.SelectedIndices.Count > 0 ) {
                 ResultItem itm = GetResultItem(lvFiles.SelectedIndices[0]);
@@ -356,17 +371,38 @@ namespace Duplicati.GUI.HelperControls {
                 miExcludeFileExt.Text = fileExt; 
                 
                 // Add Path items
-                StringBuilder completePath = new StringBuilder(itm.Path);
-                StringBuilder path = new StringBuilder(completePath.Length );
                 miExludeFilePath.DropDownItems.Clear();
+                miIncludeFilePath.DropDownItems.Clear();
 
-                while( ExtractLastDirectory(completePath, path) ) {
-                    string s = ( completePath.Length > 0 ) ? string.Format(@".*\\{0}\\", path) : path.ToString();
-                    
-                    miIncludeFilePath.DropDownItems.Add(s, null, FilterFilePath_Click).Tag = true;
-                    miExludeFilePath.DropDownItems.Add(s, null, FilterFilePath_Click).Tag = false;
+                string fullpath = Utility.AppendDirSeparator(itm.Path);
+                string root = System.IO.Path.GetPathRoot(fullpath);
+                string curpath = System.IO.Path.GetDirectoryName(fullpath);
+                List<string> folderlist = new List<string>();
 
-                    path.Insert(0, @"\\");
+                do
+                {
+                    if (curpath != System.IO.Path.GetDirectoryName(curpath))
+                        folderlist.Add(Utility.AppendDirSeparator(curpath));
+                    curpath = System.IO.Path.GetDirectoryName(curpath);
+                } while (root != curpath);
+
+                folderlist.Add(root);
+
+                foreach (string s in folderlist)
+                {
+                    if (s.Length >= fullpath.Length)
+                        continue;
+
+                    string filter = string.Format(@"*\{0}", fullpath.Substring(s.Length));
+                    miIncludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = true;
+                    miExludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = false;
+                }
+
+                foreach (string s in folderlist)
+                {
+                    string filter = string.Format(@"{0}", s);
+                    miIncludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = true;
+                    miExludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = false;
                 }
 
             }
@@ -388,23 +424,25 @@ namespace Duplicati.GUI.HelperControls {
             tbSearch.Enabled = false;
             lvFiles.Enabled = false;
             lvFilters.Enabled = false;
-            scanWorker.RunWorkerAsync();
+            scanWorker.RunWorkerAsync(this.Filters);
         }
         private void scanWorker_DoWork(object sender, DoWorkEventArgs e) {
             //if( _results.Count == 0 )
-                DoTestSearchSelection();
+                e.Result = DoTestSearchSelection((List<FilterDialog.FilterEntry>)e.Argument);
             //else UpdateSearchSelection();
 
             if (scanWorker.CancellationPending)
                 e.Cancel = true;
         }
         private void scanWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
-            if (e.Error == null && !e.Cancelled)
+            if (e.Error == null && !e.Cancelled && e.Result as List<ResultItem> != null)
             {
                 lbLoading.Visible = false;
                 tbSearch.Enabled = true;
                 lvFiles.Enabled = true;
                 lvFilters.Enabled = true;
+
+                _results = (List<ResultItem>)e.Result;
 
                 LoadFileView();
                 SortView((ResultItemSortBy)currentSortingColumn, true);
@@ -442,7 +480,6 @@ namespace Duplicati.GUI.HelperControls {
             if( lvFilters.SelectedItems.Count > 0 ) {
 
                 for(int i = lvFilters.SelectedItems.Count-1; i > -1; i--) {
-                    Filters.RemoveAt(lvFilters.SelectedItems[i].Index);
                     lvFilters.Items.RemoveAt(lvFilters.SelectedItems[i].Index);
                 }
 
@@ -493,8 +530,5 @@ namespace Duplicati.GUI.HelperControls {
         {
             this.DialogResult = DialogResult.OK;
         }
-
-
-
     }
 }

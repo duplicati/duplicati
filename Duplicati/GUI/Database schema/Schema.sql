@@ -83,7 +83,8 @@ CREATE TABLE "TaskFilter" (
     "SortOrder" INTEGER NULL,
     "Include" BOOLEAN NULL,
     "Filter" TEXT NULL,
-    "TaskID" INTEGER NULL
+    "TaskID" INTEGER NULL,
+    "GlobbingFilter" TEXT NULL
 );
 
 CREATE TABLE "SettingExtension" (
@@ -107,4 +108,4 @@ CREATE TABLE "EncryptionSetting" (
     "Value" TEXT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (7);
+INSERT INTO "Version" ("Version") VALUES (8);

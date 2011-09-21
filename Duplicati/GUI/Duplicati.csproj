@@ -1143,6 +1143,7 @@
     <EmbeddedResource Include="Database schema\5. Remove signaturekey.sql" />
     <EmbeddedResource Include="Database schema\6. Remove TimeSeparator and UseShortFilenames.sql" />
     <EmbeddedResource Include="Database schema\7. Add error message field to log.sql" />
+    <EmbeddedResource Include="Database schema\8. Add filter fields.sql" />
     <None Include="Resources\Play.png" />
     <None Include="Resources\Delay.png" />
     <None Include="Resources\Pause.png" />

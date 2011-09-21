@@ -138,14 +138,16 @@ namespace Duplicati.GUI.HelperControls {
             // 
             this.imageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList.ImageStream")));
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageList.Images.SetKeyName(0, "Inclusion.ico");
-            this.imageList.Images.SetKeyName(1, "Exclusion.ico");
+            this.imageList.Images.SetKeyName(0, "globbing-include");
+            this.imageList.Images.SetKeyName(1, "globbing-exclude");
             this.imageList.Images.SetKeyName(2, "icon_up_sort_arrow[1].png");
             this.imageList.Images.SetKeyName(3, "icon_down_sort_arrow[1].png");
             this.imageList.Images.SetKeyName(4, "sort_ascending[1].png");
             this.imageList.Images.SetKeyName(5, "sort_descending[1].png");
             this.imageList.Images.SetKeyName(6, "sort_up[1].png");
             this.imageList.Images.SetKeyName(7, "sort_down[1].png");
+            this.imageList.Images.SetKeyName(8, "regexp-include");
+            this.imageList.Images.SetKeyName(9, "regexp-exclude");
             // 
             // label1
             // 

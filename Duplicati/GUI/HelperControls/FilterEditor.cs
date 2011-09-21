@@ -50,32 +50,60 @@ namespace Duplicati.GUI.HelperControls
         /// </summary>
         /// <param name="includeDynamicFilters">if set to <c>true</c> include dynamic filters.</param>
         /// <returns>A list of filters</returns>
-        private List<KeyValuePair<bool, string>> GetFilterList(bool includeDynamicFilters)
+        private List<FilterDialog.FilterEntry> GetFilterList(bool includeDynamicFilters)
         {
-            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool, string>>();
+            List<FilterDialog.FilterEntry> filters = new List<FilterDialog.FilterEntry>();
             foreach (ListViewItem lvi in listView.Items)
-                filters.Add(new KeyValuePair<bool, string>(lvi.ImageIndex == 0, lvi.Text));
+                filters.Add(lvi.Tag as FilterDialog.FilterEntry);
 
             if (includeDynamicFilters && !string.IsNullOrEmpty(m_dynamicFilter))
             {
-                List<KeyValuePair<bool, string>> tmp = Library.Utility.FilenameFilter.DecodeFilter(m_dynamicFilter);
-                tmp.AddRange(filters);
-                filters = tmp;
+                List<KeyValuePair<bool, string>> tmp1 = Library.Utility.FilenameFilter.DecodeFilter(m_dynamicFilter);
+                List<FilterDialog.FilterEntry> tmp2 = new List<FilterDialog.FilterEntry>();
+                foreach (KeyValuePair<bool, string> k in tmp1)
+                    tmp2.Add(new FilterDialog.FilterEntry(k.Key, k.Value, null));
+                tmp2.AddRange(filters);
+                filters = tmp2;
             }
 
             return filters;
+        }
+
+        private string EncodeAsFilter(List<FilterDialog.FilterEntry> items)
+        {
+            List<KeyValuePair<bool, string>> r = new List<KeyValuePair<bool, string>>();
+            foreach (FilterDialog.FilterEntry f in items)
+                r.Add(new KeyValuePair<bool, string>(f.Include, f.Filter));
+
+            return Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(r);
         }
 
         /// <summary>
         /// Gets or sets the filter string as displayed in the UI
         /// </summary>
         [DefaultValue("")]
-        public string Filter
+        public string FilterXml
         {
-            get { return Library.Utility.FilenameFilter.EncodeAsFilter(GetFilterList(false)); }
+            get { return EncodeFilterAsXml(GetFilterList(false)); }
             set { m_filter = value; RefreshList(); FilenameTester_TextChanged(null, null); }
         }
 
+
+        private string EncodeFilterAsXml(List<FilterDialog.FilterEntry> list)
+        {
+            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+            System.Xml.XmlNode root = doc.AppendChild(doc.CreateElement("root"));
+
+            foreach (FilterDialog.FilterEntry f in list)
+            {
+                System.Xml.XmlNode filter = root.AppendChild(doc.CreateElement("filter"));
+                filter.Attributes.Append(doc.CreateAttribute("include")).Value = f.Include.ToString();
+                filter.Attributes.Append(doc.CreateAttribute("filter")).Value = f.Filter;
+                filter.Attributes.Append(doc.CreateAttribute("globbing")).Value = f.Globbing;
+            }
+
+            return doc.OuterXml;
+        }
 
         /// <summary>
         /// Gets or sets the dynamic filter, which is applied to the test area, but not visible in the list
@@ -103,11 +131,31 @@ namespace Duplicati.GUI.HelperControls
         private void RefreshList()
         {
             listView.Items.Clear();
-            foreach (KeyValuePair<bool, string> f in Library.Utility.FilenameFilter.DecodeFilter(m_filter))
-                listView.Items.Add(f.Value, f.Key ? 0 : 1);
+            foreach (FilterDialog.FilterEntry f in DecodeFilter(m_filter))
+                listView.Items.Add(f.CreateListViewItem());
 
             if (listView.Items.Count > 0)
                 listView.Items[0].Selected = true;
+        }
+
+        private List<FilterDialog.FilterEntry> DecodeFilter(string filter)
+        {
+            List<FilterDialog.FilterEntry> res = new List<FilterDialog.FilterEntry>();
+            if (string.IsNullOrEmpty(filter))
+                return res;
+
+            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+            doc.LoadXml(filter);
+            foreach (System.Xml.XmlNode n in doc.SelectNodes("root/filter"))
+            {
+                res.Add(new FilterDialog.FilterEntry(
+                    bool.Parse(n.Attributes["include"].Value),
+                    n.Attributes["filter"].Value,
+                    n.Attributes["globbing"].Value
+                ));
+            }
+
+            return res;
         }
 
         /// <summary>
@@ -194,7 +242,8 @@ namespace Duplicati.GUI.HelperControls
             parentFolders.Reverse();
 
             //Test if any of the parent folders are excluded
-            Library.Utility.FilenameFilter fn = new Duplicati.Library.Utility.FilenameFilter(GetFilterList(true));
+            string compact = EncodeAsFilter(GetFilterList(true));
+            Library.Utility.FilenameFilter fn = new Duplicati.Library.Utility.FilenameFilter(Duplicati.Library.Utility.FilenameFilter.DecodeFilter(compact));
             Library.Utility.IFilenameFilter match;
             foreach (string s in parentFolders)
             {
@@ -275,13 +324,14 @@ namespace Duplicati.GUI.HelperControls
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void EditFilterButton_Click(object sender, EventArgs e)
         {
-            if (listView.SelectedItems.Count == 1)
+            if (listView.SelectedItems.Count == 1 && listView.SelectedItems[0].Tag is FilterDialog.FilterEntry)
             {
-                FilterDialog dlg = new FilterDialog(new KeyValuePair<bool, string>(listView.SelectedItems[0].ImageIndex == 0, listView.SelectedItems[0].Text));
+                FilterDialog dlg = new FilterDialog((FilterDialog.FilterEntry)listView.SelectedItems[0].Tag);
                 if (dlg.ShowDialog(this) == DialogResult.OK)
                 {
-                    listView.SelectedItems[0].Text = dlg.Filter.Value;
-                    listView.SelectedItems[0].ImageIndex = dlg.Filter.Key ? 0 : 1;
+                    listView.SelectedItems[0].Tag = dlg.Filter;
+                    listView.SelectedItems[0].Text = dlg.Filter.DisplayValue;
+                    listView.SelectedItems[0].ImageKey = dlg.Filter.ImageKey;
                     FilenameTester_TextChanged(sender, e);
                 }
             }
@@ -366,10 +416,10 @@ namespace Duplicati.GUI.HelperControls
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void AddFilterButton_Click(object sender, EventArgs e)
         {
-            FilterDialog dlg = new FilterDialog(new KeyValuePair<bool, string>(true, ""));
+            FilterDialog dlg = new FilterDialog(new FilterDialog.FilterEntry(false, null, null));
             if (dlg.ShowDialog(this) == DialogResult.OK)
             {
-                listView.Items.Add(dlg.Filter.Value, dlg.Filter.Key ? 0 : 1);
+                listView.Items.Add(dlg.Filter.CreateListViewItem());
                 FilenameTester_TextChanged(sender, e);
             }
         }
@@ -417,7 +467,9 @@ namespace Duplicati.GUI.HelperControls
             folderBrowserDialog.Description = Strings.FilterEditor.IncludeFolderBrowseTitle;
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
-                listView.Items.Add(Duplicati.Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Utility.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath)), 0);
+                string path = Duplicati.Library.Utility.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath);
+                FilterDialog.FilterEntry fe = new FilterDialog.FilterEntry(true, Duplicati.Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(path), path);
+                listView.Items.Add(fe.CreateListViewItem());
                 FilenameTester_TextChanged(sender, e);
             }
         }
@@ -432,7 +484,9 @@ namespace Duplicati.GUI.HelperControls
             folderBrowserDialog.Description = Strings.FilterEditor.ExcludeFolderBrowseTitle;
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
-                listView.Items.Add(Duplicati.Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(Duplicati.Library.Utility.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath)), 1);
+                string path = Duplicati.Library.Utility.Utility.AppendDirSeparator(folderBrowserDialog.SelectedPath);
+                FilterDialog.FilterEntry fe = new FilterDialog.FilterEntry(false, Duplicati.Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(path), path);
+                listView.Items.Add(fe.CreateListViewItem());
                 FilenameTester_TextChanged(sender, e);
             }
         }
@@ -447,9 +501,7 @@ namespace Duplicati.GUI.HelperControls
             {
                 listView.Items.Clear();
                 foreach (var filter in dlg.Filters)
-                {
-                    listView.Items.Add(filter.Value, filter.Key ? 0 : 1);
-                }
+                    listView.Items.Add(filter.CreateListViewItem());
             }
                     
         }

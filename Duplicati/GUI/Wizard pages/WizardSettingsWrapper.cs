@@ -120,7 +120,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.ScheduleName = schedule.Name;
             this.SchedulePath = schedule.Path;
             this.SourcePath = schedule.Task.SourcePath;
-            this.EncodedFilters = schedule.Task.EncodedFilter;
+            this.EncodedFilterXml = schedule.Task.FilterXml;
             this.BackupPassword = schedule.Task.Encryptionkey;
 
             this.Backend = schedule.Task.Service;
@@ -181,7 +181,7 @@ namespace Duplicati.GUI.Wizard_pages
             if (schedule.Task == null)
                 schedule.Task = schedule.DataParent.Add<Datamodel.Task>();
             schedule.Task.SourcePath = this.SourcePath;
-            schedule.Task.EncodedFilter = this.EncodedFilters;
+            schedule.Task.FilterXml = this.EncodedFilterXml;
             schedule.Task.Encryptionkey = this.BackupPassword;
 
             schedule.Task.Service = this.Backend;
@@ -471,10 +471,10 @@ namespace Duplicati.GUI.Wizard_pages
         /// <summary>
         /// The filter applied to files being backed up
         /// </summary>
-        public string EncodedFilters
+        public string EncodedFilterXml
         {
-            get { return GetItem<string>("EncodedFilters", ""); }
-            set { SetItem("EncodedFilters", value); }
+            get { return GetItem<string>("EncodedFilterXml", ""); }
+            set { SetItem("EncodedFilterXml", value); }
         }
 
         /// <summary>

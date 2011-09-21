@@ -30,15 +30,52 @@ namespace Duplicati.GUI.HelperControls
 {
     public partial class FilterDialog : Form
     {
-        KeyValuePair<bool, string> m_filter;
+        public class FilterEntry
+        {
+            public FilterEntry(bool include, string filter, string globbing)
+            {
+                this.Include = include;
+                this.Filter = filter;
+                this.Globbing = globbing;
+            }
 
-        public FilterDialog(KeyValuePair<bool, string> filter)
+            public string Filter;
+            public bool Include;
+            public string Globbing;
+
+            public string DisplayValue { get { return string.IsNullOrEmpty(this.Globbing) ? this.Filter : this.Globbing; } }
+            public string ImageKey
+            {
+                get
+                {
+                    return
+                        (string.IsNullOrEmpty(this.Globbing) ? "regexp" : "globbing")
+                        + "-" +
+                        (this.Include ? "include" : "exclude");
+                }
+            }
+            public override string ToString()
+            {
+                return this.DisplayValue;
+            }
+
+            public ListViewItem CreateListViewItem()
+            {
+                ListViewItem lvi = new ListViewItem(this.DisplayValue, this.ImageKey);
+                lvi.Tag = this;
+                return lvi;
+            }
+        }
+
+        FilterEntry m_filter;
+
+        public FilterDialog(FilterEntry filter)
             : this()
         {
             m_filter = filter;
         }
 
-        public KeyValuePair<bool, string> Filter
+        public FilterEntry Filter
         {
             get { return m_filter; }
         }
@@ -50,7 +87,8 @@ namespace Duplicati.GUI.HelperControls
 
         private void OKBtn_Click(object sender, EventArgs e)
         {
-            string f;
+            string filter;
+            string globbing;
             if (IsRegExp.Checked)
             {
                 try
@@ -62,22 +100,44 @@ namespace Duplicati.GUI.HelperControls
                     MessageBox.Show(this, string.Format(Strings.FilterDialog.InvalidRegExpMessage, ex.Message), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                f = FilterText.Text;
+                filter = FilterText.Text;
+                globbing = null;
             }
             else
-                f = Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(FilterText.Text);
+            {
+                filter = Library.Utility.FilenameFilter.ConvertGlobbingToRegExp(FilterText.Text);
+                globbing = FilterText.Text;
+            }
 
-            m_filter = new KeyValuePair<bool, string>(Inclusive.Checked, f);
+            m_filter = new FilterEntry(Inclusive.Checked, filter, globbing);
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
 
         private void FilterDialog_Load(object sender, EventArgs e)
         {
-            Inclusive.Checked = m_filter.Key;
-            Exclusive.Checked = !m_filter.Key;
-            FilterText.Text = m_filter.Value;
-            IsRegExp.Checked = !string.IsNullOrEmpty(m_filter.Value);
+            Inclusive.Checked = m_filter.Include;
+            Exclusive.Checked = !m_filter.Include;
+            FilterText.Text = m_filter.Filter;
+            if (string.IsNullOrEmpty(m_filter.Globbing))
+            {
+                if (string.IsNullOrEmpty(m_filter.Filter))
+                {
+                    //New filter is default globbing
+                    IsRegExp.Checked = false;
+                    FilterText.Text = "";
+                }
+                else
+                {
+                    IsRegExp.Checked = true;
+                    FilterText.Text = m_filter.Filter;
+                }
+            }
+            else
+            {
+                IsRegExp.Checked = false;
+                FilterText.Text = m_filter.Globbing;
+            }
 
             try { FilterText.Focus(); }
             catch { }
@@ -110,6 +170,17 @@ namespace Duplicati.GUI.HelperControls
         private void HelpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             HelpImage_Click(sender, e);
+        }
+
+        private void FilterText_TextChanged(object sender, EventArgs e)
+        {
+            OKBtn.Enabled = FilterText.Text!= null && FilterText.Text.Trim().Length > 0;
+        }
+
+        private void FilterDialog_Activated(object sender, EventArgs e)
+        {
+            try { FilterText.Focus(); }
+            catch { }
         }
     }
 }

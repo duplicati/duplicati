@@ -46,7 +46,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             if (args.Direction == System.Windows.Forms.Wizard.PageChangedDirection.Back)
                 return;
 
-            m_wrapper.EncodedFilters = filterEditor1.Filter;
+            m_wrapper.EncodedFilterXml = filterEditor1.FilterXml;
 
             //Don't set args.NextPage, it runs on a list
         }
@@ -55,7 +55,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
 
-            filterEditor1.Filter = m_wrapper.EncodedFilters;
+            filterEditor1.FilterXml = m_wrapper.EncodedFilterXml;
 
             List<KeyValuePair<bool, string>> lst = new List<KeyValuePair<bool, string>>();
             filterEditor1.BasePath = DynamicSetupHelper.GetSourceFolders(m_wrapper, new ApplicationSettings(m_wrapper.DataConnection ?? Program.DataConnection), lst);

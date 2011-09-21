@@ -68,6 +68,7 @@ namespace Duplicati.GUI.HelperControls
             // 
             resources.ApplyResources(this.FilterText, "FilterText");
             this.FilterText.Name = "FilterText";
+            this.FilterText.TextChanged += new System.EventHandler(this.FilterText_TextChanged);
             // 
             // OKBtn
             // 
@@ -151,6 +152,7 @@ namespace Duplicati.GUI.HelperControls
             this.Controls.Add(this.Inclusive);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "FilterDialog";
+            this.Activated += new System.EventHandler(this.FilterDialog_Activated);
             this.Load += new System.EventHandler(this.FilterDialog_Load);
             ((System.ComponentModel.ISupportInitialize)(this.HelpImage)).EndInit();
             this.ResumeLayout(false);

@@ -48,6 +48,9 @@ namespace Duplicati.Datamodel
 		private System.String m_Filter = "";
 		[Relation("TaskFilterTask", typeof(Task), "ID"), DatabaseField("TaskID")]
 		private System.Int64 m_TaskID = long.MinValue;
+        [DatabaseField("GlobbingFilter")]
+        private System.String m_GlobbingFilter = "";
+
 #endregion
 
 #region " properties "
@@ -81,6 +84,12 @@ namespace Duplicati.Datamodel
 			get{return m_TaskID;}
 			set{object oldvalue = m_TaskID;OnBeforeDataChange(this, "TaskID", oldvalue, value);m_TaskID = value;OnAfterDataChange(this, "TaskID", oldvalue, value);}
 		}
+
+        public System.String GlobbingFilter
+        {
+            get { return m_GlobbingFilter; }
+            set { object oldvalue = m_GlobbingFilter; OnBeforeDataChange(this, "GlobbingFilter", oldvalue, value); m_GlobbingFilter = value; OnAfterDataChange(this, "GlobbingFilter", oldvalue, value); }
+        }
 
 #endregion
 
