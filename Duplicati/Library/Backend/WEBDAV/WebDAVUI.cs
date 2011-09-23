@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -47,6 +47,7 @@ namespace Duplicati.Library.Backend
         private const string HAS_WARNED_USERNAME = "UI: Has warned username";
         private const string HAS_WARNED_PATH = "UI: Has warned path";
         private const string HAS_WARNED_LEADING_SLASH = "UI: Has warned leading slash";
+        private const string HAS_WARNED_BACKSLASH = "UI: Has warned backslash";
         private const string HAS_TESTED = "UI: Has tested";
         private const string INITIALPASSWORD = "UI: Temp password";
 
@@ -55,6 +56,7 @@ namespace Duplicati.Library.Backend
         private bool m_hasTested;
         private bool m_warnedPath;
         private bool m_warnedLeadingSlash;
+        private bool m_warnedBackslash;
 
         private static System.Text.RegularExpressions.Regex HashRegEx = new System.Text.RegularExpressions.Regex("[^0-9a-fA-F]");
 
@@ -158,6 +160,9 @@ namespace Duplicati.Library.Backend
             if (!m_options.ContainsKey(HAS_WARNED_LEADING_SLASH) || !bool.TryParse(m_options[HAS_WARNED_LEADING_SLASH], out m_warnedLeadingSlash))
                 m_warnedLeadingSlash = false;
 
+            if (!m_options.ContainsKey(HAS_WARNED_BACKSLASH) || !bool.TryParse(m_options[HAS_WARNED_BACKSLASH], out m_warnedBackslash))
+                m_warnedBackslash = false;
+
             if (!m_options.ContainsKey(HAS_WARNED_USERNAME) || !bool.TryParse(m_options[HAS_WARNED_USERNAME], out m_warnedUsername))
                 m_warnedUsername = false;
 
@@ -188,6 +193,24 @@ namespace Duplicati.Library.Backend
                 }
 
                 m_warnedPath = true;
+            }
+
+
+            if (Path.Text.Contains("\\") && !m_warnedBackslash)
+            {
+                DialogResult res = MessageBox.Show(this, Strings.WebDAVUI.BackslashWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information);
+                if (res == DialogResult.Yes)
+                {
+                    Path.Text = Path.Text.Replace('\\', '/');
+                }
+                else if (res == DialogResult.Cancel)
+                {
+                    return false;
+                }
+                else
+                {
+                    m_warnedBackslash = true;
+                }
             }
 
             if (Path.Text.Trim().StartsWith("/") && !m_warnedLeadingSlash)
@@ -227,7 +250,7 @@ namespace Duplicati.Library.Backend
 
                 if (Password.Text.Trim().Length <= 0 && !m_warnedPassword)
                 {
-                    if (MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
+                    if (MessageBox.Show(this, Interface.CommonStrings.EmptyPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) != DialogResult.Yes)
                     {
                         try { Password.Focus(); }
                         catch { }
@@ -273,6 +296,7 @@ namespace Duplicati.Library.Backend
             m_options[HAS_TESTED] = m_hasTested.ToString();
             m_options[HAS_WARNED_PATH] = m_warnedPath.ToString();
             m_options[HAS_WARNED_LEADING_SLASH] = m_warnedLeadingSlash.ToString();
+            m_options[HAS_WARNED_BACKSLASH] = m_warnedBackslash.ToString();
             m_options[HAS_WARNED_USERNAME] = m_warnedUsername.ToString();
             m_options[HAS_WARNED_PASSWORD] = m_warnedPassword.ToString();
 
@@ -317,10 +341,29 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        WEBDAV webDAV = new WEBDAV(destination, options);
-                        webDAV.List();
+                        bool existingBackup = false;
+                        using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
+                        {
+                            httpconf.Configure(options);
+                            WEBDAV webDAV = new WEBDAV(destination, options);
+                            foreach (Interface.IFileEntry n in webDAV.List())
+                                if (n.Name.StartsWith("duplicati-"))
+                                {
+                                    existingBackup = true;
+                                    break;
+                                }
+                        }
 
-                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        if (existingBackup)
+                        {
+                            if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                                return;
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+
                         m_hasTested = true;
                     }
                     catch (Interface.FolderMissingException)
@@ -376,6 +419,7 @@ namespace Duplicati.Library.Backend
             m_hasTested = false;
             m_warnedPath = false;
             m_warnedLeadingSlash = false;
+            m_warnedBackslash = false;
         }
 
         private void Username_TextChanged(object sender, EventArgs e)
@@ -413,9 +457,13 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        WEBDAV webdav = new WEBDAV(destination, options);
-                        webdav.CreateFolder();
-
+                        using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
+                        {
+                            httpconf.Configure(options);
+                            WEBDAV webDAV = new WEBDAV(destination, options);
+                            webDAV.CreateFolder();
+                        }
+                        
                         MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;
                     }

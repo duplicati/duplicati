@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -63,7 +63,12 @@ namespace Duplicati.Library.DynamicLoader
                 if (string.IsNullOrEmpty(url))
                     throw new ArgumentNullException("url");
 
-                string scheme = new Uri(url).Scheme.ToLower();
+                string scheme;
+                //If possible, we avoid parsing the string as a URL to allow flexible string handling
+                if (url.IndexOf("://") > 0)
+                    scheme = url.Substring(0, url.IndexOf("://"));
+                else
+                    scheme = new Uri(url).Scheme.ToLower();
 
                 LoadInterfaces();
 
@@ -119,11 +124,18 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// Gets the supported commands for a given backend
         /// </summary>
-        /// <param name="key">The backend to find the commands for</param>
+        /// <param name="url">The backend to find the commands for, either just the scheme or a full url</param>
         /// <returns>The supported commands or null if the key is not supported</returns>
         public static IList<ICommandLineArgument> GetSupportedCommands(string key)
         {
-            return _backendLoader.GetSupportedCommands(key);
+            if (string.IsNullOrEmpty(key))
+                throw new ArgumentNullException("key");
+
+            //Extract the scheme, don't use new Uri() as the url may not be valid
+            if (key.IndexOf("://") > 0)
+                key = key.Substring(0, key.IndexOf("://"));
+
+            return _backendLoader.GetSupportedCommands(key.ToLower());
         }
 
 

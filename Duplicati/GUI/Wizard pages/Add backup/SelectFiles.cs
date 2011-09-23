@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -205,7 +205,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             MessageBox.Show(this, Strings.SelectFiles.UpgradeWarning, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             string p = Library.Utility.Utility.AppendDirSeparator(m_wrapper.SourcePath);
-            List<KeyValuePair<bool, string>> filters = Library.Utility.FilenameFilter.DecodeFilter(m_wrapper.EncodedFilters);
+            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+            doc.LoadXml(m_wrapper.EncodedFilterXml);
+
+            List<KeyValuePair<bool, string>> filters = new List<KeyValuePair<bool,string>>();
+            foreach (System.Xml.XmlNode n in doc.SelectNodes("root/filter"))
+                filters.Add(new KeyValuePair<bool, string>(bool.Parse(n.Attributes["include"].Value), n.Attributes["filter"].Value));
 
             //See what folders are included with the current setup
             Library.Utility.FilenameFilter filter = new Duplicati.Library.Utility.FilenameFilter(filters);
@@ -253,7 +258,19 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             //Make sure the extra filters are not included
             if (!unsupported)
-                m_wrapper.EncodedFilters = Library.Utility.FilenameFilter.EncodeAsFilter(filters);
+            {
+                doc = new System.Xml.XmlDocument();
+                System.Xml.XmlNode root = doc.AppendChild(doc.CreateElement("root"));
+                foreach (KeyValuePair<bool, string> f in filters)
+                {
+                    System.Xml.XmlNode n = root.AppendChild(doc.CreateElement("filter"));
+                    n.Attributes.Append(doc.CreateAttribute("include")).Value = f.Key.ToString();
+                    n.Attributes.Append(doc.CreateAttribute("filter")).Value = f.Value;
+                    n.Attributes.Append(doc.CreateAttribute("globbing")).Value = "";
+                }
+
+                m_wrapper.EncodedFilterXml = doc.OuterXml;
+            }
 
             if (unsupported)
                 FolderRadio.Checked = true;

@@ -106,6 +106,9 @@
       <Feature Id="fr_FR_LanguageFeature" Title="French translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in French (fr-FR)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
         <ComponentGroupRef Id="DUPLICATI_LANG_fr_FR" />
       </Feature>
+      <Feature Id="de_DE_LanguageFeature" Title="German translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in German (de-DE)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
+        <ComponentGroupRef Id="DUPLICATI_LANG_de_DE" />
+      </Feature>
     </Feature>
 
     <!-- Launch duplicati setup -->

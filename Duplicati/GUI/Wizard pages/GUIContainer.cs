@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -72,6 +72,7 @@ namespace Duplicati.GUI.Wizard_pages
             m_control = m_interface.GetControl(m_wrapper.ApplicationSettings, m_backendOptions);
             m_control.SetBounds(0, 0, this.Width, this.Height);
             m_control.Visible = true;
+            this.Controls.Clear();
             this.Controls.Add(m_control);
         }
 

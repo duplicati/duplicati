@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -219,8 +219,8 @@ namespace Duplicati.GUI
                 options["max-upload-pr-second"] = ext.UploadBandwidth;
             if (!string.IsNullOrEmpty(ext.ThreadPriority))
                 options["thread-priority"] = ext.ThreadPriority;
-            if (ext.AsyncTransfer)
-                options["asynchronous-upload"] = "";
+            if (!ext.AsyncTransfer)
+                options["synchronous-upload"] = "true";
             if (ext.IgnoreTimestamps)
                 options["disable-filetime-check"] = "";
 

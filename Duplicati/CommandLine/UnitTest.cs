@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -120,6 +120,8 @@ namespace Duplicati.CommandLine
             //We cannot rely on USN numbering, but we can use USN enumeration
             //options["disable-usn-diff-check"] = null;
 
+            options["verification-level"] = "full";
+
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
@@ -194,6 +196,15 @@ namespace Duplicati.CommandLine
                     throw new Exception("Filename parsing problem, or corrupt storage: " + sb.ToString());
                 }
 
+                Console.WriteLine("Verifying the backup chain");
+                using (new Timer("Verify backup"))
+                {
+                    List<KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception>> results = Duplicati.Library.Main.Interface.VerifyBackup(target, options);
+                    foreach (KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception> x in results)
+                        if (x.Value != null)
+                            Console.WriteLine(string.Format("Error: {0}: {1}", x.Key.Filename, x.Value.ToString()));
+                }
+
                 List<Duplicati.Library.Main.ManifestEntry> t = new List<Duplicati.Library.Main.ManifestEntry>();
                 t.Add(entries[0]);
                 t.AddRange(entries[0].Incrementals);
@@ -217,6 +228,100 @@ namespace Duplicati.CommandLine
                             restorefoldernames = new string[actualfolders.Length];
                             for (int j = 0; j < actualfolders.Length; j++)
                                 restorefoldernames[j] = System.IO.Path.Combine(ttf, System.IO.Path.GetFileName(actualfolders[j]));
+                        }
+
+                        Console.WriteLine("Partial restore of: " + folders[i]);
+                        using (TempFolder ptf = new TempFolder())
+                        {
+                            List<string> testfiles = new List<string>();
+                            using (new Timer("Extract list of files from" + folders[i]))
+                            {
+                                IList<string> sourcefiles = Duplicati.Library.Main.Interface.ListCurrentFiles(target, options);
+
+                                //Remove all folders from list
+                                for (int j = 0; j < sourcefiles.Count; j++)
+                                    if (sourcefiles[j].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                    {
+                                        sourcefiles.RemoveAt(j);
+                                        j--;
+                                    }
+
+
+                                int testfilecount = 15;
+                                Random r = new Random();
+                                while (testfilecount-- > 0 && sourcefiles.Count > 0)
+                                {
+                                    int rn = r.Next(0, sourcefiles.Count);
+                                    testfiles.Add(sourcefiles[rn]);
+                                    sourcefiles.RemoveAt(rn);
+                                }
+                            }
+
+                            //Add all folders to avoid warnings in restore log
+                            int c = testfiles.Count;
+                            Dictionary<string, string> partialFolders = new Dictionary<string, string>(Utility.ClientFilenameStringComparer);
+                            for (int j = 0; j < c; j++)
+                            {
+                                string f = testfiles[j];
+                                do
+                                {
+                                    f = System.IO.Path.GetDirectoryName(f);
+                                    partialFolders[Utility.AppendDirSeparator(f)] = null;
+                                } while (f.IndexOf(System.IO.Path.DirectorySeparatorChar) > 0);
+                            }
+
+                            if (partialFolders.ContainsKey(""))
+                                partialFolders.Remove("");
+
+                            Dictionary<string, string> tops = new Dictionary<string,string>(options);
+                            List<string> filterlist = new List<string>();
+                            filterlist.AddRange(partialFolders.Keys);
+                            filterlist.AddRange(testfiles);
+                            tops["file-to-restore"] = String.Join(System.IO.Path.PathSeparator.ToString(), filterlist.ToArray());
+                            
+                            using (new Timer("Partial restore of " + folders[i]))
+                                Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, new string[] { ptf }, tops), LogMessageType.Information);
+
+                            Console.WriteLine("Verifying partial restore of: " + folders[i]);
+                            using (new Timer("Verification of partial restore from " + folders[i]))
+                                foreach (string s in testfiles)
+                                {
+                                    string restoredname; 
+                                    string sourcename;
+
+                                    if (actualfolders.Length == 1) 
+                                    {
+                                        sourcename = System.IO.Path.Combine(actualfolders[0], s);
+                                        restoredname = System.IO.Path.Combine(ptf, s);;
+                                    }
+                                    else
+                                    {
+                                        int six = s.IndexOf(System.IO.Path.DirectorySeparatorChar);
+                                        sourcename = System.IO.Path.Combine(actualfolders[int.Parse(s.Substring(0, six))], s.Substring(six + 1));
+                                        restoredname = System.IO.Path.Combine(System.IO.Path.Combine(ptf, System.IO.Path.GetFileName(folders[0].Split(System.IO.Path.PathSeparator)[int.Parse(s.Substring(0, six))])), s.Substring(six + 1));
+                                    }
+
+                                    if (!System.IO.File.Exists(restoredname))
+                                    {
+                                        Log.WriteMessage("Partial restore missing file: " + restoredname, LogMessageType.Error);
+                                        Console.WriteLine("Partial restore missing file: " + restoredname);
+                                    }
+                                    else
+                                    {
+                                        if (!System.IO.File.Exists(sourcename))
+                                        {
+                                            Log.WriteMessage("Partial restore missing file: " + sourcename, LogMessageType.Error);
+                                            Console.WriteLine("Partial restore missing file: " + sourcename);
+                                            throw new Exception("Unittest is broken");
+                                        }
+
+                                        if (!CompareFiles(sourcename, restoredname, s))
+                                        {
+                                            Log.WriteMessage("Partial restore file differs: " + s, LogMessageType.Error);
+                                            Console.WriteLine("Partial restore file differs: " + s);
+                                        }
+                                    }
+                                }
                         }
 
                         using (new Timer("Restore of " + folders[i]))

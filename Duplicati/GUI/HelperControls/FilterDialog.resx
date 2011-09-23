@@ -156,7 +156,7 @@
     <value>170, 17</value>
   </data>
   <data name="Exclusive.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="Exclusive.Text" xml:space="preserve">
     <value>Exclude files matching the filter</value>
@@ -183,7 +183,7 @@
     <value>29, 13</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
     <value>Filter</value>
@@ -207,7 +207,7 @@
     <value>272, 20</value>
   </data>
   <data name="FilterText.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+    <value>5</value>
   </data>
   <data name="&gt;&gt;FilterText.Name" xml:space="preserve">
     <value>FilterText</value>
@@ -221,6 +221,9 @@
   <data name="&gt;&gt;FilterText.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
+  <data name="OKBtn.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
   <data name="OKBtn.Location" type="System.Drawing.Point, System.Drawing">
     <value>112, 96</value>
   </data>
@@ -228,7 +231,7 @@
     <value>75, 23</value>
   </data>
   <data name="OKBtn.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
+    <value>8</value>
   </data>
   <data name="OKBtn.Text" xml:space="preserve">
     <value>OK</value>
@@ -252,7 +255,7 @@
     <value>75, 23</value>
   </data>
   <data name="CancelBtn.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
+    <value>9</value>
   </data>
   <data name="CancelBtn.Text" xml:space="preserve">
     <value>Cancel</value>
@@ -279,7 +282,7 @@
     <value>146, 17</value>
   </data>
   <data name="IsRegExp.TabIndex" type="System.Int32, mscorlib">
-    <value>6</value>
+    <value>4</value>
   </data>
   <data name="IsRegExp.Text" xml:space="preserve">
     <value>Filter is regular expression</value>
@@ -307,7 +310,7 @@
     <value>24, 24</value>
   </data>
   <data name="BrowseFolderButton.TabIndex" type="System.Int32, mscorlib">
-    <value>7</value>
+    <value>6</value>
   </data>
   <data name="&gt;&gt;BrowseFolderButton.Name" xml:space="preserve">
     <value>BrowseFolderButton</value>
@@ -334,7 +337,7 @@
     <value>24, 24</value>
   </data>
   <data name="BrowseFileButton.TabIndex" type="System.Int32, mscorlib">
-    <value>8</value>
+    <value>7</value>
   </data>
   <data name="BrowseFileButton.Text" xml:space="preserve">
     <value>...</value>
@@ -376,7 +379,7 @@
     <value>52, 13</value>
   </data>
   <data name="HelpLink.TabIndex" type="System.Int32, mscorlib">
-    <value>9</value>
+    <value>1</value>
   </data>
   <data name="HelpLink.Text" xml:space="preserve">
     <value>Filter help</value>

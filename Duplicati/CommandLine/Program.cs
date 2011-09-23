@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -88,11 +88,41 @@ namespace Duplicati.CommandLine
                     }
                 }
 
+                if (cargs.Count > 0)
+                {
+                    //Because options are of the format --name=value, it seems natural to write "delete-all-but-n-full=5",
+                    // so we allow that format as well
+                    if (cargs[0].Trim().ToLower().StartsWith("delete-all-but-n-full="))
+                    {
+                        string p = cargs[0].Substring(cargs[0].IndexOf('=') + 1);
+                        cargs[0] = "delete-all-but-n-full";
+                        cargs.Insert(1, p);
+                    }
+
+                    //Because options are of the format --name=value, it seems natural to write "delete-older-than=5D",
+                    // so we allow that format as well
+                    if (cargs[0].Trim().ToLower().StartsWith("delete-older-than="))
+                    {
+                        string p = cargs[0].Substring(cargs[0].IndexOf('=') + 1);
+                        cargs[0] = "delete-older-than";
+                        cargs.Insert(1, p);
+                    }
+                }
+
                 if (cargs.Count < 2)
                 {
-                    PrintUsage(true);
+                    if (cargs.Count == 0 || cargs[0].Trim().Equals("help", StringComparison.InvariantCultureIgnoreCase))
+                        PrintUsage(true);
+                    else
+                    {
+                        PrintUsage(false);
+                        PrintWrongNumberOfArguments(cargs, 2);
+                    }
+                    
+
                     return;
                 }
+
 
                 string source = cargs[0];
                 string target = cargs[1];
@@ -102,6 +132,7 @@ namespace Duplicati.CommandLine
                     source = target;
                     target = cargs[2];
                     options["restore"] = null;
+                    cargs.RemoveAt(0);
                 }
 
                 if (!options.ContainsKey("passphrase"))
@@ -124,7 +155,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -136,7 +167,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -148,7 +179,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -214,7 +245,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -226,17 +257,17 @@ namespace Duplicati.CommandLine
                     {
                         Console.WriteLine();
 
-                        long size = m.Fileentry.Size;
+                        long size = Math.Max(m.Fileentry.Size ,0);
                         foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in m.Volumes)
-                            size += x.Key.Fileentry.Size + x.Value.Fileentry.Size;
+                            size += Math.Max(x.Key.Fileentry.Size, 0) + Math.Max(x.Value.Fileentry.Size, 0);
 
                         Console.WriteLine(Strings.Program.CollectionStatusLineFull.Replace("\\t", "\t"), m.Time.ToString(), m.Volumes.Count, Library.Utility.Utility.FormatSizeString(size));
 
                         foreach (Duplicati.Library.Main.ManifestEntry mi in m.Incrementals)
                         {
-                            size = mi.Fileentry.Size;
+                            size = Math.Max(mi.Fileentry.Size, 0);
                             foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in mi.Volumes)
-                                size += x.Key.Fileentry.Size + x.Value.Fileentry.Size;
+                                size += Math.Max(x.Key.Fileentry.Size, 0) + Math.Max(x.Value.Fileentry.Size, 0);
 
                             Console.WriteLine(Strings.Program.CollectionStatusLineInc.Replace("\\t", "\t"), mi.Time.ToString(), mi.Volumes.Count, Library.Utility.Utility.FormatSizeString(size));
                         }
@@ -258,7 +289,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -283,7 +314,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -295,7 +326,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -307,7 +338,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -320,7 +351,7 @@ namespace Duplicati.CommandLine
 
                     if (cargs.Count != 1)
                     {
-                        Console.WriteLine(Strings.Program.WrongNumberOfArgumentsError);
+                        PrintWrongNumberOfArguments(cargs, 1);
                         return;
                     }
 
@@ -329,12 +360,66 @@ namespace Duplicati.CommandLine
                     foreach(KeyValuePair<string, DateTime> k in results)
                         Console.WriteLine(string.Format(Strings.Program.FindLastVersionEntry.Replace("\\t", "\t"), k.Value.Ticks == 0 ? Strings.Program.FileEntryNotFound : k.Value.ToLocalTime().ToString("yyyyMMdd hhmmss"), k.Key));
                 }
+                else if (source.Trim().ToLower() == "verify")
+                {
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        PrintWrongNumberOfArguments(cargs, 1);
+                        return;
+                    }
+
+                    List<KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception>> results = Duplicati.Library.Main.Interface.VerifyBackup(cargs[0], options);
+
+                    int manifests = 0;
+                    int signatures = 0;
+                    int contentfiles = 0;
+                    int errors = 0;
+
+                    foreach (KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception> x in results)
+                    {
+                        if (x.Key is Duplicati.Library.Main.ManifestEntry)
+                            manifests++;
+                        else if (x.Key is Duplicati.Library.Main.SignatureEntry)
+                            signatures++;
+                        else if (x.Key is Duplicati.Library.Main.ContentEntry)
+                            contentfiles++;
+
+                        if (x.Value != null)
+                            errors++;
+                    }
+
+                    Console.WriteLine(string.Format(Strings.Program.VerificationCompleted, manifests, signatures, contentfiles, errors));
+                    if (errors > 0)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine(Strings.Program.VerificationErrorHeader);
+                        Console.WriteLine();
+
+                        foreach (KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception> x in results)
+                            if (x.Value != null)
+                                Console.WriteLine(string.Format("{0}: {1}", x.Key.Filename, x.Value.Message));
+                    }
+                }
                 else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
                 {
+                    if (cargs.Count != 2)
+                    {
+                        PrintWrongNumberOfArguments(cargs, 2);
+                        return;
+                    }
+
                     Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target.Split(System.IO.Path.PathSeparator), options));
                 }
                 else
                 {
+                    if (cargs.Count != 2)
+                    {
+                        PrintWrongNumberOfArguments(cargs, 2);
+                        return;
+                    } 
+                    
                     Console.WriteLine(Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options));
                 }
             }
@@ -365,6 +450,12 @@ namespace Duplicati.CommandLine
             }
         }
 
+        private static void PrintWrongNumberOfArguments(List<string> args, int expected)
+        {
+            Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2, args.Count, expected, args.Count == 0 ? "" : "\"" + string.Join("\", \"", args.ToArray()) + "\"");
+
+        }
+
         private static void PrintUsage(bool extended)
         {
             bool isLinux = Library.Utility.Utility.IsClientLinux;
@@ -372,83 +463,112 @@ namespace Duplicati.CommandLine
             List<string> lines = new List<string>();
             lines.AddRange(
                 string.Format(
-                    Strings.Program.Usage.Replace("\r", ""), 
-                    License.VersionNumbers.Version,
-                    isLinux ? Strings.Program.ExampleLinux : Strings.Program.ExampleWindows
+                    Strings.Program.ProgramUsageHeader.Replace("\r", ""), 
+                    License.VersionNumbers.Version
                 ).Split('\n')
             );
 
-            lines.Add(Strings.Program.DuplicatiOptionsHeader);
-            Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
-            foreach (Library.Interface.ICommandLineArgument arg in opt.SupportedCommands)
-                Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageBackup.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageRestore.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageCleanup.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListFiles.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListSets.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListContentFiles.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListSourceFolders.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageListSignatureFiles.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageFindLastVersion.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageVerify.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsagePurgeCache.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageDeleteOld.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageCreateFolders.Replace("\r", "")).Split('\n'));
+
+            lines.AddRange(("\n " + Strings.Program.ProgramUsageBackend.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n" + Strings.Program.ProgramUsageOptionTypes.Replace("\r", "")).Split('\n'));
+            lines.AddRange(("\n" + Strings.Program.ProgramUsageTimes.Replace("\r", "")).Split('\n'));
+            lines.AddRange(
+                string.Format( 
+                    "\n" + Strings.Program.ProgramUsageFilters.Replace("\r", ""), 
+                    isLinux ? Strings.Program.UsageExampleLinux : Strings.Program.UsageExampleWindows
+                ).Split('\n')
+            );
 
             lines.Add("");
-            lines.Add("");
-            lines.Add(Strings.Program.SupportedBackendsHeader);
-            foreach (Duplicati.Library.Interface.IBackend back in Library.DynamicLoader.BackendLoader.Backends)
+
+            if (extended)
             {
-                lines.Add(back.DisplayName + " (" + back.ProtocolKey + "):");
-                lines.Add(" " + back.Description);
-                if (back.SupportedCommands != null && back.SupportedCommands.Count > 0)
+
+                lines.Add(Strings.Program.DuplicatiOptionsHeader);
+                Library.Main.Options opt = new Library.Main.Options(new Dictionary<string, string>());
+                foreach (Library.Interface.ICommandLineArgument arg in opt.SupportedCommands)
+                    Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+
+                lines.Add("");
+                lines.Add("");
+                lines.Add(Strings.Program.SupportedBackendsHeader);
+                foreach (Duplicati.Library.Interface.IBackend back in Library.DynamicLoader.BackendLoader.Backends)
                 {
-                    lines.Add(" " + Strings.Program.SupportedOptionsHeader);
-                    foreach (Library.Interface.ICommandLineArgument arg in back.SupportedCommands)
-                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+                    lines.Add(back.DisplayName + " (" + back.ProtocolKey + "):");
+                    lines.Add(" " + back.Description);
+                    if (back.SupportedCommands != null && back.SupportedCommands.Count > 0)
+                    {
+                        lines.Add(" " + Strings.Program.SupportedOptionsHeader);
+                        foreach (Library.Interface.ICommandLineArgument arg in back.SupportedCommands)
+                            Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+                    }
+                    lines.Add("");
+                }
+
+                lines.Add("");
+                lines.Add("");
+                lines.Add(Strings.Program.SupportedEncryptionModulesHeader);
+                foreach (Duplicati.Library.Interface.IEncryption mod in Library.DynamicLoader.EncryptionLoader.Modules)
+                {
+                    lines.Add(mod.DisplayName + " (." + mod.FilenameExtension + "):");
+                    lines.Add(" " + mod.Description);
+                    if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
+                    {
+                        lines.Add(" " + Strings.Program.SupportedOptionsHeader);
+                        foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
+                            Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+                    }
+                    lines.Add("");
+                }
+
+                lines.Add("");
+                lines.Add("");
+                lines.Add(Strings.Program.SupportedCompressionModulesHeader);
+                foreach (Duplicati.Library.Interface.ICompression mod in Library.DynamicLoader.CompressionLoader.Modules)
+                {
+                    lines.Add(mod.DisplayName + " (." + mod.FilenameExtension + "):");
+                    lines.Add(" " + mod.Description);
+                    if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
+                    {
+                        lines.Add(" " + Strings.Program.SupportedOptionsHeader);
+                        foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
+                            Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+                    }
+                    lines.Add("");
+                }
+                lines.Add("");
+
+                lines.Add("");
+                lines.Add("");
+                lines.Add(Strings.Program.GenericModulesHeader);
+                foreach (Duplicati.Library.Interface.IGenericModule mod in Library.DynamicLoader.GenericLoader.Modules)
+                {
+                    lines.Add(mod.DisplayName + " (." + mod.Key + "):");
+                    lines.Add(" " + mod.Description);
+                    lines.Add(" " + (mod.LoadAsDefault ? Strings.Program.ModuleIsLoadedAutomatically : Strings.Program.ModuleIsNotLoadedAutomatically));
+                    if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
+                    {
+                        lines.Add(" " + Strings.Program.SupportedOptionsHeader);
+                        foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
+                            Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+                    }
+                    lines.Add("");
                 }
                 lines.Add("");
             }
-
-            lines.Add("");
-            lines.Add("");
-            lines.Add(Strings.Program.SupportedEncryptionModulesHeader);
-            foreach (Duplicati.Library.Interface.IEncryption mod in Library.DynamicLoader.EncryptionLoader.Modules)
-            {
-                lines.Add(mod.DisplayName + " (." + mod.FilenameExtension + "):");
-                lines.Add(" " + mod.Description);
-                if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
-                {
-                    lines.Add(" " + Strings.Program.SupportedOptionsHeader);
-                    foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
-                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
-                }
-                lines.Add("");
-            }
-
-            lines.Add("");
-            lines.Add("");
-            lines.Add(Strings.Program.SupportedCompressionModulesHeader);
-            foreach (Duplicati.Library.Interface.ICompression mod in Library.DynamicLoader.CompressionLoader.Modules)
-            {
-                lines.Add(mod.DisplayName + " (." + mod.FilenameExtension + "):");
-                lines.Add(" " + mod.Description);
-                if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
-                {
-                    lines.Add(" " + Strings.Program.SupportedOptionsHeader);
-                    foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
-                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
-                }
-                lines.Add("");
-            }
-            lines.Add("");
-
-            lines.Add("");
-            lines.Add("");
-            lines.Add(Strings.Program.GenericModulesHeader);
-            foreach (Duplicati.Library.Interface.IGenericModule mod in Library.DynamicLoader.GenericLoader.Modules)
-            {
-                lines.Add(mod.DisplayName + " (." + mod.Key + "):");
-                lines.Add(" " + mod.Description);
-                lines.Add(" " + (mod.LoadAsDefault ? Strings.Program.ModuleIsLoadedAutomatically : Strings.Program.ModuleIsNotLoadedAutomatically));
-                if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
-                {
-                    lines.Add(" " + Strings.Program.SupportedOptionsHeader);
-                    foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
-                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
-                }
-                lines.Add("");
-            }
-            lines.Add("");
 
             foreach (string s in lines)
             {

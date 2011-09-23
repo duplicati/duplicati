@@ -195,7 +195,7 @@ Error message: {1}</value>
     <value>USN is not supported on Linux</value>
   </data>
   <data name="UsnNumberingFaultWarning" xml:space="preserve">
-    <value>The stored USN number for volume {0} is {1} but the current USN is {1}, performing full file compare</value>
+    <value>The stored USN number for volume {0} is {1} but the current USN is {2}, performing full file compare</value>
   </data>
   <data name="FileChangedWhileReadError" xml:space="preserve">
     <value>The file {0} changed while being backed up, omitting file from backup set</value>
@@ -206,5 +206,8 @@ Error message: {1}</value>
   <data name="FolderModificationTimeReadError" xml:space="preserve">
     <value>Failed to read the file modification timestamp for: {0}.
 Error message: {1}</value>
+  </data>
+  <data name="InvalidTimeStampError" xml:space="preserve">
+    <value>The timestamp information for file {0} could not be read: {1}</value>
   </data>
 </root>

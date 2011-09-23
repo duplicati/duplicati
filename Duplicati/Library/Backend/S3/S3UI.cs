@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -34,8 +34,8 @@ namespace Duplicati.Library.Backend
         private const string BUCKET_NAME = "Bucketname";
         private const string EUROBUCKET = "UseEuroBucket";
         private const string RRS = "UseRRS";
-        private const string SUBDOMAIN = "UseSubdomainStrategy";
-        private const string SERVER_URL = "ServerUrl";
+        private const string SERVER_HOSTNAME = "ServerHostname";
+        private const string BUCKET_LOCATION = "BucketRegion";
         private const string PREFIX = "Prefix";
         private const string HASTESTED = "UI: HasTested";
         private const string HASCREATEDBUCKET = "UI: Has created bucket";
@@ -44,10 +44,21 @@ namespace Duplicati.Library.Backend
         private const string HASWARNEDINVALIDBUCKETNAME = "UI: Has warned invalid bucket name";
         private const string INITIALPASSWORD = "UI: Temp password";
 
-        private const string S3_PATH = "s3.amazonaws.com";
+        private const string SIGNUP_PAGE_AWS = "http://aws.amazon.com/s3";
+        private const string SIGNUP_PAGE_HOSTEUROPE = "http://www.hosteurope.de/produkt/Cloud-Storage";
+        private const string SIGNUP_PAGE_DUNKEL = "http://dunkel.de/s3/";
 
-        
-        private const string LOGIN_PAGE = "http://aws.amazon.com/s3";
+        private static string GetSignupLink(string servername)
+        {
+            if (!string.IsNullOrEmpty(servername))
+            {
+                if (servername.Equals("cs.hosteurope.de")) return SIGNUP_PAGE_HOSTEUROPE;
+                if (servername.Equals("dcs.dunkel.de")) return SIGNUP_PAGE_DUNKEL;
+            }
+
+            return SIGNUP_PAGE_AWS;
+        }
+
         private IDictionary<string, string> m_options;
         private IDictionary<string, string> m_applicationSettings;
 
@@ -122,8 +133,18 @@ namespace Duplicati.Library.Backend
             m_options[ACCESS_ID] = AWS_ID.Text;
             m_options[ACCESS_KEY] = AWS_KEY.Text;
             m_options[BUCKET_NAME] = BucketName.Text;
-            m_options[EUROBUCKET] = UseEuroBuckets.Checked.ToString();
             m_options[RRS] = UseRRS.Checked.ToString();
+            
+            if (Servernames.SelectedItem as Utility.ComboBoxItemPair<string> == null)
+                m_options[SERVER_HOSTNAME] = Servernames.Text;
+            else
+                m_options[SERVER_HOSTNAME] = (Servernames.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
+            
+            if (Bucketregions.SelectedItem as Utility.ComboBoxItemPair<string> == null)
+                m_options[BUCKET_LOCATION] = Bucketregions.Text;
+            else
+                m_options[BUCKET_LOCATION] = (Bucketregions.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
+
             string bucketname = BucketName.Text;
             int ix = bucketname.IndexOf("/");
             if (ix > 0)
@@ -138,7 +159,6 @@ namespace Duplicati.Library.Backend
             }
 
             bucketname = m_options[BUCKET_NAME];
-            m_options[SUBDOMAIN] = (bucketname.ToLower() == bucketname && S3.IsValidHostname(bucketname)).ToString();
 
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
@@ -149,6 +169,15 @@ namespace Duplicati.Library.Backend
             AWS_ID.Items.Clear();
             foreach (KeyValuePair<string, string> x in S3CommonOptions.ExtractAccounts(m_applicationSettings))
                 AWS_ID.Items.Add(new Utility.ComboBoxItemPair<string>(x.Key, x.Value));
+
+            Bucketregions.Items.Clear();
+            Servernames.Items.Clear();
+
+            foreach (KeyValuePair<string, string> s in S3.KNOWN_S3_LOCATIONS)
+                Bucketregions.Items.Add(new Utility.ComboBoxItemPair<string>(string.Format("{0} ({1})", s.Key, string.IsNullOrEmpty(s.Value) ? "-none-" : s.Value), s.Value));
+
+            foreach (KeyValuePair<string, string> s in S3.KNOWN_S3_PROVIDERS)
+                Servernames.Items.Add(new Utility.ComboBoxItemPair<string>(string.Format("{0} ({1})", s.Key, s.Value), s.Value));
 
             if (m_options.ContainsKey(ACCESS_ID))
                 AWS_ID.Text = m_options[ACCESS_ID];
@@ -164,19 +193,35 @@ namespace Duplicati.Library.Backend
             AWS_KEY.AskToEnterNewPassword = !string.IsNullOrEmpty(m_options[INITIALPASSWORD]);
             AWS_KEY.InitialPassword = m_options[INITIALPASSWORD];
 
-            bool b;
+            bool b = false;
 
             if (m_options.ContainsKey(EUROBUCKET))
             {
                 if (!bool.TryParse(m_options[EUROBUCKET], out b))
                     b = false;
             }
+
+            string region;
+
+            if (m_options.ContainsKey(BUCKET_LOCATION))
+                region = m_options[BUCKET_LOCATION];
+            else if (m_options.ContainsKey(EUROBUCKET))
+                region = b ? S3.S3_EU_REGION_NAME : null;
             else
-            {
-                b = S3CommonOptions.ExtractDefaultEUBuckets(m_applicationSettings);
-            }
-            
-            UseEuroBuckets.Checked = b;
+                region = S3CommonOptions.ExtractDefaultBucketRegion(m_applicationSettings);
+
+            string server;
+
+            if (m_options.ContainsKey(SERVER_HOSTNAME))
+                server = m_options[SERVER_HOSTNAME];
+            else
+                server = S3CommonOptions.ExtractDefaultServername(m_applicationSettings);
+
+            if (string.IsNullOrEmpty(server))
+                server = S3.DEFAULT_S3_HOST;
+
+            Servernames.Text = server;
+            Bucketregions.Text = region;
 
             if (m_options.ContainsKey(RRS))
             {
@@ -288,10 +333,19 @@ namespace Duplicati.Library.Backend
                 prefix = null;
             }
 
+            string region;
+            if (Bucketregions.SelectedItem as Utility.ComboBoxItemPair<string> == null)
+                region = Bucketregions.Text;
+            else
+                region = (Bucketregions.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
+
+            //TODO: Figure out if the AWSSDK even supports old bucket names
+            bool isNonDefaultBucket = !(string.IsNullOrEmpty(region) || region.Equals("us-west-1"));
+
             if (!m_hasSuggestedLowerCase && bucketname.ToLower() != bucketname)
             {
-                string reason = UseEuroBuckets.Checked ?
-                    Strings.S3UI.EuroBucketsRequireLowerCaseError :
+                string reason = isNonDefaultBucket ?
+                    Strings.S3UI.NonUSBucketsRequireLowerCaseError :
                     Strings.S3UI.NewS3RequiresLowerCaseError;
 
                 DialogResult res = MessageBox.Show(this, string.Format(Strings.S3UI.BucketnameCaseWarning, reason), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
@@ -300,7 +354,7 @@ namespace Duplicati.Library.Backend
                     bucketname = bucketname.ToLower();
                     BucketName.Text = bucketname + "/" + prefix;
                 }
-                else if (res == DialogResult.Cancel || UseEuroBuckets.Checked)
+                else if (res == DialogResult.Cancel || isNonDefaultBucket)
                 {
                     return false;
                 }
@@ -310,9 +364,9 @@ namespace Duplicati.Library.Backend
 
             if (!S3.IsValidHostname(bucketname))
             {
-                if (UseEuroBuckets.Checked)
+                if (isNonDefaultBucket)
                 {
-                    MessageBox.Show(this, string.Format(Strings.S3UI.HostnameInvalidWithEuBucketOptionError, bucketname), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, string.Format(Strings.S3UI.HostnameInvalidWithNonUSBucketOptionError, bucketname), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                 }
                 else
@@ -335,7 +389,7 @@ namespace Duplicati.Library.Backend
 
         private void SignUpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Duplicati.Library.Utility.UrlUtillity.OpenUrl(LOGIN_PAGE);
+            Duplicati.Library.Utility.UrlUtillity.OpenUrl(GetSignupLink(Servernames.Text));
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -351,10 +405,25 @@ namespace Duplicati.Library.Backend
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     string destination = GetConfiguration(m_options, options);
 
+                    bool existingBackup = false;
                     S3 s3 = new S3(destination, options);
-                    s3.Test();
+                    foreach (Interface.IFileEntry n in s3.List())
+                        if (n.Name.StartsWith("duplicati-"))
+                        {
+                            existingBackup = true;
+                            break;
+                        }
 
-                    MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    if (existingBackup)
+                    {
+                        if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                            return;
+                    }
+                    else
+                    {
+                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+
                     m_hasTested = true;
                     m_hasCreatedbucket = true; //If the test succeeds, the bucket exists
                 }
@@ -425,7 +494,6 @@ namespace Duplicati.Library.Backend
                 commandlineOptions["aws_secret_access_key"] = guiOptions[ACCESS_KEY];
 
             bool useEuroBucket;
-            bool useSubDomain;
             bool useRRS;
 
             if (!guiOptions.ContainsKey(EUROBUCKET) || !bool.TryParse(guiOptions[EUROBUCKET], out useEuroBucket))
@@ -434,31 +502,23 @@ namespace Duplicati.Library.Backend
             if (!guiOptions.ContainsKey(RRS) || !bool.TryParse(guiOptions[RRS], out useRRS))
                 useRRS = false;
 
-            if (!guiOptions.ContainsKey(SUBDOMAIN) || !bool.TryParse(guiOptions[SUBDOMAIN], out useSubDomain))
-                useSubDomain = false;
-
             if (!guiOptions.ContainsKey(BUCKET_NAME))
                 throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, BUCKET_NAME));
 
             string bucketName = guiOptions[BUCKET_NAME];
-            string host = guiOptions.ContainsKey(SERVER_URL) ? guiOptions[SERVER_URL] : "";
+            string host = guiOptions.ContainsKey(SERVER_HOSTNAME) ? guiOptions[SERVER_HOSTNAME] : "";
             string prefix = guiOptions.ContainsKey(PREFIX) ? guiOptions[PREFIX] : "";
-
-            if (string.IsNullOrEmpty(host))
-            {
-                if (useEuroBucket || useSubDomain)
-                    host = bucketName + "." + S3_PATH;
-                else
-                    host = S3_PATH;
-            }
+            string region = guiOptions.ContainsKey(BUCKET_LOCATION) ? guiOptions[BUCKET_LOCATION] : (useEuroBucket ? S3.S3_EU_REGION_NAME : null);
 
             if (useRRS)
                 commandlineOptions[S3.RRS_OPTION] = "";
 
-            if (useEuroBucket || useSubDomain)
-                return "s3://" + host + "/" + (string.IsNullOrEmpty(prefix) ? "" : prefix);
-            else
-                return "s3://" + host + "/" + bucketName + (string.IsNullOrEmpty(prefix) ? "" : "/" + prefix);
+            if (!string.IsNullOrEmpty(host))
+                commandlineOptions[S3.SERVER_NAME] = host;
+            if (!string.IsNullOrEmpty(region))
+                commandlineOptions[S3.LOCATION_OPTION] = region;
+
+            return "s3://" + bucketName + "/" + (string.IsNullOrEmpty(prefix) ? "" : prefix);
         }
 
         public static string PageTitle
@@ -499,6 +559,33 @@ namespace Duplicati.Library.Backend
                 this.Cursor = c;
             }
 
+        }
+
+        private delegate void SetComboTextDelegate(ComboBox el, string text);
+        private void SetComboText(ComboBox el, string text)
+        {
+            el.Text = text;
+        }
+
+        private void Servernames_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Servernames.SelectedItem as Utility.ComboBoxItemPair<string> != null)
+                BeginInvoke(new SetComboTextDelegate(SetComboText), Servernames, (Servernames.SelectedItem as Utility.ComboBoxItemPair<string>).Value);
+        }
+
+        private void Bucketregions_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Bucketregions.SelectedItem as Utility.ComboBoxItemPair<string> != null)
+                BeginInvoke(new SetComboTextDelegate(SetComboText), Bucketregions, (Bucketregions.SelectedItem as Utility.ComboBoxItemPair<string>).Value);
+        }
+
+        private void Servernames_TextChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+            m_hasCreatedbucket = false;
+            m_hasSuggestedPrefix = false;
+            m_hasSuggestedLowerCase = false;
+            m_hasWarnedInvalidBucketname = false;
         }
 
     }

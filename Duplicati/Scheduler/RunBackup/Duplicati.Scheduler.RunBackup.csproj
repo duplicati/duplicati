@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <PlatformTarget>x86</PlatformTarget>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Duplicati.Scheduler.RunBackup</RootNamespace>
+    <AssemblyName>Duplicati.Scheduler.RunBackup</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <StartupObject>Duplicati.Scheduler.RunBackup.Program</StartupObject>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Options.cs" />
+    <Compile Include="Pipe.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="RunBackup.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="AppendLog.cs" />
+    <Compile Include="Notifier.cs">
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Notifier.resx">
+      <DependentUpon>Notifier.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.SQL.Server.Compact.3.5">
+      <Visible>False</Visible>
+      <ProductName>SQL Server Compact 3.5</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
+      <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
+      <Name>Duplicati.Library.Backend.File</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
+      <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
+      <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
+      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
+      <Name>Duplicati.Library.Compression</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.DynamicLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj">
+      <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
+      <Name>Duplicati.Library.Main</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Data\Duplicati.Scheduler.Data.csproj">
+      <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>
+      <Name>Duplicati.Scheduler.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Utility\Duplicati.Scheduler.Utility.csproj">
+      <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
+      <Name>Duplicati.Scheduler.Utility</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

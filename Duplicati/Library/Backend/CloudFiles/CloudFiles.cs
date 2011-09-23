@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -27,8 +27,17 @@ namespace Duplicati.Library.Backend
 {
     public class CloudFiles : IBackend_v2, IStreamingBackend, IBackendGUI
     {
-        private const string AUTH_URL = "https://api.mosso.com/auth";
+        public const string AUTH_URL_US = "https://api.mosso.com/auth";
+        public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
+
+        private readonly System.Text.RegularExpressions.Regex URL_PARSING = new System.Text.RegularExpressions.Regex("cloudfiles://(?<path>.+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase); 
+
+        public static readonly KeyValuePair<string, string>[] KNOWN_CLOUDFILES_PROVIDERS = new KeyValuePair<string, string>[] {
+            new KeyValuePair<string, string>("Rackspace US", AUTH_URL_US),
+            new KeyValuePair<string, string>("Rackspace UK", AUTH_URL_UK),
+        };
+
 
         private const int ITEM_LIST_LIMIT = 1000;
         private string m_username;
@@ -37,6 +46,7 @@ namespace Duplicati.Library.Backend
 
         private string m_storageUrl = null;
         private string m_authToken = null;
+        private string m_authUrl;
 
         public CloudFiles()
         {
@@ -44,54 +54,64 @@ namespace Duplicati.Library.Backend
 
         public CloudFiles(string url, Dictionary<string, string> options)
         {
-            Uri u = new Uri(url);
+            if (options.ContainsKey("ftp-username"))
+                m_username = options["ftp-username"];
+            if (options.ContainsKey("ftp-password"))
+                m_password = options["ftp-password"];
 
-            if (!string.IsNullOrEmpty(u.UserInfo))
-            {
-                if (u.UserInfo.IndexOf(":") >= 0)
-                {
-                    m_username = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
-                    m_password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
-                }
-                else
-                {
-                    m_username = u.UserInfo;
-                    if (options.ContainsKey("cloudfiles-accesskey"))
-                        m_password = options["cloudfiles-accesskey"];
-                    else if (options.ContainsKey("ftp-password"))
-                        m_password = options["ftp-password"];
-                }
-            }
-            else
-            {
-                if (options.ContainsKey("ftp-username"))
-                    m_username = options["ftp-username"];
-                if (options.ContainsKey("ftp-password"))
-                    m_password = options["ftp-password"];
-
-                if (options.ContainsKey("cloudfiles-username"))
-                    m_username = options["cloudfiles-username"];
-                if (options.ContainsKey("cloudfiles-accesskey"))
-                    m_password = options["cloudfiles-accesskey"];
-            }
+            if (options.ContainsKey("cloudfiles-username"))
+                m_username = options["cloudfiles-username"];
+            if (options.ContainsKey("cloudfiles-accesskey"))
+                m_password = options["cloudfiles-accesskey"];
 
             if (string.IsNullOrEmpty(m_username))
                 throw new Exception(Strings.CloudFiles.NoUserIDError);
             if (string.IsNullOrEmpty(m_password))
                 throw new Exception(Strings.CloudFiles.NoAPIKeyError);
 
-            //We use the api.mosso.com hostname.
-            //This allows the use of containers that have names that are not valid hostnames, 
-            // such as container names with spaces in them
-            if (u.Host.Equals(DUMMY_HOSTNAME))
-                m_path = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+            //Fallback to the previous format
+            if (url.Contains(DUMMY_HOSTNAME))
+            {
+                Uri u = new Uri(url);
+
+                if (!string.IsNullOrEmpty(u.UserInfo))
+                {
+                    if (u.UserInfo.IndexOf(":") >= 0)
+                    {
+                        m_username = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
+                        m_password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
+                    }
+                    else
+                    {
+                        m_username = u.UserInfo;
+                    }
+                }
+
+
+                //We use the api.mosso.com hostname.
+                //This allows the use of containers that have names that are not valid hostnames, 
+                // such as container names with spaces in them
+                if (u.Host.Equals(DUMMY_HOSTNAME))
+                    m_path = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+                else
+                    m_path = u.Host + System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+            }
             else
-                m_path = u.Host + System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
+            {
+                System.Text.RegularExpressions.Match m = URL_PARSING.Match(url);
+                if (!m.Success)
+                    throw new Exception(string.Format(Strings.CloudFiles.InvalidUrlError, url));
+
+                m_path = m.Groups["path"].Value;
+            }
 
             if (m_path.EndsWith("/"))
                 m_path = m_path.Substring(0, m_path.Length - 1);
             if (!m_path.StartsWith("/"))
                 m_path = "/" + m_path;
+
+            if (!options.TryGetValue("cloudfiles-authentication-url", out m_authUrl))
+                m_authUrl = Utility.Utility.ParseBoolOption(options, "cloudfiles-uk-account") ? AUTH_URL_UK : AUTH_URL_US;
         }
 
         #region IBackend Members
@@ -193,13 +213,15 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionFTPUsernameShort, Strings.CloudFiles.DescriptionFTPUsernameLong),
                     new CommandLineArgument("cloudfiles-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong),
                     new CommandLineArgument("cloudfiles-accesskey", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong),
+                    new CommandLineArgument("cloudfiles-uk-account", CommandLineArgument.ArgumentType.Boolean, Strings.CloudFiles.DescriptionUKAccountShort, string.Format(Strings.CloudFiles.DescriptionUKAccountLong, "cloudfiles-authentication-url", AUTH_URL_UK)),
+                    new CommandLineArgument("cloudfiles-authentication-url", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthenticationURLShort, string.Format(Strings.CloudFiles.DescriptionAuthenticationURLLong_v2, "cloudfiles-uk-account"), AUTH_URL_US),
                 });
             }
         }
 
         public string Description
         {
-            get { return Strings.CloudFiles.Description; }
+            get { return Strings.CloudFiles.Description_v2; }
         }
 
         #endregion
@@ -342,7 +364,7 @@ namespace Duplicati.Library.Backend
             //If this is the first call, get an authentication token
             if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
             {
-                HttpWebRequest authReq = (HttpWebRequest)HttpWebRequest.Create(AUTH_URL);
+                HttpWebRequest authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
                 authReq.Headers.Add("X-Auth-User", UrlEncode(m_username));
                 authReq.Headers.Add("X-Auth-Key", UrlEncode(m_password));
                 authReq.Method = "GET";

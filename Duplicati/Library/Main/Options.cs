@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -125,6 +125,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("totalsize", CommandLineArgument.ArgumentType.Size, Strings.Options.TotalsizeShort, Strings.Options.TotalsizeLong),
                     new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong),
                     new CommandLineArgument("full-if-older-than", CommandLineArgument.ArgumentType.Timespan, Strings.Options.FullifolderthanShort, Strings.Options.FullifolderthanLong),
+                    new CommandLineArgument("full-if-more-than-n-incrementals", CommandLineArgument.ArgumentType.Integer, Strings.Options.FullifmorethannincrementalsShort, Strings.Options.FullifmorethannincrementalsLong),
                     new CommandLineArgument("allow-full-removal", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremoveShort, Strings.Options.AllowfullremoveLong),
 
                     new CommandLineArgument("signature-control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecontrolfilesShort, Strings.Options.SignaturecontrolfilesLong),
@@ -163,7 +164,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("sorted-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SortedfilelistShort, Strings.Options.SortedfilelistLong, "false"),
                     
 
-                    new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false"),
+                    new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
+                    new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false", null, null, string.Format(Strings.Options.AsynchronousuploadDeprecated, "synchronous-upload")),
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "2"),
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong),
 
@@ -178,7 +180,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
-                    new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, Library.Utility.Utility.IsClientLinux ? "off" : "auto", null, new string[] {"auto", "off", "on", "required"}),
+                    new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("open-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.OpenfilepolicyShort, Strings.Options.OpenfilepolicyLong, "snapshot", null, new string[] { "ignore", "snapshot", "copy" }),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
@@ -192,6 +194,12 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileShort),
                     new CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+
+                    new CommandLineArgument("verification-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.VerificationLevelShort, Strings.Options.VerificationLevelLong, "Manifest", null, Enum.GetNames(typeof(Duplicati.Library.Main.VerificationLevel))),
+                    new CommandLineArgument("create-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CreateverificationfileShort, Strings.Options.CreateverificationfileLong, "false"),
+                    new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
+                    new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepShort, "false"),
+                    
                 });
             }
         }
@@ -278,6 +286,24 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// A value indicating how many incrementals are required to trigger a full backup
+        /// </summary>
+        public int FullIfMoreThanNInvcrementals
+        {
+            get
+            {
+                string countdata;
+                int count;
+                if (!m_options.TryGetValue("full-if-more-than-n-incrementals", out countdata))
+                    return 0;
+                if (int.TryParse(countdata, out count))
+                    return count;
+
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// A value indicating if orphan files are deleted automatically
         /// </summary>
         public bool AutoCleanup { get { return GetBool("auto-cleanup"); } }
@@ -307,6 +333,11 @@ namespace Duplicati.Library.Main
                     return null;
                 else
                     return m_options["signature-cache-path"];
+            }
+            set
+            {
+                if (m_options.ContainsKey("signature-cache-path"))
+                    m_options.Remove("signature-cache-path");
             }
         }
 
@@ -627,7 +658,23 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A value indicating if backups are transmitted on a separate thread
         /// </summary>
-        public bool AsynchronousUpload { get { return GetBool("asynchronous-upload"); } }
+        public bool AsynchronousUpload 
+        { 
+            get 
+            {
+                if (m_options.ContainsKey("synchronous-upload"))
+                    return !GetBool("synchronous-upload");
+                else if (m_options.ContainsKey("asynchronous-upload"))
+                    return GetBool("asynchronous-upload");
+                else
+                    return true;
+            } 
+        }
+
+        /// <summary>
+        /// A value indicating if system is allowed to enter sleep power states during backup/restore ops (win32 only)
+        /// </summary>
+        public bool AllowSleep { get { return GetBool("allow-sleep"); } }
 
         /// <summary>
         /// A value indicating if use of the streaming interface is disallowed
@@ -779,7 +826,7 @@ namespace Duplicati.Library.Main
                 else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
                     return OptimizationStrategy.Required;
                 else
-                    return Utility.Utility.IsClientLinux ? OptimizationStrategy.Off : OptimizationStrategy.Auto;
+                    return OptimizationStrategy.Off;
             }
         }
 
@@ -862,7 +909,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the logfile filename
+        /// Gets the log detail level
         /// </summary>
         public Duplicati.Library.Logging.LogMessageType Loglevel
         {
@@ -881,6 +928,35 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the verification detail level
+        /// </summary>
+        public Duplicati.Library.Main.VerificationLevel Verificationlevel
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("verification-level", out value))
+                    value = null;
+
+                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Main.VerificationLevel)))
+                    if (s.Equals(value, StringComparison.InvariantCultureIgnoreCase))
+                        return (Duplicati.Library.Main.VerificationLevel)Enum.Parse(typeof(Duplicati.Library.Main.VerificationLevel), s);
+
+                return Duplicati.Library.Main.VerificationLevel.Manifest;
+            }
+        }
+
+        /// <summary>
+        /// A value indicating if a verification file is placed on the server
+        /// </summary>
+        public bool CreateVerificationFile { get { return GetBool("create-verification-file"); } }
+
+        /// <summary>
+        /// A value indicating if server uploads are verified by listing the folder contents
+        /// </summary>
+        public bool ListVerifyUploads { get { return GetBool("list-verify-uploads"); } }
+
+        /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 
         /// </summary>
         public List<KeyValuePair<bool, Library.Interface.IGenericModule>> LoadedModules { get { return m_loadedModules; } }
@@ -894,9 +970,8 @@ namespace Duplicati.Library.Main
         /// <returns>The interpreted value of the option</returns>
         private bool GetBool(string name)
         {
-            string value;
-            
-            if (m_options.TryGetValue(name, out value))
+            string value;           
+            if (m_options.TryGetValue(name, out value))            
                 return Utility.Utility.ParseBool(value, true);
             else
                 return false;

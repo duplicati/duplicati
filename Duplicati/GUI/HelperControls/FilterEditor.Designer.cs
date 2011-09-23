@@ -32,26 +32,27 @@ namespace Duplicati.GUI.HelperControls
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FilterEditor));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.listView = new System.Windows.Forms.ListView();
-            this.columnHeader1 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.AddFilterButton = new System.Windows.Forms.ToolStripButton();
+            this.RemoveFilterButton = new System.Windows.Forms.ToolStripButton();
+            this.EditFilterButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.IncludeFolderButton = new System.Windows.Forms.ToolStripButton();
+            this.ExcludeFolderButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.MoveFilterUpButton = new System.Windows.Forms.ToolStripButton();
+            this.MoveFilterDownButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.MoveFilterTopButton = new System.Windows.Forms.ToolStripButton();
+            this.MoveFilterBottomButton = new System.Windows.Forms.ToolStripButton();
+            this.HelpButton = new System.Windows.Forms.ToolStripButton();
+            this.btnTestSearch = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.FilenameTester = new System.Windows.Forms.TextBox();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.TestResults = new System.Windows.Forms.PictureBox();
-            this.AddFilterButton = new System.Windows.Forms.ToolStripButton();
-            this.RemoveFilterButton = new System.Windows.Forms.ToolStripButton();
-            this.EditFilterButton = new System.Windows.Forms.ToolStripButton();
-            this.MoveFilterUpButton = new System.Windows.Forms.ToolStripButton();
-            this.MoveFilterDownButton = new System.Windows.Forms.ToolStripButton();
-            this.MoveFilterTopButton = new System.Windows.Forms.ToolStripButton();
-            this.MoveFilterBottomButton = new System.Windows.Forms.ToolStripButton();
-            this.HelpButton = new System.Windows.Forms.ToolStripButton();
-            this.IncludeFolderButton = new System.Windows.Forms.ToolStripButton();
-            this.ExcludeFolderButton = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
             this.groupBox1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
@@ -88,8 +89,10 @@ namespace Duplicati.GUI.HelperControls
             // 
             this.imageList.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList.ImageStream")));
             this.imageList.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageList.Images.SetKeyName(0, "Inclusion.ico");
-            this.imageList.Images.SetKeyName(1, "Exclusion.ico");
+            this.imageList.Images.SetKeyName(0, "globbing-include");
+            this.imageList.Images.SetKeyName(1, "globbing-exclude");
+            this.imageList.Images.SetKeyName(2, "regexp-include");
+            this.imageList.Images.SetKeyName(3, "regexp-exclude");
             // 
             // toolStrip1
             // 
@@ -112,33 +115,6 @@ namespace Duplicati.GUI.HelperControls
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
             // 
-            // toolStripSeparator1
-            // 
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            resources.ApplyResources(this.toolStripSeparator1, "toolStripSeparator1");
-            // 
-            // toolStripSeparator2
-            // 
-            this.toolStripSeparator2.Name = "toolStripSeparator2";
-            resources.ApplyResources(this.toolStripSeparator2, "toolStripSeparator2");
-            // 
-            // label1
-            // 
-            resources.ApplyResources(this.label1, "label1");
-            this.label1.Name = "label1";
-            // 
-            // FilenameTester
-            // 
-            resources.ApplyResources(this.FilenameTester, "FilenameTester");
-            this.FilenameTester.Name = "FilenameTester";
-            this.FilenameTester.TextChanged += new System.EventHandler(this.FilenameTester_TextChanged);
-            // 
-            // TestResults
-            // 
-            resources.ApplyResources(this.TestResults, "TestResults");
-            this.TestResults.Name = "TestResults";
-            this.TestResults.TabStop = false;
-            // 
             // AddFilterButton
             // 
             this.AddFilterButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
@@ -160,6 +136,32 @@ namespace Duplicati.GUI.HelperControls
             this.EditFilterButton.Name = "EditFilterButton";
             this.EditFilterButton.Click += new System.EventHandler(this.EditFilterButton_Click);
             // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            resources.ApplyResources(this.toolStripSeparator3, "toolStripSeparator3");
+            // 
+            // IncludeFolderButton
+            // 
+            this.IncludeFolderButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.IncludeFolderButton.Image = global::Duplicati.GUI.Properties.Resources.AddedFolder;
+            resources.ApplyResources(this.IncludeFolderButton, "IncludeFolderButton");
+            this.IncludeFolderButton.Name = "IncludeFolderButton";
+            this.IncludeFolderButton.Click += new System.EventHandler(this.IncludeFolderButton_Click);
+            // 
+            // ExcludeFolderButton
+            // 
+            this.ExcludeFolderButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.ExcludeFolderButton.Image = global::Duplicati.GUI.Properties.Resources.DeletedFolder;
+            resources.ApplyResources(this.ExcludeFolderButton, "ExcludeFolderButton");
+            this.ExcludeFolderButton.Name = "ExcludeFolderButton";
+            this.ExcludeFolderButton.Click += new System.EventHandler(this.ExcludeFolderButton_Click);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            resources.ApplyResources(this.toolStripSeparator1, "toolStripSeparator1");
+            // 
             // MoveFilterUpButton
             // 
             this.MoveFilterUpButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
@@ -173,6 +175,11 @@ namespace Duplicati.GUI.HelperControls
             resources.ApplyResources(this.MoveFilterDownButton, "MoveFilterDownButton");
             this.MoveFilterDownButton.Name = "MoveFilterDownButton";
             this.MoveFilterDownButton.Click += new System.EventHandler(this.MoveFilterDownButton_Click);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            resources.ApplyResources(this.toolStripSeparator2, "toolStripSeparator2");
             // 
             // MoveFilterTopButton
             // 
@@ -196,26 +203,29 @@ namespace Duplicati.GUI.HelperControls
             this.HelpButton.Name = "HelpButton";
             this.HelpButton.Click += new System.EventHandler(this.HelpButton_Click);
             // 
-            // IncludeFolderButton
+            // btnTestSearch
             // 
-            this.IncludeFolderButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.IncludeFolderButton.Image = global::Duplicati.GUI.Properties.Resources.AddedFolder;
-            resources.ApplyResources(this.IncludeFolderButton, "IncludeFolderButton");
-            this.IncludeFolderButton.Name = "IncludeFolderButton";
-            this.IncludeFolderButton.Click += new System.EventHandler(this.IncludeFolderButton_Click);
+            resources.ApplyResources(this.btnTestSearch, "btnTestSearch");
+            this.btnTestSearch.Name = "btnTestSearch";
+            this.btnTestSearch.UseVisualStyleBackColor = true;
+            this.btnTestSearch.Click += new System.EventHandler(this.btnTestSearch_Click);
             // 
-            // ExcludeFolderButton
+            // label1
             // 
-            this.ExcludeFolderButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.ExcludeFolderButton.Image = global::Duplicati.GUI.Properties.Resources.DeletedFolder;
-            resources.ApplyResources(this.ExcludeFolderButton, "ExcludeFolderButton");
-            this.ExcludeFolderButton.Name = "ExcludeFolderButton";
-            this.ExcludeFolderButton.Click += new System.EventHandler(this.ExcludeFolderButton_Click);
+            resources.ApplyResources(this.label1, "label1");
+            this.label1.Name = "label1";
             // 
-            // toolStripSeparator3
+            // FilenameTester
             // 
-            this.toolStripSeparator3.Name = "toolStripSeparator3";
-            resources.ApplyResources(this.toolStripSeparator3, "toolStripSeparator3");
+            resources.ApplyResources(this.FilenameTester, "FilenameTester");
+            this.FilenameTester.Name = "FilenameTester";
+            this.FilenameTester.TextChanged += new System.EventHandler(this.FilenameTester_TextChanged);
+            // 
+            // TestResults
+            // 
+            resources.ApplyResources(this.TestResults, "TestResults");
+            this.TestResults.Name = "TestResults";
+            this.TestResults.TabStop = false;
             // 
             // folderBrowserDialog
             // 
@@ -225,6 +235,7 @@ namespace Duplicati.GUI.HelperControls
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnTestSearch);
             this.Controls.Add(this.TestResults);
             this.Controls.Add(this.FilenameTester);
             this.Controls.Add(this.label1);
@@ -266,5 +277,6 @@ namespace Duplicati.GUI.HelperControls
         private System.Windows.Forms.ToolStripButton IncludeFolderButton;
         private System.Windows.Forms.ToolStripButton ExcludeFolderButton;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
+				private System.Windows.Forms.Button btnTestSearch;
     }
 }

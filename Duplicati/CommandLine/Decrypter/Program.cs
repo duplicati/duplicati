@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -30,7 +30,7 @@ namespace Duplicati.CommandLine.Decrypter
         {
             if (args.Length != 3)
             {
-                Console.WriteLine(Strings.Program.Usage);
+                Console.WriteLine(Strings.Program.ProgramUsage);
                 return;
             }
 

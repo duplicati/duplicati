@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -403,6 +403,7 @@ namespace Duplicati.Library.Utility
             System.IO.Directory.Delete(path);
         }
 
+
         /// <summary>
         /// Calculates the hash of a given file, and returns the results as an base64 encoded string
         /// </summary>
@@ -410,9 +411,18 @@ namespace Duplicati.Library.Utility
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(string path)
         {
-            System.Security.Cryptography.HashAlgorithm sha = System.Security.Cryptography.HashAlgorithm.Create(HashAlgorithm);
             using (System.IO.FileStream fs = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                return Convert.ToBase64String(sha.ComputeHash(fs));
+                return CalculateHash(fs);
+        }
+
+        /// <summary>
+        /// Calculates the hash of a given stream, and returns the results as an base64 encoded string
+        /// </summary>
+        /// <param name="path">The stream to calculate the hash for</param>
+        /// <returns>The base64 encoded hash</returns>
+        public static string CalculateHash(System.IO.Stream stream)
+        {
+            return Convert.ToBase64String(System.Security.Cryptography.HashAlgorithm.Create(HashAlgorithm).ComputeHash(stream));
         }
 
 
@@ -490,6 +500,22 @@ namespace Duplicati.Library.Utility
                 default:
                     return @default;
             }
+        }
+
+        /// <summary>
+        /// Parses an option from the option set, using the convention that if the option is set, it is true unless it parses to false, and false otherwise
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <returns></returns>
+        public static bool ParseBoolOption(IDictionary<string, string> options, string value)
+        {
+            string opt;
+            if (options.TryGetValue(value, out opt))
+                return ParseBool(opt, true);
+            else
+                return false;
+
         }
 
         /// <summary>

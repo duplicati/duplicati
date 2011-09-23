@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -45,8 +45,6 @@ namespace Duplicati.GUI
         public ApplicationSetup()
         {
             InitializeComponent();
-            m_connection = new DataFetcherNested(Program.DataConnection);
-            m_settings = new ApplicationSettings(m_connection);
 
             RecentDuration.SetIntervals(new List<KeyValuePair<string, string>>(
                 new KeyValuePair<string, string>[]
@@ -76,34 +74,37 @@ namespace Duplicati.GUI
                 new ComboBoxItemPair<ApplicationSettings.NotificationLevel>(Strings.ApplicationSetup.BalloonNotification_Continous, ApplicationSettings.NotificationLevel.Continous),
             });
 
-            try
+            LanguageSelection.Items.Clear();
+            LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(string.Format(Strings.ApplicationSetup.DefaultLanguage, Library.Utility.Utility.DefaultCulture.DisplayName), Library.Utility.Utility.DefaultCulture));
+
+            System.Text.RegularExpressions.Regex cix = new System.Text.RegularExpressions.Regex("[A-z][A-z](\\-[A-z][A-z])?");
+
+            foreach (string f in System.IO.Directory.GetDirectories(Application.StartupPath))
+                if (cix.Match(System.IO.Path.GetFileName(f)).Length == System.IO.Path.GetFileName(f).Length)
+                    try
+                    {
+                        CultureInfo ci = CultureInfo.GetCultureInfo(System.IO.Path.GetFileName(f));
+                        LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(ci.DisplayName, ci));
+                    }
+                    catch
+                    {
+                    }
+
+            bool hasEnglish = false;
+            foreach (ComboBoxItemPair<CultureInfo> c in LanguageSelection.Items)
+                if (c.Value.Name.Equals("en-US", StringComparison.InvariantCultureIgnoreCase))
+                    hasEnglish = true;
+
+            if (!hasEnglish)
             {
-                LanguageSelection.Items.Clear();
-                LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(string.Format(Strings.ApplicationSetup.DefaultLanguage, Library.Utility.Utility.DefaultCulture.DisplayName), Library.Utility.Utility.DefaultCulture));
-
-                System.Text.RegularExpressions.Regex cix = new System.Text.RegularExpressions.Regex("[A-z][A-z](\\-[A-z][A-z])?");
-
-                foreach(string f in System.IO.Directory.GetDirectories(Application.StartupPath))
-                    if (cix.Match(System.IO.Path.GetFileName(f)).Length == System.IO.Path.GetFileName(f).Length)
-                        try 
-                        {
-                            CultureInfo ci = CultureInfo.GetCultureInfo(System.IO.Path.GetFileName(f));
-                            LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(ci.DisplayName, ci));
-                        }
-                        catch 
-                        {
-                        }
-
-            }
-            finally
-            {
-                m_isUpdating = false;
+                CultureInfo ci = CultureInfo.GetCultureInfo("en-US");
+                LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(ci.DisplayName, ci));
             }
 
             try
             {
                 EncryptionModule.Items.Clear();
-                
+
                 foreach (Library.Interface.IEncryption e in Library.DynamicLoader.EncryptionLoader.Modules)
                     EncryptionModule.Items.Add(new ComboBoxItemPair<Library.Interface.IEncryption>(e.DisplayName, e));
             }
@@ -117,12 +118,12 @@ namespace Duplicati.GUI
 #if DEBUG
             this.Text += " (DEBUG)";
 #endif
-            
+
         }
 
         private void RecentDuration_TextChanged(object sender, EventArgs e)
         {
-            if (m_isUpdating)
+            if (m_isUpdating || m_settings == null)
                 return;
             m_settings.RecentBackupDuration = RecentDuration.Value;
         }
@@ -205,6 +206,10 @@ namespace Duplicati.GUI
                 this.Text = string.Format(Strings.ApplicationSetup.DialogTitle, License.VersionNumbers.Version);
 
                 m_isUpdating = true;
+
+                m_connection = new DataFetcherNested(Program.DataConnection);
+                m_settings = new ApplicationSettings(m_connection);
+
                 RecentDuration.Value = m_settings.RecentBackupDuration;
                 TempPath.Text = m_settings.TempPath;
 
@@ -459,7 +464,7 @@ namespace Duplicati.GUI
 
         private void StartupDelayDuration_ValueChanged(object sender, EventArgs e)
         {
-            if (m_isUpdating)
+            if (m_isUpdating || m_settings == null)
                 return;
 
             m_settings.StartupDelayDuration = StartupDelayDuration.Value;

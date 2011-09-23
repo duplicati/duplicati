@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Interface
             m_name = null;
             m_lastAccess = new DateTime();
             m_lastModification = new DateTime();
-            m_size = 0;
+            m_size = -1;
             m_isFolder = false;
         }
 

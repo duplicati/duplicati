@@ -1,0 +1,475 @@
+Index: Amazon.S3/AmazonS3Client.cs
+===================================================================
+--- Amazon.S3/AmazonS3Client.cs	(revision 1)
++++ Amazon.S3/AmazonS3Client.cs	(working copy)
+@@ -3616,6 +3616,7 @@
+ 
+             // Add the Timeout parameter
+             parameters[S3QueryParameter.RequestTimeout] = request.Timeout.ToString();
++            parameters[S3QueryParameter.RequestReadWriteTimeout] = request.ReadWriteTimeout.ToString();
+ 
+             addS3QueryParameters(request, request.BucketName);
+         }
+@@ -3739,6 +3740,7 @@
+ 
+             // Add the Timeout parameter
+             parameters[S3QueryParameter.RequestTimeout] = request.Timeout.ToString();
++            parameters[S3QueryParameter.RequestReadWriteTimeout] = request.ReadWriteTimeout.ToString();
+ 
+             // Add the Put Object specific headers to the request
+             // 1. The Canned ACL
+@@ -3937,6 +3939,7 @@
+ 
+             // Add the Timeout parameter
+             parameters[S3QueryParameter.RequestTimeout] = request.Timeout.ToString();
++            parameters[S3QueryParameter.RequestReadWriteTimeout] = request.ReadWriteTimeout.ToString();
+ 
+             // Add the Copy Object specific headers to the request
+             if (request.IsSetETagToMatch())
+@@ -4282,6 +4285,7 @@
+ 
+             // Add the Timeout parameter
+             parameters[S3QueryParameter.RequestTimeout] = request.Timeout.ToString();
++            parameters[S3QueryParameter.RequestReadWriteTimeout] = request.ReadWriteTimeout.ToString();
+ 
+ 
+             // Finally, add the S3 specific parameters and headers
+@@ -4339,6 +4343,7 @@
+ 
+             // Add the Timeout parameter
+             parameters[S3QueryParameter.RequestTimeout] = request.Timeout.ToString();
++            parameters[S3QueryParameter.RequestReadWriteTimeout] = request.ReadWriteTimeout.ToString();
+ 
+ 
+             // Finally, add the S3 specific parameters and headers
+@@ -5345,13 +5350,24 @@
+                 {
+                     int timeout = 0;
+                     Int32.TryParse(parameters[S3QueryParameter.RequestTimeout], out timeout);
+-                    if (timeout > 0)
++                    if (timeout > 0 || timeout == System.Threading.Timeout.Infinite)
+                     {
+-                        httpRequest.ReadWriteTimeout = timeout;
+                         httpRequest.Timeout = timeout;
+                     }
+                 }
+ 
++                // While checking the Action, for Get, Put and Copy Object, set
++                // the timeout to the value specified in the request.
++                if (request.SupportReadWriteTimeout)
++                {
++                    int readwritetimeout = 0;
++                    Int32.TryParse(parameters[S3QueryParameter.RequestReadWriteTimeout], out readwritetimeout);
++                    if (readwritetimeout > 0 || readwritetimeout == System.Threading.Timeout.Infinite)
++                    {
++                        httpRequest.ReadWriteTimeout = readwritetimeout;
++                    }
++                }
++
+                 httpRequest.Headers.Add(headers);
+                 httpRequest.Method = parameters[S3QueryParameter.Verb];
+                 httpRequest.ContentLength = contentLength;
+Index: Amazon.S3/Model/CopyObjectRequest.cs
+===================================================================
+--- Amazon.S3/Model/CopyObjectRequest.cs	(revision 1)
++++ Amazon.S3/Model/CopyObjectRequest.cs	(working copy)
+@@ -55,6 +55,7 @@
+         internal NameValueCollection metaData;
+         private S3CannedACL cannedACL;
+         private int timeout = 0;
++        private int readwritetimeout;
+         private S3StorageClass storageClass;
+ 
+         #endregion
+@@ -571,7 +572,7 @@
+             get { return this.timeout; }
+             set
+             {
+-                if (value > 0)
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
+                 {
+                     this.timeout = value;
+                 }
+@@ -602,6 +603,50 @@
+ 
+         #endregion
+ 
++        #region ReadWriteTimeout
++
++        /// <summary>
++        /// Gets and sets of the ReadWriteTimeout property (in milliseconds).
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout properties of the
++        /// HTTPWebRequest object used for S3 COPY requests.
++        /// </summary>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public int ReadWriteTimeout
++        {
++            get { return this.readwritetimeout; }
++            set
++            {
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
++                {
++                    this.readwritetimeout = value;
++                }
++            }
++        }
++
++        /// <summary>
++        /// Sets the ReadWriteTimeout property (in milliseconds). 
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout property of the HttpWebRequest.
++        /// </summary>
++        /// <param name="readwritetimeout">ReadWriteTimeout property</param>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <returns>this instance</returns>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public CopyObjectRequest WithReadWriteTimeout(int readwritetimeout)
++        {
++            ReadWriteTimeout = readwritetimeout;
++            return this;
++        }
++
++        internal override bool SupportReadWriteTimeout
++        {
++            get { return true; }
++        }
++
++        #endregion
++
+         #region SourceVersionId
+ 
+         /// <summary>
+Index: Amazon.S3/Model/CopyPartRequest.cs
+===================================================================
+--- Amazon.S3/Model/CopyPartRequest.cs	(revision 1)
++++ Amazon.S3/Model/CopyPartRequest.cs	(working copy)
+@@ -51,6 +51,7 @@
+         private DateTime? modifiedSinceDate;
+         private DateTime? unmodifiedSinceDate;
+         private int timeout = System.Threading.Timeout.Infinite;
++        private int readwritetimeout = 0;
+         private int? partNumber;
+         private long? firstByte;
+         private long? lastByte;
+@@ -506,6 +507,50 @@
+ 
+         #endregion
+ 
++        #region ReadWriteTimeout
++
++        /// <summary>
++        /// Gets and sets of the ReadWriteTimeout property (in milliseconds).
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout properties of the
++        /// HTTPWebRequest object used for S3 COPY requests.
++        /// </summary>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public int ReadWriteTimeout
++        {
++            get { return this.readwritetimeout; }
++            set
++            {
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
++                {
++                    this.readwritetimeout = value;
++                }
++            }
++        }
++
++        /// <summary>
++        /// Sets the ReadWriteTimeout property (in milliseconds). 
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout property of the HttpWebRequest.
++        /// </summary>
++        /// <param name="readwritetimeout">ReadWriteTimeout property</param>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <returns>this instance</returns>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public CopyPartRequest WithReadWriteTimeout(int readwritetimeout)
++        {
++            ReadWriteTimeout = readwritetimeout;
++            return this;
++        }
++
++        internal override bool SupportReadWriteTimeout
++        {
++            get { return true; }
++        }
++
++        #endregion
++
+         #region PartNumber
+ 
+         /// <summary>
+Index: Amazon.S3/Model/GetObjectRequest.cs
+===================================================================
+--- Amazon.S3/Model/GetObjectRequest.cs	(revision 1)
++++ Amazon.S3/Model/GetObjectRequest.cs	(working copy)
+@@ -46,6 +46,7 @@
+         string etagToNotMatch;
+         Tuple<long, long> byteRange;
+         int timeout = 0;
++        int readwritetimeout = 0;
+         ResponseHeaderOverrides _responseHeaders;
+ 
+         #endregion
+@@ -408,18 +409,17 @@
+         /// <summary>
+         /// Gets and sets of the Timeout property (in milliseconds).
+         /// The value of this property is assigned to the
+-        /// ReadWriteTimeout and Timeout properties of the
++        /// Timeout property of the
+         /// HTTPWebRequest object used for S3 GET Object requests.
+         /// </summary>
+         /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
+-        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
+         /// <seealso cref="P:System.Net.HttpWebRequest.Timeout"/>
+         public int Timeout
+         {
+             get { return this.timeout; }
+             set
+             {
+-                if (value > 0)
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
+                 {
+                     this.timeout = value;
+                 }
+@@ -429,7 +429,7 @@
+         /// <summary>
+         /// Sets the Timeout property (in milliseconds). 
+         /// The value of this property is assigned to the
+-        /// ReadWriteTimeout and Timeout properties of the
++        /// Timeout property of the HttpWebRequest
+         /// Please specify a timeout value only if you are certain that
+         /// the file will not be retrieved within the default intervals
+         /// specified for an HttpWebRequest.
+@@ -452,6 +452,50 @@
+ 
+         #endregion
+ 
++        #region ReadWriteTimeout
++
++        /// <summary>
++        /// Gets and sets of the ReadWriteTimeout property (in milliseconds).
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout properties of the
++        /// HTTPWebRequest object used for S3 GET Object requests.
++        /// </summary>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public int ReadWriteTimeout
++        {
++            get { return this.readwritetimeout; }
++            set
++            {
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
++                {
++                    this.readwritetimeout = value;
++                }
++            }
++        }
++
++        /// <summary>
++        /// Sets the ReadWriteTimeout property (in milliseconds). 
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout property of the HttpWebRequest.
++        /// </summary>
++        /// <param name="readwritetimeout">ReadWriteTimeout property</param>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <returns>this instance</returns>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public GetObjectRequest WithReadWriteTimeout(int readwritetimeout)
++        {
++            ReadWriteTimeout = readwritetimeout;
++            return this;
++        }
++
++        internal override bool SupportReadWriteTimeout
++        {
++            get { return true; }
++        }
++
++        #endregion
++
+         #region Response Headers
+ 
+ 
+Index: Amazon.S3/Model/PutObjectRequest.cs
+===================================================================
+--- Amazon.S3/Model/PutObjectRequest.cs	(revision 1)
++++ Amazon.S3/Model/PutObjectRequest.cs	(working copy)
+@@ -51,6 +51,7 @@
+         private string contentBody;
+         internal NameValueCollection metaData;
+         private int timeout = 0;
++        private int readwritetimeout = 0;
+         private S3StorageClass storageClass;
+         private bool autoCloseStream = true;
+ 
+@@ -501,7 +502,7 @@
+             get { return this.timeout; }
+             set
+             {
+-                if (value > 0)
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
+                 {
+                     this.timeout = value;
+                 }
+@@ -527,6 +528,51 @@
+ 
+         #endregion
+ 
++        #region ReadWriteTimeout
++
++        /// <summary>
++        /// Gets and sets of the ReadWriteTimeout property (in milliseconds).
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout properties of the
++        /// HTTPWebRequest object used for S3 PUT Object requests.
++        /// </summary>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public int ReadWriteTimeout
++        {
++            get { return this.readwritetimeout; }
++            set
++            {
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
++                {
++                    this.readwritetimeout = value;
++                }
++            }
++        }
++
++        /// <summary>
++        /// Sets the ReadWriteTimeout property (in milliseconds). 
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout property of the HttpWebRequest.
++        /// </summary>
++        /// <param name="readwritetimeout">ReadWriteTimeout property</param>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <returns>this instance</returns>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public PutObjectRequest WithReadWriteTimeout(int readwritetimeout)
++        {
++            ReadWriteTimeout = readwritetimeout;
++            return this;
++        }
++
++        internal override bool SupportReadWriteTimeout
++        {
++            get { return true; }
++        }
++
++        #endregion
++
++
+         #region StorageClass
+ 
+         /// <summary>
+Index: Amazon.S3/Model/S3Enumerations.cs
+===================================================================
+--- Amazon.S3/Model/S3Enumerations.cs	(revision 1)
++++ Amazon.S3/Model/S3Enumerations.cs	(working copy)
+@@ -92,6 +92,7 @@
+         Range,
+         RequestAddress,
+         RequestTimeout,
++        RequestReadWriteTimeout,
+         Url,
+         Verb,
+         VerifyChecksum,
+Index: Amazon.S3/Model/S3Request.cs
+===================================================================
+--- Amazon.S3/Model/S3Request.cs	(revision 1)
++++ Amazon.S3/Model/S3Request.cs	(working copy)
+@@ -182,6 +182,11 @@
+             get { return false; }
+         }
+ 
++        internal virtual bool SupportReadWriteTimeout
++        {
++            get { return false; }
++        }
++
+         internal virtual bool Expect100Continue
+         {
+             get { return false; }
+Index: Amazon.S3/Model/UploadPartRequest.cs
+===================================================================
+--- Amazon.S3/Model/UploadPartRequest.cs	(revision 1)
++++ Amazon.S3/Model/UploadPartRequest.cs	(working copy)
+@@ -47,7 +47,7 @@
+         private string md5Digest;
+         private bool fGenerateMD5Digest;
+         private int timeout = 0;
+-
++        private int readwritetimeout = 0;
+         private string filePath;
+         private long? filePosition;
+ 
+@@ -361,7 +361,7 @@
+             get { return this.timeout; }
+             set
+             {
+-                if (value > 0)
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
+                 {
+                     this.timeout = value;
+                 }
+@@ -392,8 +392,52 @@
+ 
+         #endregion
+ 
++        #region ReadWriteTimeout
+ 
+         /// <summary>
++        /// Gets and sets of the ReadWriteTimeout property (in milliseconds).
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout properties of the
++        /// HTTPWebRequest object used for S3 PUT Object requests.
++        /// </summary>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public int ReadWriteTimeout
++        {
++            get { return this.readwritetimeout; }
++            set
++            {
++                if (value > 0 || value == System.Threading.Timeout.Infinite)
++                {
++                    this.readwritetimeout = value;
++                }
++            }
++        }
++
++        /// <summary>
++        /// Sets the ReadWriteTimeout property (in milliseconds). 
++        /// The value of this property is assigned to the
++        /// ReadWriteTimeout property of the HttpWebRequest.
++        /// </summary>
++        /// <param name="readwritetimeout">ReadWriteTimeout property</param>
++        /// <remarks>A value less than or equal to 0 will be silently ignored</remarks>
++        /// <returns>this instance</returns>
++        /// <seealso cref="P:System.Net.HttpWebRequest.ReadWriteTimeout"/>
++        public UploadPartRequest WithReadWriteTimeout(int readwritetimeout)
++        {
++            ReadWriteTimeout = readwritetimeout;
++            return this;
++        }
++
++        internal override bool SupportReadWriteTimeout
++        {
++            get { return true; }
++        }
++
++        #endregion
++
++
++        /// <summary>
+         /// The event for Put Object progress notifications. All
+         /// subscribers will be notified when a new progress
+         /// event is raised.

@@ -138,6 +138,9 @@
   <data name="FolderIsExcluded" xml:space="preserve">
     <value>The folder {0} is excluded due to rule {1}</value>
   </data>
+  <data name="FolderIsRootFolder" xml:space="preserve">
+    <value>The folder {0} is included because it is a source folder</value>
+  </data>
   <data name="IncludeFolderBrowseTitle" xml:space="preserve">
     <value>Choose the folder to add for inclusion</value>
   </data>

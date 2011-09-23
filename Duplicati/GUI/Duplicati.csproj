@@ -133,6 +133,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SizeSelector.resx</DependentUpon>
     </Compile>
+    <Compile Include="HelperControls\Strings\TestSearchSelection.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TestSearchSelection.resx</DependentUpon>
+    </Compile>
     <Compile Include="HelperControls\Strings\WaitForOperation.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -216,6 +221,13 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="HelperControls\Strings\TestSearchSelection.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>TestSearchSelection.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HelperControls\TestSearchSelection.resx">
+      <DependentUpon>TestSearchSelection.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -330,6 +342,12 @@
     </Compile>
     <Compile Include="Wizard pages\Add backup\FinishedAdd.Designer.cs">
       <DependentUpon>FinishedAdd.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperControls\TestSearchSelection.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="HelperControls\TestSearchSelection.Designer.cs">
+      <DependentUpon>TestSearchSelection.cs</DependentUpon>
     </Compile>
     <Compile Include="Wizard pages\Add backup\SettingOverrides.cs">
       <SubType>UserControl</SubType>
@@ -600,6 +618,10 @@
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
+      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
+      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
@@ -607,6 +629,9 @@
     <ProjectReference Include="..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
       <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>
       <Name>Duplicati.Library.Backend.SSHv2</Name>
+    <ProjectReference Include="..\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj">
+      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
+      <Name>Duplicati.Library.Backend.SkyDrive</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
       <Project>{C0270709-2A40-43B5-8CF1-69581B9FA2A1}</Project>
@@ -1118,6 +1143,7 @@
     <EmbeddedResource Include="Database schema\5. Remove signaturekey.sql" />
     <EmbeddedResource Include="Database schema\6. Remove TimeSeparator and UseShortFilenames.sql" />
     <EmbeddedResource Include="Database schema\7. Add error message field to log.sql" />
+    <EmbeddedResource Include="Database schema\8. Add filter fields.sql" />
     <None Include="Resources\Play.png" />
     <None Include="Resources\Delay.png" />
     <None Include="Resources\Pause.png" />

@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Duplicati.Library.Backend</RootNamespace>
+    <AssemblyName>Duplicati.Library.Backend.SkyDrive</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="SkyDrive.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SkyDriveSession.cs" />
+    <Compile Include="SkyDriveUI.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="SkyDriveUI.Designer.cs">
+      <DependentUpon>SkyDriveUI.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\SkyDrive.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SkyDrive.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\SkyDriveUI.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SkyDriveUI.resx</DependentUpon>
+    </Compile>
+    <Compile Include="TaggedFileEntry.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
+      <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
+      <Name>Duplicati.Winforms.Controls</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="SkyDriveUI.resx">
+      <DependentUpon>SkyDriveUI.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\SkyDrive.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SkyDrive.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\SkyDriveUI.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SkyDriveUI.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

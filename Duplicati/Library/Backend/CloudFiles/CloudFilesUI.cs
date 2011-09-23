@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -32,10 +32,13 @@ namespace Duplicati.Library.Backend
         private const string USERNAME = "Username";
         private const string ACCESS_KEY = "Access Key";
         private const string CONTAINER_NAME = "Container name";
+        private const string USE_UK_ACCOUNT = "UK Account";
+        private const string AUTH_URL = "Auth URL";
         private const string HASTESTED = "UI: Has tested";
         private const string INITIALPASSWORD = "UI: Temp password";
 
-        private const string LOGIN_PAGE = "https://www.rackspacecloud.com/signup";
+        private const string SIGNUP_PAGE_US = "https://www.rackspacecloud.com/signup";
+        private const string SIGNUP_PAGE_UK = "http://www.rackspace.co.uk/cloud-hosting/cloud-files/";
         private IDictionary<string, string> m_options;
         private bool m_hasTested;
 
@@ -43,6 +46,10 @@ namespace Duplicati.Library.Backend
             : this()
         {
             m_options = options;
+
+            Servernames.Items.Clear();
+            foreach (KeyValuePair<string, string> p in CloudFiles.KNOWN_CLOUDFILES_PROVIDERS)
+                Servernames.Items.Add(new Utility.ComboBoxItemPair<string>(string.Format("{0} ({1})", p.Key, p.Value), p.Value));
         }
 
         private CloudFilesUI()
@@ -92,7 +99,11 @@ namespace Duplicati.Library.Backend
             m_options[USERNAME] = Username.Text;
             m_options[ACCESS_KEY] = API_KEY.Text;
             m_options[CONTAINER_NAME] = ContainerName.Text;
-            
+            if (Servernames.SelectedItem as Utility.ComboBoxItemPair<string> == null)
+                m_options[AUTH_URL] = Servernames.Text;
+            else
+                m_options[AUTH_URL] = (Servernames.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
+
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
         }
@@ -105,6 +116,24 @@ namespace Duplicati.Library.Backend
                 API_KEY.Text = m_options[ACCESS_KEY];
             if (m_options.ContainsKey(CONTAINER_NAME))
                 ContainerName.Text = m_options[CONTAINER_NAME];
+
+            if (m_options.ContainsKey(AUTH_URL))
+            {
+                Servernames.Text = m_options[AUTH_URL];
+            }
+            else if (m_options.ContainsKey(USE_UK_ACCOUNT))
+            {
+                bool useUK;
+                if (bool.TryParse(m_options[USE_UK_ACCOUNT], out useUK))
+                    Servernames.Text = CloudFiles.AUTH_URL_UK;
+                else
+                    Servernames.Text = CloudFiles.AUTH_URL_US;
+            }
+            else
+            {
+                Servernames.Text = CloudFiles.AUTH_URL_US;
+            }
+            
 
             if (!m_options.ContainsKey(INITIALPASSWORD))
                 m_options[INITIALPASSWORD] = m_options.ContainsKey(ACCESS_KEY) ? m_options[ACCESS_KEY] : "";
@@ -143,7 +172,7 @@ namespace Duplicati.Library.Backend
 
         private void SignUpLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Duplicati.Library.Utility.UrlUtillity.OpenUrl(LOGIN_PAGE);
+            Duplicati.Library.Utility.UrlUtillity.OpenUrl(Servernames.Text.Equals(CloudFiles.AUTH_URL_UK) ? SIGNUP_PAGE_UK : SIGNUP_PAGE_US);
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -160,9 +189,23 @@ namespace Duplicati.Library.Backend
                     string destination = GetConfiguration(m_options, options);
 
                     CloudFiles cf = new CloudFiles(destination, options);
-                    cf.Test();
+                    bool existingBackup = false;
+                    foreach (Interface.IFileEntry n in cf.List())
+                        if (n.Name.StartsWith("duplicati-"))
+                        {
+                            existingBackup = true;
+                            break;
+                        }
 
-                    MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    if (existingBackup)
+                    {
+                        if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                            return;
+                    }
+                    else
+                    {
+                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
                     m_hasTested = true;
                 }
                 catch (Interface.FolderMissingException)
@@ -203,6 +246,11 @@ namespace Duplicati.Library.Backend
             m_hasTested = false;
         }
 
+        private void UKAccount_CheckedChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+        }
+
         public static string GetConfiguration(IDictionary<string, string> guiOptions, IDictionary<string, string> commandlineOptions)
         {
             if (guiOptions.ContainsKey(USERNAME) && !string.IsNullOrEmpty(guiOptions[USERNAME]))
@@ -210,10 +258,21 @@ namespace Duplicati.Library.Backend
             if (guiOptions.ContainsKey(ACCESS_KEY) && !string.IsNullOrEmpty(guiOptions[ACCESS_KEY]))
                 commandlineOptions["cloudfiles-accesskey"] = guiOptions[ACCESS_KEY];
 
+            if (guiOptions.ContainsKey(AUTH_URL))
+            {
+                commandlineOptions["cloudfiles-authentication-url"] = guiOptions[AUTH_URL];
+            }
+            else
+            {
+                bool useUK;
+                if (guiOptions.ContainsKey(USE_UK_ACCOUNT) && bool.TryParse(guiOptions[USE_UK_ACCOUNT], out useUK) && useUK)
+                    commandlineOptions["cloudfiles-uk-account"] = "";
+            }
+
             if (!guiOptions.ContainsKey(CONTAINER_NAME))
                 throw new Exception(string.Format(Interface.CommonStrings.ConfigurationIsMissingItemError, CONTAINER_NAME));
 
-            return "cloudfiles://api.mosso.com/" + guiOptions[CONTAINER_NAME];
+            return "cloudfiles://" + guiOptions[CONTAINER_NAME];
         }
 
         public static string PageTitle
@@ -254,5 +313,23 @@ namespace Duplicati.Library.Backend
             }
 
         }
+
+        private delegate void SetComboTextDelegate(ComboBox el, string text);
+        private void SetComboText(ComboBox el, string text)
+        {
+            el.Text = text;
+        }
+
+        private void Servernames_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Servernames.SelectedItem as Utility.ComboBoxItemPair<string> != null)
+                BeginInvoke(new SetComboTextDelegate(SetComboText), Servernames, (Servernames.SelectedItem as Utility.ComboBoxItemPair<string>).Value);
+        }
+
+        private void Servernames_TextChanged(object sender, EventArgs e)
+        {
+            m_hasTested = false;
+        }
+
     }
 }

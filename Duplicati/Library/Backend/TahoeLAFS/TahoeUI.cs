@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -198,10 +198,28 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        TahoeBackend tahoe = new TahoeBackend(destination, options);
-                        tahoe.List();
-
-                        MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        bool existingBackup = false;
+                        using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
+                        {
+                            httpconf.Configure(options);
+                            TahoeBackend tahoe = new TahoeBackend(destination, options);
+                            foreach (Interface.IFileEntry n in tahoe.List())
+                                if (n.Name.StartsWith("duplicati-"))
+                                {
+                                    existingBackup = true;
+                                    break;
+                                }
+                        }
+                     
+                        if (existingBackup)
+                        {
+                            if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                                return;
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, Interface.CommonStrings.ConnectionSuccess, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
                         m_hasTested = true;
                     }
                     catch (Interface.FolderMissingException)
@@ -274,8 +292,12 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        TahoeBackend tahoe = new TahoeBackend(destination, options);
-                        tahoe.CreateFolder();
+                        using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
+                        {
+                            httpconf.Configure(options);
+                            TahoeBackend tahoe = new TahoeBackend(destination, options);
+                            tahoe.CreateFolder();
+                        }
 
                         MessageBox.Show(this, Interface.CommonStrings.FolderCreated, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         m_hasTested = true;

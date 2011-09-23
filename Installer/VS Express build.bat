@@ -2,6 +2,16 @@
 SET PARAFFIN_EXE=%CD%\paraffin.exe
 SET ORIGIN_PATH=%CD%
 
+if exist "%PARAFFIN_EXE%" goto paraffin_found
+echo *****************************************************
+echo Missing Paraffin.exe, download from here: 
+echo http://www.wintellect.com/CS/files/folders/8198/download.aspx
+echo *****************************************************
+pause
+goto end_of_program
+
+:paraffin_found
+
 rmdir /S /Q "bin\Release\Duplicati"
 
 mkdir bin
@@ -20,6 +30,8 @@ move sqlite-3.6.12.so libsqlite3.so.0
 xcopy /I /Y "..\..\..\linux help\*" .
 del "*.vshost.*" /Q
 xcopy /Y ..\..\..\..\Duplicati\GUI\StartDuplicati.sh .
+mkdir Tools
+xcopy /I /Y /E ..\..\..\..\Tools .\Tools
 
 REM This dll enables Mono on Windows support
 xcopy /I /Y ..\..\..\..\thirdparty\SQLite\Bin\sqlite3.dll .
@@ -44,6 +56,15 @@ REM Build translations
 cd "..\Duplicati\Localization"
 rmdir /S /Q compiled
 
+REM TODO: Make this dynamic with report.*.csv
+LocalizationTool.exe update
+
+LocalizationTool.exe import da-DK report.da-DK.csv
+LocalizationTool.exe import fr-FR report.fr-FR.csv
+LocalizationTool.exe import pt-BR report.pt-BR.csv
+LocalizationTool.exe import de-DE report.de-DE.csv
+LocalizationTool.exe import es-ES report.es-ES.csv
+
 LocalizationTool.exe update
 LocalizationTool.exe build
 for /D %%d in ("compiled\*") do call :langbuild %%d
@@ -61,7 +82,9 @@ if exist incBinFiles.PARAFFIN xcopy /I /Y incBinFiles.PARAFFIN incBinFiles.wxs
 if exist incBinFiles.PARAFFIN del incBinFiles.PARAFFIN
 
 xcopy /I /Y /E "..\Duplicati\Localization\compiled\*" "bin\Release\Duplicati"
-"%PROGRAMFILES%\7-zip\7z.exe" a -r "bin\Release\Duplicati.zip" bin\Release\Duplicati
+cd "bin\Release"
+"%PROGRAMFILES%\7-zip\7z.exe" a -r "Duplicati.zip" Duplicati
+cd "..\.."
 
 WixProjBuilder.exe --wixpath="C:\Program Files (x86)\Windows Installer XML v3\bin" WixInstaller.wixproj
 move "bin\Release\Duplicati.msi" "bin\Release\Duplicati.x86.msi"

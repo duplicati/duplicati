@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -64,7 +64,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             try
             {
-                Schedule[] tmp = Program.DataConnection.GetObjects<Schedule>("Name LIKE ? AND Path Like ?", BackupName.Text, BackupFolder.SelectedFolder);
+                Schedule[] tmp = Program.DataConnection.GetObjects<Schedule>("Name LIKE ? AND Path LIKE ?", BackupName.Text, BackupFolder.SelectedFolder);
                 if ((tmp.Length == 1 && tmp[0].ID != m_wrapper.ScheduleID) || tmp.Length > 1)
                 {
                     MessageBox.Show(this, Strings.SelectName.DuplicateNameEnteredError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);

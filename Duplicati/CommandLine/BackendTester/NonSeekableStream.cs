@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -45,18 +45,6 @@ namespace Duplicati.CommandLine.BackendTester
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
             throw new NotImplementedException();
-        }
-
-        public override long Position
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
         }
 
         public override void SetLength(long value)

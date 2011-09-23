@@ -117,14 +117,41 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="EofInManifestFile" xml:space="preserve">
+    <value>Got EOF while attempting to locate the self-hash of a manifest</value>
+  </data>
+  <data name="HashGenerationFailure" xml:space="preserve">
+    <value>The hash generation for the manifest file resulted in the hash value {0} but should have been {1}</value>
+  </data>
+  <data name="InternalError" xml:space="preserve">
+    <value>An internal error occured when creating the manifest, please report this to the developers</value>
+  </data>
   <data name="InvalidManifestError" xml:space="preserve">
     <value>The manifest file did not have the expected root Xml element: {0}</value>
   </data>
   <data name="InvalidSourcePathError" xml:space="preserve">
     <value>The number of source paths in the manifest file are wrong</value>
   </data>
+  <data name="MainfestIsMissingSelfFilename" xml:space="preserve">
+    <value>Manifest did not contain its own filename as expected</value>
+  </data>
+  <data name="MainfestIsMissingSelfHash" xml:space="preserve">
+    <value>Manifest did not contain a self hash as expected</value>
+  </data>
+  <data name="ManifestValidationError" xml:space="preserve">
+    <value>Failed to validate manifest: {0}</value>
+  </data>
+  <data name="MissingPreviousManifestFilename" xml:space="preserve">
+    <value>Manifest has no previous manifest filename</value>
+  </data>
+  <data name="MissingPreviousManifestHash" xml:space="preserve">
+    <value>Manifest has no previous manifest hash</value>
+  </data>
   <data name="NoFilesError" xml:space="preserve">
     <value>Invalid manifest, there were no files in the manifest</value>
+  </data>
+  <data name="SelfhashMismatch" xml:space="preserve">
+    <value>Manifest file had selfhash {0} but the hash of the file is {1}</value>
   </data>
   <data name="UnsupportedHashAlgorithmError" xml:space="preserve">
     <value>The manifest uses the hash algorithm {0}, which is unsupported</value>

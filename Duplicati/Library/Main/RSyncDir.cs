@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -695,10 +695,9 @@ namespace Duplicati.Library.Main.RSync
         public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Utility.FilenameFilter filter)
         {
             m_filter = filter;
-            //TODO: These should theoretically use the file systems case sensitivity
-            m_oldSignatures = new Dictionary<string, ArchiveWrapper>();
-            m_oldFolders = new Dictionary<string, DateTime>();
-            m_lastVerificationTime = new Dictionary<string, DateTime>();
+            m_oldSignatures = new Dictionary<string, ArchiveWrapper>(Utility.Utility.ClientFilenameStringComparer);
+            m_oldFolders = new Dictionary<string, DateTime>(Utility.Utility.ClientFilenameStringComparer);
+            m_lastVerificationTime = new Dictionary<string, DateTime>(Utility.Utility.ClientFilenameStringComparer);
 
             for (int i = 0; i < sourcefolder.Length; i++)
             {
@@ -1272,20 +1271,28 @@ namespace Duplicati.Library.Main.RSync
                         string relpath = GetRelativeName(s);
                         if (m_oldSignatures.ContainsKey(relpath))
                         {
-                            DateTime lastFileWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
-                            //Cut off as we only preserve precision in seconds after compression
-                            lastFileWrite = new DateTime(lastFileWrite.Year, lastFileWrite.Month, lastFileWrite.Day, lastFileWrite.Hour, lastFileWrite.Minute, lastFileWrite.Second, DateTimeKind.Utc);
-
-                            DateTime lastCheck;
-                            if (!m_lastVerificationTime.TryGetValue(relpath, out lastCheck))
-                                lastCheck = m_oldSignatures[relpath].CreateTime;
-
-                            //Compare with the modification time of the last known check time
-                            if (lastFileWrite <= lastCheck)
+                            try
                             {
-                                m_oldSignatures.Remove(relpath);
-                                m_examinedfiles++;
-                                continue;
+                                //Reports show that the file time can be missing :(
+                                DateTime lastFileWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
+                                //Cut off as we only preserve precision in seconds after compression
+                                lastFileWrite = new DateTime(lastFileWrite.Year, lastFileWrite.Month, lastFileWrite.Day, lastFileWrite.Hour, lastFileWrite.Minute, lastFileWrite.Second, DateTimeKind.Utc);
+
+                                DateTime lastCheck;
+                                if (!m_lastVerificationTime.TryGetValue(relpath, out lastCheck))
+                                    lastCheck = m_oldSignatures[relpath].CreateTime;
+
+                                //Compare with the modification time of the last known check time
+                                if (lastFileWrite <= lastCheck)
+                                {
+                                    m_oldSignatures.Remove(relpath);
+                                    m_examinedfiles++;
+                                    continue;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.InvalidTimeStampError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
                             }
                         }
                     }
@@ -1318,11 +1325,20 @@ namespace Duplicati.Library.Main.RSync
                                 else
                                     throw;
                             }
-                            
-                            //Record the change time after we opened (and thus locked) the file
-                            DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
-                            //Cut off as we only preserve precision in seconds
-                            lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
+
+
+                            DateTime lastWrite = EPOCH;
+                            try 
+                            {
+                                //Record the change time after we opened (and thus locked) the file
+                                lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
+                                //Cut off as we only preserve precision in seconds
+                                lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.InvalidTimeStampError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                            }
 
 
                             if (fs.Length > m_maxFileSize)
@@ -2097,7 +2113,15 @@ namespace Duplicati.Library.Main.RSync
                         }
 
                         System.IO.File.Delete(target);
-                        System.IO.File.Move(tempfile, target);
+
+                        try { System.IO.File.Move(tempfile, target); }
+                        catch
+                        {
+                            //The OS sometimes reports the file as existing even after a delete
+                            // this seems to be related to MS Security Essentials?
+                            System.Threading.Thread.Sleep(500);
+                            System.IO.File.Move(tempfile, target);
+                        }
                     }
 
                     if (File.Exists(target))

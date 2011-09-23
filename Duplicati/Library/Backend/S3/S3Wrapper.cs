@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -20,120 +20,99 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Affirma.ThreeSharp;
-using Affirma.ThreeSharp.Query;
-using Affirma.ThreeSharp.Model;
+using Amazon.S3;
+using Amazon.S3.Model;
 using System.Xml;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
     /// <summary>
-    /// Helper class that allows a little more configuration than the original wrapper,
-    /// and fixes various problems with it, such as EU bucket support and long lists
+    /// Helper class that fixes long list support and injects location headers, includes using directives etc.
     /// </summary>
-    public class S3Wrapper
+    public class S3Wrapper : IDisposable
     {
         private const int ITEM_LIST_LIMIT = 1000;
-        private static Dictionary<string, KeyValuePair<DateTime, string>> RedirectCache = new Dictionary<string, KeyValuePair<DateTime, string>>();
 
-        protected const string EU_LOCATION_CONSTRAINT = "<CreateBucketConfiguration><LocationConstraint>EU</LocationConstraint></CreateBucketConfiguration>";
-        protected bool m_euBucket;
+        protected string m_locationConstraint;
         protected bool m_useRRS;
-		private ThreeSharpConfig m_config;
-		private ThreeSharpQuery m_service;
+		protected AmazonS3Client m_client;
 
-        public S3Wrapper(string awsID, string awsKey, CallingFormat format, bool euBuckets, bool useRRS)
+        public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, bool useRRS, bool useSSL)
         {
-            m_config = new ThreeSharpConfig();
-            m_config.AwsAccessKeyID = awsID;
-            m_config.AwsSecretAccessKey = awsKey;
-            m_config.Format = format;
-			m_config.IsSecure = false;
+            AmazonS3Config cfg = new AmazonS3Config();
+            
+            cfg.CommunicationProtocol = useSSL ? Amazon.S3.Model.Protocol.HTTPS : Amazon.S3.Model.Protocol.HTTP;
+            cfg.ServiceURL = servername;
+            cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
+            cfg.UseSecureStringForAwsSecretKey = false;
 
-            m_euBucket = euBuckets;
+            m_client = new Amazon.S3.AmazonS3Client(awsID, awsKey, cfg);
+
+            m_locationConstraint = locationConstraint;
             m_useRRS = useRRS;
-
-            if (euBuckets && format == CallingFormat.REGULAR)
-                throw new Exception(Strings.S3Wrapper.EuroBucketsRequireSubDomainError);
-
-            m_service = new ThreeSharpQuery(m_config);
-
         }
 
         public void AddBucket(string bucketName)
         {
-            //Due to a resource leak in the S3 code, we flush it here
-            GC.Collect();
-            using (BucketAddRequest request = new BucketAddRequest(bucketName))
-            {
-                if (m_euBucket)
-                    request.LoadStreamWithString(EU_LOCATION_CONSTRAINT);
+            PutBucketRequest request = new PutBucketRequest();
+            request.BucketName = bucketName;
 
-                using (BucketAddResponse response = m_service.BucketAdd(request))
-                { }
-            }
+            if (!string.IsNullOrEmpty(m_locationConstraint))
+                request.BucketRegionName = m_locationConstraint;
+
+            using (PutBucketResponse response = m_client.PutBucket(request))
+            { }
         }
 
         public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
         {
-            //Due to a resource leak in the S3 code, we flush it here
-            GC.Collect();
-            using (ObjectGetRequest objectGetRequest = new ObjectGetRequest(bucketName, keyName))
-            {
-                objectGetRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
-                using (ObjectGetResponse objectGetResponse = m_service.ObjectGet(objectGetRequest))
-                    Utility.Utility.CopyStream(objectGetResponse.DataStream, target);
-            }
+            GetObjectRequest objectGetRequest = new GetObjectRequest();
+            objectGetRequest.BucketName = bucketName;
+            objectGetRequest.Key = keyName;
+            objectGetRequest.Timeout = System.Threading.Timeout.Infinite;
+            objectGetRequest.ReadWriteTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+            
+            using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
+            using (System.IO.Stream s = objectGetResponse.ResponseStream)
+                Utility.Utility.CopyStream(s, target);
         }
 
         public void GetFileObject(string bucketName, string keyName, string localfile)
         {
-            //Due to a resource leak in the S3 code, we flush it here
-            GC.Collect();
             using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                 GetFileStream(bucketName, keyName, fs);
         }
 
         public void AddFileObject(string bucketName, string keyName, string localfile)
         {
-            //Due to a resource leak in the S3 code, we flush it here
-            GC.Collect();
             using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 AddFileStream(bucketName, keyName, fs);
         }
 
         public virtual void AddFileStream(string bucketName, string keyName, System.IO.Stream source)
         {
-            //Due to a resource leak in the S3 code, we flush it here
-            GC.Collect();
-            using (ObjectAddRequest objectAddRequest = new ObjectAddRequest(bucketName, keyName))
-            {
-                objectAddRequest.DataStream = source;
+            PutObjectRequest objectAddRequest = new PutObjectRequest();
+            objectAddRequest.BucketName = bucketName;
+            objectAddRequest.Key = keyName;
+            objectAddRequest.InputStream = source;
+            objectAddRequest.StorageClass = m_useRRS ? S3StorageClass.ReducedRedundancy : S3StorageClass.Standard;
+            objectAddRequest.GenerateMD5Digest = false; //We would like this, but cannot read the stream twice :(
+            objectAddRequest.Timeout = System.Threading.Timeout.Infinite;
+            objectAddRequest.ReadWriteTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
 
-				//objectAddRequest.ContentType = "application/octet-stream";
-                objectAddRequest.BytesTotal = source.Length; //The source length MUST be readable
-                objectAddRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
-                if (m_useRRS)
-                    objectAddRequest.Headers.Add("x-amz-storage-class", "REDUCED_REDUNDANCY");
-
-                using (ObjectAddResponse objectAddResponse = m_service.ObjectAdd(objectAddRequest))
-                { }
-            }
+            using (PutObjectResponse objectAddResponse = m_client.PutObject(objectAddRequest))
+            { }
         }
 
         public void DeleteObject(string bucketName, string keyName)
         {
-            //Due to a resource leak in the S3 code, we flush it here
-            GC.Collect();
-            using (ObjectDeleteRequest objectDeleteRequest = new ObjectDeleteRequest(bucketName, keyName))
-            {
-                objectDeleteRequest.RedirectUrl = GetRedirectUrl(bucketName, keyName);
+            DeleteObjectRequest objectDeleteRequest = new DeleteObjectRequest();
+            objectDeleteRequest.BucketName = bucketName;
+            objectDeleteRequest.Key = keyName;
 
-                using (ObjectDeleteResponse objectDeleteResponse = m_service.ObjectDelete(objectDeleteRequest))
-                { }
-            }
-
+            using (DeleteObjectResponse objectDeleteResponse = m_client.DeleteObject(objectDeleteRequest))
+            { }
         }
 
         public virtual List<IFileEntry> ListBucket(string bucketName, string prefix)
@@ -141,42 +120,41 @@ namespace Duplicati.Library.Backend
             bool isTruncated = true;
             string filename = null;
 
-            string redirUrl = GetRedirectUrl(bucketName, null);
             List<IFileEntry> files = new List<IFileEntry>();
 
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
             {
-                //Due to a resource leak in the S3 code, we flush it here
-                GC.Collect();
-                using (BucketListRequest listRequest = new BucketListRequest(bucketName))
+                ListObjectsRequest listRequest = new ListObjectsRequest();
+                listRequest.BucketName = bucketName;
+
+                if (!string.IsNullOrEmpty(filename))
+                    listRequest.Marker = filename;
+
+                listRequest.MaxKeys = ITEM_LIST_LIMIT;
+                if (!string.IsNullOrEmpty(prefix))
+                    listRequest.Prefix = prefix;
+
+                using (ListObjectsResponse listResponse = m_client.ListObjects(listRequest))
                 {
-					listRequest.RedirectUrl = redirUrl;
-                    if (!string.IsNullOrEmpty(filename))
-                        listRequest.QueryList.Add("marker", filename);
+                    isTruncated = listResponse.IsTruncated;
+                    filename = listResponse.NextMarker;
 
-                    listRequest.QueryList.Add("max-keys", ITEM_LIST_LIMIT.ToString());
-                    if (!string.IsNullOrEmpty(prefix))
-                        listRequest.QueryList.Add("prefix", prefix);
-
-                    using (BucketListResponse listResponse = m_service.BucketList(listRequest))
+                    foreach (S3Object obj in listResponse.S3Objects)
                     {
-                        XmlDocument bucketXml = listResponse.StreamResponseToXmlDocument();
-                        XmlNodeList objects = bucketXml.SelectNodes("//*[local-name()='Contents']");
-
-                        foreach (XmlNode obj in objects)
-                        {
-                            filename = obj["Key"].InnerText;
-                            long size = long.Parse(obj["Size"].InnerText);
-                            DateTime lastModified = DateTime.Parse(obj["LastModified"].InnerText);
-                            files.Add(new FileEntry(filename, size, lastModified, lastModified));
-                        }
-
-                        isTruncated = bool.Parse(bucketXml.SelectSingleNode("//*[local-name()='IsTruncated']").InnerText);
+                        files.Add(new FileEntry(
+                            obj.Key,
+                            obj.Size,
+                            DateTime.Parse(obj.LastModified),
+                            DateTime.Parse(obj.LastModified)
+                        ));
                     }
+
+                    //filename = files[files.Count - 1].Name;
                 }
             }
 
+            //TODO: Figure out if this is the case with AWSSDK too
             //Unfortunately S3 sometimes reports duplicate values when requesting more than one page of results
             Dictionary<string, string> tmp = new Dictionary<string, string>();
             for (int i = 0; i < files.Count; i++)
@@ -191,30 +169,15 @@ namespace Duplicati.Library.Backend
             return files;
         }
 
-        protected string GetRedirectUrl(string bucketName, string filename)
-        {
-            if (!RedirectCache.ContainsKey(bucketName) || RedirectCache[bucketName].Key < DateTime.Now)
-            {
-                //Due to a resource leak in the S3 code, we flush it here
-                GC.Collect();
-                using (BucketListRequest testRequest = new BucketListRequest(bucketName))
-                {
-                   	testRequest.Method = "HEAD";
-                    using (BucketListResponse testResponse = m_service.BucketList(testRequest))
-                        if (testResponse.StatusCode == System.Net.HttpStatusCode.TemporaryRedirect)
-                            RedirectCache[bucketName] = new KeyValuePair<DateTime,string>(DateTime.Now.AddMinutes(5), testResponse.Headers["Location"].ToString());
-                        else
-                            RedirectCache[bucketName] = new KeyValuePair<DateTime,string>(DateTime.Now.AddHours(1), null);
-                            //If there are no temp redirects, the DNS system is updated, and will likely never require temporary redirects
-                }
-            }
+        #region IDisposable Members
 
-            string tempurl = RedirectCache[bucketName].Value;
-            if (tempurl == null)
-                return null;
-            else
-                return RedirectCache[bucketName].Value + (filename == null ? "" : filename);
+        public void Dispose()
+        {
+            if (m_client != null)
+                m_client.Dispose();
+            m_client = null;
         }
 
+        #endregion
     }
 }

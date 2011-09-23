@@ -1,4 +1,23 @@
-﻿using System;
+#region Disclaimer / License
+// Copyright (C) 2011, Kenneth Skovhede
+// http://www.hexad.dk, opensource@hexad.dk
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+#endregion
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
@@ -14,9 +33,6 @@ namespace Duplicati.Library.Backend
 
         private string m_url;
         Dictionary<string, string> m_options;
-
-        private bool m_acceptAllCertificates = false;
-        private string m_acceptCertificateHash = null;
         private bool m_useSSL = false;
 
         public TahoeBackend()
@@ -34,23 +50,17 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(u.Query))
                 throw new Exception(Strings.TahoeBackend.UriHasQueryError);
 
-            m_useSSL = options.ContainsKey("use-ssl");
-            m_acceptAllCertificates = options.ContainsKey("accept-any-ssl-certificate");
-            if (options.ContainsKey("accept-specified-ssl-hash"))
-                m_acceptCertificateHash = options["accept-specified-ssl-hash"];
+            string sslString;
+            if (options.TryGetValue("use-ssl", out sslString))
+                m_useSSL = Utility.Utility.ParseBool(sslString, true);
+            else
+                m_useSSL = false;
 
             m_options = options;
 
             m_url = (m_useSSL ? "https" : "http") + url.Substring(u.Scheme.Length);
             if (!m_url.EndsWith("/"))
                 m_url += "/";
-        }
-
-        private IDisposable ActivateCertificateValidator()
-        {
-            return m_useSSL ?
-                new Utility.SslCertificateValidator(m_acceptAllCertificates, m_acceptCertificateHash) :
-                null;
         }
 
         private System.Net.HttpWebRequest CreateRequest(string remotename, string queryparams)
@@ -72,13 +82,10 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            using (ActivateCertificateValidator())
-            {
-                System.Net.HttpWebRequest req = CreateRequest("", "t=mkdir");
-                req.Method = System.Net.WebRequestMethods.Http.Post;
-                using (req.GetResponse())
-                { }
-            }
+            System.Net.HttpWebRequest req = CreateRequest("", "t=mkdir");
+            req.Method = System.Net.WebRequestMethods.Http.Post;
+            using (req.GetResponse())
+            { }
         }
 
         #endregion
@@ -101,32 +108,30 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                using (ActivateCertificateValidator())
+                System.Net.HttpWebRequest req = CreateRequest("", "t=json");
+                req.Method = System.Net.WebRequestMethods.Http.Get;
+
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
                 {
-                    System.Net.HttpWebRequest req = CreateRequest("", "t=json");
-                    req.Method = System.Net.WebRequestMethods.Http.Get;
+                    int code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                    using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                    //HACK: We need the LitJSON to use Invariant culture, otherwise it cannot parse doubles
+                    System.Globalization.CultureInfo ci = System.Threading.Thread.CurrentThread.CurrentCulture;
+                    try
                     {
-                        int code = (int)resp.StatusCode;
-                        if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                            throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-
-                        //HACK: We need the LitJSON to use Invariant culture, otherwise it cannot parse doubles
-                        System.Globalization.CultureInfo ci = System.Threading.Thread.CurrentThread.CurrentCulture;
-                        try
-                        {
-                            System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-                            using (System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream()))
-                                data = LitJson.JsonMapper.ToObject(sr);
-                        }
-                        finally
-                        {
-                            try { System.Threading.Thread.CurrentThread.CurrentCulture = ci; }
-                            catch { }
-                        }
+                        System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+                        using (System.IO.StreamReader sr = new System.IO.StreamReader(resp.GetResponseStream()))
+                            data = LitJson.JsonMapper.ToObject(sr);
+                    }
+                    finally
+                    {
+                        try { System.Threading.Thread.CurrentThread.CurrentCulture = ci; }
+                        catch { }
                     }
                 }
+
             }
             catch (System.Net.WebException wex)
             {
@@ -160,7 +165,7 @@ namespace Duplicati.Library.Backend
                 if (!isDir && !isFile)
                     continue;
 
-                FileEntry fe = new FileEntry(key, -1);
+                FileEntry fe = new FileEntry(key);
                 fe.IsFolder = isDir;
 
                 if (((System.Collections.IDictionary)entry[1]).Contains("metadata"))
@@ -210,13 +215,10 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            using (ActivateCertificateValidator())
-            {
-                System.Net.HttpWebRequest req = CreateRequest(remotename, "");
-                req.Method = "DELETE";
-                using (req.GetResponse())
-                { }
-            }
+            System.Net.HttpWebRequest req = CreateRequest(remotename, "");
+            req.Method = "DELETE";
+            using (req.GetResponse())
+            { }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -225,8 +227,6 @@ namespace Duplicati.Library.Backend
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.TahoeBackend.DescriptionUseSSLShort, Strings.TahoeBackend.DescriptionUseSSLLong),
-                    new CommandLineArgument("accept-specified-ssl-hash", CommandLineArgument.ArgumentType.String, Strings.TahoeBackend.DescriptionAcceptHashShort, Strings.TahoeBackend.DescriptionAcceptHashLong),
-                    new CommandLineArgument("accept-any-ssl-certificate", CommandLineArgument.ArgumentType.Boolean, Strings.TahoeBackend.DescriptionAcceptAnyCertificateShort, Strings.TahoeBackend.DescriptionAcceptAnyCertificateLong),
                 });
             }
         }
@@ -252,26 +252,23 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using (ActivateCertificateValidator())
+                System.Net.HttpWebRequest req = CreateRequest(remotename, "");
+                req.Method = System.Net.WebRequestMethods.Http.Put;
+                req.ContentType = "application/binary";
+                //We only depend on the ReadWriteTimeout
+                req.Timeout = System.Threading.Timeout.Infinite;
+
+                try { req.ContentLength = stream.Length; }
+                catch { }
+
+                using (System.IO.Stream s = req.GetRequestStream())
+                    Utility.Utility.CopyStream(stream, s);
+
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
                 {
-                    System.Net.HttpWebRequest req = CreateRequest(remotename, "");
-                    req.Method = System.Net.WebRequestMethods.Http.Put;
-                    req.ContentType = "application/binary";
-                    //We only depend on the ReadWriteTimeout
-                    req.Timeout = System.Threading.Timeout.Infinite;
-
-                    try { req.ContentLength = stream.Length; }
-                    catch { }
-
-                    using (System.IO.Stream s = req.GetRequestStream())
-                        Utility.Utility.CopyStream(stream, s);
-
-                    using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
-                    {
-                        int code = (int)resp.StatusCode;
-                        if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                            throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-                    }
+                    int code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
                 }
             }
             catch (System.Net.WebException wex)
@@ -287,22 +284,19 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            using (ActivateCertificateValidator())
+            System.Net.HttpWebRequest req = CreateRequest(remotename, "");
+            req.Method = System.Net.WebRequestMethods.Http.Get;
+            //We only depend on the ReadWriteTimeout
+            req.Timeout = System.Threading.Timeout.Infinite;
+
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
             {
-                System.Net.HttpWebRequest req = CreateRequest(remotename, "");
-                req.Method = System.Net.WebRequestMethods.Http.Get;
-                //We only depend on the ReadWriteTimeout
-                req.Timeout = System.Threading.Timeout.Infinite;
+                int code = (int)resp.StatusCode;
+                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
-                {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-
-                    using (System.IO.Stream s = resp.GetResponseStream())
-                        Utility.Utility.CopyStream(s, stream);
-                }
+                using (System.IO.Stream s = resp.GetResponseStream())
+                    Utility.Utility.CopyStream(s, stream);
             }
         }
 

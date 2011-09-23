@@ -77,9 +77,17 @@
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
+      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
+      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj">
+      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
+      <Name>Duplicati.Library.Backend.SkyDrive</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
       <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>

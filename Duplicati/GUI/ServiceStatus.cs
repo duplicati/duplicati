@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -255,7 +255,7 @@ namespace Duplicati.GUI
                 recentBackups.Items.Clear();
                 foreach (Log l in logs)
                 {
-                    ListViewItem lvi = new ListViewItem(new string[] { l.EndTime.ToString("g", System.Globalization.CultureInfo.CurrentUICulture), l.OwnerTask == null || l.OwnerTask.Schedule == null ? "" : l.OwnerTask.Schedule.Name, l.Transfersize > 0 ? l.TransferSizeString : "" });
+                    ListViewItem lvi = new ListViewItem(new string[] { l.EndTime.ToString("g"), l.OwnerTask == null || l.OwnerTask.Schedule == null ? "" : l.OwnerTask.Schedule.Name, l.Transfersize > 0 ? l.TransferSizeString : "" });
 
                     lvi.Tag = l;
                     lvi.ImageIndex = imageList.Images.ContainsKey(l.ParsedStatus) ? imageList.Images.IndexOfKey(l.ParsedStatus) : imageList.Images.IndexOfKey("Warning");

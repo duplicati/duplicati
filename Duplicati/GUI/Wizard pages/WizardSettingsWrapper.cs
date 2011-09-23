@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -120,7 +120,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.ScheduleName = schedule.Name;
             this.SchedulePath = schedule.Path;
             this.SourcePath = schedule.Task.SourcePath;
-            this.EncodedFilters = schedule.Task.EncodedFilter;
+            this.EncodedFilterXml = schedule.Task.FilterXml;
             this.BackupPassword = schedule.Task.Encryptionkey;
 
             this.Backend = schedule.Task.Service;
@@ -181,7 +181,7 @@ namespace Duplicati.GUI.Wizard_pages
             if (schedule.Task == null)
                 schedule.Task = schedule.DataParent.Add<Datamodel.Task>();
             schedule.Task.SourcePath = this.SourcePath;
-            schedule.Task.EncodedFilter = this.EncodedFilters;
+            schedule.Task.FilterXml = this.EncodedFilterXml;
             schedule.Task.Encryptionkey = this.BackupPassword;
 
             schedule.Task.Service = this.Backend;
@@ -352,31 +352,6 @@ namespace Duplicati.GUI.Wizard_pages
         }
 
         /// <summary>
-        /// Returns a customized settings object describing settings for a file-based backend
-        /// </summary>
-        public FileSettings FileSettings { get { return new FileSettings(this); } }
-
-        /// <summary>
-        /// Returns a customized settings object describing settings for a ssh-based backend
-        /// </summary>
-        public SSHSettings SSHSettings { get { return new SSHSettings(this); } }
-
-        /// <summary>
-        /// Returns a customized settings object describing settings for a ftp-based backend
-        /// </summary>
-        public FTPSettings FTPSettings { get { return new FTPSettings(this); } }
-
-        /// <summary>
-        /// Returns a customized settings object describing settings for a S3-based backend
-        /// </summary>
-        public S3Settings S3Settings { get { return new S3Settings(this); } }
-
-        /// <summary>
-        /// Returns a customized settings object describing settings for a WEBDAV-based backend
-        /// </summary>
-        public WEBDAVSettings WEBDAVSettings { get { return new WEBDAVSettings(this); } }
-
-        /// <summary>
         /// The offset for running backups
         /// </summary>
         public DateTime BackupTimeOffset
@@ -496,10 +471,10 @@ namespace Duplicati.GUI.Wizard_pages
         /// <summary>
         /// The filter applied to files being backed up
         /// </summary>
-        public string EncodedFilters
+        public string EncodedFilterXml
         {
-            get { return GetItem<string>("EncodedFilters", ""); }
-            set { SetItem("EncodedFilters", value); }
+            get { return GetItem<string>("EncodedFilterXml", ""); }
+            set { SetItem("EncodedFilterXml", value); }
         }
 
         /// <summary>
@@ -722,198 +697,6 @@ namespace Duplicati.GUI.Wizard_pages
     
     }
 
-    /// <summary>
-    /// Class that represents the settings for a backend
-    /// </summary>
-    public class BackendSettings
-    {
-        protected WizardSettingsWrapper m_parent;
-
-        public BackendSettings(WizardSettingsWrapper parent)
-        {
-            m_parent = parent;
-        }
-
-        /// <summary>
-        /// The username used to authenticate towards the remote path
-        /// </summary>
-        public string Username
-        {
-            get { return m_parent.GetItem<string>("Backend:Username", ""); }
-            set { m_parent.SetItem("Backend:Username", value); }
-        }
-
-        /// <summary>
-        /// The password used to authenticate towards the remote path
-        /// </summary>
-        public string Password
-        {
-            get { return m_parent.GetItem<string>("Backend:Password", ""); }
-            set { m_parent.SetItem("Backend:Password", value); }
-        }
-
-        /// <summary>
-        /// The path used on the server
-        /// </summary>
-        public string Path
-        {
-            get { return m_parent.GetItem<string>("Backend:Path", ""); }
-            set { m_parent.SetItem("Backend:Path", value); }
-        }
-    }
-
-
-    /// <summary>
-    /// Class that represents the settings for a file backend
-    /// </summary>
-    public class FileSettings : BackendSettings
-    {
-        public FileSettings(WizardSettingsWrapper parent)
-            : base(parent)
-        {
-        }
-
-    }
-
-
-    /// <summary>
-    /// Class that represents the settings for a web based backend
-    /// </summary>
-    public class WebSettings : BackendSettings
-    {
-        protected int m_defaultPort = 0;
-
-        public WebSettings(WizardSettingsWrapper parent)
-            : base(parent)
-        {
-        }
-
-        /// <summary>
-        /// The hostname of the server
-        /// </summary>
-        public string Server
-        {
-            get { return m_parent.GetItem<string>("WEB:Server", ""); }
-            set { m_parent.SetItem("WEB:Server", value); }
-        }
-
-        /// <summary>
-        /// The port used to communicate with the server
-        /// </summary>
-        public int Port
-        {
-            get { return m_parent.GetItem<int>("WEB:Port", m_defaultPort); }
-            set { m_parent.SetItem("WEB:Port", value); }
-        }
-    }
-
-    /// <summary>
-    /// Class that represents the settings for a ftp backend
-    /// </summary>
-    public class FTPSettings : WebSettings
-    {
-        public FTPSettings(WizardSettingsWrapper parent)
-            : base(parent)
-        {
-            m_defaultPort = 21;
-        }
-
-        /// <summary>
-        /// A value indicating if the connection should be passive
-        /// </summary>
-        public bool Passive
-        {
-            get { return m_parent.GetItem<bool>("FTP:Passive", true); }
-            set { m_parent.SetItem("FTP:Passive", value); }
-        }
-    }
-
-    /// <summary>
-    /// Class that represents the settings for a ssh backend
-    /// </summary>
-    public class SSHSettings : WebSettings
-    {
-        public SSHSettings(WizardSettingsWrapper parent)
-            : base(parent)
-        {
-            m_defaultPort = 22;
-        }
-
-        /// <summary>
-        /// A value indicating if the connection is passwordless
-        /// </summary>
-        public bool Passwordless
-        {
-            get { return m_parent.GetItem<bool>("SSH:Passwordless", false); }
-            set { m_parent.SetItem("SSH:Passwordless", value); }
-        }
-
-        /// <summary>
-        /// A value indicating if debug output will be generated
-        /// </summary>
-        public bool DebugEnabled
-        {
-            get { return m_parent.GetItem<bool>("SSH:DebugEnabled", false); }
-            set { m_parent.SetItem("SSH:DebugEnabled", value); }
-        }
-    }
-
-    /// <summary>
-    /// Class that represents the settings for a ssh backend
-    /// </summary>
-    public class S3Settings : BackendSettings
-    {
-        public S3Settings(WizardSettingsWrapper parent)
-            : base(parent)
-        {
-        }
-
-        /// <summary>
-        /// A value indicating if the server should be placed in europe
-        /// </summary>
-        public bool UseEuroServer
-        {
-            get { return m_parent.GetItem<bool>("S3:UseEuroServer", false); }
-            set { m_parent.SetItem("S3:UseEuroServer", value); }
-        }
-
-        /// <summary>
-        /// A value indicating if the connection should use subdomain access
-        /// </summary>
-        public bool UseSubDomains
-        {
-            get { return m_parent.GetItem<bool>("S3:UseSubDomains", false); }
-            set { m_parent.SetItem("S3:UseSubDomains", value); }
-        }
-
-    }
-
-    public class WEBDAVSettings : WebSettings
-    {
-        public WEBDAVSettings(WizardSettingsWrapper parent)
-            : base(parent)
-        {
-            m_defaultPort = 80;
-        }
-
-        /// <summary>
-        /// A value indicating if the connection should use integrated authentication
-        /// </summary>
-        public bool IntegratedAuthentication
-        {
-            get { return m_parent.GetItem<bool>("WEBDAV:IntegratedAuth", false); }
-            set { m_parent.SetItem("WEBDAV:IntegratedAuth", value); }
-        }
-
-        /// <summary>
-        /// A value indicating if the connection should only allow digest authentication
-        /// </summary>
-        public bool ForceDigestAuthentication
-        {
-            get { return m_parent.GetItem<bool>("WEBDAV:DigestAuth", false); }
-            set { m_parent.SetItem("WEBDAV:DigestAuth", value); }
-        }
-    }
 
     /// <summary>
     /// Represents settings that are required to give a consistent view of the file selection UI

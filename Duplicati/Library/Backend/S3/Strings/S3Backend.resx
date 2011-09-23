@@ -129,12 +129,6 @@
   <data name="AMZUserIDDescriptionShort" xml:space="preserve">
     <value>The AWS "Access Key ID"</value>
   </data>
-  <data name="Description" xml:space="preserve">
-    <value>This backend can read and write data to an Amazon S3 based backend. Allowed formats are (subdomain type): "s3://bucketname.s3.amazonaws.com/prefix" or "s3://aws_id:aws_key@bucketname.s3.amazonaws.com/prefix". 
-The url suffix model is also accepted: "s3://s3.amazonaws.com/bucketname/prefix".
-Any hostname not using s3.amazonaws.com is considered a vanity style, and the bucket name is attempted extracted through CNAME lookup.
-Note that if you AWS ID or Key contains either ":", "/" or "@" you cannot supply them in the url, but must pass them through arguments.</value>
-  </data>
   <data name="DisplayName" xml:space="preserve">
     <value>Amazon S3 based</value>
   </data>
@@ -171,13 +165,48 @@ Note that if you AWS ID or Key contains either ":", "/" or "@" you cannot supply
   <data name="UnableToDecodeBucketnameError" xml:space="preserve">
     <value>Unable to determine the bucket name for host: {0}</value>
   </data>
-  <data name="InvalidHostnameForSubdomainError" xml:space="preserve">
-    <value>The supplied bucket name, "{0}", is not a valid hostname label, and cannot be used with subdomain urls. The options --{1} or --{2} also toggle subdomain urls.</value>
-  </data>
   <data name="S3UseRRSDescriptionLong" xml:space="preserve">
     <value>This flag toggles the use of the special RRS header. Files stored using RRS are more likely to disapear than those stored normally, but also costs less to store. See the full description here: http://aws.amazon.com/about-aws/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/</value>
   </data>
   <data name="S3UseRRSDescriptionShort" xml:space="preserve">
     <value>Use Reduced Redundancy Storage</value>
+  </data>
+  <data name="DeprecatedUrlFormat" xml:space="preserve">
+    <value>You are using a deprected url format, please change it to: {0}</value>
+  </data>
+  <data name="Description_v2" xml:space="preserve">
+    <value>This backend can read and write data to an Amazon S3 compatible server. Allowed formats are: "s3://bucketname/prefix"</value>
+  </data>
+  <data name="OptionsAreMutuallyExclusiveError" xml:space="preserve">
+    <value>The options --{0} and --{1} are mutually exclusive</value>
+  </data>
+  <data name="S3EurobucketDeprecationDescription" xml:space="preserve">
+    <value>Please use --{0}={1} instead</value>
+  </data>
+  <data name="S3LocationDescriptionLong" xml:space="preserve">
+    <value>This option is only used when creating new buckets. Use this option to change what region the data is stored in. Amazon charges slightly more for non-US buckets. Known bucket locations:
+{0}</value>
+  </data>
+  <data name="S3LocationDescriptionShort" xml:space="preserve">
+    <value>Specifies S3 location constraints</value>
+  </data>
+  <data name="S3ServerNameDescriptionLong" xml:space="preserve">
+    <value>Companies other than Amazon are now supporting the S3 API, meaning that this backend can read and write data to those providers as well. Use this option to set the hostname. Currently known providers are:
+{0}</value>
+  </data>
+  <data name="S3ServerNameDescriptionShort" xml:space="preserve">
+    <value>Specifies an alternate S3 server name</value>
+  </data>
+  <data name="UnableToParseURLError" xml:space="preserve">
+    <value>Could not parse the url: {0}</value>
+  </data>
+  <data name="S3NewStyleDeprecation" xml:space="preserve">
+    <value>The subdomain calling option does nothing, the library will pick the right calling convention</value>
+  </data>
+  <data name="DescriptionUseSSLLong" xml:space="preserve">
+    <value>Use this flag to communicate using Secure Socket Layer (SSL) over http (https). Note that bucket names containing a period has problems with SSL connections.</value>
+  </data>
+  <data name="DescriptionUseSSLShort" xml:space="preserve">
+    <value>Instructs Duplicati to use an SSL (https) connection</value>
   </data>
 </root>

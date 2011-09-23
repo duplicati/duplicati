@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -114,6 +114,54 @@ namespace Duplicati.Datamodel
             get { return new TaskExtensionWrapper(this); }
         }
 
+        public string FilterXml
+        {
+            get
+            {
+                if (this.Filters.Count <= 0)
+                    return "";
+
+                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                System.Xml.XmlNode root = doc.AppendChild(doc.CreateElement("root"));
+
+                foreach (TaskFilter f in this.SortedFilters)
+                {
+                    System.Xml.XmlNode e = root.AppendChild(doc.CreateElement("filter"));
+                    e.Attributes.Append(doc.CreateAttribute("include")).Value = f.Include.ToString();
+                    e.Attributes.Append(doc.CreateAttribute("filter")).Value = f.Filter ?? "";
+                    e.Attributes.Append(doc.CreateAttribute("globbing")).Value = f.GlobbingFilter ?? "";
+                }
+                    
+                return doc.OuterXml;
+            }
+            set
+            {
+                if (value == this.EncodedFilter)
+                    return;
+
+                //Delete previous ones
+                this.SortedFilters = new TaskFilter[0];
+
+                if (string.IsNullOrEmpty(value))
+                    return;
+                
+                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                doc.LoadXml(value);
+
+                List<TaskFilter> filters = new List<TaskFilter>();
+                foreach(System.Xml.XmlNode n in doc.SelectNodes("root/filter")) 
+                {
+                    TaskFilter tf = this.DataParent.Add<TaskFilter>();
+                    tf.Include = bool.Parse(n.Attributes["include"].Value);
+                    tf.GlobbingFilter = n.Attributes["globbing"].Value;
+                    tf.Filter = n.Attributes["filter"].Value;
+                    filters.Add(tf);
+                }
+
+                this.SortedFilters = filters.ToArray();
+            }
+        }
+
         public string EncodedFilter
         {
             get
@@ -126,25 +174,6 @@ namespace Duplicati.Datamodel
                     filters.Add(new KeyValuePair<bool, string>(f.Include, f.Filter));
 
                 return Library.Utility.FilenameFilter.EncodeAsFilter(filters);
-            }
-            set
-            {
-                if (value == this.EncodedFilter)
-                    return;
-
-                //Delete previous ones
-                this.SortedFilters = new TaskFilter[0];
-
-                List<TaskFilter> filters = new List<TaskFilter>();
-                foreach (KeyValuePair<bool, string> f in Library.Utility.FilenameFilter.DecodeFilter(value))
-                {
-                    TaskFilter tf = this.DataParent.Add<TaskFilter>();
-                    tf.Filter = f.Value;
-                    tf.Include = f.Key;
-                    filters.Add(tf);
-                }
-
-                this.SortedFilters = filters.ToArray();
             }
         }
 
@@ -245,7 +274,7 @@ namespace Duplicati.Datamodel
 
             public bool AsyncTransfer
             {
-                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[ASYNC_TRANSFER], false); }
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[ASYNC_TRANSFER], true); }
                 set { m_owner.TaskExtensionsLookup[ASYNC_TRANSFER] = value.ToString(); }
             }
 

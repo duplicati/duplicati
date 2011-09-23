@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -79,11 +79,14 @@ namespace Duplicati.Library.Main
         protected string m_timeString;
         protected string m_encryption;
         protected bool m_isFull;
+        protected bool m_isEncrypted;
+        protected string m_remoteHash;
+        protected long m_size = -1;
 
         /// <summary>
         /// Gets the filename that represents this entry
         /// </summary>
-        public string Filename { get { return m_filename; } }
+        public string Filename { get { return m_filename; } set { m_filename = value; } }
         /// <summary>
         /// Gets the Fileentry that was parsed into this object
         /// </summary>
@@ -105,6 +108,19 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool IsFull { get { return m_isFull; } }
 
+        /// <summary>
+        /// Gets or sets the hash of the remote file
+        /// </summary>
+        public string RemoteHash { get { return m_remoteHash; } set { m_remoteHash = value; } }
+        /// <summary>
+        /// Gets or sets a value indicating if the associated file has been encrypted
+        /// </summary>
+        public bool IsEncrypted { get { return m_isEncrypted; } set { m_isEncrypted = value; } }
+        /// <summary>
+        /// Gets or sets the size of the remote file
+        /// </summary>
+        public long Filesize { get { return m_size; } set { m_size = value; } }
+
         protected BackupEntryBase(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, bool isFull, string timeString, string encryption)
         {
             m_filename = filename;
@@ -117,6 +133,22 @@ namespace Duplicati.Library.Main
     }
 
     /// <summary>
+    /// A class that represents the verification file
+    /// </summary>
+    public class VerificationEntry : BackupEntryBase
+    {
+        public VerificationEntry(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, string timestring)
+            : base(filename, entry, time, true, timestring, null)
+        {
+        }
+
+        public VerificationEntry(DateTime time)
+            : base(null, null, time, true, null, null)
+        {
+        }
+    }
+
+    /// <summary>
     /// A class that represents a backup set
     /// </summary>
     public class ManifestEntry : BackupEntryBase
@@ -124,7 +156,10 @@ namespace Duplicati.Library.Main
         protected List<KeyValuePair<SignatureEntry, ContentEntry>> m_volumes;
         protected List<ManifestEntry> m_incrementals;
         protected ManifestEntry m_alternate;
+        protected ManifestEntry m_previous;
+        protected Manifestfile m_parsedManifest;
         protected bool m_isPrimary;
+        protected VerificationEntry m_verification;
 
         /// <summary>
         /// Gets a list of volumes that make up this backup
@@ -142,6 +177,18 @@ namespace Duplicati.Library.Main
         /// Gets or sets the alternate manifest file, if available
         /// </summary>
         public ManifestEntry Alternate { get { return m_alternate; } set { m_alternate = value; } }
+        /// <summary>
+        /// Gets or sets the previous manifest in the chain
+        /// </summary>
+        public ManifestEntry Previous { get { return m_previous; } set { m_previous = value; } }
+        /// <summary>
+        /// Gets the parsed manifest file for this entry
+        /// </summary>
+        public Manifestfile ParsedManifest { get { return m_parsedManifest; } set { m_parsedManifest = value; } }
+        /// <summary>
+        /// Gets or sets the verifcation file associated with the entry
+        /// </summary>
+        public VerificationEntry Verification { get { return m_verification; } set { m_verification = value; } }
 
         public ManifestEntry(string filename, Duplicati.Library.Interface.IFileEntry entry, DateTime time, bool isFull, string timeString, string encryption, bool primary)
             : base(filename, entry, time, isFull, timeString, encryption)

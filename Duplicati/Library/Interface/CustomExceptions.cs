@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -26,6 +26,7 @@ namespace Duplicati.Library.Interface
     /// <summary>
     /// An exception indicating that the requested folder is missing
     /// </summary>
+    [Serializable]
     public class FolderMissingException : Exception
     {
         public FolderMissingException()
@@ -48,6 +49,7 @@ namespace Duplicati.Library.Interface
     /// <summary>
     /// An exception indicating that the requested folder already existed
     /// </summary>
+    [Serializable]
     public class FolderAreadyExistedException : Exception
     {
         public FolderAreadyExistedException()
@@ -70,6 +72,7 @@ namespace Duplicati.Library.Interface
     /// <summary>
     /// An exception indicating that the user has cancelled the action
     /// </summary>
+    [Serializable]
     public class CancelException : Exception
     {
         public CancelException()

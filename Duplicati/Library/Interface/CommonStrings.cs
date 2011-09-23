@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -172,5 +172,19 @@ namespace Duplicati.Library.Interface
                 return Strings.Common.FolderAlreadyExistsError;
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The connection succeeded but another backup was found in the destination folder. It is possible to configure Duplicati to store multiple backups in the same folder, but it is not recommended.
+        ///
+        ///Do you want to use the selected folder?.
+        /// </summary>
+        public static string ExistingBackupDetectedQuestion
+        {
+            get
+            {
+                return Strings.Common.ExistingBackupDetectedQuestion;
+            }
+        }
+
     }
 }
