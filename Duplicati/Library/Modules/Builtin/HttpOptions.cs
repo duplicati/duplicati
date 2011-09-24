@@ -73,21 +73,15 @@ namespace Duplicati.Library.Modules.Builtin
         {
             m_dispose = true;
 
-            string opt;
-            commandlineOptions.TryGetValue(OPTION_ACCEPT_ANY_CERTIFICATE, out opt);
+            bool accepAllCertificates = commandlineOptions.ContainsKey(OPTION_ACCEPT_ANY_CERTIFICATE) && Utility.Utility.ParseBool(commandlineOptions[OPTION_ACCEPT_ANY_CERTIFICATE], true);
 
-            bool accepAllCertificates = Utility.Utility.ParseBool(opt, false);
             string certHash;
             commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
 
-            if (accepAllCertificates || !string.IsNullOrEmpty(certHash))
-                m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash);
-            
-            commandlineOptions.TryGetValue(OPTION_DISABLE_NAGLING, out opt);
-            bool disableNagle = Utility.Utility.ParseBool(opt, false);
+            m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash);
 
-            commandlineOptions.TryGetValue(OPTION_DISABLE_EXPECT100, out opt);
-            bool disableExpect100 = Utility.Utility.ParseBool(opt, false);
+            bool disableNagle = commandlineOptions.ContainsKey(OPTION_DISABLE_NAGLING) && Utility.Utility.ParseBool(commandlineOptions[OPTION_DISABLE_NAGLING], true);
+            bool disableExpect100 = commandlineOptions.ContainsKey(OPTION_DISABLE_EXPECT100) && Utility.Utility.ParseBool(commandlineOptions[OPTION_DISABLE_EXPECT100], true);
 
             m_useNagle = System.Net.ServicePointManager.UseNagleAlgorithm;
             m_useExpect = System.Net.ServicePointManager.Expect100Continue;
