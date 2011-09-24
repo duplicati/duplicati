@@ -89,10 +89,8 @@ namespace Duplicati.Library.Utility
             try
             {
                 certHash = Utility.ByteArrayAsHexString(cert.GetCertHash());
-                if (certHash != null && certHash.Equals(m_validHash, StringComparison.InvariantCultureIgnoreCase))
+                if (certHash != null && !string.IsNullOrEmpty(m_validHash) && certHash.Equals(m_validHash, StringComparison.InvariantCultureIgnoreCase))
                     return true;
-
-                Console.WriteLine(string.Format(Strings.SslCertificateValidator.VerifyCertificateException, sslPolicyErrors, certHash));
             }
             catch (Exception ex)
             {

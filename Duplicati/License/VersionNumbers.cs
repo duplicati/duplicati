@@ -58,6 +58,8 @@ namespace Duplicati.License
                     return "1.2 Final";
                 else if (v == new Version(1, 2, 1, 856))
                     return "1.2.1 Final";
+                else if (v == new Version(1, 2, 2, 909))
+                    return "1.2.2 Final";
                 else
                     return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             }
