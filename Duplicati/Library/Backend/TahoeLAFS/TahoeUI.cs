@@ -178,7 +178,8 @@ namespace Duplicati.Library.Backend
             
             m_options[USE_SSL] = UseSSL.Checked.ToString();
             m_options[ACCEPT_ANY_CERTIFICATE] = AcceptAnyHash.Checked.ToString();
-            m_options[ACCEPT_SPECIFIC_CERTIFICATE] = AcceptSpecifiedHash.Checked ? SpecifiedHash.Text : "";
+            if (AcceptSpecifiedHash.Checked)
+                m_options[ACCEPT_SPECIFIC_CERTIFICATE] = SpecifiedHash.Text;
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
