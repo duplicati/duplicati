@@ -203,13 +203,13 @@ namespace Duplicati.Library.Backend
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
                             httpconf.Configure(options);
-                            TahoeBackend tahoe = new TahoeBackend(destination, options);
-                            foreach (Interface.IFileEntry n in tahoe.List())
-                                if (n.Name.StartsWith("duplicati-"))
-                                {
-                                    existingBackup = true;
-                                    break;
-                                }
+                            using (TahoeBackend tahoe = new TahoeBackend(destination, options))
+                                foreach (Interface.IFileEntry n in tahoe.List())
+                                    if (n.Name.StartsWith("duplicati-"))
+                                    {
+                                        existingBackup = true;
+                                        break;
+                                    }
                         }
                      
                         if (existingBackup)

@@ -346,13 +346,13 @@ namespace Duplicati.Library.Backend
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
                             httpconf.Configure(options);
-                            WEBDAV webDAV = new WEBDAV(destination, options);
-                            foreach (Interface.IFileEntry n in webDAV.List())
-                                if (n.Name.StartsWith("duplicati-"))
-                                {
-                                    existingBackup = true;
-                                    break;
-                                }
+                            using(WEBDAV webDAV = new WEBDAV(destination, options))
+                                foreach (Interface.IFileEntry n in webDAV.List())
+                                    if (n.Name.StartsWith("duplicati-"))
+                                    {
+                                        existingBackup = true;
+                                        break;
+                                    }
                         }
 
                         if (existingBackup)

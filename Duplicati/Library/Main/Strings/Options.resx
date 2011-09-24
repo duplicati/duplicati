@@ -489,4 +489,10 @@
   <data name="SynchronousuploadShort" xml:space="preserve">
     <value>Upload files synchronously</value>
   </data>
+  <data name="NoconnectionreuseLong" xml:space="preserve">
+    <value>Duplicati will attempt to perform multiple operations on a single connection, as this avoids repeated login attempts, and thus speeds up the process. This option can be used to ensure that each operation is performed on a seperate connection</value>
+  </data>
+  <data name="NoconnectionreuseShort" xml:space="preserve">
+    <value>Do not re-use connections</value>
+  </data>
 </root>

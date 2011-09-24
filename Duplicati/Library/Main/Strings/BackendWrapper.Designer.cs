@@ -124,6 +124,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occured while closing a connection: {0}.
+        /// </summary>
+        internal static string FailureWhileDisposingBackendError {
+            get {
+                return ResourceManager.GetString("FailureWhileDisposingBackendError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to delete file: {0}.
         /// </summary>
         internal static string FileDeleteError {

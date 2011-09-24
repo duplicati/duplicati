@@ -199,6 +199,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("create-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CreateverificationfileShort, Strings.Options.CreateverificationfileLong, "false"),
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
                     new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepShort, "false"),
+                    new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
                     
                 });
             }
@@ -955,6 +956,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if server uploads are verified by listing the folder contents
         /// </summary>
         public bool ListVerifyUploads { get { return GetBool("list-verify-uploads"); } }
+
+        /// <summary>
+        /// A value indicating if connections cannot be re-used
+        /// </summary>
+        public bool NoConnectionReuse { get { return GetBool("no-connection-reuse"); } }
 
         /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 

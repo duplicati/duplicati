@@ -191,14 +191,16 @@ namespace Duplicati.Library.Backend
 
                     options["debug-to-console"] = "";
 
-                    SSH ssh = new SSH(destination, options);
                     bool existingBackup = false;
-                    foreach (Interface.IFileEntry n in ssh.List())
-                        if (n.Name.StartsWith("duplicati-"))
-                        {
-                            existingBackup = true;
-                            break;
-                        }
+                    using (SSH ssh = new SSH(destination, options))
+                    {
+                        foreach (Interface.IFileEntry n in ssh.List())
+                            if (n.Name.StartsWith("duplicati-"))
+                            {
+                                existingBackup = true;
+                                break;
+                            }
+                    }
 
                     if (existingBackup)
                     {

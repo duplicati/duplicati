@@ -265,14 +265,13 @@ namespace Duplicati.Library.Backend
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
                             httpconf.Configure(options);
-                            FTP f = new FTP(hostname, options);
-                            
-                            foreach (Interface.IFileEntry n in f.List())
-                                if (n.Name.StartsWith("duplicati-"))
-                                {
-                                    existingBackup = true;
-                                    break;
-                                }
+                            using(FTP f = new FTP(hostname, options))
+                                foreach (Interface.IFileEntry n in f.List())
+                                    if (n.Name.StartsWith("duplicati-"))
+                                    {
+                                        existingBackup = true;
+                                        break;
+                                    }
                         }
 
                         if (existingBackup) 

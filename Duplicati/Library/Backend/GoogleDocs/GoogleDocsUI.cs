@@ -150,15 +150,15 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        GoogleDocs GoogleDocs = new GoogleDocs(destination, options);
-                        
                         bool existingBackup = false;
-                        foreach (Interface.IFileEntry n in GoogleDocs.List())
-                            if (n.Name.StartsWith("duplicati-"))
-                            {
-                                existingBackup = true;
-                                break;
-                            }
+
+                        using(GoogleDocs GoogleDocs = new GoogleDocs(destination, options))
+                            foreach (Interface.IFileEntry n in GoogleDocs.List())
+                                if (n.Name.StartsWith("duplicati-"))
+                                {
+                                    existingBackup = true;
+                                    break;
+                                }
 
                         if (existingBackup)
                         {

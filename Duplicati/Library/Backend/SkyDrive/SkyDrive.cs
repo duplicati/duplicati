@@ -21,6 +21,8 @@ namespace Duplicati.Library.Backend
         private string m_rootfolder;
         private string m_prefix;
 
+        private SkyDriveSession m_session;
+
         public SkyDrive() { }
 
         public SkyDrive(string url, Dictionary<string, string> options)
@@ -52,8 +54,13 @@ namespace Duplicati.Library.Backend
 
         private SkyDriveSession CreateSession(bool createFolders)
         {
-            //TODO: Once persistent connections are supported, this instance should be cached
-            return new SkyDriveSession(m_username, m_password, m_rootfolder, m_prefix, createFolders);
+            if (createFolders)
+                return new SkyDriveSession(m_username, m_password, m_rootfolder, m_prefix, createFolders);
+
+            if (m_session == null)
+                m_session = new SkyDriveSession(m_username, m_password, m_rootfolder, m_prefix, createFolders);
+
+            return m_session;
         }
 
         #region IBackend_v2 Members

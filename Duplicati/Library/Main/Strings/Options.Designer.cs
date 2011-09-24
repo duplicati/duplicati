@@ -736,6 +736,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicati will attempt to perform multiple operations on a single connection, as this avoids repeated login attempts, and thus speeds up the process. This option can be used to ensure that each operation is performed on a seperate connection.
+        /// </summary>
+        internal static string NoconnectionreuseLong {
+            get {
+                return ResourceManager.GetString("NoconnectionreuseLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not re-use connections.
+        /// </summary>
+        internal static string NoconnectionreuseShort {
+            get {
+                return ResourceManager.GetString("NoconnectionreuseShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If you store the backups on a local disk, and prefer that they are kept unencrypted, you can turn of encryption completely by using this switch..
         /// </summary>
         internal static string NoencryptionLong {

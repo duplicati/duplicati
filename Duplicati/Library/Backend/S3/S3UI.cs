@@ -406,13 +406,13 @@ namespace Duplicati.Library.Backend
                     string destination = GetConfiguration(m_options, options);
 
                     bool existingBackup = false;
-                    S3 s3 = new S3(destination, options);
-                    foreach (Interface.IFileEntry n in s3.List())
-                        if (n.Name.StartsWith("duplicati-"))
-                        {
-                            existingBackup = true;
-                            break;
-                        }
+                    using(S3 s3 = new S3(destination, options))
+                        foreach (Interface.IFileEntry n in s3.List())
+                            if (n.Name.StartsWith("duplicati-"))
+                            {
+                                existingBackup = true;
+                                break;
+                            }
 
                     if (existingBackup)
                     {

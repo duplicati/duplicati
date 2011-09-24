@@ -151,15 +151,14 @@ namespace Duplicati.Library.Backend
                         Dictionary<string, string> options = new Dictionary<string, string>();
                         string destination = GetConfiguration(m_options, options);
 
-                        SkyDrive skyDrive = new SkyDrive(destination, options);
-                        
                         bool existingBackup = false;
-                        foreach (Interface.IFileEntry n in skyDrive.List())
-                            if (n.Name.StartsWith("duplicati-"))
-                            {
-                                existingBackup = true;
-                                break;
-                            }
+                        using (SkyDrive skyDrive = new SkyDrive(destination, options))
+                            foreach (Interface.IFileEntry n in skyDrive.List())
+                                if (n.Name.StartsWith("duplicati-"))
+                                {
+                                    existingBackup = true;
+                                    break;
+                                }
 
                         if (existingBackup)
                         {

@@ -39,6 +39,17 @@ namespace Duplicati.Library.Backend
 
         public FTP(string url, Dictionary<string, string> options)
         {
+            //This can be made better by keeping a single ftp stream open,
+            //unfortunately the .Net model does not allow this as the request is 
+            //bound to a single url (path+file).
+            //
+            //To fix this, a thirdparty FTP library is required,
+            //this would also allow a fix for the FTP servers
+            //that only support SSL during authentication, not during transfers
+            //
+            //If you have experience with a stable open source .Net FTP library,
+            //please let the Duplicati authors know
+
             Uri u = new Uri(url);
 
             if (!string.IsNullOrEmpty(u.UserInfo))

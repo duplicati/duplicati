@@ -188,14 +188,14 @@ namespace Duplicati.Library.Backend
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     string destination = GetConfiguration(m_options, options);
 
-                    CloudFiles cf = new CloudFiles(destination, options);
                     bool existingBackup = false;
-                    foreach (Interface.IFileEntry n in cf.List())
-                        if (n.Name.StartsWith("duplicati-"))
-                        {
-                            existingBackup = true;
-                            break;
-                        }
+                    using (CloudFiles cf = new CloudFiles(destination, options))
+                        foreach (Interface.IFileEntry n in cf.List())
+                            if (n.Name.StartsWith("duplicati-"))
+                            {
+                                existingBackup = true;
+                                break;
+                            }
 
                     if (existingBackup)
                     {

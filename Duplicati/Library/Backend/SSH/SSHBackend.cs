@@ -50,6 +50,11 @@ namespace Duplicati.Library.Backend
         private bool m_noCdCommand = false;
 
         private int m_port = 22;
+
+        /// <summary>
+        /// The managed connection
+        /// </summary>
+        private SFTPCon m_con;
         
         /// <summary>
         /// A value indicating if the *CLIENT* is a linux client.
@@ -548,6 +553,10 @@ namespace Duplicati.Library.Backend
 
         private SFTPCon CreateManagedConnection(bool changeDir)
         {
+            //If the request is for a connection initialized to the right dir, we can use the cached version
+            if (changeDir && m_con != null)
+                return m_con;
+
             SFTPCon con;
             
             string keyfile;
@@ -574,6 +583,10 @@ namespace Duplicati.Library.Backend
             {
                 throw new Interface.FolderMissingException(string.Format(Strings.SSHBackend.FolderNotFoundManagedError, m_path, ex.Message), ex);
             }
+
+            //If the connection is initialized to the right folder, we cache it
+            if (changeDir)
+                m_con = con;
 
             return con;
         }

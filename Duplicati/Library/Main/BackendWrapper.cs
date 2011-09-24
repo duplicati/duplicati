@@ -33,6 +33,20 @@ namespace Duplicati.Library.Main
         /// </summary>
         private Duplicati.Library.Interface.IBackend m_backend;
         /// <summary>
+        /// The backend url for creating a new backend instance
+        /// </summary>
+        private string m_backendUrl;
+        /// <summary>
+        /// A flag indicating if the backend instance will be re-used
+        /// </summary>
+        private bool m_reuse_backend;
+        /// <summary>
+        /// A flag indicating if the backend is being used for the first time,
+        /// used to prevent disposing the initally created backend
+        /// </summary>
+        private bool m_first_backend_use;
+
+        /// <summary>
         /// The statistics gathering object
         /// </summary>
         private CommunicationStatistics m_statistics;
@@ -179,10 +193,14 @@ namespace Duplicati.Library.Main
             m_options = options;
 
             m_filenamestrategy = new FilenameStrategy(m_options);
+            m_backendUrl = backend;
 
             m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(backend, m_options.RawOptions);
             if (m_backend == null)
                 throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, backend));
+
+            m_reuse_backend = !m_options.NoConnectionReuse;
+            m_first_backend_use = true;
 
             if (m_options.AutoCleanup)
                 m_orphans = new List<BackupEntryBase>();
@@ -204,6 +222,31 @@ namespace Duplicati.Library.Main
                 m_queuelock = new object();
                 m_workerThread.Start();
             }
+        }
+
+        private void DisposeBackend()
+        {
+            if (m_backend != null)
+            {
+                try { m_backend.Dispose(); }
+                catch (Exception ex) { m_statistics.LogWarning(string.Format(Strings.BackendWrapper.FailureWhileDisposingBackendError, ex.Message), ex); }
+                finally { m_backend = null; }
+            }
+        }
+
+        private void ResetBackend()
+        {
+            if (!m_reuse_backend)
+            {
+                //Avoid disposing the very first backend instance
+                if (m_first_backend_use)
+                    m_first_backend_use = false;
+                else
+                    DisposeBackend();
+            }
+
+            if (m_backend == null)
+                m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(m_backendUrl, m_options.RawOptions);
         }
 
         public void AddOrphan(BackupEntryBase entry)
@@ -717,6 +760,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
+                    ResetBackend();
                     m_statistics.AddNumberOfRemoteCalls(1);
                     return m_backend.List();
                 }
@@ -728,6 +772,7 @@ namespace Duplicati.Library.Main
                 {
                     lastEx = ex;
                     m_statistics.LogError(ex.Message, ex);
+                    DisposeBackend();
 
                     if (ex is Library.Interface.FolderMissingException && m_backend is Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
                         return new List<Library.Interface.IFileEntry>();
@@ -750,6 +795,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
+                    ResetBackend();
                     m_statistics.AddNumberOfRemoteCalls(1);
                     m_backend.Delete(remote.Filename);
                     lastEx = null;
@@ -762,6 +808,7 @@ namespace Duplicati.Library.Main
                 {
                     lastEx = ex;
                     m_statistics.LogError(ex.Message, ex);
+                    DisposeBackend();
 
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -886,6 +933,7 @@ namespace Duplicati.Library.Main
                         else
                             tempfile = new Duplicati.Library.Utility.TempFile(filename);
 
+                        ResetBackend();
                         m_statistics.AddNumberOfRemoteCalls(1);
                         if (m_backend is Duplicati.Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
@@ -983,6 +1031,7 @@ namespace Duplicati.Library.Main
                 {
                     lastEx = ex;
                     m_statistics.LogError(ex.Message, ex);
+                    DisposeBackend();
 
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -1016,6 +1065,7 @@ namespace Duplicati.Library.Main
                 {
                     try
                     {
+                        ResetBackend();
                         m_statistics.AddNumberOfRemoteCalls(1);
                         if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
@@ -1090,11 +1140,21 @@ namespace Duplicati.Library.Main
                     }
                     catch (Exception ex)
                     {
+                        DisposeBackend();
+
                         //Even if we can create the folder, we still count it as an error to prevent trouble with backends
                         // that report OK for CreateFolder, but still report the folder as missing
                         if (ex is Library.Interface.FolderMissingException && m_backend is Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
-                            try { (m_backend as Library.Interface.IBackend_v2).CreateFolder(); }
-                            catch { }
+                        {
+                            ResetBackend();
+                            try 
+                            {
+                                m_statistics.AddNumberOfRemoteCalls(1);
+                                (m_backend as Library.Interface.IBackend_v2).CreateFolder(); 
+                            }
+                            catch { DisposeBackend(); }
+                        }
+                            
                         
                         lastEx = ex;
                         m_statistics.LogError(ex.Message, ex);
@@ -1133,10 +1193,16 @@ namespace Duplicati.Library.Main
 
         }
 
+        private void CreateFolderInternal()
+        {
+            ResetBackend();
+            (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+        }
+
         public void CreateFolder()
         {
             if (m_backend is Library.Interface.IBackend_v2)
-                (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+                ProtectedInvoke("CreateFolderInternal");
             else
                 throw new Exception(string.Format(Strings.BackendWrapper.BackendDoesNotSupportCreateFolder, m_backend.DisplayName, m_backend.ProtocolKey));
         }
@@ -1348,11 +1414,7 @@ namespace Duplicati.Library.Main
 
         private void DisposeInternal()
         {
-            if (m_backend != null)
-            {
-                m_backend.Dispose();
-                m_backend = null;
-            }
+            DisposeBackend();
         }
 
         #region IDisposable Members

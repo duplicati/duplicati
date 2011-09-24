@@ -28,13 +28,14 @@ namespace Duplicati.Library.Backend
         //Seems the Google limit is 10MB
         private const long TRANSFER_CHUNK_SIZE = 1024 * 1024 * 5; //5MB Chuncks
 
-        private string m_username;
-        private string m_password;
         private string m_folder;
         private string[] m_labels;
 
         private Dictionary<string, Google.Documents.Document> m_folders = null;
         private Dictionary<string, TaggedFileEntry> m_files = null;
+        private Google.GData.Client.RequestSettings m_settings = null;
+        private Google.GData.Client.ClientLoginAuthenticator m_cla;
+
 
         public GoogleDocs() { }
 
@@ -48,14 +49,17 @@ namespace Duplicati.Library.Backend
             if (m_folder.EndsWith("/"))
                 m_folder = m_folder.Substring(0, m_folder.Length - 1);
 
+            string username = null;
+            string password = null;
+
             if (options.ContainsKey("ftp-username"))
-                m_username = options["ftp-username"];
+                username = options["ftp-username"];
             if (options.ContainsKey("ftp-password"))
-                m_password = options["ftp-password"];
+                password = options["ftp-password"];
             if (options.ContainsKey(USERNAME_OPTION))
-                m_username = options[USERNAME_OPTION];
+                username = options[USERNAME_OPTION];
             if (options.ContainsKey(PASSWORD_OPTION))
-                m_password = options[PASSWORD_OPTION];
+                password = options[PASSWORD_OPTION];
 
             string labels;
             if (!options.TryGetValue(ATTRIBUTES_OPTION, out labels))
@@ -63,26 +67,20 @@ namespace Duplicati.Library.Backend
 
             m_labels = (labels ?? "").Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries);
 
-            if (string.IsNullOrEmpty(m_username))
+            if (string.IsNullOrEmpty(username))
                 throw new Exception(Strings.GoogleDocs.MissingUsernameError);
-            if (string.IsNullOrEmpty(m_password))
+            if (string.IsNullOrEmpty(password))
                 throw new Exception(Strings.GoogleDocs.MissingPasswordError);
-        }
 
-        private Google.GData.Documents.DocumentsService CreateService()
-        {
-            Google.GData.Documents.DocumentsService s = new Google.GData.Documents.DocumentsService(USER_AGENT);
-            s.Credentials = new Google.GData.Client.GDataCredentials(m_username, m_password);
-            return s;
+            m_cla = new Google.GData.Client.ClientLoginAuthenticator(USER_AGENT, Google.GData.Client.ServiceNames.Documents, username, password);
+
+            m_settings = new Google.GData.Client.RequestSettings(USER_AGENT, username, password);
+            m_settings.AutoPaging = true;
         }
 
         private Google.Documents.DocumentsRequest CreateRequest()
         {
-            Google.GData.Client.RequestSettings settings = new Google.GData.Client.RequestSettings(USER_AGENT, m_username, m_password);
-            settings.AutoPaging = true;
-            Google.Documents.DocumentsRequest req = new Google.Documents.DocumentsRequest(settings);
-
-            return req;
+            return new Google.Documents.DocumentsRequest(m_settings);
         }
 
         private Google.Documents.Document GetFolder()
@@ -213,8 +211,6 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, string filename)
         {
-            //Google.GData.Documents.DocumentEntry de = CreateService().UploadFile(filename, remotename, "", false);
-
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
                 Put(remotename, fs);
         }
@@ -267,6 +263,8 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
+            m_settings = null;
+            m_cla = null;
         }
 
         #endregion
@@ -276,7 +274,6 @@ namespace Duplicati.Library.Backend
         public void Put(string remotename, System.IO.Stream stream)
         {
             Google.Documents.Document folder = GetFolder();
-            Google.GData.Client.ClientLoginAuthenticator cla = new Google.GData.Client.ClientLoginAuthenticator(USER_AGENT, Google.GData.Client.ServiceNames.Documents, m_username, m_password);
 
             //First we need to get a resumeable upload url
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://docs.google.com/feeds/upload/create-session/default/private/full/" + System.Web.HttpUtility.UrlEncode(folder.ResourceId) + "/contents?convert=false");
@@ -298,7 +295,7 @@ namespace Duplicati.Library.Backend
             req.ContentType = "application/atom+xml";
 
             //Authenticate our request
-            cla.ApplyAuthenticationToRequest(req);
+            m_cla.ApplyAuthenticationToRequest(req);
 
             using (System.IO.Stream s = req.GetRequestStream())
                 s.Write(data, 0, data.Length);

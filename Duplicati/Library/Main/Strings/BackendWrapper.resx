@@ -201,4 +201,7 @@
   <data name="UploadVerificationFailure" xml:space="preserve">
     <value>The file {0} was uploaded but not found on the server</value>
   </data>
+  <data name="FailureWhileDisposingBackendError" xml:space="preserve">
+    <value>An error occured while closing a connection: {0}</value>
+  </data>
 </root>
