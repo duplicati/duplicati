@@ -195,19 +195,16 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using (S3Wrapper con = CreateRequest())
+                List<IFileEntry> lst = Connection.ListBucket(m_bucket, m_prefix);
+                for (int i = 0; i < lst.Count; i++)
                 {
-                    List<IFileEntry> lst = con.ListBucket(m_bucket, m_prefix);
-                    for (int i = 0; i < lst.Count; i++)
-                    {
-                        ((FileEntry)lst[i]).Name = lst[i].Name.Substring(m_prefix.Length);
+                    ((FileEntry)lst[i]).Name = lst[i].Name.Substring(m_prefix.Length);
 
-                        //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                        if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
-                            ((FileEntry)lst[i]).Name = lst[i].Name.Substring(1);
-                    }
-                    return lst;
+                    //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
+                    if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
+                        ((FileEntry)lst[i]).Name = lst[i].Name.Substring(1);
                 }
+                return lst;
             }
             catch (Exception ex)
             {
@@ -230,8 +227,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using (S3Wrapper con = CreateRequest())
-                    con.AddFileStream(m_bucket, GetFullKey(remotename), input);
+                Connection.AddFileStream(m_bucket, GetFullKey(remotename), input);
             }
 			catch (Exception ex)
 			{
@@ -252,35 +248,31 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            using (S3Wrapper con = CreateRequest())
+            try
             {
+                Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
+            }
+            catch
+            {
+                //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
                 try
                 {
-                    con.GetFileStream(m_bucket, GetFullKey(remotename), output);
+                    if (!remotename.StartsWith("/"))
+                        Connection.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
+                    return;
                 }
                 catch
                 {
-                    //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
-                    try
-                    {
-                        if (!remotename.StartsWith("/"))
-                            con.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
-                        return;
-                    }
-                    catch
-                    {
-                    }
-
-                    //Throw original error
-                    throw;
                 }
+
+                //Throw original error
+                throw;
             }
         }
 
         public void Delete(string remotename)
         {
-            using(S3Wrapper con = CreateRequest())
-                con.DeleteObject(m_bucket, GetFullKey(remotename));
+            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -331,8 +323,7 @@ namespace Duplicati.Library.Backend
         public void CreateFolder()
         {
             //S3 does not complain if the bucket already exists
-            using (S3Wrapper con = CreateRequest())
-                con.AddBucket(m_bucket);
+            Connection.AddBucket(m_bucket);
         }
 
         #endregion
@@ -352,9 +343,9 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private S3Wrapper CreateRequest()
+        private S3Wrapper Connection
         {
-            return m_wrapper;
+            get { return m_wrapper; }
         }
 
         private string GetFullKey(string name)

@@ -601,20 +601,17 @@ namespace Duplicati.Library.Backend
 
         private List<IFileEntry> ListManaged()
         {
-            using (SFTPCon con = CreateManagedConnection(true))
-            {
-                List<IFileEntry> files = new List<IFileEntry>();
+            List<IFileEntry> files = new List<IFileEntry>();
 
-                DateTime epochOffset = new DateTime(1970, 1, 1);
+            DateTime epochOffset = new DateTime(1970, 1, 1);
 
-                string path = m_noCdCommand ? m_path : ".";
+            string path = m_noCdCommand ? m_path : ".";
 
-                foreach (Tamir.SharpSsh.jsch.ChannelSftp.LsEntry ls in con.ListFiles(path))
-                    if (ls.getFilename().ToString() != "." && ls.getFilename().ToString() != "..")
-                        files.Add(new FileEntry(ls.getFilename().ToString(), ls.getAttrs().getSize(), epochOffset.Add(new TimeSpan(ls.getAttrs().getATime() * TimeSpan.TicksPerSecond)), epochOffset.Add(new TimeSpan(ls.getAttrs().getMTime() * TimeSpan.TicksPerSecond))));
+            foreach (Tamir.SharpSsh.jsch.ChannelSftp.LsEntry ls in CreateManagedConnection(true).ListFiles(path))
+                if (ls.getFilename().ToString() != "." && ls.getFilename().ToString() != "..")
+                    files.Add(new FileEntry(ls.getFilename().ToString(), ls.getAttrs().getSize(), epochOffset.Add(new TimeSpan(ls.getAttrs().getATime() * TimeSpan.TicksPerSecond)), epochOffset.Add(new TimeSpan(ls.getAttrs().getMTime() * TimeSpan.TicksPerSecond))));
 
-                return files;
-            }
+            return files;
         }
 
         private void PutManaged(string remotename, string filename)
@@ -631,8 +628,7 @@ namespace Duplicati.Library.Backend
 
         private void DeleteManaged(string remotename)
         {
-            using (SFTPCon con = CreateManagedConnection(true))
-                con.Delete(remotename);
+            CreateManagedConnection(true).Delete(remotename);
         }
 
         private void CreateFolderManaged()
@@ -684,8 +680,7 @@ namespace Duplicati.Library.Backend
             if (!m_useManaged)
                 throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
 
-            using (SFTPCon con = CreateManagedConnection(true))
-                con.Put(getFullPath(remotename), stream);
+            CreateManagedConnection(true).Put(getFullPath(remotename), stream);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -693,8 +688,7 @@ namespace Duplicati.Library.Backend
             if (!m_useManaged)
                 throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
 
-            using (SFTPCon con = CreateManagedConnection(true))
-                con.Get(getFullPath(remotename), stream);
+            CreateManagedConnection(true).Get(getFullPath(remotename), stream);
         }
 
         #endregion

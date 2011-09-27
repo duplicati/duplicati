@@ -92,8 +92,8 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            using (SkyDriveSession session = CreateSession(false))
-                return session.ListFolderItems(session.FolderCID);
+            SkyDriveSession session = CreateSession(false);
+            return session.ListFolderItems(session.FolderCID);
         }
 
         public void Put(string remotename, string filename)
@@ -110,8 +110,7 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            using(SkyDriveSession session = CreateSession(false))
-            using (System.Net.HttpWebResponse resp = session.DeleteFile(remotename))
+            using (System.Net.HttpWebResponse resp = CreateSession(false).DeleteFile(remotename))
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -150,8 +149,7 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            using (SkyDriveSession session = CreateSession(false))
-            using (System.Net.HttpWebResponse resp = session.UploadFile(remotename, stream))
+            using (System.Net.HttpWebResponse resp = CreateSession(false).UploadFile(remotename, stream))
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -161,8 +159,7 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            using (SkyDriveSession session = CreateSession(false))
-            using (System.Net.HttpWebResponse resp = session.DownloadFile(remotename))
+            using (System.Net.HttpWebResponse resp = CreateSession(false).DownloadFile(remotename))
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
