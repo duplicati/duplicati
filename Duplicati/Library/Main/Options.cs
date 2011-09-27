@@ -976,11 +976,7 @@ namespace Duplicati.Library.Main
         /// <returns>The interpreted value of the option</returns>
         private bool GetBool(string name)
         {
-            string value;           
-            if (m_options.TryGetValue(name, out value))            
-                return Utility.Utility.ParseBool(value, true);
-            else
-                return false;
+            return Utility.Utility.ParseBoolOption(m_options, name);
         }
 
     }

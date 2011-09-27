@@ -190,7 +190,7 @@ namespace Duplicati.GUI
                 //debug mode uses a lock file located in the app folder
                 Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 #else
-                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
+                bool portableMode = Library.Utility.Utility.ParseBoolOption(commandlineOptions, "portable-mode");
 
                 if (portableMode)
                 {
@@ -244,9 +244,10 @@ namespace Duplicati.GUI
 
 #if DEBUG
                     //Default is to not use encryption for debugging
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
+                    Program.UseDatabaseEncryption = !Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database");
 #else
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
+                    //Default is to use encryption for release
+                    Program.UseDatabaseEncryption = !(commandlineOptions.ContainsKey("unencrypted-database") ? Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database") : true);
 #endif
                     con.ConnectionString = "Data Source=" + DatabasePath;
 

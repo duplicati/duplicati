@@ -503,18 +503,18 @@ namespace Duplicati.GUI
                         return false;
                     }
 
-                    if (options.ContainsKey("full"))
+                    if (Library.Utility.Utility.ParseBoolOption(options, "full"))
                         Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
                     else
                         Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
                 }
             }
 
-            if (options.ContainsKey("show-status"))
+            if (Library.Utility.Utility.ParseBoolOption(options, "show-status"))
                 ShowStatus();
 
             //Resume if requested
-            if (options.ContainsKey("resume"))
+            if (Library.Utility.Utility.ParseBoolOption(options, "resume"))
                 Program.LiveControl.Resume();
 
             return false;

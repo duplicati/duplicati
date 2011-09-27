@@ -126,13 +126,7 @@ namespace Duplicati.Library.Backend
                     throw new Exception(string.Format(Strings.FileBackend.NoDestinationWithMarkerFileError, markerfile, string.Join(System.IO.Path.PathSeparator.ToString(), paths.ToArray())));
             }
 
-            
-            string tmp;
-            m_moveFile = false;
-
-            if (options.TryGetValue(OPTION_MOVE_FILE, out tmp))
-                m_moveFile = Utility.Utility.ParseBool(tmp, true);
-
+            m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
             m_hasAutenticated = false;
         }
 

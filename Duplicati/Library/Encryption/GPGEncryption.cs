@@ -129,9 +129,11 @@ namespace Duplicati.Library.Encryption
             //NOTE: For reasons unknown, GPG commandline options are divided into "options" and "commands".
             //NOTE: The "options" must be placed before "commands" or it wont work!
 
+            //Special handling of this option, it should have been --enable-armor instead
             bool disableArmor = true;
+
             if (options.ContainsKey(COMMANDLINE_OPTIONS_DISABLE_ARMOR))
-                disableArmor = Utility.Utility.ParseBool(options[COMMANDLINE_OPTIONS_DISABLE_ARMOR], true);
+                Utility.Utility.ParseBoolOption(options, COMMANDLINE_OPTIONS_DISABLE_ARMOR);
 
             if (!disableArmor)
             {

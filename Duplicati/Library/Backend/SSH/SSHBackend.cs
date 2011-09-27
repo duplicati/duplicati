@@ -96,11 +96,9 @@ namespace Duplicati.Library.Backend
 
             m_path = u.AbsolutePath;
 
-            if (options.ContainsKey(USE_UNMANAGED_OPTION))
-                m_useManaged = false;
+            m_useManaged = !Utility.Utility.ParseBoolOption(options, USE_UNMANAGED_OPTION);
 
-            if (options.ContainsKey(SSH_NO_CD_OPTION))
-                m_noCdCommand = true;
+            m_noCdCommand = Utility.Utility.ParseBoolOption(options, SSH_NO_CD_OPTION);
             
             if (m_isLinux)
             {
@@ -146,7 +144,7 @@ namespace Duplicati.Library.Backend
             else
                 m_transfer_timeout = 1000 * 60 * 15;
 
-            m_write_log_info = options.ContainsKey("debug-to-console");
+            m_write_log_info = Utility.Utility.ParseBoolOption(options, "debug-to-console");
         }
 
         #region IBackendInterface Members

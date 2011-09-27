@@ -78,12 +78,7 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            string sslString;
-            if (options.TryGetValue("use-ssl", out sslString))
-                m_useSSL = Utility.Utility.ParseBool(sslString, true);
-            else
-                m_useSSL = false;
-
+            m_useSSL = Utility.Utility.ParseBoolOption(m_options, "use-ssl");
 
             m_options = options;
             m_url = url;
@@ -293,9 +288,9 @@ namespace Duplicati.Library.Backend
                 req.Credentials = m_userInfo;
             req.KeepAlive = false;
 
-            if (m_options.ContainsKey("ftp-passive"))
+            if (Utility.Utility.ParseBoolOption(m_options, "ftp-passive"))
                 req.UsePassive = true;
-            if (m_options.ContainsKey("ftp-regular"))
+            if (Utility.Utility.ParseBoolOption(m_options, "ftp-regular"))
                 req.UsePassive = false;
 
             if (m_useSSL)

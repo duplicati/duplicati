@@ -78,7 +78,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
                     return;
                 }
 
-                if (options.ContainsKey("usn-test"))
+                if (Library.Utility.Utility.ParseBoolOption(options, "usn-test"))
                 {
                     using (USNHelper usn = new USNHelper(args[0]))
                     {

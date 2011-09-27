@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
@@ -50,11 +50,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(u.Query))
                 throw new Exception(Strings.TahoeBackend.UriHasQueryError);
 
-            string sslString;
-            if (options.TryGetValue("use-ssl", out sslString))
-                m_useSSL = Utility.Utility.ParseBool(sslString, true);
-            else
-                m_useSSL = false;
+            m_useSSL = Utility.Utility.ParseBoolOption(m_options, "use-ssl");
 
             m_options = options;
 

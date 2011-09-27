@@ -99,10 +99,7 @@ namespace Duplicati.CommandLine.BackendTester
             else
                 allowedChars += ExtendedChars;
 
-            bool autoCreateFolders = false;
-            string v;
-            if (options.TryGetValue("auto-create-folder", out v))
-                 autoCreateFolders = Library.Utility.Utility.ParseBool(v, true);
+            bool autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
 
             Library.Interface.IBackend backend = Library.DynamicLoader.BackendLoader.GetBackend(args[0], options);
             if (backend == null)
@@ -139,8 +136,8 @@ namespace Duplicati.CommandLine.BackendTester
             foreach (Library.Interface.IFileEntry fe in curlist)
                 if (!fe.IsFolder)
                 {
-                    if (options.ContainsKey("auto-clean") && first)
-                        if (options.ContainsKey("force"))
+                    if (Library.Utility.Utility.ParseBoolOption(options, "auto-clean") && first)
+                        if (Library.Utility.Utility.ParseBoolOption(options, "force"))
                         {
                             Console.WriteLine("Auto clean, removing file: {0}", fe.Name);
                             backend.Delete(fe.Name);
@@ -159,7 +156,7 @@ namespace Duplicati.CommandLine.BackendTester
             int max_file_size = 1024 * 1024 * 50;
             int min_filename_size = 5;
             int max_filename_size = 80;
-            bool disableStreaming = options.ContainsKey("disable-streaming-transfers");
+            bool disableStreaming = Library.Utility.Utility.ParseBoolOption(options, "disable-streaming-transfers");
 
             if (options.ContainsKey("number-of-files"))
                 number_of_files = int.Parse(options["number-of-files"]);

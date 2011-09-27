@@ -60,9 +60,7 @@ namespace Duplicati.Library.Encryption
         /// <param name="key">The key used for encryption. The key gets stretched through SHA hashing to fit the key size requirements</param>
         public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
-            if (options.ContainsKey(COMMAND_LINE_NO_FALLBACK))
-                m_allowFallback = !Utility.Utility.ParseBool(options[COMMAND_LINE_NO_FALLBACK], true);
-
+            m_allowFallback = !Utility.Utility.ParseBoolOption(options, COMMAND_LINE_NO_FALLBACK);
             m_key = passphrase;
         }
 
