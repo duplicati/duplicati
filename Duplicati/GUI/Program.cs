@@ -244,10 +244,10 @@ namespace Duplicati.GUI
 
 #if DEBUG
                     //Default is to not use encryption for debugging
-                    Program.UseDatabaseEncryption = !Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database");
+                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database") : false;
 #else
                     //Default is to use encryption for release
-                    Program.UseDatabaseEncryption = !(commandlineOptions.ContainsKey("unencrypted-database") ? Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database") : true);
+                    Program.UseDatabaseEncryption = !Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database");
 #endif
                     con.ConnectionString = "Data Source=" + DatabasePath;
 

@@ -32,6 +32,8 @@ namespace Duplicati.Library.Backend
         Dictionary<string, string> m_options;
 
         private bool m_useSSL = false;
+        private bool m_defaultPassive = true;
+        private bool m_passive = false;
 
         public FTP()
         {
@@ -89,6 +91,16 @@ namespace Duplicati.Library.Backend
             if (!options.ContainsKey("list-verify-uploads"))
                 options.Add("list-verify-uploads", "true");
 
+            if (Utility.Utility.ParseBoolOption(m_options, "ftp-passive"))
+            {
+                m_defaultPassive = false;
+                m_passive = true;
+            }
+            if (Utility.Utility.ParseBoolOption(m_options, "ftp-regular"))
+            {
+                m_defaultPassive = false;
+                m_passive = false;
+            }
         }
 
         #region Regular expression to parse list lines
@@ -252,7 +264,6 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-regular", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionFTPActiveShort, Strings.FTPBackend.DescriptionFTPActiveLong, "true"),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPPasswordShort, Strings.FTPBackend.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPUsernameShort, Strings.FTPBackend.DescriptionFTPUsernameLong),
-                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionIntegratedAuthenticationShort, Strings.FTPBackend.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionUseSSLShort, Strings.FTPBackend.DescriptionUseSSLLong),
                 });
             }
@@ -288,10 +299,8 @@ namespace Duplicati.Library.Backend
                 req.Credentials = m_userInfo;
             req.KeepAlive = false;
 
-            if (Utility.Utility.ParseBoolOption(m_options, "ftp-passive"))
-                req.UsePassive = true;
-            if (Utility.Utility.ParseBoolOption(m_options, "ftp-regular"))
-                req.UsePassive = false;
+            if (!m_defaultPassive)
+                req.UsePassive = m_passive;
 
             if (m_useSSL)
                 req.EnableSsl = m_useSSL;
