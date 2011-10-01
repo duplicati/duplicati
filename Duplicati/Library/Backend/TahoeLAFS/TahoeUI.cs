@@ -43,6 +43,9 @@ namespace Duplicati.Library.Backend
 
         private static System.Text.RegularExpressions.Regex HashRegEx = new System.Text.RegularExpressions.Regex("[^0-9a-fA-F]");
 
+        private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
+        private string m_uiAction = null;
+
         private IDictionary<string, string> m_options;
 
         public TahoeUI(IDictionary<string, string> options)
@@ -114,6 +117,8 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(HAS_TESTED) || !bool.TryParse(m_options[HAS_TESTED], out m_hasTested))
                 m_hasTested = false;
+
+            m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
         private bool ValidateForm()
@@ -180,6 +185,8 @@ namespace Duplicati.Library.Backend
             m_options[ACCEPT_ANY_CERTIFICATE] = AcceptAnyHash.Checked.ToString();
             if (AcceptSpecifiedHash.Checked)
                 m_options[ACCEPT_SPECIFIC_CERTIFICATE] = SpecifiedHash.Text;
+            if (!string.IsNullOrEmpty(m_uiAction))
+                m_options.Add(DUPLICATI_ACTION_MARKER, m_uiAction);
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -211,8 +218,9 @@ namespace Duplicati.Library.Backend
                                         break;
                                     }
                         }
-                     
-                        if (existingBackup)
+
+                        bool isUiAdd = string.IsNullOrEmpty(m_uiAction) || string.Equals(m_uiAction, "add", StringComparison.InvariantCultureIgnoreCase);
+                        if (existingBackup && isUiAdd)
                         {
                             if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                                 return;

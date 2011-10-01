@@ -68,6 +68,9 @@ namespace Duplicati.Library.Backend
         private bool m_hasSuggestedLowerCase = false;
         private bool m_hasWarnedInvalidBucketname = false;
 
+        private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
+        private string m_uiAction = null;
+
         public S3UI(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
             : this()
         {
@@ -162,6 +165,9 @@ namespace Duplicati.Library.Backend
 
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
+
+            if (!string.IsNullOrEmpty(m_uiAction))
+                m_options.Add(DUPLICATI_ACTION_MARKER, m_uiAction);
         }
 
         void S3UI_Load(object sender, EventArgs args)
@@ -249,6 +255,8 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(HASWARNEDINVALIDBUCKETNAME) || !bool.TryParse(m_options[HASWARNEDINVALIDBUCKETNAME], out m_hasWarnedInvalidBucketname))
                 m_hasWarnedInvalidBucketname = false;
+
+            m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
         /// <summary>
@@ -414,7 +422,8 @@ namespace Duplicati.Library.Backend
                                 break;
                             }
 
-                    if (existingBackup)
+                    bool isUiAdd = string.IsNullOrEmpty(m_uiAction) || string.Equals(m_uiAction, "add", StringComparison.InvariantCultureIgnoreCase);
+                    if (existingBackup && isUiAdd)
                     {
                         if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                             return;

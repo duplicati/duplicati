@@ -19,6 +19,9 @@ namespace Duplicati.Library.Backend
 
         private bool m_hasTested;
 
+        private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
+        private string m_uiAction = null;
+
         private IDictionary<string, string> m_options;
 
         public GoogleDocsUI(IDictionary<string, string> options)
@@ -79,6 +82,8 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(HAS_TESTED) || !bool.TryParse(m_options[HAS_TESTED], out m_hasTested))
                 m_hasTested = false;
+
+            m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
         private bool ValidateForm()
@@ -131,6 +136,9 @@ namespace Duplicati.Library.Backend
 
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
+
+            if (!string.IsNullOrEmpty(m_uiAction))
+                m_options.Add(DUPLICATI_ACTION_MARKER, m_uiAction);
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -160,7 +168,8 @@ namespace Duplicati.Library.Backend
                                     break;
                                 }
 
-                        if (existingBackup)
+                        bool isUiAdd = string.IsNullOrEmpty(m_uiAction) || string.Equals(m_uiAction, "add", StringComparison.InvariantCultureIgnoreCase);
+                        if (existingBackup && isUiAdd)
                         {
                             if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                                 return;

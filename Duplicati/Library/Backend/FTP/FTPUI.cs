@@ -52,6 +52,9 @@ namespace Duplicati.Library.Backend
         private bool m_hasTested;
         private bool m_warnedPath;
 
+        private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
+        private string m_uiAction = null;
+
         private IDictionary<string, string> m_options;
 
         private static System.Text.RegularExpressions.Regex HashRegEx = new System.Text.RegularExpressions.Regex("[^0-9a-fA-F]");
@@ -187,6 +190,8 @@ namespace Duplicati.Library.Backend
                 m_options[ACCEPT_SPECIFIC_CERTIFICATE] = SpecifiedHash.Text;
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
+            if (!string.IsNullOrEmpty(m_uiAction))
+                m_options.Add(DUPLICATI_ACTION_MARKER, m_uiAction);
         }
 
         private void LoadSettings()
@@ -241,6 +246,8 @@ namespace Duplicati.Library.Backend
                 m_warnedUsername = false;
             if (!m_options.ContainsKey(HASWARNEDPASSWORD) || !bool.TryParse(m_options[HASWARNEDPASSWORD], out m_warnedPassword))
                 m_warnedPassword = false;
+
+            m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -274,7 +281,8 @@ namespace Duplicati.Library.Backend
                                     }
                         }
 
-                        if (existingBackup) 
+                        bool isUiAdd = string.IsNullOrEmpty(m_uiAction) || string.Equals(m_uiAction, "add", StringComparison.InvariantCultureIgnoreCase);
+                        if (existingBackup && isUiAdd) 
                         {
                             if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                                 return;

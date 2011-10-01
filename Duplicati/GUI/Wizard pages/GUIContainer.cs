@@ -33,6 +33,8 @@ namespace Duplicati.GUI.Wizard_pages
     /// </summary>
     public partial class GUIContainer : WizardControl
     {
+        private const string ACTION_MARKER = "*duplicati-action*";
+
         private IDictionary<string, string> m_backendOptions;
         private Control m_control;
         private Library.Interface.IGUIControl m_interface;
@@ -62,6 +64,10 @@ namespace Duplicati.GUI.Wizard_pages
                 return;
             }
 
+            //Make sure we don't save it in the DB
+            if (m_backendOptions.ContainsKey(ACTION_MARKER))
+                m_backendOptions.Remove(ACTION_MARKER);
+
             args.NextPage = m_nextpage;
         }
 
@@ -69,6 +75,28 @@ namespace Duplicati.GUI.Wizard_pages
         {
             m_wrapper = new WizardSettingsWrapper(m_settings);
             m_backendOptions = m_wrapper.BackendSettings;
+
+            //We inject a marker option here so the backend can make 
+            // intelligent testing based on the current action
+            string marker;
+            switch (m_wrapper.PrimayAction)
+            {
+                case WizardSettingsWrapper.MainAction.Add:
+                    marker = "add";
+                    break;
+                case WizardSettingsWrapper.MainAction.Edit:
+                    marker = "edit";
+                    break;
+                case WizardSettingsWrapper.MainAction.Restore:
+                case WizardSettingsWrapper.MainAction.RestoreSetup:
+                    marker = "restore";
+                    break;
+                default:
+                    marker = "unknown";
+                    break;
+            }
+            m_backendOptions[ACTION_MARKER] = marker;
+
             m_control = m_interface.GetControl(m_wrapper.ApplicationSettings, m_backendOptions);
             m_control.SetBounds(0, 0, this.Width, this.Height);
             m_control.Visible = true;
