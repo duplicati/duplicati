@@ -30,6 +30,7 @@ namespace Duplicati.GUI
         public const string OKStatus = "OK";
         public const string WarningStatus = "Warning";
         public const string PartialStatus = "Partial";
+        public const string InterruptedStatus = "InProgress";
 
         private const string OK_INDICATOR = "Duration";
         private const string WARNING_INDICATOR = "NumberOfErrors";

@@ -283,6 +283,23 @@ namespace Duplicati.GUI
                     }
                 }
 
+                try
+                {
+                    DataFetcherNested logcon = new DataFetcherNested(DataConnection);
+                    Log[] items = logcon.GetObjects<Log>("Subaction LIKE ?", "InProgress");
+                    if (items != null && items.Length > 0)
+                    {
+                        foreach (Log l in items)
+                            l.SubAction = "Primary";
+
+                        logcon.CommitAllRecursive();
+                    }
+                }
+                catch
+                {
+                    //Non-fatal but any interrupted backup will not show
+                }
+
                 LiveControl = new LiveControls(new ApplicationSettings(DataConnection));
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
@@ -306,7 +323,23 @@ namespace Duplicati.GUI
 
             try
             {
-                //Compress the database
+                //Find logs that are no longer displayed, and delete them
+                DataFetcherNested con = new DataFetcherNested(DataConnection);
+                foreach (Log x in con.GetObjects<Log>("EndTime < ?", Library.Utility.Timeparser.ParseTimeInterval(new ApplicationSettings(con).RecentBackupDuration, DateTime.Now, true)))
+                {
+                    if (x.Blob != null) //Load the blob part if required
+                        con.DeleteObject(x.Blob);
+                    con.DeleteObject(x);
+                }
+
+                con.CommitAllRecursive();
+            }
+            catch
+            { }
+
+            try
+            {
+                //Compact the database
                 using (System.Data.IDbCommand vaccum_cmd = DataConnection.Provider.Connection.CreateCommand())
                 {
                     vaccum_cmd.CommandText = "VACUUM;";

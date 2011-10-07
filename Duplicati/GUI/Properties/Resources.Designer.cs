@@ -200,6 +200,13 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap InterruptedStatusIcon {
+            get {
+                object obj = ResourceManager.GetObject("InterruptedStatusIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap LogMenuIcon {
             get {
                 object obj = ResourceManager.GetObject("LogMenuIcon", resourceCulture);

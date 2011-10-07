@@ -135,6 +135,9 @@
   <data name="OtherAbortMessage" xml:space="preserve">
     <value>The backup was stopped, the reason was: {0}</value>
   </data>
+  <data name="ShutdownWhileBackupInprogress" xml:space="preserve">
+    <value>Duplicati was terminated before the backup completed, status is unknown</value>
+  </data>
   <data name="TaskManagerCloseMessage" xml:space="preserve">
     <value>The backup was stopped because the application was closed by the task manager</value>
   </data>

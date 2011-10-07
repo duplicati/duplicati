@@ -40,6 +40,7 @@ namespace Duplicati.GUI
             imageList.Images.Add(DuplicatiOutputParser.WarningStatus, Properties.Resources.WarningStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.ErrorStatus, Properties.Resources.ErrorStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.PartialStatus, Properties.Resources.PartialStatusIcon);
+            imageList.Images.Add(DuplicatiOutputParser.InterruptedStatus, Properties.Resources.InterruptedStatusIcon);
 
             //We have the display open in the designer, so we set the right size here
             this.Size = this.MinimumSize;

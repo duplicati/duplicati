@@ -157,6 +157,9 @@ namespace Duplicati.GUI
 
                                     options["filter"] = Library.Utility.FilenameFilter.EncodeAsFilter(filters);
 
+                                    //At this point we register the backup as being in progress
+                                    ((FullOrIncrementalTask)task).WriteBackupInProgress(Strings.DuplicatiRunner.ShutdownWhileBackupInprogress);
+
                                     results = i.Backup(sourceFolders);
                                 }
                                 finally
