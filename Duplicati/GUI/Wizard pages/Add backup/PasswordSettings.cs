@@ -130,7 +130,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 m_warnedChanged = true;
             }
 
-            if (m_hasGeneratedNewPassword)
+            if (m_hasGeneratedNewPassword && EnablePassword.Checked)
             {
                 if (MessageBox.Show(this, Strings.PasswordSettings.NewGeneratedPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                 {
