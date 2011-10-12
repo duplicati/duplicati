@@ -103,6 +103,8 @@ namespace Duplicati.Library.Main
         {
             //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
+            sb.Append("Executable      : " + System.Reflection.Assembly.GetEntryAssembly().FullName + "\r\n");
+            sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
             sb.Append("OperationName   : " + this.OperationMode.ToString() + "\r\n");
             sb.Append("BytesUploaded   : " + this.NumberOfBytesUploaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("BytesDownloaded : " + this.NumberOfBytesDownloaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
