@@ -120,11 +120,11 @@
   <data name="BackendNotFoundError" xml:space="preserve">
     <value>Unable to find backend for: {0}</value>
   </data>
-  <data name="FileDeleteError" xml:space="preserve">
-    <value>Failed to delete file: {0}</value>
+  <data name="FileDeleteError2" xml:space="preserve">
+    <value>Failed to delete file "{0}": {1}</value>
   </data>
-  <data name="FileDownloadError" xml:space="preserve">
-    <value>Failed to download file: {0}</value>
+  <data name="FileDownloadError2" xml:space="preserve">
+    <value>Failed to download file "{0}": {1}</value>
   </data>
   <data name="FileListingError" xml:space="preserve">
     <value>Failed to retrieve file listing: {0}</value>
@@ -135,8 +135,8 @@
   <data name="FilesNotForceRemovedMessage" xml:space="preserve">
     <value>No files removed, specify --force to remove files.</value>
   </data>
-  <data name="FileUploadError" xml:space="preserve">
-    <value>Failed to upload file: {0}</value>
+  <data name="FileUploadError2" xml:space="preserve">
+    <value>Failed to upload file "{0}": {1}</value>
   </data>
   <data name="FunctionLookupError" xml:space="preserve">
     <value>Failed to find function: {0}</value>

@@ -817,7 +817,7 @@ namespace Duplicati.Library.Main
             } while (lastEx != null && retries > 0);
 
             if (lastEx != null)
-                throw new Exception(string.Format(Strings.BackendWrapper.FileDeleteError, lastEx.Message), lastEx);
+                throw new Exception(string.Format(Strings.BackendWrapper.FileDeleteError2, remote.Filename, lastEx.Message), lastEx);
 
             if (remote is SignatureEntry && !string.IsNullOrEmpty(m_options.SignatureCachePath))
             {
@@ -1045,7 +1045,7 @@ namespace Duplicati.Library.Main
                 else if (lastEx is System.Security.Cryptography.CryptographicException)
                     throw lastEx;
                 else
-                    throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError, lastEx.Message), lastEx);
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError2, filename, lastEx.Message), lastEx);
 
             m_statistics.AddBytesDownloaded(new System.IO.FileInfo(filename).Length);
         }
@@ -1166,7 +1166,7 @@ namespace Duplicati.Library.Main
                 } while (!success && retries > 0);
 
                 if (!success)
-                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError, lastEx == null ? "<null>" : lastEx.Message), lastEx);
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError2, filename, lastEx == null ? "<null>" : lastEx.Message), lastEx);
 
                 m_statistics.AddBytesUploaded(new System.IO.FileInfo(filename).Length);
             }

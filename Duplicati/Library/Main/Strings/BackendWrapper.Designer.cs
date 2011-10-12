@@ -133,20 +133,20 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to delete file: {0}.
+        ///   Looks up a localized string similar to Failed to delete file &quot;{0}&quot;: {1}.
         /// </summary>
-        internal static string FileDeleteError {
+        internal static string FileDeleteError2 {
             get {
-                return ResourceManager.GetString("FileDeleteError", resourceCulture);
+                return ResourceManager.GetString("FileDeleteError2", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to download file: {0}.
+        ///   Looks up a localized string similar to Failed to download file &quot;{0}&quot;: {1}.
         /// </summary>
-        internal static string FileDownloadError {
+        internal static string FileDownloadError2 {
             get {
-                return ResourceManager.GetString("FileDownloadError", resourceCulture);
+                return ResourceManager.GetString("FileDownloadError2", resourceCulture);
             }
         }
         
@@ -178,11 +178,11 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to upload file: {0}.
+        ///   Looks up a localized string similar to Failed to upload file &quot;{0}&quot;: {1}.
         /// </summary>
-        internal static string FileUploadError {
+        internal static string FileUploadError2 {
             get {
-                return ResourceManager.GetString("FileUploadError", resourceCulture);
+                return ResourceManager.GetString("FileUploadError2", resourceCulture);
             }
         }
         
