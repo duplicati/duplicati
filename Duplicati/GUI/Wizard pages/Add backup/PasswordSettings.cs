@@ -79,6 +79,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_settings["Password:SettingsChanged"] = m_settingsChanged;
             m_settings["Password:NewPasswordGenerated"] = m_hasGeneratedNewPassword;
             m_settings["Password:AskToEnterNewPassword"] = Password.AskToEnterNewPassword;
+            m_settings["Password:InitialPassword"] = Password.InitialPassword;
+            m_settings["Password:Password"] = Password.Text;
 
             if (args.Direction == PageChangedDirection.Back)
                 return;
@@ -153,6 +155,8 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_settings["Password:WarnedChanged"] = m_warnedChanged;
             m_settings["Password:NewPasswordGenerated"] = m_hasGeneratedNewPassword;
             m_settings["Password:AskToEnterNewPassword"] = Password.AskToEnterNewPassword;
+            m_settings["Password:InitialPassword"] = Password.InitialPassword;
+            m_settings["Password:Password"] = Password.Text;
 
             m_wrapper.BackupPassword = EnablePassword.Checked ? Password.Text : "";
 
@@ -210,12 +214,16 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             m_wrapper.PasswordSettingsUI.WarnedNoPassword = hasWarnedNoPassword;
             if (m_settings.ContainsKey("Password:WarnedChanged"))
                 m_warnedChanged = (bool)m_settings["Password:WarnedChanged"];
-            if (m_settings.ContainsKey("Password:SettingsChanged"))
-                m_settingsChanged = (bool)m_settings["Password:SettingsChanged"];
             if (m_settings.ContainsKey("Password:NewPasswordGenerated"))
                 m_hasGeneratedNewPassword = (bool)m_settings["Password:NewPasswordGenerated"];
             if (m_settings.ContainsKey("Password:AskToEnterNewPassword"))
                 Password.AskToEnterNewPassword = (bool)m_settings.ContainsKey("Password:AskToEnterNewPassword");
+            if (m_settings.ContainsKey("Password:InitialPassword"))
+                Password.InitialPassword = (string)m_settings["Password:InitialPassword"];
+            if (m_settings.ContainsKey("Password:Password"))
+                Password.Text = (string)m_settings["Password:Password"];
+            if (m_settings.ContainsKey("Password:SettingsChanged"))
+                m_settingsChanged = (bool)m_settings["Password:SettingsChanged"];
 
             if (m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.RestoreSetup || m_wrapper.PrimayAction == WizardSettingsWrapper.MainAction.Restore)
             {
