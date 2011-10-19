@@ -29,7 +29,6 @@ namespace Duplicati.Library.Backend
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
-        Dictionary<string, string> m_options;
 
         private bool m_useSSL = false;
         private bool m_defaultPassive = true;
@@ -80,23 +79,22 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            m_useSSL = Utility.Utility.ParseBoolOption(m_options, "use-ssl");
-
-            m_options = options;
             m_url = url;
             if (!m_url.EndsWith("/"))
                 m_url += "/";
+
+            m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             //HACK: We modify the commandline options to alter the setting it the ftp backend is loaded
             if (!options.ContainsKey("list-verify-uploads"))
                 options.Add("list-verify-uploads", "true");
 
-            if (Utility.Utility.ParseBoolOption(m_options, "ftp-passive"))
+            if (Utility.Utility.ParseBoolOption(options, "ftp-passive"))
             {
                 m_defaultPassive = false;
                 m_passive = true;
             }
-            if (Utility.Utility.ParseBoolOption(m_options, "ftp-regular"))
+            if (Utility.Utility.ParseBoolOption(options, "ftp-regular"))
             {
                 m_defaultPassive = false;
                 m_passive = false;
@@ -285,8 +283,6 @@ namespace Duplicati.Library.Backend
         {
             if (m_userInfo != null)
                 m_userInfo = null;
-            if (m_options != null)
-                m_options = null;
         }
 
         #endregion

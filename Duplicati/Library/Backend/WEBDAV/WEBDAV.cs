@@ -31,7 +31,6 @@ namespace Duplicati.Library.Backend
         private string m_path;
         private string m_rawurl;
         private string m_rawurlPort;
-        Dictionary<string, string> m_options;
         private bool m_useIntegratedAuthentication = false;
         private bool m_forceDigestAuthentication = false;
         private bool m_useSSL = false;
@@ -85,10 +84,9 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            m_options = options;
-            m_useIntegratedAuthentication = Utility.Utility.ParseBoolOption(m_options, "integrated-authentication");
-            m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(m_options, "force-digest-authentication");
-            m_useSSL = Utility.Utility.ParseBoolOption(m_options, "use-ssl");
+            m_useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, "integrated-authentication");
+            m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(options, "force-digest-authentication");
+            m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = (m_useSSL ? "https" : "http") + url.Substring(u.Scheme.Length);
             if (!m_url.EndsWith("/"))
@@ -106,7 +104,7 @@ namespace Duplicati.Library.Backend
                 port = m_useSSL ? 443 : 80;
 
             m_rawurlPort = (m_useSSL ? "https://" : "http://") + u.Host + ":" + port + m_path;
-            m_options.TryGetValue("debug-propfind-file", out m_debugPropfindFile);
+            options.TryGetValue("debug-propfind-file", out m_debugPropfindFile);
         }
 
         #region IBackend Members

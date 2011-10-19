@@ -33,7 +33,6 @@ namespace Duplicati.Library.Backend
         private string m_path;
         private string m_username;
         private string m_password;
-        Dictionary<string, string> m_options;
         private bool m_moveFile;
         private bool m_hasAutenticated;
 
@@ -43,7 +42,6 @@ namespace Duplicati.Library.Backend
 
         public File(string url, Dictionary<string, string> options)
         {
-            m_options = options;
             m_path = url.Substring("file://".Length);
 
             if (m_path.IndexOf("@") > 0)
@@ -282,8 +280,6 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            if (m_options != null)
-                m_options = null;
             if (m_username != null)
                 m_username = null;
             if (m_password != null)

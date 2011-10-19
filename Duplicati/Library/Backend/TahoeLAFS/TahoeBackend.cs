@@ -32,7 +32,6 @@ namespace Duplicati.Library.Backend
         private static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
 
         private string m_url;
-        Dictionary<string, string> m_options;
         private bool m_useSSL = false;
 
         public TahoeBackend()
@@ -50,9 +49,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(u.Query))
                 throw new Exception(Strings.TahoeBackend.UriHasQueryError);
 
-            m_useSSL = Utility.Utility.ParseBoolOption(m_options, "use-ssl");
-
-            m_options = options;
+            m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = (m_useSSL ? "https" : "http") + url.Substring(u.Scheme.Length);
             if (!m_url.EndsWith("/"))
