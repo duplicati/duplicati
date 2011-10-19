@@ -101,6 +101,7 @@ namespace Duplicati.Library.Main
                     "restore",
                     "delete-older-than",
                     "delete-all-but-n-full",
+                    "delete-all-but-n",
                     "filter",
                     "main-action"
                 };
@@ -511,12 +512,17 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("delete-all-but-n-full") || string.IsNullOrEmpty(m_options["delete-all-but-n-full"]))
-                    throw new Exception("No count given for \"Delete All But N Full\"");
+                string key = "delete-all-but-n-full";
+                if (!m_options.ContainsKey(key) || string.IsNullOrEmpty(m_options[key]))
+                {
+                    key = "delete-all-but-n";
+                    if (!m_options.ContainsKey(key) || string.IsNullOrEmpty(m_options[key]))
+                        throw new Exception("No count given for \"Delete All But N (Full)\"");
+                }
 
-                int x = int.Parse(m_options["delete-all-but-n-full"]);
+                int x = int.Parse(m_options[key]);
                 if (x < 0)
-                    throw new Exception("Invalid count for delete-all-but-n-full, must be greater than zero");
+                    throw new Exception("Invalid count for delete-all-but-n(-full), must be greater than zero");
 
                 return x;
             }

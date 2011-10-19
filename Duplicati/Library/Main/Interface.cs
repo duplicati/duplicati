@@ -97,6 +97,10 @@ namespace Duplicati.Library.Main
         /// </summary>
         DeleteAllButNFull,
         /// <summary>
+        /// A delete operation performed by looking at the number of existing backups
+        /// </summary>
+        DeleteAllButN,
+        /// <summary>
         /// A delete operation performed by looking at the age of existing backups
         /// </summary>
         DeleteOlderThan,
@@ -1294,6 +1298,65 @@ namespace Duplicati.Library.Main
             return rs.ToString();
         }
 
+        public string DeleteAllButN()
+        {
+            CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.DeleteAllButN);
+            SetupCommonOptions(stats);
+
+            int x = Math.Max(0, m_options.DeleteAllButNFull);
+
+            StringBuilder sb = new StringBuilder();
+
+            using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
+                try
+                {
+                    if (OperationStarted != null)
+                        OperationStarted(this, DuplicatiOperation.Remove, stats.OperationMode, 0, -1, Strings.Interface.StatusStarted, "");
+
+                    List<ManifestEntry> flatlist = new List<ManifestEntry>();
+                    List<ManifestEntry> entries =  backend.GetBackupSets();
+
+                    //Get all backups as a flat list
+                    foreach (ManifestEntry me in entries)
+                    {
+                        flatlist.Add(me);
+                        flatlist.AddRange(me.Incrementals);
+                    }
+
+                    //Now remove all but those requested
+                    List<ManifestEntry> toremove = new List<ManifestEntry>();
+                    while (flatlist.Count > x)
+                    {
+                        toremove.Add(flatlist[0]);
+                        flatlist.RemoveAt(0);
+                    }
+
+                    //If there are still chains left, make sure we do not end up with a partial chain
+                    if (!m_options.AllowFullRemoval || flatlist.Count != 0)
+                    {
+                        //Go back until we have a full chain
+                        while (toremove.Count > 0 && (flatlist.Count == 0 || !flatlist[0].IsFull))
+                        {
+                            sb.AppendLine(string.Format(Strings.Interface.NotDeletingBackupSetMessage, toremove[toremove.Count - 1].Time));
+                            flatlist.Insert(0, toremove[toremove.Count - 1]);
+                            toremove.RemoveAt(toremove.Count - 1);
+                        }
+                    }
+
+                    if (toremove.Count > 0 && !m_options.AllowFullRemoval && (flatlist.Count == 0 || !flatlist[0].IsFull))
+                        throw new Exception(Strings.Interface.InternalDeleteCountError);
+
+                    sb.Append(RemoveBackupSets(backend, toremove));
+                }
+                finally
+                {
+                    if (OperationCompleted != null)
+                        OperationCompleted(this, DuplicatiOperation.Remove, stats.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
+                }
+
+            return sb.ToString();
+        }
+
         public string DeleteAllButNFull()
         {
             CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.DeleteAllButNFull);
@@ -2206,6 +2269,12 @@ namespace Duplicati.Library.Main
         {
             using (Interface i = new Interface(target, options))
                 return i.DeleteAllButNFull();
+        }
+
+        public static string DeleteAllButN(string target, Dictionary<string, string> options)
+        {
+            using (Interface i = new Interface(target, options))
+                return i.DeleteAllButN();
         }
 
         public static string DeleteOlderThan(string target, Dictionary<string, string> options)
