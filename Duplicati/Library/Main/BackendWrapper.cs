@@ -960,6 +960,11 @@ namespace Duplicati.Library.Main
                                 ProgressEvent(100, m_statusmessage);
                         }
 
+                        //This is required so we are sure that the file was downloaded completely and not partially,
+                        // as any exception here will cause a retry, but using a partial file may cause random errors
+                        if (remote.Fileentry.Size > 0 && remote.Fileentry.Size != new System.IO.FileInfo(tempfile).Length)
+                            throw new Exception(string.Format(Strings.BackendWrapper.DownloadedFileSizeError, remote.Filename, remote.Fileentry.Size, new System.IO.FileInfo(tempfile).Length));
+
                         remote.RemoteHash = Utility.Utility.CalculateHash(tempfile);
                         
                         //Manifest version 3 has hashes WITH encryption

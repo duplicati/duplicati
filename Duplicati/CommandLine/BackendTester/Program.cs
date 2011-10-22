@@ -249,6 +249,10 @@ namespace Duplicati.CommandLine.BackendTester
                                     Console.WriteLine("*** File with name {0} was found more than once", tx.filename);
                                 found = true;
                                 tx.found = true;
+
+                                if (fe.Size > 0 && tx.length != fe.Size)
+                                    Console.WriteLine("*** File with name {0} has size {1} but the size was reported as {2}", tx.filename, tx.length, fe.Size);
+
                                 break;
                             }
 

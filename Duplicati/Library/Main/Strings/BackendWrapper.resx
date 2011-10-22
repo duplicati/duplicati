@@ -204,4 +204,7 @@
   <data name="FailureWhileDisposingBackendError" xml:space="preserve">
     <value>An error occured while closing a connection: {0}</value>
   </data>
+  <data name="DownloadedFileSizeError" xml:space="preserve">
+    <value>The file {0} was downloaded and had size {1} but the size was expected to be {2}</value>
+  </data>
 </root>
