@@ -813,27 +813,26 @@ namespace Duplicati.Library.Main
 
             while (entry.Previous != null)
             {
-                if (entry.ParsedManifest == null)
-                    GetManifest(backend, entry);
+                Manifestfile parsed = GetManifest(backend, entry);
 
                 //If this manifest is not version 3, the chain verification stops here
-                if (entry.ParsedManifest.Version < 3)
+                if (parsed.Version < 3)
                     return;
 
                 ManifestEntry previous = entry.Previous;
-                if (entry.Previous.Alternate != null && entry.Previous.Alternate.Filename == entry.ParsedManifest.PreviousManifestFilename)
+                if (entry.Previous.Alternate != null && entry.Previous.Alternate.Filename == parsed.PreviousManifestFilename)
                     previous = entry.Previous.Alternate;
 
-                if (previous.ParsedManifest == null)
-                    GetManifest(backend, previous);
-
-                if (entry.ParsedManifest.PreviousManifestFilename != previous.Filename)
-                    throw new System.IO.InvalidDataException(string.Format(Strings.Interface.PreviousManifestFilenameMismatchError, entry.Filename, entry.ParsedManifest.PreviousManifestFilename, previous.Filename));
+                if (parsed.PreviousManifestFilename != previous.Filename)
+                    throw new System.IO.InvalidDataException(string.Format(Strings.Interface.PreviousManifestFilenameMismatchError, entry.Filename, parsed.PreviousManifestFilename, previous.Filename));
 
                 if (!m_options.SkipFileHashChecks)
                 {
-                    if (entry.ParsedManifest.PreviousManifestHash != previous.RemoteHash)
-                        throw new System.IO.InvalidDataException(string.Format(Strings.Interface.PreviousManifestHashMismatchError, entry.Filename, entry.ParsedManifest.PreviousManifestHash, previous.RemoteHash));
+                    //Load the Remotehash property
+                    GetManifest(backend, previous);
+
+                    if (parsed.PreviousManifestHash != previous.RemoteHash)
+                        throw new System.IO.InvalidDataException(string.Format(Strings.Interface.PreviousManifestHashMismatchError, entry.Filename, parsed.PreviousManifestHash, previous.RemoteHash));
                 }
 
                 entry = previous;
@@ -853,42 +852,51 @@ namespace Duplicati.Library.Main
 
             while (entry != null)
             {
-                if (entry.ParsedManifest == null)
-                    GetManifest(backend, entry);
+                Manifestfile parsed = GetManifest(backend, entry);
 
                 errorMessage += entry.Filename + Environment.NewLine;
 
-                if (entry.Volumes.Count != entry.ParsedManifest.SignatureHashes.Count || entry.Volumes.Count != entry.ParsedManifest.ContentHashes.Count)
+                if (entry.Volumes.Count != parsed.SignatureHashes.Count || entry.Volumes.Count != parsed.ContentHashes.Count)
                 {
-                    throw new Exception(
-                        string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, entry.ParsedManifest.SignatureHashes.Count, entry.Volumes.Count)
-                        + errorMessage
-                        );
+                    //If we have an extra set, the connection could have died right before the manifest was uploaded
+                    if (parsed.SignatureHashes.Count == parsed.ContentHashes.Count && entry.Volumes.Count - 1 == parsed.ContentHashes.Count)
+                    {
+                        backend.AddOrphan(entry.Volumes[entry.Volumes.Count - 1].Value);
+                        backend.AddOrphan(entry.Volumes[entry.Volumes.Count - 1].Key);
+                        entry.Volumes.RemoveAt(entry.Volumes.Count - 1);
+                    }
+                    else
+                    {
+                        throw new Exception(
+                            string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, parsed.SignatureHashes.Count, entry.Volumes.Count)
+                            + errorMessage
+                            );
+                    }
                 }
 
                 for(int i = 0; i < entry.Volumes.Count; i++)
                 {
-                    if (entry.Volumes[i].Key.Filesize > 0 && entry.ParsedManifest.SignatureHashes[i].Size > 0 && entry.Volumes[i].Key.Filesize != entry.ParsedManifest.SignatureHashes[i].Size)
+                    if (entry.Volumes[i].Key.Filesize > 0 && parsed.SignatureHashes[i].Size > 0 && entry.Volumes[i].Key.Filesize != parsed.SignatureHashes[i].Size)
                         throw new Exception(
-                            string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Key.Filename, entry.Volumes[i].Key.Filesize, entry.ParsedManifest.SignatureHashes[i].Size)
+                            string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Key.Filename, entry.Volumes[i].Key.Filesize, parsed.SignatureHashes[i].Size)
                             + errorMessage
                             );
 
-                    if (entry.Volumes[i].Value.Filesize >= 0 && entry.ParsedManifest.ContentHashes[i].Size >= 0 && entry.Volumes[i].Value.Filesize != entry.ParsedManifest.ContentHashes[i].Size)
+                    if (entry.Volumes[i].Value.Filesize >= 0 && parsed.ContentHashes[i].Size >= 0 && entry.Volumes[i].Value.Filesize != parsed.ContentHashes[i].Size)
                         throw new Exception(
-                            string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Value.Filename, entry.Volumes[i].Value.Filesize, entry.ParsedManifest.ContentHashes[i].Size)
+                            string.Format(Strings.Interface.FileSizeMismatchError, entry.Volumes[i].Value.Filename, entry.Volumes[i].Value.Filesize, parsed.ContentHashes[i].Size)
                             + errorMessage
                             );
 
-                    if (!string.IsNullOrEmpty(entry.ParsedManifest.SignatureHashes[i].Name) && !entry.ParsedManifest.SignatureHashes[i].Name.Equals(entry.Volumes[i].Key.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
+                    if (!string.IsNullOrEmpty(parsed.SignatureHashes[i].Name) && !parsed.SignatureHashes[i].Name.Equals(entry.Volumes[i].Key.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
                         throw new Exception(
-                            string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.SignatureHashes[i].Name, entry.Volumes[i].Key.Fileentry.Name)
+                            string.Format(Strings.Interface.FilenameMismatchError, parsed.SignatureHashes[i].Name, entry.Volumes[i].Key.Fileentry.Name)
                             + errorMessage
                             );
 
-                    if (!string.IsNullOrEmpty(entry.ParsedManifest.ContentHashes[i].Name) && !entry.ParsedManifest.ContentHashes[i].Name.Equals(entry.Volumes[i].Value.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
+                    if (!string.IsNullOrEmpty(parsed.ContentHashes[i].Name) && !parsed.ContentHashes[i].Name.Equals(entry.Volumes[i].Value.Fileentry.Name, StringComparison.InvariantCultureIgnoreCase))
                         throw new Exception(
-                            string.Format(Strings.Interface.FilenameMismatchError, entry.ParsedManifest.ContentHashes[i].Name, entry.Volumes[i].Value.Fileentry.Name)
+                            string.Format(Strings.Interface.FilenameMismatchError, parsed.ContentHashes[i].Name, entry.Volumes[i].Value.Fileentry.Name)
                             + errorMessage
                             );
                 }
@@ -921,7 +929,22 @@ namespace Duplicati.Library.Main
             if (OperationProgress != null && backend.Statistics != null)
                 OperationProgress(this, GetOperationType(), backend.Statistics.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusReadingManifest, entry.Time.ToShortDateString() + " " + entry.Time.ToShortTimeString()), "");
 
-            bool parsingError = false;
+            bool tryAlternateManifest = false;
+
+            //This method has some very special logic to ensure correct handling of errors
+            //The assumption is that it is possible to determine if the error occurred due to a 
+            // transfer problem or a corrupt file. If the former happens, the operation should
+            // be retried, and thus an exception is thrown. If the latter, the file should 
+            // be ignored and the backup file should be used.
+            //
+            //We detect a parsing error, either directly or indirectly through CryptographicException,
+            // and assume that a parsing error is an indication of a broken file.
+            //All other errors are assumed to be transfer problems, and throws exceptions.
+            //
+            //This holds as long as the backend always throws an exception if a partial file
+            // was downloaded. The FTP backend may not honor this, and some webservers
+            // may ommit the "Content-Length" header, which will cause problems.
+            //There is a guard agains partial downloads in BackendWrapper.GetInternal()
 
             using (new Logging.Timer("Get " + entry.Filename))
             using (Utility.TempFile tf = new Duplicati.Library.Utility.TempFile())
@@ -932,8 +955,77 @@ namespace Duplicati.Library.Main
                     
                     //We now have the file decrypted, if the next step fails,
                     // its a broken xml or invalid content
-                    parsingError = true;
+                    tryAlternateManifest = true;
                     Manifestfile mf = new Manifestfile(tf, m_options.SkipFileHashChecks);
+
+                    if (string.IsNullOrEmpty(mf.SelfFilename))
+                        mf.SelfFilename = entry.Filename;
+
+                    if (mf.ContentHashes != null && entry.Alternate != null)
+                    {
+                        //Special case, the manifest has not recorded all volumes,
+                        // we must see if the alternate manifest has more volumes
+                        if (entry.Volumes.Count > mf.ContentHashes.Count)
+                        {
+                            //Do not try the alternate, we just did
+                            tryAlternateManifest = false;
+                            Logging.Log.WriteMessage(string.Format(Strings.Interface.ReadingSecondaryManifestLogMessage, entry.Alternate.Filename), Duplicati.Library.Logging.LogMessageType.Information);
+                                
+                            Manifestfile amf = null;
+
+                            //Read the alternate file and try to differentiate between a defect file or a partial one
+                            bool defectFile = false;
+
+                            try 
+                            {
+                                System.IO.File.Delete(tf);
+                                backend.Get(entry.Alternate, null, tf, null);
+                            }
+                            catch (System.Security.Cryptography.CryptographicException cex) 
+                            {
+                                //We assume that CryptoException means partial file
+                                Logging.Log.WriteMessage(string.Format(Strings.Interface.SecondaryManifestReadErrorLogMessage, entry.Alternate.Filename, cex), Duplicati.Library.Logging.LogMessageType.Warning);
+                                defectFile = true;
+                            }
+
+                            if (!defectFile)
+                            {
+                                try
+                                {
+                                    amf = new Manifestfile(tf, m_options.SkipFileHashChecks);
+                                }
+                                catch (Exception ex)
+                                {
+                                    //Parsing error means partial file
+                                    Logging.Log.WriteMessage(string.Format(Strings.Interface.SecondaryManifestReadErrorLogMessage, entry.Alternate.Filename, ex), Duplicati.Library.Logging.LogMessageType.Warning);
+                                    defectFile = true;
+                                }
+                            }
+
+                            //If the alternate manifest is correct, assign it so we have a copy
+                            if (!defectFile && amf != null)
+                            {
+                                if (string.IsNullOrEmpty(amf.SelfFilename))
+                                    amf.SelfFilename = entry.Alternate.Filename;
+
+                                //If the alternate manifest has more files than the primary, we use that one
+                                if (amf.ContentHashes != null && amf.ContentHashes.Count > mf.ContentHashes.Count)
+                                {
+                                    entry.Alternate.ParsedManifest = amf;
+
+                                    if (m_options.SkipFileHashChecks)
+                                    {
+                                        mf.SignatureHashes = null;
+                                        mf.ContentHashes = null;
+                                    }
+
+                                    return amf;
+
+                                }
+                            }
+                        }
+                    }
+
                     if (m_options.SkipFileHashChecks)
                     {
                         mf.SignatureHashes = null;
@@ -941,16 +1033,12 @@ namespace Duplicati.Library.Main
                     }
 
                     entry.ParsedManifest = mf;
-
-                    if (string.IsNullOrEmpty(mf.SelfFilename))
-                        mf.SelfFilename = entry.Filename;
-
                     return mf;
                 }
                 catch (Exception ex)
                 {
                     //Only try secondary if the parsing/decrypting fails, not if the transfer fails
-                    if (entry.Alternate != null && (ex is System.Security.Cryptography.CryptographicException || parsingError))
+                    if (entry.Alternate != null && (ex is System.Security.Cryptography.CryptographicException || tryAlternateManifest))
                     {
                         //TODO: If it is a version error, there is no need to read the alternate version
                         Logging.Log.WriteMessage(string.Format(Strings.Interface.PrimaryManifestReadErrorLogMessage, entry.Filename, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning);
