@@ -45,6 +45,10 @@ namespace Duplicati.Library.Main
         /// used to prevent disposing the initally created backend
         /// </summary>
         private bool m_first_backend_use;
+        /// <summary>
+        /// A flag indicating if the backend can create folders
+        /// </summary>
+        private bool m_backendSupportsCreateFolder;
 
         /// <summary>
         /// The statistics gathering object
@@ -201,6 +205,7 @@ namespace Duplicati.Library.Main
 
             m_reuse_backend = !m_options.NoConnectionReuse;
             m_first_backend_use = true;
+            m_backendSupportsCreateFolder = m_backend is Library.Interface.IBackend_v2;
 
             if (m_options.AutoCleanup)
                 m_orphans = new List<BackupEntryBase>();
@@ -774,7 +779,7 @@ namespace Duplicati.Library.Main
                     m_statistics.LogError(ex.Message, ex);
                     DisposeBackend();
 
-                    if (ex is Library.Interface.FolderMissingException && m_backend is Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
+                    if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
                         return new List<Library.Interface.IFileEntry>();
 
                     retries--;
@@ -1144,7 +1149,7 @@ namespace Duplicati.Library.Main
 
                         //Even if we can create the folder, we still count it as an error to prevent trouble with backends
                         // that report OK for CreateFolder, but still report the folder as missing
-                        if (ex is Library.Interface.FolderMissingException && m_backend is Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
+                        if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
                         {
                             ResetBackend();
                             try 
@@ -1201,7 +1206,7 @@ namespace Duplicati.Library.Main
 
         public void CreateFolder()
         {
-            if (m_backend is Library.Interface.IBackend_v2)
+            if (m_backendSupportsCreateFolder)
                 ProtectedInvoke("CreateFolderInternal");
             else
                 throw new Exception(string.Format(Strings.BackendWrapper.BackendDoesNotSupportCreateFolder, m_backend.DisplayName, m_backend.ProtocolKey));
