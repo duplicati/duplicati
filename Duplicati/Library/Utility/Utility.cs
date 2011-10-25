@@ -704,5 +704,127 @@ namespace Duplicati.Library.Utility
 
             return null;
         }
+
+
+        /// <summary>
+        /// Gets a stream using the GetRequestStream method, but with a timeout.
+        /// This is a workaround for the fact that GetRequestStream() hangs if
+        /// Timeout is set to infinity, but setting it to something else than
+        /// inifinity may abort the request if it is slow. Setting it to something
+        /// large is just as bad, as it would hang for a long time.
+        /// </summary>
+        /// <param name="req">The WebRequest to invoke GetRequestStream() on</param>
+        /// <returns>The request stream</returns>
+        public static System.IO.Stream SafeGetRequestStream(System.Net.WebRequest req)
+        {
+            return (System.IO.Stream)SafeGetRequestOrResponseStream(req, true);
+        }
+
+        /// <summary>
+        /// Gets a response using the GetResponse method, but with a timeout.
+        /// This is a workaround for the fact that GetResponse() hangs if
+        /// Timeout is set to infinity, but setting it to something else than
+        /// inifinity may abort the request if it is slow. Setting it to something
+        /// large is just as bad, as it would hang for a long time.
+        /// </summary>
+        /// <param name="req">The WebRequest to invoke GetResponse() on</param>
+        /// <returns>The WebResponse</returns>
+        public static System.Net.WebResponse SafeGetResponse(System.Net.WebRequest req)
+        {
+            return (System.Net.WebResponse)SafeGetRequestOrResponseStream(req, false);
+        }
+
+        /// <summary>
+        /// The default timeout for a connection response, either for creating the connection or for starting to deliver the results
+        /// </summary>
+        private static readonly int DEFAULT_RESPONSE_TIMEOUT = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
+
+        /// <summary>
+        /// Helper function that invokes a thread and the GetRequestStream() or GetResponse() method
+        /// </summary>
+        /// <param name="req">The request to invoke the method on</param>
+        /// <param name="getRequest">A value indicating if the invoked method should be GetRequestStream() or GetResponse()</param>
+        /// <returns>Either a System.IO.Stream or a System.Net.WebResponse object</returns>
+        private static object SafeGetRequestOrResponseStream(System.Net.WebRequest req, bool getRequest)
+        {
+            object[] args = new object[] { req, getRequest, null };
+            System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(RunSafeGetRequest));
+            try
+            {
+                //We use the timeout to determine how long we should wait
+                int waitTime = req.Timeout == System.Threading.Timeout.Infinite ? DEFAULT_RESPONSE_TIMEOUT : req.Timeout;
+                t.Start(args);
+                if (t.Join(waitTime))
+                {
+                    if (args[2] == null)
+                        throw new Exception(string.Format(Strings.Utility.UnexpectedRequestResultError, "null", ""));
+                    else if (args[2] is Exception)
+                        throw (Exception)args[2];
+
+                    if (getRequest && args[2] is System.IO.Stream)
+                        return (System.IO.Stream)args[2];
+                    else if (!getRequest && args[2] is System.Net.WebResponse)
+                        return (System.Net.WebResponse)args[2];
+
+                    throw new Exception(string.Format(Strings.Utility.UnexpectedRequestResultError, args[2].GetType(), args[2].ToString()));
+                }
+                else
+                {
+                    t.Abort();
+                    throw new System.Net.WebException(Strings.Utility.TimeoutException, null, System.Net.WebExceptionStatus.Timeout, null);
+                }
+
+            }
+            catch
+            {
+                try { t.Abort(); }
+                catch { }
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// The thread method that is invoked to perform the actual invocation,
+        /// this ensures that we can abort the thread should we want to
+        /// </summary>
+        /// <param name="data">An object array with the required parameters. Index 0 is the System.Net.WebRequest, index 1 is the flag indicating if it should use GetRequestStream() or GetResponse(), index 2 is an empty slot for returning the result or an exception</param>
+        private static void RunSafeGetRequest(object data)
+        {
+            object[] args = (object[])data;
+            try
+            {
+                System.Net.WebRequest req = (System.Net.WebRequest)args[0];
+                req.Timeout = System.Threading.Timeout.Infinite;
+
+                bool getRequest = (bool)args[1];
+                if (getRequest)
+                {
+                    args[2] = req.GetRequestStream();
+                }
+                else
+                {
+                    args[2] = req.GetResponse();
+                }
+            }
+            catch (System.Threading.ThreadAbortException)
+            {
+            }
+            catch (Exception ex)
+            {
+                args[2] = ex;
+            }
+        }
+
+        private class ThreadWorker
+        {
+            public System.IO.Stream stream = null;
+            public void Run(object data)
+            {
+                System.Net.WebRequest req = (System.Net.WebRequest)data;
+                req.Timeout = System.Threading.Timeout.Infinite;
+                stream = req.GetRequestStream();
+            }
+        }
     }
 }

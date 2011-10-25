@@ -135,4 +135,10 @@
   <data name="InvalidHexStringLengthError" xml:space="preserve">
     <value>The hex string size must be a multiple of two, eg. the length must be even</value>
   </data>
+  <data name="TimeoutException" xml:space="preserve">
+    <value>The request timed out</value>
+  </data>
+  <data name="UnexpectedRequestResultError" xml:space="preserve">
+    <value>The attempt to open a connection gave an unexpected result. Type: {0}, message: {1}</value>
+  </data>
 </root>

@@ -110,12 +110,7 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            using (System.Net.HttpWebResponse resp = CreateSession(false).DeleteFile(remotename))
-            {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-            }
+            CreateSession(false).DeleteFile(remotename);
         }        
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -149,25 +144,14 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            using (System.Net.HttpWebResponse resp = CreateSession(false).UploadFile(remotename, stream))
-            {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-            }
+            CreateSession(false).UploadFile(remotename, stream);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
             using (System.Net.HttpWebResponse resp = CreateSession(false).DownloadFile(remotename))
-            {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-
                 using (System.IO.Stream s = resp.GetResponseStream())
                     Utility.Utility.CopyStream(s, stream);
-            }
         }
 
         #endregion

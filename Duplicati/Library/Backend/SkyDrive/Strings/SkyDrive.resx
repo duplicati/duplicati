@@ -147,6 +147,9 @@
   <data name="Displayname" xml:space="preserve">
     <value>SkyDrive</value>
   </data>
+  <data name="FileIsReadOnlyError" xml:space="preserve">
+    <value>The file "{0}" was found, but it was readonly</value>
+  </data>
   <data name="InvalidNonceError" xml:space="preserve">
     <value>The nonce returned was not recognized: {0}</value>
   </data>
@@ -179,5 +182,8 @@
   </data>
   <data name="UnableToFindCIDError" xml:space="preserve">
     <value>Unable to parse the response and extract the CID</value>
+  </data>
+  <data name="UploadFailedError" xml:space="preserve">
+    <value>Upload of file {0} succeeded but no valid atom entry was returned</value>
   </data>
 </root>
