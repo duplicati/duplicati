@@ -28,14 +28,16 @@ namespace Duplicati.CommandLine.BackendTester
     {
         class TempFile
         {
-            public string filename;
-            public byte[] hash;
-            public long length;
+            public readonly string remotefilename;
+            public readonly string localfilename;
+            public readonly byte[] hash;
+            public readonly long length;
             public bool found = false;
 
-            public TempFile(string filename, byte[] hash, long length)
+            public TempFile(string remotefilename, string localfilename, byte[] hash, long length)
             {
-                this.filename = filename;
+                this.remotefilename = remotefilename;
+                this.localfilename = localfilename;
                 this.hash = hash;
                 this.length = length;
             }
@@ -44,51 +46,57 @@ namespace Duplicati.CommandLine.BackendTester
         private const string ValidFilenameChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
         private const string ExtendedChars = "-_',=)(&%$#@! +";
 
-
         static void Main(string[] _args)
         {
-            List<string> args = new List<string>(_args);
-            Dictionary<string, string> options = CommandLineParser.ExtractOptions(args);
-
-            if (!options.ContainsKey("ftp_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_PASSWORD")))
-                options["ftp_password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");
-
-            if (!options.ContainsKey("ftp_username") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_USERNAME")))
-                options["ftp_username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
-
-            if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
-
-
-            if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
+            try
             {
-                Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
-                Console.WriteLine("Example: ftp://user:pass@server/folder");
-                Console.WriteLine();
-                Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.DynamicLoader.BackendLoader.Keys));
+                List<string> args = new List<string>(_args);
+                Dictionary<string, string> options = CommandLineParser.ExtractOptions(args);
 
-                Console.WriteLine();
-                List<string> lines = new List<string>();
-                foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
-                    Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+                if (!options.ContainsKey("ftp_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_PASSWORD")))
+                    options["ftp_password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");
 
-                foreach (string s in lines)
-                    Console.WriteLine(s);
+                if (!options.ContainsKey("ftp_username") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_USERNAME")))
+                    options["ftp_username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
 
-                return;
-            }
+                if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
+                    Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
 
-            int reruns = 5;
-            if (options.ContainsKey("reruns"))
-                reruns = int.Parse(options["reruns"]);
 
-            for (int i = 0; i < reruns; i++)
-            {
-                Console.WriteLine("Starting run no {0}", i);
-                if (!Run(args, options, i == 0))
+                if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
+                {
+                    Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
+                    Console.WriteLine("Example: ftp://user:pass@server/folder");
+                    Console.WriteLine();
+                    Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.DynamicLoader.BackendLoader.Keys));
+
+                    Console.WriteLine();
+                    List<string> lines = new List<string>();
+                    foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
+                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
+
+                    foreach (string s in lines)
+                        Console.WriteLine(s);
+
                     return;
+                }
+
+                int reruns = 5;
+                if (options.ContainsKey("reruns"))
+                    reruns = int.Parse(options["reruns"]);
+
+                for (int i = 0; i < reruns; i++)
+                {
+                    Console.WriteLine("Starting run no {0}", i);
+                    if (!Run(args, options, i == 0))
+                        return;
+                }
+                Console.WriteLine("Unittest complete!");
             }
-            Console.WriteLine("Unittest complete!");
+            catch (Exception ex)
+            {
+                Console.WriteLine("Unittest failed: " + ex.Message);
+            }
         }
 
         static bool Run(List<string> args, Dictionary<string, string> options, bool first)
@@ -157,6 +165,7 @@ namespace Duplicati.CommandLine.BackendTester
             int min_filename_size = 5;
             int max_filename_size = 80;
             bool disableStreaming = Library.Utility.Utility.ParseBoolOption(options, "disable-streaming-transfers");
+            bool skipOverwriteTest = Library.Utility.Utility.ParseBoolOption(options, "skip-overwrite-test");
 
             if (options.ContainsKey("number-of-files"))
                 number_of_files = int.Parse(options["number-of-files"]);
@@ -179,61 +188,41 @@ namespace Duplicati.CommandLine.BackendTester
                 List<TempFile> files = new List<TempFile>();
                 for (int i = 0; i < number_of_files; i++)
                 {
-                    Console.Write("Generating file {0}", i);
+                    
                     StringBuilder filename = new StringBuilder();
                     int filenamelen = rnd.Next(min_filename_size, max_filename_size);
                     for (int j = 0; j < filenamelen; j++)
                         filename.Append(allowedChars[rnd.Next(0, allowedChars.Length)]);
 
-                    using (System.IO.FileStream fs = new System.IO.FileStream(System.IO.Path.Combine(tf, i.ToString()), System.IO.FileMode.CreateNew, System.IO.FileAccess.Write))
-                    {
-                        //Random size
-                        byte[] buf = new byte[1024];
-                        int size = rnd.Next(min_file_size, max_file_size);
-
-                        Console.WriteLine(" ({0})", Duplicati.Library.Utility.Utility.FormatSizeString(size));
-
-                        while (size > 0)
-                        {
-                            rnd.NextBytes(buf);
-                            fs.Write(buf, 0, Math.Min(buf.Length, size));
-                            size -= buf.Length;
-                        }
-                    }
+                    string localfilename = CreateRandomFile(tf, i, min_file_size, max_file_size, rnd);
 
                     //Calculate local hash and length
-                    using (System.IO.FileStream fs = new System.IO.FileStream(System.IO.Path.Combine(tf, i.ToString()), System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                        files.Add(new TempFile(filename.ToString(), sha.ComputeHash(fs), fs.Length));
+                    using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        files.Add(new TempFile(filename.ToString(), localfilename, sha.ComputeHash(fs), fs.Length));
                 }
 
+                byte[] dummyFileHash = null;
+                if (!skipOverwriteTest)
+                {
+                    Console.WriteLine("Uploading wrong files ...");
+                    using (Library.Utility.TempFile dummy = new Library.Utility.TempFile(CreateRandomFile(tf, files.Count, 1024, 2048, rnd)))
+                    {
+                        using (System.IO.FileStream fs = new System.IO.FileStream(dummy, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                            dummyFileHash = sha.ComputeHash(fs);
+
+                        //Upload a dummy file for entry 0 and the last one, they will be replaced by the real files afterwards
+                        //We upload entry 0 twice just to try to freak any internal cache list
+                        Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming);
+                        Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming);
+                        Uploadfile(dummy, files.Count - 1, files[files.Count - 1].remotefilename, backend, disableStreaming);
+                    }
+
+                }
 
                 Console.WriteLine("Uploading files ...");
 
                 for (int i = 0; i < files.Count; i++)
-                {
-                    Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(System.IO.Path.Combine(tf, i.ToString())).Length));
-                    try 
-                    {
-                        if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
-                        {
-                            using (System.IO.FileStream fs = new System.IO.FileStream(System.IO.Path.Combine(tf, i.ToString()), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                            using (NonSeekableStream nss = new NonSeekableStream(fs))
-                                (backend as Library.Interface.IStreamingBackend).Put(files[i].filename, nss);
-                        }
-                        else
-                            backend.Put(files[i].filename, System.IO.Path.Combine(tf, i.ToString())); 
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Failed to upload file {0}, error message: {1}", i, ex.ToString());
-                        while (ex.InnerException != null)
-                        {
-                            ex = ex.InnerException;
-                            Console.WriteLine(string.Format("  Inner exception: {0}", ex.ToString()));
-                        }
-                    }
-                    Console.WriteLine(" done!");
-                }
+                    Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming);
 
                 Console.WriteLine("Verifying file list ...");
 
@@ -243,15 +232,15 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         bool found = false;
                         foreach (TempFile tx in files)
-                            if (tx.filename == fe.Name)
+                            if (tx.remotefilename == fe.Name)
                             {
                                 if (tx.found)
-                                    Console.WriteLine("*** File with name {0} was found more than once", tx.filename);
+                                    Console.WriteLine("*** File with name {0} was found more than once", tx.remotefilename);
                                 found = true;
                                 tx.found = true;
 
                                 if (fe.Size > 0 && tx.length != fe.Size)
-                                    Console.WriteLine("*** File with name {0} has size {1} but the size was reported as {2}", tx.filename, tx.length, fe.Size);
+                                    Console.WriteLine("*** File with name {0} has size {1} but the size was reported as {2}", tx.remotefilename, tx.length, fe.Size);
 
                                 break;
                             }
@@ -262,7 +251,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                 foreach (TempFile tx in files)
                     if (!tx.found)
-                        Console.WriteLine("*** File with name {0} was uploaded but not found afterwards", tx.filename);
+                        Console.WriteLine("*** File with name {0} was uploaded but not found afterwards", tx.remotefilename);
 
                 Console.WriteLine("Downloading files");
 
@@ -272,18 +261,24 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         Exception e = null;
                         Console.Write("Downloading file {0} ... ", i);
-                        try 
+
+                        try
                         {
                             if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
                             {
                                 using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                 using (NonSeekableStream nss = new NonSeekableStream(fs))
-                                    (backend as Library.Interface.IStreamingBackend).Get(files[i].filename, nss);
+                                    (backend as Library.Interface.IStreamingBackend).Get(files[i].remotefilename, nss);
                             }
                             else
-                                backend.Get(files[i].filename, cf); 
+                                backend.Get(files[i].remotefilename, cf);
+
+                            e = null;
                         }
-                        catch (Exception ex) { e = ex; }
+                        catch (Exception ex) 
+                        {
+                            e = ex;
+                        }
 
                         if (e != null)
                             Console.WriteLine("failed\n*** Error: {0}", e.ToString());
@@ -294,7 +289,12 @@ namespace Duplicati.CommandLine.BackendTester
 
                         using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Open, System.IO.FileAccess.Read))
                             if (Convert.ToBase64String(sha.ComputeHash(fs)) != Convert.ToBase64String(files[i].hash))
-                                Console.WriteLine("failed\n*** Downloaded file was corrupt");
+                            {
+                                if (dummyFileHash != null && Convert.ToBase64String(sha.ComputeHash(fs)) == Convert.ToBase64String(dummyFileHash))
+                                    Console.WriteLine("failed\n*** Downloaded file was the dummy file");
+                                else
+                                    Console.WriteLine("failed\n*** Downloaded file was corrupt");
+                            }
                             else
                                 Console.WriteLine("done");
                     }
@@ -303,10 +303,10 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine("Deleting files...");
 
                 foreach (TempFile tx in files)
-                    try { backend.Delete(tx.filename); }
+                    try { backend.Delete(tx.remotefilename); }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.filename, ex.ToString());
+                        Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex.ToString());
                     }
 
                 curlist = backend.List();
@@ -319,6 +319,67 @@ namespace Duplicati.CommandLine.BackendTester
             }
 
             return true;
+        }
+
+        private static void Uploadfile(string localfilename, int i, string remotefilename, IBackend backend, bool disableStreaming)
+        {
+            Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(localfilename).Length));
+            Exception e = null;
+
+            try
+            {
+                if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
+                {
+                    using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+                    using (NonSeekableStream nss = new NonSeekableStream(fs))
+                        (backend as Library.Interface.IStreamingBackend).Put(remotefilename, nss);
+                }
+                else
+                    backend.Put(remotefilename, localfilename);
+
+                e = null;
+            }
+            catch (Exception ex)
+            {
+                e = ex;
+            }
+
+            if (e != null)
+            {
+                Console.WriteLine("Failed to upload file {0}, error message: {1}, remote name: {2}", i, e.ToString(), remotefilename);
+                while (e.InnerException != null)
+                {
+                    e = e.InnerException;
+                    Console.WriteLine(string.Format("  Inner exception: {0}", e.ToString()));
+                }
+            }
+            else
+            {
+                Console.WriteLine(" done!");
+            }
+        }
+
+        private static string CreateRandomFile(Library.Utility.TempFolder tf, int i, int min_file_size, int max_file_size, Random rnd)
+        {
+            Console.Write("Generating file {0}", i);
+            string filename = System.IO.Path.Combine(tf, i.ToString());
+            using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write))
+            {
+                //Random size
+                byte[] buf = new byte[1024];
+                int size = rnd.Next(min_file_size, max_file_size);
+
+                Console.WriteLine(" ({0})", Duplicati.Library.Utility.Utility.FormatSizeString(size));
+
+                while (size > 0)
+                {
+                    rnd.NextBytes(buf);
+                    fs.Write(buf, 0, Math.Min(buf.Length, size));
+                    size -= buf.Length;
+                }
+            }
+
+            return filename;
         }
 
         public static IList<ICommandLineArgument> SupportedCommands
@@ -334,7 +395,10 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this valus is the upper bound", "50mb"),
                     new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this valus is the lower bound", "5"),
                     new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this valus is the upper bound", "80"),
-                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allows automatic folder creation", "A value that indicates if missing folders are created automatically", "false")
+                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allows automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
+                    new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypasses the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
+                    new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Removes any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
+                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activates file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false")
                 });
 
             }
