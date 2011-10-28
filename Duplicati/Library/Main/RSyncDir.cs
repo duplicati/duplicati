@@ -238,10 +238,11 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         public class PartialEntryRecord
         {
-            public string Filename;
-            public long StartOffset;
-            public long Length;
-            public long TotalFileSize;
+            public readonly string Filename;
+            public readonly long StartOffset;
+            public readonly long Length;
+            public readonly long TotalFileSize;
+            public readonly string PlatformConvertedFilename;
 
             public PartialEntryRecord(string[] items)
             {
@@ -251,6 +252,7 @@ namespace Duplicati.Library.Main.RSync
                 this.StartOffset = long.Parse(items[1]);
                 this.Length = long.Parse(items[2]);
                 this.TotalFileSize = long.Parse(items[3]);
+                this.PlatformConvertedFilename = ConvertedFilename(this.Filename);
             }
 
             public PartialEntryRecord(string filename, long start, long size, long totalSize)
@@ -259,6 +261,52 @@ namespace Duplicati.Library.Main.RSync
                 this.StartOffset = start;
                 this.Length = size;
                 this.TotalFileSize = totalSize;
+                this.PlatformConvertedFilename = ConvertedFilename(this.Filename);
+            }
+
+            /// <summary>
+            /// This function attempts to discover what path separator 
+            /// was used to generate the filename, and then convert the
+            /// filename to use the current OS separator.
+            /// 
+            /// This fixes an issue where the backup is made on
+            /// one OS and attempted restored on another.
+            /// 
+            /// This is really a sub-optimal workaround for
+            /// the fact that the filename should have been recorded
+            /// as a platform independent filename.
+            /// 
+            /// Changing this requires increasing the manifest
+            /// version number to ensure backwards compatibility,
+            /// and then changing the recording function
+            /// </summary>
+            /// <param name="filename">The filename to convert</param>
+            /// <returns>The filename adapted to the local OS filename convetions</returns>
+            private static string ConvertedFilename(string filename)
+            {
+                //TODO: Once recorded correctly, this can just be:
+                //return FromplatformIndependantFilename(filename);
+
+                //We know that the filename is prefixed with either "snapshot" or "delta",
+                // so we just look for the first seperator (assumes there is only / and \),
+                int ix_linux = filename.IndexOf('/');
+                int ix_win = filename.IndexOf('\\');
+                
+                char sep_char;
+                if (ix_linux >= 0 && ix_win >= 0)
+                    sep_char = filename[Math.Min(ix_linux, ix_win)];
+                else if (ix_linux >= 0)
+                    sep_char = filename[ix_linux];
+                else if (ix_win >= 0)
+                    sep_char = filename[ix_win];
+                else
+                    //No sep char means no need to convert
+                    return filename;
+
+                if (sep_char != System.IO.Path.DirectorySeparatorChar)
+                    filename = filename.Replace(sep_char, System.IO.Path.DirectorySeparatorChar);
+                
+                return filename;
             }
 
             public string[] Serialize()
@@ -1965,12 +2013,12 @@ namespace Duplicati.Library.Main.RSync
                         PartialEntryRecord pex = null;
                         Utility.TempFile partialFile = null;
 
-                        if (pe != null && string.Equals(pe.Filename, s))
+                        if (pe != null && string.Equals(pe.PlatformConvertedFilename, s))
                             pex = pe; //The file is incomplete
-                        else if (fe != null && string.Equals(fe.Filename, s))
+                        else if (fe != null && string.Equals(fe.PlatformConvertedFilename, s))
                             pex = fe; //The file has the final segment
 
-                        if (pex != null && string.Equals(pex.Filename, s))
+                        if (pex != null && string.Equals(pex.PlatformConvertedFilename, s))
                         {
                             //Ensure that the partial file list is in the correct state
                             if (pex.StartOffset == 0 && m_partialDeltas.ContainsKey(s))
@@ -2057,14 +2105,14 @@ namespace Duplicati.Library.Main.RSync
                     }
 
                     PartialEntryRecord pex = null;
-                    if (pe != null && string.Equals(pe.Filename, s))
+                    if (pe != null && string.Equals(pe.PlatformConvertedFilename, s))
                         pex = pe; //The file is incomplete
-                    else if (fe != null && string.Equals(fe.Filename, s))
+                    else if (fe != null && string.Equals(fe.PlatformConvertedFilename, s))
                         pex = fe; //The file has the final segment
 
                     Utility.TempFile tempDelta = null;
 
-                    if (pex != null && string.Equals(pex.Filename, s))
+                    if (pex != null && string.Equals(pex.PlatformConvertedFilename, s))
                     {
                         //Ensure that the partial file list is in the correct state
                         if (pex.StartOffset == 0 && m_partialDeltas.ContainsKey(s))
