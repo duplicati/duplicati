@@ -776,7 +776,7 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message, ex);
+                    m_statistics.LogRetryAttempt(ex.Message, ex);
                     DisposeBackend();
 
                     if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
@@ -812,7 +812,7 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message, ex);
+                    m_statistics.LogRetryAttempt(ex.Message, ex);
                     DisposeBackend();
 
                     retries--;
@@ -1040,7 +1040,7 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message, ex);
+                    m_statistics.LogRetryAttempt(ex.Message, ex);
                     DisposeBackend();
 
                     retries--;
@@ -1167,7 +1167,7 @@ namespace Duplicati.Library.Main
                             
                         
                         lastEx = ex;
-                        m_statistics.LogError(ex.Message, ex);
+                        m_statistics.LogRetryAttempt(ex.Message, ex);
 
                         retries--;
                         if (retries > 0 && m_options.RetryDelay.Ticks > 0)

@@ -191,6 +191,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-module", CommandLineArgument.ArgumentType.String, Strings.Options.DisablemoduleShort, Strings.Options.DisablemoduleLong),
 
                     new CommandLineArgument("debug-output", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugoutputShort, Strings.Options.DebugoutputLong, "false"),
+                    new CommandLineArgument("debug-retry-errors", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugretryerrorsShort, Strings.Options.DebugretryerrorsLong, "false"),
                     new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
 
                     new CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileShort),
@@ -763,6 +764,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if debug output is enabled
         /// </summary>
         public bool DebugOutput { get { return GetBool("debug-output"); } }
+
+        /// <summary>
+        /// A value indicating if retry debug output is enabled
+        /// </summary>
+        public bool VerboseRetryErrors { get { return GetBool("debug-retry-errors"); } }
 
 
         /// <summary>
