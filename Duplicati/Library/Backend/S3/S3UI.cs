@@ -298,6 +298,30 @@ namespace Duplicati.Library.Backend
 
         private bool ValidateForm(bool checkForBucket)
         {
+            string servername;
+            if (Servernames.SelectedItem as Utility.ComboBoxItemPair<string> == null)
+                servername = Servernames.Text;
+            else
+                servername = (Servernames.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
+
+            if (string.IsNullOrEmpty(servername))
+            {
+                MessageBox.Show(this, Library.Interface.CommonStrings.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servernames.Focus(); }
+                catch { }
+
+                return false;
+            }
+
+            if (!Library.Utility.Utility.IsValidHostname(servername))
+            {
+                MessageBox.Show(this, string.Format(Library.Interface.CommonStrings.InvalidServernameError, servername), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servernames.Focus(); }
+                catch { }
+
+                return false;
+            }
+
             if (AWS_ID.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Strings.S3UI.EmptyAWSIDError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);

@@ -816,15 +816,15 @@ namespace Duplicati.Library.Utility
             }
         }
 
-        private class ThreadWorker
+        /// <summary>
+        /// Checks that a hostname is valid
+        /// </summary>
+        /// <param name="hostname">The hostname to verify</param>
+        /// <returns>True if the hostname is valid, false otherwise</returns>
+        public static bool IsValidHostname(string hostname)
         {
-            public System.IO.Stream stream = null;
-            public void Run(object data)
-            {
-                System.Net.WebRequest req = (System.Net.WebRequest)data;
-                req.Timeout = System.Threading.Timeout.Infinite;
-                stream = req.GetRequestStream();
-            }
+            try { return Uri.CheckHostName(hostname) != UriHostNameType.Unknown; }
+            catch { return false; }
         }
     }
 }

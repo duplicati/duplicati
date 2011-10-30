@@ -255,6 +255,15 @@ namespace Duplicati.Library.Backend
                 return false;
             }
 
+            if (!Library.Utility.Utility.IsValidHostname(Servername.Text))
+            {
+                MessageBox.Show(this, string.Format(Library.Interface.CommonStrings.InvalidServernameError, Servername.Text), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servername.Focus(); }
+                catch { }
+
+                return false;
+            }
+
             if (Username.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Interface.CommonStrings.EmptyUsernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);

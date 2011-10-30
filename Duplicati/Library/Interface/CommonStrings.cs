@@ -186,5 +186,15 @@ namespace Duplicati.Library.Interface
             }
         }
 
+        /// <summary>
+        ///   Looks up a localized string similar to The server name &quot;{0}&quot; is not valid.
+        /// </summary>
+        public static string InvalidServernameError
+        {
+            get
+            {
+                return Strings.Common.InvalidServernameError;
+            }
+        }
     }
 }

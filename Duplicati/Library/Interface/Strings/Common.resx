@@ -167,4 +167,7 @@ Do you want to use the selected folder?</value>
   <data name="FolderMissingError" xml:space="preserve">
     <value>The requested folder does not exist</value>
   </data>
+  <data name="InvalidServernameError" xml:space="preserve">
+    <value>The server name "{0}" is not valid</value>
+  </data>
 </root>

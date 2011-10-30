@@ -154,6 +154,31 @@ namespace Duplicati.Library.Backend
 
         private bool ValidateForm(bool checkForBucket)
         {
+            string servername;
+            if (Servernames.SelectedItem as Utility.ComboBoxItemPair<string> == null)
+                servername = Servernames.Text;
+            else
+                servername = (Servernames.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
+
+            if (string.IsNullOrEmpty(servername))
+            {
+                MessageBox.Show(this, Strings.CloudFilesUI.EmptyAuthUrlError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servernames.Focus(); }
+                catch { }
+                
+                return false;
+            }
+
+            Uri tmp;
+            if (!Uri.TryCreate(servername, UriKind.Absolute, out tmp))
+            {
+                MessageBox.Show(this, string.Format(Strings.CloudFilesUI.InvalidAuthUrlError, servername), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servernames.Focus(); }
+                catch { }
+
+                return false;
+            }
+
             if (Username.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Strings.CloudFilesUI.EmptyCloudFilesIDError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -174,6 +199,7 @@ namespace Duplicati.Library.Backend
 
             if (!API_KEY.VerifyPasswordIfChanged())
                 return false;
+
 
             return true;
         }
