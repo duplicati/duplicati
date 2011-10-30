@@ -163,7 +163,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("number-of-retries", CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, "5"),
                     new CommandLineArgument("retry-delay", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, "10s"),
                     new CommandLineArgument("sorted-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SortedfilelistShort, Strings.Options.SortedfilelistLong, "false"),
-                    
 
                     new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
                     new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false", null, null, string.Format(Strings.Options.AsynchronousuploadDeprecated, "synchronous-upload")),
@@ -178,6 +177,7 @@ namespace Duplicati.Library.Main
                     
                     new CommandLineArgument("allow-sourcefolder-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsourcefolderchangeShort, Strings.Options.AllowsourcefolderchangeLong, "false"),
                     new CommandLineArgument("full-if-sourcefolder-changed", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullifsourcefolderchangedShort, Strings.Options.FullifsourcefolderchangedLong, "false"),
+                    new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
@@ -770,6 +770,10 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool VerboseRetryErrors { get { return GetBool("debug-retry-errors"); } }
 
+        /// <summary>
+        /// A value indicating if unchanged backups are uploaded
+        /// </summary>
+        public bool UploadUnchangedBackups { get { return GetBool("upload-unchanged-backups"); } }
 
         /// <summary>
         /// Gets a list of modules that should be loaded

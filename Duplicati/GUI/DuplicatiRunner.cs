@@ -340,7 +340,7 @@ namespace Duplicati.GUI
                     RunnerResult r = RunnerResult.Error;
                     if (l.ParsedStatus == DuplicatiOutputParser.ErrorStatus)
                         r = RunnerResult.Error;
-                    else if (l.ParsedStatus == DuplicatiOutputParser.OKStatus)
+                    else if (l.ParsedStatus == DuplicatiOutputParser.OKStatus || l.ParsedStatus == DuplicatiOutputParser.NoChangedFiles)
                         r = RunnerResult.OK;
                     else if (l.ParsedStatus == DuplicatiOutputParser.PartialStatus)
                         r = RunnerResult.Partial;

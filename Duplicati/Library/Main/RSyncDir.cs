@@ -2200,6 +2200,26 @@ namespace Duplicati.Library.Main.RSync
         }
 
 
+        public bool AnyChangesFound
+        {
+            get
+            {
+                long count = 0;
+                if (m_deletedfiles != null)
+                    count += m_deletedfiles.Count;
+                if (m_deletedfolders != null)
+                    count += m_deletedfolders.Count;
+                count += m_diffedfiles;
+                count += m_addedfiles;
+                count += m_diffedfilessize;
+                count += m_addedfilessize;
+                if (m_newfolders != null)
+                    count += m_newfolders.Count;
+
+                return count != 0;
+            }
+        }
+
         #region IDisposable Members
 
         public void Dispose()

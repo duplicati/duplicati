@@ -1141,6 +1141,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If no files have changed, Duplicati will not upload a backup set. If the backup data is used to verify that a backup was executed, this option will make Duplicati upload a backupset even if it is empty.
+        /// </summary>
+        internal static string UploadUnchangedBackupsLong {
+            get {
+                return ResourceManager.GetString("UploadUnchangedBackupsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Upload empty backup files .
+        /// </summary>
+        internal static string UploadUnchangedBackupsShort {
+            get {
+                return ResourceManager.GetString("UploadUnchangedBackupsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This settings controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to &quot;off&quot;, Duplicati will not attempt to use USN. Setting this to &quot;auto&quot; makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of &quot;on&quot; will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to &quot;required&quot; will make Duplicati abort the backup if the USN usage fail [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string UsnpolicyLong {

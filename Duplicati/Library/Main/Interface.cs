@@ -513,6 +513,8 @@ namespace Duplicati.Library.Main
 
                         OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, -1, -1, Strings.Interface.StatusBuildingFilelist, "");
 
+                        bool completedWithoutChanges;
+
                         using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(manifest.SourceDirs, bs, m_options.Filter, patches))
                         {
                             CheckLiveControl();
@@ -566,87 +568,100 @@ namespace Duplicati.Library.Main
 
                                     }
 
+                                    completedWithoutChanges = done && !dir.AnyChangesFound;
+
+                                    if (m_options.UploadUnchangedBackups)
+                                        completedWithoutChanges = false;
+
+                                    if (!completedWithoutChanges)
+                                    {
+
+                                        if (m_options.AsynchronousUpload)
+                                        {
+                                            m_lastProgressMessage = Strings.Interface.StatusWaitingForUpload;
+                                            m_allowUploadProgress = true;
+                                            m_allowUploadProgressAfter = DateTime.Now.AddSeconds(1);
+                                        }
+                                        else
+                                            OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingContentVolume, vol + 1), "");
+
+                                        //Last check before we upload, we do not interrupt transfers
+                                        CheckLiveControl();
+
+                                        //The backendwrapper will remove these
+                                        signaturefile.Protected = true;
+                                        contentfile.Protected = true;
+
+                                        ContentEntry ce = new ContentEntry(backuptime, full, vol + 1);
+                                        SignatureEntry se = new SignatureEntry(backuptime, full, vol + 1);
+
+                                        using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
+                                            backend.Put(ce, contentfile);
+
+                                        if (!m_options.AsynchronousUpload)
+                                            OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
+
+                                        using (new Logging.Timer("Writing remote signatures"))
+                                            backend.Put(se, signaturefile);
+
+                                        manifest.AddEntries(ce, se);
+
+                                        if (verification != null)
+                                        {
+                                            verification.AddFile(ce);
+                                            verification.AddFile(se);
+                                        }
+                                    }
+                                }
+
+                                if (!completedWithoutChanges)
+                                {
+                                    //The backend wrapper will remove these
+                                    Utility.TempFile mf = new Duplicati.Library.Utility.TempFile();
+
+                                    using (new Logging.Timer("Writing manifest " + backuptime.ToUniversalTime().ToString("yyyyMMddTHHmmssK")))
+                                    {
+                                        //Alternate primary/secondary
+                                        ManifestEntry mfe = new ManifestEntry(backuptime, full, manifest.SignatureHashes.Count % 2 != 0);
+                                        manifest.SelfFilename = backend.GenerateFilename(mfe);
+                                        manifest.Save(mf);
+
+                                        if (!m_options.AsynchronousUpload)
+                                            OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingManifestVolume, vol + 1), "");
+
+                                        //Write the file
+                                        mf.Protected = true;
+                                        backend.Put(mfe, mf);
+
+                                        if (verification != null)
+                                            verification.UpdateManifest(mfe);
+                                    }
+
+                                    if (verification != null)
+                                    {
+                                        using (new Logging.Timer("Writing verification " + backuptime.ToUniversalTime().ToString("yyyyMMddTHHmmssK")))
+                                        {
+                                            Utility.TempFile vt = new Duplicati.Library.Utility.TempFile();
+
+                                            verification.Save(vt);
+
+                                            if (!m_options.AsynchronousUpload)
+                                                OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusUploadingVerificationVolume, "");
+
+                                            vt.Protected = true;
+                                            backend.Put(new VerificationEntry(backupchaintime), vt);
+                                        }
+                                    }
+
                                     if (m_options.AsynchronousUpload)
-                                    {
-                                        m_lastProgressMessage = Strings.Interface.StatusWaitingForUpload;
-                                        m_allowUploadProgress = true;
-                                        m_allowUploadProgressAfter = DateTime.Now.AddSeconds(1);
-                                    }
-                                    else
-                                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingContentVolume, vol + 1), "");
+                                        m_allowUploadProgress = false;
 
-                                    //Last check before we upload, we do not interrupt transfers
-                                    CheckLiveControl();
-
-                                    //The backendwrapper will remove these
-                                    signaturefile.Protected = true;
-                                    contentfile.Protected = true;
-
-                                    ContentEntry ce = new ContentEntry(backuptime, full, vol + 1);
-                                    SignatureEntry se = new SignatureEntry(backuptime, full, vol + 1);
-
-                                    using (new Logging.Timer("Writing delta file " + (vol + 1).ToString()))
-                                        backend.Put(ce, contentfile);
-
-                                    if (!m_options.AsynchronousUpload)
-                                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingSignatureVolume, vol + 1), "");
-
-                                    using (new Logging.Timer("Writing remote signatures"))
-                                        backend.Put(se, signaturefile);
-
-                                    manifest.AddEntries(ce, se);
-
-                                    if (verification != null)
-                                    {
-                                        verification.AddFile(ce);
-                                        verification.AddFile(se);
-                                    }
+                                    //The file volume counter
+                                    vol++;
                                 }
-
-                                //The backend wrapper will remove these
-                                Utility.TempFile mf = new Duplicati.Library.Utility.TempFile();
-
-                                using (new Logging.Timer("Writing manifest " + backuptime.ToUniversalTime().ToString("yyyyMMddTHHmmssK")))
-                                {
-                                    //Alternate primary/secondary
-                                    ManifestEntry mfe = new ManifestEntry(backuptime, full, manifest.SignatureHashes.Count % 2 != 0);
-                                    manifest.SelfFilename = backend.GenerateFilename(mfe);
-                                    manifest.Save(mf);
-
-                                    if (!m_options.AsynchronousUpload)
-                                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusUploadingManifestVolume, vol + 1), "");
-
-                                    //Write the file
-                                    mf.Protected = true;
-                                    backend.Put(mfe, mf);
-
-                                    if (verification != null)
-                                        verification.UpdateManifest(mfe);
-                                }
-
-                                if (verification != null)
-                                {
-                                    using (new Logging.Timer("Writing verification " + backuptime.ToUniversalTime().ToString("yyyyMMddTHHmmssK")))
-                                    {
-                                        Utility.TempFile vt = new Duplicati.Library.Utility.TempFile();
-
-                                        verification.Save(vt);
-
-                                    if (!m_options.AsynchronousUpload)
-                                        OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, Strings.Interface.StatusUploadingVerificationVolume, "");
-
-                                        vt.Protected = true;
-                                        backend.Put(new VerificationEntry(backupchaintime), vt);
-                                    }
-                                }
-
-                                if (m_options.AsynchronousUpload)
-                                    m_allowUploadProgress = false;
-
-                                //The file volume counter
-                                vol++;
                             }
                         }
+
 
                         //If we are running asynchronous, we now enter the end-game
                         if (m_options.AsynchronousUpload)

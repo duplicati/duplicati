@@ -31,6 +31,7 @@ namespace Duplicati.GUI
         public const string WarningStatus = "Warning";
         public const string PartialStatus = "Partial";
         public const string InterruptedStatus = "InProgress";
+        public const string NoChangedFiles = "Empty";
 
         private const string OK_INDICATOR = "Duration";
         private const string WARNING_INDICATOR = "NumberOfErrors";
@@ -54,16 +55,22 @@ namespace Duplicati.GUI
             if (c > 0)
                 log.ParsedStatus = WarningStatus;
 
-            if (ExtractValue(text, METHOD_INDICATOR, "").StartsWith("backup", StringComparison.InvariantCultureIgnoreCase))
+            bool isBackup = ExtractValue(text, METHOD_INDICATOR, "").StartsWith("backup", StringComparison.InvariantCultureIgnoreCase);
+
+            if (isBackup)
                 c = ExtractNumber(text, UPLOAD_SIZE_INDICATOR, -1);
             else
                 c = ExtractNumber(text, DOWNLOAD_SIZE_INDICATOR, -1);
 
             if (c == 0)
-                log.ParsedStatus = WarningStatus;
+            {
+                if (isBackup)
+                    log.ParsedStatus = NoChangedFiles;
+                else
+                    log.ParsedStatus = WarningStatus;
+            }
 
             log.Transfersize = c;
-
 
             if (log.ParsedStatus == WarningStatus)
             {
@@ -71,7 +78,6 @@ namespace Duplicati.GUI
                 if (missing > 0)
                     log.ParsedStatus = PartialStatus;
             }
-
         }
 
         private static long ExtractNumber(string output, string key, long @default)

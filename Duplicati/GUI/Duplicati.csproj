@@ -1168,6 +1168,7 @@
     <None Include="Resources\TrayNormalWarning.ico" />
     <None Include="Resources\InterruptedStatusIcon.ico" />
     <None Include="Resources\InterruptedStatusIcon.png" />
+    <None Include="Resources\EmptyBackupStatusIcon.png" />
     <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -41,6 +41,7 @@ namespace Duplicati.GUI
             imageList.Images.Add(DuplicatiOutputParser.ErrorStatus, Properties.Resources.ErrorStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.PartialStatus, Properties.Resources.PartialStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.InterruptedStatus, Properties.Resources.InterruptedStatusIcon);
+            imageList.Images.Add(DuplicatiOutputParser.NoChangedFiles, Properties.Resources.EmptyBackupStatusIcon);
 
             //We have the display open in the designer, so we set the right size here
             this.Size = this.MinimumSize;
@@ -343,6 +344,13 @@ namespace Duplicati.GUI
             Log l = recentBackups.SelectedItems[0].Tag as Log;
             if (l == null)
                 return;
+
+            if (DuplicatiOutputParser.NoChangedFiles.Equals(l.ParsedStatus, StringComparison.InvariantCultureIgnoreCase))
+            {
+                MessageBox.Show(this, Strings.ServiceStatus.NoFilesInBackupMessages, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             Schedule s = l.OwnerTask.Schedule;
             DateTime time = l.EndTime; //Not the exact time to use, but close enough unless there were multiple backups running at the same time
 

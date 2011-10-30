@@ -129,6 +129,9 @@
   <data name="BackupStatusWarning" xml:space="preserve">
     <value>Completed backup with warnings</value>
   </data>
+  <data name="NoFilesInBackupMessages" xml:space="preserve">
+    <value>The backup has no changes</value>
+  </data>
   <data name="StatusBackup" xml:space="preserve">
     <value>Backup: {0}</value>
   </data>
