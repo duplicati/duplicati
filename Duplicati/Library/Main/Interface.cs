@@ -1566,31 +1566,69 @@ namespace Duplicati.Library.Main
         {
             StringBuilder sb = new StringBuilder();
 
-            foreach (ManifestEntry me in entries)
+            sb.Append(backend.FinishDeleteTransaction(false));
+
+            if (entries.Count > 0)
             {
-                sb.AppendLine(string.Format(Strings.Interface.DeletingBackupSetMessage, me.Time.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                System.Xml.XmlNode root = doc.AppendChild(doc.CreateElement("files"));
+                root.Attributes.Append(doc.CreateAttribute("version")).Value = "1";
 
-                if (m_options.Force)
+                foreach (ManifestEntry me in entries)
                 {
-                    //Delete manifest
                     if (me.Alternate != null)
-                        backend.Delete(me.Alternate);
-
-                    backend.Delete(me);
+                        root.AppendChild(doc.CreateElement("file")).InnerText = me.Alternate.Filename;
+                    root.AppendChild(doc.CreateElement("file")).InnerText = me.Filename;
 
                     if (me.Verification != null)
-                        backend.Delete(me.Verification);
+                        root.AppendChild(doc.CreateElement("file")).InnerText = me.Verification.Filename;
 
                     foreach (KeyValuePair<SignatureEntry, ContentEntry> kx in me.Volumes)
                     {
-                        backend.Delete(kx.Key);
-                        backend.Delete(kx.Value);
+                        root.AppendChild(doc.CreateElement("file")).InnerText = kx.Key.Filename;
+                        root.AppendChild(doc.CreateElement("file")).InnerText = kx.Value.Filename;
                     }
                 }
-            }
 
-            if (!m_options.Force && entries.Count > 0)
-                sb.AppendLine(Strings.Interface.FilesAreNotForceDeletedMessage);
+                if (m_options.Force)
+                {
+                    using (TempFile tf = new TempFile())
+                    {
+                        doc.Save(tf);
+                        tf.Protected = true;
+                        backend.WriteDeleteTransactionFile(tf);
+                    }
+                }
+
+                foreach (ManifestEntry me in entries)
+                {
+                    sb.AppendLine(string.Format(Strings.Interface.DeletingBackupSetMessage, me.Time.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+
+                    if (m_options.Force)
+                    {
+                        //Delete manifest
+                        if (me.Alternate != null)
+                            backend.Delete(me.Alternate);
+
+                        backend.Delete(me);
+
+                        if (me.Verification != null)
+                            backend.Delete(me.Verification);
+
+                        foreach (KeyValuePair<SignatureEntry, ContentEntry> kx in me.Volumes)
+                        {
+                            backend.Delete(kx.Key);
+                            backend.Delete(kx.Value);
+                        }
+                    }
+                }
+
+                if (m_options.Force)
+                    backend.RemoveDeleteTransactionFile();
+
+                if (!m_options.Force && entries.Count > 0)
+                    sb.AppendLine(Strings.Interface.FilesAreNotForceDeletedMessage);
+            }
 
             return sb.ToString();
         }
@@ -1607,7 +1645,7 @@ namespace Duplicati.Library.Main
                 if (OperationStarted != null)
                     OperationStarted(this, DuplicatiOperation.List, stats.OperationMode, 0, -1, Strings.Interface.StatusStarted, "");
 
-                foreach (Duplicati.Library.Interface.IFileEntry fe in backend.List())
+                foreach (Duplicati.Library.Interface.IFileEntry fe in backend.List(false))
                     res.Add(fe.Name);
 
                 if (OperationCompleted != null)
@@ -1623,6 +1661,7 @@ namespace Duplicati.Library.Main
             SetupCommonOptions(stats);
 
             bool anyRemoved = false;
+            StringBuilder sb = new StringBuilder();
             using (BackendWrapper backend = new BackendWrapper(stats, m_backend, m_options))
             {
                 List<ManifestEntry> sorted = backend.GetBackupSets();
@@ -1632,7 +1671,9 @@ namespace Duplicati.Library.Main
                 foreach (ManifestEntry be in sorted)
                     entries.AddRange(be.Incrementals);
 
-                backend.DeleteOrphans(false);
+                string cleanup = backend.DeleteOrphans(false);
+                if (!string.IsNullOrEmpty(cleanup))
+                    sb.AppendLine(cleanup);
 
                 if (m_options.SkipFileHashChecks)
                     throw new Exception(Strings.Interface.CannotCleanWithoutHashesError);
@@ -1653,8 +1694,16 @@ namespace Duplicati.Library.Main
                     for (int i = count - 1; i < be.Volumes.Count; i++)
                     {
                         anyRemoved = true;
-                        Logging.Log.WriteMessage(string.Format(Strings.Interface.RemovingPartialFilesMessage, be.Volumes[i].Key.Filename), Duplicati.Library.Logging.LogMessageType.Information);
-                        Logging.Log.WriteMessage(string.Format(Strings.Interface.RemovingPartialFilesMessage, be.Volumes[i].Value.Filename), Duplicati.Library.Logging.LogMessageType.Information);
+
+                        string sigmsg = string.Format(Strings.Interface.RemovingPartialFilesMessage, be.Volumes[i].Key.Filename);
+                        string cntmsg = string.Format(Strings.Interface.RemovingPartialFilesMessage, be.Volumes[i].Value.Filename);
+
+                        Logging.Log.WriteMessage(sigmsg, Duplicati.Library.Logging.LogMessageType.Information);
+                        Logging.Log.WriteMessage(cntmsg, Duplicati.Library.Logging.LogMessageType.Information);
+
+                        sb.AppendLine(sigmsg);
+                        sb.AppendLine(cntmsg);
+
                         if (m_options.Force)
                         {
                             backend.Delete(be.Volumes[i].Key);
@@ -1665,9 +1714,12 @@ namespace Duplicati.Library.Main
             }
 
             if (!m_options.Force && anyRemoved)
+            {
                 Logging.Log.WriteMessage(Strings.Interface.FilesAreNotForceDeletedMessage, Duplicati.Library.Logging.LogMessageType.Information);
+                sb.AppendLine(Strings.Interface.FilesAreNotForceDeletedMessage);
+            }
 
-            return ""; //TODO: Write a message here?
+            return sb.ToString(); //TODO: Write a message here?
         }
 
         public IList<string> ListCurrentFiles()

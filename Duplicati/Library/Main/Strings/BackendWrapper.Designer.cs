@@ -97,11 +97,58 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Delete transaction completed successfully.
+        /// </summary>
+        internal static string CompletedDeleteTransaction {
+            get {
+                return ResourceManager.GetString("CompletedDeleteTransaction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Completing unfinished delete transaction and removing {0} files.
+        /// </summary>
+        internal static string CompletingDeleteTransactionWarning {
+            get {
+                return ResourceManager.GetString("CompletingDeleteTransactionWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An error occured while attempting to delete cache file {0}.
         /// </summary>
         internal static string DeleteCacheFileError {
             get {
                 return ResourceManager.GetString("DeleteCacheFileError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A delete operation was started, but failed to complete. Next invocation of a cleanup or delete command will complete the transaction..
+        /// </summary>
+        internal static string DeleteTransactionFileFoundWarning {
+            get {
+                return ResourceManager.GetString("DeleteTransactionFileFoundWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A previously started delete operation was not completed, but the attempt to recover the operation details failed with the message: {1}.
+        ///
+        ///If this problem happens more than once, it is possible that the delete transaction file is defect. Try renaming the file &quot;{0}&quot; and the run the operation again. If no errors are reported, it is safe to delete the file, otherwise Duplicati will report what needs to be manually corrected..
+        /// </summary>
+        internal static string DeleteTransactionFileReadError {
+            get {
+                return ResourceManager.GetString("DeleteTransactionFileReadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deleting file from delete transaction &quot;{0}&quot;.
+        /// </summary>
+        internal static string DeletingTransactionLeftoverFile {
+            get {
+                return ResourceManager.GetString("DeletingTransactionLeftoverFile", resourceCulture);
             }
         }
         
@@ -129,6 +176,15 @@ namespace Duplicati.Library.Main.Strings {
         internal static string EmptyManifestWarning {
             get {
                 return ResourceManager.GetString("EmptyManifestWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An internal error has occured, a request was made to initiate a delete transaction, but one was already present.
+        /// </summary>
+        internal static string ExistingDeleteTransactionError {
+            get {
+                return ResourceManager.GetString("ExistingDeleteTransactionError", resourceCulture);
             }
         }
         
@@ -223,11 +279,29 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to There were multiple delete transaction files found. Please manually inspect the target destination and resolve this error..
+        /// </summary>
+        internal static string MultipleDeleteTransactionsFoundError {
+            get {
+                return ResourceManager.GetString("MultipleDeleteTransactionsFoundError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No backups found at remote location.
         /// </summary>
         internal static string NoBackupsFoundError {
             get {
                 return ResourceManager.GetString("NoBackupsFoundError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An internal error has occured, a request was made to complete a delete transaction, but there was not a transaction in progress.
+        /// </summary>
+        internal static string NonExistingDeleteTransactionError {
+            get {
+                return ResourceManager.GetString("NonExistingDeleteTransactionError", resourceCulture);
             }
         }
         
