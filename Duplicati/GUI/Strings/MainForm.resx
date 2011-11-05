@@ -140,6 +140,9 @@
     <value>The backup named "{0}" was found {1} times</value>
     <comment>An error message displayed when invoking a backup from the commandline, and the named backup is found multiple times</comment>
   </data>
+  <data name="NamedBackupGroupNotFound" xml:space="preserve">
+    <value>The backup group named "{0}" was not found</value>
+  </data>
   <data name="NamedBackupNotFound" xml:space="preserve">
     <value>The backup named "{0}" was not found</value>
     <comment>An error message displayed when invoking a backup from the commandline, and the named backup is not found</comment>

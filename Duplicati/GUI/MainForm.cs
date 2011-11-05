@@ -458,6 +458,10 @@ namespace Duplicati.GUI
             if (args.Count == 1 && args[0] == "show-status")
                 options["show-status"] = "";
 
+            //Backwards compatible options
+            if (args.Count == 2 && args[0].ToLower().Trim() == "run-backup-group")
+                options["run-backup-group"] = args[1].Trim();
+
             //If pause is requested, pause before parsing --run-backup
             if (options.ContainsKey("pause"))
             {
@@ -507,6 +511,36 @@ namespace Duplicati.GUI
                         Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
                     else
                         Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
+                }
+            }
+
+            if (options.ContainsKey("run-backup-group"))
+            {
+                string groupname = options["run-backup-group"];
+                if (string.IsNullOrEmpty(groupname))
+                {
+                    if (WizardDialog == null || !WizardDialog.Visible)
+                    {
+                        WizardDialog = new WizardHandler(new System.Windows.Forms.Wizard.IWizardControl[] { new Wizard_pages.SelectBackup(Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.RunNow) });
+                        WizardDialog.Show();
+                    }
+                }
+                else
+                {
+                    Datamodel.Schedule[] schedules = Program.DataConnection.GetObjects<Datamodel.Schedule>("Path LIKE ?", groupname.Trim());
+                    if (schedules == null || schedules.Length == 0)
+                    {
+                        MessageBox.Show(string.Format(Strings.MainForm.NamedBackupGroupNotFound, groupname), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+
+                    bool full = Library.Utility.Utility.ParseBoolOption(options, "full");
+
+                    foreach(Datamodel.Schedule s in schedules)
+                        if (full)
+                            Program.WorkThread.AddTask(new FullBackupTask(s));
+                        else
+                            Program.WorkThread.AddTask(new IncrementalBackupTask(s));
                 }
             }
 
