@@ -99,9 +99,6 @@ namespace Duplicati.Library.Backend
                     MessageBox.Show(this, Strings.FileUI.AuthenticationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                 }
-
-                if (Password.Text.Length > 0 && !Password.VerifyPasswordIfChanged())
-                    return false;
             }
 
             try

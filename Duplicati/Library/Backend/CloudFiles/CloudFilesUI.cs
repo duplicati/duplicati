@@ -197,10 +197,6 @@ namespace Duplicati.Library.Backend
                 return false;
             }
 
-            if (!API_KEY.VerifyPasswordIfChanged())
-                return false;
-
-
             return true;
         }
 

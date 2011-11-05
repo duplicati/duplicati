@@ -410,9 +410,6 @@ namespace Duplicati.Library.Backend
                 m_hasWarnedInvalidBucketname = true;
             }
 
-            if (!AWS_KEY.VerifyPasswordIfChanged())
-                return false;
-
             if (checkForBucket)
                 return EnsureBucketForMono();
             else

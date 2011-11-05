@@ -342,9 +342,6 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            if (UsePassword.Checked && !Password.VerifyPasswordIfChanged())
-                return false;
-
             return true;
         }
 

@@ -271,10 +271,6 @@ namespace Duplicati.Library.Backend
                     }
                     m_warnedPassword = true;
                 }
-
-                if (Password.Text.Length > 0 && !Password.VerifyPasswordIfChanged())
-                    return false;
-
             }
 
             if (UseSSL.Checked && AcceptSpecifiedHash.Checked)

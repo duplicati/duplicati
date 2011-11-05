@@ -171,9 +171,6 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            if (Password.Text.Length > 0 && !Password.VerifyPasswordIfChanged())
-                return false;
-
             return true;
         }
 
