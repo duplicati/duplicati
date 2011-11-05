@@ -117,82 +117,83 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="label3.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="splitContainer1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
+  <data name="splitContainer1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 144</value>
   </data>
-  <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>102, 13</value>
+  <data name="splitContainer1.Orientation" type="System.Windows.Forms.Orientation, System.Windows.Forms">
+    <value>Horizontal</value>
   </data>
-  <data name="label3.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+  <data name="columnHeader4.Text" xml:space="preserve">
+    <value>Time</value>
   </data>
-  <data name="label3.Text" xml:space="preserve">
-    <value>Scheduled backups</value>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="columnHeader4.Width" type="System.Int32, mscorlib">
+    <value>116</value>
   </data>
-  <data name="&gt;&gt;label3.Name" xml:space="preserve">
-    <value>label3</value>
+  <data name="columnHeader5.Text" xml:space="preserve">
+    <value>Backup set</value>
   </data>
-  <data name="&gt;&gt;label3.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="columnHeader5.Width" type="System.Int32, mscorlib">
+    <value>187</value>
   </data>
-  <data name="&gt;&gt;label3.Parent" xml:space="preserve">
-    <value>advancedPanel</value>
+  <metadata name="pendingTasks.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>467, 17</value>
+  </metadata>
+  <data name="runBackupNowToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>163, 22</value>
   </data>
-  <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>1</value>
+  <data name="runBackupNowToolStripMenuItem1.Text" xml:space="preserve">
+    <value>Run backup now</value>
   </data>
-  <data name="scheduledBackups.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 16</value>
+  <data name="pendingTasks.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 26</value>
   </data>
-  <data name="scheduledBackups.Size" type="System.Drawing.Size, System.Drawing">
-    <value>320, 56</value>
+  <data name="&gt;&gt;pendingTasks.Name" xml:space="preserve">
+    <value>pendingTasks</value>
   </data>
-  <data name="scheduledBackups.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+  <data name="&gt;&gt;pendingTasks.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;scheduledBackups.Name" xml:space="preserve">
-    <value>scheduledBackups</value>
+  <data name="pendingView.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
   </data>
-  <data name="&gt;&gt;scheduledBackups.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="pendingView.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 21</value>
   </data>
-  <data name="&gt;&gt;scheduledBackups.Parent" xml:space="preserve">
-    <value>advancedPanel</value>
+  <data name="pendingView.Size" type="System.Drawing.Size, System.Drawing">
+    <value>341, 68</value>
   </data>
-  <data name="&gt;&gt;scheduledBackups.ZOrder" xml:space="preserve">
+  <data name="pendingView.TabIndex" type="System.Int32, mscorlib">
+    <value>16</value>
+  </data>
+  <data name="&gt;&gt;pendingView.Name" xml:space="preserve">
+    <value>pendingView</value>
+  </data>
+  <data name="&gt;&gt;pendingView.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ListView, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;pendingView.Parent" xml:space="preserve">
+    <value>splitContainer1.Panel1</value>
+  </data>
+  <data name="&gt;&gt;pendingView.ZOrder" xml:space="preserve">
     <value>0</value>
-  </data>
-  <data name="pendingBackups.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 96</value>
-  </data>
-  <data name="pendingBackups.Size" type="System.Drawing.Size, System.Drawing">
-    <value>320, 56</value>
-  </data>
-  <data name="pendingBackups.TabIndex" type="System.Int32, mscorlib">
-    <value>7</value>
-  </data>
-  <data name="&gt;&gt;pendingBackups.Name" xml:space="preserve">
-    <value>pendingBackups</value>
-  </data>
-  <data name="&gt;&gt;pendingBackups.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;pendingBackups.Parent" xml:space="preserve">
-    <value>advancedPanel</value>
-  </data>
-  <data name="&gt;&gt;pendingBackups.ZOrder" xml:space="preserve">
-    <value>2</value>
   </data>
   <data name="label5.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="label5.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Top</value>
+  </data>
+  <data name="label5.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
   <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 80</value>
+    <value>0, 8</value>
   </data>
   <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
     <value>90, 13</value>
@@ -210,37 +211,171 @@
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;label5.Parent" xml:space="preserve">
-    <value>advancedPanel</value>
+    <value>splitContainer1.Panel1</value>
   </data>
   <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>1</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="advancedPanel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+  <data name="splitContainer1.Panel1.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 8, 0, 0</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Panel1.Name" xml:space="preserve">
+    <value>splitContainer1.Panel1</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Panel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitterPanel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Panel1.Parent" xml:space="preserve">
+    <value>splitContainer1</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Panel1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="columnHeader1.Text" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="columnHeader1.Width" type="System.Int32, mscorlib">
+    <value>116</value>
+  </data>
+  <data name="columnHeader2.Text" xml:space="preserve">
+    <value>Backup set</value>
+  </data>
+  <data name="columnHeader2.Width" type="System.Int32, mscorlib">
+    <value>107</value>
+  </data>
+  <data name="columnHeader3.Text" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="columnHeader3.Width" type="System.Int32, mscorlib">
+    <value>75</value>
+  </data>
+  <metadata name="contextMenuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>208, 17</value>
+  </metadata>
+  <data name="viewLogToolStripMenuItem.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Tahoma, 8.25pt, style=Bold</value>
+  </data>
+  <data name="viewLogToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>163, 22</value>
+  </data>
+  <data name="viewLogToolStripMenuItem.Text" xml:space="preserve">
+    <value>View log ...</value>
+  </data>
+  <data name="viewFilesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>163, 22</value>
+  </data>
+  <data name="viewFilesToolStripMenuItem.Text" xml:space="preserve">
+    <value>View contents ...</value>
+  </data>
+  <data name="runBackupNowToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>163, 22</value>
+  </data>
+  <data name="runBackupNowToolStripMenuItem.Text" xml:space="preserve">
+    <value>Run backup now</value>
+  </data>
+  <data name="contextMenuStrip.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 70</value>
+  </data>
+  <data name="&gt;&gt;contextMenuStrip.Name" xml:space="preserve">
+    <value>contextMenuStrip</value>
+  </data>
+  <data name="&gt;&gt;contextMenuStrip.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="recentBackups.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="recentBackups.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 21</value>
+  </data>
+  <data name="recentBackups.Size" type="System.Drawing.Size, System.Drawing">
+    <value>341, 109</value>
+  </data>
+  <metadata name="imageList.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <data name="imageList.ImageSize" type="System.Drawing.Size, System.Drawing">
+    <value>16, 16</value>
+  </data>
+  <data name="recentBackups.TabIndex" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="&gt;&gt;recentBackups.Name" xml:space="preserve">
+    <value>recentBackups</value>
+  </data>
+  <data name="&gt;&gt;recentBackups.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ListView, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;recentBackups.Parent" xml:space="preserve">
+    <value>splitContainer1.Panel2</value>
+  </data>
+  <data name="&gt;&gt;recentBackups.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label1_2.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="label1_2.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Top</value>
   </data>
-  <data name="advancedPanel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 8</value>
+  <data name="label1_2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 8</value>
   </data>
-  <data name="advancedPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>329, 160</value>
+  <data name="label1_2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>101, 13</value>
   </data>
-  <data name="advancedPanel.TabIndex" type="System.Int32, mscorlib">
+  <data name="label1_2.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
   </data>
-  <data name="advancedPanel.Visible" type="System.Boolean, mscorlib">
-    <value>False</value>
+  <data name="label1_2.Text" xml:space="preserve">
+    <value>Completed backups</value>
   </data>
-  <data name="&gt;&gt;advancedPanel.Name" xml:space="preserve">
-    <value>advancedPanel</value>
+  <data name="&gt;&gt;label1_2.Name" xml:space="preserve">
+    <value>label1_2</value>
   </data>
-  <data name="&gt;&gt;advancedPanel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="&gt;&gt;label1_2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;advancedPanel.Parent" xml:space="preserve">
+  <data name="&gt;&gt;label1_2.Parent" xml:space="preserve">
+    <value>splitContainer1.Panel2</value>
+  </data>
+  <data name="&gt;&gt;label1_2.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="splitContainer1.Panel2.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 8, 0, 0</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Panel2.Name" xml:space="preserve">
+    <value>splitContainer1.Panel2</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Panel2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitterPanel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Panel2.Parent" xml:space="preserve">
+    <value>splitContainer1</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Panel2.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="splitContainer1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>341, 223</value>
+  </data>
+  <data name="splitContainer1.SplitterDistance" type="System.Int32, mscorlib">
+    <value>89</value>
+  </data>
+  <data name="splitContainer1.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Name" xml:space="preserve">
+    <value>splitContainer1</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitContainer, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;splitContainer1.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;advancedPanel.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;splitContainer1.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
   <data name="SubProgressBar.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
@@ -250,7 +385,7 @@
     <value>80, 16</value>
   </data>
   <data name="SubProgressBar.Size" type="System.Drawing.Size, System.Drawing">
-    <value>249, 16</value>
+    <value>260, 16</value>
   </data>
   <data name="SubProgressBar.TabIndex" type="System.Int32, mscorlib">
     <value>18</value>
@@ -268,7 +403,7 @@
     <value>simplePanel</value>
   </data>
   <data name="&gt;&gt;SubProgressBar.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>10</value>
   </data>
   <data name="WorkProgressbar.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Left, Right</value>
@@ -277,7 +412,7 @@
     <value>40, 32</value>
   </data>
   <data name="WorkProgressbar.Size" type="System.Drawing.Size, System.Drawing">
-    <value>289, 16</value>
+    <value>300, 16</value>
   </data>
   <data name="WorkProgressbar.TabIndex" type="System.Int32, mscorlib">
     <value>17</value>
@@ -295,7 +430,7 @@
     <value>simplePanel</value>
   </data>
   <data name="&gt;&gt;WorkProgressbar.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>8</value>
   </data>
   <data name="ProgressMessage.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -325,82 +460,7 @@
     <value>simplePanel</value>
   </data>
   <data name="&gt;&gt;ProgressMessage.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="recentBackups.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Bottom, Left, Right</value>
-  </data>
-  <data name="columnHeader1.Text" xml:space="preserve">
-    <value>Time</value>
-  </data>
-  <data name="columnHeader1.Width" type="System.Int32, mscorlib">
-    <value>116</value>
-  </data>
-  <data name="columnHeader2.Text" xml:space="preserve">
-    <value>Backup set</value>
-  </data>
-  <data name="columnHeader2.Width" type="System.Int32, mscorlib">
-    <value>107</value>
-  </data>
-  <data name="columnHeader3.Text" xml:space="preserve">
-    <value>Size</value>
-  </data>
-  <data name="columnHeader3.Width" type="System.Int32, mscorlib">
-    <value>75</value>
-  </data>
-  <metadata name="contextMenuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>208, 17</value>
-  </metadata>
-  <data name="viewLogToolStripMenuItem.Font" type="System.Drawing.Font, System.Drawing">
-    <value>Tahoma, 8.25pt, style=Bold</value>
-  </data>
-  <data name="viewLogToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>160, 22</value>
-  </data>
-  <data name="viewLogToolStripMenuItem.Text" xml:space="preserve">
-    <value>View log ...</value>
-  </data>
-  <data name="viewFilesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>160, 22</value>
-  </data>
-  <data name="viewFilesToolStripMenuItem.Text" xml:space="preserve">
-    <value>View contents ...</value>
-  </data>
-  <data name="contextMenuStrip.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 48</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStrip.Name" xml:space="preserve">
-    <value>contextMenuStrip</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStrip.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="recentBackups.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 80</value>
-  </data>
-  <data name="recentBackups.Size" type="System.Drawing.Size, System.Drawing">
-    <value>329, 110</value>
-  </data>
-  <metadata name="imageList.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>17, 17</value>
-  </metadata>
-  <data name="imageList.ImageSize" type="System.Drawing.Size, System.Drawing">
-    <value>16, 16</value>
-  </data>
-  <data name="recentBackups.TabIndex" type="System.Int32, mscorlib">
-    <value>15</value>
-  </data>
-  <data name="&gt;&gt;recentBackups.Name" xml:space="preserve">
-    <value>recentBackups</value>
-  </data>
-  <data name="&gt;&gt;recentBackups.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ListView, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;recentBackups.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;recentBackups.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>6</value>
   </data>
   <metadata name="backupTasks.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>346, 17</value>
@@ -477,33 +537,6 @@
   <data name="&gt;&gt;statusImage.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
-  <data name="ShowAdvanced.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Right</value>
-  </data>
-  <data name="ShowAdvanced.Location" type="System.Drawing.Point, System.Drawing">
-    <value>233, 56</value>
-  </data>
-  <data name="ShowAdvanced.Size" type="System.Drawing.Size, System.Drawing">
-    <value>96, 24</value>
-  </data>
-  <data name="ShowAdvanced.TabIndex" type="System.Int32, mscorlib">
-    <value>13</value>
-  </data>
-  <data name="ShowAdvanced.Text" xml:space="preserve">
-    <value>Advanced &gt;&gt;&gt;</value>
-  </data>
-  <data name="&gt;&gt;ShowAdvanced.Name" xml:space="preserve">
-    <value>ShowAdvanced</value>
-  </data>
-  <data name="&gt;&gt;ShowAdvanced.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;ShowAdvanced.Parent" xml:space="preserve">
-    <value>simplePanel</value>
-  </data>
-  <data name="&gt;&gt;ShowAdvanced.ZOrder" xml:space="preserve">
-    <value>5</value>
-  </data>
   <data name="CurrentStatus.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Left, Right</value>
   </data>
@@ -514,7 +547,7 @@
     <value>40, 0</value>
   </data>
   <data name="CurrentStatus.Size" type="System.Drawing.Size, System.Drawing">
-    <value>289, 16</value>
+    <value>302, 16</value>
   </data>
   <data name="CurrentStatus.TabIndex" type="System.Int32, mscorlib">
     <value>12</value>
@@ -535,46 +568,184 @@
     <value>simplePanel</value>
   </data>
   <data name="&gt;&gt;CurrentStatus.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>2</value>
   </data>
-  <data name="label1.AutoSize" type="System.Boolean, mscorlib">
+  <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>116, 17</value>
+  </metadata>
+  <data name="wizardLink.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 64</value>
+  <data name="wizardLink.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 88</value>
   </data>
-  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>145, 13</value>
+  <data name="wizardLink.Size" type="System.Drawing.Size, System.Drawing">
+    <value>84, 13</value>
   </data>
-  <data name="label1.TabIndex" type="System.Int32, mscorlib">
-    <value>10</value>
+  <data name="wizardLink.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
   </data>
-  <data name="label1.Text" xml:space="preserve">
-    <value>Recently completed backups</value>
+  <data name="wizardLink.Text" xml:space="preserve">
+    <value>Duplicati Wizard</value>
   </data>
-  <data name="&gt;&gt;label1.Name" xml:space="preserve">
-    <value>label1</value>
+  <data name="&gt;&gt;wizardLink.Name" xml:space="preserve">
+    <value>wizardLink</value>
   </data>
-  <data name="&gt;&gt;label1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="&gt;&gt;wizardLink.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LinkLabel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;label1.Parent" xml:space="preserve">
+  <data name="&gt;&gt;wizardLink.Parent" xml:space="preserve">
     <value>simplePanel</value>
   </data>
-  <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;wizardLink.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="linkLabel1.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="linkLabel1.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="linkLabel1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 112</value>
+  </data>
+  <data name="linkLabel1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>87, 13</value>
+  </data>
+  <data name="linkLabel1.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="linkLabel1.Text" xml:space="preserve">
+    <value>Duplicati Options</value>
+  </data>
+  <data name="&gt;&gt;linkLabel1.Name" xml:space="preserve">
+    <value>linkLabel1</value>
+  </data>
+  <data name="&gt;&gt;linkLabel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.LinkLabel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;linkLabel1.Parent" xml:space="preserve">
+    <value>simplePanel</value>
+  </data>
+  <data name="&gt;&gt;linkLabel1.ZOrder" xml:space="preserve">
     <value>7</value>
   </data>
+  <data name="wizardHelpLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="wizardHelpLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>96, 88</value>
+  </data>
+  <data name="wizardHelpLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>205, 13</value>
+  </data>
+  <data name="wizardHelpLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="wizardHelpLabel.Text" xml:space="preserve">
+    <value>(Create, edit, delete, run, restore backups)</value>
+  </data>
+  <data name="&gt;&gt;wizardHelpLabel.Name" xml:space="preserve">
+    <value>wizardHelpLabel</value>
+  </data>
+  <data name="&gt;&gt;wizardHelpLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;wizardHelpLabel.Parent" xml:space="preserve">
+    <value>simplePanel</value>
+  </data>
+  <data name="&gt;&gt;wizardHelpLabel.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="optionsLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="optionsLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="optionsLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>96, 112</value>
+  </data>
+  <data name="optionsLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>233, 13</value>
+  </data>
+  <data name="optionsLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
+  </data>
+  <data name="optionsLabel.Text" xml:space="preserve">
+    <value>(UI Language, Default password, Advanced, ...)</value>
+  </data>
+  <data name="&gt;&gt;optionsLabel.Name" xml:space="preserve">
+    <value>optionsLabel</value>
+  </data>
+  <data name="&gt;&gt;optionsLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;optionsLabel.Parent" xml:space="preserve">
+    <value>simplePanel</value>
+  </data>
+  <data name="&gt;&gt;optionsLabel.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="QuickActions.Location" type="System.Drawing.Point, System.Drawing">
+    <value>96, 56</value>
+  </data>
+  <data name="QuickActions.Size" type="System.Drawing.Size, System.Drawing">
+    <value>232, 21</value>
+  </data>
+  <data name="QuickActions.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="&gt;&gt;QuickActions.Name" xml:space="preserve">
+    <value>QuickActions</value>
+  </data>
+  <data name="&gt;&gt;QuickActions.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;QuickActions.Parent" xml:space="preserve">
+    <value>simplePanel</value>
+  </data>
+  <data name="&gt;&gt;QuickActions.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="quickLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="quickLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 60</value>
+  </data>
+  <data name="quickLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>72, 13</value>
+  </data>
+  <data name="quickLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>23</value>
+  </data>
+  <data name="quickLabel.Text" xml:space="preserve">
+    <value>Quick actions</value>
+  </data>
+  <data name="&gt;&gt;quickLabel.Name" xml:space="preserve">
+    <value>quickLabel</value>
+  </data>
+  <data name="&gt;&gt;quickLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;quickLabel.Parent" xml:space="preserve">
+    <value>simplePanel</value>
+  </data>
+  <data name="&gt;&gt;quickLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
   <data name="simplePanel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
-    <value>Fill</value>
+    <value>Top</value>
   </data>
   <data name="simplePanel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 168</value>
+    <value>8, 8</value>
   </data>
   <data name="simplePanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>329, 190</value>
+    <value>341, 136</value>
   </data>
   <data name="simplePanel.TabIndex" type="System.Int32, mscorlib">
-    <value>11</value>
+    <value>23</value>
   </data>
   <data name="&gt;&gt;simplePanel.Name" xml:space="preserve">
     <value>simplePanel</value>
@@ -586,11 +757,8 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;simplePanel.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>4</value>
   </data>
-  <metadata name="toolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>116, 17</value>
-  </metadata>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
@@ -598,7 +766,7 @@
     <value>6, 13</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>345, 366</value>
+    <value>357, 375</value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -1104,7 +1272,7 @@
 </value>
   </data>
   <data name="$this.MinimumSize" type="System.Drawing.Size, System.Drawing">
-    <value>361, 209</value>
+    <value>373, 400</value>
   </data>
   <data name="$this.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>8, 8, 8, 8</value>
@@ -1112,22 +1280,16 @@
   <data name="$this.Text" xml:space="preserve">
     <value>Duplicati Status</value>
   </data>
-  <data name="&gt;&gt;columnHeader1.Name" xml:space="preserve">
-    <value>columnHeader1</value>
+  <data name="&gt;&gt;columnHeader4.Name" xml:space="preserve">
+    <value>columnHeader4</value>
   </data>
-  <data name="&gt;&gt;columnHeader1.Type" xml:space="preserve">
+  <data name="&gt;&gt;columnHeader4.Type" xml:space="preserve">
     <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;columnHeader2.Name" xml:space="preserve">
-    <value>columnHeader2</value>
+  <data name="&gt;&gt;columnHeader5.Name" xml:space="preserve">
+    <value>columnHeader5</value>
   </data>
-  <data name="&gt;&gt;columnHeader2.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;columnHeader3.Name" xml:space="preserve">
-    <value>columnHeader3</value>
-  </data>
-  <data name="&gt;&gt;columnHeader3.Type" xml:space="preserve">
+  <data name="&gt;&gt;columnHeader5.Type" xml:space="preserve">
     <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;viewLogToolStripMenuItem.Name" xml:space="preserve">
@@ -1147,6 +1309,24 @@
   </data>
   <data name="&gt;&gt;imageList.Type" xml:space="preserve">
     <value>System.Windows.Forms.ImageList, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;columnHeader1.Name" xml:space="preserve">
+    <value>columnHeader1</value>
+  </data>
+  <data name="&gt;&gt;columnHeader1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;columnHeader2.Name" xml:space="preserve">
+    <value>columnHeader2</value>
+  </data>
+  <data name="&gt;&gt;columnHeader2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;columnHeader3.Name" xml:space="preserve">
+    <value>columnHeader3</value>
+  </data>
+  <data name="&gt;&gt;columnHeader3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;pauseBackupToolStripMenuItem.Name" xml:space="preserve">
     <value>pauseBackupToolStripMenuItem</value>
@@ -1195,6 +1375,18 @@
   </data>
   <data name="&gt;&gt;toolTip1.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;runBackupNowToolStripMenuItem.Name" xml:space="preserve">
+    <value>runBackupNowToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;runBackupNowToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;runBackupNowToolStripMenuItem1.Name" xml:space="preserve">
+    <value>runBackupNowToolStripMenuItem1</value>
+  </data>
+  <data name="&gt;&gt;runBackupNowToolStripMenuItem1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>ServiceStatus</value>

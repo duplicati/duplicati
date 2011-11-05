@@ -61,6 +61,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Now.
+        /// </summary>
+        internal static string BackupImmediate {
+            get {
+                return ResourceManager.GetString("BackupImmediate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed backup.
         /// </summary>
         internal static string BackupStatusError {
@@ -97,11 +106,119 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicati {0} - Status.
+        /// </summary>
+        internal static string DialogTitle {
+            get {
+                return ResourceManager.GetString("DialogTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The backup has no changes.
         /// </summary>
         internal static string NoFilesInBackupMessages {
             get {
                 return ResourceManager.GetString("NoFilesInBackupMessages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Close Duplicati.
+        /// </summary>
+        internal static string QuickActionExit {
+            get {
+                return ResourceManager.GetString("QuickActionExit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pause.
+        /// </summary>
+        internal static string QuickActionPause {
+            get {
+                return ResourceManager.GetString("QuickActionPause", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pause for 10 minutes.
+        /// </summary>
+        internal static string QuickActionPause10 {
+            get {
+                return ResourceManager.GetString("QuickActionPause10", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pause for 15 minutes.
+        /// </summary>
+        internal static string QuickActionPause15 {
+            get {
+                return ResourceManager.GetString("QuickActionPause15", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pause for 30 minutes.
+        /// </summary>
+        internal static string QuickActionPause30 {
+            get {
+                return ResourceManager.GetString("QuickActionPause30", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pause for 5 minutes.
+        /// </summary>
+        internal static string QuickActionPause5 {
+            get {
+                return ResourceManager.GetString("QuickActionPause5", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pause for 60 minutes.
+        /// </summary>
+        internal static string QuickActionPause60 {
+            get {
+                return ResourceManager.GetString("QuickActionPause60", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resume.
+        /// </summary>
+        internal static string QuickActionResume {
+            get {
+                return ResourceManager.GetString("QuickActionResume", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stop the current backup.
+        /// </summary>
+        internal static string QuickActionStop {
+            get {
+                return ResourceManager.GetString("QuickActionStop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Throttle options ....
+        /// </summary>
+        internal static string QuickActionThrottle {
+            get {
+                return ResourceManager.GetString("QuickActionThrottle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to - Select action -.
+        /// </summary>
+        internal static string SelectQuickAction {
+            get {
+                return ResourceManager.GetString("SelectQuickAction", resourceCulture);
             }
         }
         

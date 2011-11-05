@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BackupImmediate" xml:space="preserve">
+    <value>Now</value>
+  </data>
   <data name="BackupStatusError" xml:space="preserve">
     <value>Failed backup</value>
   </data>
@@ -129,8 +132,44 @@
   <data name="BackupStatusWarning" xml:space="preserve">
     <value>Completed backup with warnings</value>
   </data>
+  <data name="DialogTitle" xml:space="preserve">
+    <value>Duplicati {0} - Status</value>
+  </data>
   <data name="NoFilesInBackupMessages" xml:space="preserve">
     <value>The backup has no changes</value>
+  </data>
+  <data name="QuickActionExit" xml:space="preserve">
+    <value>Close Duplicati</value>
+  </data>
+  <data name="QuickActionPause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="QuickActionPause10" xml:space="preserve">
+    <value>Pause for 10 minutes</value>
+  </data>
+  <data name="QuickActionPause15" xml:space="preserve">
+    <value>Pause for 15 minutes</value>
+  </data>
+  <data name="QuickActionPause30" xml:space="preserve">
+    <value>Pause for 30 minutes</value>
+  </data>
+  <data name="QuickActionPause5" xml:space="preserve">
+    <value>Pause for 5 minutes</value>
+  </data>
+  <data name="QuickActionPause60" xml:space="preserve">
+    <value>Pause for 60 minutes</value>
+  </data>
+  <data name="QuickActionResume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="QuickActionStop" xml:space="preserve">
+    <value>Stop the current backup</value>
+  </data>
+  <data name="QuickActionThrottle" xml:space="preserve">
+    <value>Throttle options ...</value>
+  </data>
+  <data name="SelectQuickAction" xml:space="preserve">
+    <value>- Select action -</value>
   </data>
   <data name="StatusBackup" xml:space="preserve">
     <value>Backup: {0}</value>

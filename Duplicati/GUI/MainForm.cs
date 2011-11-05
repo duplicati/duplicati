@@ -324,6 +324,11 @@ namespace Duplicati.GUI
 
         private void quitToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            Quit();
+        }
+
+        public void Quit()
+        {
             if (Program.WorkThread.Active && MessageBox.Show(Strings.MainForm.ExitWhileBackupIsRunningQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
 
