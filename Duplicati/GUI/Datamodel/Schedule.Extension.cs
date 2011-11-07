@@ -68,6 +68,14 @@ namespace Duplicati.Datamodel
         }
 
         /// <summary>
+        /// Signals that the operation failed and that the backup
+        /// </summary>
+        public void ScheduledRunFailed()
+        {
+            m_nextSchedule = new DateTime(0);
+        }
+
+        /// <summary>
         /// Gets or sets the schedule allowed weekdays,
         /// this is a parser/wrapper for the Weekdays string
         /// </summary>

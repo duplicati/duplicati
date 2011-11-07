@@ -262,6 +262,19 @@ namespace Duplicati.GUI
                             parsedMessage = string.Format(Strings.DuplicatiRunner.OtherAbortMessage, m_stopReason);
                             break;
                     }
+
+                    if (task.Schedule != null)
+                    {
+                        //If the application is going down, the backup should resume on next launch
+                        switch (m_stopReason)
+                        {
+                            case System.Windows.Forms.CloseReason.ApplicationExitCall:
+                            case System.Windows.Forms.CloseReason.TaskManagerClosing:
+                            case System.Windows.Forms.CloseReason.WindowsShutDown:
+                                task.Schedule.ScheduledRunFailed();
+                                break;
+                        }
+                    }
                 }
                 else
                     parsedMessage = string.Format(Strings.DuplicatiRunner.ErrorMessage, ex.Message);
