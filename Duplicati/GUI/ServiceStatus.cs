@@ -254,7 +254,7 @@ namespace Duplicati.GUI
 
                     foreach (Schedule s in Program.Scheduler.Schedule)
                     {
-                        ListViewItem lvi = pendingView.Items.Add(s.When.ToString("g"));
+                        ListViewItem lvi = pendingView.Items.Add(s.NextScheduledTime.ToString("g"));
                         lvi.SubItems.Add(s.Name);
                         lvi.Tag = s;
                     }

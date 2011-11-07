@@ -53,15 +53,18 @@ namespace Duplicati.GUI
             this.pendingView = new System.Windows.Forms.ListView();
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.viewLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.imageList = new System.Windows.Forms.ImageList(this.components);
+            this.pendingTasks = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.runBackupNowToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.label5 = new System.Windows.Forms.Label();
             this.recentBackups = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.viewLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runBackupNowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.label1_2 = new System.Windows.Forms.Label();
             this.SubProgressBar = new System.Windows.Forms.ProgressBar();
             this.WorkProgressbar = new System.Windows.Forms.ProgressBar();
@@ -84,17 +87,14 @@ namespace Duplicati.GUI
             this.simplePanel = new System.Windows.Forms.Panel();
             this.QuickActions = new System.Windows.Forms.ComboBox();
             this.quickLabel = new System.Windows.Forms.Label();
-            this.runBackupNowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.pendingTasks = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.runBackupNowToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
+            this.pendingTasks.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).BeginInit();
             this.backupTasks.SuspendLayout();
             this.simplePanel.SuspendLayout();
-            this.pendingTasks.SuspendLayout();
             this.SuspendLayout();
             // 
             // splitContainer1
@@ -136,34 +136,19 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.columnHeader5, "columnHeader5");
             // 
-            // contextMenuStrip
+            // pendingTasks
             // 
-            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.viewLogToolStripMenuItem,
-            this.viewFilesToolStripMenuItem,
-            this.runBackupNowToolStripMenuItem});
-            this.contextMenuStrip.Name = "contextMenuStrip";
-            resources.ApplyResources(this.contextMenuStrip, "contextMenuStrip");
+            this.pendingTasks.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.runBackupNowToolStripMenuItem1});
+            this.pendingTasks.Name = "pendingTasks";
+            resources.ApplyResources(this.pendingTasks, "pendingTasks");
             // 
-            // viewLogToolStripMenuItem
+            // runBackupNowToolStripMenuItem1
             // 
-            resources.ApplyResources(this.viewLogToolStripMenuItem, "viewLogToolStripMenuItem");
-            this.viewLogToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.LogMenuIcon;
-            this.viewLogToolStripMenuItem.Name = "viewLogToolStripMenuItem";
-            this.viewLogToolStripMenuItem.Click += new System.EventHandler(this.viewLogToolStripMenuItem_Click);
-            // 
-            // viewFilesToolStripMenuItem
-            // 
-            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.ExamineMenuIcon;
-            this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
-            resources.ApplyResources(this.viewFilesToolStripMenuItem, "viewFilesToolStripMenuItem");
-            this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
-            // 
-            // imageList
-            // 
-            this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
-            resources.ApplyResources(this.imageList, "imageList");
-            this.imageList.TransparentColor = System.Drawing.Color.Transparent;
+            this.runBackupNowToolStripMenuItem1.Image = global::Duplicati.GUI.Properties.Resources.Play;
+            this.runBackupNowToolStripMenuItem1.Name = "runBackupNowToolStripMenuItem1";
+            resources.ApplyResources(this.runBackupNowToolStripMenuItem1, "runBackupNowToolStripMenuItem1");
+            this.runBackupNowToolStripMenuItem1.Click += new System.EventHandler(this.runBackupNowToolStripMenuItem1_Click);
             // 
             // label5
             // 
@@ -199,6 +184,42 @@ namespace Duplicati.GUI
             // columnHeader3
             // 
             resources.ApplyResources(this.columnHeader3, "columnHeader3");
+            // 
+            // contextMenuStrip
+            // 
+            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewLogToolStripMenuItem,
+            this.viewFilesToolStripMenuItem,
+            this.runBackupNowToolStripMenuItem});
+            this.contextMenuStrip.Name = "contextMenuStrip";
+            resources.ApplyResources(this.contextMenuStrip, "contextMenuStrip");
+            // 
+            // viewLogToolStripMenuItem
+            // 
+            resources.ApplyResources(this.viewLogToolStripMenuItem, "viewLogToolStripMenuItem");
+            this.viewLogToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.LogMenuIcon;
+            this.viewLogToolStripMenuItem.Name = "viewLogToolStripMenuItem";
+            this.viewLogToolStripMenuItem.Click += new System.EventHandler(this.viewLogToolStripMenuItem_Click);
+            // 
+            // viewFilesToolStripMenuItem
+            // 
+            this.viewFilesToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.ExamineMenuIcon;
+            this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
+            resources.ApplyResources(this.viewFilesToolStripMenuItem, "viewFilesToolStripMenuItem");
+            this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.viewFilesToolStripMenuItem_Click);
+            // 
+            // runBackupNowToolStripMenuItem
+            // 
+            this.runBackupNowToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Play;
+            this.runBackupNowToolStripMenuItem.Name = "runBackupNowToolStripMenuItem";
+            resources.ApplyResources(this.runBackupNowToolStripMenuItem, "runBackupNowToolStripMenuItem");
+            this.runBackupNowToolStripMenuItem.Click += new System.EventHandler(this.runBackupNowToolStripMenuItem_Click);
+            // 
+            // imageList
+            // 
+            this.imageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
+            resources.ApplyResources(this.imageList, "imageList");
+            this.imageList.TransparentColor = System.Drawing.Color.Transparent;
             // 
             // label1_2
             // 
@@ -355,27 +376,6 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.quickLabel, "quickLabel");
             this.quickLabel.Name = "quickLabel";
             // 
-            // runBackupNowToolStripMenuItem
-            // 
-            this.runBackupNowToolStripMenuItem.Image = global::Duplicati.GUI.Properties.Resources.Play;
-            this.runBackupNowToolStripMenuItem.Name = "runBackupNowToolStripMenuItem";
-            resources.ApplyResources(this.runBackupNowToolStripMenuItem, "runBackupNowToolStripMenuItem");
-            this.runBackupNowToolStripMenuItem.Click += new System.EventHandler(this.runBackupNowToolStripMenuItem_Click);
-            // 
-            // pendingTasks
-            // 
-            this.pendingTasks.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.runBackupNowToolStripMenuItem1});
-            this.pendingTasks.Name = "pendingTasks";
-            resources.ApplyResources(this.pendingTasks, "pendingTasks");
-            // 
-            // runBackupNowToolStripMenuItem1
-            // 
-            this.runBackupNowToolStripMenuItem1.Image = global::Duplicati.GUI.Properties.Resources.Play;
-            this.runBackupNowToolStripMenuItem1.Name = "runBackupNowToolStripMenuItem1";
-            resources.ApplyResources(this.runBackupNowToolStripMenuItem1, "runBackupNowToolStripMenuItem1");
-            this.runBackupNowToolStripMenuItem1.Click += new System.EventHandler(this.runBackupNowToolStripMenuItem1_Click);
-            // 
             // ServiceStatus
             // 
             resources.ApplyResources(this, "$this");
@@ -396,12 +396,12 @@ namespace Duplicati.GUI
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
             this.splitContainer1.ResumeLayout(false);
+            this.pendingTasks.ResumeLayout(false);
             this.contextMenuStrip.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.statusImage)).EndInit();
             this.backupTasks.ResumeLayout(false);
             this.simplePanel.ResumeLayout(false);
             this.simplePanel.PerformLayout();
-            this.pendingTasks.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }

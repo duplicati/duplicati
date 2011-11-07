@@ -133,13 +133,13 @@
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="columnHeader4.Width" type="System.Int32, mscorlib">
-    <value>116</value>
+    <value>135</value>
   </data>
   <data name="columnHeader5.Text" xml:space="preserve">
     <value>Backup set</value>
   </data>
   <data name="columnHeader5.Width" type="System.Int32, mscorlib">
-    <value>187</value>
+    <value>182</value>
   </data>
   <metadata name="pendingTasks.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>467, 17</value>
@@ -235,7 +235,7 @@
     <value>Time</value>
   </data>
   <data name="columnHeader1.Width" type="System.Int32, mscorlib">
-    <value>116</value>
+    <value>135</value>
   </data>
   <data name="columnHeader2.Text" xml:space="preserve">
     <value>Backup set</value>
@@ -1292,23 +1292,11 @@
   <data name="&gt;&gt;columnHeader5.Type" xml:space="preserve">
     <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;viewLogToolStripMenuItem.Name" xml:space="preserve">
-    <value>viewLogToolStripMenuItem</value>
+  <data name="&gt;&gt;runBackupNowToolStripMenuItem1.Name" xml:space="preserve">
+    <value>runBackupNowToolStripMenuItem1</value>
   </data>
-  <data name="&gt;&gt;viewLogToolStripMenuItem.Type" xml:space="preserve">
+  <data name="&gt;&gt;runBackupNowToolStripMenuItem1.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;viewFilesToolStripMenuItem.Name" xml:space="preserve">
-    <value>viewFilesToolStripMenuItem</value>
-  </data>
-  <data name="&gt;&gt;viewFilesToolStripMenuItem.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;imageList.Name" xml:space="preserve">
-    <value>imageList</value>
-  </data>
-  <data name="&gt;&gt;imageList.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ImageList, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;columnHeader1.Name" xml:space="preserve">
     <value>columnHeader1</value>
@@ -1327,6 +1315,30 @@
   </data>
   <data name="&gt;&gt;columnHeader3.Type" xml:space="preserve">
     <value>System.Windows.Forms.ColumnHeader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;viewLogToolStripMenuItem.Name" xml:space="preserve">
+    <value>viewLogToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;viewLogToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;viewFilesToolStripMenuItem.Name" xml:space="preserve">
+    <value>viewFilesToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;viewFilesToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;runBackupNowToolStripMenuItem.Name" xml:space="preserve">
+    <value>runBackupNowToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;runBackupNowToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;imageList.Name" xml:space="preserve">
+    <value>imageList</value>
+  </data>
+  <data name="&gt;&gt;imageList.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ImageList, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;pauseBackupToolStripMenuItem.Name" xml:space="preserve">
     <value>pauseBackupToolStripMenuItem</value>
@@ -1375,18 +1387,6 @@
   </data>
   <data name="&gt;&gt;toolTip1.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;runBackupNowToolStripMenuItem.Name" xml:space="preserve">
-    <value>runBackupNowToolStripMenuItem</value>
-  </data>
-  <data name="&gt;&gt;runBackupNowToolStripMenuItem.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;runBackupNowToolStripMenuItem1.Name" xml:space="preserve">
-    <value>runBackupNowToolStripMenuItem1</value>
-  </data>
-  <data name="&gt;&gt;runBackupNowToolStripMenuItem1.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>ServiceStatus</value>
