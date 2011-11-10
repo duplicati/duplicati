@@ -452,6 +452,8 @@ namespace Duplicati.GUI
 
         private bool HandleCommandlineArguments(string[] _args)
         {
+			bool anyUiShown = false;
+			
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = CommandLine.CommandLineParser.ExtractOptions(args);
 
@@ -485,37 +487,42 @@ namespace Duplicati.GUI
                         MessageBox.Show(this, string.Format(Strings.MainForm.PauseOperationFailed, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
+				
+				anyUiShown = true;
             }
 
             if (options.ContainsKey("run-backup"))
             {
-                string backupname = options["run-backup"];
+				string backupname = options["run-backup"];
                 if (string.IsNullOrEmpty(backupname))
                 {
                     if (WizardDialog == null || !WizardDialog.Visible)
                     {
                         WizardDialog = new WizardHandler(new System.Windows.Forms.Wizard.IWizardControl[] { new Wizard_pages.SelectBackup(Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.RunNow) });
                         WizardDialog.Show();
+						anyUiShown = true;
                     }
                 }
                 else
                 {
+					anyUiShown = true;
+					
                     Datamodel.Schedule[] schedules = Program.DataConnection.GetObjects<Datamodel.Schedule>("Name LIKE ?", backupname.Trim());
                     if (schedules == null || schedules.Length == 0)
                     {
                         MessageBox.Show(string.Format(Strings.MainForm.NamedBackupNotFound, backupname), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
                     }
                     else if (schedules.Length > 1)
                     {
                         MessageBox.Show(string.Format(Strings.MainForm.MultipleNamedBackupsFound, backupname, schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
                     }
-
-                    if (Library.Utility.Utility.ParseBoolOption(options, "full"))
-                        Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
-                    else
-                        Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
+					else
+					{
+	                    if (Library.Utility.Utility.ParseBoolOption(options, "full"))
+	                        Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
+	                    else
+	                        Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
+					}
                 }
             }
 
@@ -528,6 +535,7 @@ namespace Duplicati.GUI
                     {
                         WizardDialog = new WizardHandler(new System.Windows.Forms.Wizard.IWizardControl[] { new Wizard_pages.SelectBackup(Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.RunNow) });
                         WizardDialog.Show();
+						anyUiShown = true;
                     }
                 }
                 else
@@ -536,27 +544,42 @@ namespace Duplicati.GUI
                     if (schedules == null || schedules.Length == 0)
                     {
                         MessageBox.Show(string.Format(Strings.MainForm.NamedBackupGroupNotFound, groupname), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-
-                    bool full = Library.Utility.Utility.ParseBoolOption(options, "full");
-
-                    foreach(Datamodel.Schedule s in schedules)
-                        if (full)
-                            Program.WorkThread.AddTask(new FullBackupTask(s));
-                        else
-                            Program.WorkThread.AddTask(new IncrementalBackupTask(s));
+                    } 
+					else 
+					{
+	                    bool full = Library.Utility.Utility.ParseBoolOption(options, "full");
+	
+	                    foreach(Datamodel.Schedule s in schedules)
+	                        if (full)
+	                            Program.WorkThread.AddTask(new FullBackupTask(s));
+	                        else
+	                            Program.WorkThread.AddTask(new IncrementalBackupTask(s));
+					}
+					
+					anyUiShown = true;
                 }
             }
 
             if (Library.Utility.Utility.ParseBoolOption(options, "show-status"))
+			{
                 ShowStatus();
+				anyUiShown = true;
+			}
+
+			if (Library.Utility.Utility.ParseBoolOption(options, "show-wizard"))
+			{
+                ShowWizard();
+				anyUiShown = true;
+			}
 
             //Resume if requested
-            if (Library.Utility.Utility.ParseBoolOption(options, "resume"))
+            if (Library.Utility.Utility.ParseBoolOption(options, "resume")) 
+			{
                 Program.LiveControl.Resume();
-
-            return false;
+				anyUiShown = true;
+			}
+			
+            return anyUiShown;
         }
 
         private void EnsureBackupIsTerminated(CloseReason reason)

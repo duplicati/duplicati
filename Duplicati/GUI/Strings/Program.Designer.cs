@@ -216,7 +216,16 @@ namespace Duplicati.GUI.Strings {
                 return ResourceManager.GetString("UnencrypteddatabaseCommandDescription", resourceCulture);
             }
         }
-        
+
+		/// <summary>
+        ///   Looks up a localized string similar to Displays the wizard window.
+        /// </summary>
+        internal static string ShowwizardCommandDescription {
+            get {
+                return ResourceManager.GetString("ShowwizardCommandDescription", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Unsupported version of SQLite detected ({0}), must be {1} or higher.
         /// </summary>

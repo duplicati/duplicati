@@ -57,12 +57,17 @@ namespace Duplicati.GUI
         /// <summary>
         /// The file that is locked to prevent other access
         /// </summary>
-        private System.IO.FileStream m_file;
+        private IDisposable m_file;
 
         /// <summary>
         /// The folder where control files are placed
         /// </summary>
         private string m_controldir;
+		
+		/// <summary>
+		/// The full path to the locking file
+		/// </summary>
+		private string m_lockfilename;
 
         /// <summary>
         /// The watcher that allows interprocess communication
@@ -96,15 +101,32 @@ namespace Duplicati.GUI
             if (!System.IO.Directory.Exists(m_controldir))
                 System.IO.Directory.CreateDirectory(m_controldir);
 
-            string lockfile = System.IO.Path.Combine(m_controldir, CONTROL_FILE);
+            m_lockfilename = System.IO.Path.Combine(m_controldir, CONTROL_FILE);
             m_file = null;
+			
+			System.IO.Stream temp_fs = null;
 
-            try
+			try
             {
-                m_file = new System.IO.FileStream(lockfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
+				if (Library.Utility.Utility.IsClientLinux)
+					temp_fs = UnixSupport.File.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
+				else
+					temp_fs = System.IO.File.Open(m_lockfilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
+				
+				if (temp_fs != null)
+				{
+					System.IO.StreamWriter sw = new System.IO.StreamWriter(temp_fs);
+					sw.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
+					sw.Flush();
+					//Do not dispose sw as that would dispose the stream
+					m_file = temp_fs;
+				}
             }
             catch
             {
+				if (temp_fs != null)
+					try { temp_fs.Dispose(); }
+					catch {}
             }
 
             //If we have write access
@@ -114,16 +136,11 @@ namespace Duplicati.GUI
                 m_filewatcher.Created += new System.IO.FileSystemEventHandler(m_filewatcher_Created);
                 m_filewatcher.EnableRaisingEvents = true;
 
-                System.IO.StreamWriter sw = new System.IO.StreamWriter(m_file);
-                sw.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
-                sw.Flush();
-                //Do not dispose the SW, as that will close the file and release the lock
-
-                DateTime startup = System.IO.File.GetLastWriteTime(lockfile);
+                DateTime startup = System.IO.File.GetLastWriteTime(m_lockfilename);
 
                 //Clean up any files that were created before the app launched
                 foreach(string s in System.IO.Directory.GetFiles(m_controldir))
-                    if (s != lockfile && System.IO.File.GetCreationTime(s) < startup)
+                    if (s != m_lockfilename && System.IO.File.GetCreationTime(s) < startup)
                         try { System.IO.File.Delete(s); }
                         catch { }
             }
@@ -131,14 +148,14 @@ namespace Duplicati.GUI
             {
                 //Wait for the initial process to signal that the filewatcher is activated
                 int retrycount = 5;
-                while (retrycount > 0 && new System.IO.FileInfo(lockfile).Length == 0)
+                while (retrycount > 0 && new System.IO.FileInfo(m_lockfilename).Length == 0)
                 {
                     System.Threading.Thread.Sleep(500);
                     retrycount--;
                 }
 
                 //HACK: the unix file lock does not allow us to read the file length when the file is locked
-                if (new System.IO.FileInfo(lockfile).Length == 0)
+                if (new System.IO.FileInfo(m_lockfilename).Length == 0)
                     if (!Library.Utility.Utility.IsClientLinux)
                         throw new Exception("The file was locked, but had no data");
 
@@ -271,7 +288,7 @@ namespace Duplicati.GUI
             {
                 m_file.Dispose();
 
-                try { System.IO.File.Delete(m_file.Name); }
+                try { System.IO.File.Delete(m_lockfilename); }
                 catch { }
 
                 m_file = null;
