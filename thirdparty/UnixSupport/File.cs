@@ -1,4 +1,5 @@
 using System;
+using Mono.Unix.Native;
 
 namespace UnixSupport
 {
@@ -22,28 +23,32 @@ namespace UnixSupport
 		/// <param name="filemode">The file create mode</param>
 		public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode, int filemode) 
 		{
-			Mono.Unix.Native.Flock lck;
+			Flock lck;
 			lck.l_len = 0;
-			lck.l_pid = Mono.Unix.Native.Syscall.getpid();
+			lck.l_pid = Syscall.getpid();
 			lck.l_start = 0;
-			lck.l_type = Mono.Unix.Native.LockType.F_WRLCK;
-			lck.l_whence = Mono.Unix.Native.SeekFlags.SEEK_SET;
-			
-			Mono.Unix.Native.OpenFlags flags = Mono.Unix.Native.OpenFlags.O_CREAT;
+			lck.l_type = LockType.F_WRLCK;
+			lck.l_whence = SeekFlags.SEEK_SET;
+						
+			OpenFlags flags = OpenFlags.O_CREAT;
 			if (mode == System.IO.FileAccess.Read) 
 			{
-				lck.l_type = Mono.Unix.Native.LockType.F_RDLCK;
-				flags |= Mono.Unix.Native.OpenFlags.O_RDONLY;
+				lck.l_type = LockType.F_RDLCK;
+				flags |= OpenFlags.O_RDONLY;
 			} else if (mode == System.IO.FileAccess.Write) {
-				flags |= Mono.Unix.Native.OpenFlags.O_WRONLY;
+				flags |= OpenFlags.O_WRONLY;
 			} else {
-				flags |= Mono.Unix.Native.OpenFlags.O_RDWR;
+				flags |= OpenFlags.O_RDWR;
 			}
 			
-			int fd = Mono.Unix.Native.Syscall.open(path, flags, (Mono.Unix.Native.FilePermissions)filemode);
+			int fd = Syscall.open(path, flags, (Mono.Unix.Native.FilePermissions)filemode);
 			if (fd > 0) 
 			{
-				int res = Mono.Unix.Native.Syscall.fcntl(fd, Mono.Unix.Native.FcntlCommand.F_SETLK, ref lck);
+				//This does not work on OSX, it gives ENOTTY
+				//int res = Syscall.fcntl(fd, Mono.Unix.Native.FcntlCommand.F_SETLK, ref lck);
+				
+				//This is the same (at least for our purpose, and works on OSX)
+				int res = Syscall.lockf(fd, LockfCommand.F_TLOCK, 0);
 
 				//If we have the lock, return the stream
 				if (res == 0)
@@ -62,7 +67,7 @@ namespace UnixSupport
 		private class BadFileException : System.IO.IOException
 		{
 			public BadFileException(string filename)
-				: base(string.Format("Unable to open the file \"{0}\", error: {1} ({2})", filename, Mono.Unix.Native.Syscall.GetLastError(), (int)Mono.Unix.Native.Syscall.GetLastError()))
+				: base(string.Format("Unable to open the file \"{0}\", error: {1} ({2})", filename, Syscall.GetLastError(), (int)Syscall.GetLastError()))
 			{
 			}
 		}
@@ -71,7 +76,7 @@ namespace UnixSupport
 		private class LockedFileException : System.IO.IOException
 		{
 			public LockedFileException(string filename, System.IO.FileAccess mode)
-				: base(string.Format("Unable to open the file \"{0}\" in mode {1}", filename, mode))
+				: base(string.Format("Unable to open the file \"{0}\" in mode {1}, error: {2} ({3})", filename, mode, Syscall.GetLastError(), (int)Syscall.GetLastError()))
 			{
 			}
 		}
