@@ -388,6 +388,7 @@ namespace Duplicati.GUI
             this.MinimizeBox = false;
             this.Name = "ServiceStatus";
             this.Activated += new System.EventHandler(this.ServiceStatus_Activated);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ServiceStatus_FormClosing);
             this.Load += new System.EventHandler(this.ServiceStatus_Load);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.ServiceStatus_KeyUp);
             this.Resize += new System.EventHandler(this.ServiceStatus_Resize);

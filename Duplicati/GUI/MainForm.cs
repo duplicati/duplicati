@@ -46,6 +46,69 @@ namespace Duplicati.GUI
         private DuplicatiRunner.RunnerResult m_currentIconState;
         private Icon m_currentIcon;
         private string m_currentTooltip;
+        private TrayIconProxy m_trayIcon;
+
+        /// <summary>
+        /// A recursion protection helper flag
+        /// </summary>
+        private bool m_inQuit = false;
+
+        /// <summary>
+        /// Internal helper class that can filter all access to the trayicon if the program runs without a trayicon
+        /// </summary>
+        private class TrayIconProxy
+        {
+            private readonly NotifyIcon m_owner = null;
+
+            private Icon m_icon;
+            private bool m_visible;
+            private string m_text;
+
+            public TrayIconProxy(NotifyIcon owner)
+            {
+                if (!Program.TraylessMode)
+                    m_owner = owner;
+            }
+
+            public Icon Icon
+            {
+                get { return m_icon; }
+                set 
+                {
+                    m_icon = value;
+                    if (m_owner != null)
+                        m_owner.Icon = value; 
+                }
+            }
+
+            public bool Visible
+            {
+                get { return m_visible; }
+                set
+                {
+                    m_visible = value;
+                    if (m_owner != null)
+                        m_owner.Visible = value;
+                }
+            }
+
+            public string Text
+            {
+                get { return m_text; }
+                set
+                {
+                    m_text = value;
+                    if (m_owner != null)
+                        m_owner.Text = value;
+                }
+            }
+
+            public void ShowBalloonTip(int timeout, string tipTitle, string tipText, ToolTipIcon tipIcon)
+            {
+                if (m_owner != null)
+                    m_owner.ShowBalloonTip(timeout, tipTitle, tipText, tipIcon);
+            }
+        }
 
         public string[] InitialArguments
         {
@@ -57,6 +120,7 @@ namespace Duplicati.GUI
         {
             InitializeComponent();
 
+            m_trayIcon = new TrayIconProxy(TrayIcon);
             m_currentIcon = Properties.Resources.TrayNormal;
             m_currentTooltip = Strings.MainForm.TrayStatusReady;
 
@@ -107,7 +171,7 @@ namespace Duplicati.GUI
             //TODO: Hard to maintain consistent state because the number of cases here can change
             if (Program.LiveControl.State == LiveControls.LiveControlState.Running && !Program.WorkThread.Active)
             {
-                TrayIcon.Icon = m_currentIcon;
+                m_trayIcon.Icon = m_currentIcon;
                 SetTrayIconText(m_currentTooltip);
             }
         }
@@ -136,10 +200,10 @@ namespace Duplicati.GUI
                 return;
 
             if (result == DuplicatiRunner.RunnerResult.Error)
-                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Error, name, parsedMessage), ToolTipIcon.Error);
+                m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Error, name, parsedMessage), ToolTipIcon.Error);
 
             else if (result == DuplicatiRunner.RunnerResult.Warning || result == DuplicatiRunner.RunnerResult.Partial)
-                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Warning, name), ToolTipIcon.Warning);
+                m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Warning, name), ToolTipIcon.Warning);
         }
 
         void DataConnection_AfterDataChange(object sender, string propertyname, object oldvalue, object newvalue)
@@ -176,17 +240,17 @@ namespace Duplicati.GUI
             if (state == DuplicatiRunner.RunnerState.Started && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Start || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
             {
                 //Show start balloon
-                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Started, name), ToolTipIcon.Info);
+                m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Started, name), ToolTipIcon.Info);
             }
             else if (state == DuplicatiRunner.RunnerState.Stopped && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
             {
                 //Show stop balloon
-                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Stopped, name), ToolTipIcon.Info);
+                m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Stopped, name), ToolTipIcon.Info);
             }
             else if (state == DuplicatiRunner.RunnerState.Running && level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous)
             {
                 //Show update balloon
-                TrayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Running, message), ToolTipIcon.Info);
+                m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Running, message), ToolTipIcon.Info);
 
             }
         }
@@ -205,7 +269,7 @@ namespace Duplicati.GUI
                     pauseToolStripMenuItem.Text = Strings.Common.MenuResume;
                     pauseToolStripMenuItem.Checked = true;
 
-                    TrayIcon.Icon = Program.WorkThread.Active ? Properties.Resources.TrayWorkingPause : Properties.Resources.TrayNormalPause;
+                    m_trayIcon.Icon = Program.WorkThread.Active ? Properties.Resources.TrayWorkingPause : Properties.Resources.TrayNormalPause;
                     SetTrayIconText(Strings.MainForm.TrayStatusPause);
                     break;
                 case LiveControls.LiveControlState.Running:
@@ -223,11 +287,11 @@ namespace Duplicati.GUI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            TrayIcon.Icon = m_currentIcon;
+            m_trayIcon.Icon = m_currentIcon;
             SetTrayIconText(m_currentTooltip);
 
             LiveControl_StateChanged(Program.LiveControl, null);
-            TrayIcon.Visible = true;
+            m_trayIcon.Visible = true;
 
             long count = 0;
             lock (Program.MainLock)
@@ -239,6 +303,8 @@ namespace Duplicati.GUI
                 HandleCommandlineArguments(InitialArguments);
 
             BeginInvoke(new EmptyDelegate(HideWindow));
+            if (Program.TraylessMode)
+                ShowStatus();
         }
 
         private void HideWindow()
@@ -283,11 +349,11 @@ namespace Duplicati.GUI
         private void SetTrayIconText(string text)
         {
             //Strange 64 character limit on linux: http://code.google.com/p/duplicati/issues/detail?id=298
-            try { TrayIcon.Text = text; }
+            try { m_trayIcon.Text = text; }
             catch
             {
                 if (text.Length >= 64)
-                    TrayIcon.Text = text.Substring(0, 60) + "...";
+                    m_trayIcon.Text = text.Substring(0, 60) + "...";
             }
         }
 
@@ -299,7 +365,7 @@ namespace Duplicati.GUI
                 return;
             }
 
-            TrayIcon.Icon = Properties.Resources.TrayWorking;
+            m_trayIcon.Icon = Properties.Resources.TrayWorking;
             string tmp = string.Format(Strings.MainForm.TrayStatusRunning, Program.WorkThread.CurrentTask == null ? "" : Program.WorkThread.CurrentTask.Schedule.Name);
             SetTrayIconText(tmp);
             stopToolStripMenuItem.Enabled = true;
@@ -315,7 +381,7 @@ namespace Duplicati.GUI
 
             if (Program.LiveControl.State != LiveControls.LiveControlState.Paused)
             {
-                TrayIcon.Icon = m_currentIcon;
+                m_trayIcon.Icon = m_currentIcon;
                 SetTrayIconText(m_currentTooltip);
             }
 
@@ -327,23 +393,42 @@ namespace Duplicati.GUI
             Quit();
         }
 
-        public void Quit()
+        public bool IsInQuit
         {
-            if (Program.WorkThread.Active && MessageBox.Show(Strings.MainForm.ExitWhileBackupIsRunningQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
-                return;
+            get { return m_inQuit; }
+        }
 
-            Program.LiveControl.Pause();
-            Program.Runner.Stop(CloseReason.ApplicationExitCall);
+        public bool Quit()
+        {
+            //Under Mono we somehow keep invoking this function recursively, eventually causing a stack-overflow exception
+            if (m_inQuit)
+                return false;
 
-            TrayIcon.Visible = false;
-            if (StatusDialog != null && StatusDialog.Visible)
-                StatusDialog.Close();
-            if (WizardDialog != null && WizardDialog.Visible)
-                WizardDialog.Close();
+            try
+            {
+                m_inQuit = true;
+                if (Program.WorkThread.Active && MessageBox.Show(Strings.MainForm.ExitWhileBackupIsRunningQuestion, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) != DialogResult.Yes)
+                    return false;
 
-            EnsureBackupIsTerminated(CloseReason.ApplicationExitCall);
+                Program.LiveControl.Pause();
+                Program.Runner.Stop(CloseReason.ApplicationExitCall);
 
-            Application.Exit();
+                m_trayIcon.Visible = false;
+                if (StatusDialog != null && StatusDialog.Visible)
+                    StatusDialog.Close();
+                if (WizardDialog != null && WizardDialog.Visible)
+                    WizardDialog.Close();
+
+                EnsureBackupIsTerminated(CloseReason.ApplicationExitCall);
+
+                Application.Exit();
+
+                return true;
+            }
+            finally
+            {
+                m_inQuit = false;
+            }
         }
 
         private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -426,7 +511,7 @@ namespace Duplicati.GUI
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            TrayIcon.Visible = false;
+            m_trayIcon.Visible = false;
             Program.LiveControl.StateChanged -= new EventHandler(LiveControl_StateChanged);
             Program.WorkThread.StartingWork -= new EventHandler(WorkThread_StartingWork);
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
@@ -447,7 +532,11 @@ namespace Duplicati.GUI
                 return;
 
             //TODO: This actually blocks the app thread, and thus may pile up remote invocations
-            ShowWizard();
+            if (Program.TraylessMode)
+                try { StatusDialog.Focus(); }
+                catch { }
+            else
+                ShowWizard();
         }
 
         private bool HandleCommandlineArguments(string[] _args)

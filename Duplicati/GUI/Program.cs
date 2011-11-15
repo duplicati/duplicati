@@ -94,6 +94,11 @@ namespace Duplicati.GUI
         public static SingleInstance SingleInstance;
 
         /// <summary>
+        /// A value describing if Duplicati is running without a tray
+        /// </summary>
+        public static bool TraylessMode = Library.Utility.Utility.IsClientLinux ? true : false;
+
+        /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
@@ -161,6 +166,9 @@ namespace Duplicati.GUI
                 MessageBox.Show(string.Format(Strings.Program.HelpDisplayDialog, string.Join(Environment.NewLine, lines.ToArray())), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+
+            if (commandlineOptions.ContainsKey("trayless"))
+                Program.TraylessMode = Library.Utility.Utility.ParseBoolOption(commandlineOptions, "trayless");
 
 #if DEBUG
             //Log various information in the logfile
@@ -535,7 +543,8 @@ namespace Duplicati.GUI
                     new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
-                    new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                    new Duplicati.Library.Interface.CommandLineArgument("trayless", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.TraylessCommandDescription, Strings.Program.TraylessCommandDescription, Library.Utility.Utility.IsClientLinux ? "true" : "false" )
                 };
             }
         }

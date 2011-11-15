@@ -74,6 +74,9 @@ namespace Duplicati.GUI
                 new ComboBoxItemPair<ApplicationSettings.NotificationLevel>(Strings.ApplicationSetup.BalloonNotification_Continous, ApplicationSettings.NotificationLevel.Continous),
             });
 
+            if (Program.TraylessMode)
+                BalloonNotificationLevel.Enabled = label8.Enabled = false;
+
             LanguageSelection.Items.Clear();
             LanguageSelection.Items.Add(new ComboBoxItemPair<CultureInfo>(string.Format(Strings.ApplicationSetup.DefaultLanguage, Library.Utility.Utility.DefaultCulture.DisplayName), Library.Utility.Utility.DefaultCulture));
 

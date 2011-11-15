@@ -50,6 +50,17 @@ namespace Duplicati.GUI
         {
             InitializeComponent();
 
+            if (Library.Utility.Utility.IsClientLinux || Program.TraylessMode)
+                this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
+
+            if (Program.TraylessMode)
+            {
+                this.StartPosition = FormStartPosition.CenterScreen;
+                this.MinimizeBox = true;
+                this.ShowInTaskbar = true;
+                this.ShowIcon = true;
+            }
+
             imageList.Images.Clear();
             imageList.Images.Add(DuplicatiOutputParser.OKStatus, Properties.Resources.OKStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.WarningStatus, Properties.Resources.WarningStatusIcon);
@@ -125,8 +136,6 @@ namespace Duplicati.GUI
                 pauseBackupToolStripMenuItem.Text = Strings.Common.MenuResume;
                 CurrentStatus.Text = Strings.ServiceStatus.StatusPaused;
                 statusImage.Image = Properties.Resources.Status_pause;
-
-                
             }
             else
             {
@@ -559,6 +568,15 @@ namespace Duplicati.GUI
 
             Program.WorkThread.AddTask(new IncrementalBackupTask(s));
 
+        }
+
+        private void ServiceStatus_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (Program.TraylessMode && !Program.DisplayHelper.IsInQuit)
+            {
+                if (!Program.DisplayHelper.Quit())
+                    e.Cancel = true;
+            }
         }
      }
 }
