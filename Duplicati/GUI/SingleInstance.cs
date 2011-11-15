@@ -162,11 +162,9 @@ namespace Duplicati.GUI
                 //Notify the other process that we have started
                 string filename = System.IO.Path.Combine(m_controldir, COMM_FILE_PREFIX + Guid.NewGuid().ToString());
 
-
                 //Write out the commandline arguments
                 string[] cmdargs = System.Environment.GetCommandLineArgs();
-                using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(fs))
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(Library.Utility.Utility.IsClientLinux ? UnixSupport.File.OpenExclusive(filename, System.IO.FileAccess.Write) : new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None)))
                     for (int i = 1; i < cmdargs.Length; i++) //Skip the first, as that is the filename
                         sw.WriteLine(cmdargs[i]);
 
@@ -202,6 +200,14 @@ namespace Duplicati.GUI
             //Indicator and holder of arguments passed
             string[] commandline = null;
 
+            //HACK: Linux has some locking issues
+            //The problem is that there is no atomic open-and-lock operation, so the other process
+            // needs a little time to create+lock the file. This is not really a fix, but an
+            // ugly workaround. This functionality is only used to allow a new instance to signal
+            // the running instance, so errors here would only affect that functionality
+            if (Library.Utility.Utility.IsClientLinux)
+                System.Threading.Thread.Sleep(1000);
+
             do
             {
                 try
@@ -211,8 +217,7 @@ namespace Duplicati.GUI
                         return;
 
                     List<string> args = new List<string>();
-                    using (System.IO.FileStream fs = new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
-                    using (System.IO.StreamReader sr = new System.IO.StreamReader(fs))
+                    using (System.IO.StreamReader sr = new System.IO.StreamReader(Duplicati.Library.Utility.Utility.IsClientLinux ? UnixSupport.File.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite) : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
                     while(!sr.EndOfStream)
                         args.Add(sr.ReadLine());
 
