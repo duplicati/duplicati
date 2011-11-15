@@ -46,6 +46,10 @@ namespace Duplicati.Library.Encryption
         /// The key used to encrypt the data
         /// </summary>
         private string m_key;
+        /// <summary>
+        /// A flag indicating if the fallback is specified or default
+        /// </summary>
+        private bool m_defaultFallback;
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands
@@ -61,6 +65,7 @@ namespace Duplicati.Library.Encryption
         public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
             m_allowFallback = !Utility.Utility.ParseBoolOption(options, COMMAND_LINE_NO_FALLBACK);
+            m_defaultFallback = !options.ContainsKey(COMMAND_LINE_NO_FALLBACK);
             m_key = passphrase;
         }
 
@@ -91,12 +96,22 @@ namespace Duplicati.Library.Encryption
             {
                 return new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Decrypt);
             }
-            catch (InvalidDataException)
+            catch (InvalidDataException iex)
             {
                 if (m_allowFallback)
                 {
                     input.Seek(0, SeekOrigin.Begin);
-                    return new System.Security.Cryptography.CryptoStream(input, GenerateOldAESDecryptor(m_key), System.Security.Cryptography.CryptoStreamMode.Read);
+
+                    return
+                        new ProtectedCryptoStream(
+                            new System.Security.Cryptography.CryptoStream(
+                                input,
+                                GenerateOldAESDecryptor(m_key),
+                                System.Security.Cryptography.CryptoStreamMode.Read
+                            ),
+                            iex,
+                            m_defaultFallback
+                        );
                 }
                 else
                     throw;
@@ -105,7 +120,7 @@ namespace Duplicati.Library.Encryption
 
         public override IList<ICommandLineArgument> SupportedCommands
         {
-            get 
+            get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(COMMAND_LINE_NO_FALLBACK, CommandLineArgument.ArgumentType.Boolean, Strings.AESEncryption.AesencryptiondontallowfallbackShort, Strings.AESEncryption.AesencryptiondontallowfallbackLong_v2, "false")
@@ -192,6 +207,56 @@ namespace Duplicati.Library.Encryption
             crypto.Padding = PaddingMode.PKCS7;
 
             return crypto.CreateDecryptor();
+        }
+
+        /// <summary>
+        /// Helper class that protects reading from the stream to allow throwing a custom exception
+        /// </summary>
+        private class ProtectedCryptoStream : Library.Utility.OverrideableStream
+        {
+            /// <summary>
+            /// Another exception to report instead of the real one.
+            /// This enables fallback decryption attempts, but will show the non-fallback error message if it fails
+            /// </summary>
+            private Exception m_reportException;
+
+            /// <summary>
+            /// A flag indicating if the fallback was requested explicit or default
+            /// </summary>
+            private bool m_defaultFallback;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ProtectedCryptoStream"/> class.
+            /// </summary>
+            /// <param name="stream">The stream to protect</param>
+            /// <param name="reportException">The exception reported on read error</param>
+            /// <param name="defaultFallback">A flag indicating if the fallback was requested explicit or default</param>
+            public ProtectedCryptoStream(System.IO.Stream stream, Exception reportException, bool defaultFallback)
+                : base(stream)
+            {
+            }
+
+            /// <summary>
+            /// Reads the specified number of bytes into the buffer
+            /// </summary>
+            /// <param name="buffer">The buffer to read the data into</param>
+            /// <param name="offset">The offset into the buffer to start writing</param>
+            /// <param name="count">The number of bytes to read</param>
+            /// <returns>The number of bytes read</returns>
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                try
+                {
+                    return base.Read(buffer, offset, count);
+                }
+                catch (CryptographicException ex)
+                {
+                    if (m_defaultFallback)
+                        throw m_reportException;
+                    else
+                        throw new CryptographicException(m_reportException.Message + Environment.NewLine + ex.Message, m_reportException);
+                }
+            }
         }
 
         #endregion

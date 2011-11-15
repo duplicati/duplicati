@@ -225,6 +225,14 @@ namespace Duplicati.GUI
 
             if (!string.IsNullOrEmpty(ext.FileSizeLimit))
                 options["skip-files-larger-than"] = ext.FileSizeLimit;
+
+            //Bit tricky, but we REALLY want to disallow fallback decryption for new backups
+            //We need some extra protection, otherwise the user will be warned about an unused option,
+            // if they have non-AES encryption or no encryption at all.
+            //This means that we have special support for the "aes" module in here, which is bad encapsulation
+            //Once we completely remove fallback encryption this check can be removed
+            if (!string.IsNullOrEmpty(this.Task.Encryptionkey) && "aes".Equals(this.Task.EncryptionModule, StringComparison.InvariantCultureIgnoreCase) && ext.DisableAESFallbackDecryption)
+                options["aes-encryption-dont-allow-fallback"] = "true";
         }
 
         protected virtual string SetupBackend(Dictionary<string, string> environment, Dictionary<string, string> options)

@@ -9,4 +9,5 @@
   <EncodedFilters>e:.*\\Thumbs.db</EncodedFilters>
   <IncludeSetup>true</IncludeSetup>
   <AsyncTransfer>true</AsyncTransfer>
+  <DisableAESFallbackEncryption>true</DisableAESFallbackEncryption>
 </settings>

@@ -232,8 +232,9 @@ namespace Duplicati.Datamodel
             private const string SELECTWHEN_WARNEDNOINCREMENTALS = "Select When - Warned No Incrementals";
 
             private const string PASSWORDSETTINGS_WARNEDNOPASSWORD = "Password Settings - Warned No Password";
-
             private const string CLEANUPSETTINGS_WARNEDNOCLEANUP = "Cleanup Settings - Warned No Cleanup";
+
+            private const string DISABLE_AES_FALLBACK_DECRYPTION = "Disable AES fallback encryption";
 
             private Task m_owner;
 
@@ -367,6 +368,12 @@ namespace Duplicati.Datamodel
                 get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[CLEANUPSETTINGS_WARNEDNOCLEANUP], false); }
                 set { m_owner.TaskExtensionsLookup[CLEANUPSETTINGS_WARNEDNOCLEANUP] = value.ToString(); }
             }
-}
+
+            public bool DisableAESFallbackDecryption
+            {
+                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[DISABLE_AES_FALLBACK_DECRYPTION], false); }
+                set { m_owner.TaskExtensionsLookup[DISABLE_AES_FALLBACK_DECRYPTION] = value.ToString(); }
+            }
+        }
     }
 }
