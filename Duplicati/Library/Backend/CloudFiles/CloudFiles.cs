@@ -365,8 +365,8 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
             {
                 HttpWebRequest authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
-                authReq.Headers.Add("X-Auth-User", UrlEncode(m_username));
-                authReq.Headers.Add("X-Auth-Key", UrlEncode(m_password));
+                authReq.Headers.Add("X-Auth-User", m_username);
+                authReq.Headers.Add("X-Auth-Key", m_password);
                 authReq.Method = "GET";
 
                 using (WebResponse resp = authReq.GetResponse())
