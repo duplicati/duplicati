@@ -113,8 +113,13 @@ namespace Duplicati.GUI
         private delegate void EmptyDelegate();
         private void DataConnection_AfterDataConnection(object sender, System.Data.LightDatamodel.DataActions action)
         {
-            if (action != System.Data.LightDatamodel.DataActions.Fetch)
-                this.BeginInvoke(new EmptyDelegate(BuildRecent));
+            if (action != System.Data.LightDatamodel.DataActions.Fetch) 
+			{
+				if (Library.Utility.Utility.IsMono)
+					MonoSupport.BeginInvoke (this, new EmptyDelegate(BuildRecent));
+				else
+                	this.BeginInvoke(new EmptyDelegate(BuildRecent));
+			}
         }
 
         void LiveControl_StateChanged(object sender, EventArgs e)

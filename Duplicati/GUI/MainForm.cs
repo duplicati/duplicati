@@ -302,7 +302,10 @@ namespace Duplicati.GUI
             else if (InitialArguments != null)
                 HandleCommandlineArguments(InitialArguments);
 
-            BeginInvoke(new EmptyDelegate(HideWindow));
+			if (Library.Utility.Utility.IsMono)
+				MonoSupport.BeginInvoke (this, new EmptyDelegate(HideWindow));
+			else
+            	BeginInvoke(new EmptyDelegate(HideWindow));
             if (Program.TraylessMode)
                 ShowStatus();
         }

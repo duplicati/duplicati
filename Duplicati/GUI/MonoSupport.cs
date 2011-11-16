@@ -75,6 +75,40 @@ namespace Duplicati.GUI
                     resources.ReleaseAllResources();
             }
         }
-
+		
+		/// <summary>
+		/// Custom implementation of the BeginInvoke method, as Mono does the same for Invoke and BeginInvoke
+		/// </summary>
+		/// <param name='method'>The method to invoke</param>
+		/// <param name='args'>The parameters to call the method with</param>
+		public static void BeginInvoke(Control owner, Delegate method, params object[] args)
+		{
+			new System.Threading.Thread(BeginInvokeHelper).Start (new object[] { owner, method, args });
+		}
+		
+		/// <summary>
+		/// Helper method to do invocations from a thread
+		/// </summary>
+		/// <param name='arg'>
+		/// An object array where the first entry is the control owner, 
+		/// the second is the delegate and the third is the arguments
+		/// </param>
+		private static void BeginInvokeHelper(object arg)
+		{
+			try 
+			{
+				System.Threading.Thread.Sleep(500);
+				object[] args = (object[])arg;
+				Control owner = (Control)args[0];
+				Delegate delg = (Delegate)args[1];
+				object[] input = (object[])args[2];
+				
+				owner.Invoke(delg, input);
+			} 
+			catch 
+			{
+				
+			}
+		}
     }
 }
