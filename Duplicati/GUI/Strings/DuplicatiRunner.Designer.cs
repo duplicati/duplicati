@@ -115,6 +115,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicati was terminated before the backup completed, status is unknown.
+        /// </summary>
+        internal static string ShutdownWhileBackupInprogress {
+            get {
+                return ResourceManager.GetString("ShutdownWhileBackupInprogress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The backup was stopped because the application was closed by the task manager.
         /// </summary>
         internal static string TaskManagerCloseMessage {

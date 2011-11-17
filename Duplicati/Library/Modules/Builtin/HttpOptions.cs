@@ -73,21 +73,15 @@ namespace Duplicati.Library.Modules.Builtin
         {
             m_dispose = true;
 
-            string opt;
-            commandlineOptions.TryGetValue(OPTION_ACCEPT_ANY_CERTIFICATE, out opt);
+            bool accepAllCertificates = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_ACCEPT_ANY_CERTIFICATE);
 
-            bool accepAllCertificates = Utility.Utility.ParseBool(opt, false);
             string certHash;
             commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
 
-            if (accepAllCertificates || !string.IsNullOrEmpty(certHash))
-                m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash);
+            m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash);
             
-            commandlineOptions.TryGetValue(OPTION_DISABLE_NAGLING, out opt);
-            bool disableNagle = Utility.Utility.ParseBool(opt, false);
-
-            commandlineOptions.TryGetValue(OPTION_DISABLE_EXPECT100, out opt);
-            bool disableExpect100 = Utility.Utility.ParseBool(opt, false);
+            bool disableNagle = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_NAGLING);
+            bool disableExpect100 = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_EXPECT100);
 
             m_useNagle = System.Net.ServicePointManager.UseNagleAlgorithm;
             m_useExpect = System.Net.ServicePointManager.Expect100Continue;

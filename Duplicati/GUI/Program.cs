@@ -94,6 +94,17 @@ namespace Duplicati.GUI
         public static SingleInstance SingleInstance;
 
         /// <summary>
+        /// A value describing if Duplicati is running without a tray
+        /// </summary>
+        public static bool TraylessMode = Library.Utility.Utility.IsClientLinux ? true : false;
+		
+		/// <summary>
+		/// A flag indicating if the main message loop is still running,
+		/// used to force exit when running on OSX
+		/// </summary>
+        public static bool IsRunningMainLoop;
+		
+		/// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
@@ -162,6 +173,9 @@ namespace Duplicati.GUI
                 return;
             }
 
+            if (commandlineOptions.ContainsKey("trayless"))
+                Program.TraylessMode = Library.Utility.Utility.ParseBoolOption(commandlineOptions, "trayless");
+
 #if DEBUG
             //Log various information in the logfile
             if (!commandlineOptions.ContainsKey("log-file"))
@@ -190,7 +204,7 @@ namespace Duplicati.GUI
                 //debug mode uses a lock file located in the app folder
                 Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 #else
-                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
+                bool portableMode = Library.Utility.Utility.ParseBoolOption(commandlineOptions, "portable-mode");
 
                 if (portableMode)
                 {
@@ -244,9 +258,10 @@ namespace Duplicati.GUI
 
 #if DEBUG
                     //Default is to not use encryption for debugging
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
+                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database") : false;
 #else
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
+                    //Default is to use encryption for release
+                    Program.UseDatabaseEncryption = !Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database");
 #endif
                     con.ConnectionString = "Data Source=" + DatabasePath;
 
@@ -282,6 +297,23 @@ namespace Duplicati.GUI
                     }
                 }
 
+                try
+                {
+                    DataFetcherNested logcon = new DataFetcherNested(DataConnection);
+                    Log[] items = logcon.GetObjects<Log>("Subaction LIKE ?", "InProgress");
+                    if (items != null && items.Length > 0)
+                    {
+                        foreach (Log l in items)
+                            l.SubAction = "Primary";
+
+                        logcon.CommitAllRecursive();
+                    }
+                }
+                catch
+                {
+                    //Non-fatal but any interrupted backup will not show
+                }
+
                 LiveControl = new LiveControls(new ApplicationSettings(DataConnection));
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
@@ -295,17 +327,40 @@ namespace Duplicati.GUI
 
                 DisplayHelper = new MainForm();
                 DisplayHelper.InitialArguments = args;
-
+				
+				Program.IsRunningMainLoop = true;
                 Application.Run(DisplayHelper);
+				Program.IsRunningMainLoop = false;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(string.Format(Strings.Program.SeriousError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+				//If the helper thread aborts the main thread, it also sets IsRunningMainLoop to false
+				// and in that case we accept the abort call
+				if (ex is System.Threading.ThreadAbortException && !Program.IsRunningMainLoop)
+					System.Threading.Thread.ResetAbort();
+				else
+		        	MessageBox.Show(string.Format(Strings.Program.SeriousError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);					
+		    }
 
             try
             {
-                //Compress the database
+                //Find logs that are no longer displayed, and delete them
+                DataFetcherNested con = new DataFetcherNested(DataConnection);
+                foreach (Log x in con.GetObjects<Log>("EndTime < ?", Library.Utility.Timeparser.ParseTimeInterval(new ApplicationSettings(con).RecentBackupDuration, DateTime.Now, true)))
+                {
+                    if (x.Blob != null) //Load the blob part if required
+                        con.DeleteObject(x.Blob);
+                    con.DeleteObject(x);
+                }
+
+                con.CommitAllRecursive();
+            }
+            catch
+            { }
+
+            try
+            {
+                //Compact the database
                 using (System.Data.IDbCommand vaccum_cmd = DataConnection.Provider.Connection.CreateCommand())
                 {
                     vaccum_cmd.CommandText = "VACUUM;";
@@ -497,10 +552,12 @@ namespace Duplicati.GUI
                     new Duplicati.Library.Interface.CommandLineArgument("resume", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ResumeCommandDescription, Strings.Program.ResumeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("pause", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.PauseCommandDescription, Strings.Program.PauseCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("show-status", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ShowstausCommandDescription, Strings.Program.ShowstausCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("show-wizard", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ShowwizardCommandDescription, Strings.Program.ShowwizardCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
-                    new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                    new Duplicati.Library.Interface.CommandLineArgument("trayless", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.TraylessCommandDescription, Strings.Program.TraylessCommandDescription, Library.Utility.Utility.IsClientLinux ? "true" : "false" )
                 };
             }
         }

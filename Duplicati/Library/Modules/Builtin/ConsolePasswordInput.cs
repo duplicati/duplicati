@@ -29,7 +29,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// These actions only use the file list and do not require access to the data inside the files,
         /// and thus require no encryption setup
         /// </summary>
-        private readonly static string[] PASSPHRASELESS_ACTIONS = { "List", "DeleteAllButNFull", "DeleteOlderThan", "GetBackupSets", "CreateFolder" };
+        private readonly static string[] PASSPHRASELESS_ACTIONS = { "List", "DeleteAllButNFull", "DeleteAllButN", "DeleteOlderThan", "GetBackupSets", "CreateFolder" };
 
         #region IGenericModule Members
 

@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend
             this.label4 = new System.Windows.Forms.Label();
             this.TestConnection = new System.Windows.Forms.Button();
             this.CreateContainer = new System.Windows.Forms.Button();
-            this.label5 = new System.Windows.Forms.Label();
+            this.label5_2 = new System.Windows.Forms.Label();
             this.Servernames = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
@@ -107,10 +107,10 @@ namespace Duplicati.Library.Backend
             this.CreateContainer.UseVisualStyleBackColor = true;
             this.CreateContainer.Click += new System.EventHandler(this.CreateContainer_Click);
             // 
-            // label5
+            // label5_2
             // 
-            resources.ApplyResources(this.label5, "label5");
-            this.label5.Name = "label5";
+            resources.ApplyResources(this.label5_2, "label5_2");
+            this.label5_2.Name = "label5_2";
             // 
             // Servernames
             // 
@@ -125,7 +125,7 @@ namespace Duplicati.Library.Backend
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.Servernames);
-            this.Controls.Add(this.label5);
+            this.Controls.Add(this.label5_2);
             this.Controls.Add(this.CreateContainer);
             this.Controls.Add(this.TestConnection);
             this.Controls.Add(this.label4);
@@ -155,7 +155,7 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button TestConnection;
         private System.Windows.Forms.Button CreateContainer;
-        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label label5_2;
         private System.Windows.Forms.ComboBox Servernames;
     }
 }

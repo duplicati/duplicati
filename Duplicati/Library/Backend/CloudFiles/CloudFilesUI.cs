@@ -42,6 +42,9 @@ namespace Duplicati.Library.Backend
         private IDictionary<string, string> m_options;
         private bool m_hasTested;
 
+        private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
+        private string m_uiAction = null;
+
         public CloudFilesUI(IDictionary<string, string> options)
             : this()
         {
@@ -106,6 +109,9 @@ namespace Duplicati.Library.Backend
 
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
+
+            if (!string.IsNullOrEmpty(m_uiAction))
+                m_options.Add(DUPLICATI_ACTION_MARKER, m_uiAction);
         }
 
         void CloudFilesUI_Load(object sender, EventArgs args)
@@ -142,10 +148,37 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(HASTESTED) || !bool.TryParse(m_options[HASTESTED], out m_hasTested))
                 m_hasTested = false;
+
+            m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
         private bool ValidateForm(bool checkForBucket)
         {
+            string servername;
+            if (Servernames.SelectedItem as Utility.ComboBoxItemPair<string> == null)
+                servername = Servernames.Text;
+            else
+                servername = (Servernames.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
+
+            if (string.IsNullOrEmpty(servername))
+            {
+                MessageBox.Show(this, Strings.CloudFilesUI.EmptyAuthUrlError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servernames.Focus(); }
+                catch { }
+                
+                return false;
+            }
+
+            Uri tmp;
+            if (!Uri.TryCreate(servername, UriKind.Absolute, out tmp))
+            {
+                MessageBox.Show(this, string.Format(Strings.CloudFilesUI.InvalidAuthUrlError, servername), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servernames.Focus(); }
+                catch { }
+
+                return false;
+            }
+
             if (Username.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Strings.CloudFilesUI.EmptyCloudFilesIDError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -163,9 +196,6 @@ namespace Duplicati.Library.Backend
                 MessageBox.Show(this, Strings.CloudFilesUI.EmptyContainerNameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
-
-            if (!API_KEY.VerifyPasswordIfChanged())
-                return false;
 
             return true;
         }
@@ -188,16 +218,17 @@ namespace Duplicati.Library.Backend
                     Dictionary<string, string> options = new Dictionary<string, string>();
                     string destination = GetConfiguration(m_options, options);
 
-                    CloudFiles cf = new CloudFiles(destination, options);
                     bool existingBackup = false;
-                    foreach (Interface.IFileEntry n in cf.List())
-                        if (n.Name.StartsWith("duplicati-"))
-                        {
-                            existingBackup = true;
-                            break;
-                        }
+                    using (CloudFiles cf = new CloudFiles(destination, options))
+                        foreach (Interface.IFileEntry n in cf.List())
+                            if (n.Name.StartsWith("duplicati-"))
+                            {
+                                existingBackup = true;
+                                break;
+                            }
 
-                    if (existingBackup)
+                    bool isUiAdd = string.IsNullOrEmpty(m_uiAction) || string.Equals(m_uiAction, "add", StringComparison.InvariantCultureIgnoreCase);
+                    if (existingBackup && isUiAdd)
                     {
                         if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                             return;

@@ -97,6 +97,15 @@ namespace Duplicati.Library.Encryption.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option has non-standard handling, please use the --{0} option instead..
+        /// </summary>
+        internal static string Gpgencryptiondisablearmordeprecated {
+            get {
+                return ResourceManager.GetString("Gpgencryptiondisablearmordeprecated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The GPG encryption/decryption will use the --armor option for GPG to protect the files with armor. Specify this switch to remove the --armor option..
         /// </summary>
         internal static string GpgencryptiondisablearmorLong {
@@ -111,6 +120,24 @@ namespace Duplicati.Library.Encryption.Strings {
         internal static string GpgencryptiondisablearmorShort {
             get {
                 return ResourceManager.GetString("GpgencryptiondisablearmorShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use this option to supply the --armor option to GPG. The files will be larger but can be sent as pure text files..
+        /// </summary>
+        internal static string GpgencryptionenablearmorLong {
+            get {
+                return ResourceManager.GetString("GpgencryptionenablearmorLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use GPG Armor.
+        /// </summary>
+        internal static string GpgencryptionenablearmorShort {
+            get {
+                return ResourceManager.GetString("GpgencryptionenablearmorShort", resourceCulture);
             }
         }
         

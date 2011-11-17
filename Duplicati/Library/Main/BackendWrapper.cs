@@ -33,6 +33,24 @@ namespace Duplicati.Library.Main
         /// </summary>
         private Duplicati.Library.Interface.IBackend m_backend;
         /// <summary>
+        /// The backend url for creating a new backend instance
+        /// </summary>
+        private string m_backendUrl;
+        /// <summary>
+        /// A flag indicating if the backend instance will be re-used
+        /// </summary>
+        private bool m_reuse_backend;
+        /// <summary>
+        /// A flag indicating if the backend is being used for the first time,
+        /// used to prevent disposing the initally created backend
+        /// </summary>
+        private bool m_first_backend_use;
+        /// <summary>
+        /// A flag indicating if the backend can create folders
+        /// </summary>
+        private bool m_backendSupportsCreateFolder;
+
+        /// <summary>
         /// The statistics gathering object
         /// </summary>
         private CommunicationStatistics m_statistics;
@@ -113,6 +131,17 @@ namespace Duplicati.Library.Main
         private List<BackupEntryBase> m_orphans;
 
         /// <summary>
+        /// The delete transaction marker file, null if it does not exist
+        /// </summary>
+        private DeleteTransactionEntry m_transactionFile;
+
+        /// <summary>
+        /// A list of files that are mentioned in the delete transaction,
+        /// but are not actually deleted yet
+        /// </summary>
+        private List<Library.Interface.IFileEntry> m_leftovers;
+
+        /// <summary>
         /// The progress reporting event
         /// </summary>
         public event RSync.RSyncDir.ProgressEventDelegate ProgressEvent;
@@ -179,10 +208,15 @@ namespace Duplicati.Library.Main
             m_options = options;
 
             m_filenamestrategy = new FilenameStrategy(m_options);
+            m_backendUrl = backend;
 
             m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(backend, m_options.RawOptions);
             if (m_backend == null)
                 throw new Exception(string.Format(Strings.BackendWrapper.BackendNotFoundError, backend));
+
+            m_reuse_backend = !m_options.NoConnectionReuse;
+            m_first_backend_use = true;
+            m_backendSupportsCreateFolder = m_backend is Library.Interface.IBackend_v2;
 
             if (m_options.AutoCleanup)
                 m_orphans = new List<BackupEntryBase>();
@@ -206,6 +240,31 @@ namespace Duplicati.Library.Main
             }
         }
 
+        private void DisposeBackend()
+        {
+            if (m_backend != null)
+            {
+                try { m_backend.Dispose(); }
+                catch (Exception ex) { m_statistics.LogWarning(string.Format(Strings.BackendWrapper.FailureWhileDisposingBackendError, ex.Message), ex); }
+                finally { m_backend = null; }
+            }
+        }
+
+        private void ResetBackend()
+        {
+            if (!m_reuse_backend)
+            {
+                //Avoid disposing the very first backend instance
+                if (m_first_backend_use)
+                    m_first_backend_use = false;
+                else
+                    DisposeBackend();
+            }
+
+            if (m_backend == null)
+                m_backend = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(m_backendUrl, m_options.RawOptions);
+        }
+
         public void AddOrphan(BackupEntryBase entry)
         {
             if (m_orphans != null)
@@ -225,10 +284,92 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Returns all files in the target backend
         /// </summary>
+        /// <param name="filter">A value indicating if the results should be filtered according to the delete transaction</param>
         /// <returns>All files in the target backend</returns>
-        public List<Library.Interface.IFileEntry> List()
+        public List<Library.Interface.IFileEntry> List(bool filter)
         {
-            return (List<Library.Interface.IFileEntry>)ProtectedInvoke("ListInternal");
+            List<Library.Interface.IFileEntry> result = (List<Library.Interface.IFileEntry>)ProtectedInvoke("ListInternal");
+
+            if (!filter)
+                return result;
+
+            m_transactionFile = null;
+            List<DeleteTransactionEntry> found = new List<DeleteTransactionEntry>();
+
+            foreach (Library.Interface.IFileEntry f in result)
+            {
+                DeleteTransactionEntry de = m_filenamestrategy.ParseAsDeleteTransaction(f);
+                if (de != null)
+                    found.Add(de);
+            }
+
+            if (found.Count > 0)
+            {
+                if (found.Count > 1)
+                    throw new Exception(Strings.BackendWrapper.MultipleDeleteTransactionsFoundError);
+
+                m_transactionFile = found[0];
+                result.Remove(m_transactionFile.Fileentry);
+
+                if (m_statistics != null)
+                {
+                    //Show the warning to the user unless we will
+                    // actually delete the files later, as that would
+                    // produce the warning twice
+                    bool logWarning = true;
+
+                    switch (m_options.MainAction)
+                    {
+                        case DuplicatiOperationMode.Backup:
+                        case DuplicatiOperationMode.BackupFull:
+                        case DuplicatiOperationMode.BackupIncremental:
+                            logWarning = !m_options.AutoCleanup;
+                            break;
+                        
+                        case DuplicatiOperationMode.CleanUp:
+                        case DuplicatiOperationMode.DeleteAllButN:
+                        case DuplicatiOperationMode.DeleteAllButNFull:
+                        case DuplicatiOperationMode.DeleteOlderThan:
+                            logWarning = false;
+                            break;
+                    }
+
+                    if (logWarning)
+                        m_statistics.LogWarning(Strings.BackendWrapper.DeleteTransactionFileFoundWarning, null);
+                }
+
+                Dictionary<string, string> lookup = new Dictionary<string,string>();
+                try
+                {
+                    using (Library.Utility.TempFile tf = new Utility.TempFile())
+                    {
+                        this.Get(m_transactionFile, null, tf, null);
+                        System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+                        doc.Load(tf);
+
+                        foreach (System.Xml.XmlNode n in doc.SelectNodes("files/file")) 
+                            lookup[n.InnerText] = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(string.Format(Strings.BackendWrapper.DeleteTransactionFileReadError, m_transactionFile.Filename, ex.Message), ex);
+                }
+
+                m_leftovers = new List<Library.Interface.IFileEntry>();
+
+                //Filter the results reported to look as if the delete was completed,
+                // and keep a list of not-yet-deleted entries
+                for (int i = 0; i < result.Count; i++)
+                    if (lookup.ContainsKey(result[i].Name))
+                    {
+                        m_leftovers.Add(result[i]);
+                        result.RemoveAt(i);
+                        i--;
+                    }
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -494,10 +635,15 @@ namespace Duplicati.Library.Main
         public List<ManifestEntry> GetBackupSets()
         {
             using (new Logging.Timer("Getting and sorting filelist from " + m_backend.DisplayName))
-                return SortAndPairSets(List());
+                return SortAndPairSets(List(true));
         }
 
         public void Put(BackupEntryBase remote, string filename)
+        {
+            Put(remote, filename, false);
+        }
+
+        private void Put(BackupEntryBase remote, string filename, bool forcesync)
         {
             if (!remote.IsEncrypted && !m_options.NoEncryption && remote as VerificationEntry == null)
             {
@@ -524,32 +670,51 @@ namespace Duplicati.Library.Main
                 PutInternal(remote, filename);
             else
             {
-                bool waitForCompletion;
-                
-                //There are 3 files in a volume (signature, content and manifest) + a verification file
-                int uploads_in_set = m_options.CreateVerificationFile ? 4 : 3;
-
-                lock (m_queuelock)
+                if (forcesync)
                 {
-                    if (m_workerException != null)
-                        throw m_workerException;
+                    int count;
 
-                    m_pendingOperations.Enqueue(new KeyValuePair<BackupEntryBase, string>( remote, filename ));
-                    m_asyncItemReady.Set();
+                    lock (m_queuelock)
+                        count = m_pendingOperations.Count;
 
-                    waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * uploads_in_set);
+                    while (count > 0)
+                    {
+                        m_asyncItemProcessed.WaitOne(1000 * 5, false);
+                        lock (m_queuelock)
+                            count = m_pendingOperations.Count;
+                    }
+
+                    PutInternal(remote, filename);
                 }
-
-                while (waitForCompletion)
+                else
                 {
-                    m_asyncItemProcessed.WaitOne(1000 * 5, false);
+                    bool waitForCompletion;
+
+                    //There are 3 files in a volume (signature, content and manifest) + a verification file
+                    int uploads_in_set = m_options.CreateVerificationFile ? 4 : 3;
 
                     lock (m_queuelock)
                     {
                         if (m_workerException != null)
                             throw m_workerException;
 
+                        m_pendingOperations.Enqueue(new KeyValuePair<BackupEntryBase, string>(remote, filename));
+                        m_asyncItemReady.Set();
+
                         waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * uploads_in_set);
+                    }
+
+                    while (waitForCompletion)
+                    {
+                        m_asyncItemProcessed.WaitOne(1000 * 5, false);
+
+                        lock (m_queuelock)
+                        {
+                            if (m_workerException != null)
+                                throw m_workerException;
+
+                            waitForCompletion = m_options.AsynchronousUploadLimit > 0 && m_pendingOperations.Count > (m_options.AsynchronousUploadLimit * uploads_in_set);
+                        }
                     }
                 }
             }
@@ -636,24 +801,85 @@ namespace Duplicati.Library.Main
                     //Now re-acquire the lock, and re-check the state of the event
                 }
             }
-
         }
 
-        private void DeleteSignatureCacheCopy(BackupEntryBase entry)
+        /// <summary>
+        /// Writes the delete transaction file to the backend in preperation for a delete operation
+        /// </summary>
+        /// <param name="filename">The name of the local file with delete transaction data</param>
+        public void WriteDeleteTransactionFile(string filename)
         {
-            if (!string.IsNullOrEmpty(m_options.SignatureCachePath))
+            if (m_transactionFile != null)
+                throw new Exception(Strings.BackendWrapper.ExistingDeleteTransactionError);
+
+            m_transactionFile = new DeleteTransactionEntry(m_options.EncryptionModule);
+
+            Put(m_transactionFile, filename, true);
+        }
+
+        /// <summary>
+        /// Removes the delete transaction file from the backend, thus completing the delete transaction
+        /// </summary>
+        public void RemoveDeleteTransactionFile()
+        {
+            if (m_transactionFile == null)
+                throw new Exception(Strings.BackendWrapper.NonExistingDeleteTransactionError);
+
+            Delete(m_transactionFile);
+            m_transactionFile = null;
+        }
+
+        /// <summary>
+        /// Deletes all files listed in the delete transaction file if it exists
+        /// </summary>
+        /// <param name="logAsWarnings">A value indicating if a warning message should be logged</param>
+        /// <returns></returns>
+        public string FinishDeleteTransaction(bool logAsWarnings)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (m_transactionFile != null)
             {
-                string cacheFilename = m_cachefilenamestrategy.GenerateFilename(entry);
-                if (System.IO.File.Exists(cacheFilename))
-                    try { System.IO.File.Delete(cacheFilename); }
-                    catch { }
+                if (logAsWarnings)
+                    m_statistics.LogWarning(string.Format(Strings.BackendWrapper.CompletingDeleteTransactionWarning, m_leftovers.Count), null);
+                sb.AppendLine(string.Format(Strings.BackendWrapper.CompletingDeleteTransactionWarning, m_leftovers.Count));
+
+                foreach (Library.Interface.IFileEntry s in m_leftovers)
+                {
+                    sb.AppendLine(string.Format(Strings.BackendWrapper.DeletingTransactionLeftoverFile, s.Name));
+
+                    BackupEntryBase be = m_filenamestrategy.ParseFilename(s);
+                    if (m_options.Force)
+                        this.Delete(be ?? new SignatureEntry(s.Name, s, DateTime.Now, true, "", "", "", 0));
+                }
+
+                sb.AppendLine(string.Format(Strings.BackendWrapper.DeletingTransactionLeftoverFile, m_transactionFile.Filename));
+
+                if (m_options.Force)
+                    this.Delete(m_transactionFile);
+                
+                m_transactionFile = null;
+
+                sb.AppendLine(Strings.BackendWrapper.CompletedDeleteTransaction);
+
+                if (!m_options.Force)
+                    sb.AppendLine(Strings.BackendWrapper.FilesNotForceRemovedMessage);
             }
+
+            return sb.ToString();
         }
 
-        public void DeleteOrphans(bool protectedCleanup)
+        public string DeleteOrphans(bool protectedCleanup)
         {
+            StringBuilder sb = new StringBuilder();
+            
+            string res = FinishDeleteTransaction(protectedCleanup);
+            if (!string.IsNullOrEmpty(res))
+                sb.AppendLine(res);
+
+
             if (m_orphans == null)
-                return;
+                return sb.ToString();
 
             if (protectedCleanup && m_orphans.Count > 2)
             {
@@ -668,26 +894,30 @@ namespace Duplicati.Library.Main
                     if (m_statistics != null)
                         m_statistics.LogWarning(string.Format(Strings.BackendWrapper.TooManyOrphansFoundError, m_orphans.Count), null);
 
-                    return;
+                    return sb.ToString();
                 }
             }
 
             foreach (BackupEntryBase be in m_orphans)
             {
-                Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, be.Filename), Duplicati.Library.Logging.LogMessageType.Information);
+                string mfmsg = string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, be.Filename);
+                Logging.Log.WriteMessage(mfmsg, Duplicati.Library.Logging.LogMessageType.Information);
+                sb.AppendLine(mfmsg);
+                
                 if (m_options.Force)
                 {
                     if (m_statistics != null)
                         m_statistics.LogWarning(string.Format(Strings.BackendWrapper.RemoveOrphanFileWarning, be.Filename), null);
-                    m_backend.Delete(be.Filename);
-                    DeleteSignatureCacheCopy(be);
+                    this.Delete(be);
                 }
 
                 if (be is ManifestEntry)
                     foreach (KeyValuePair<SignatureEntry, ContentEntry> bex in ((ManifestEntry)be).Volumes)
                     {
-                        Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Key.Filename), Duplicati.Library.Logging.LogMessageType.Information);
-                        Logging.Log.WriteMessage(string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Value.Filename), Duplicati.Library.Logging.LogMessageType.Information);
+                        string sigmsg = string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Key.Filename);
+                        string cntmsg = string.Format(Strings.BackendWrapper.RemovingLeftoverFileMessage, bex.Value.Filename);
+                        Logging.Log.WriteMessage(sigmsg, Duplicati.Library.Logging.LogMessageType.Information);
+                        Logging.Log.WriteMessage(cntmsg, Duplicati.Library.Logging.LogMessageType.Information);
 
                         if (m_options.Force)
                         {
@@ -697,15 +927,19 @@ namespace Duplicati.Library.Main
                                 m_statistics.LogWarning(string.Format(Strings.BackendWrapper.RemoveOrphanFileWarning, bex.Value.Filename), null);
                             }
 
-                            m_backend.Delete(bex.Key.Filename);
-                            m_backend.Delete(bex.Value.Filename);
-                            DeleteSignatureCacheCopy(bex.Key);
+                            this.Delete(bex.Key);
+                            this.Delete(bex.Value);
                         }
                     }
             }
 
             if (!m_options.Force && m_orphans.Count > 0)
+            {
                 Logging.Log.WriteMessage(Strings.BackendWrapper.FilesNotForceRemovedMessage, Duplicati.Library.Logging.LogMessageType.Information);
+                sb.AppendLine(Strings.BackendWrapper.FilesNotForceRemovedMessage);
+            }
+
+            return sb.ToString();
         }
 
         private List<Duplicati.Library.Interface.IFileEntry> ListInternal()
@@ -717,6 +951,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
+                    ResetBackend();
                     m_statistics.AddNumberOfRemoteCalls(1);
                     return m_backend.List();
                 }
@@ -727,9 +962,10 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message, ex);
+                    m_statistics.LogRetryAttempt(ex.Message, ex);
+                    DisposeBackend();
 
-                    if (ex is Library.Interface.FolderMissingException && m_backend is Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
+                    if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
                         return new List<Library.Interface.IFileEntry>();
 
                     retries--;
@@ -750,6 +986,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
+                    ResetBackend();
                     m_statistics.AddNumberOfRemoteCalls(1);
                     m_backend.Delete(remote.Filename);
                     lastEx = null;
@@ -761,7 +998,8 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message, ex);
+                    m_statistics.LogRetryAttempt(ex.Message, ex);
+                    DisposeBackend();
 
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -770,7 +1008,7 @@ namespace Duplicati.Library.Main
             } while (lastEx != null && retries > 0);
 
             if (lastEx != null)
-                throw new Exception(string.Format(Strings.BackendWrapper.FileDeleteError, lastEx.Message), lastEx);
+                throw new Exception(string.Format(Strings.BackendWrapper.FileDeleteError2, remote.Filename, lastEx.Message), lastEx);
 
             if (remote is SignatureEntry && !string.IsNullOrEmpty(m_options.SignatureCachePath))
             {
@@ -886,6 +1124,7 @@ namespace Duplicati.Library.Main
                         else
                             tempfile = new Duplicati.Library.Utility.TempFile(filename);
 
+                        ResetBackend();
                         m_statistics.AddNumberOfRemoteCalls(1);
                         if (m_backend is Duplicati.Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
@@ -906,6 +1145,11 @@ namespace Duplicati.Library.Main
                             if (!m_async && ProgressEvent != null)
                                 ProgressEvent(100, m_statusmessage);
                         }
+
+                        //This is required so we are sure that the file was downloaded completely and not partially,
+                        // as any exception here will cause a retry, but using a partial file may cause random errors
+                        if (remote.Fileentry.Size > 0 && remote.Fileentry.Size != new System.IO.FileInfo(tempfile).Length)
+                            throw new Exception(string.Format(Strings.BackendWrapper.DownloadedFileSizeError, remote.Filename, remote.Fileentry.Size, new System.IO.FileInfo(tempfile).Length));
 
                         remote.RemoteHash = Utility.Utility.CalculateHash(tempfile);
                         
@@ -982,7 +1226,8 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    m_statistics.LogError(ex.Message, ex);
+                    m_statistics.LogRetryAttempt(ex.Message, ex);
+                    DisposeBackend();
 
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -996,7 +1241,7 @@ namespace Duplicati.Library.Main
                 else if (lastEx is System.Security.Cryptography.CryptographicException)
                     throw lastEx;
                 else
-                    throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError, lastEx.Message), lastEx);
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileDownloadError2, filename, lastEx.Message), lastEx);
 
             m_statistics.AddBytesDownloaded(new System.IO.FileInfo(filename).Length);
         }
@@ -1016,6 +1261,7 @@ namespace Duplicati.Library.Main
                 {
                     try
                     {
+                        ResetBackend();
                         m_statistics.AddNumberOfRemoteCalls(1);
                         if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                         {
@@ -1090,14 +1336,24 @@ namespace Duplicati.Library.Main
                     }
                     catch (Exception ex)
                     {
+                        DisposeBackend();
+
                         //Even if we can create the folder, we still count it as an error to prevent trouble with backends
                         // that report OK for CreateFolder, but still report the folder as missing
-                        if (ex is Library.Interface.FolderMissingException && m_backend is Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
-                            try { (m_backend as Library.Interface.IBackend_v2).CreateFolder(); }
-                            catch { }
+                        if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
+                        {
+                            ResetBackend();
+                            try 
+                            {
+                                m_statistics.AddNumberOfRemoteCalls(1);
+                                (m_backend as Library.Interface.IBackend_v2).CreateFolder(); 
+                            }
+                            catch { DisposeBackend(); }
+                        }
+                            
                         
                         lastEx = ex;
-                        m_statistics.LogError(ex.Message, ex);
+                        m_statistics.LogRetryAttempt(ex.Message, ex);
 
                         retries--;
                         if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -1106,7 +1362,7 @@ namespace Duplicati.Library.Main
                 } while (!success && retries > 0);
 
                 if (!success)
-                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError, lastEx == null ? "<null>" : lastEx.Message), lastEx);
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError2, filename, lastEx == null ? "<null>" : lastEx.Message), lastEx);
 
                 m_statistics.AddBytesUploaded(new System.IO.FileInfo(filename).Length);
             }
@@ -1133,10 +1389,16 @@ namespace Duplicati.Library.Main
 
         }
 
+        private void CreateFolderInternal()
+        {
+            ResetBackend();
+            (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+        }
+
         public void CreateFolder()
         {
-            if (m_backend is Library.Interface.IBackend_v2)
-                (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+            if (m_backendSupportsCreateFolder)
+                ProtectedInvoke("CreateFolderInternal");
             else
                 throw new Exception(string.Format(Strings.BackendWrapper.BackendDoesNotSupportCreateFolder, m_backend.DisplayName, m_backend.ProtocolKey));
         }
@@ -1163,7 +1425,7 @@ namespace Duplicati.Library.Main
                 remotename += ".manifest";
             else if (remote is VerificationEntry)
                 return remotename;
-            else
+            else if (!(remote is DeleteTransactionEntry))
                 remotename += "." + m_options.CompressionModule;
 
             if (!m_options.NoEncryption)
@@ -1348,11 +1610,7 @@ namespace Duplicati.Library.Main
 
         private void DisposeInternal()
         {
-            if (m_backend != null)
-            {
-                m_backend.Dispose();
-                m_backend = null;
-            }
+            DisposeBackend();
         }
 
         #region IDisposable Members

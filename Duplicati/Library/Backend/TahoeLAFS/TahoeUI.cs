@@ -43,6 +43,9 @@ namespace Duplicati.Library.Backend
 
         private static System.Text.RegularExpressions.Regex HashRegEx = new System.Text.RegularExpressions.Regex("[^0-9a-fA-F]");
 
+        private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
+        private string m_uiAction = null;
+
         private IDictionary<string, string> m_options;
 
         public TahoeUI(IDictionary<string, string> options)
@@ -114,6 +117,8 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(HAS_TESTED) || !bool.TryParse(m_options[HAS_TESTED], out m_hasTested))
                 m_hasTested = false;
+
+            m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
         private bool ValidateForm()
@@ -121,6 +126,15 @@ namespace Duplicati.Library.Backend
             if (Servername.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Interface.CommonStrings.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servername.Focus(); }
+                catch { }
+
+                return false;
+            }
+
+            if (!Library.Utility.Utility.IsValidHostname(Servername.Text))
+            {
+                MessageBox.Show(this, string.Format(Library.Interface.CommonStrings.InvalidServernameError, Servername.Text), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 try { Servername.Focus(); }
                 catch { }
 
@@ -178,7 +192,10 @@ namespace Duplicati.Library.Backend
             
             m_options[USE_SSL] = UseSSL.Checked.ToString();
             m_options[ACCEPT_ANY_CERTIFICATE] = AcceptAnyHash.Checked.ToString();
-            m_options[ACCEPT_SPECIFIC_CERTIFICATE] = AcceptSpecifiedHash.Checked ? SpecifiedHash.Text : "";
+            if (AcceptSpecifiedHash.Checked)
+                m_options[ACCEPT_SPECIFIC_CERTIFICATE] = SpecifiedHash.Text;
+            if (!string.IsNullOrEmpty(m_uiAction))
+                m_options.Add(DUPLICATI_ACTION_MARKER, m_uiAction);
         }
 
         private void TestConnection_Click(object sender, EventArgs e)
@@ -202,16 +219,17 @@ namespace Duplicati.Library.Backend
                         using (Duplicati.Library.Modules.Builtin.HttpOptions httpconf = new Duplicati.Library.Modules.Builtin.HttpOptions())
                         {
                             httpconf.Configure(options);
-                            TahoeBackend tahoe = new TahoeBackend(destination, options);
-                            foreach (Interface.IFileEntry n in tahoe.List())
-                                if (n.Name.StartsWith("duplicati-"))
-                                {
-                                    existingBackup = true;
-                                    break;
-                                }
+                            using (TahoeBackend tahoe = new TahoeBackend(destination, options))
+                                foreach (Interface.IFileEntry n in tahoe.List())
+                                    if (n.Name.StartsWith("duplicati-"))
+                                    {
+                                        existingBackup = true;
+                                        break;
+                                    }
                         }
-                     
-                        if (existingBackup)
+
+                        bool isUiAdd = string.IsNullOrEmpty(m_uiAction) || string.Equals(m_uiAction, "add", StringComparison.InvariantCultureIgnoreCase);
+                        if (existingBackup && isUiAdd)
                         {
                             if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                                 return;

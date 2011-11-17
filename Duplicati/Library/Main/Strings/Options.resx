@@ -489,4 +489,22 @@
   <data name="SynchronousuploadShort" xml:space="preserve">
     <value>Upload files synchronously</value>
   </data>
+  <data name="NoconnectionreuseLong" xml:space="preserve">
+    <value>Duplicati will attempt to perform multiple operations on a single connection, as this avoids repeated login attempts, and thus speeds up the process. This option can be used to ensure that each operation is performed on a seperate connection</value>
+  </data>
+  <data name="NoconnectionreuseShort" xml:space="preserve">
+    <value>Do not re-use connections</value>
+  </data>
+  <data name="DebugretryerrorsLong" xml:space="preserve">
+    <value>When an error occurs, Duplicati will silently retry, and only report the number of retries. Enable this option to have the error messages displayed when a retry is performed.</value>
+  </data>
+  <data name="DebugretryerrorsShort" xml:space="preserve">
+    <value>Show error messages when a retry is performed</value>
+  </data>
+  <data name="UploadUnchangedBackupsLong" xml:space="preserve">
+    <value>If no files have changed, Duplicati will not upload a backup set. If the backup data is used to verify that a backup was executed, this option will make Duplicati upload a backupset even if it is empty</value>
+  </data>
+  <data name="UploadUnchangedBackupsShort" xml:space="preserve">
+    <value>Upload empty backup files </value>
+  </data>
 </root>

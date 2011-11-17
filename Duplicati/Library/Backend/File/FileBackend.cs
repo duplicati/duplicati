@@ -33,8 +33,8 @@ namespace Duplicati.Library.Backend
         private string m_path;
         private string m_username;
         private string m_password;
-        Dictionary<string, string> m_options;
         private bool m_moveFile;
+        private bool m_hasAutenticated;
 
         public File()
         {
@@ -42,7 +42,6 @@ namespace Duplicati.Library.Backend
 
         public File(string url, Dictionary<string, string> options)
         {
-            m_options = options;
             m_path = url.Substring("file://".Length);
 
             if (m_path.IndexOf("@") > 0)
@@ -125,23 +124,30 @@ namespace Duplicati.Library.Backend
                     throw new Exception(string.Format(Strings.FileBackend.NoDestinationWithMarkerFileError, markerfile, string.Join(System.IO.Path.PathSeparator.ToString(), paths.ToArray())));
             }
 
-            
-            string tmp;
-            m_moveFile = false;
-
-            if (options.TryGetValue(OPTION_MOVE_FILE, out tmp))
-                m_moveFile = Utility.Utility.ParseBool(tmp, true);
+            m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
+            m_hasAutenticated = false;
         }
 
-        private string GetRemoteName(string remotename)
+        private void PreAuthenticate()
         {
             try
             {
                 if (!string.IsNullOrEmpty(m_username) && m_password != null)
-                    Win32.PreAuthenticate(m_path, m_username, m_password);
+                {
+                    if (!m_hasAutenticated)
+                    {
+                        Win32.PreAuthenticate(m_path, m_username, m_password);
+                        m_hasAutenticated = true;
+                    }
+                }
             }
             catch
             { }
+        }
+
+        private string GetRemoteName(string remotename)
+        {
+            PreAuthenticate();
 
             if (!System.IO.Directory.Exists(m_path))
                 throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
@@ -170,9 +176,7 @@ namespace Duplicati.Library.Backend
         {
             List<IFileEntry> ls = new List<IFileEntry>();
 
-            //Attempt to apply credentials
-            if (!string.IsNullOrEmpty(m_username) && m_password != null)
-                Win32.PreAuthenticate(m_path, m_username, m_password);
+            PreAuthenticate();
 
             if (!System.IO.Directory.Exists(m_path))
                 throw new FolderMissingException(string.Format(Strings.FileBackend.FolderMissingError, m_path));
@@ -276,8 +280,6 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            if (m_options != null)
-                m_options = null;
             if (m_username != null)
                 m_username = null;
             if (m_password != null)

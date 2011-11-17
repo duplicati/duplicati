@@ -142,6 +142,7 @@ namespace Duplicati.GUI.Wizard_pages
             this.IncludeSetup = schedule.Task.IncludeSetup;
             this.IgnoreFileTimestamps = schedule.Task.Extensions.IgnoreTimestamps;
             this.FileSizeLimit = schedule.Task.Extensions.FileSizeLimit;
+            this.DisableAESFallbackEncryption = schedule.Task.Extensions.DisableAESFallbackDecryption;
 
             //Handle the "Select Files" portion
             this.SelectFilesUI.Version = schedule.Task.Extensions.SelectFiles_Version;
@@ -206,6 +207,7 @@ namespace Duplicati.GUI.Wizard_pages
             schedule.Task.IncludeSetup = this.IncludeSetup;
             schedule.Task.Extensions.IgnoreTimestamps = this.IgnoreFileTimestamps;
             schedule.Task.Extensions.FileSizeLimit = this.FileSizeLimit;
+            schedule.Task.Extensions.DisableAESFallbackDecryption = this.DisableAESFallbackEncryption;
 
             schedule.Task.Extensions.SelectFiles_Version = this.SelectFilesUI.Version;
             schedule.Task.Extensions.SelectFiles_UseSimpleMode = this.SelectFilesUI.UseSimpleMode;
@@ -466,6 +468,15 @@ namespace Duplicati.GUI.Wizard_pages
         {
             get { return GetItem<bool>("AsyncTransfer", false); }
             set { SetItem("AsyncTransfer", value); }
+        }
+
+        /// <summary>
+        /// Disables AES fallback encryption
+        /// </summary>
+        public bool DisableAESFallbackEncryption
+        {
+            get { return GetItem<bool>("DisableAESFallbackEncryption", false); }
+            set { SetItem("DisableAESFallbackEncryption", value); }
         }
 
         /// <summary>

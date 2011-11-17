@@ -68,6 +68,9 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="UnixSupport">
+      <HintPath>..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\thirdparty\ShellIcons\ShellIcons.cs">
@@ -1166,6 +1169,9 @@
     <None Include="Resources\Wizard.png" />
     <None Include="Resources\TrayNormalError.ico" />
     <None Include="Resources\TrayNormalWarning.ico" />
+    <None Include="Resources\InterruptedStatusIcon.ico" />
+    <None Include="Resources\InterruptedStatusIcon.png" />
+    <None Include="Resources\EmptyBackupStatusIcon.png" />
     <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

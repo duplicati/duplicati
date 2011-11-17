@@ -29,9 +29,10 @@ namespace Duplicati.Library.Backend
     {
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
-        Dictionary<string, string> m_options;
 
         private bool m_useSSL = false;
+        private bool m_defaultPassive = true;
+        private bool m_passive = false;
 
         public FTP()
         {
@@ -39,6 +40,17 @@ namespace Duplicati.Library.Backend
 
         public FTP(string url, Dictionary<string, string> options)
         {
+            //This can be made better by keeping a single ftp stream open,
+            //unfortunately the .Net model does not allow this as the request is 
+            //bound to a single url (path+file).
+            //
+            //To fix this, a thirdparty FTP library is required,
+            //this would also allow a fix for the FTP servers
+            //that only support SSL during authentication, not during transfers
+            //
+            //If you have experience with a stable open source .Net FTP library,
+            //please let the Duplicati authors know
+
             Uri u = new Uri(url);
 
             if (!string.IsNullOrEmpty(u.UserInfo))
@@ -67,22 +79,26 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            string sslString;
-            if (options.TryGetValue("use-ssl", out sslString))
-                m_useSSL = Utility.Utility.ParseBool(sslString, true);
-            else
-                m_useSSL = false;
-
-
-            m_options = options;
             m_url = url;
             if (!m_url.EndsWith("/"))
                 m_url += "/";
+
+            m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             //HACK: We modify the commandline options to alter the setting it the ftp backend is loaded
             if (!options.ContainsKey("list-verify-uploads"))
                 options.Add("list-verify-uploads", "true");
 
+            if (Utility.Utility.ParseBoolOption(options, "ftp-passive"))
+            {
+                m_defaultPassive = false;
+                m_passive = true;
+            }
+            if (Utility.Utility.ParseBoolOption(options, "ftp-regular"))
+            {
+                m_defaultPassive = false;
+                m_passive = false;
+            }
         }
 
         #region Regular expression to parse list lines
@@ -246,7 +262,6 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-regular", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionFTPActiveShort, Strings.FTPBackend.DescriptionFTPActiveLong, "true"),
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPPasswordShort, Strings.FTPBackend.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPUsernameShort, Strings.FTPBackend.DescriptionFTPUsernameLong),
-                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionIntegratedAuthenticationShort, Strings.FTPBackend.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionUseSSLShort, Strings.FTPBackend.DescriptionUseSSLLong),
                 });
             }
@@ -268,8 +283,6 @@ namespace Duplicati.Library.Backend
         {
             if (m_userInfo != null)
                 m_userInfo = null;
-            if (m_options != null)
-                m_options = null;
         }
 
         #endregion
@@ -282,10 +295,8 @@ namespace Duplicati.Library.Backend
                 req.Credentials = m_userInfo;
             req.KeepAlive = false;
 
-            if (m_options.ContainsKey("ftp-passive"))
-                req.UsePassive = true;
-            if (m_options.ContainsKey("ftp-regular"))
-                req.UsePassive = false;
+            if (!m_defaultPassive)
+                req.UsePassive = m_passive;
 
             if (m_useSSL)
                 req.EnableSsl = m_useSSL;

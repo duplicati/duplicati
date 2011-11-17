@@ -31,21 +31,61 @@ namespace Duplicati.GUI
 {
     public partial class ServiceStatus : Form
     {
+        private enum QuickActionType
+        {
+            None,
+            Pause,
+            Resume,
+            Pause5Min,
+            Pause10Min,
+            Pause15Min,
+            Pause30Min,
+            Pause60Min,
+            StopBackup,
+            ThrottleDialog,
+            QuitDuplicati
+        }
+
         public ServiceStatus()
         {
             InitializeComponent();
+
+            if (Library.Utility.Utility.IsClientLinux || Program.TraylessMode)
+                this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
+
+            if (Program.TraylessMode)
+            {
+                this.StartPosition = FormStartPosition.CenterScreen;
+                this.MinimizeBox = true;
+                this.ShowInTaskbar = true;
+                this.ShowIcon = true;
+            }
 
             imageList.Images.Clear();
             imageList.Images.Add(DuplicatiOutputParser.OKStatus, Properties.Resources.OKStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.WarningStatus, Properties.Resources.WarningStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.ErrorStatus, Properties.Resources.ErrorStatusIcon);
             imageList.Images.Add(DuplicatiOutputParser.PartialStatus, Properties.Resources.PartialStatusIcon);
+            imageList.Images.Add(DuplicatiOutputParser.InterruptedStatus, Properties.Resources.InterruptedStatusIcon);
+            imageList.Images.Add(DuplicatiOutputParser.NoChangedFiles, Properties.Resources.EmptyBackupStatusIcon);
 
-            //We have the display open in the designer, so we set the right size here
-            this.Size = this.MinimumSize;
-#if DEBUG
-            this.Text += " (DEBUG)";
-#endif
+            this.Text = String.Format(Strings.ServiceStatus.DialogTitle, License.VersionNumbers.Version);
+
+            string indent = "  ";
+            QuickActions.Items.Clear();
+            QuickActions.Items.AddRange(
+                new object[] {
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(Strings.ServiceStatus.SelectQuickAction, QuickActionType.None),
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(Strings.ServiceStatus.QuickActionPause, QuickActionType.Pause),
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(indent + Strings.ServiceStatus.QuickActionPause5, QuickActionType.Pause5Min),
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(indent + Strings.ServiceStatus.QuickActionPause10, QuickActionType.Pause10Min),
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(indent + Strings.ServiceStatus.QuickActionPause15, QuickActionType.Pause15Min),
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(indent + Strings.ServiceStatus.QuickActionPause30, QuickActionType.Pause30Min),
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(indent + Strings.ServiceStatus.QuickActionPause60, QuickActionType.Pause60Min),
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(Strings.ServiceStatus.QuickActionThrottle, QuickActionType.ThrottleDialog),
+                    new Library.Utility.ComboBoxItemPair<QuickActionType>(Strings.ServiceStatus.QuickActionExit, QuickActionType.QuitDuplicati),
+                });
+            QuickActions.SelectedIndex = 0;
         }
 
         private void ServiceStatus_Load(object sender, EventArgs e)
@@ -67,14 +107,19 @@ namespace Duplicati.GUI
             PlaceAtBottom();
 
             if (Program.WorkThread.CurrentTask != null)
-                Program.Runner.ReinvokeLastProgressEvent();
+                Program.Runner.ReinvokeLastProgressEvent();            
         }
 
         private delegate void EmptyDelegate();
         private void DataConnection_AfterDataConnection(object sender, System.Data.LightDatamodel.DataActions action)
         {
-            if (action != System.Data.LightDatamodel.DataActions.Fetch)
-                this.BeginInvoke(new EmptyDelegate(BuildRecent));
+            if (action != System.Data.LightDatamodel.DataActions.Fetch) 
+			{
+				if (Library.Utility.Utility.IsMono)
+					MonoSupport.BeginInvoke (this, new EmptyDelegate(BuildRecent));
+				else
+                	this.BeginInvoke(new EmptyDelegate(BuildRecent));
+			}
         }
 
         void LiveControl_StateChanged(object sender, EventArgs e)
@@ -86,7 +131,10 @@ namespace Duplicati.GUI
             }
 
             stopBackupToolStripMenuItem.Enabled = Program.WorkThread.Active;
+            UpdateQuickStateStop(Program.WorkThread.Active);
 
+            SetQuickActionsPauseState();
+            
             if (Program.LiveControl.State == LiveControls.LiveControlState.Paused)
             {
                 pauseBackupToolStripMenuItem.Checked = true;
@@ -102,6 +150,67 @@ namespace Duplicati.GUI
                     WorkThread_CompletedWork(null, null);
                 else
                     WorkThread_StartingWork(null, null);
+            }
+        }
+
+        /// <summary>
+        /// Helper function that removes the QuickState item for Pause/Resume and inserts the right one
+        /// </summary>
+        private void SetQuickActionsPauseState()
+        {
+            int index = -1;
+            for(int i = 0; i < QuickActions.Items.Count; i++)
+                if (QuickActions.Items[i] is ComboBoxItemPair<QuickActionType>)
+                {
+                    QuickActionType action = ((ComboBoxItemPair<QuickActionType>)QuickActions.Items[i]).Value;
+                    if (action == QuickActionType.Pause || action == QuickActionType.Resume)
+                    {
+                        //If it is already correct, return now
+                        if (action == QuickActionType.Resume && Program.LiveControl.State == LiveControls.LiveControlState.Paused)
+                            return;
+
+                        if (action == QuickActionType.Pause && Program.LiveControl.State == LiveControls.LiveControlState.Running)
+                            return;
+
+                        index = i;
+                        break;
+                    }
+                }
+
+            ComboBoxItemPair<QuickActionType> newitem;
+            if (Program.LiveControl.State == LiveControls.LiveControlState.Paused)
+                newitem = new ComboBoxItemPair<QuickActionType>(Strings.ServiceStatus.QuickActionResume, QuickActionType.Resume);
+            else
+                newitem = new ComboBoxItemPair<QuickActionType>(Strings.ServiceStatus.QuickActionPause, QuickActionType.Pause);
+
+            QuickActions.Items.RemoveAt(index);
+            QuickActions.Items.Insert(index, newitem);
+        }
+
+        /// <summary>
+        /// Updates the QuickState combo and removes or inserts the stop backup item
+        /// </summary>
+        private void UpdateQuickStateStop(bool enabled)
+        {
+            int index = -1;
+            for(int i = 0; i < QuickActions.Items.Count; i++)
+                if (QuickActions.Items[i] is ComboBoxItemPair<QuickActionType>)
+                {
+                    QuickActionType action = ((ComboBoxItemPair<QuickActionType>)QuickActions.Items[i]).Value;
+                    if (action == QuickActionType.StopBackup)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+
+            if (index == -1 && enabled)
+            {
+                QuickActions.Items.Insert(QuickActions.Items.Count - 3, new ComboBoxItemPair<QuickActionType>(Strings.ServiceStatus.QuickActionStop, QuickActionType.StopBackup));
+            }
+            else if (index != -1 && !enabled)
+            {
+                QuickActions.Items.RemoveAt(index);
             }
         }
 
@@ -134,18 +243,41 @@ namespace Duplicati.GUI
                 if (this.InvokeRequired)
                     this.Invoke(new EventHandler(Scheduler_NewSchedule), sender, e);
                 else
-                {
-                    scheduledBackups.Items.Clear();
-                    lock (Program.MainLock)
-                        foreach (Schedule s in Program.Scheduler.Schedule)
-                            scheduledBackups.Items.Add(s.When.ToString("g") + " " + s.Name);
-                }
+                    RebuildScheduled();
             }
             catch 
             {
                 //TODO: This happens occasionally when the user closes the dialog because, the form is disposed before the event is detached
                 //I've only seen it happen once
             }
+        }
+
+        private void RebuildScheduled()
+        {
+            lock (Program.MainLock)
+                try
+                {
+                    pendingView.BeginUpdate();
+                    pendingView.Items.Clear();
+                    foreach (IDuplicityTask t in Program.WorkThread.CurrentTasks)
+                    {
+                        ListViewItem lvi = pendingView.Items.Add(Strings.ServiceStatus.BackupImmediate);
+                        lvi.SubItems.Add(t.Schedule.Name == null ? "" : t.Schedule.Name);
+                        lvi.Tag = t; //Note: not a schedule object!
+                    }
+
+                    foreach (Schedule s in Program.Scheduler.Schedule)
+                    {
+                        ListViewItem lvi = pendingView.Items.Add(s.NextScheduledTime.ToString("g"));
+                        lvi.SubItems.Add(s.Name);
+                        lvi.Tag = s;
+                    }
+                }
+                finally
+                {
+                    pendingView.EndUpdate();
+                }
+
         }
 
         void ServiceStatus_FormClosed(object sender, FormClosedEventArgs e)
@@ -173,6 +305,7 @@ namespace Duplicati.GUI
                 }
 
                 stopBackupToolStripMenuItem.Enabled = false;
+                UpdateQuickStateStop(false);
             }
         }
 
@@ -189,6 +322,7 @@ namespace Duplicati.GUI
                 statusImage.Image = Properties.Resources.Status_Working;
                 WorkThread_WorkQueueChanged(sender, e);
                 stopBackupToolStripMenuItem.Enabled = true;
+                UpdateQuickStateStop(true);
             }
         }
 
@@ -197,44 +331,8 @@ namespace Duplicati.GUI
             if (this.InvokeRequired)
                 this.Invoke(new EventHandler(WorkThread_WorkQueueChanged), sender, e);
             else
-            {
-                try
-                {
-                    pendingBackups.BeginUpdate();
-                    pendingBackups.Items.Clear();
-                    //No locking here, the list is protected by the thread raising the event
-                    foreach (IDuplicityTask t in Program.WorkThread.CurrentTasks)
-                        pendingBackups.Items.Add(Program.LocalizeTaskType(t.TaskType) + ": " + t.Schedule.Name == null ? "" : t.Schedule.Name);
-                }
-                finally
-                {
-                    pendingBackups.EndUpdate();
-                }
-            }
+                RebuildScheduled();
 
-        }
-
-        private void ShowAdvanced_Click(object sender, EventArgs e)
-        {
-            int height = simplePanel.Height + (this.Padding.All + simplePanel.Margin.All) * 5;
-            bool reposition = (this.Top == (Screen.PrimaryScreen.WorkingArea.Height - this.Height) && this.Left == (Screen.PrimaryScreen.WorkingArea.Width - this.Width));
-
-            if (advancedPanel.Visible)
-            {
-                advancedPanel.Visible = false;
-                ShowAdvanced.Text = Strings.ServiceStatus.SwitchToAdvanced;
-            }
-            else
-            {
-                advancedPanel.Visible = true;
-                ShowAdvanced.Text = Strings.ServiceStatus.SwitchToSimple;
-            }
-
-
-            this.Height = (advancedPanel.Visible ? (advancedPanel.Height - (this.Padding.All + simplePanel.Margin.All)) : 0) + height;
-
-            if (reposition)
-                PlaceAtBottom();
         }
 
         private void PlaceAtBottom()
@@ -342,6 +440,13 @@ namespace Duplicati.GUI
             Log l = recentBackups.SelectedItems[0].Tag as Log;
             if (l == null)
                 return;
+
+            if (DuplicatiOutputParser.NoChangedFiles.Equals(l.ParsedStatus, StringComparison.InvariantCultureIgnoreCase))
+            {
+                MessageBox.Show(this, Strings.ServiceStatus.NoFilesInBackupMessages, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             Schedule s = l.OwnerTask.Schedule;
             DateTime time = l.EndTime; //Not the exact time to use, but close enough unless there were multiple backups running at the same time
 
@@ -390,6 +495,93 @@ namespace Duplicati.GUI
         private void ServiceStatus_Activated(object sender, EventArgs e)
         {
             Program.DisplayHelper.ResetCurrentIcon();
+        }
+
+        private void wizardLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Program.DisplayHelper.ShowWizard();
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Program.DisplayHelper.ShowSettings();
+        }
+
+        private void QuickActions_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ComboBoxItemPair<QuickActionType> c = QuickActions.SelectedItem as ComboBoxItemPair<QuickActionType>;
+            if (c != null)
+            {
+                switch (c.Value)
+                {
+                    case QuickActionType.Pause:
+                        Program.LiveControl.Pause();
+                        break;
+                    case QuickActionType.Resume:
+                        Program.LiveControl.Resume();
+                        break;
+                    case QuickActionType.Pause5Min:
+                        Program.LiveControl.Pause("5m");
+                        break;
+                    case QuickActionType.Pause10Min:
+                        Program.LiveControl.Pause("10m");
+                        break;
+                    case QuickActionType.Pause15Min:
+                        Program.LiveControl.Pause("15m");
+                        break;
+                    case QuickActionType.Pause30Min:
+                        Program.LiveControl.Pause("30m");
+                        break;
+                    case QuickActionType.Pause60Min:
+                        Program.LiveControl.Pause("60m");
+                        break;
+                    case QuickActionType.StopBackup:
+                        Program.Runner.Stop(CloseReason.UserClosing);
+                        break;
+                    case QuickActionType.ThrottleDialog:
+                        new ThrottleControl().ShowDialog(Program.DisplayHelper);
+                        break;
+                    case QuickActionType.QuitDuplicati:
+                        Program.DisplayHelper.Quit();
+                        break;
+                }
+            }
+
+            QuickActions.SelectedIndex = 0;
+        }
+
+        private void runBackupNowToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (recentBackups.SelectedItems.Count != 1)
+                return;
+
+            Log l = recentBackups.SelectedItems[0].Tag as Log;
+            if (l == null || l.OwnerTask == null || l.OwnerTask.Schedule == null)
+                return;
+
+            Program.WorkThread.AddTask(new IncrementalBackupTask(l.OwnerTask.Schedule));
+        }
+
+        private void runBackupNowToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (pendingView.SelectedItems.Count != 1)
+                return;
+
+            Schedule s = pendingView.SelectedItems[0].Tag as Schedule;
+            if (s == null)
+                return;
+
+            Program.WorkThread.AddTask(new IncrementalBackupTask(s));
+
+        }
+
+        private void ServiceStatus_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (Program.TraylessMode && !Program.DisplayHelper.IsInQuit)
+            {
+                if (!Program.DisplayHelper.Quit())
+                    e.Cancel = true;
+            }
         }
      }
 }

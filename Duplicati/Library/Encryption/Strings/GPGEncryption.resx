@@ -162,4 +162,13 @@ GPG may work regardless, if it is located in the system search path.
 If the encryption fails, no files will be backed up
 Do you want to continue anyway?</value>
   </data>
+  <data name="Gpgencryptiondisablearmordeprecated" xml:space="preserve">
+    <value>This option has non-standard handling, please use the --{0} option instead.</value>
+  </data>
+  <data name="GpgencryptionenablearmorLong" xml:space="preserve">
+    <value>Use this option to supply the --armor option to GPG. The files will be larger but can be sent as pure text files.</value>
+  </data>
+  <data name="GpgencryptionenablearmorShort" xml:space="preserve">
+    <value>Use GPG Armor</value>
+  </data>
 </root>

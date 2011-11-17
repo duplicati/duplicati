@@ -23,18 +23,19 @@ namespace Duplicati.Library.Backend
         private const string ATTRIBUTE_TEMPLATE = "<category scheme=\"http://schemas.google.com/g/2005/labels\" term=\"http://schemas.google.com/g/2005/labels#{0}\" label=\"{0}\"/>";
 
         private const string DEFAULT_LABELS = "viewed,hidden";
-
+        private const string CAPTCHA_UNLOCK_URL = "https://www.google.com/accounts/UnlockCaptcha";
 
         //Seems the Google limit is 10MB
-        private const long TRANSFER_CHUNK_SIZE = 1024 * 1024 * 5; //5MB Chuncks
+        private const long TRANSFER_CHUNK_SIZE = 1024 * 1024 * 5; //5MB Chuncks (must be divisible by 512)
 
-        private string m_username;
-        private string m_password;
         private string m_folder;
         private string[] m_labels;
 
         private Dictionary<string, Google.Documents.Document> m_folders = null;
         private Dictionary<string, TaggedFileEntry> m_files = null;
+        private Google.GData.Client.RequestSettings m_settings = null;
+        private Google.GData.Client.ClientLoginAuthenticator m_cla;
+        private Google.GData.Client.Service m_service;
 
         public GoogleDocs() { }
 
@@ -48,14 +49,17 @@ namespace Duplicati.Library.Backend
             if (m_folder.EndsWith("/"))
                 m_folder = m_folder.Substring(0, m_folder.Length - 1);
 
+            string username = null;
+            string password = null;
+
             if (options.ContainsKey("ftp-username"))
-                m_username = options["ftp-username"];
+                username = options["ftp-username"];
             if (options.ContainsKey("ftp-password"))
-                m_password = options["ftp-password"];
+                password = options["ftp-password"];
             if (options.ContainsKey(USERNAME_OPTION))
-                m_username = options[USERNAME_OPTION];
+                username = options[USERNAME_OPTION];
             if (options.ContainsKey(PASSWORD_OPTION))
-                m_password = options[PASSWORD_OPTION];
+                password = options[PASSWORD_OPTION];
 
             string labels;
             if (!options.TryGetValue(ATTRIBUTES_OPTION, out labels))
@@ -63,26 +67,21 @@ namespace Duplicati.Library.Backend
 
             m_labels = (labels ?? "").Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries);
 
-            if (string.IsNullOrEmpty(m_username))
+            if (string.IsNullOrEmpty(username))
                 throw new Exception(Strings.GoogleDocs.MissingUsernameError);
-            if (string.IsNullOrEmpty(m_password))
+            if (string.IsNullOrEmpty(password))
                 throw new Exception(Strings.GoogleDocs.MissingPasswordError);
-        }
 
-        private Google.GData.Documents.DocumentsService CreateService()
-        {
-            Google.GData.Documents.DocumentsService s = new Google.GData.Documents.DocumentsService(USER_AGENT);
-            s.Credentials = new Google.GData.Client.GDataCredentials(m_username, m_password);
-            return s;
+            m_cla = new Google.GData.Client.ClientLoginAuthenticator(USER_AGENT, Google.GData.Client.ServiceNames.Documents, username, password);
+
+            m_settings = new Google.GData.Client.RequestSettings(USER_AGENT, username, password);
+            m_settings.AutoPaging = true;
+            m_service = new Google.GData.Client.Service();
         }
 
         private Google.Documents.DocumentsRequest CreateRequest()
         {
-            Google.GData.Client.RequestSettings settings = new Google.GData.Client.RequestSettings(USER_AGENT, m_username, m_password);
-            settings.AutoPaging = true;
-            Google.Documents.DocumentsRequest req = new Google.Documents.DocumentsRequest(settings);
-
-            return req;
+            return new Google.Documents.DocumentsRequest(m_settings);
         }
 
         private Google.Documents.Document GetFolder()
@@ -99,18 +98,28 @@ namespace Duplicati.Library.Backend
             throw new FolderMissingException();
         }
 
-        private Google.Documents.Document GetFile(string filename)
+        private TaggedFileEntry TryGetFile(string filename)
         {
             TaggedFileEntry res;
             if (m_files != null && m_files.TryGetValue(filename, out res))
-                return res.Doc;
+                return res;
 
             m_files = GetFileList();
 
-            if(m_files.TryGetValue(filename, out res))
-                return res.Doc;
+            if (m_files.TryGetValue(filename, out res))
+                return res;
 
-            throw new System.IO.FileNotFoundException(filename);
+            return null;
+        }
+
+        private TaggedFileEntry GetFile(string filename)
+        {
+            TaggedFileEntry res = TryGetFile(filename);
+            
+            if (res == null)
+                throw new System.IO.FileNotFoundException(filename);
+            
+            return res;
         }
 
         private Dictionary<string, TaggedFileEntry> GetFileList()
@@ -120,8 +129,20 @@ namespace Duplicati.Library.Backend
             Dictionary<string, TaggedFileEntry> results = new Dictionary<string, TaggedFileEntry>();
 
             foreach (Google.Documents.Document file in req.GetFolderContent(folder).Entries)
-                results.Add(file.Title, new TaggedFileEntry(file.Title, file.QuotaBytesUsed, file.LastViewed, file.Updated, file));
-            
+            {
+                if (results.ContainsKey(file.Title))
+                    throw new Exception(string.Format(Strings.GoogleDocs.DuplicateFilenameFoundError, file.Title, folder.Title));
+
+                string updateUrl = null;
+                foreach (Google.GData.Client.AtomLink x in file.AtomEntry.Links)
+                    if (x.Rel.EndsWith("#resumable-edit-media"))
+                    {
+                        updateUrl = x.HRef.ToString();
+                        break;
+                    }
+
+                results.Add(file.Title, new TaggedFileEntry(file.Title, file.QuotaBytesUsed, file.LastViewed, file.Updated, file.ResourceId, file.DocumentEntry.Content.Src.ToString(), updateUrl, file.ETag));
+            }
             return results;
         }
 
@@ -140,7 +161,10 @@ namespace Duplicati.Library.Backend
                     p[i] = parentlookup[d.ParentFolders[i]].Title;
 
                 p[p.Length - 1] = d.Title;
-                dict.Add(string.Join("/", p), d);
+                string key = string.Join("/", p);
+                if (dict.ContainsKey(key))
+                    throw new Exception(string.Format(Strings.GoogleDocs.DuplicateFoldernameFoundError, key));
+                dict.Add(key, d);
             }
             
             return dict;
@@ -161,6 +185,29 @@ namespace Duplicati.Library.Backend
             string[] subfolders = m_folder.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             string curfolder = "";
             Google.Documents.Document parentfolder = null;
+            Dictionary<string, Google.GData.Client.AtomCategory> categories = new Dictionary<string,Google.GData.Client.AtomCategory>();
+
+            //We know of these labels statically
+            categories["starred"] = Google.GData.Documents.DocumentEntry.STARRED_CATEGORY;
+            categories["viewed"] = Google.GData.Documents.DocumentEntry.VIEWED_CATEGORY;
+            categories["hidden"] = Google.GData.Documents.DocumentEntry.HIDDEN_CATEGORY;
+
+            try 
+            {
+                //Pick up any extra supported labels by reflection
+                foreach(System.Reflection.FieldInfo fi in typeof(Google.GData.Documents.DocumentEntry).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+                    if (fi.FieldType == typeof(Google.GData.Client.AtomCategory))  
+                    {
+                        Google.GData.Client.AtomCategory cat = (Google.GData.Client.AtomCategory)fi.GetValue(null);
+                        if (cat.Scheme == "http://schemas.google.com/g/2005/labels")
+                            categories[cat.Label] = cat;
+                    }
+            } 
+            catch 
+            {
+                //Extra labels are non-fatal
+            }
+
             foreach (string s in subfolders)
             {
                 if (curfolder.Length == 0)
@@ -173,6 +220,10 @@ namespace Duplicati.Library.Backend
                     Google.Documents.Document doc = new Google.Documents.Document();
                     doc.Title = s;
                     doc.DocumentEntry.IsFolder = true;
+
+                    foreach (string label in m_labels) 
+                        if (categories.ContainsKey(label))
+                            doc.DocumentEntry.ToggleCategory(categories[label], true);
 
                     Google.Documents.Document d;
                     if (parentfolder == null)
@@ -202,19 +253,24 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            m_files = GetFileList();
+            try
+            {
+                m_files = GetFileList();
 
-            List<IFileEntry> results = new List<IFileEntry>();
-            foreach (TaggedFileEntry e in m_files.Values)
-                results.Add(e);
+                List<IFileEntry> results = new List<IFileEntry>();
+                foreach (TaggedFileEntry e in m_files.Values)
+                    results.Add(e);
 
-            return results;
+                return results;
+            } 
+            catch (Google.GData.Client.CaptchaRequiredException cex) 
+            {
+                throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
+            }
         }
 
         public void Put(string remotename, string filename)
         {
-            //Google.GData.Documents.DocumentEntry de = CreateService().UploadFile(filename, remotename, "", false);
-
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
                 Put(remotename, fs);
         }
@@ -229,10 +285,24 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                CreateRequest().Delete(new Uri(GetFile(remotename).AtomEntry.EditUri.Content + "?delete=true"), "*");
+                TaggedFileEntry f = GetFile(remotename);
+
+                //This does not work if the item is in a folder, because it will only be removed from the folder,
+                // even if with the "delete=true" setting
+                //CreateRequest().Delete(new Uri(f.AtomEntry.EditUri.Content + "?delete=true"), f.ETag);
+
+                //Instead we create the root element id (that is without any folder information),
+                //and delete that instead, that seems to works as desired, fully removing the file
+                Google.Documents.DocumentsRequest req = CreateRequest();
+                string url = req.BaseUri + "/" + HttpUtility.UrlEncode(f.ResourceId) + "?delete=true";
+                req.Delete(new Uri(url), f.ETag);
 
                 //We need to ensure that a LIST will not return the removed file
                 m_files.Remove(remotename);
+            }
+            catch (Google.GData.Client.CaptchaRequiredException cex)
+            {
+                throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
             }
             catch
             {
@@ -267,6 +337,8 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
+            m_settings = null;
+            m_cla = null;
         }
 
         #endregion
@@ -275,124 +347,251 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            Google.Documents.Document folder = GetFolder();
-            Google.GData.Client.ClientLoginAuthenticator cla = new Google.GData.Client.ClientLoginAuthenticator(USER_AGENT, Google.GData.Client.ServiceNames.Documents, m_username, m_password);
-
-            //First we need to get a resumeable upload url
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://docs.google.com/feeds/upload/create-session/default/private/full/" + System.Web.HttpUtility.UrlEncode(folder.ResourceId) + "/contents?convert=false");
-            req.Method = "POST";
-            req.Headers.Add("X-Upload-Content-Length", stream.Length.ToString());
-            req.Headers.Add("X-Upload-Content-Type", "application/octet-stream");
-            req.UserAgent = USER_AGENT;
-            req.Headers.Add("GData-Version", "3.0");
-
-            //Build the atom entry describing the file we want to create
-            string labels = "";
-            foreach(string s in m_labels)
-                if (s.Trim().Length > 0)
-                    labels += string.Format(ATTRIBUTE_TEMPLATE, s);
-            
-            //Apply the name and content-type to the not-yet-uploaded file
-            byte[] data = System.Text.Encoding.UTF8.GetBytes(string.Format(CREATE_ITEM_TEMPLATE, System.Web.HttpUtility.HtmlEncode(remotename), labels));
-            req.ContentLength = data.Length;
-            req.ContentType = "application/atom+xml";
-
-            //Authenticate our request
-            cla.ApplyAuthenticationToRequest(req);
-
-            using (System.IO.Stream s = req.GetRequestStream())
-                s.Write(data, 0, data.Length);
-
-            string newUri;
-            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+            try
             {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                
+                Google.Documents.Document folder = GetFolder();
+                
+                //Special, since uploads can overwrite or create,
+                // we must figure out if the file exists in advance.
+                //Unfortunately it would be wastefull to request the list 
+                // for each upload request, so we rely on the cache being
+                // correct
 
-                newUri = resp.Headers["Location"];
-            }
-
-            //Ensure that we have a resumeable upload url
-            if (newUri == null)
-                throw new Exception(Strings.GoogleDocs.NoResumeURLError);
-
-            string id = null;
-            byte[] buffer = new byte[8 * 1024];
-
-            while (stream.Position != stream.Length)
-            {
-                long postbytes = Math.Min(stream.Length - stream.Position, TRANSFER_CHUNK_SIZE);
-
-                //Post a fragment of the file as a partial request
-                req = (HttpWebRequest)WebRequest.Create(newUri);
-                req.Method = "PUT";
-                req.UserAgent = USER_AGENT;
-                req.ContentLength = postbytes;
-                req.ContentType = "application/octet-stream";
-                req.Headers.Add("Content-Range", string.Format("bytes {0}-{1}/{2}", stream.Position, stream.Position + (postbytes - 1), stream.Length.ToString()));
-
-                //Copy the current fragment of bytes
-                using (System.IO.Stream s = req.GetRequestStream())
-                {
-                    long bytesleft = postbytes;
-                    long written = 0;
-                    int a;
-                    while (bytesleft != 0 && ((a = stream.Read(buffer, 0, (int)Math.Min(buffer.Length, bytesleft))) != 0))
-                    {
-                        s.Write(buffer, 0, a);
-                        bytesleft -= a;
-                        written += a;
-                    }
-
-                    s.Flush();
-
-                    if (bytesleft != 0 || postbytes != written)
-                        throw new System.IO.EndOfStreamException();
-                }
+                TaggedFileEntry doc = null;
+                if (m_files == null)
+                    doc = TryGetFile(remotename);
+                else 
+                    m_files.TryGetValue(remotename, out doc);
 
                 try
                 {
-                    using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                    string resumableUri;
+                    if (doc != null)
                     {
-                        int code = (int)resp.StatusCode;
-                        if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                            throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                        if (doc.MediaUrl == null)
+                        {
+                            //Strange, we could not get the edit url, perhaps it is readonly?
+                            //Fallback strategy is "delete-then-upload"
+                            try { this.Delete(remotename); }
+                            catch { }
 
-                        //If all goes well, we should now get an atom entry describing the new element
-                        System.Xml.XmlDocument doc = new XmlDocument();
-                        using (System.IO.Stream s = resp.GetResponseStream())
-                            doc.Load(s);
-
-                        System.Xml.XmlNamespaceManager mgr = new XmlNamespaceManager(doc.NameTable);
-                        mgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
-                        id = doc.SelectSingleNode("atom:entry/atom:id", mgr).InnerText;
+                            doc = TryGetFile(remotename);
+                            if (doc != null || doc.MediaUrl == null)
+                                throw new Exception(string.Format(Strings.GoogleDocs.FileIsReadOnlyError, remotename));
+                        }
                     }
-                }
-                catch (WebException wex)
-                {
-                    //Accept the 308 until we are complete
-                    if (wex.Status == WebExceptionStatus.ProtocolError && 
-                        wex.Response is HttpWebResponse && 
-                        (int)((HttpWebResponse)wex.Response).StatusCode == 308 && 
-                        stream.Position != stream.Length)
+
+
+                    //File does not exist, we upload a new one
+                    if (doc == null)
                     {
-                        //Accept the 308 until we are complete
+                        //First we need to get a resumeable upload url
+                        HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://docs.google.com/feeds/upload/create-session/default/private/full/" + System.Web.HttpUtility.UrlEncode(folder.ResourceId) + "/contents?convert=false");
+                        req.Method = "POST";
+                        req.Headers.Add("X-Upload-Content-Length", stream.Length.ToString());
+                        req.Headers.Add("X-Upload-Content-Type", "application/octet-stream");
+                        req.UserAgent = USER_AGENT;
+                        req.Headers.Add("GData-Version", "3.0");
+
+                        //Build the atom entry describing the file we want to create
+                        string labels = "";
+                        foreach (string s in m_labels)
+                            if (s.Trim().Length > 0)
+                                labels += string.Format(ATTRIBUTE_TEMPLATE, s);
+
+                        //Apply the name and content-type to the not-yet-uploaded file
+                        byte[] data = System.Text.Encoding.UTF8.GetBytes(string.Format(CREATE_ITEM_TEMPLATE, System.Web.HttpUtility.HtmlEncode(remotename), labels));
+                        req.ContentLength = data.Length;
+                        req.ContentType = "application/atom+xml";
+
+                        //Authenticate our request
+                        m_cla.ApplyAuthenticationToRequest(req);
+
+                        using (System.IO.Stream s = req.GetRequestStream())
+                            s.Write(data, 0, data.Length);
+
+                        using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                        {
+                            int code = (int)resp.StatusCode;
+                            if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                                throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+
+                            resumableUri = resp.Headers["Location"];
+                        }
                     }
                     else
-                        throw;
+                    {
+                        //First we need to get a resumeable upload url
+                        HttpWebRequest req = (HttpWebRequest)WebRequest.Create(doc.MediaUrl);
+                        req.Method = "PUT";
+                        req.Headers.Add("X-Upload-Content-Length", stream.Length.ToString());
+                        req.Headers.Add("X-Upload-Content-Type", "application/octet-stream");
+                        req.UserAgent = USER_AGENT;
+                        req.Headers.Add("If-Match", doc.ETag);
+                        req.Headers.Add("GData-Version", "3.0");
 
+                        //This is a blank marker request
+                        req.ContentLength = 0;
+                        req.ContentType = "text/plain";
+
+                        //Authenticate our request
+                        m_cla.ApplyAuthenticationToRequest(req);
+
+                        using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                        {
+                            int code = (int)resp.StatusCode;
+                            if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                                throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+
+                            resumableUri = resp.Headers["Location"];
+                        }
+                    }
+
+                    //Ensure that we have a resumeable upload url
+                    if (resumableUri == null)
+                        throw new Exception(Strings.GoogleDocs.NoResumeURLError);
+
+                    string id = null;
+                    byte[] buffer = new byte[8 * 1024];
+                    int retries = 0;
+                    long initialPosition;
+                    DateTime initialRequestTime = DateTime.Now;
+
+                    while (stream.Position != stream.Length)
+                    {
+                        initialPosition = stream.Position;
+                        long postbytes = Math.Min(stream.Length - initialPosition, TRANSFER_CHUNK_SIZE);
+
+                        //Post a fragment of the file as a partial request
+                        HttpWebRequest req = (HttpWebRequest)WebRequest.Create(resumableUri);
+                        req.Method = "PUT";
+                        req.UserAgent = USER_AGENT;
+                        req.ContentLength = postbytes;
+                        req.ContentType = "application/octet-stream";
+                        req.Headers.Add("Content-Range", string.Format("bytes {0}-{1}/{2}", initialPosition, initialPosition + (postbytes - 1), stream.Length.ToString()));
+
+                        //Copy the current fragment of bytes
+                        using (System.IO.Stream s = req.GetRequestStream())
+                        {
+                            long bytesleft = postbytes;
+                            long written = 0;
+                            int a;
+                            while (bytesleft != 0 && ((a = stream.Read(buffer, 0, (int)Math.Min(buffer.Length, bytesleft))) != 0))
+                            {
+                                s.Write(buffer, 0, a);
+                                bytesleft -= a;
+                                written += a;
+                            }
+
+                            s.Flush();
+
+                            if (bytesleft != 0 || postbytes != written)
+                                throw new System.IO.EndOfStreamException();
+                        }
+
+                        try
+                        {
+                            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                            {
+                                int code = (int)resp.StatusCode;
+                                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+
+                                //If all goes well, we should now get an atom entry describing the new element
+                                System.Xml.XmlDocument xml = new XmlDocument();
+                                using (System.IO.Stream s = resp.GetResponseStream())
+                                    xml.Load(s);
+
+                                string tmp = xml.ToString();
+
+                                System.Xml.XmlNamespaceManager mgr = new XmlNamespaceManager(xml.NameTable);
+                                mgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
+                                mgr.AddNamespace("gd", "http://schemas.google.com/g/2005");
+                                id = xml.SelectSingleNode("atom:entry/atom:id", mgr).InnerText;
+                                string resourceId = xml.SelectSingleNode("atom:entry/gd:resourceId", mgr).InnerText;
+                                string url = xml.SelectSingleNode("atom:entry/atom:content", mgr).Attributes["src"].Value;
+                                string mediaUrl = null;
+
+                                foreach(XmlNode n in xml.SelectNodes("atom:entry/atom:link", mgr))
+                                    if (n.Attributes["rel"] != null && n.Attributes["href"] != null &&n.Attributes["rel"].Value.EndsWith("#resumable-edit-media")) 
+                                    {
+                                        mediaUrl = n.Attributes["href"].Value;
+                                        break;
+                                    }
+
+                                if (doc == null)
+                                {
+                                    TaggedFileEntry tf = new TaggedFileEntry(remotename, stream.Length, initialRequestTime, initialRequestTime, resourceId, url, mediaUrl, resp.Headers["ETag"]);
+                                    m_files.Add(remotename, tf);
+                                }
+                                else
+                                {
+
+                                    //Since we update an existing item, we just need to update the ETag
+                                    doc.ETag = resp.Headers["ETag"];
+                                }
+
+
+                            }
+                            retries = 0;
+                        }
+                        catch (WebException wex)
+                        {
+                            //Accept the 308 until we are complete
+                            if (wex.Status == WebExceptionStatus.ProtocolError &&
+                                wex.Response is HttpWebResponse &&
+                                (int)((HttpWebResponse)wex.Response).StatusCode == 308 &&
+                                initialPosition + postbytes != stream.Length)
+                            {
+                                retries = 0;
+                                //Accept the 308 until we are complete
+                            }
+                            else
+                            {
+                                //Retries are handled in Duplicati, but it is much more efficient here,
+                                // because we only re-submit the last TRANSFER_CHUNK_SIZE bytes,
+                                // instead of the entire file
+                                retries++;
+                                if (retries > 2)
+                                    throw;
+                                else
+                                    System.Threading.Thread.Sleep(1000);
+
+                                stream.Position = initialPosition;
+                            }
+
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(id))
+                        throw new Exception(Strings.GoogleDocs.NoIDReturnedError);
+                }
+                catch
+                {
+                    //Clear the cache as we have no idea what happened
+                    m_files = null;
+
+                    throw;
                 }
             }
-
-            if (string.IsNullOrEmpty(id))
-                throw new Exception(Strings.GoogleDocs.NoIDReturnedError);
+            catch (Google.GData.Client.CaptchaRequiredException cex)
+            {
+                throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
+            }
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            using (System.IO.Stream s = CreateRequest().Download(GetFile(remotename), null))
-                Utility.Utility.CopyStream(s, stream);
+            try
+            {
+                using (System.IO.Stream s = CreateRequest().Service.Query(new Uri(GetFile(remotename).Url)))
+                    Utility.Utility.CopyStream(s, stream);
+            }
+            catch (Google.GData.Client.CaptchaRequiredException cex)
+            {
+                throw new Exception(string.Format(Strings.GoogleDocs.CaptchaRequiredError, CAPTCHA_UNLOCK_URL), cex);
+            }
         }
 
         #endregion

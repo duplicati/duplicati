@@ -36,6 +36,10 @@ namespace Duplicati.Library.Encryption
         /// </summary>
         private const string COMMANDLINE_OPTIONS_DISABLE_ARMOR = "gpg-encryption-disable-armor";
         /// <summary>
+        /// The commandline option supplied if armor should be enabled (--gpg-encryption-enable-armor)
+        /// </summary>
+        private const string COMMANDLINE_OPTIONS_ENABLE_ARMOR = "gpg-encryption-enable-armor";
+        /// <summary>
         /// The commandline option supplied if the encryption should have non-default switches (--gpg-encryption-switches)
         /// </summary>
         private const string COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS = "gpg-encryption-switches";
@@ -129,11 +133,21 @@ namespace Duplicati.Library.Encryption
             //NOTE: For reasons unknown, GPG commandline options are divided into "options" and "commands".
             //NOTE: The "options" must be placed before "commands" or it wont work!
 
-            bool disableArmor = true;
-            if (options.ContainsKey(COMMANDLINE_OPTIONS_DISABLE_ARMOR))
-                disableArmor = Utility.Utility.ParseBool(options[COMMANDLINE_OPTIONS_DISABLE_ARMOR], true);
+            bool enableArmor = false;
 
-            if (!disableArmor)
+            if (options.ContainsKey(COMMANDLINE_OPTIONS_ENABLE_ARMOR))
+            {
+                enableArmor = Utility.Utility.ParseBoolOption(options, COMMANDLINE_OPTIONS_ENABLE_ARMOR);
+            }
+            else
+            {
+                //Special handling of this option, it should have been --enable-armor instead,
+                //so this is now deprecated
+                if (options.ContainsKey(COMMANDLINE_OPTIONS_DISABLE_ARMOR))
+                    enableArmor = !Utility.Utility.ParseBoolOption(options, COMMANDLINE_OPTIONS_DISABLE_ARMOR);
+            }
+
+            if (enableArmor)
             {
                 //--armor is an option
                 m_encryption_args += GPG_ARMOR_OPTION;
@@ -185,7 +199,8 @@ namespace Duplicati.Library.Encryption
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(COMMANDLINE_OPTIONS_DISABLE_ARMOR, CommandLineArgument.ArgumentType.Boolean, Strings.GPGEncryption.GpgencryptiondisablearmorShort, Strings.GPGEncryption.GpgencryptiondisablearmorLong, "true"),
+                    new CommandLineArgument(COMMANDLINE_OPTIONS_DISABLE_ARMOR, CommandLineArgument.ArgumentType.Boolean, Strings.GPGEncryption.GpgencryptiondisablearmorShort, Strings.GPGEncryption.GpgencryptiondisablearmorLong, "true", null, null, string.Format(Strings.GPGEncryption.Gpgencryptiondisablearmordeprecated, COMMANDLINE_OPTIONS_ENABLE_ARMOR)),
+                    new CommandLineArgument(COMMANDLINE_OPTIONS_ENABLE_ARMOR, CommandLineArgument.ArgumentType.Boolean, Strings.GPGEncryption.GpgencryptionenablearmorShort, Strings.GPGEncryption.GpgencryptionenablearmorLong, "false"),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionencryptionswitchesShort, Strings.GPGEncryption.GpgencryptionencryptionswitchesLong, GPG_ENCRYPTION_DEFAULT_OPTIONS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptiondecryptionswitchesShort, Strings.GPGEncryption.GpgencryptiondecryptionswitchesLong, GPG_DECRYPTION_DEFAULT_OPTIONS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_PATH, CommandLineArgument.ArgumentType.Path, Strings.GPGEncryption.GpgprogrampathShort, Strings.GPGEncryption.GpgprogrampathLong),

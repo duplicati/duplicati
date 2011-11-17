@@ -21,6 +21,8 @@ namespace Duplicati.Library.Backend
         private string m_rootfolder;
         private string m_prefix;
 
+        private SkyDriveSession m_session;
+
         public SkyDrive() { }
 
         public SkyDrive(string url, Dictionary<string, string> options)
@@ -52,8 +54,13 @@ namespace Duplicati.Library.Backend
 
         private SkyDriveSession CreateSession(bool createFolders)
         {
-            //TODO: Once persistent connections are supported, this instance should be cached
-            return new SkyDriveSession(m_username, m_password, m_rootfolder, m_prefix, createFolders);
+            if (createFolders)
+                return new SkyDriveSession(m_username, m_password, m_rootfolder, m_prefix, createFolders);
+
+            if (m_session == null)
+                m_session = new SkyDriveSession(m_username, m_password, m_rootfolder, m_prefix, createFolders);
+
+            return m_session;
         }
 
         #region IBackend_v2 Members
@@ -85,8 +92,8 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            using (SkyDriveSession session = CreateSession(false))
-                return session.ListFolderItems(session.FolderCID);
+            SkyDriveSession session = CreateSession(false);
+            return session.ListFolderItems(session.FolderCID);
         }
 
         public void Put(string remotename, string filename)
@@ -103,13 +110,7 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            using(SkyDriveSession session = CreateSession(false))
-            using (System.Net.HttpWebResponse resp = session.DeleteFile(remotename))
-            {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-            }
+            CreateSession(false).DeleteFile(remotename);
         }        
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -143,27 +144,14 @@ namespace Duplicati.Library.Backend
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            using (SkyDriveSession session = CreateSession(false))
-            using (System.Net.HttpWebResponse resp = session.UploadFile(remotename, stream))
-            {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-            }
+            CreateSession(false).UploadFile(remotename, stream);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            using (SkyDriveSession session = CreateSession(false))
-            using (System.Net.HttpWebResponse resp = session.DownloadFile(remotename))
-            {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-
+            using (System.Net.HttpWebResponse resp = CreateSession(false).DownloadFile(remotename))
                 using (System.IO.Stream s = resp.GetResponseStream())
                     Utility.Utility.CopyStream(s, stream);
-            }
         }
 
         #endregion

@@ -39,6 +39,9 @@ namespace Duplicati.Library.Backend
 
         private bool m_hasCheckedEmpty = false;
 
+        private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
+        private string m_uiAction = null;
+
         public FileUI(IDictionary<string, string> options)
             : this()
         {
@@ -83,6 +86,9 @@ namespace Duplicati.Library.Backend
                 m_options[PASSWORD] = "";
             }
 
+            if (!string.IsNullOrEmpty(m_uiAction))
+                m_options.Add(DUPLICATI_ACTION_MARKER, m_uiAction);
+
             if (!validate)
                 return false;
 
@@ -93,9 +99,6 @@ namespace Duplicati.Library.Backend
                     MessageBox.Show(this, Strings.FileUI.AuthenticationError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                 }
-
-                if (Password.Text.Length > 0 && !Password.VerifyPasswordIfChanged())
-                    return false;
             }
 
             try
@@ -132,24 +135,31 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                //The UI cannot determine if we are restoring or creating a backup, 
-                //so the check below is not active
+                if (!string.IsNullOrEmpty(m_uiAction))
+                {
+                    if (string.Equals(m_uiAction, "add", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        string[] files = System.IO.Directory.GetFileSystemEntries(targetpath);
+                        string[] duplicati_files = System.IO.Directory.GetFiles(targetpath, "duplicati-*");
 
-                /*if (m_options.ContainsKey("PrimaryAction") && m_options["PrimaryAction"] == "Restore")
-                {
-                    if (System.IO.Directory.GetFileSystemEntries(targetpath).Length == 0)
-                        if (MessageBox.Show(this, Strings.FileUI.FolderEmptyError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
-                            return false;
+                        if (duplicati_files.Length > 0)
+                            if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
+                                return false;
+
+                        if (!m_hasCheckedEmpty && files.Length > 0)
+                            if (MessageBox.Show(this, Strings.FileUI.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                                return false;
+                    }
+                    else if (string.Equals(m_uiAction, "restore", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        if (System.IO.Directory.GetFileSystemEntries(targetpath).Length == 0)
+                            if (MessageBox.Show(this, Strings.FileUI.FolderEmptyError, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                                return false;
+                    }
+
+                    m_hasCheckedEmpty = true;
+                    m_options[CHECKED_EMPTY] = "true";
                 }
-                else
-                {
-                    if (!m_hasCheckedEmpty && System.IO.Directory.GetFileSystemEntries(targetpath).Length > 0)
-                        if (MessageBox.Show(this, Strings.FileUI.FolderNotEmptyWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
-                            return false;
-                }
-                
-                m_hasCheckedEmpty = true;
-                m_options[CHECKED_EMPTY] = "true";*/
             }
             catch (Exception ex)
             {
@@ -200,6 +210,8 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(CHECKED_EMPTY) || !bool.TryParse(m_options[CHECKED_EMPTY], out m_hasCheckedEmpty))
                 m_hasCheckedEmpty = false;
+
+            m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
         private void UseCredentials_CheckedChanged(object sender, EventArgs e)

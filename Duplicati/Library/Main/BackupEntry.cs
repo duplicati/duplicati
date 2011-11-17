@@ -133,6 +133,22 @@ namespace Duplicati.Library.Main
     }
 
     /// <summary>
+    /// A class that represents the delete transaction file
+    /// </summary>
+    public class DeleteTransactionEntry : BackupEntryBase
+    {
+        public DeleteTransactionEntry(Duplicati.Library.Interface.IFileEntry entry, string encryption)
+            : base(entry.Name, entry, DateTime.Now, true, "", encryption)
+        {
+        }
+
+        public DeleteTransactionEntry(string encryption)
+            : base(null, null, DateTime.Now, true, "", encryption)
+        {
+        }
+    }
+
+    /// <summary>
     /// A class that represents the verification file
     /// </summary>
     public class VerificationEntry : BackupEntryBase

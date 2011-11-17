@@ -124,6 +124,15 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The backup group named &quot;{0}&quot; was not found.
+        /// </summary>
+        internal static string NamedBackupGroupNotFound {
+            get {
+                return ResourceManager.GetString("NamedBackupGroupNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The backup named &quot;{0}&quot; was not found.
         /// </summary>
         internal static string NamedBackupNotFound {

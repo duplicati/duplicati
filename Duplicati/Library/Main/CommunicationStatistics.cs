@@ -38,6 +38,12 @@ namespace Duplicati.Library.Main
         private long m_numberOfWarnings;
         private StringBuilder m_warningMessages = new StringBuilder();
 
+        private bool m_verboseRetryErrors = false;
+        private long m_lastRetryOperationNo = -1;
+        private long m_numberOfRetriedOperations;
+        private long m_numberOfRetries;
+        private StringBuilder m_retryMessages = new StringBuilder();
+
         public CommunicationStatistics(DuplicatiOperationMode operationMode)
         {
             m_operationMode = operationMode;
@@ -49,6 +55,12 @@ namespace Duplicati.Library.Main
         {
             get { return m_verboseErrors; }
             set { m_verboseErrors = value; }
+        }
+
+        public bool VerboseRetryErrors
+        {
+            get { return m_verboseRetryErrors; }
+            set { m_verboseRetryErrors = value; }
         }
 
         public long NumberOfBytesUploaded
@@ -99,10 +111,31 @@ namespace Duplicati.Library.Main
             }
         }
 
+        public void LogRetryAttempt(string errorMessage, Exception ex)
+        {
+            m_numberOfRetries++;
+            if (m_lastRetryOperationNo != m_numberOfRemoteCalls + 1)
+                m_numberOfRetriedOperations++;
+            m_lastRetryOperationNo = m_numberOfRemoteCalls;
+
+            if (m_verboseErrors || m_verboseRetryErrors)
+            {
+                m_retryMessages.AppendLine(errorMessage);
+                if (m_verboseErrors) 
+                    while (ex != null)
+                    {
+                        m_retryMessages.AppendLine(ex.ToString());
+                        ex = ex.InnerException;
+                    }
+            }
+        }
+
         public override string ToString()
         {
             //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
+            sb.Append("Executable      : " + System.Reflection.Assembly.GetEntryAssembly().FullName + "\r\n");
+            sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
             sb.Append("OperationName   : " + this.OperationMode.ToString() + "\r\n");
             sb.Append("BytesUploaded   : " + this.NumberOfBytesUploaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("BytesDownloaded : " + this.NumberOfBytesDownloaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
@@ -122,6 +155,18 @@ namespace Duplicati.Library.Main
                 sb.Append("****************\r\n");
                 sb.Append(m_warningMessages.ToString());
                 sb.Append("****************\r\n");
+            }
+
+            if (m_numberOfRetries > 0)
+            {
+                sb.Append("NumberOfRetries : " + m_numberOfRetries.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+                sb.Append("RetryOperations : " + m_numberOfRetriedOperations.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+                if (m_retryMessages.Length > 0)
+                {
+                    sb.Append("****************\r\n");
+                    sb.Append(m_retryMessages.ToString());
+                    sb.Append("****************\r\n");
+                }
             }
 
             return sb.ToString();

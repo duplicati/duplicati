@@ -101,6 +101,7 @@ namespace Duplicati.Library.Main
                     "restore",
                     "delete-older-than",
                     "delete-all-but-n-full",
+                    "delete-all-but-n",
                     "filter",
                     "main-action"
                 };
@@ -162,7 +163,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("number-of-retries", CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, "5"),
                     new CommandLineArgument("retry-delay", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, "10s"),
                     new CommandLineArgument("sorted-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SortedfilelistShort, Strings.Options.SortedfilelistLong, "false"),
-                    
 
                     new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
                     new CommandLineArgument("asynchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AsynchronousuploadShort, Strings.Options.AsynchronousuploadLong, "false", null, null, string.Format(Strings.Options.AsynchronousuploadDeprecated, "synchronous-upload")),
@@ -177,6 +177,7 @@ namespace Duplicati.Library.Main
                     
                     new CommandLineArgument("allow-sourcefolder-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsourcefolderchangeShort, Strings.Options.AllowsourcefolderchangeLong, "false"),
                     new CommandLineArgument("full-if-sourcefolder-changed", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullifsourcefolderchangedShort, Strings.Options.FullifsourcefolderchangedLong, "false"),
+                    new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
@@ -190,6 +191,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-module", CommandLineArgument.ArgumentType.String, Strings.Options.DisablemoduleShort, Strings.Options.DisablemoduleLong),
 
                     new CommandLineArgument("debug-output", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugoutputShort, Strings.Options.DebugoutputLong, "false"),
+                    new CommandLineArgument("debug-retry-errors", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugretryerrorsShort, Strings.Options.DebugretryerrorsLong, "false"),
                     new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
 
                     new CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileShort),
@@ -199,6 +201,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("create-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CreateverificationfileShort, Strings.Options.CreateverificationfileLong, "false"),
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
                     new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepShort, "false"),
+                    new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
                     
                 });
             }
@@ -510,12 +513,17 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("delete-all-but-n-full") || string.IsNullOrEmpty(m_options["delete-all-but-n-full"]))
-                    throw new Exception("No count given for \"Delete All But N Full\"");
+                string key = "delete-all-but-n-full";
+                if (!m_options.ContainsKey(key) || string.IsNullOrEmpty(m_options[key]))
+                {
+                    key = "delete-all-but-n";
+                    if (!m_options.ContainsKey(key) || string.IsNullOrEmpty(m_options[key]))
+                        throw new Exception("No count given for \"Delete All But N (Full)\"");
+                }
 
-                int x = int.Parse(m_options["delete-all-but-n-full"]);
+                int x = int.Parse(m_options[key]);
                 if (x < 0)
-                    throw new Exception("Invalid count for delete-all-but-n-full, must be greater than zero");
+                    throw new Exception("Invalid count for delete-all-but-n(-full), must be greater than zero");
 
                 return x;
             }
@@ -757,6 +765,15 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool DebugOutput { get { return GetBool("debug-output"); } }
 
+        /// <summary>
+        /// A value indicating if retry debug output is enabled
+        /// </summary>
+        public bool VerboseRetryErrors { get { return GetBool("debug-retry-errors"); } }
+
+        /// <summary>
+        /// A value indicating if unchanged backups are uploaded
+        /// </summary>
+        public bool UploadUnchangedBackups { get { return GetBool("upload-unchanged-backups"); } }
 
         /// <summary>
         /// Gets a list of modules that should be loaded
@@ -957,6 +974,11 @@ namespace Duplicati.Library.Main
         public bool ListVerifyUploads { get { return GetBool("list-verify-uploads"); } }
 
         /// <summary>
+        /// A value indicating if connections cannot be re-used
+        /// </summary>
+        public bool NoConnectionReuse { get { return GetBool("no-connection-reuse"); } }
+
+        /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 
         /// </summary>
         public List<KeyValuePair<bool, Library.Interface.IGenericModule>> LoadedModules { get { return m_loadedModules; } }
@@ -970,11 +992,7 @@ namespace Duplicati.Library.Main
         /// <returns>The interpreted value of the option</returns>
         private bool GetBool(string name)
         {
-            string value;           
-            if (m_options.TryGetValue(name, out value))            
-                return Utility.Utility.ParseBool(value, true);
-            else
-                return false;
+            return Utility.Utility.ParseBoolOption(m_options, name);
         }
 
     }

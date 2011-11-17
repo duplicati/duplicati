@@ -163,6 +163,17 @@ namespace Duplicati.Library.Interface.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The connection succeeded but another backup was found in the destination folder. It is possible to configure Duplicati to store multiple backups in the same folder, but it is not recommended.
+        ///
+        ///Do you want to use the selected folder?.
+        /// </summary>
+        internal static string ExistingBackupDetectedQuestion {
+            get {
+                return ResourceManager.GetString("ExistingBackupDetectedQuestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The folder cannot be created because it already exists.
         /// </summary>
         internal static string FolderAlreadyExistsError {
@@ -186,6 +197,15 @@ namespace Duplicati.Library.Interface.Strings {
         internal static string FolderMissingError {
             get {
                 return ResourceManager.GetString("FolderMissingError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The server name &quot;{0}&quot; is not valid.
+        /// </summary>
+        internal static string InvalidServernameError {
+            get {
+                return ResourceManager.GetString("InvalidServernameError", resourceCulture);
             }
         }
     }

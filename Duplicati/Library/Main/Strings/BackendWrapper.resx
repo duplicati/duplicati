@@ -120,11 +120,11 @@
   <data name="BackendNotFoundError" xml:space="preserve">
     <value>Unable to find backend for: {0}</value>
   </data>
-  <data name="FileDeleteError" xml:space="preserve">
-    <value>Failed to delete file: {0}</value>
+  <data name="FileDeleteError2" xml:space="preserve">
+    <value>Failed to delete file "{0}": {1}</value>
   </data>
-  <data name="FileDownloadError" xml:space="preserve">
-    <value>Failed to download file: {0}</value>
+  <data name="FileDownloadError2" xml:space="preserve">
+    <value>Failed to download file "{0}": {1}</value>
   </data>
   <data name="FileListingError" xml:space="preserve">
     <value>Failed to retrieve file listing: {0}</value>
@@ -135,8 +135,8 @@
   <data name="FilesNotForceRemovedMessage" xml:space="preserve">
     <value>No files removed, specify --force to remove files.</value>
   </data>
-  <data name="FileUploadError" xml:space="preserve">
-    <value>Failed to upload file: {0}</value>
+  <data name="FileUploadError2" xml:space="preserve">
+    <value>Failed to upload file "{0}": {1}</value>
   </data>
   <data name="FunctionLookupError" xml:space="preserve">
     <value>Failed to find function: {0}</value>
@@ -200,5 +200,37 @@
   </data>
   <data name="UploadVerificationFailure" xml:space="preserve">
     <value>The file {0} was uploaded but not found on the server</value>
+  </data>
+  <data name="FailureWhileDisposingBackendError" xml:space="preserve">
+    <value>An error occured while closing a connection: {0}</value>
+  </data>
+  <data name="DownloadedFileSizeError" xml:space="preserve">
+    <value>The file {0} was downloaded and had size {1} but the size was expected to be {2}</value>
+  </data>
+  <data name="CompletedDeleteTransaction" xml:space="preserve">
+    <value>Delete transaction completed successfully</value>
+  </data>
+  <data name="CompletingDeleteTransactionWarning" xml:space="preserve">
+    <value>Completing unfinished delete transaction and removing {0} files</value>
+  </data>
+  <data name="DeleteTransactionFileFoundWarning" xml:space="preserve">
+    <value>A delete operation was started, but failed to complete. Next invocation of a cleanup or delete command will complete the transaction.</value>
+  </data>
+  <data name="DeleteTransactionFileReadError" xml:space="preserve">
+    <value>A previously started delete operation was not completed, but the attempt to recover the operation details failed with the message: {1}.
+
+If this problem happens more than once, it is possible that the delete transaction file is defect. Try renaming the file "{0}" and the run the operation again. If no errors are reported, it is safe to delete the file, otherwise Duplicati will report what needs to be manually corrected.</value>
+  </data>
+  <data name="DeletingTransactionLeftoverFile" xml:space="preserve">
+    <value>Deleting file from delete transaction "{0}"</value>
+  </data>
+  <data name="ExistingDeleteTransactionError" xml:space="preserve">
+    <value>An internal error has occured, a request was made to initiate a delete transaction, but one was already present</value>
+  </data>
+  <data name="MultipleDeleteTransactionsFoundError" xml:space="preserve">
+    <value>There were multiple delete transaction files found. Please manually inspect the target destination and resolve this error.</value>
+  </data>
+  <data name="NonExistingDeleteTransactionError" xml:space="preserve">
+    <value>An internal error has occured, a request was made to complete a delete transaction, but there was not a transaction in progress</value>
   </data>
 </root>

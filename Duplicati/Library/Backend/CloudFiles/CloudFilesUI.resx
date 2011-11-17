@@ -204,7 +204,7 @@
     <value>144, 32</value>
   </data>
   <data name="Username.Size" type="System.Drawing.Size, System.Drawing">
-    <value>152, 20</value>
+    <value>192, 20</value>
   </data>
   <data name="Username.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -225,7 +225,7 @@
     <value>144, 56</value>
   </data>
   <data name="API_KEY.Size" type="System.Drawing.Size, System.Drawing">
-    <value>150, 20</value>
+    <value>192, 20</value>
   </data>
   <data name="API_KEY.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -246,7 +246,7 @@
     <value>144, 80</value>
   </data>
   <data name="ContainerName.Size" type="System.Drawing.Size, System.Drawing">
-    <value>152, 20</value>
+    <value>192, 20</value>
   </data>
   <data name="ContainerName.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -267,7 +267,7 @@
     <value>True</value>
   </data>
   <data name="SignUpLink.Location" type="System.Drawing.Point, System.Drawing">
-    <value>304, 8</value>
+    <value>344, 8</value>
   </data>
   <data name="SignUpLink.Size" type="System.Drawing.Size, System.Drawing">
     <value>151, 13</value>
@@ -318,7 +318,7 @@
     <value>4</value>
   </data>
   <data name="TestConnection.Location" type="System.Drawing.Point, System.Drawing">
-    <value>360, 144</value>
+    <value>376, 144</value>
   </data>
   <data name="TestConnection.Size" type="System.Drawing.Size, System.Drawing">
     <value>112, 24</value>
@@ -346,7 +346,7 @@
     <value>NoControl</value>
   </data>
   <data name="CreateContainer.Location" type="System.Drawing.Point, System.Drawing">
-    <value>360, 48</value>
+    <value>376, 48</value>
   </data>
   <data name="CreateContainer.Size" type="System.Drawing.Size, System.Drawing">
     <value>112, 24</value>
@@ -369,41 +369,41 @@
   <data name="&gt;&gt;CreateContainer.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
-  <data name="label5.AutoSize" type="System.Boolean, mscorlib">
+  <data name="label5_2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="label5.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+  <data name="label5_2.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
-  <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="label5_2.Location" type="System.Drawing.Point, System.Drawing">
     <value>24, 8</value>
   </data>
-  <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
-    <value>115, 13</value>
+  <data name="label5_2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 13</value>
   </data>
-  <data name="label5.TabIndex" type="System.Int32, mscorlib">
+  <data name="label5_2.TabIndex" type="System.Int32, mscorlib">
     <value>13</value>
   </data>
-  <data name="label5.Text" xml:space="preserve">
-    <value>CloudFiles Servername</value>
+  <data name="label5_2.Text" xml:space="preserve">
+    <value>CloudFiles AuthUrl</value>
   </data>
-  <data name="&gt;&gt;label5.Name" xml:space="preserve">
-    <value>label5</value>
+  <data name="&gt;&gt;label5_2.Name" xml:space="preserve">
+    <value>label5_2</value>
   </data>
-  <data name="&gt;&gt;label5.Type" xml:space="preserve">
+  <data name="&gt;&gt;label5_2.Type" xml:space="preserve">
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;label5.Parent" xml:space="preserve">
+  <data name="&gt;&gt;label5_2.Parent" xml:space="preserve">
     <value>$this</value>
   </data>
-  <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;label5_2.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
   <data name="Servernames.Location" type="System.Drawing.Point, System.Drawing">
     <value>144, 8</value>
   </data>
   <data name="Servernames.Size" type="System.Drawing.Size, System.Drawing">
-    <value>152, 21</value>
+    <value>192, 21</value>
   </data>
   <data name="Servernames.TabIndex" type="System.Int32, mscorlib">
     <value>14</value>

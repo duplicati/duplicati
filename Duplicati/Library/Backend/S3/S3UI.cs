@@ -68,6 +68,9 @@ namespace Duplicati.Library.Backend
         private bool m_hasSuggestedLowerCase = false;
         private bool m_hasWarnedInvalidBucketname = false;
 
+        private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
+        private string m_uiAction = null;
+
         public S3UI(IDictionary<string, string> applicationSettings, IDictionary<string, string> options)
             : this()
         {
@@ -162,6 +165,9 @@ namespace Duplicati.Library.Backend
 
             if (hasInitial)
                 m_options[INITIALPASSWORD] = initialPwd;
+
+            if (!string.IsNullOrEmpty(m_uiAction))
+                m_options.Add(DUPLICATI_ACTION_MARKER, m_uiAction);
         }
 
         void S3UI_Load(object sender, EventArgs args)
@@ -249,6 +255,8 @@ namespace Duplicati.Library.Backend
 
             if (!m_options.ContainsKey(HASWARNEDINVALIDBUCKETNAME) || !bool.TryParse(m_options[HASWARNEDINVALIDBUCKETNAME], out m_hasWarnedInvalidBucketname))
                 m_hasWarnedInvalidBucketname = false;
+
+            m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
         /// <summary>
@@ -290,6 +298,30 @@ namespace Duplicati.Library.Backend
 
         private bool ValidateForm(bool checkForBucket)
         {
+            string servername;
+            if (Servernames.SelectedItem as Utility.ComboBoxItemPair<string> == null)
+                servername = Servernames.Text;
+            else
+                servername = (Servernames.SelectedItem as Utility.ComboBoxItemPair<string>).Value;
+
+            if (string.IsNullOrEmpty(servername))
+            {
+                MessageBox.Show(this, Library.Interface.CommonStrings.EmptyServernameError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servernames.Focus(); }
+                catch { }
+
+                return false;
+            }
+
+            if (!Library.Utility.Utility.IsValidHostname(servername))
+            {
+                MessageBox.Show(this, string.Format(Library.Interface.CommonStrings.InvalidServernameError, servername), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try { Servernames.Focus(); }
+                catch { }
+
+                return false;
+            }
+
             if (AWS_ID.Text.Trim().Length <= 0)
             {
                 MessageBox.Show(this, Strings.S3UI.EmptyAWSIDError, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -378,9 +410,6 @@ namespace Duplicati.Library.Backend
                 m_hasWarnedInvalidBucketname = true;
             }
 
-            if (!AWS_KEY.VerifyPasswordIfChanged())
-                return false;
-
             if (checkForBucket)
                 return EnsureBucketForMono();
             else
@@ -406,15 +435,16 @@ namespace Duplicati.Library.Backend
                     string destination = GetConfiguration(m_options, options);
 
                     bool existingBackup = false;
-                    S3 s3 = new S3(destination, options);
-                    foreach (Interface.IFileEntry n in s3.List())
-                        if (n.Name.StartsWith("duplicati-"))
-                        {
-                            existingBackup = true;
-                            break;
-                        }
+                    using(S3 s3 = new S3(destination, options))
+                        foreach (Interface.IFileEntry n in s3.List())
+                            if (n.Name.StartsWith("duplicati-"))
+                            {
+                                existingBackup = true;
+                                break;
+                            }
 
-                    if (existingBackup)
+                    bool isUiAdd = string.IsNullOrEmpty(m_uiAction) || string.Equals(m_uiAction, "add", StringComparison.InvariantCultureIgnoreCase);
+                    if (existingBackup && isUiAdd)
                     {
                         if (MessageBox.Show(this, string.Format(Interface.CommonStrings.ExistingBackupDetectedQuestion), Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button3) != DialogResult.Yes)
                             return;

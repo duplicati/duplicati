@@ -81,6 +81,15 @@ namespace Duplicati.Library.Backend.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The AuthUrl field cannot be empty.
+        /// </summary>
+        internal static string EmptyAuthUrlError {
+            get {
+                return ResourceManager.GetString("EmptyAuthUrlError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You must enter your CloudFiles user ID.
         ///You may click the link to the right
         ///to open the CloudFiles login page, and retrieve it..
@@ -99,6 +108,15 @@ namespace Duplicati.Library.Backend.Strings {
         internal static string EmptyContainerNameError {
             get {
                 return ResourceManager.GetString("EmptyContainerNameError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The url {0} is invalid.
+        /// </summary>
+        internal static string InvalidAuthUrlError {
+            get {
+                return ResourceManager.GetString("InvalidAuthUrlError", resourceCulture);
             }
         }
         

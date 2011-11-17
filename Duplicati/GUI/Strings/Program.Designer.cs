@@ -199,12 +199,30 @@ namespace Duplicati.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Displays the wizard window.
+        /// </summary>
+        internal static string ShowwizardCommandDescription {
+            get {
+                return ResourceManager.GetString("ShowwizardCommandDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to start up, perhaps another process is already running?
         ///Error message: {0}.
         /// </summary>
         internal static string StartupFailure {
             get {
                 return ResourceManager.GetString("StartupFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Runs Duplicati without showing the tray icon, closing the main window closes Duplicati.
+        /// </summary>
+        internal static string TraylessCommandDescription {
+            get {
+                return ResourceManager.GetString("TraylessCommandDescription", resourceCulture);
             }
         }
         

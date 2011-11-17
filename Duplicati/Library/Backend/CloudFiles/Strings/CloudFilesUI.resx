@@ -125,6 +125,9 @@
 You may click the link to the right
 to open the CloudFiles login page, and retrieve it.</value>
   </data>
+  <data name="EmptyAuthUrlError" xml:space="preserve">
+    <value>The AuthUrl field cannot be empty</value>
+  </data>
   <data name="EmptyCloudFilesIDError" xml:space="preserve">
     <value>You must enter your CloudFiles user ID.
 You may click the link to the right
@@ -134,6 +137,9 @@ to open the CloudFiles login page, and retrieve it.</value>
     <value>You must enter a name for the Container.
 You must use a unique name for each backup.
 You may enter any name you like.</value>
+  </data>
+  <data name="InvalidAuthUrlError" xml:space="preserve">
+    <value>The url {0} is invalid</value>
   </data>
   <data name="PageDescription" xml:space="preserve">
     <value>On this page you can select where to store the backup data.</value>

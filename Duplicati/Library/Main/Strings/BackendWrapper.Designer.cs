@@ -79,6 +79,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Attempt to decrypt file {0} failed with error: {1}.
+        /// </summary>
+        internal static string CachedSignatureDecryptWarning {
+            get {
+                return ResourceManager.GetString("CachedSignatureDecryptWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The cache file {0} did not match the expected hash for the same file, ignoring cache file.
         /// </summary>
         internal static string CachedSignatureHashMismatchWarning {
@@ -88,11 +97,67 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Delete transaction completed successfully.
+        /// </summary>
+        internal static string CompletedDeleteTransaction {
+            get {
+                return ResourceManager.GetString("CompletedDeleteTransaction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Completing unfinished delete transaction and removing {0} files.
+        /// </summary>
+        internal static string CompletingDeleteTransactionWarning {
+            get {
+                return ResourceManager.GetString("CompletingDeleteTransactionWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An error occured while attempting to delete cache file {0}.
         /// </summary>
         internal static string DeleteCacheFileError {
             get {
                 return ResourceManager.GetString("DeleteCacheFileError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A delete operation was started, but failed to complete. Next invocation of a cleanup or delete command will complete the transaction..
+        /// </summary>
+        internal static string DeleteTransactionFileFoundWarning {
+            get {
+                return ResourceManager.GetString("DeleteTransactionFileFoundWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A previously started delete operation was not completed, but the attempt to recover the operation details failed with the message: {1}.
+        ///
+        ///If this problem happens more than once, it is possible that the delete transaction file is defect. Try renaming the file &quot;{0}&quot; and the run the operation again. If no errors are reported, it is safe to delete the file, otherwise Duplicati will report what needs to be manually corrected..
+        /// </summary>
+        internal static string DeleteTransactionFileReadError {
+            get {
+                return ResourceManager.GetString("DeleteTransactionFileReadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deleting file from delete transaction &quot;{0}&quot;.
+        /// </summary>
+        internal static string DeletingTransactionLeftoverFile {
+            get {
+                return ResourceManager.GetString("DeletingTransactionLeftoverFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} was downloaded and had size {1} but the size was expected to be {2}.
+        /// </summary>
+        internal static string DownloadedFileSizeError {
+            get {
+                return ResourceManager.GetString("DownloadedFileSizeError", resourceCulture);
             }
         }
         
@@ -115,20 +180,38 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to delete file: {0}.
+        ///   Looks up a localized string similar to An internal error has occured, a request was made to initiate a delete transaction, but one was already present.
         /// </summary>
-        internal static string FileDeleteError {
+        internal static string ExistingDeleteTransactionError {
             get {
-                return ResourceManager.GetString("FileDeleteError", resourceCulture);
+                return ResourceManager.GetString("ExistingDeleteTransactionError", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to download file: {0}.
+        ///   Looks up a localized string similar to An error occured while closing a connection: {0}.
         /// </summary>
-        internal static string FileDownloadError {
+        internal static string FailureWhileDisposingBackendError {
             get {
-                return ResourceManager.GetString("FileDownloadError", resourceCulture);
+                return ResourceManager.GetString("FailureWhileDisposingBackendError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to delete file &quot;{0}&quot;: {1}.
+        /// </summary>
+        internal static string FileDeleteError2 {
+            get {
+                return ResourceManager.GetString("FileDeleteError2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to download file &quot;{0}&quot;: {1}.
+        /// </summary>
+        internal static string FileDownloadError2 {
+            get {
+                return ResourceManager.GetString("FileDownloadError2", resourceCulture);
             }
         }
         
@@ -160,11 +243,11 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to upload file: {0}.
+        ///   Looks up a localized string similar to Failed to upload file &quot;{0}&quot;: {1}.
         /// </summary>
-        internal static string FileUploadError {
+        internal static string FileUploadError2 {
             get {
-                return ResourceManager.GetString("FileUploadError", resourceCulture);
+                return ResourceManager.GetString("FileUploadError2", resourceCulture);
             }
         }
         
@@ -196,11 +279,29 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to There were multiple delete transaction files found. Please manually inspect the target destination and resolve this error..
+        /// </summary>
+        internal static string MultipleDeleteTransactionsFoundError {
+            get {
+                return ResourceManager.GetString("MultipleDeleteTransactionsFoundError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No backups found at remote location.
         /// </summary>
         internal static string NoBackupsFoundError {
             get {
                 return ResourceManager.GetString("NoBackupsFoundError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An internal error has occured, a request was made to complete a delete transaction, but there was not a transaction in progress.
+        /// </summary>
+        internal static string NonExistingDeleteTransactionError {
+            get {
+                return ResourceManager.GetString("NonExistingDeleteTransactionError", resourceCulture);
             }
         }
         
@@ -268,11 +369,38 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Auto-cleanup specified but there are {0} orphan files, and there should not be more than 2.
+        /// </summary>
+        internal static string TooManyOrphansFoundError {
+            get {
+                return ResourceManager.GetString("TooManyOrphansFoundError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The file {0} was found on the backend but not recognized by Duplicati.
         /// </summary>
         internal static string UnmatchedFilenameWarning {
             get {
                 return ResourceManager.GetString("UnmatchedFilenameWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} was uploaded to the server, but the reported filesize was {1} and the size was expected to be {2}.
+        /// </summary>
+        internal static string UploadSizeVerificationFailure {
+            get {
+                return ResourceManager.GetString("UploadSizeVerificationFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} was uploaded but not found on the server.
+        /// </summary>
+        internal static string UploadVerificationFailure {
+            get {
+                return ResourceManager.GetString("UploadVerificationFailure", resourceCulture);
             }
         }
     }

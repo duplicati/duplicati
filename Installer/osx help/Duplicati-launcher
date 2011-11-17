@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# This is a stub script that allows .apps to be relocatable on OSX but still
+# find the managed assembly.
+#
+# This is copied from the Mono macpack tool and modified to fit Duplicati 
+#
+# The Mono Version Check is from here:
+#   http://mjhutchinson.com/journal/2010/01/24/creating_mac_app_bundle_for_gtk_app
+#
+
+PWD=`pwd`
+# Fetch the path relative to the launch point where this shell script exists.
+APP_PATH=`echo $0 | awk '{split($0,patharr,"/"); idx=1; while(patharr[idx+3] != "") { if (patharr[idx] != "/") {printf("%s/", patharr[idx]); idx++ }} }'`
+
+APP_NAME="Duplicati"
+ASSEMBLY="Duplicati.exe"
+
+export MONO_MWF_USE_CARBON_BACKEND=1
+export GDIPLUS_NOX=1
+
+#mono version check
+
+REQUIRED_MAJOR=2
+REQUIRED_MINOR=6
+
+VERSION_TITLE="Cannot launch $APP_NAME"
+VERSION_MSG="$APP_NAME requires the Mono Framework version $REQUIRED_MAJOR.$REQUIRED_MINOR or later."
+DOWNLOAD_URL="http://www.go-mono.com/mono-downloads/download.html"
+ 
+MONO_VERSION="$(mono --version | grep 'Mono JIT compiler version ' |  cut -f5 -d\ )"
+MONO_VERSION_MAJOR="$(echo $MONO_VERSION | cut -f1 -d.)"
+MONO_VERSION_MINOR="$(echo $MONO_VERSION | cut -f2 -d.)"
+if [ -z "$MONO_VERSION" ] \
+	|| [ $MONO_VERSION_MAJOR -lt $REQUIRED_MAJOR ] \
+	|| [ $MONO_VERSION_MAJOR -eq $REQUIRED_MAJOR -a $MONO_VERSION_MINOR -lt $REQUIRED_MINOR ] 
+then
+	osascript \
+	-e "set question to display dialog \"$VERSION_MSG\" with title \"$VERSION_TITLE\" buttons {\"Cancel\", \"Download...\"} default button 2" \
+	-e "if button returned of question is equal to \"Download...\" then open location \"$DOWNLOAD_URL\""
+	echo "$VERSION_TITLE"
+	echo "$VERSION_MSG"
+	exit 1
+fi
+
+# Move into the folder where all the assemblies are located
+cd "$APP_PATH/Contents/Resources"
+
+# Make a symlink so Duplicati shows up as "Duplicati" in ps and not as "mono"
+if [ ! -d "./bin" ]; then mkdir bin ; fi
+
+if [ ! -d "./bin" ]
+then
+	# We cannot make the extra dir (most likely we are running on read-only medium)
+	# Instead we attempt to use exec to set the appname
+	OSX_VERSION=$(uname -r | cut -f1 -d.)
+	if [ $OSX_VERSION -lt 9 ]; then  # If OSX version is 10.4
+		MONO_EXEC="exec mono"
+	else
+		MONO_EXEC="exec -a \"$APP_NAME\" mono"
+	fi	
+	$MONO_EXEC "$ASSEMBLY"
+	
+else
+
+	# We can make the helper file, lets use that
+	if [ -f "./bin/$APP_NAME" ]; then rm -f "./bin/$APP_NAME" ; fi
+	ln -s `which mono` "./bin/$APP_NAME" 
+
+	# Start Duplicati using the renamed symlink to Mono
+	"./bin/$APP_NAME" "$ASSEMBLY"
+fi

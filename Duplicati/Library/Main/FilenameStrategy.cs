@@ -60,6 +60,8 @@ namespace Duplicati.Library.Main
 
         private const string VOLUME = "vol";
 
+        private const string DELETE_TRANSACTION_FILENAME = "delete.transaction";
+
         //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
         private const string TIMESTAMP_FORMAT = "yyyyMMdd'T'HHmmssK";
 
@@ -68,10 +70,11 @@ namespace Duplicati.Library.Main
         private string m_timeSeparator;
         private string m_prefix;
 
-        private Regex m_oldFilenameRegExp;
-        private Regex m_filenameRegExp;
-        private Regex m_shortRegExp;
-        private Regex m_verificationRegExp;
+        private readonly Regex m_oldFilenameRegExp;
+        private readonly Regex m_filenameRegExp;
+        private readonly Regex m_shortRegExp;
+        private readonly Regex m_verificationRegExp;
+        private readonly Regex m_deleteTransactionRegExp;
 
         /// <summary>
         /// A cache used to ensure that filenames are consistent, 
@@ -152,6 +155,13 @@ namespace Duplicati.Library.Main
                 )
             );
 
+            m_deleteTransactionRegExp = new Regex(
+                string.Format(@"(?<prefix>{0})-{1}(\.(?<encryption>[^\.]+))?",
+                    System.Text.RegularExpressions.Regex.Escape(m_prefix),
+                    DELETE_TRANSACTION_FILENAME
+                )
+            );
+
             //The short filenames and new filenames are UTC so there is no timezone attached
             if (!m_useShortFilenames && m_useOldFilenames)
                 m_timeStringCache = new Dictionary<DateTime, string>();
@@ -175,6 +185,8 @@ namespace Duplicati.Library.Main
                 t = m_useShortFilenames ? SIGNATURE_SHORT : SIGNATURE;
             else if (type is VerificationEntry)
                 return m_prefix + "." + type.Time.ToUniversalTime().ToString(TIMESTAMP_FORMAT) + ".verification";
+            else if (type is DeleteTransactionEntry)
+                return m_prefix + "-" + DELETE_TRANSACTION_FILENAME;
             else
                 throw new Exception(string.Format(Strings.FilenameStrategy.InvalidEntryTypeError, type));
 
@@ -225,6 +237,12 @@ namespace Duplicati.Library.Main
                 {
                     DateTime verificationtime = DateTime.ParseExact(m.Groups["time"].Value, TIMESTAMP_FORMAT, System.Globalization.CultureInfo.InvariantCulture).ToLocalTime();
                     return new VerificationEntry(fe.Name, fe, verificationtime, m.Groups["time"].Value);
+                }
+                
+                m = m_deleteTransactionRegExp.Match(fe.Name);
+                if (m.Success && m.Value == fe.Name)
+                {
+                    return new DeleteTransactionEntry(fe, m.Groups["encryption"].Value);
                 }
             }
 
@@ -281,5 +299,19 @@ namespace Duplicati.Library.Main
 
         public bool UseShortNames { get { return m_useShortFilenames; } }
         public string Prefix { get { return m_prefix; } }
+
+        /// <summary>
+        /// Parses a filename as a delete transaction.
+        /// </summary>
+        /// <param name="fe">The file entry to parse</param>
+        /// <returns>A delete transaction or null</returns>
+        public DeleteTransactionEntry ParseAsDeleteTransaction(Library.Interface.IFileEntry fe)
+        {
+            System.Text.RegularExpressions.Match m = m_deleteTransactionRegExp.Match(fe.Name);
+            if (m.Success && m.Value == fe.Name)
+                return new DeleteTransactionEntry(fe, m.Groups["encryption"].Value);
+
+            return null;
+        }
     }
 }

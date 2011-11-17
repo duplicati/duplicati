@@ -10,9 +10,14 @@ echo *****************************************************
 pause
 goto end_of_program
 
+REM TODO: Consider rewriting this in Python so it becomes readable :(
+
+REM Should also write a new Paraffin replacement so we can distribute it,
+REM  it should be fairly simple and not support everything Paraffin does
+
 :paraffin_found
 
-rmdir /S /Q "bin\Release\Duplicati"
+rmdir /S /Q "bin\Release"
 
 mkdir bin
 cd bin
@@ -25,45 +30,26 @@ cd Duplicati
 
 xcopy /I /Y /E ..\..\..\..\Duplicati\GUI\Bin\Release\* .
 del *.pdb /Q
-xcopy /I /Y ..\..\..\..\thirdparty\SQLite\Bin\sqlite-3.6.12.so .
-move sqlite-3.6.12.so libsqlite3.so.0
 xcopy /I /Y "..\..\..\linux help\*" .
 del "*.vshost.*" /Q
 xcopy /Y ..\..\..\..\Duplicati\GUI\StartDuplicati.sh .
 mkdir Tools
 xcopy /I /Y /E ..\..\..\..\Tools .\Tools
 
-REM This dll enables Mono on Windows support
-xcopy /I /Y ..\..\..\..\thirdparty\SQLite\Bin\sqlite3.dll .
-
 REM Prepare the config file with version overrides
-del "Duplicati.exe.config" /Q
-del "Duplicati.CommandLine.exe.config" /Q
 echo "" > "Duplicati.CommandLine.exe.config"
 echo "" > "Duplicati.exe.config"
 xcopy /Y ..\..\..\AssemblyRedirects.xml "Duplicati.exe.config"
 xcopy /Y ..\..\..\AssemblyRedirects.xml "Duplicati.CommandLine.exe.config"
 
-cd ..
-del .\Duplicati.msi /Q
-del .\Duplicati.x86.msi /Q
-del .\Duplicati.x64.msi /Q
-del .\Duplicati.zip /Q
-
-cd ..\..
+cd ..\..\..
 
 REM Build translations
 cd "..\Duplicati\Localization"
 rmdir /S /Q compiled
 
-REM TODO: Make this dynamic with report.*.csv
 LocalizationTool.exe update
-
-LocalizationTool.exe import da-DK report.da-DK.csv
-LocalizationTool.exe import fr-FR report.fr-FR.csv
-LocalizationTool.exe import pt-BR report.pt-BR.csv
-LocalizationTool.exe import de-DE report.de-DE.csv
-LocalizationTool.exe import es-ES report.es-ES.csv
+for %%d in (".\*.csv") do call :reimportcsv %%d
 
 LocalizationTool.exe update
 LocalizationTool.exe build
@@ -81,7 +67,17 @@ if exist incBinFiles.PARAFFIN del incBinFiles.PARAFFIN
 if exist incBinFiles.PARAFFIN xcopy /I /Y incBinFiles.PARAFFIN incBinFiles.wxs
 if exist incBinFiles.PARAFFIN del incBinFiles.PARAFFIN
 
+REM Copy in translation files
 xcopy /I /Y /E "..\Duplicati\Localization\compiled\*" "bin\Release\Duplicati"
+
+REM Support for linux with old SQLite binaries
+xcopy /I /Y "..\thirdparty\SQLite\Bin\sqlite-3.6.12.so" "bin\Release\Duplicati"
+move sqlite-3.6.12.so libsqlite3.so.0
+
+REM This dll enables Mono on Windows support
+xcopy /I /Y "..\thirdparty\SQLite\Bin\sqlite3.dll" "bin\Release\Duplicati"
+
+REM Build zip version
 cd "bin\Release"
 "%PROGRAMFILES%\7-zip\7z.exe" a -r "Duplicati.zip" Duplicati
 cd "..\.."
@@ -91,6 +87,15 @@ move "bin\Release\Duplicati.msi" "bin\Release\Duplicati.x86.msi"
 WixProjBuilder.exe --wixpath="C:\Program Files (x86)\Windows Installer XML v3\bin" --platform=x64 WixInstaller.wixproj
 move "bin\Release\Duplicati.msi" "bin\Release\Duplicati.x64.msi"
 pause
+
+goto end_of_program
+
+:reimportcsv
+set LANG_NAME=
+
+REM Read the second value delimited by . (the filename is .\report.en-US.csv)
+for /f "tokens=2 delims=." %%a in ("%1") do set LANG_NAME=%%a
+LocalizationTool.exe import %LANG_NAME% %1
 
 goto end_of_program
 

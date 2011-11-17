@@ -158,6 +158,13 @@ namespace Duplicati.GUI.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap EmptyBackupStatusIcon {
+            get {
+                object obj = ResourceManager.GetObject("EmptyBackupStatusIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap ErrorStatusIcon {
             get {
                 object obj = ResourceManager.GetObject("ErrorStatusIcon", resourceCulture);
@@ -196,6 +203,13 @@ namespace Duplicati.GUI.Properties {
         internal static System.Drawing.Bitmap IncompleteFile {
             get {
                 object obj = ResourceManager.GetObject("IncompleteFile", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        internal static System.Drawing.Bitmap InterruptedStatusIcon {
+            get {
+                object obj = ResourceManager.GetObject("InterruptedStatusIcon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

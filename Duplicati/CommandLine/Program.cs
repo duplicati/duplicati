@@ -25,6 +25,8 @@ namespace Duplicati.CommandLine
 {
     class Program
     {
+        private static readonly string[] COMMANDS_AS_ARGUMENTS = new string[] { "delete-all-but-n-full", "delete-all-but-n", "delete-older-than" };
+
         static void Main(string[] args)
         {
             try
@@ -78,6 +80,18 @@ namespace Duplicati.CommandLine
                 }
 #endif
 
+                if (cargs.Count > 0)
+                {
+                    //Because options are of the format --name=value, it seems natural to write "delete-all-but-n-full=5",
+                    // so we allow that format as well
+                    foreach (string s in COMMANDS_AS_ARGUMENTS)
+                        if (cargs[0].Trim().ToLower().StartsWith(s + "="))
+                        {
+                            cargs.Insert(1, cargs[0].Substring(s.Length + 1));
+                            cargs[0] = s;
+                        }
+                }
+
                 if (cargs.Count == 1)
                 {
                     switch (cargs[0].Trim().ToLower())
@@ -85,27 +99,6 @@ namespace Duplicati.CommandLine
                         case "purge-signature-cache":
                             Library.Main.Interface.PurgeSignatureCache(options);
                             return;
-                    }
-                }
-
-                if (cargs.Count > 0)
-                {
-                    //Because options are of the format --name=value, it seems natural to write "delete-all-but-n-full=5",
-                    // so we allow that format as well
-                    if (cargs[0].Trim().ToLower().StartsWith("delete-all-but-n-full="))
-                    {
-                        string p = cargs[0].Substring(cargs[0].IndexOf('=') + 1);
-                        cargs[0] = "delete-all-but-n-full";
-                        cargs.Insert(1, p);
-                    }
-
-                    //Because options are of the format --name=value, it seems natural to write "delete-older-than=5D",
-                    // so we allow that format as well
-                    if (cargs[0].Trim().ToLower().StartsWith("delete-older-than="))
-                    {
-                        string p = cargs[0].Substring(cargs[0].IndexOf('=') + 1);
-                        cargs[0] = "delete-older-than";
-                        cargs.Insert(1, p);
                     }
                 }
 
@@ -273,7 +266,7 @@ namespace Duplicati.CommandLine
                         }
                     }
                 }
-                else if (source.Trim().ToLower() == "delete-all-but-n-full")
+                else if (source.Trim().ToLower() == "delete-all-but-n-full" || source.Trim().ToLower() == "delete-all-but-n")
                 {
                     int n = 0;
                     if (!int.TryParse(target, out n) || n < 0)
@@ -293,7 +286,10 @@ namespace Duplicati.CommandLine
                         return;
                     }
 
-                    Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButNFull(cargs[0], options));
+                    if (source.Trim().ToLower() == "delete-all-but-n")
+                        Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButN(cargs[0], options));
+                    else
+                        Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButNFull(cargs[0], options));
                 }
                 else if (source.Trim().ToLower() == "delete-older-than")
                 {

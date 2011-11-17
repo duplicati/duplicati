@@ -79,6 +79,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only).
+        /// </summary>
+        internal static string AllowsleepShort {
+            get {
+                return ResourceManager.GetString("AllowsleepShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing..
         /// </summary>
         internal static string AllowsourcefolderchangeLong {
@@ -93,6 +102,15 @@ namespace Duplicati.Library.Main.Strings {
         internal static string AllowsourcefolderchangeShort {
             get {
                 return ResourceManager.GetString("AllowsourcefolderchangeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Asynchronous upload is now default, you can turn it off by using the flag --{0}.
+        /// </summary>
+        internal static string AsynchronousuploadDeprecated {
+            get {
+                return ResourceManager.GetString("AsynchronousuploadDeprecated", resourceCulture);
             }
         }
         
@@ -205,6 +223,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If the backup is encrypted, the remote backend cannot verify the backup contents without the password. If this option is activated, Duplicati stores an unencrypted file on the backend. The file is never read by Duplicati, but allows the remote server to verify the backup integrity without requiring a password. The file contains no sensitive information, only a list of files that are expected to exist on the backend and their respective hashes. This option only has an effect when creating a backup and when v [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string CreateverificationfileLong {
+            get {
+                return ResourceManager.GetString("CreateverificationfileLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create verification file on server.
+        /// </summary>
+        internal static string CreateverificationfileShort {
+            get {
+                return ResourceManager.GetString("CreateverificationfileShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Activating this option will make some error messages more verbose, which may help you track down a particular issue.
         /// </summary>
         internal static string DebugoutputLong {
@@ -219,6 +255,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string DebugoutputShort {
             get {
                 return ResourceManager.GetString("DebugoutputShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When an error occurs, Duplicati will silently retry, and only report the number of retries. Enable this option to have the error messages displayed when a retry is performed..
+        /// </summary>
+        internal static string DebugretryerrorsLong {
+            get {
+                return ResourceManager.GetString("DebugretryerrorsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show error messages when a retry is performed.
+        /// </summary>
+        internal static string DebugretryerrorsShort {
+            get {
+                return ResourceManager.GetString("DebugretryerrorsShort", resourceCulture);
             }
         }
         
@@ -475,6 +529,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use this option to limit the length of the backup chain to a certain number. The number supplied here indicates the maximum number of incrementals a chain can contain (not counting the root full backup).
+        /// </summary>
+        internal static string FullifmorethannincrementalsLong {
+            get {
+                return ResourceManager.GetString("FullifmorethannincrementalsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The max number of incrementals in a chain.
+        /// </summary>
+        internal static string FullifmorethannincrementalsShort {
+            get {
+                return ResourceManager.GetString("FullifmorethannincrementalsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If the last full backup is older than the duration supplied here, Duplicati will make a full backup, otherwise an incremental.
         /// </summary>
         internal static string FullifolderthanLong {
@@ -592,6 +664,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Some protocols, like FTP, and some servers have problems detecting an interrupted transfer and will assume that the transfer completed, even if it did not. If this option is enabled Duplicati will list the contents of the backend after each upload and verify that the file exists and has the expected size..
+        /// </summary>
+        internal static string ListverifyuploadsLong {
+            get {
+                return ResourceManager.GetString("ListverifyuploadsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verify uploads by listing contents.
+        /// </summary>
+        internal static string ListverifyuploadsShort {
+            get {
+                return ResourceManager.GetString("ListverifyuploadsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Specifies the name of a while into which internal log information is written.
         /// </summary>
         internal static string LogfileLong {
@@ -660,6 +750,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string MaxuploadprsecondShort {
             get {
                 return ResourceManager.GetString("MaxuploadprsecondShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Duplicati will attempt to perform multiple operations on a single connection, as this avoids repeated login attempts, and thus speeds up the process. This option can be used to ensure that each operation is performed on a seperate connection.
+        /// </summary>
+        internal static string NoconnectionreuseLong {
+            get {
+                return ResourceManager.GetString("NoconnectionreuseLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not re-use connections.
+        /// </summary>
+        internal static string NoconnectionreuseShort {
+            get {
+                return ResourceManager.GetString("NoconnectionreuseShort", resourceCulture);
             }
         }
         
@@ -934,6 +1042,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicati will upload files while scanning the disk and producing volumes, which usually makes the backup faster. Use this flag to turn the behavior off, so that Duplicati will wait for each volume to complete..
+        /// </summary>
+        internal static string SynchronousuploadLong {
+            get {
+                return ResourceManager.GetString("SynchronousuploadLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Upload files synchronously.
+        /// </summary>
+        internal static string SynchronousuploadShort {
+            get {
+                return ResourceManager.GetString("SynchronousuploadShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicati will use the system default temporary folder. This option can be used to supply an alternative folder for temporary storage..
         /// </summary>
         internal static string TempdirLong {
@@ -1015,6 +1141,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If no files have changed, Duplicati will not upload a backup set. If the backup data is used to verify that a backup was executed, this option will make Duplicati upload a backupset even if it is empty.
+        /// </summary>
+        internal static string UploadUnchangedBackupsLong {
+            get {
+                return ResourceManager.GetString("UploadUnchangedBackupsLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Upload empty backup files .
+        /// </summary>
+        internal static string UploadUnchangedBackupsShort {
+            get {
+                return ResourceManager.GetString("UploadUnchangedBackupsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This settings controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to &quot;off&quot;, Duplicati will not attempt to use USN. Setting this to &quot;auto&quot; makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of &quot;on&quot; will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to &quot;required&quot; will make Duplicati abort the backup if the USN usage fail [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string UsnpolicyLong {
@@ -1029,6 +1173,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string UsnpolicyShort {
             get {
                 return ResourceManager.GetString("UsnpolicyShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use this option to change the level of verifiation done by the verify command. The setting &quot;manifest&quot; will only verify the manifest chain. The settings &quot;signature&quot; will also download and verify all signature files. The setting &quot;full&quot;, will download all files, including content files, and verify that they are unchanged..
+        /// </summary>
+        internal static string VerificationLevelLong {
+            get {
+                return ResourceManager.GetString("VerificationLevelLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Level of verification.
+        /// </summary>
+        internal static string VerificationLevelShort {
+            get {
+                return ResourceManager.GetString("VerificationLevelShort", resourceCulture);
             }
         }
         

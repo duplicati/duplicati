@@ -125,6 +125,14 @@ namespace Duplicati.GUI
             m_state = paused ? WorkerThread<Tx>.RunState.Paused : WorkerThread<Tx>.RunState.Run;
 
             m_thread = new Thread(new ThreadStart(Runner));
+            try
+            {
+                //The worker is using the same locale as the caller
+                m_thread.CurrentCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
+                m_thread.CurrentUICulture = System.Threading.Thread.CurrentThread.CurrentUICulture;
+            }
+            catch { }
+
             m_thread.IsBackground = true;
             m_thread.Start();
         }

@@ -177,8 +177,14 @@ Error message: {0}</value>
   <data name="UnencrypteddatabaseCommandDescription" xml:space="preserve">
     <value>Disables database encryption</value>
   </data>
+  <data name="ShowwizardCommandDescription" xml:space="preserve">
+    <value>Displays the wizard window</value>
+  </data>
   <data name="WrongSQLiteVersion" xml:space="preserve">
     <value>Unsupported version of SQLite detected ({0}), must be {1} or higher</value>
     <comment>An error message displayed when the wrong version of SQLite is detected</comment>
+  </data>
+  <data name="TraylessCommandDescription" xml:space="preserve">
+    <value>Runs Duplicati without showing the tray icon, closing the main window closes Duplicati</value>
   </data>
 </root>

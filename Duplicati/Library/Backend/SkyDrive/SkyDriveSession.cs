@@ -139,6 +139,10 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private string m_folderCID;
         /// <summary>
+        /// The passport token used to authticate WebDAV requests
+        /// </summary>
+        private string m_mainpassporttoken;
+        /// <summary>
         /// The WLID token used to authenticate requests
         /// </summary>
         private string m_mainwlidtoken;
@@ -158,7 +162,6 @@ namespace Duplicati.Library.Backend
         /// A lookup table with all WEBDAV folders, key is the root foldername, value is the WEBDAV url
         /// </summary>
         private Dictionary<string, string> m_webdav_rootFolderCache = null;
-
 
         /// <summary>
         /// A lock used to prevent loading the loginUrl multiple times
@@ -208,7 +211,7 @@ namespace Duplicati.Library.Backend
         {
             HttpWebRequest getUrls = (HttpWebRequest)WebRequest.Create(PASSPORT_LIST_URL);
             getUrls.UserAgent = USER_AGENT;
-            using (HttpWebResponse resp = (HttpWebResponse)getUrls.GetResponse())
+            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(getUrls))
             {
                 string header = resp.Headers[PASSPORT_URL_LIST_HEADER];
                 if (string.IsNullOrEmpty(header))
@@ -237,7 +240,7 @@ namespace Duplicati.Library.Backend
             //We use the first request to extract the nonce template
             if (string.IsNullOrEmpty(m_noncetemplate))
             {
-                using (HttpWebResponse resp = (HttpWebResponse)listRequest.GetResponse())
+                using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(listRequest))
                 {
                     string nonce = resp.Headers[NONCE_HEADER];
                     if (string.IsNullOrEmpty(nonce))
@@ -257,7 +260,7 @@ namespace Duplicati.Library.Backend
 
             //Get the list of root folders, the user CID and the urls for webdav folders
             XmlDocument doc = new XmlDocument();
-            using (HttpWebResponse resp = (HttpWebResponse)listRequest.GetResponse())
+            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(listRequest))
             using (System.IO.Stream s = resp.GetResponseStream())
                 doc.Load(s);
 
@@ -289,8 +292,11 @@ namespace Duplicati.Library.Backend
         /// <returns>The folder CID</returns>
         private string GetFolderCID(string rootfolder, string prefix, bool createFolder)
         {
+            //Obtain a valid passport token for downloading with WebDAV
+            m_mainpassporttoken = GetAuthenticationToken("GET", RootUrl);
+
             //Assign the WLID1.0 token, which is the same as the Passport1.4 token, but with another prefix
-            m_mainwlidtoken = ConvertPassportTokenToWLIDToken(GetAuthenticationToken("GET", RootUrl));
+            m_mainwlidtoken = ConvertPassportTokenToWLIDToken(m_mainpassporttoken);
 
             string[] folders = (rootfolder + prefix).Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             TaggedFileEntry curfolder = null;
@@ -352,7 +358,7 @@ namespace Duplicati.Library.Backend
             SetAuthenticationToken(soapRequest);
 
             byte[] data = System.Text.Encoding.UTF8.GetBytes(SOAP_GETACCOUNT_INFO_REQUEST);
-            using (System.IO.Stream s = soapRequest.GetRequestStream())
+            using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(soapRequest))
                 s.Write(data, 0, data.Length);
 
             return soapRequest;
@@ -466,7 +472,7 @@ namespace Duplicati.Library.Backend
             getToken.UserAgent = USER_AGENT;
             getToken.Headers[AUTHORIZATION_HEADER] = string.Format(LOGIN_HEADER_TEMPLATE, HttpUtility.UrlEncode(m_username), HttpUtility.UrlEncode(m_password), verb, url, CreateNonce(verb, url));
 
-            using (HttpWebResponse resp = (HttpWebResponse)getToken.GetResponse())
+            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(getToken))
             {
                 string token_header = resp.Headers[AUTHENTIFICATION_RESULT_HEADER];
                 string redir = resp.Headers[REDIR_LOCATION_HEADER];
@@ -522,10 +528,10 @@ namespace Duplicati.Library.Backend
 
             req.ContentLength = data.Length;
 
-            using (System.IO.Stream s = req.GetRequestStream())
+            using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(req))
                 s.Write(data, 0, data.Length);
 
-            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -535,6 +541,74 @@ namespace Duplicati.Library.Backend
             //If we added a root folder, update the webdab list
             if (string.IsNullOrEmpty(parentCid))
                 SetupConnection();
+        }
+
+        private TaggedFileEntry ParseXmlAtomEntry(XmlNode node, XmlNamespaceManager mgr)
+        {
+            if (mgr == null)
+                mgr = new XmlNamespaceManager(node.OwnerDocument.NameTable);
+
+            if (!mgr.HasNamespace("live"))
+                mgr.AddNamespace("live", "http://api.live.com/schemas");
+            if (!mgr.HasNamespace("atom"))
+                mgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
+
+            XmlNode title = node.SelectSingleNode("atom:title", mgr);
+            XmlNode id = node.SelectSingleNode("live:resourceId", mgr);
+            XmlNode url = node.SelectSingleNode("atom:id", mgr);
+
+            if (title == null || id == null || url == null)
+                return null;
+
+            XmlNode updated = node.SelectSingleNode("atom:updated", mgr);
+            XmlNode size = node.SelectSingleNode("live:size", mgr);
+            XmlNode type = node.SelectSingleNode("live:type", mgr);
+
+            string u = url.InnerText;
+            XmlNode content = node.SelectSingleNode("atom:content", mgr);
+            if (content != null) content = content.Attributes["src"];
+            if (content != null) u = content.Value;
+
+            string editLink = null;
+            string altLink = null;
+
+            foreach (XmlNode n in node.SelectNodes("atom:link", mgr))
+                if (n.Attributes["rel"] != null && n.Attributes["href"] != null)
+                {
+                    if (n.Attributes["rel"].Value == "edit-media")
+                        editLink = n.Attributes["href"].Value;
+                    else if (n.Attributes["rel"].Value == "alternate")
+                        altLink = n.Attributes["href"].Value;
+                }
+
+            TaggedFileEntry tf = new TaggedFileEntry(title.InnerText, u, id.InnerText, altLink, editLink);
+            try { tf.LastAccess = tf.LastModification = DateTime.Parse(updated.InnerText); }
+            catch { }
+
+            try { tf.Size = long.Parse(size.InnerText); }
+            catch { }
+
+            try { tf.IsFolder = type.InnerText.Equals("Library", StringComparison.InvariantCultureIgnoreCase) || type.InnerText.Equals("Folder", StringComparison.InvariantCultureIgnoreCase); }
+            catch { }
+
+            return tf;
+        }
+
+        private List<IFileEntry> ParseXmlAtomDocument(XmlDocument doc)
+        {
+            List<IFileEntry> results = new List<IFileEntry>();
+            XmlNamespaceManager mgr = new XmlNamespaceManager(doc.NameTable);
+            mgr.AddNamespace("live", "http://api.live.com/schemas");
+            mgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
+
+            foreach (XmlNode n in doc.SelectNodes("//atom:entry", mgr))
+            {
+                TaggedFileEntry tf = ParseXmlAtomEntry(n, mgr);
+                if (tf != null)
+                    results.Add(tf);
+            }
+
+            return results;
         }
 
         /// <summary>
@@ -556,46 +630,11 @@ namespace Duplicati.Library.Backend
             SetWlidAuthenticationToken(req);
 
             XmlDocument doc = new XmlDocument();
-            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
             using (System.IO.Stream s = resp.GetResponseStream())
                 doc.Load(s);
 
-            XmlNamespaceManager mgr = new XmlNamespaceManager(doc.NameTable);
-            mgr.AddNamespace("live", "http://api.live.com/schemas");
-            mgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
-
-            List<IFileEntry> results = new List<IFileEntry>();
-
-            foreach (XmlNode n in doc.SelectNodes("//atom:entry", mgr))
-            {
-                XmlNode title = n.SelectSingleNode("atom:title", mgr);
-                XmlNode id = n.SelectSingleNode("live:resourceId", mgr);
-                XmlNode url = n.SelectSingleNode("atom:id", mgr);
-
-                if (title == null || id == null || url == null)
-                    continue;
-
-                XmlNode updated = n.SelectSingleNode("atom:updated", mgr);
-                XmlNode size = n.SelectSingleNode("live:size", mgr);
-                XmlNode type = n.SelectSingleNode("live:type", mgr);
-
-                string u = url.InnerText;
-                XmlNode content = n.SelectSingleNode("atom:content", mgr);
-                if (content != null) content = content.Attributes["src"];
-                if (content != null) u = content.Value;
-
-                TaggedFileEntry tf = new TaggedFileEntry(title.InnerText, u, id.InnerText);
-                try { tf.LastAccess = tf.LastModification = DateTime.Parse(updated.InnerText); }
-                catch { }
-
-                try { tf.Size = long.Parse(size.InnerText); }
-                catch { }
-
-                try { tf.IsFolder = type.InnerText.Equals("Library", StringComparison.InvariantCultureIgnoreCase) || type.InnerText.Equals("Folder", StringComparison.InvariantCultureIgnoreCase); }
-                catch { }
-
-                results.Add(tf);
-            }
+            List<IFileEntry> results = ParseXmlAtomDocument(doc);
 
             //Cache the results if we listed the folder that the session is bound to
             if (m_folderCID != null && m_folderCID.Equals(parentCid))
@@ -616,6 +655,26 @@ namespace Duplicati.Library.Backend
                 throw new FolderMissingException();
 
             return m_webdav_rootFolderCache[m_rootfolder] + m_prefix + remotename;
+        }
+
+        /// <summary>
+        /// Looks for a file and returns the file information, including the CID
+        /// </summary>
+        /// <param name="name">The name of the file to look for</param>
+        /// <returns>The file information or null</returns>
+        private TaggedFileEntry GetFileInfoFromCache(string name)
+        {
+            if (m_filenameCache == null)
+                return GetFileInfo(name);
+
+            foreach (TaggedFileEntry f in m_filenameCache)
+            {
+                if (f.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+                    return f;
+            }
+
+            return null;
+
         }
 
         /// <summary>
@@ -648,21 +707,36 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="remotename">The remote file name.</param>
         /// <returns>The server response</returns>
-        public HttpWebResponse DeleteFile(string remotename)
+        public void DeleteFile(string remotename)
         {
-            TaggedFileEntry fileinfo = GetFileInfo(remotename);
-            if (fileinfo == null)
-                throw new System.IO.FileNotFoundException(); //TODO: Should throw 404?
+            try
+            {
+                TaggedFileEntry fileinfo = GetFileInfo(remotename);
+                if (fileinfo == null)
+                    throw new System.IO.FileNotFoundException(); //TODO: Should throw 404?
 
-            //First we need the content url
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(GetFileUrl(fileinfo.CID));
-            req.AllowAutoRedirect = false;
-            req.Method = "DELETE";
-            //We only depend on the ReadWriteTimeout
-            req.Timeout = System.Threading.Timeout.Infinite;
-            SetWlidAuthenticationToken(req);
+                //First we need the content url
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(GetFileUrl(fileinfo.CID));
+                req.AllowAutoRedirect = false;
+                req.Method = "DELETE";
+                req.KeepAlive = false;
+                //Delete uses the default timeout
+                //req.Timeout = System.Threading.Timeout.Infinite;
+                SetWlidAuthenticationToken(req);
 
-            return (HttpWebResponse)req.GetResponse();
+                using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
+                {
+                    int code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                    m_filenameCache.Remove(fileinfo);
+                }
+            }
+            catch
+            {
+                m_filenameCache = null;
+                throw;
+            }
         }
 
         /// <summary>
@@ -671,52 +745,134 @@ namespace Duplicati.Library.Backend
         /// <param name="remotename">The remote file name.</param>
         /// <param name="data">The data that represents the file.</param>
         /// <returns>The server response</returns>
-        public HttpWebResponse UploadFile(string remotename, System.IO.Stream data)
+        public void UploadFile(string remotename, System.IO.Stream data)
         {
-            string boundary = String.Format("---------------------------{0:x}", DateTime.Now.Ticks);
+            TaggedFileEntry fileinfo = null;
 
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(FolderUrl);
-            req.Method = WebRequestMethods.Http.Post;
-            req.ContentType = "multipart/related; type=\"application/atom+xml\"; boundary=\"" + boundary + "\"";
-            req.Accept = "application/atom+xml";
-            req.AllowAutoRedirect = false;
-            //req.Credentials = new NetworkCredential(m_username, m_password);
-            //We only depend on the ReadWriteTimeout
-            req.Timeout = System.Threading.Timeout.Infinite;
-            SetWlidAuthenticationToken(req);
-
-            byte[] createRequest = System.Text.Encoding.UTF8.GetBytes(string.Format(CREATE_FILE_TEMPLATE, HttpUtility.HtmlEncode(remotename)));
-
-            byte[] newLine = Encoding.UTF8.GetBytes("\r\n");
-            byte[] lastBoundary = Encoding.UTF8.GetBytes("--" + boundary + "--\r\n");
-
-
-            byte[] xmlHeader = System.Text.Encoding.UTF8.GetBytes(
-                "--" + boundary + "\r\n" +
-                "MIME-Version: 1.0" + "\r\n" +
-                "Content-Type: application/atom+xml" + "\r\n\r\n");
-
-            byte[] dataHeader = System.Text.Encoding.UTF8.GetBytes(
-                "--" + boundary + "\r\n" +
-                "MIME-Version: 1.0" + "\r\n" +
-                "Content-Type: application/octet-stream" + "\r\n\r\n");
-
-
-            try { req.ContentLength = xmlHeader.Length + createRequest.Length + newLine.Length + dataHeader.Length + data.Length + newLine.Length + lastBoundary.Length; }
-            catch { }
-
-            using (System.IO.Stream s = req.GetRequestStream())
+            //This is done slightly odd, because we do not want to
+            // re-issue the file listing if it can be avoided
+            if (m_filenameCache == null)
+                fileinfo = GetFileInfoFromCache(remotename);
+            else
             {
-                s.Write(xmlHeader, 0, xmlHeader.Length);
-                s.Write(createRequest, 0, createRequest.Length);
-                s.Write(newLine, 0, newLine.Length);
-                s.Write(dataHeader, 0, dataHeader.Length);
-                Utility.Utility.CopyStream(data, s);
-                s.Write(newLine, 0, newLine.Length);
-                s.Write(lastBoundary, 0, lastBoundary.Length);
+                foreach (TaggedFileEntry f in m_filenameCache)
+                    if (f.Name.Equals(remotename, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        fileinfo = f;
+                        break;
+                    }
             }
 
-            return (System.Net.HttpWebResponse)req.GetResponse();
+            if (fileinfo != null && fileinfo.EditUrl == null)
+            {
+                try { this.DeleteFile(remotename); }
+                catch { }
+
+                fileinfo = GetFileInfo(remotename);
+                if (fileinfo != null && fileinfo.EditUrl == null)
+                    throw new Exception(string.Format(Strings.SkyDrive.FileIsReadOnlyError, remotename));
+            }
+
+            HttpWebRequest req;
+            if (fileinfo == null)
+            {
+                try
+                {
+                    string boundary = String.Format("---------------------------{0:x}", DateTime.Now.Ticks);
+
+                    req = (HttpWebRequest)WebRequest.Create(FolderUrl);
+
+                    req.Method = WebRequestMethods.Http.Post;
+                    req.ContentType = "multipart/related; type=\"application/atom+xml\"; boundary=\"" + boundary + "\"";
+                    req.Accept = "application/atom+xml";
+                    req.AllowAutoRedirect = false;
+                    req.KeepAlive = false;
+
+                    //We only depend on the ReadWriteTimeout
+                    req.Timeout = System.Threading.Timeout.Infinite;
+                    SetWlidAuthenticationToken(req);
+
+                    byte[] createRequest = System.Text.Encoding.UTF8.GetBytes(string.Format(CREATE_FILE_TEMPLATE, HttpUtility.HtmlEncode(remotename)));
+
+                    byte[] newLine = Encoding.UTF8.GetBytes("\r\n");
+                    byte[] lastBoundary = Encoding.UTF8.GetBytes("--" + boundary + "--\r\n");
+
+
+                    byte[] xmlHeader = System.Text.Encoding.UTF8.GetBytes(
+                        "--" + boundary + "\r\n" +
+                        "MIME-Version: 1.0" + "\r\n" +
+                        "Content-Type: application/atom+xml" + "\r\n\r\n");
+
+                    byte[] dataHeader = System.Text.Encoding.UTF8.GetBytes(
+                        "--" + boundary + "\r\n" +
+                        "MIME-Version: 1.0" + "\r\n" +
+                        "Content-Type: application/octet-stream" + "\r\n\r\n");
+
+
+                    try { req.ContentLength = xmlHeader.Length + createRequest.Length + newLine.Length + dataHeader.Length + data.Length + newLine.Length + lastBoundary.Length; }
+                    catch { }
+
+                    using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(req))
+                    {
+                        s.Write(xmlHeader, 0, xmlHeader.Length);
+                        s.Write(createRequest, 0, createRequest.Length);
+                        s.Write(newLine, 0, newLine.Length);
+                        s.Write(dataHeader, 0, dataHeader.Length);
+                        Utility.Utility.CopyStream(data, s);
+                        s.Write(newLine, 0, newLine.Length);
+                        s.Write(lastBoundary, 0, lastBoundary.Length);
+                    }
+
+                    using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
+                    {
+                        int code = (int)resp.StatusCode;
+                        if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                            throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+
+                        //If all goes well, we should now get an atom entry describing the new element
+                        System.Xml.XmlDocument xml = new XmlDocument();
+                        using (System.IO.Stream s = resp.GetResponseStream())
+                            xml.Load(s);
+
+                        TaggedFileEntry tf = ParseXmlAtomEntry(xml["entry"], null);
+                        if (tf == null)
+                            throw new Exception(string.Format(Strings.SkyDrive.UploadFailedError, remotename));
+
+                        if (fileinfo != null)
+                            m_filenameCache.Remove(fileinfo);
+                        m_filenameCache.Add(tf);
+                    }
+                }
+                catch
+                {
+                    m_filenameCache = null;
+                    throw;
+                }
+            }
+            else
+            {
+                //Overwrite is simpler
+                req = (HttpWebRequest)WebRequest.Create(fileinfo.EditUrl);
+                req.Method = WebRequestMethods.Http.Put;
+                req.ContentLength = data.Length;
+                req.ContentType = "application/octet-stream";
+                req.AllowAutoRedirect = false;
+                req.KeepAlive = false;
+
+                //We only depend on the ReadWriteTimeout
+                req.Timeout = System.Threading.Timeout.Infinite;
+                SetWlidAuthenticationToken(req);
+
+                using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(req))
+                    Utility.Utility.CopyStream(data, s);
+
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
+                {
+                    int code = (int)resp.StatusCode;
+                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                }
+            }
         }
 
         /// <summary>
@@ -726,13 +882,50 @@ namespace Duplicati.Library.Backend
         /// <returns>The server response</returns>
         public HttpWebResponse DownloadFile(string remotename)
         {
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(GetWebDavUrl(remotename));
+            TaggedFileEntry fileinfo = GetFileInfo(remotename);
+            if (fileinfo == null)
+                throw new System.IO.FileNotFoundException(); //TODO: Should throw 404?
+
+            //This method is much preferred because it allows us to use non-url-friendly characters
+            //For some reason it will not accept the WLID token :(
+            //I also tried creating WLID and passport tokens for the URL and
+            // the hostnames, but everything redirects.
+            //The browser redirects to an auth page that sets a WLSRDAuth
+            // cookie, but I cannot find any information on that
+
+            /*HttpWebRequest req = (HttpWebRequest)WebRequest.Create(fileinfo.Url);
+            req.Method = WebRequestMethods.Http.Get;
             req.AllowAutoRedirect = false;
+            req.KeepAlive = false;
             //We only depend on the ReadWriteTimeout
             req.Timeout = System.Threading.Timeout.Infinite;
-            SetAuthenticationToken(req);
+            SetWlidAuthenticationToken(req);
+            */
 
-            return (HttpWebResponse)req.GetResponse();
+            //This uses a WebDAV hack to download files via WebDAV,
+            //I have not yet figured out how to encode special characters,
+            // but it works with -_. and that should be enough for Duplicati
+            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(GetWebDavUrl(remotename));
+            req.Method = WebRequestMethods.Http.Get;
+            req.AllowAutoRedirect = false;
+            req.KeepAlive = false;
+            //We only depend on the ReadWriteTimeout
+            req.Timeout = System.Threading.Timeout.Infinite;
+            req.UserAgent = USER_AGENT;
+            req.Headers[AUTHORIZATION_HEADER] = m_mainpassporttoken;
+
+            HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req);
+            int code = (int)resp.StatusCode;
+
+            //For some reason Mono does not throw this automatically
+            if (code < 200 || code >= 300)
+            {
+                //if (resp.StatusCode == HttpStatusCode.Moved || resp.StatusCode == HttpStatusCode.MovedPermanently)
+                using (resp)
+                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+            }
+
+            return resp;
         }
 
 
@@ -748,18 +941,27 @@ namespace Duplicati.Library.Backend
             req.Timeout = System.Threading.Timeout.Infinite;
             SetAuthenticationToken(req);
 
-            using (System.IO.Stream s = req.GetRequestStream())
+            using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(req))
                 Utility.Utility.CopyStream(data, s);
 
-            return (System.Net.HttpWebResponse)req.GetResponse();
+            return (System.Net.HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req);
 
         }*/
-        
+
         #region IDisposable Members
 
         public void Dispose()
         {
-            //Currently we hold no resources that needs disposing
+            m_username = null;
+            m_password = null;
+            m_rootfolder = null;
+            m_prefix = null;
+            m_folderCID = null;
+            m_mainwlidtoken = null;
+            m_noncetemplate = null;
+            m_userCID = null;
+            m_filenameCache = null;
+            m_webdav_rootFolderCache = null;
         }
 
         #endregion

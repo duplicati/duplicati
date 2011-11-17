@@ -49,21 +49,17 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("AP Northeast", "ap-northeast-1"),
         };
         
-        private string m_awsID;
-        private string m_awsKey;
-        private string m_url;
-        private string m_host;
         private string m_bucket;
         private string m_prefix;
-        private string m_locationConstraint;
-        private bool m_useRRS = false;
-        private bool m_useSSL = false;
 
         private readonly System.Text.RegularExpressions.Regex URL_PARSING = new Regex("s3://(?<hostname>[^/]+)(/(?<prefix>.+))?", RegexOptions.IgnoreCase); 
         public const string DEFAULT_S3_HOST  = "s3.amazonaws.com";
         public const string S3_EU_REGION_NAME = "eu-west-1";
 
-        Dictionary<string, string> m_options;
+        private Dictionary<string, string> m_options;
+
+        private S3Wrapper m_wrapper;
+
 
         public S3()
         {
@@ -77,18 +73,21 @@ namespace Duplicati.Library.Backend
             if (!m.Success)
                 throw new Exception(string.Format(Strings.S3Backend.UnableToParseURLError, url));
 
-            m_host = m.Groups["hostname"].Value;
+            string host = m.Groups["hostname"].Value;
             m_prefix = m.Groups["prefix"].Value;
 
+            string awsID = null;
+            string awsKey = null;
+
             if (options.ContainsKey("ftp-username"))
-                m_awsID = options["ftp-username"];
+                awsID = options["ftp-username"];
             if (options.ContainsKey("ftp-password"))
-                m_awsKey = options["ftp-password"];
+                awsKey = options["ftp-password"];
 
             if (options.ContainsKey("aws_access_key_id"))
-                m_awsID = options["aws_access_key_id"];
+                awsID = options["aws_access_key_id"];
             if (options.ContainsKey("aws_secret_access_key"))
-                m_awsKey = options["aws_secret_access_key"];
+                awsKey = options["aws_secret_access_key"];
 
             string s3host;
             options.TryGetValue(SERVER_NAME, out s3host);
@@ -96,25 +95,26 @@ namespace Duplicati.Library.Backend
                 s3host = DEFAULT_S3_HOST;
 
             bool euBuckets = Utility.Utility.ParseBoolOption(options, EU_BUCKETS_OPTION);
-            m_useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
-            m_useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
+            bool useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
+            bool useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
 
-            options.TryGetValue(LOCATION_OPTION, out m_locationConstraint);
+            string locationConstraint;
+            options.TryGetValue(LOCATION_OPTION, out locationConstraint);
 
-            if (!string.IsNullOrEmpty(m_locationConstraint) && euBuckets)
+            if (!string.IsNullOrEmpty(locationConstraint) && euBuckets)
                 throw new Exception(string.Format(Strings.S3Backend.OptionsAreMutuallyExclusiveError, LOCATION_OPTION, EU_BUCKETS_OPTION));
 
             if (euBuckets)
-                m_locationConstraint = S3_EU_REGION_NAME;
+                locationConstraint = S3_EU_REGION_NAME;
 
             //Fallback to previous formats
-            if (m_host.Contains(DEFAULT_S3_HOST))
+            if (host.Contains(DEFAULT_S3_HOST))
             {
                 Uri u = new Uri(url);
-                m_host = u.Host;
+                host = u.Host;
                 m_prefix = "";
 
-                if (m_host.ToLower() == s3host)
+                if (host.ToLower() == s3host)
                 {
                     m_bucket = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
 
@@ -130,17 +130,17 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     //Subdomain type lookup
-                    if (m_host.ToLower().EndsWith("." + s3host))
+                    if (host.ToLower().EndsWith("." + s3host))
                     {
-                        m_bucket = m_host.Substring(0, m_host.Length - ("." + s3host).Length);
-                        m_host = s3host;
+                        m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
+                        host = s3host;
                         m_prefix = System.Web.HttpUtility.UrlDecode(u.PathAndQuery);
 
                         if (m_prefix.StartsWith("/"))
                             m_prefix = m_prefix.Substring(1);
                     }
                     else
-                        throw new Exception(string.Format(Strings.S3Backend.UnableToDecodeBucketnameError, m_url));
+                        throw new Exception(string.Format(Strings.S3Backend.UnableToDecodeBucketnameError, url));
                 }
 
                 try { Console.Error.WriteLine(string.Format(Strings.S3Backend.DeprecatedUrlFormat, "s3://" + m_bucket + "/" + m_prefix)); }
@@ -149,20 +149,21 @@ namespace Duplicati.Library.Backend
             else
             {
                 //The new simplified url style s3://bucket/prefix
-                m_bucket = m_host;
-                m_host = s3host;
+                m_bucket = host;
+                host = s3host;
             }
 
-            if (string.IsNullOrEmpty(m_awsID))
+            if (string.IsNullOrEmpty(awsID))
                 throw new Exception(Strings.S3Backend.NoAMZUserIDError);
-            if (string.IsNullOrEmpty(m_awsKey))
+            if (string.IsNullOrEmpty(awsKey))
                 throw new Exception(Strings.S3Backend.NoAMZKeyError);
 
             m_options = options;
-            m_url = url;
             m_prefix = m_prefix.Trim();
             if (m_prefix.Length != 0 && !m_prefix.EndsWith("/"))
                 m_prefix += "/";
+
+            m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, useRRS, useSSL);
         }
 
         public static bool IsValidHostname(string bucketname)
@@ -194,19 +195,16 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using (S3Wrapper con = CreateRequest())
+                List<IFileEntry> lst = Connection.ListBucket(m_bucket, m_prefix);
+                for (int i = 0; i < lst.Count; i++)
                 {
-                    List<IFileEntry> lst = con.ListBucket(m_bucket, m_prefix);
-                    for (int i = 0; i < lst.Count; i++)
-                    {
-                        ((FileEntry)lst[i]).Name = lst[i].Name.Substring(m_prefix.Length);
+                    ((FileEntry)lst[i]).Name = lst[i].Name.Substring(m_prefix.Length);
 
-                        //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                        if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
-                            ((FileEntry)lst[i]).Name = lst[i].Name.Substring(1);
-                    }
-                    return lst;
+                    //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
+                    if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
+                        ((FileEntry)lst[i]).Name = lst[i].Name.Substring(1);
                 }
+                return lst;
             }
             catch (Exception ex)
             {
@@ -229,8 +227,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using (S3Wrapper con = CreateRequest())
-                    con.AddFileStream(m_bucket, GetFullKey(remotename), input);
+                Connection.AddFileStream(m_bucket, GetFullKey(remotename), input);
             }
 			catch (Exception ex)
 			{
@@ -251,35 +248,31 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            using (S3Wrapper con = CreateRequest())
+            try
             {
+                Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
+            }
+            catch
+            {
+                //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
                 try
                 {
-                    con.GetFileStream(m_bucket, GetFullKey(remotename), output);
+                    if (!remotename.StartsWith("/"))
+                        Connection.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
+                    return;
                 }
                 catch
                 {
-                    //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
-                    try
-                    {
-                        if (!remotename.StartsWith("/"))
-                            con.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
-                        return;
-                    }
-                    catch
-                    {
-                    }
-
-                    //Throw original error
-                    throw;
                 }
+
+                //Throw original error
+                throw;
             }
         }
 
         public void Delete(string remotename)
         {
-            using(S3Wrapper con = CreateRequest())
-                con.DeleteObject(m_bucket, GetFullKey(remotename));
+            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -330,8 +323,7 @@ namespace Duplicati.Library.Backend
         public void CreateFolder()
         {
             //S3 does not complain if the bucket already exists
-            using (S3Wrapper con = CreateRequest())
-                con.AddBucket(m_bucket);
+            Connection.AddBucket(m_bucket);
         }
 
         #endregion
@@ -342,17 +334,18 @@ namespace Duplicati.Library.Backend
         {
             if (m_options != null)
                 m_options = null;
-            if (m_awsID != null)
-                m_awsID = null;
-            if (m_awsKey != null)
-                m_awsKey = null;
+            if (m_wrapper != null)
+            {
+                m_wrapper.Dispose();
+                m_wrapper = null;
+            }
         }
 
         #endregion
 
-        private S3Wrapper CreateRequest()
+        private S3Wrapper Connection
         {
-            return new S3Wrapper(m_awsID, m_awsKey, m_locationConstraint, m_host, m_useRRS, m_useSSL);
+            get { return m_wrapper; }
         }
 
         private string GetFullKey(string name)

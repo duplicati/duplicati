@@ -1,0 +1,2 @@
+python upload.py
+pause

@@ -48,7 +48,6 @@ namespace Duplicati.GUI
         event TaskCompletedHandler TaskCompleted;
         void RaiseTaskCompleted(string output, string parsedMessage);
 
-        
         DateTime BeginTime { get; set; }
         Task Task { get; }
         Schedule Schedule { get; }
@@ -226,6 +225,14 @@ namespace Duplicati.GUI
 
             if (!string.IsNullOrEmpty(ext.FileSizeLimit))
                 options["skip-files-larger-than"] = ext.FileSizeLimit;
+
+            //Bit tricky, but we REALLY want to disallow fallback decryption for new backups
+            //We need some extra protection, otherwise the user will be warned about an unused option,
+            // if they have non-AES encryption or no encryption at all.
+            //This means that we have special support for the "aes" module in here, which is bad encapsulation
+            //Once we completely remove fallback encryption this check can be removed
+            if (!string.IsNullOrEmpty(this.Task.Encryptionkey) && "aes".Equals(this.Task.EncryptionModule, StringComparison.InvariantCultureIgnoreCase) && ext.DisableAESFallbackDecryption)
+                options["aes-encryption-dont-allow-fallback"] = "true";
         }
 
         protected virtual string SetupBackend(Dictionary<string, string> environment, Dictionary<string, string> options)
@@ -268,42 +275,63 @@ namespace Duplicati.GUI
             set { m_result = value; }
         }
 
-        protected virtual void WriteLogMessage(string action, string subaction, string data, string parsedMessage, bool commit)
+        protected virtual Log WriteLogMessage(string action, string subaction, string data, string parsedMessage, bool commit, Log log)
         {
             lock (Program.MainLock)
             {
-                System.Data.LightDatamodel.IDataFetcher con = this.Task.DataParent;
-                Log l = con.Add<Log>();
-                LogBlob lb = con.Add<LogBlob>();
+                System.Data.LightDatamodel.IDataFetcher con;
+                LogBlob lb;
+
+                if (log == null)
+                {
+                    con = this.Task.DataParent;
+                    log = con.Add<Log>();
+                    lb = con.Add<LogBlob>();
+
+                    log.Blob = lb;
+                    this.Task.Logs.Add(log);
+                }
+                else
+                {
+                    con = log.DataParent;
+                    if (log.Blob == null)
+                        log.Blob = con.Add<LogBlob>();
+                    
+                    lb = log.Blob;
+                }
+
                 lb.StringData = data;
 
-                l.Blob = lb;
-                this.Task.Logs.Add(l);
-
                 //Keep some of the data in an easy to read manner
-                DuplicatiOutputParser.ParseData(l);
-                l.Action = action;
-                l.SubAction = subaction;
-                l.BeginTime = m_beginTime;
-                l.EndTime = DateTime.Now;
-                l.ParsedMessage = parsedMessage;
+                DuplicatiOutputParser.ParseData(log);
 
-                //Find logs that are no longer displayed, and delete them
-                foreach (Log x in con.GetObjects<Log>("EndTime < ?", Library.Utility.Timeparser.ParseTimeInterval(new ApplicationSettings(con).RecentBackupDuration, DateTime.Now, true)))
+
+                log.Action = action;
+                log.SubAction = subaction;
+                log.BeginTime = m_beginTime;
+                log.EndTime = DateTime.Now;
+                log.ParsedMessage = parsedMessage;
+
+                if (parsedMessage == "InProgress")
                 {
-                    if (x.Blob != null) //Load the blob part if required
-                        con.DeleteObject(x.Blob);
-                    con.DeleteObject(x);
+                    log.ParsedStatus = DuplicatiOutputParser.InterruptedStatus;
+                    log.ParsedMessage = "";
                 }
+
 
                 if (commit)
                     (con as System.Data.LightDatamodel.IDataFetcherWithRelations).CommitAllRecursive();
             }
+
+            return log;
         }
     }
 
     public abstract class FullOrIncrementalTask : BackupTask
     {
+        protected Log m_log = null;
+        public Log LogEntry { get { return m_log; } set { m_log = value; } }
+
         protected FullOrIncrementalTask(Schedule schedule)
             : base(schedule)
         {
@@ -312,7 +340,8 @@ namespace Duplicati.GUI
 
         protected void DoneEvent(IDuplicityTask task, string output, string parsedMessage)
         {
-            WriteLogMessage("Backup", "Primary", output, parsedMessage, true);
+            WriteLogMessage("Backup", "Primary", output, parsedMessage, true, m_log); 
+            m_log = null;
         }
 
         public override string GetConfiguration(Dictionary<string, string> options)
@@ -323,6 +352,11 @@ namespace Duplicati.GUI
         public override string LocalPath
         {
             get { return System.Environment.ExpandEnvironmentVariables(this.Task.SourcePath); }
+        }
+
+        internal void WriteBackupInProgress(string message)
+        {
+            m_log = WriteLogMessage("Backup", "InProgress", message, "InProgress", true, null);
         }
     }
 
@@ -622,7 +656,7 @@ namespace Duplicati.GUI
 
         void DoneEvent(IDuplicityTask owner, string output, string parsedMessage)
         {
-            WriteLogMessage("Restore", "Primary", output, parsedMessage, true);
+            WriteLogMessage("Restore", "Primary", output, parsedMessage, true, null);
         }
 
         public override string LocalPath
@@ -660,7 +694,7 @@ namespace Duplicati.GUI
 
         void DoneEvent(IDuplicityTask owner, string output, string parsedMessage)
         {
-            WriteLogMessage("Backup", "Cleanup", output, parsedMessage, false);
+            WriteLogMessage("Backup", "Cleanup", output, parsedMessage, false, null);
         }
 
         public override string LocalPath
@@ -700,7 +734,7 @@ namespace Duplicati.GUI
 
         void DoneEvent(IDuplicityTask owner, string output, string parsedMessage)
         {
-            WriteLogMessage("Backup", "Cleanup", output, parsedMessage, false);
+            WriteLogMessage("Backup", "Cleanup", output, parsedMessage, false, null);
         }
 
         public override string GetConfiguration(Dictionary<string, string> options)
