@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Categories=Utility;
+Type=Application
+Name=Duplicati
+Comment=Duplicati - A free backup client
+Exec=/usr/bin/duplicati
+Icon=duplicati
