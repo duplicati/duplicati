@@ -100,11 +100,11 @@ then
 fi
 
 # Remove some of the files that we do not like
-for FILE in "$UNWANTED_FILES"
+for FILE in $UNWANTED_FILES
 do
-	if [ -e "$FILE" ]
+	if [ -e "Duplicati/$FILE" ]
 	then
-		rm -rf "$FILE"
+		rm -rf "Duplicati/$FILE"
 	fi
 done
 
