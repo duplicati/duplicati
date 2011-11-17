@@ -319,6 +319,16 @@ namespace Duplicati.GUI
         {
             TrayIcon_MouseClick(sender, e);
         }
+		
+		private static void AbortOwnThread(object thread)
+		{
+			System.Threading.Thread.Sleep(5000);
+			if (Program.IsRunningMainLoop) 
+			{
+				Program.IsRunningMainLoop = false;	
+				((System.Threading.Thread)thread).Abort();
+			}
+		}
 
         private void TrayIcon_MouseClick(object sender, MouseEventArgs e)
         {
@@ -521,7 +531,11 @@ namespace Duplicati.GUI
             Program.SingleInstance.SecondInstanceDetected -= new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected);
 
             EnsureBackupIsTerminated(e.CloseReason == CloseReason.UserClosing ? CloseReason.ApplicationExitCall : e.CloseReason);
-        }
+			
+			//The form occasionally hangs on Mono, so we force kill it after 5 secs if it did not quit itself
+			if (Library.Utility.Utility.IsMono)
+				new System.Threading.Thread(AbortOwnThread).Start (System.Threading.Thread.CurrentThread);
+		}
 
         private void SingleInstance_SecondInstanceDetected(string[] commandlineargs)
         {

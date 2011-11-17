@@ -97,8 +97,14 @@ namespace Duplicati.GUI
         /// A value describing if Duplicati is running without a tray
         /// </summary>
         public static bool TraylessMode = Library.Utility.Utility.IsClientLinux ? true : false;
-
-        /// <summary>
+		
+		/// <summary>
+		/// A flag indicating if the main message loop is still running,
+		/// used to force exit when running on OSX
+		/// </summary>
+        public static bool IsRunningMainLoop;
+		
+		/// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
@@ -321,13 +327,20 @@ namespace Duplicati.GUI
 
                 DisplayHelper = new MainForm();
                 DisplayHelper.InitialArguments = args;
-
+				
+				Program.IsRunningMainLoop = true;
                 Application.Run(DisplayHelper);
+				Program.IsRunningMainLoop = false;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(string.Format(Strings.Program.SeriousError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+				//If the helper thread aborts the main thread, it also sets IsRunningMainLoop to false
+				// and in that case we accept the abort call
+				if (ex is System.Threading.ThreadAbortException && !Program.IsRunningMainLoop)
+					System.Threading.Thread.ResetAbort();
+				else
+		        	MessageBox.Show(string.Format(Strings.Program.SeriousError, ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);					
+		    }
 
             try
             {
