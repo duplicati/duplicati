@@ -54,6 +54,7 @@ namespace Duplicati.Scheduler
             this.DescriptionTextBox.Text = aDetails;
             this.sourceTextBox.Text = aRow.Source;
             this.destinationTextBox.Text = aRow.Destination;
+            this.LastModLabel.Text = (aRow.IsLastModNull() || aRow.LastMod == DateTime.MinValue) ? "Never edited" : "Last edited: " + aRow.LastMod.ToString("ddd, dd MMMM yyyy hh:mm tt");
             if (aRow.FullOnly || (aRow.FullRepeatDays == 0 && aRow.FullAfterN == 0)) this.fullRepeatStrTextBox.Text = "Always do full backups";
             else this.fullRepeatStrTextBox.Text = aRow.FullRepeatDays > 0 ? aRow.FullRepeatDays + " days " : aRow.FullAfterN.ToString()+" incrementals";
             this.MaxFullTextBox.Text = aRow.MaxFulls > 0 ? "the last "+aRow.MaxFulls.ToString("N0") : "all" ;

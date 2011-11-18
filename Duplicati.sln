@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C# Express 2010
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati", "Duplicati\GUI\Duplicati.csproj", "{1470F75F-D364-4010-91D0-FD4DDA1C5159}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
@@ -64,6 +64,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.RunBackup", "Duplicati\Scheduler\RunBackup\Duplicati.Scheduler.RunBackup.csproj", "{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.Monitor.SQL", "Duplicati\Scheduler\Monitor.SQL\Duplicati.Scheduler.Monitor.SQL.csproj", "{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.Monitor.Oracle", "Duplicati\Scheduler\Monitor.Oracle\Duplicati.Scheduler.Monitor.Oracle.csproj", "{58972ACB-FC37-404D-A842-A7B5264EAC19}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -608,6 +610,21 @@ Global
 		{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}.Test|Mixed Platforms.Build.0 = Release|Any CPU
 		{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}.Test|x86.ActiveCfg = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Release|x86.ActiveCfg = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Test|Any CPU.ActiveCfg = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Test|Any CPU.Build.0 = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Test|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Test|Mixed Platforms.Build.0 = Release|Any CPU
+		{58972ACB-FC37-404D-A842-A7B5264EAC19}.Test|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

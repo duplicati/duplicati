@@ -45,9 +45,9 @@
             System.Windows.Forms.Label deletedFilesLabel;
             System.Windows.Forms.Label deletedFoldersLabel;
             System.Windows.Forms.Label modifiedFilesLabel;
+            System.Windows.Forms.Label label1;
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.Label label1;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LogView));
             this.historyBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.historyDataSet = new Duplicati.Scheduler.Data.HistoryDataSet();
@@ -55,14 +55,15 @@
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.logListDataGridView = new System.Windows.Forms.DataGridView();
-            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.DateCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.TypeCol = new System.Windows.Forms.DataGridViewImageColumn();
-            this.dataGridViewTextBoxColumn6 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dataGridViewTextBoxColumn7 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.MessageCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ExMessageCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.TimeBeginTextBox = new System.Windows.Forms.TextBox();
+            this.TypeTextBox = new System.Windows.Forms.TextBox();
             this.StatsBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.historyStatsBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.TimeBeginTextBox = new System.Windows.Forms.TextBox();
             this.TimeEndTextBox = new System.Windows.Forms.TextBox();
             this.addedFilesTextBox = new System.Windows.Forms.TextBox();
             this.addedFoldersTextBox = new System.Windows.Forms.TextBox();
@@ -83,7 +84,9 @@
             this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.BackupType = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.TypeTextBox = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.copyToClipboardToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             addedFilesLabel = new System.Windows.Forms.Label();
             addedFoldersLabel = new System.Windows.Forms.Label();
             examinedFilesLabel = new System.Windows.Forms.Label();
@@ -112,6 +115,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.historyStatsBindingSource)).BeginInit();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.historyDataGridView)).BeginInit();
+            this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // addedFilesLabel
@@ -274,6 +278,16 @@
             modifiedFilesLabel.TabIndex = 77;
             modifiedFilesLabel.Text = "Modified Files:";
             // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            label1.Location = new System.Drawing.Point(239, 24);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(35, 13);
+            label1.TabIndex = 81;
+            label1.Text = "Type:";
+            // 
             // historyBindingSource
             // 
             this.historyBindingSource.AllowNew = false;
@@ -311,6 +325,7 @@
             // groupBox3
             // 
             this.tableLayoutPanel1.SetColumnSpan(this.groupBox3, 2);
+            this.groupBox3.Controls.Add(this.label2);
             this.groupBox3.Controls.Add(this.logListDataGridView);
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Location = new System.Drawing.Point(3, 224);
@@ -328,10 +343,11 @@
             this.logListDataGridView.BackgroundColor = System.Drawing.SystemColors.Control;
             this.logListDataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.logListDataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.dataGridViewTextBoxColumn1,
+            this.DateCol,
             this.TypeCol,
-            this.dataGridViewTextBoxColumn6,
-            this.dataGridViewTextBoxColumn7});
+            this.MessageCol,
+            this.ExMessageCol});
+            this.logListDataGridView.ContextMenuStrip = this.contextMenuStrip1;
             this.logListDataGridView.DataSource = this.logListBindingSource;
             this.logListDataGridView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.logListDataGridView.Location = new System.Drawing.Point(3, 23);
@@ -339,16 +355,17 @@
             this.logListDataGridView.ReadOnly = true;
             this.logListDataGridView.Size = new System.Drawing.Size(717, 189);
             this.logListDataGridView.TabIndex = 0;
+            this.logListDataGridView.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.logListDataGridView_CellDoubleClick);
             this.logListDataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.logListDataGridView_CellFormatting);
             // 
-            // dataGridViewTextBoxColumn1
+            // DateCol
             // 
-            this.dataGridViewTextBoxColumn1.DataPropertyName = "Date";
+            this.DateCol.DataPropertyName = "Date";
             dataGridViewCellStyle1.Format = "T";
-            this.dataGridViewTextBoxColumn1.DefaultCellStyle = dataGridViewCellStyle1;
-            this.dataGridViewTextBoxColumn1.HeaderText = "";
-            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
-            this.dataGridViewTextBoxColumn1.ReadOnly = true;
+            this.DateCol.DefaultCellStyle = dataGridViewCellStyle1;
+            this.DateCol.HeaderText = "";
+            this.DateCol.Name = "DateCol";
+            this.DateCol.ReadOnly = true;
             // 
             // TypeCol
             // 
@@ -361,22 +378,23 @@
             this.TypeCol.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
             this.TypeCol.Width = 19;
             // 
-            // dataGridViewTextBoxColumn6
+            // MessageCol
             // 
-            this.dataGridViewTextBoxColumn6.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.dataGridViewTextBoxColumn6.DataPropertyName = "Message";
-            this.dataGridViewTextBoxColumn6.HeaderText = "Message";
-            this.dataGridViewTextBoxColumn6.Name = "dataGridViewTextBoxColumn6";
-            this.dataGridViewTextBoxColumn6.ReadOnly = true;
+            this.MessageCol.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.MessageCol.DataPropertyName = "Message";
+            this.MessageCol.HeaderText = "Message";
+            this.MessageCol.Name = "MessageCol";
+            this.MessageCol.ReadOnly = true;
+            this.MessageCol.Width = 93;
             // 
-            // dataGridViewTextBoxColumn7
+            // ExMessageCol
             // 
-            this.dataGridViewTextBoxColumn7.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
-            this.dataGridViewTextBoxColumn7.DataPropertyName = "ExMessage";
-            this.dataGridViewTextBoxColumn7.HeaderText = "ExMessage";
-            this.dataGridViewTextBoxColumn7.Name = "dataGridViewTextBoxColumn7";
-            this.dataGridViewTextBoxColumn7.ReadOnly = true;
-            this.dataGridViewTextBoxColumn7.Width = 110;
+            this.ExMessageCol.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.ExMessageCol.DataPropertyName = "ExMessage";
+            this.ExMessageCol.HeaderText = "ExMessage";
+            this.ExMessageCol.Name = "ExMessageCol";
+            this.ExMessageCol.ReadOnly = true;
+            this.ExMessageCol.Width = 110;
             // 
             // groupBox2
             // 
@@ -423,6 +441,26 @@
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Statistics";
             // 
+            // TypeTextBox
+            // 
+            this.TypeTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "BackupType", true));
+            this.TypeTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.TypeTextBox.Location = new System.Drawing.Point(280, 21);
+            this.TypeTextBox.Name = "TypeTextBox";
+            this.TypeTextBox.ReadOnly = true;
+            this.TypeTextBox.Size = new System.Drawing.Size(68, 21);
+            this.TypeTextBox.TabIndex = 82;
+            this.TypeTextBox.TabStop = false;
+            // 
+            // StatsBindingSource
+            // 
+            this.StatsBindingSource.DataSource = this.historyStatsBindingSource;
+            // 
+            // historyStatsBindingSource
+            // 
+            this.historyStatsBindingSource.DataMember = "History_Stats";
+            this.historyStatsBindingSource.DataSource = this.historyBindingSource;
+            // 
             // TimeBeginTextBox
             // 
             this.TimeBeginTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "BeginTime", true));
@@ -433,15 +471,6 @@
             this.TimeBeginTextBox.Size = new System.Drawing.Size(68, 21);
             this.TimeBeginTextBox.TabIndex = 80;
             this.TimeBeginTextBox.TabStop = false;
-            // 
-            // StatsBindingSource
-            // 
-            this.StatsBindingSource.DataSource = this.historyStatsBindingSource;
-            // 
-            // historyStatsBindingSource
-            // 
-            this.historyStatsBindingSource.DataMember = "History_Stats";
-            this.historyStatsBindingSource.DataSource = this.historyBindingSource;
             // 
             // TimeEndTextBox
             // 
@@ -661,26 +690,29 @@
             this.BackupType.Name = "BackupType";
             this.BackupType.Width = 19;
             // 
-            // TypeTextBox
+            // label2
             // 
-            this.TypeTextBox.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.StatsBindingSource, "BackupType", true));
-            this.TypeTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.TypeTextBox.Location = new System.Drawing.Point(280, 21);
-            this.TypeTextBox.Name = "TypeTextBox";
-            this.TypeTextBox.ReadOnly = true;
-            this.TypeTextBox.Size = new System.Drawing.Size(68, 21);
-            this.TypeTextBox.TabIndex = 82;
-            this.TypeTextBox.TabStop = false;
+            this.label2.AutoSize = true;
+            this.label2.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.Location = new System.Drawing.Point(157, 5);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(173, 13);
+            this.label2.TabIndex = 1;
+            this.label2.Text = "*Double-click entry for better view";
             // 
-            // label1
+            // contextMenuStrip1
             // 
-            label1.AutoSize = true;
-            label1.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            label1.Location = new System.Drawing.Point(239, 24);
-            label1.Name = "label1";
-            label1.Size = new System.Drawing.Size(35, 13);
-            label1.TabIndex = 81;
-            label1.Text = "Type:";
+            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.copyToClipboardToolStripMenuItem});
+            this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.Size = new System.Drawing.Size(170, 48);
+            // 
+            // copyToClipboardToolStripMenuItem
+            // 
+            this.copyToClipboardToolStripMenuItem.Name = "copyToClipboardToolStripMenuItem";
+            this.copyToClipboardToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copyToClipboardToolStripMenuItem.Text = "Copy to clipboard";
+            this.copyToClipboardToolStripMenuItem.Click += new System.EventHandler(this.copyToClipboardToolStripMenuItem_Click);
             // 
             // LogView
             // 
@@ -698,6 +730,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.logListBindingSource)).EndInit();
             this.tableLayoutPanel1.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.logListDataGridView)).EndInit();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
@@ -705,6 +738,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.historyStatsBindingSource)).EndInit();
             this.groupBox1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.historyDataGridView)).EndInit();
+            this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -739,12 +773,15 @@
         private System.Windows.Forms.TextBox modifiedFilesTextBox;
         private System.Windows.Forms.TextBox TimeBeginTextBox;
         private System.Windows.Forms.TextBox TimeEndTextBox;
-        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
-        private System.Windows.Forms.DataGridViewImageColumn TypeCol;
-        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn6;
-        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn7;
         private System.Windows.Forms.BindingSource StatsBindingSource;
         private System.Windows.Forms.BindingSource historyStatsBindingSource;
         private System.Windows.Forms.TextBox TypeTextBox;
+        private System.Windows.Forms.DataGridViewTextBoxColumn DateCol;
+        private System.Windows.Forms.DataGridViewImageColumn TypeCol;
+        private System.Windows.Forms.DataGridViewTextBoxColumn MessageCol;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ExMessageCol;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem copyToClipboardToolStripMenuItem;
     }
 }

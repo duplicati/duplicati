@@ -32,6 +32,10 @@ namespace Duplicati.Scheduler
         /// </summary>
         public Duplicati.Scheduler.Data.SchedulerDataSet.SettingsDataTable Settings { get; private set; }
         /// <summary>
+        /// XML prior to edit
+        /// </summary>
+        private string OriginalXML;
+        /// <summary>
         /// Edit Settings
         /// </summary>
         /// <remarks>
@@ -42,13 +46,20 @@ namespace Duplicati.Scheduler
         public SettingsDialog(Duplicati.Scheduler.Data.SchedulerDataSet.SettingsDataTable aSettings)
         {
             InitializeComponent();
-            Settings = aSettings;
-            this.checkBox1.Checked = Settings.UseGlobalPassword;
-            this.passwordControl1.CheckMod = Settings.Values.CheckMod;
-            this.passwordControl1.Checksum = Settings.Values.Checksum;
-            this.numericUpDown1.Value = (decimal)Settings.Values.LogFileAgeDays;
-            if (Settings.Values.IsShowBubblesNull()) Settings.Values.ShowBubbles = true;
-            this.BubbleCheckBox.Checked = Settings.Values.ShowBubbles;
+            this.Settings = aSettings;
+            OriginalXML = XmlFromTable(aSettings);
+            this.checkBox1.Checked = this.Settings.UseGlobalPassword;
+            this.passwordControl1.CheckMod = this.Settings.Values.CheckMod;
+            this.passwordControl1.Checksum = this.Settings.Values.Checksum;
+            this.numericUpDown1.Value = (decimal)this.Settings.Values.LogFileAgeDays;
+            if (this.Settings.Values.IsShowBubblesNull()) this.Settings.Values.ShowBubbles = true;
+            this.BubbleCheckBox.Checked = this.Settings.Values.ShowBubbles;
+        }
+        private string XmlFromTable(Duplicati.Scheduler.Data.SchedulerDataSet.SettingsDataTable aSettings)
+        {
+            System.IO.MemoryStream ms = new System.IO.MemoryStream();
+            aSettings.WriteXml(ms);
+            return System.Text.ASCIIEncoding.ASCII.GetString(ms.ToArray());
         }
         /// <summary>
         /// Let user know what zero means
@@ -62,12 +73,16 @@ namespace Duplicati.Scheduler
         /// </summary>
         private void OKButton_Click(object sender, EventArgs e)
         {
-            Settings.Values.CheckSrc = this.checkBox1.Checked;
-            Settings.Values.CheckMod = this.passwordControl1.CheckMod;
-            Settings.Values.Checksum = this.passwordControl1.Checksum;
-            Settings.Values.LogFileAgeDays = (int)this.numericUpDown1.Value;
-            Settings.Values.ShowBubbles = this.BubbleCheckBox.Checked;
-            ((Duplicati.Scheduler.Data.SchedulerDataSet)Settings.DataSet).Save();
+            this.Settings.Values.CheckSrc = this.checkBox1.Checked;
+            this.Settings.Values.CheckMod = this.passwordControl1.CheckMod;
+            this.Settings.Values.Checksum = this.passwordControl1.Checksum;
+            this.Settings.Values.LogFileAgeDays = (int)this.numericUpDown1.Value;
+            this.Settings.Values.ShowBubbles = this.BubbleCheckBox.Checked;
+            if (OriginalXML != XmlFromTable(this.Settings))
+            {
+                this.Settings.Values.LastMod = DateTime.Now;
+                ((Duplicati.Scheduler.Data.SchedulerDataSet)this.Settings.DataSet).Save();
+            }
             this.DialogResult = DialogResult.OK;
             Close();
         }

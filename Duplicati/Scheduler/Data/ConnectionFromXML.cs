@@ -27,7 +27,7 @@ namespace Duplicati.Scheduler.Data
 	        }
 	        catch (Exception Ex)
 	        {
-                Console.WriteLine(Ex);
+                Console.WriteLine(Ex.Message);
                 return Default;
 	        }
             if (this.ConnectionTable.Rows.Count == 0) return Default;

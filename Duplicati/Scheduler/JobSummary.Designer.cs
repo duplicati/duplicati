@@ -52,6 +52,7 @@
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
             this.listBox1 = new System.Windows.Forms.ListBox();
+            this.LastModLabel = new System.Windows.Forms.Label();
             label3 = new System.Windows.Forms.Label();
             label2 = new System.Windows.Forms.Label();
             nameLabel = new System.Windows.Forms.Label();
@@ -137,6 +138,15 @@
             label1.Size = new System.Drawing.Size(98, 19);
             label1.TabIndex = 37;
             label1.Text = "full backups.";
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new System.Drawing.Point(166, 309);
+            label4.Name = "label4";
+            label4.Size = new System.Drawing.Size(98, 19);
+            label4.TabIndex = 39;
+            label4.Text = "Backups are ";
             // 
             // MaxAgeTextBox
             // 
@@ -230,15 +240,6 @@
             this.EnableLabel.Text = "Not enabled";
             this.EnableLabel.Visible = false;
             // 
-            // label4
-            // 
-            label4.AutoSize = true;
-            label4.Location = new System.Drawing.Point(166, 309);
-            label4.Name = "label4";
-            label4.Size = new System.Drawing.Size(98, 19);
-            label4.TabIndex = 39;
-            label4.Text = "Backups are ";
-            // 
             // PassRichTextBox
             // 
             this.PassRichTextBox.BackColor = System.Drawing.SystemColors.Control;
@@ -267,14 +268,24 @@
             this.listBox1.ItemHeight = 19;
             this.listBox1.Location = new System.Drawing.Point(0, 0);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(237, 308);
+            this.listBox1.Size = new System.Drawing.Size(237, 310);
             this.listBox1.TabIndex = 0;
             this.listBox1.Click += new System.EventHandler(this.listBox1_Click);
+            // 
+            // LastModLabel
+            // 
+            this.LastModLabel.AutoSize = true;
+            this.LastModLabel.Location = new System.Drawing.Point(16, 337);
+            this.LastModLabel.Name = "LastModLabel";
+            this.LastModLabel.Size = new System.Drawing.Size(98, 19);
+            this.LastModLabel.TabIndex = 41;
+            this.LastModLabel.Text = "Never edited";
             // 
             // JobSummary
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 19F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.LastModLabel);
             this.Controls.Add(this.MaxAgeTextBox);
             this.Controls.Add(this.MaxFullTextBox);
             this.Controls.Add(this.PassRichTextBox);
@@ -322,5 +333,6 @@
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.ListBox listBox1;
+        private System.Windows.Forms.Label LastModLabel;
     }
 }
