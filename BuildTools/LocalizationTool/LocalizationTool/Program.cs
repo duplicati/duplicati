@@ -261,35 +261,79 @@ namespace LocalizationTool
             {
                 XDocument doc = XDocument.Load(System.IO.Path.Combine(Application.StartupPath, "report." + culture + ".xml"));
                 string outfile = System.IO.Path.Combine(Application.StartupPath, "report." + culture + ".csv");
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(outfile, false, new System.Text.UTF8Encoding(false)))
+
+                Dictionary<string, Dictionary<string, CSVEntry>> elems = new Dictionary<string, Dictionary<string, CSVEntry>>();
+                foreach (var file in doc.Element("root").Elements("file"))
                 {
-                    foreach (var file in doc.Element("root").Elements("file"))
+                    string filename = file.Attribute("filename").Value.Substring(Duplicati.Library.Utility.Utility.AppendDirSeparator(Application.StartupPath).Length);
+                    filename = filename.Substring(culture.Length + 1);
+
+                    Dictionary<string, CSVEntry> e = new Dictionary<string, CSVEntry>();
+                    elems[filename] = e;
+
+                    foreach (var item in file.Element("updated").Elements("item"))
                     {
-                        string filename = file.Attribute("filename").Value.Substring(Duplicati.Library.Utility.Utility.AppendDirSeparator(Application.StartupPath).Length);
-                        filename = filename.Substring(culture.Length + 1);
+                        CSVEntry c = new CSVEntry();
+                        c.Filename = filename;
+                        c.Fieldkey = item.Attribute("name").Value;
+                        c.Status = item.Parent.Name.LocalName;
+                        c.Origvalue = item.Element("original").Value;
+                        c.Value = item.Element("translated").Value;
+                        e.Add(c.Fieldkey, c);
 
-                        foreach (var item in file.Element("updated").Elements("item"))
-                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Element("original").Value, item.Element("translated").Value, null);
-
-                        foreach (var item in file.Element("missing").Elements("item"))
-                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Value, "", null);
-
-                        foreach (var item in file.Element("not-updated").Elements("item"))
-                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, item.Value, "", null);
-
-                        foreach (var item in file.Element("unused").Elements("item"))
-                            WriteCSVLine(sw, filename, item.Attribute("name").Value, item.Parent.Name.LocalName, "", item.Value, null);
                     }
+
+                    foreach (var item in file.Element("missing").Elements("item"))
+                    {
+                        CSVEntry c = new CSVEntry();
+                        c.Filename = filename;
+                        c.Fieldkey = item.Attribute("name").Value;
+                        c.Status = item.Parent.Name.LocalName;
+                        c.Origvalue = item.Value;
+                        c.Value = "";
+                        e.Add(c.Fieldkey, c);
+                    }
+
+                    foreach (var item in file.Element("not-updated").Elements("item"))
+                    {
+                        CSVEntry c = new CSVEntry();
+                        c.Filename = filename;
+                        c.Fieldkey = item.Attribute("name").Value;
+                        c.Status = item.Parent.Name.LocalName;
+                        c.Origvalue = item.Value;
+                        c.Value = "";
+                        e.Add(c.Fieldkey, c);
+                    }
+
+                    foreach (var item in file.Element("unused").Elements("item"))
+                    {
+                        CSVEntry c = new CSVEntry();
+                        c.Filename = filename;
+                        c.Fieldkey = item.Attribute("name").Value;
+                        c.Status = item.Parent.Name.LocalName;
+                        c.Origvalue = "";
+                        c.Value = item.Value;
+                        e.Add(c.Fieldkey, c);
+                    }
+
                 }
+
+                WriteCSVFile(outfile, culture, elems, null);
             }
         }
 
         private static void ExportDiff(string culture, string inputfile)
         {
-            Export(culture);
+            inputfile = System.IO.Path.GetFullPath(inputfile);
 
             string currentFile = System.IO.Path.Combine(Application.StartupPath, "report." + culture + ".csv");
             string diffFile = System.IO.Path.Combine(Application.StartupPath, "report." + culture + ".diff.csv");
+
+            if (currentFile.Equals(inputfile, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                throw new Exception("Input file will be overwritten, please use another file");
+
+            Export(culture);
+
 
             //Outer key is filename, inner key is fieldname, inner value is translated text
             Dictionary<string, Dictionary<string, CSVEntry>> inputValues = ImportCSV(inputfile, culture, null);
@@ -327,20 +371,33 @@ namespace LocalizationTool
                 }
             }
 
-            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(diffFile, false, new System.Text.UTF8Encoding(false)))
-            {
-                string filenameprefix = System.IO.Path.Combine(Application.StartupPath, culture);
-                int pfl = filenameprefix.Length + 1;
+            Dictionary<string, Dictionary<string, string>> overrides = new Dictionary<string, Dictionary<string, string>>();
+            Dictionary<string, Dictionary<string, CSVEntry>> diffElems = new Dictionary<string, Dictionary<string, CSVEntry>>();
 
-                foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in added)
-                    foreach (KeyValuePair<string, CSVEntry> s in f.Value)
-                        if (s.Value.Origvalue == s.Value.Value || s.Value.Value.Trim().Length == 0)
-                            WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, "not-updated", s.Value.Origvalue, s.Value.Value, s.Value.extraFields);
+            foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in added)
+                foreach (KeyValuePair<string, CSVEntry> s in f.Value)
+                    if (s.Value.Origvalue == s.Value.Value || s.Value.Value.Trim().Length == 0)
+                    {
+                        if (!overrides.ContainsKey(f.Key))
+                            overrides.Add(f.Key, new Dictionary<string, string>());
+                        if (!diffElems.ContainsKey(f.Key))
+                            diffElems.Add(f.Key, new Dictionary<string, CSVEntry>());
+                        overrides[f.Key].Add(s.Key, "not-updated");
+                        diffElems[f.Key].Add(s.Key, s.Value);
+                    }
 
-                foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in removed)
-                    foreach (KeyValuePair<string, CSVEntry> s in f.Value)
-                        WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, "unused", s.Value.Origvalue, s.Value.Value, s.Value.extraFields);
-            }
+            foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in removed)
+                foreach (KeyValuePair<string, CSVEntry> s in f.Value)
+                {
+                    if (!overrides.ContainsKey(f.Key))
+                        overrides.Add(f.Key, new Dictionary<string, string>());
+                    if (!diffElems.ContainsKey(f.Key))
+                        diffElems.Add(f.Key, new Dictionary<string, CSVEntry>());
+                    overrides[f.Key].Add(s.Key, "unused");
+                    diffElems[f.Key].Add(s.Key, s.Value);
+                }
+
+            WriteCSVFile(diffFile, culture, diffElems, overrides);
 
             //Re-read the file
             inputValues = ImportCSV(inputfile, culture, null);
@@ -358,6 +415,25 @@ namespace LocalizationTool
 
             }
 
+            foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in currentValues)
+            {
+                Dictionary<string, CSVEntry> o = inputValues[f.Key];
+                foreach (KeyValuePair<string, CSVEntry> s in f.Value)
+                {
+                    CSVEntry c = o[s.Key];
+                    if (s.Value.Status == "unused")
+                        c.Status = "unused";
+                    else if (c.Origvalue == c.Value)
+                        c.Status = "not-updated";
+                    else if (string.IsNullOrEmpty(c.Value) || c.Value.Trim().Length == 0)
+                        c.Status = "missing";
+                    else
+                        c.Status = "updated";
+
+                    o[s.Key] = c;
+                }
+            }
+
             //Update the removed entries
             foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in removed)
             {
@@ -370,19 +446,43 @@ namespace LocalizationTool
                 }
             }
 
+
+
             //Write the output file
             diffFile = System.IO.Path.Combine(Application.StartupPath, "report." + culture + ".updated.csv");
+            WriteCSVFile(diffFile, culture, inputValues, null);
+        }
 
-            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(diffFile, false, new System.Text.UTF8Encoding(false)))
+        private static void WriteCSVFile(string filename, string culture, Dictionary<string, Dictionary<string, CSVEntry>> entries, Dictionary<string, Dictionary<string, string>> status_overrides)
+        {
+            if (status_overrides == null)
+                status_overrides = new Dictionary<string, Dictionary<string, string>>();
+
+            List<KeyValuePair<string, KeyValuePair<string, CSVEntry>>> sortlist = new List<KeyValuePair<string, KeyValuePair<string, CSVEntry>>>();
+            foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in entries)
+                foreach (KeyValuePair<string, CSVEntry> s in f.Value)
+                    sortlist.Add(new KeyValuePair<string, KeyValuePair<string, CSVEntry>>(f.Key, s));
+
+            var sortedlist = sortlist.OrderBy(x => x.Key + System.IO.Path.PathSeparator + x.Value.Key);
+
+            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(filename, false, new System.Text.UTF8Encoding(false)))
             {
                 string filenameprefix = System.IO.Path.Combine(Application.StartupPath, culture);
                 int pfl = filenameprefix.Length + 1;
 
-                foreach (KeyValuePair<string, Dictionary<string, CSVEntry>> f in inputValues)
-                    foreach (KeyValuePair<string, CSVEntry> s in f.Value)
-                        WriteCSVLine(sw, f.Key.Substring(pfl), s.Key, s.Value.Status, s.Value.Origvalue, s.Value.Value, s.Value.extraFields);
-            }
+                foreach (KeyValuePair<string, KeyValuePair<string, CSVEntry>> f in sortedlist)
+                {
+                    string status = f.Value.Value.Status;
+                    if (status_overrides.ContainsKey(f.Key) && status_overrides[f.Key].ContainsKey(f.Value.Key))
+                        status = status_overrides[f.Key][f.Value.Key];
 
+                    string path = f.Key;
+                    if (f.Key.StartsWith(filenameprefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        path = f.Key.Substring(pfl);
+
+                    WriteCSVLine(sw, path, f.Value.Key, status, f.Value.Value.Origvalue, f.Value.Value.Value, f.Value.Value.extraFields);
+                }
+            }
         }
 
         private static string CSV_SEPARATOR = ",";

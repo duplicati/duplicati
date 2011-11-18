@@ -36,6 +36,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Duplicati.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.ExceptionMessageBox, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.Win32.TaskScheduler, Version=1.6.4186.14621, Culture=neutral, processorArchitecture=MSIL">
@@ -80,6 +83,12 @@
     </Compile>
     <Compile Include="EnterPassDialog.Designer.cs">
       <DependentUpon>EnterPassDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ErrorMessageDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ErrorMessageDialog.Designer.cs">
+      <DependentUpon>ErrorMessageDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="FileListDialog.cs">
       <SubType>Form</SubType>
@@ -140,6 +149,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="EnterPassDialog.resx">
       <DependentUpon>EnterPassDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ErrorMessageDialog.resx">
+      <DependentUpon>ErrorMessageDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FileListDialog.resx">
       <DependentUpon>FileListDialog.cs</DependentUpon>
@@ -227,6 +239,14 @@
     <Compile Include="TaskScheduler.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Monitor.Oracle\Duplicati.Scheduler.Monitor.Oracle.csproj">
+      <Project>{58972ACB-FC37-404D-A842-A7B5264EAC19}</Project>
+      <Name>Duplicati.Scheduler.Monitor.Oracle</Name>
+    </ProjectReference>
+    <ProjectReference Include="Monitor.SQL\Duplicati.Scheduler.Monitor.SQL.csproj">
+      <Project>{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}</Project>
+      <Name>Duplicati.Scheduler.Monitor.SQL</Name>
+    </ProjectReference>
     <ProjectReference Include="RunBackup\Duplicati.Scheduler.RunBackup.csproj">
       <Project>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</Project>
       <Name>Duplicati.Scheduler.RunBackup</Name>
@@ -279,6 +299,9 @@
       <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
       <Name>Duplicati.Scheduler.Utility</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Duplicati.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

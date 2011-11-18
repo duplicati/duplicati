@@ -134,9 +134,10 @@ namespace Duplicati.Library.DynamicLoader
                             }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Duplicati.Library.Logging.Log.WriteMessage(string.Format(Strings.DynamicLoader.DynamicAssemblyLoadError, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
+                catch // (Exception ex)
+                {   // Since this is locating the assemblies that have the proper interface, it isn't an error to not.
+                    // This was loading the log with errors about additional DLL's that are not plugins and do not have manifests.
+                    // Duplicati.Library.Logging.Log.WriteMessage(string.Format(Strings.DynamicLoader.DynamicAssemblyLoadError, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
                 }
             }
 

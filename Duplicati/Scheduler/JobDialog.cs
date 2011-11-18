@@ -50,6 +50,10 @@ namespace Duplicati.Scheduler
             get { return ((Duplicati.Scheduler.Data.SchedulerDataSet)Row.Table.DataSet).Settings; }
         }
         /// <summary>
+        /// XML of row prior to any changes
+        /// </summary>
+        private byte[] OriginalXML;
+        /// <summary>
         /// Edit a Job
         /// </summary>
         /// <param name="aRow">Row to edit</param>
@@ -109,12 +113,32 @@ namespace Duplicati.Scheduler
         // The current backend user control control
         private Control GuiInterface = null;
         /// <summary>
+        /// Returns the XML of a jobs row
+        /// </summary>
+        /// <param name="aRow">Row to convert</param>
+        /// <returns>XML text in byte array</returns>
+        private static byte[] RowtoXml(Duplicati.Scheduler.Data.SchedulerDataSet.JobsRow aRow)
+        {
+            byte[] Result = null;
+            using (Duplicati.Scheduler.Data.SchedulerDataSet.JobsDataTable cTable = new Data.SchedulerDataSet.JobsDataTable())
+            {
+                cTable.Rows.Add(aRow.ItemArray);
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+                {
+                    cTable.WriteXml(ms);
+                    Result = ms.ToArray();
+                }
+            }
+            return Result;
+        }
+        /// <summary>
         /// Set up the controls for a job row
         /// </summary>
         /// <param name="aRow">Row to use</param>
         private void SetRow(Duplicati.Scheduler.Data.SchedulerDataSet.JobsRow aRow)
         {
-            Row = aRow;
+            this.Row = aRow;
+            this.OriginalXML = RowtoXml(aRow);
             this.Text = "Job: "+ Row.Name;
             // Set the source tree contents
             if (!Row.IsSourceNull())
@@ -237,6 +261,8 @@ namespace Duplicati.Scheduler
             aRow.Checksum = Settings.Values.Checksum;
             aRow.CheckMod = Settings.Values.CheckMod;
             aRow.SetCheckSrc(this.PasswordMethodComboBox.SelectedIndex);
+            // Never edited (?)
+            if (aRow.IsLastModNull()) aRow.LastMod = DateTime.Now;
         }
         /// <summary>
         /// Updates a summary with the latest
@@ -263,8 +289,8 @@ namespace Duplicati.Scheduler
             GetRow(Row);    // Populate the row
             // Get the trigger
             itsTrigger = this.TaskEditor.GetTrigger();
-            // And report all OK
-            this.DialogResult = DialogResult.OK;
+            // And report all OK if there was a change
+            this.DialogResult = (OriginalXML == RowtoXml(Row)) ? DialogResult.Ignore : DialogResult.OK;
             Close();
         }
         /// <summary>

@@ -88,6 +88,7 @@ namespace Duplicati.Scheduler.RunBackup
             if(itsDryRun) ArgList.Remove("DryRun");
             // The job name
             Job = ArgList[0];
+
             // Be nice
             System.Threading.Thread.CurrentThread.Priority = System.Threading.ThreadPriority.BelowNormal;
             // Get a log file

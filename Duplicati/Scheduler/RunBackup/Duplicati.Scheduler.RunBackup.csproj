@@ -43,6 +43,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -54,6 +55,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -163,6 +165,10 @@
     <ProjectReference Include="..\Data\Duplicati.Scheduler.Data.csproj">
       <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>
       <Name>Duplicati.Scheduler.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Monitor.Oracle\Duplicati.Scheduler.Monitor.Oracle.csproj">
+      <Project>{58972ACB-FC37-404D-A842-A7B5264EAC19}</Project>
+      <Name>Duplicati.Scheduler.Monitor.Oracle</Name>
     </ProjectReference>
     <ProjectReference Include="..\Utility\Duplicati.Scheduler.Utility.csproj">
       <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>

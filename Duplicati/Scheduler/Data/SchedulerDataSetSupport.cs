@@ -420,7 +420,7 @@ namespace Duplicati.Scheduler.Data
                 get
                 {
                     if (this.Count == 0)
-                        this.AddSettingsRow(0, new byte[0], string.Empty, true, false, string.Empty);
+                        this.AddSettingsRow(0, new byte[0], string.Empty, true, false, string.Empty, DateTime.Now);
                     return (SettingsRow)this.Rows[0];
                 }
             }

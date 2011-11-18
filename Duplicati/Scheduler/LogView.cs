@@ -114,9 +114,34 @@ namespace Duplicati.Scheduler
         {
             if (e.RowIndex >= 0 && e.ColumnIndex == this.TypeCol.Index)
             {
-                e.Value = TypeIcons[(Duplicati.Library.Logging.LogMessageType)e.Value];
+                e.Value = this.TypeIcons[(Duplicati.Library.Logging.LogMessageType)e.Value];
                 e.FormattingApplied = true;
             }
+        }
+
+        private void logListDataGridView_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            ErrorMessageDialog ed = new ErrorMessageDialog();
+            ed.ShowDialog(
+                this.logListDataGridView.Rows[e.RowIndex].Cells[this.DateCol.Index].Value.ToString() + "\n" +
+                this.logListDataGridView.Rows[e.RowIndex].Cells[this.MessageCol.Index].Value.ToString() + "\n" +
+                this.logListDataGridView.Rows[e.RowIndex].Cells[this.ExMessageCol.Index].Value.ToString(),
+                this.TypeIcons[(Duplicati.Library.Logging.LogMessageType)
+                    this.logListDataGridView.Rows[e.RowIndex].Cells[this.TypeCol.Index].Value]);
+        }
+
+        private void copyToClipboardToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string Contents = string.Empty;
+            foreach (DataGridViewRow Row in this.logListDataGridView.Rows)
+            {
+                Contents +=
+                    Row.Cells[this.DateCol.Index].Value.ToString() + ":" +
+                    Row.Cells[this.MessageCol.Index].Value.ToString() + ":" +
+                    Row.Cells[this.ExMessageCol.Index].Value.ToString() + "\n";
+            }
+            Clipboard.Clear();
+            Clipboard.SetText(Contents);
         }
     }
 

@@ -185,7 +185,7 @@ namespace Duplicati.Scheduler.Data
                 if (Stats == null || Stats.Length == 0)
                     sRow = ((StatsDataTable)this.tableHistory.ChildRelations["History_Stats"].ChildTable).AddStatsRow(this,
                         this.ActionDate, 0, 0, 0, 0, 0L, 0L, 0L, 0, 0, 0, this.ActionDate, this.ActionDate, string.Empty,
-                        0, 0, 0, string.Empty);
+                        0, 0, 0, string.Empty, null);
                 else
                     sRow = Stats[0];
                 // Parse the stats out of the results

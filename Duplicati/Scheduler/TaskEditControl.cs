@@ -86,6 +86,17 @@ namespace Duplicati.Scheduler
         /// <returns>XML text</returns>
         public static string TriggerToXml( Microsoft.Win32.TaskScheduler.Trigger aTrigger )
         {
+            if (aTrigger is Microsoft.Win32.TaskScheduler.MonthlyTrigger)
+            {
+                Microsoft.Win32.TaskScheduler.MonthlyTrigger t = (Microsoft.Win32.TaskScheduler.MonthlyTrigger)aTrigger;
+                return new System.Xml.Linq.XElement("Trigger",
+                    new System.Xml.Linq.XAttribute("Type", "MonthlyTrigger"),
+                    new System.Xml.Linq.XElement("Enabled", t.Enabled),
+                    new System.Xml.Linq.XElement("StartBoundary", t.StartBoundary.ToString("o")),
+                    new System.Xml.Linq.XElement("DayOfMonth", 1),
+                    new System.Xml.Linq.XElement("MonthsOfYear", t.MonthsOfYear)
+                    ).ToString();
+            }
             if (aTrigger is Microsoft.Win32.TaskScheduler.TimeTrigger)
             {
                 return new System.Xml.Linq.XElement("Trigger",

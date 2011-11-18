@@ -169,15 +169,15 @@ namespace Duplicati.Scheduler
         /// <param name="aRow">Altered row</param>
         private void Save(Duplicati.Scheduler.Data.SchedulerDataSet.JobsRow aRow)
         {
+            if (aRow == null) return; //
+            aRow.LastMod = DateTime.Now;
             // Update the drive table
-            if (aRow != null)
-            {
-                System.Collections.Generic.Dictionary<string, string> DriveMap = new System.Collections.Generic.Dictionary<string, string>();
-                foreach (System.IO.DriveInfo di in System.IO.DriveInfo.GetDrives())
-                    if ((di.IsReady && di.DriveType == System.IO.DriveType.Network))
-                        DriveMap.Add(di.Name[0].ToString(), Utility.Tools.DriveToUNC(di.Name[0]));
-                aRow.SetDriveMaps(DriveMap);
-            }
+            System.Collections.Generic.Dictionary<string, string> DriveMap = new System.Collections.Generic.Dictionary<string, string>();
+            foreach (System.IO.DriveInfo di in System.IO.DriveInfo.GetDrives())
+                if ((di.IsReady && di.DriveType == System.IO.DriveType.Network))
+                    DriveMap.Add(di.Name[0].ToString(), Utility.Tools.DriveToUNC(di.Name[0]));
+            aRow.SetDriveMaps(DriveMap);
+
             Exception Ex = this.SchedulerDataSet.Save();
             if (Ex != null)
                 MessageBox.Show("Can not save schedule: " + Ex.Message);
