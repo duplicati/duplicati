@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -17,7 +17,6 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -97,10 +96,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Data\Duplicati.Scheduler.Data.csproj">
-      <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>
-      <Name>Duplicati.Scheduler.Data</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Utility\Duplicati.Scheduler.Utility.csproj">
       <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
       <Name>Duplicati.Scheduler.Utility</Name>
