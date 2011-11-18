@@ -10,12 +10,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Backend</RootNamespace>
     <AssemblyName>Duplicati.Library.Backend.GoogleDocs</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,6 +34,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Accessibility" />
@@ -81,6 +88,19 @@
     <Compile Include="TaggedFileEntry.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="GoogleDocsUI.resx">
+      <DependentUpon>GoogleDocsUI.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\GoogleDocs.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>GoogleDocs.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\GoogleDocsUI.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>GoogleDocsUI.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
       <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
       <Name>Duplicati.Winforms.Controls</Name>
@@ -95,17 +115,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="GoogleDocsUI.resx">
-      <DependentUpon>GoogleDocsUI.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\GoogleDocs.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>GoogleDocs.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\GoogleDocsUI.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>GoogleDocsUI.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <None Include="Duplicati.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

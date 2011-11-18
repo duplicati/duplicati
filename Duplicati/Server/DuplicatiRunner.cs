@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -46,14 +46,6 @@ namespace Duplicati.Server
             Error
         }
 
-        public enum StopReason
-        {
-            ApplicationExit,
-            TaskManagerClosing,
-            UserClosing,
-            OSShutDown,
-            None
-        }
 
         public delegate void ResultEventDelegate(RunnerResult result, string parsedMessage, string message);
         public event ResultEventDelegate ResultEvent;
@@ -72,7 +64,7 @@ namespace Duplicati.Server
         private string m_lastPGSubmessage;
 
         private object m_lock = new object();
-        private StopReason m_stopReason = StopReason.None;
+        private System.Windows.Forms.CloseReason m_stopReason = System.Windows.Forms.CloseReason.None;
         private Library.Main.LiveControl.ILiveControl m_currentBackupControlInterface;
         private bool m_isAborted = false;
 
@@ -96,7 +88,7 @@ namespace Duplicati.Server
                 {
                     lock (m_lock)
                     {
-                        m_stopReason = StopReason.None;
+                        m_stopReason = System.Windows.Forms.CloseReason.None;
                         m_currentBackupControlInterface = i;
                     }
 
@@ -165,6 +157,9 @@ namespace Duplicati.Server
                                         filters.AddRange(Library.Utility.FilenameFilter.DecodeFilter(options["filter"]));
 
                                     options["filter"] = Library.Utility.FilenameFilter.EncodeAsFilter(filters);
+
+                                    //At this point we register the backup as being in progress
+                                    ((FullOrIncrementalTask)task).WriteBackupInProgress(Strings.DuplicatiRunner.ShutdownWhileBackupInprogress);
 
                                     results = i.Backup(sourceFolders);
                                 }
@@ -247,26 +242,39 @@ namespace Duplicati.Server
                 else if (ex is Library.Main.LiveControl.ExecutionStoppedException)
                     m_isAborted = true;
 
-                if (m_isAborted && m_stopReason != StopReason.None)
+                if (m_isAborted && m_stopReason != System.Windows.Forms.CloseReason.None)
                 {
                     //If the user has stopped the backup for some reason, write a nicer message
                     switch (m_stopReason)
                     {
-                        case StopReason.ApplicationExit:
+                        case System.Windows.Forms.CloseReason.ApplicationExitCall:
                             parsedMessage = Strings.DuplicatiRunner.ApplicationExitLogMesssage;
                             break;
-                        case StopReason.TaskManagerClosing:
+                        case System.Windows.Forms.CloseReason.TaskManagerClosing:
                             parsedMessage = Strings.DuplicatiRunner.TaskManagerCloseMessage;
                             break;
-                        case StopReason.UserClosing:
+                        case System.Windows.Forms.CloseReason.UserClosing:
                             parsedMessage = Strings.DuplicatiRunner.UserClosingMessage;
                             break;
-                        case StopReason.OSShutDown:
+                        case System.Windows.Forms.CloseReason.WindowsShutDown:
                             parsedMessage = Strings.DuplicatiRunner.WindowsShutdownMessage;
                             break;
                         default:
                             parsedMessage = string.Format(Strings.DuplicatiRunner.OtherAbortMessage, m_stopReason);
                             break;
+                    }
+
+                    if (task.Schedule != null)
+                    {
+                        //If the application is going down, the backup should resume on next launch
+                        switch (m_stopReason)
+                        {
+                            case System.Windows.Forms.CloseReason.ApplicationExitCall:
+                            case System.Windows.Forms.CloseReason.TaskManagerClosing:
+                            case System.Windows.Forms.CloseReason.WindowsShutDown:
+                                task.Schedule.ScheduledRunFailed();
+                                break;
+                        }
                     }
                 }
                 else
@@ -346,7 +354,7 @@ namespace Duplicati.Server
                     RunnerResult r = RunnerResult.Error;
                     if (l.ParsedStatus == DuplicatiOutputParser.ErrorStatus)
                         r = RunnerResult.Error;
-                    else if (l.ParsedStatus == DuplicatiOutputParser.OKStatus)
+                    else if (l.ParsedStatus == DuplicatiOutputParser.OKStatus || l.ParsedStatus == DuplicatiOutputParser.NoChangedFiles)
                         r = RunnerResult.OK;
                     else if (l.ParsedStatus == DuplicatiOutputParser.PartialStatus)
                         r = RunnerResult.Partial;
@@ -511,10 +519,12 @@ namespace Duplicati.Server
                     m_currentBackupControlInterface.Resume();
         }
 
-        public void Stop() { Stop(StopReason.None); }
-        public void Terminate() { Terminate(StopReason.None); }
+        public void Stop()
+        {
+            Stop(System.Windows.Forms.CloseReason.None);
+        }
 
-        public void Stop(StopReason reason)
+        public void Stop(System.Windows.Forms.CloseReason reason)
         {
             lock (m_lock)
                 if (m_currentBackupControlInterface != null)
@@ -527,7 +537,7 @@ namespace Duplicati.Server
                 }
         }
 
-        public void Terminate(StopReason reason)
+        public void Terminate(System.Windows.Forms.CloseReason reason)
         {
             lock (m_lock)
                 if (m_currentBackupControlInterface != null)
@@ -535,6 +545,11 @@ namespace Duplicati.Server
                     m_stopReason = reason;
                     m_currentBackupControlInterface.Terminate();
                 }
+        }
+
+        public void Terminate()
+        {
+            Terminate(System.Windows.Forms.CloseReason.None);
         }
 
         public bool IsStopRequested

@@ -1,5 +1,5 @@
 #region Disclaimer / License
-// Copyright (C) 2010, Kenneth Skovhede
+// Copyright (C) 2011, Kenneth Skovhede
 // http://www.hexad.dk, opensource@hexad.dk
 // 
 // This library is free software; you can redistribute it and/or
@@ -57,12 +57,17 @@ namespace Duplicati.Server
         /// <summary>
         /// The file that is locked to prevent other access
         /// </summary>
-        private System.IO.FileStream m_file;
+        private IDisposable m_file;
 
         /// <summary>
         /// The folder where control files are placed
         /// </summary>
         private string m_controldir;
+		
+		/// <summary>
+		/// The full path to the locking file
+		/// </summary>
+		private string m_lockfilename;
 
         /// <summary>
         /// The watcher that allows interprocess communication
@@ -96,15 +101,32 @@ namespace Duplicati.Server
             if (!System.IO.Directory.Exists(m_controldir))
                 System.IO.Directory.CreateDirectory(m_controldir);
 
-            string lockfile = System.IO.Path.Combine(m_controldir, CONTROL_FILE);
+            m_lockfilename = System.IO.Path.Combine(m_controldir, CONTROL_FILE);
             m_file = null;
+			
+			System.IO.Stream temp_fs = null;
 
-            try
+			try
             {
-                m_file = new System.IO.FileStream(lockfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
+				if (Library.Utility.Utility.IsClientLinux)
+					temp_fs = UnixSupport.File.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
+				else
+					temp_fs = System.IO.File.Open(m_lockfilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
+				
+				if (temp_fs != null)
+				{
+					System.IO.StreamWriter sw = new System.IO.StreamWriter(temp_fs);
+					sw.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
+					sw.Flush();
+					//Do not dispose sw as that would dispose the stream
+					m_file = temp_fs;
+				}
             }
             catch
             {
+				if (temp_fs != null)
+					try { temp_fs.Dispose(); }
+					catch {}
             }
 
             //If we have write access
@@ -114,16 +136,11 @@ namespace Duplicati.Server
                 m_filewatcher.Created += new System.IO.FileSystemEventHandler(m_filewatcher_Created);
                 m_filewatcher.EnableRaisingEvents = true;
 
-                System.IO.StreamWriter sw = new System.IO.StreamWriter(m_file);
-                sw.WriteLine(System.Diagnostics.Process.GetCurrentProcess().Id);
-                sw.Flush();
-                //Do not dispose the SW, as that will close the file and release the lock
-
-                DateTime startup = System.IO.File.GetLastWriteTime(lockfile);
+                DateTime startup = System.IO.File.GetLastWriteTime(m_lockfilename);
 
                 //Clean up any files that were created before the app launched
                 foreach(string s in System.IO.Directory.GetFiles(m_controldir))
-                    if (s != lockfile && System.IO.File.GetCreationTime(s) < startup)
+                    if (s != m_lockfilename && System.IO.File.GetCreationTime(s) < startup)
                         try { System.IO.File.Delete(s); }
                         catch { }
             }
@@ -131,25 +148,23 @@ namespace Duplicati.Server
             {
                 //Wait for the initial process to signal that the filewatcher is activated
                 int retrycount = 5;
-                while (retrycount > 0 && new System.IO.FileInfo(lockfile).Length == 0)
+                while (retrycount > 0 && new System.IO.FileInfo(m_lockfilename).Length == 0)
                 {
                     System.Threading.Thread.Sleep(500);
                     retrycount--;
                 }
 
                 //HACK: the unix file lock does not allow us to read the file length when the file is locked
-                if (new System.IO.FileInfo(lockfile).Length == 0)
+                if (new System.IO.FileInfo(m_lockfilename).Length == 0)
                     if (!Library.Utility.Utility.IsClientLinux)
                         throw new Exception("The file was locked, but had no data");
 
                 //Notify the other process that we have started
                 string filename = System.IO.Path.Combine(m_controldir, COMM_FILE_PREFIX + Guid.NewGuid().ToString());
 
-
                 //Write out the commandline arguments
                 string[] cmdargs = System.Environment.GetCommandLineArgs();
-                using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(fs))
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(Library.Utility.Utility.IsClientLinux ? UnixSupport.File.OpenExclusive(filename, System.IO.FileAccess.Write) : new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None)))
                     for (int i = 1; i < cmdargs.Length; i++) //Skip the first, as that is the filename
                         sw.WriteLine(cmdargs[i]);
 
@@ -185,6 +200,14 @@ namespace Duplicati.Server
             //Indicator and holder of arguments passed
             string[] commandline = null;
 
+            //HACK: Linux has some locking issues
+            //The problem is that there is no atomic open-and-lock operation, so the other process
+            // needs a little time to create+lock the file. This is not really a fix, but an
+            // ugly workaround. This functionality is only used to allow a new instance to signal
+            // the running instance, so errors here would only affect that functionality
+            if (Library.Utility.Utility.IsClientLinux)
+                System.Threading.Thread.Sleep(1000);
+
             do
             {
                 try
@@ -194,8 +217,7 @@ namespace Duplicati.Server
                         return;
 
                     List<string> args = new List<string>();
-                    using (System.IO.FileStream fs = new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
-                    using (System.IO.StreamReader sr = new System.IO.StreamReader(fs))
+                    using (System.IO.StreamReader sr = new System.IO.StreamReader(Duplicati.Library.Utility.Utility.IsClientLinux ? UnixSupport.File.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite) : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
                     while(!sr.EndOfStream)
                         args.Add(sr.ReadLine());
 
@@ -271,7 +293,7 @@ namespace Duplicati.Server
             {
                 m_file.Dispose();
 
-                try { System.IO.File.Delete(m_file.Name); }
+                try { System.IO.File.Delete(m_lockfilename); }
                 catch { }
 
                 m_file = null;

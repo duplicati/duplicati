@@ -15,5 +15,12 @@ namespace Duplicati.GUI.TrayIcon
         {
             InitializeComponent();
         }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            BeginInvoke((Action)(() => { this.Visible = false; }));
+
+            TrayIcon.Visible = true;
+        }
     }
 }

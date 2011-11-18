@@ -132,6 +132,7 @@
     <EmbeddedResource Include="Database schema\6. Remove TimeSeparator and UseShortFilenames.sql" />
     <EmbeddedResource Include="Database schema\7. Add error message field to log.sql" />
     <EmbeddedResource Include="Database schema\Schema.sql" />
+    <EmbeddedResource Include="Database schema\8. Add filter fields.sql" />
     <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -161,6 +162,14 @@
     <ProjectReference Include="..\GUI\Datamodel\Datamodel.csproj">
       <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
       <Name>Datamodel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj">
+      <Project>{42C91180-11EB-4590-82EA-80FE9D4DEBEC}</Project>
+      <Name>Duplicati.Library.Backend.GoogleDocs</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj">
+      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
+      <Name>Duplicati.Library.Backend.SkyDrive</Name>
     </ProjectReference>
     <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
       <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>

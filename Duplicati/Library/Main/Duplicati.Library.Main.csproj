@@ -107,6 +107,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>RSyncDir.resx</DependentUpon>
     </Compile>
+    <Compile Include="VerificationFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">

@@ -71,6 +71,7 @@
     <Compile Include="ApplicationSettings.cs" />
     <Compile Include="Backend.cs" />
     <Compile Include="EncryptionModule.cs" />
+    <Compile Include="Enums.cs" />
     <Compile Include="GenericModule.cs" />
     <Compile Include="Schedule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
