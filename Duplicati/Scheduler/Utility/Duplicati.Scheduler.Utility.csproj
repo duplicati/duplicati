@@ -57,6 +57,12 @@
     <Compile Include="CredentialsDialog.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="FolderSelectControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FolderSelectControl.Designer.cs">
+      <DependentUpon>FolderSelectControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="FolderTreeControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -90,6 +96,7 @@
     <Compile Include="SecureTextBox.Designer.cs">
       <DependentUpon>SecureTextBox.cs</DependentUpon>
     </Compile>
+    <Compile Include="ShellUtilities.cs" />
     <Compile Include="Su.cs" />
     <Compile Include="User.cs" />
     <Compile Include="Tools.cs" />
@@ -104,6 +111,9 @@
   <ItemGroup>
     <EmbeddedResource Include="DayPicker.resx">
       <DependentUpon>DayPicker.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FolderSelectControl.resx">
+      <DependentUpon>FolderSelectControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FolderTreeControl.resx">
       <DependentUpon>FolderTreeControl.cs</DependentUpon>
@@ -121,6 +131,12 @@
     <EmbeddedResource Include="SecureTextBox.resx">
       <DependentUpon>SecureTextBox.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\thirdparty\ObjectListView\ObjectListView\ObjectListView2010.csproj">
+      <Project>{18FEDA0C-D147-4286-B39A-01204808106A}</Project>
+      <Name>ObjectListView2010</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
