@@ -1362,7 +1362,7 @@ namespace Duplicati.Library.Main
                 } while (!success && retries > 0);
 
                 if (!success)
-                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError2, filename, lastEx == null ? "<null>" : lastEx.Message), lastEx);
+                    throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError2, remotename, lastEx == null ? "<null>" : lastEx.Message), lastEx);
 
                 m_statistics.AddBytesUploaded(new System.IO.FileInfo(filename).Length);
             }
