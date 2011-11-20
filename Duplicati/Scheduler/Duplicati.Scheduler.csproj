@@ -243,10 +243,6 @@
       <Project>{18FEDA0C-D147-4286-B39A-01204808106A}</Project>
       <Name>ObjectListView2010</Name>
     </ProjectReference>
-    <ProjectReference Include="Monitor.Oracle\Duplicati.Scheduler.Monitor.Oracle.csproj">
-      <Project>{58972ACB-FC37-404D-A842-A7B5264EAC19}</Project>
-      <Name>Duplicati.Scheduler.Monitor.Oracle</Name>
-    </ProjectReference>
     <ProjectReference Include="Monitor.SQL\Duplicati.Scheduler.Monitor.SQL.csproj">
       <Project>{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}</Project>
       <Name>Duplicati.Scheduler.Monitor.SQL</Name>
