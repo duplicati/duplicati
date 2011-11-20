@@ -33,7 +33,7 @@
             this.OKButton = new System.Windows.Forms.Button();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
-            this.folderTreeControl1 = new Utility.FolderTreeControl();
+            this.folderTreeControl1 = new Duplicati.Scheduler.Utility.FolderTreeControl();
             this.PromptLabel = new System.Windows.Forms.Label();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();

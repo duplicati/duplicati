@@ -39,14 +39,13 @@
             this.SourceTabPage = new System.Windows.Forms.TabPage();
             this.SourceTabControl = new System.Windows.Forms.TabControl();
             this.TreeViewTabPage = new System.Windows.Forms.TabPage();
-            this.SourceFolderTreeControl = new Utility.FolderTreeControl();
+            this.folderSelectControl1 = new Duplicati.Scheduler.Utility.FolderSelectControl();
             this.ListViewTabPage = new System.Windows.Forms.TabPage();
             this.SourceListBox = new System.Windows.Forms.ListBox();
             this.FiltersTabPage = new System.Windows.Forms.TabPage();
             this.FilterListBox = new System.Windows.Forms.ListBox();
             this.FilterEditButton = new System.Windows.Forms.Button();
             this.DestTabPage = new System.Windows.Forms.TabPage();
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.BackEndTableLayoutPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.UIFPanel = new System.Windows.Forms.Panel();
             this.tabPage1 = new System.Windows.Forms.TabPage();
@@ -75,6 +74,7 @@
             this.NextButton = new System.Windows.Forms.ToolStripButton();
             this.BackButton = new System.Windows.Forms.ToolStripButton();
             this.ExplainToolStripLabel = new System.Windows.Forms.ToolStripLabel();
+            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             label8 = new System.Windows.Forms.Label();
             label3 = new System.Windows.Forms.Label();
             label1 = new System.Windows.Forms.Label();
@@ -86,9 +86,6 @@
             this.ListViewTabPage.SuspendLayout();
             this.FiltersTabPage.SuspendLayout();
             this.DestTabPage.SuspendLayout();
-            this.splitContainer1.Panel1.SuspendLayout();
-            this.splitContainer1.Panel2.SuspendLayout();
-            this.splitContainer1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -98,6 +95,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.MaxFullsNumericUpDown)).BeginInit();
             this.SummaryTabPage.SuspendLayout();
             this.BottomToolStrip.SuspendLayout();
+            this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // label8
@@ -191,29 +189,31 @@
             this.SourceTabControl.Location = new System.Drawing.Point(3, 3);
             this.SourceTabControl.Name = "SourceTabControl";
             this.SourceTabControl.SelectedIndex = 0;
-            this.SourceTabControl.Size = new System.Drawing.Size(620, 379);
+            this.SourceTabControl.Size = new System.Drawing.Size(186, 68);
             this.SourceTabControl.TabIndex = 18;
             this.SourceTabControl.SelectedIndexChanged += new System.EventHandler(this.SourceTabControl_SelectedIndexChanged);
             // 
             // TreeViewTabPage
             // 
-            this.TreeViewTabPage.Controls.Add(this.SourceFolderTreeControl);
+            this.TreeViewTabPage.Controls.Add(this.folderSelectControl1);
             this.TreeViewTabPage.Location = new System.Drawing.Point(4, 28);
             this.TreeViewTabPage.Name = "TreeViewTabPage";
             this.TreeViewTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.TreeViewTabPage.Size = new System.Drawing.Size(612, 347);
+            this.TreeViewTabPage.Size = new System.Drawing.Size(178, 36);
             this.TreeViewTabPage.TabIndex = 0;
             this.TreeViewTabPage.Text = "Tree View";
             this.TreeViewTabPage.UseVisualStyleBackColor = true;
             // 
-            // SourceFolderTreeControl
+            // folderSelectControl1
             // 
-            this.SourceFolderTreeControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.SourceFolderTreeControl.Location = new System.Drawing.Point(3, 3);
-            this.SourceFolderTreeControl.Margin = new System.Windows.Forms.Padding(4);
-            this.SourceFolderTreeControl.Name = "SourceFolderTreeControl";
-            this.SourceFolderTreeControl.Size = new System.Drawing.Size(606, 341);
-            this.SourceFolderTreeControl.TabIndex = 0;
+            this.folderSelectControl1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.folderSelectControl1.Location = new System.Drawing.Point(3, 3);
+            this.folderSelectControl1.Margin = new System.Windows.Forms.Padding(4);
+            this.folderSelectControl1.Name = "folderSelectControl1";
+            this.folderSelectControl1.SelectedFolders = new string[0];
+            this.folderSelectControl1.Size = new System.Drawing.Size(172, 36);
+            this.folderSelectControl1.State = resources.GetString("folderSelectControl1.State");
+            this.folderSelectControl1.TabIndex = 0;
             // 
             // ListViewTabPage
             // 
@@ -221,7 +221,7 @@
             this.ListViewTabPage.Location = new System.Drawing.Point(4, 28);
             this.ListViewTabPage.Name = "ListViewTabPage";
             this.ListViewTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.ListViewTabPage.Size = new System.Drawing.Size(612, 347);
+            this.ListViewTabPage.Size = new System.Drawing.Size(178, 36);
             this.ListViewTabPage.TabIndex = 1;
             this.ListViewTabPage.Text = "List View";
             this.ListViewTabPage.UseVisualStyleBackColor = true;
@@ -233,7 +233,7 @@
             this.SourceListBox.ItemHeight = 19;
             this.SourceListBox.Location = new System.Drawing.Point(3, 3);
             this.SourceListBox.Name = "SourceListBox";
-            this.SourceListBox.Size = new System.Drawing.Size(606, 327);
+            this.SourceListBox.Size = new System.Drawing.Size(606, 347);
             this.SourceListBox.Sorted = true;
             this.SourceListBox.TabIndex = 15;
             // 
@@ -243,7 +243,7 @@
             this.FiltersTabPage.Controls.Add(this.FilterEditButton);
             this.FiltersTabPage.Location = new System.Drawing.Point(4, 28);
             this.FiltersTabPage.Name = "FiltersTabPage";
-            this.FiltersTabPage.Size = new System.Drawing.Size(612, 347);
+            this.FiltersTabPage.Size = new System.Drawing.Size(178, 36);
             this.FiltersTabPage.TabIndex = 2;
             this.FiltersTabPage.Text = "Filters";
             this.FiltersTabPage.UseVisualStyleBackColor = true;
@@ -270,7 +270,7 @@
             // DestTabPage
             // 
             this.DestTabPage.BackColor = System.Drawing.Color.Gainsboro;
-            this.DestTabPage.Controls.Add(this.splitContainer1);
+            this.DestTabPage.Controls.Add(this.tableLayoutPanel1);
             this.DestTabPage.ImageIndex = 2;
             this.DestTabPage.Location = new System.Drawing.Point(4, 28);
             this.DestTabPage.Name = "DestTabPage";
@@ -281,43 +281,21 @@
             this.DestTabPage.ToolTipText = "Select the backup destination";
             this.DestTabPage.UseVisualStyleBackColor = true;
             // 
-            // splitContainer1
-            // 
-            this.splitContainer1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer1.IsSplitterFixed = true;
-            this.splitContainer1.Location = new System.Drawing.Point(3, 3);
-            this.splitContainer1.Name = "splitContainer1";
-            this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer1.Panel1
-            // 
-            this.splitContainer1.Panel1.Controls.Add(this.BackEndTableLayoutPanel);
-            // 
-            // splitContainer1.Panel2
-            // 
-            this.splitContainer1.Panel2.Controls.Add(this.UIFPanel);
-            this.splitContainer1.Panel2.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.splitContainer1.Size = new System.Drawing.Size(620, 379);
-            this.splitContainer1.SplitterDistance = 64;
-            this.splitContainer1.TabIndex = 0;
-            // 
             // BackEndTableLayoutPanel
             // 
             this.BackEndTableLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.BackEndTableLayoutPanel.Location = new System.Drawing.Point(0, 0);
+            this.BackEndTableLayoutPanel.Location = new System.Drawing.Point(3, 3);
             this.BackEndTableLayoutPanel.Name = "BackEndTableLayoutPanel";
-            this.BackEndTableLayoutPanel.Size = new System.Drawing.Size(618, 62);
+            this.BackEndTableLayoutPanel.Size = new System.Drawing.Size(614, 37);
             this.BackEndTableLayoutPanel.TabIndex = 0;
             // 
             // UIFPanel
             // 
             this.UIFPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.UIFPanel.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.UIFPanel.Location = new System.Drawing.Point(0, 0);
+            this.UIFPanel.Location = new System.Drawing.Point(3, 46);
             this.UIFPanel.Name = "UIFPanel";
-            this.UIFPanel.Size = new System.Drawing.Size(618, 309);
+            this.UIFPanel.Size = new System.Drawing.Size(614, 330);
             this.UIFPanel.TabIndex = 0;
             // 
             // tabPage1
@@ -376,22 +354,22 @@
         ((byte)(0)),
         ((byte)(0)),
         ((byte)(0)),
-        ((byte)(48)),
-        ((byte)(183)),
-        ((byte)(91)),
+        ((byte)(107)),
+        ((byte)(101)),
+        ((byte)(40)),
+        ((byte)(33)),
+        ((byte)(125)),
+        ((byte)(211)),
         ((byte)(129)),
-        ((byte)(98)),
-        ((byte)(50)),
-        ((byte)(81)),
-        ((byte)(67)),
-        ((byte)(164)),
-        ((byte)(141)),
-        ((byte)(23)),
-        ((byte)(21)),
-        ((byte)(92)),
+        ((byte)(70)),
+        ((byte)(137)),
+        ((byte)(204)),
+        ((byte)(251)),
+        ((byte)(223)),
         ((byte)(22)),
-        ((byte)(163)),
-        ((byte)(166)),
+        ((byte)(67)),
+        ((byte)(157)),
+        ((byte)(88)),
         ((byte)(0)),
         ((byte)(0)),
         ((byte)(0)),
@@ -414,38 +392,38 @@
         ((byte)(0)),
         ((byte)(0)),
         ((byte)(0)),
-        ((byte)(224)),
-        ((byte)(167)),
-        ((byte)(228)),
-        ((byte)(192)),
-        ((byte)(76)),
-        ((byte)(7)),
-        ((byte)(193)),
-        ((byte)(243)),
-        ((byte)(33)),
-        ((byte)(27)),
-        ((byte)(40)),
-        ((byte)(150)),
-        ((byte)(105)),
-        ((byte)(128)),
-        ((byte)(83)),
-        ((byte)(62)),
-        ((byte)(129)),
-        ((byte)(184)),
-        ((byte)(147)),
-        ((byte)(116)),
-        ((byte)(190)),
-        ((byte)(156)),
-        ((byte)(173)),
-        ((byte)(186)),
-        ((byte)(61)),
-        ((byte)(134)),
-        ((byte)(13)),
-        ((byte)(5)),
-        ((byte)(249)),
-        ((byte)(107)),
+        ((byte)(171)),
+        ((byte)(3)),
+        ((byte)(247)),
+        ((byte)(127)),
+        ((byte)(67)),
+        ((byte)(248)),
+        ((byte)(57)),
+        ((byte)(241)),
+        ((byte)(15)),
+        ((byte)(157)),
+        ((byte)(158)),
+        ((byte)(87)),
+        ((byte)(135)),
+        ((byte)(127)),
+        ((byte)(79)),
+        ((byte)(73)),
+        ((byte)(227)),
+        ((byte)(124)),
+        ((byte)(189)),
+        ((byte)(246)),
+        ((byte)(135)),
         ((byte)(9)),
-        ((byte)(29)),
+        ((byte)(144)),
+        ((byte)(119)),
+        ((byte)(7)),
+        ((byte)(36)),
+        ((byte)(178)),
+        ((byte)(93)),
+        ((byte)(145)),
+        ((byte)(236)),
+        ((byte)(142)),
+        ((byte)(65)),
         ((byte)(0)),
         ((byte)(0)),
         ((byte)(0)),
@@ -462,254 +440,254 @@
         ((byte)(0)),
         ((byte)(0)),
         ((byte)(0)),
-        ((byte)(88)),
-        ((byte)(42)),
-        ((byte)(68)),
-        ((byte)(29)),
-        ((byte)(150)),
-        ((byte)(125)),
-        ((byte)(211)),
-        ((byte)(162)),
-        ((byte)(77)),
-        ((byte)(189)),
-        ((byte)(206)),
-        ((byte)(212)),
-        ((byte)(178)),
-        ((byte)(95)),
-        ((byte)(24)),
-        ((byte)(109)),
-        ((byte)(96)),
-        ((byte)(121)),
-        ((byte)(27)),
-        ((byte)(100)),
-        ((byte)(165)),
-        ((byte)(184)),
-        ((byte)(82)),
-        ((byte)(209)),
-        ((byte)(147)),
-        ((byte)(87)),
-        ((byte)(196)),
-        ((byte)(192)),
-        ((byte)(59)),
-        ((byte)(212)),
-        ((byte)(97)),
-        ((byte)(16)),
-        ((byte)(144)),
-        ((byte)(0)),
-        ((byte)(0)),
-        ((byte)(0)),
-        ((byte)(1)),
-        ((byte)(1)),
-        ((byte)(8)),
-        ((byte)(100)),
-        ((byte)(11)),
-        ((byte)(220)),
-        ((byte)(130)),
-        ((byte)(98)),
-        ((byte)(104)),
-        ((byte)(13)),
-        ((byte)(161)),
-        ((byte)(206)),
-        ((byte)(25)),
-        ((byte)(39)),
-        ((byte)(213)),
-        ((byte)(188)),
-        ((byte)(165)),
-        ((byte)(168)),
-        ((byte)(242)),
-        ((byte)(49)),
-        ((byte)(76)),
-        ((byte)(109)),
-        ((byte)(99)),
-        ((byte)(139)),
-        ((byte)(175)),
-        ((byte)(215)),
-        ((byte)(5)),
-        ((byte)(79)),
-        ((byte)(198)),
-        ((byte)(242)),
-        ((byte)(145)),
-        ((byte)(65)),
-        ((byte)(195)),
-        ((byte)(71)),
-        ((byte)(121)),
-        ((byte)(23)),
-        ((byte)(128)),
-        ((byte)(82)),
-        ((byte)(199)),
-        ((byte)(144)),
-        ((byte)(55)),
-        ((byte)(204)),
-        ((byte)(120)),
-        ((byte)(52)),
-        ((byte)(243)),
-        ((byte)(113)),
-        ((byte)(184)),
-        ((byte)(239)),
-        ((byte)(129)),
-        ((byte)(54)),
-        ((byte)(1)),
-        ((byte)(209)),
-        ((byte)(125)),
-        ((byte)(4)),
-        ((byte)(53)),
-        ((byte)(138)),
-        ((byte)(114)),
-        ((byte)(27)),
-        ((byte)(171)),
-        ((byte)(103)),
-        ((byte)(229)),
-        ((byte)(44)),
-        ((byte)(37)),
-        ((byte)(26)),
-        ((byte)(201)),
-        ((byte)(247)),
-        ((byte)(84)),
-        ((byte)(116)),
-        ((byte)(154)),
-        ((byte)(33)),
-        ((byte)(230)),
-        ((byte)(80)),
-        ((byte)(221)),
-        ((byte)(62)),
-        ((byte)(233)),
-        ((byte)(224)),
-        ((byte)(207)),
-        ((byte)(202)),
-        ((byte)(245)),
-        ((byte)(153)),
-        ((byte)(80)),
-        ((byte)(80)),
-        ((byte)(140)),
-        ((byte)(198)),
-        ((byte)(22)),
-        ((byte)(140)),
-        ((byte)(153)),
-        ((byte)(247)),
-        ((byte)(238)),
-        ((byte)(214)),
-        ((byte)(142)),
-        ((byte)(74)),
-        ((byte)(222)),
-        ((byte)(237)),
-        ((byte)(16)),
-        ((byte)(33)),
-        ((byte)(205)),
-        ((byte)(199)),
-        ((byte)(151)),
-        ((byte)(244)),
-        ((byte)(34)),
-        ((byte)(151)),
-        ((byte)(157)),
-        ((byte)(20)),
-        ((byte)(65)),
-        ((byte)(129)),
-        ((byte)(62)),
-        ((byte)(23)),
-        ((byte)(144)),
-        ((byte)(16)),
-        ((byte)(63)),
-        ((byte)(42)),
-        ((byte)(130)),
-        ((byte)(14)),
-        ((byte)(134)),
-        ((byte)(5)),
-        ((byte)(164)),
-        ((byte)(242)),
-        ((byte)(210)),
-        ((byte)(157)),
-        ((byte)(134)),
-        ((byte)(28)),
-        ((byte)(201)),
-        ((byte)(143)),
-        ((byte)(141)),
-        ((byte)(156)),
-        ((byte)(77)),
-        ((byte)(246)),
-        ((byte)(32)),
-        ((byte)(146)),
-        ((byte)(135)),
-        ((byte)(121)),
-        ((byte)(54)),
-        ((byte)(30)),
-        ((byte)(93)),
-        ((byte)(163)),
-        ((byte)(24)),
-        ((byte)(80)),
-        ((byte)(242)),
-        ((byte)(173)),
-        ((byte)(74)),
-        ((byte)(67)),
-        ((byte)(71)),
-        ((byte)(67)),
-        ((byte)(64)),
-        ((byte)(0)),
-        ((byte)(0)),
-        ((byte)(0)),
-        ((byte)(119)),
-        ((byte)(166)),
-        ((byte)(252)),
-        ((byte)(136)),
-        ((byte)(41)),
-        ((byte)(50)),
-        ((byte)(167)),
-        ((byte)(39)),
-        ((byte)(157)),
-        ((byte)(194)),
-        ((byte)(103)),
-        ((byte)(3)),
-        ((byte)(255)),
-        ((byte)(211)),
-        ((byte)(64)),
-        ((byte)(101)),
-        ((byte)(140)),
-        ((byte)(248)),
-        ((byte)(190)),
-        ((byte)(155)),
-        ((byte)(137)),
-        ((byte)(16)),
-        ((byte)(37)),
-        ((byte)(238)),
-        ((byte)(194)),
-        ((byte)(157)),
-        ((byte)(166)),
-        ((byte)(78)),
-        ((byte)(109)),
-        ((byte)(14)),
-        ((byte)(142)),
-        ((byte)(24)),
-        ((byte)(191)),
-        ((byte)(11)),
-        ((byte)(109)),
-        ((byte)(149)),
-        ((byte)(72)),
-        ((byte)(100)),
-        ((byte)(11)),
-        ((byte)(31)),
-        ((byte)(112)),
-        ((byte)(132)),
-        ((byte)(186)),
-        ((byte)(209)),
-        ((byte)(52)),
-        ((byte)(171)),
-        ((byte)(176)),
-        ((byte)(193)),
-        ((byte)(25)),
-        ((byte)(97)),
-        ((byte)(234)),
-        ((byte)(187)),
-        ((byte)(103)),
-        ((byte)(118)),
-        ((byte)(158)),
-        ((byte)(77)),
-        ((byte)(48)),
+        ((byte)(85)),
         ((byte)(124)),
-        ((byte)(40)),
-        ((byte)(30)),
+        ((byte)(176)),
+        ((byte)(116)),
+        ((byte)(126)),
+        ((byte)(224)),
+        ((byte)(78)),
+        ((byte)(64)),
+        ((byte)(167)),
+        ((byte)(137)),
+        ((byte)(252)),
+        ((byte)(144)),
+        ((byte)(171)),
+        ((byte)(211)),
+        ((byte)(134)),
+        ((byte)(156)),
+        ((byte)(125)),
+        ((byte)(116)),
+        ((byte)(70)),
+        ((byte)(221)),
+        ((byte)(2)),
+        ((byte)(65)),
+        ((byte)(41)),
+        ((byte)(18)),
+        ((byte)(176)),
+        ((byte)(127)),
+        ((byte)(63)),
+        ((byte)(206)),
+        ((byte)(93)),
+        ((byte)(83)),
+        ((byte)(246)),
+        ((byte)(52)),
+        ((byte)(144)),
+        ((byte)(0)),
+        ((byte)(0)),
+        ((byte)(0)),
+        ((byte)(203)),
+        ((byte)(226)),
+        ((byte)(77)),
+        ((byte)(127)),
+        ((byte)(210)),
+        ((byte)(213)),
+        ((byte)(62)),
+        ((byte)(75)),
+        ((byte)(136)),
+        ((byte)(16)),
+        ((byte)(178)),
+        ((byte)(148)),
+        ((byte)(74)),
+        ((byte)(69)),
+        ((byte)(83)),
+        ((byte)(63)),
+        ((byte)(86)),
+        ((byte)(185)),
+        ((byte)(204)),
+        ((byte)(33)),
+        ((byte)(26)),
+        ((byte)(243)),
+        ((byte)(14)),
+        ((byte)(139)),
+        ((byte)(76)),
+        ((byte)(146)),
+        ((byte)(136)),
+        ((byte)(173)),
+        ((byte)(171)),
+        ((byte)(249)),
+        ((byte)(186)),
+        ((byte)(89)),
+        ((byte)(216)),
+        ((byte)(58)),
+        ((byte)(73)),
+        ((byte)(111)),
+        ((byte)(207)),
+        ((byte)(182)),
+        ((byte)(195)),
+        ((byte)(153)),
+        ((byte)(6)),
+        ((byte)(41)),
+        ((byte)(32)),
+        ((byte)(238)),
+        ((byte)(123)),
+        ((byte)(194)),
+        ((byte)(195)),
+        ((byte)(130)),
+        ((byte)(102)),
+        ((byte)(6)),
+        ((byte)(223)),
+        ((byte)(150)),
+        ((byte)(237)),
+        ((byte)(193)),
+        ((byte)(148)),
+        ((byte)(65)),
+        ((byte)(135)),
+        ((byte)(10)),
+        ((byte)(213)),
+        ((byte)(211)),
+        ((byte)(54)),
+        ((byte)(192)),
+        ((byte)(144)),
+        ((byte)(31)),
+        ((byte)(32)),
+        ((byte)(74)),
+        ((byte)(178)),
+        ((byte)(151)),
+        ((byte)(189)),
+        ((byte)(106)),
+        ((byte)(14)),
+        ((byte)(19)),
+        ((byte)(101)),
+        ((byte)(38)),
+        ((byte)(249)),
+        ((byte)(22)),
+        ((byte)(61)),
+        ((byte)(209)),
+        ((byte)(7)),
+        ((byte)(148)),
+        ((byte)(245)),
+        ((byte)(90)),
+        ((byte)(232)),
+        ((byte)(2)),
+        ((byte)(175)),
+        ((byte)(16)),
+        ((byte)(123)),
+        ((byte)(65)),
+        ((byte)(188)),
+        ((byte)(228)),
+        ((byte)(240)),
+        ((byte)(142)),
+        ((byte)(28)),
+        ((byte)(151)),
+        ((byte)(175)),
+        ((byte)(226)),
+        ((byte)(108)),
+        ((byte)(115)),
+        ((byte)(245)),
+        ((byte)(96)),
+        ((byte)(69)),
+        ((byte)(93)),
+        ((byte)(59)),
+        ((byte)(99)),
+        ((byte)(97)),
         ((byte)(184)),
-        ((byte)(121)),
-        ((byte)(229)),
-        ((byte)(38))};
+        ((byte)(149)),
+        ((byte)(225)),
+        ((byte)(11)),
+        ((byte)(249)),
+        ((byte)(68)),
+        ((byte)(62)),
+        ((byte)(222)),
+        ((byte)(92)),
+        ((byte)(226)),
+        ((byte)(89)),
+        ((byte)(177)),
+        ((byte)(16)),
+        ((byte)(222)),
+        ((byte)(6)),
+        ((byte)(87)),
+        ((byte)(113)),
+        ((byte)(205)),
+        ((byte)(89)),
+        ((byte)(204)),
+        ((byte)(5)),
+        ((byte)(226)),
+        ((byte)(233)),
+        ((byte)(203)),
+        ((byte)(142)),
+        ((byte)(113)),
+        ((byte)(65)),
+        ((byte)(77)),
+        ((byte)(20)),
+        ((byte)(109)),
+        ((byte)(132)),
+        ((byte)(234)),
+        ((byte)(91)),
+        ((byte)(135)),
+        ((byte)(81)),
+        ((byte)(232)),
+        ((byte)(0)),
+        ((byte)(200)),
+        ((byte)(21)),
+        ((byte)(64)),
+        ((byte)(0)),
+        ((byte)(0)),
+        ((byte)(0)),
+        ((byte)(158)),
+        ((byte)(91)),
+        ((byte)(198)),
+        ((byte)(6)),
+        ((byte)(245)),
+        ((byte)(23)),
+        ((byte)(191)),
+        ((byte)(250)),
+        ((byte)(164)),
+        ((byte)(179)),
+        ((byte)(152)),
+        ((byte)(23)),
+        ((byte)(132)),
+        ((byte)(196)),
+        ((byte)(198)),
+        ((byte)(40)),
+        ((byte)(206)),
+        ((byte)(33)),
+        ((byte)(151)),
+        ((byte)(245)),
+        ((byte)(177)),
+        ((byte)(203)),
+        ((byte)(21)),
+        ((byte)(210)),
+        ((byte)(248)),
+        ((byte)(54)),
+        ((byte)(244)),
+        ((byte)(230)),
+        ((byte)(162)),
+        ((byte)(11)),
+        ((byte)(215)),
+        ((byte)(169)),
+        ((byte)(205)),
+        ((byte)(78)),
+        ((byte)(232)),
+        ((byte)(245)),
+        ((byte)(59)),
+        ((byte)(205)),
+        ((byte)(71)),
+        ((byte)(57)),
+        ((byte)(128)),
+        ((byte)(120)),
+        ((byte)(131)),
+        ((byte)(253)),
+        ((byte)(6)),
+        ((byte)(103)),
+        ((byte)(98)),
+        ((byte)(128)),
+        ((byte)(155)),
+        ((byte)(49)),
+        ((byte)(23)),
+        ((byte)(209)),
+        ((byte)(215)),
+        ((byte)(146)),
+        ((byte)(89)),
+        ((byte)(179)),
+        ((byte)(75)),
+        ((byte)(114)),
+        ((byte)(64)),
+        ((byte)(54)),
+        ((byte)(188)),
+        ((byte)(179)),
+        ((byte)(105)),
+        ((byte)(167))};
             this.passwordControl1.Enabled = false;
             this.passwordControl1.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.passwordControl1.Location = new System.Drawing.Point(70, 109);
@@ -780,7 +758,7 @@
             this.FullAfterNRadioButton.AutoSize = true;
             this.FullAfterNRadioButton.Location = new System.Drawing.Point(21, 88);
             this.FullAfterNRadioButton.Name = "FullAfterNRadioButton";
-            this.FullAfterNRadioButton.Size = new System.Drawing.Size(184, 23);
+            this.FullAfterNRadioButton.Size = new System.Drawing.Size(130, 17);
             this.FullAfterNRadioButton.TabIndex = 39;
             this.FullAfterNRadioButton.Text = "Do a full backup after ";
             this.FullAfterNRadioButton.UseVisualStyleBackColor = true;
@@ -791,7 +769,7 @@
             this.FullDaysRadioButton.AutoSize = true;
             this.FullDaysRadioButton.Location = new System.Drawing.Point(21, 55);
             this.FullDaysRadioButton.Name = "FullDaysRadioButton";
-            this.FullDaysRadioButton.Size = new System.Drawing.Size(190, 23);
+            this.FullDaysRadioButton.Size = new System.Drawing.Size(135, 17);
             this.FullDaysRadioButton.TabIndex = 38;
             this.FullDaysRadioButton.Text = "Do a full backup every ";
             this.FullDaysRadioButton.UseVisualStyleBackColor = true;
@@ -803,7 +781,7 @@
             this.FullAlwaysRadioButton.Checked = true;
             this.FullAlwaysRadioButton.Location = new System.Drawing.Point(21, 26);
             this.FullAlwaysRadioButton.Name = "FullAlwaysRadioButton";
-            this.FullAlwaysRadioButton.Size = new System.Drawing.Size(194, 23);
+            this.FullAlwaysRadioButton.Size = new System.Drawing.Size(136, 17);
             this.FullAlwaysRadioButton.TabIndex = 37;
             this.FullAlwaysRadioButton.TabStop = true;
             this.FullAlwaysRadioButton.Text = "Always do full backups.";
@@ -896,7 +874,7 @@
             this.MaxFullsCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MaxFullsCheckBox.Location = new System.Drawing.Point(23, 30);
             this.MaxFullsCheckBox.Name = "MaxFullsCheckBox";
-            this.MaxFullsCheckBox.Size = new System.Drawing.Size(190, 23);
+            this.MaxFullsCheckBox.Size = new System.Drawing.Size(135, 17);
             this.MaxFullsCheckBox.TabIndex = 13;
             this.MaxFullsCheckBox.Text = "Never keep more than ";
             this.MaxFullsCheckBox.UseVisualStyleBackColor = true;
@@ -908,7 +886,7 @@
             this.MaxAgeCheckBox.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.MaxAgeCheckBox.Location = new System.Drawing.Point(23, 87);
             this.MaxAgeCheckBox.Name = "MaxAgeCheckBox";
-            this.MaxAgeCheckBox.Size = new System.Drawing.Size(251, 23);
+            this.MaxAgeCheckBox.Size = new System.Drawing.Size(179, 17);
             this.MaxAgeCheckBox.TabIndex = 11;
             this.MaxAgeCheckBox.Text = "Never keep backups older than ";
             this.MaxAgeCheckBox.UseVisualStyleBackColor = true;
@@ -945,7 +923,7 @@
             this.jobSummary1.Location = new System.Drawing.Point(0, 0);
             this.jobSummary1.Margin = new System.Windows.Forms.Padding(4);
             this.jobSummary1.Name = "jobSummary1";
-            this.jobSummary1.Size = new System.Drawing.Size(626, 385);
+            this.jobSummary1.Size = new System.Drawing.Size(192, 74);
             this.jobSummary1.TabIndex = 0;
             // 
             // TabsImageList
@@ -1023,6 +1001,21 @@
             this.ExplainToolStripLabel.Size = new System.Drawing.Size(102, 32);
             this.ExplainToolStripLabel.Text = "toolStripLabel3";
             // 
+            // tableLayoutPanel1
+            // 
+            this.tableLayoutPanel1.ColumnCount = 1;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.Controls.Add(this.UIFPanel, 0, 1);
+            this.tableLayoutPanel1.Controls.Add(this.BackEndTableLayoutPanel, 0, 0);
+            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(3, 3);
+            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+            this.tableLayoutPanel1.RowCount = 2;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(620, 379);
+            this.tableLayoutPanel1.TabIndex = 1;
+            // 
             // JobDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 19F);
@@ -1038,6 +1031,7 @@
             this.MinimizeBox = false;
             this.Name = "JobDialog";
             this.Text = "Edit Job";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.JobDialog_FormClosing);
             this.MainTabControl.ResumeLayout(false);
             this.TimeTabPage.ResumeLayout(false);
             this.SourceTabPage.ResumeLayout(false);
@@ -1046,9 +1040,6 @@
             this.ListViewTabPage.ResumeLayout(false);
             this.FiltersTabPage.ResumeLayout(false);
             this.DestTabPage.ResumeLayout(false);
-            this.splitContainer1.Panel1.ResumeLayout(false);
-            this.splitContainer1.Panel2.ResumeLayout(false);
-            this.splitContainer1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
             this.tabPage2.PerformLayout();
@@ -1061,6 +1052,7 @@
             this.SummaryTabPage.ResumeLayout(false);
             this.BottomToolStrip.ResumeLayout(false);
             this.BottomToolStrip.PerformLayout();
+            this.tableLayoutPanel1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1073,7 +1065,6 @@
         private System.Windows.Forms.TabPage TimeTabPage;
         private System.Windows.Forms.ListBox SourceListBox;
         private System.Windows.Forms.TabPage DestTabPage;
-        private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.Panel UIFPanel;
         private System.Windows.Forms.FlowLayoutPanel BackEndTableLayoutPanel;
         private System.Windows.Forms.ToolStrip BottomToolStrip;
@@ -1104,11 +1095,12 @@
         private PasswordControl passwordControl1;
         private System.Windows.Forms.TabControl SourceTabControl;
         private System.Windows.Forms.TabPage TreeViewTabPage;
-        private Utility.FolderTreeControl SourceFolderTreeControl;
         private System.Windows.Forms.TabPage ListViewTabPage;
         private System.Windows.Forms.TabPage FiltersTabPage;
         private System.Windows.Forms.Button FilterEditButton;
         private System.Windows.Forms.ListBox FilterListBox;
         private System.Windows.Forms.ComboBox PasswordMethodComboBox;
+        private Utility.FolderSelectControl folderSelectControl1;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
     }
 }

@@ -186,6 +186,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="JobDialog.resx">
       <DependentUpon>JobDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="SchedulerNameDialog.resx">
       <DependentUpon>SchedulerNameDialog.cs</DependentUpon>
@@ -238,6 +239,10 @@
     <Compile Include="TaskScheduler.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\thirdparty\ObjectListView\ObjectListView\ObjectListView2010.csproj">
+      <Project>{18FEDA0C-D147-4286-B39A-01204808106A}</Project>
+      <Name>ObjectListView2010</Name>
+    </ProjectReference>
     <ProjectReference Include="Monitor.Oracle\Duplicati.Scheduler.Monitor.Oracle.csproj">
       <Project>{58972ACB-FC37-404D-A842-A7B5264EAC19}</Project>
       <Name>Duplicati.Scheduler.Monitor.Oracle</Name>
@@ -245,10 +250,6 @@
     <ProjectReference Include="Monitor.SQL\Duplicati.Scheduler.Monitor.SQL.csproj">
       <Project>{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}</Project>
       <Name>Duplicati.Scheduler.Monitor.SQL</Name>
-    </ProjectReference>
-    <ProjectReference Include="RunBackup\Duplicati.Scheduler.RunBackup.csproj">
-      <Project>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</Project>
-      <Name>Duplicati.Scheduler.RunBackup</Name>
     </ProjectReference>
     <ProjectReference Include="..\GUI\Datamodel\Datamodel.csproj">
       <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
@@ -293,6 +294,10 @@
     <ProjectReference Include="Data\Duplicati.Scheduler.Data.csproj">
       <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>
       <Name>Duplicati.Scheduler.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="RunBackup\Duplicati.Scheduler.RunBackup.csproj">
+      <Project>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</Project>
+      <Name>Duplicati.Scheduler.RunBackup</Name>
     </ProjectReference>
     <ProjectReference Include="Utility\Duplicati.Scheduler.Utility.csproj">
       <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>

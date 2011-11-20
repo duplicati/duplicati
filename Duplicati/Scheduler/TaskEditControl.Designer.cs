@@ -67,7 +67,7 @@
             this.checkBox14 = new System.Windows.Forms.CheckBox();
             this.checkBox15 = new System.Windows.Forms.CheckBox();
             this.label5 = new System.Windows.Forms.Label();
-            this.MonthlyDaysPicker = new Utility.DayPicker();
+            this.MonthlyDaysPicker = new Duplicati.Scheduler.Utility.DayPicker();
             this.TabPageImageList = new System.Windows.Forms.ImageList(this.components);
             this.panel2.SuspendLayout();
             this.PeriodTabControl.SuspendLayout();
@@ -250,7 +250,7 @@
             this.checkBox7.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox7.Location = new System.Drawing.Point(294, 20);
             this.checkBox7.Name = "checkBox7";
-            this.checkBox7.Size = new System.Drawing.Size(35, 37);
+            this.checkBox7.Size = new System.Drawing.Size(27, 31);
             this.checkBox7.TabIndex = 6;
             this.checkBox7.Text = "Sat";
             this.checkBox7.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -262,7 +262,7 @@
             this.checkBox6.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox6.Location = new System.Drawing.Point(254, 20);
             this.checkBox6.Name = "checkBox6";
-            this.checkBox6.Size = new System.Drawing.Size(31, 37);
+            this.checkBox6.Size = new System.Drawing.Size(22, 31);
             this.checkBox6.TabIndex = 5;
             this.checkBox6.Text = "Fri";
             this.checkBox6.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -274,7 +274,7 @@
             this.checkBox5.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox5.Location = new System.Drawing.Point(202, 20);
             this.checkBox5.Name = "checkBox5";
-            this.checkBox5.Size = new System.Drawing.Size(41, 37);
+            this.checkBox5.Size = new System.Drawing.Size(30, 31);
             this.checkBox5.TabIndex = 4;
             this.checkBox5.Text = "Thu";
             this.checkBox5.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -286,7 +286,7 @@
             this.checkBox4.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox4.Location = new System.Drawing.Point(152, 20);
             this.checkBox4.Name = "checkBox4";
-            this.checkBox4.Size = new System.Drawing.Size(44, 37);
+            this.checkBox4.Size = new System.Drawing.Size(34, 31);
             this.checkBox4.TabIndex = 3;
             this.checkBox4.Text = "Wed";
             this.checkBox4.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -298,7 +298,7 @@
             this.checkBox3.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox3.Location = new System.Drawing.Point(106, 20);
             this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(40, 37);
+            this.checkBox3.Size = new System.Drawing.Size(30, 31);
             this.checkBox3.TabIndex = 2;
             this.checkBox3.Text = "Tue";
             this.checkBox3.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -312,7 +312,7 @@
             this.checkBox2.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox2.Location = new System.Drawing.Point(57, 20);
             this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(43, 37);
+            this.checkBox2.Size = new System.Drawing.Size(32, 31);
             this.checkBox2.TabIndex = 1;
             this.checkBox2.Text = "Mon";
             this.checkBox2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -324,7 +324,7 @@
             this.checkBox1.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox1.Location = new System.Drawing.Point(13, 20);
             this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(40, 37);
+            this.checkBox1.Size = new System.Drawing.Size(30, 31);
             this.checkBox1.TabIndex = 0;
             this.checkBox1.Text = "Sun";
             this.checkBox1.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -443,7 +443,7 @@
             this.checkBox9.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox9.Location = new System.Drawing.Point(119, 64);
             this.checkBox9.Name = "checkBox9";
-            this.checkBox9.Size = new System.Drawing.Size(35, 37);
+            this.checkBox9.Size = new System.Drawing.Size(27, 31);
             this.checkBox9.TabIndex = 6;
             this.checkBox9.Text = "Sat";
             this.checkBox9.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -455,7 +455,7 @@
             this.checkBox10.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox10.Location = new System.Drawing.Point(68, 64);
             this.checkBox10.Name = "checkBox10";
-            this.checkBox10.Size = new System.Drawing.Size(31, 37);
+            this.checkBox10.Size = new System.Drawing.Size(22, 31);
             this.checkBox10.TabIndex = 5;
             this.checkBox10.Text = "Fri";
             this.checkBox10.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -467,7 +467,7 @@
             this.checkBox11.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox11.Location = new System.Drawing.Point(17, 64);
             this.checkBox11.Name = "checkBox11";
-            this.checkBox11.Size = new System.Drawing.Size(41, 37);
+            this.checkBox11.Size = new System.Drawing.Size(30, 31);
             this.checkBox11.TabIndex = 4;
             this.checkBox11.Text = "Thu";
             this.checkBox11.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -479,7 +479,7 @@
             this.checkBox12.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox12.Location = new System.Drawing.Point(165, 22);
             this.checkBox12.Name = "checkBox12";
-            this.checkBox12.Size = new System.Drawing.Size(44, 37);
+            this.checkBox12.Size = new System.Drawing.Size(34, 31);
             this.checkBox12.TabIndex = 3;
             this.checkBox12.Text = "Wed";
             this.checkBox12.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -491,7 +491,7 @@
             this.checkBox13.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox13.Location = new System.Drawing.Point(119, 22);
             this.checkBox13.Name = "checkBox13";
-            this.checkBox13.Size = new System.Drawing.Size(40, 37);
+            this.checkBox13.Size = new System.Drawing.Size(30, 31);
             this.checkBox13.TabIndex = 2;
             this.checkBox13.Text = "Tue";
             this.checkBox13.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -505,7 +505,7 @@
             this.checkBox14.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox14.Location = new System.Drawing.Point(68, 22);
             this.checkBox14.Name = "checkBox14";
-            this.checkBox14.Size = new System.Drawing.Size(43, 37);
+            this.checkBox14.Size = new System.Drawing.Size(32, 31);
             this.checkBox14.TabIndex = 1;
             this.checkBox14.Text = "Mon";
             this.checkBox14.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -517,7 +517,7 @@
             this.checkBox15.CheckAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.checkBox15.Location = new System.Drawing.Point(17, 22);
             this.checkBox15.Name = "checkBox15";
-            this.checkBox15.Size = new System.Drawing.Size(40, 37);
+            this.checkBox15.Size = new System.Drawing.Size(30, 31);
             this.checkBox15.TabIndex = 0;
             this.checkBox15.Text = "Sun";
             this.checkBox15.TextAlign = System.Drawing.ContentAlignment.TopCenter;

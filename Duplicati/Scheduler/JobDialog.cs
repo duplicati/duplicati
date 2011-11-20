@@ -60,13 +60,15 @@ namespace Duplicati.Scheduler
         public JobDialog(Duplicati.Scheduler.Data.SchedulerDataSet.JobsRow aRow)
         {
             InitializeComponent();
+            if (!string.IsNullOrEmpty(Properties.Settings.Default.TreeViewState))
+                this.folderSelectControl1.State = Properties.Settings.Default.TreeViewState;
             this.Text = "Edit job " + aRow.Name + "(" + Utility.User.UserName + ")";
             // Dang background colors in tab pages - can't trust them.
             foreach (TabPage P in this.MainTabControl.TabPages)
                 P.BackColor = this.BackColor;
             foreach (TabPage P in this.SourceTabControl.TabPages)
                 P.BackColor = this.BackColor;
-            this.SourceFolderTreeControl.BackColor = this.BackColor;
+            this.folderSelectControl1.BackColor = this.BackColor;
             // Add radio buttons for backends; put the backend in the tag
             this.BackEndTableLayoutPanel.Controls.AddRange(
                 (from Library.Interface.IBackend qB in Duplicati.Library.DynamicLoader.BackendLoader.Backends
@@ -142,7 +144,7 @@ namespace Duplicati.Scheduler
             this.Text = "Job: "+ Row.Name;
             // Set the source tree contents
             if (!Row.IsSourceNull())
-                this.SourceFolderTreeControl.SetSelectedFolders(Row.Source.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries));
+                this.folderSelectControl1.SelectedFolders = Row.Source.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
             if (Row.IsFullRepeatDaysNull()) Row.FullRepeatDays = 10;
             // Full of it.
             this.FullAlwaysRadioButton.Checked = (Row.IsFullOnlyNull() ? false : Row.FullOnly) || (Row.FullAfterN == 0 && Row.FullRepeatDays == 0);
@@ -244,7 +246,7 @@ namespace Duplicati.Scheduler
                 }
             }
             // Get stuff from the controls
-            aRow.Source = string.Join(System.IO.Path.PathSeparator.ToString(), this.SourceFolderTreeControl.SelectedFolders);
+            aRow.Source = string.Join(System.IO.Path.PathSeparator.ToString(), this.folderSelectControl1.SelectedFolders);
             aRow.FullOnly = this.FullAlwaysRadioButton.Checked;
             aRow.FullAfterN = this.FullAfterNRadioButton.Checked ? (int)this.FullAfterNNumericUpDown.Value : 0;
             aRow.FullRepeatDays = this.FullDaysRadioButton.Checked ? (int)this.FullDaysNumericUpDown.Value : 0;
@@ -382,7 +384,7 @@ namespace Duplicati.Scheduler
             if (this.SourceTabControl.SelectedTab == this.ListViewTabPage)
             {
                 this.SourceListBox.Items.Clear();
-                this.SourceListBox.Items.AddRange(this.SourceFolderTreeControl.SelectedFolders);
+                this.SourceListBox.Items.AddRange(this.folderSelectControl1.SelectedFolders);
             }
         }
         /// <summary>
@@ -391,6 +393,11 @@ namespace Duplicati.Scheduler
         private void PasswordMethodComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             this.passwordControl1.Enabled = this.PasswordMethodComboBox.SelectedIndex == 1;
+        }
+
+        private void JobDialog_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Properties.Settings.Default.TreeViewState = this.folderSelectControl1.State;
         }
     }
 }
