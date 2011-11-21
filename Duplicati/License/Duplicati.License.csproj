@@ -137,8 +137,22 @@
     <Content Include="licenses\duplicati-url.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="licenses\SSH.NET\Homepage.txt" />
-    <Content Include="licenses\SSH.NET\License.txt" />
+    <Content Include="..\..\thirdparty\SSH.NET\Homepage.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\SSH.NET\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\SSH.NET\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\SSH.NET\License.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\Json.NET\Homepage.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\Json.NET\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\Json.NET\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\Json.NET\License.txt</Link>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

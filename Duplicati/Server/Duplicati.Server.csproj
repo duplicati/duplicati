@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -54,6 +54,12 @@
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="HttpServer">
       <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
@@ -63,9 +69,6 @@
     </Reference>
     <Reference Include="LightDatamodel">
       <HintPath>..\..\thirdparty\LightDataModel\LightDatamodel.dll</HintPath>
-    </Reference>
-    <Reference Include="LitJson">
-      <HintPath>..\..\thirdparty\LitJSON\LitJson.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -83,7 +86,6 @@
     <Compile Include="DuplicatiOutputParser.cs" />
     <Compile Include="DuplicatiRunner.cs" />
     <Compile Include="DynamicSetupHelper.cs" />
-    <Compile Include="EventQueue.cs" />
     <Compile Include="LiveControls.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -122,9 +124,11 @@
     </Compile>
     <Compile Include="TaskPackages.cs" />
     <Compile Include="WebServer.cs" />
+    <Compile Include="SerializableStatus.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Database schema\1. Support timestamp flag.sql" />
@@ -173,10 +177,6 @@
     <ProjectReference Include="..\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj">
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.SkyDrive</Name>
-    </ProjectReference>
-    <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
-      <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>
-      <Name>Duplicati.Server.Serialization</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
@@ -241,6 +241,10 @@
     <ProjectReference Include="..\License\Duplicati.License.csproj">
       <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
       <Name>Duplicati.License</Name>
+    </ProjectReference>
+    <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
+      <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>
+      <Name>Duplicati.Server.Serialization</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -240,5 +240,21 @@ namespace Duplicati.Server
                 }
             }
         }
+
+        /// <summary>
+        /// Suspends the backups for a given period
+        /// </summary>
+        /// <param name="timeout">The duration to wait</param>
+        public void Pause(TimeSpan timeout)
+        {
+            lock (m_lock)
+            {
+                if (m_state == LiveControlState.Running)
+                {
+                    Pause();
+                    m_waitTimer.Change((long)timeout.TotalMilliseconds, System.Threading.Timeout.Infinite);
+                }
+            }
+        }
     }
 }

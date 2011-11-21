@@ -84,16 +84,11 @@ namespace Duplicati.Server
         public static WebServer WebServer;
 
         /// <summary>
-        /// The queue for handling events
-        /// </summary>
-        public static EventQueue Events;
-
-        /// <summary>
         /// The main entry point for the application.
         /// <param name="args">Commandline arguments</param>
         /// </summary>
         [STAThread]
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
@@ -262,28 +257,25 @@ namespace Duplicati.Server
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
 
-                Events = new EventQueue();
-
                 LiveControl = new LiveControls(new Duplicati.Datamodel.ApplicationSettings(DataConnection));
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
                 LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
 
-
                 Runner = new DuplicatiRunner();
                 WorkThread = new Duplicati.Library.Utility.WorkerThread<IDuplicityTask>(new Duplicati.Library.Utility.WorkerThread<IDuplicityTask>.ProcessItemDelegate(Runner.ExecuteTask), LiveControl.State == LiveControls.LiveControlState.Paused);
                 Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
 
-                WorkThread.StartingWork += new EventHandler(Events.WorkThread_StartingWork);
+                /*WorkThread.StartingWork += new EventHandler(Events.WorkThread_StartingWork);
                 WorkThread.CompletedWork += new EventHandler(Events.WorkThread_CompletedWork);
                 WorkThread.WorkQueueChanged += new EventHandler(Events.WorkThread_WorkQueueChanged);
                 Scheduler.NewSchedule += new EventHandler(Events.Scheduler_NewSchedule);
                 Runner.ProgressEvent += new DuplicatiRunner.ProgressEventDelegate(Events.Runner_DuplicatiProgress);
                 DataConnection.AfterDataConnection += new System.Data.LightDatamodel.DataConnectionEventHandler(Events.DataConnection_AfterDataConnection);
-
+                
                 LiveControl.StateChanged += new EventHandler(Events.LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(Events.LiveControl_ThreadPriorityChanged);
-                LiveControl.ThrottleSpeedChanged += new EventHandler(Events.LiveControl_ThrottleSpeedChanged);
+                LiveControl.ThrottleSpeedChanged += new EventHandler(Events.LiveControl_ThrottleSpeedChanged);*/
 
 
                 Program.WebServer = new Server.WebServer(8080);

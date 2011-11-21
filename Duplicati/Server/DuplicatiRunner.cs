@@ -21,7 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Datamodel;
-using Duplicati.Library.Main;
+//using Duplicati.Library.Main;
+using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server
 {
@@ -30,30 +31,15 @@ namespace Duplicati.Server
     /// </summary>
     public class DuplicatiRunner : Duplicati.Library.Main.LiveControl.ILiveControl
     {
-        public enum RunnerState
+        public class ProgressEventData : IProgressEventData
         {
-            Started,
-            Suspended,
-            Running,
-            Stopped,
+            public DuplicatiOperation Operation { get; set; }
+            public DuplicatiOperationMode Mode { get; set; }
+            public string Message { get; set; }
+            public string SubMessage { get; set; }
+            public int Progress { get; set; }
+            public int SubProgress { get; set; }
         }
-
-        public enum RunnerResult
-        {
-            OK,
-            Partial,
-            Warning,
-            Error
-        }
-		
-		public enum CloseReason
-		{
-			None,
-			ApplicationExitCall,
-			TaskManagerClosing,
-			WindowsShutDown,
-			UserClosing
-		}
 
         public delegate void ResultEventDelegate(RunnerResult result, string parsedMessage, string message);
         public event ResultEventDelegate ResultEvent;
@@ -64,17 +50,24 @@ namespace Duplicati.Server
         private const int PERCENT_PR_EXTRA_OPERATION = 2;
         private int m_extraOperations = 0;
 
-        private DuplicatiOperation m_lastPGOperation;
-        private DuplicatiOperationMode m_lastPGMode;
-        private int m_lastPGProgress;
-        private int m_lastPGSubprogress;
-        private string m_lastPGmessage;
-        private string m_lastPGSubmessage;
+        private ProgressEventData m_lastEvent = new ProgressEventData();
 
         private object m_lock = new object();
         private CloseReason m_stopReason = CloseReason.None;
         private Library.Main.LiveControl.ILiveControl m_currentBackupControlInterface;
         private bool m_isAborted = false;
+
+        private RunnerState m_currentRunnerState = RunnerState.Suspended;
+
+        public DuplicatiRunner()
+        {
+            ProgressEvent += new ProgressEventDelegate(DuplicatiRunner_ProgressEvent);
+        }
+
+        void DuplicatiRunner_ProgressEvent(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress)
+        {
+            m_currentRunnerState = state;
+        }
 
         public void ExecuteTask(IDuplicityTask task)
         {
@@ -92,7 +85,7 @@ namespace Duplicati.Server
             try
             {
                 //TODO: Its a bit dirty to set the options after creating the instance
-                using (Interface i = new Interface(destination, options))
+                using (Duplicati.Library.Main.Interface i = new Duplicati.Library.Main.Interface(destination, options))
                 {
                     lock (m_lock)
                     {
@@ -101,8 +94,8 @@ namespace Duplicati.Server
                     }
 
                     SetupControlInterface();
-                    
-                    i.OperationProgress += new OperationProgressEvent(Duplicati_OperationProgress);
+
+                    i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(Duplicati_OperationProgress);
 
                     switch (task.TaskType)
                     {
@@ -184,10 +177,10 @@ namespace Duplicati.Server
                         case DuplicityTaskType.ListBackups:
 
                             List<string> res = new List<string>();
-                            foreach (ManifestEntry be in i.GetBackupSets())
+                            foreach (Duplicati.Library.Main.ManifestEntry be in i.GetBackupSets())
                             {
                                 res.Add(be.Time.ToString());
-                                foreach (ManifestEntry bei in be.Incrementals)
+                                foreach (Duplicati.Library.Main.ManifestEntry bei in be.Incrementals)
                                     res.Add(bei.Time.ToString());
                             }
 
@@ -309,10 +302,10 @@ namespace Duplicati.Server
                 {
                     if (task.Schedule.Task.KeepFull > 0)
                     {
-                        m_lastPGProgress = 100;
-                        m_lastPGmessage = Strings.DuplicatiRunner.CleaningUpMessage;
-                        m_lastPGSubmessage = "";
-                        m_lastPGSubprogress = -1;
+                        m_lastEvent.Progress = 100;
+                        m_lastEvent.Message = Strings.DuplicatiRunner.CleaningUpMessage;
+                        m_lastEvent.SubMessage = "";
+                        m_lastEvent.SubProgress = -1;
 
                         ReinvokeLastProgressEvent();
                         m_extraOperations--;
@@ -324,10 +317,10 @@ namespace Duplicati.Server
 
                     if (!string.IsNullOrEmpty(task.Schedule.Task.KeepTime))
                     {
-                        m_lastPGProgress = 100;
-                        m_lastPGmessage = Strings.DuplicatiRunner.CleaningUpMessage;
-                        m_lastPGSubmessage = "";
-                        m_lastPGSubprogress = -1;
+                        m_lastEvent.Progress = 100;
+                        m_lastEvent.Message = Strings.DuplicatiRunner.CleaningUpMessage;
+                        m_lastEvent.SubMessage = "";
+                        m_lastEvent.SubProgress = -1;
 
                         ReinvokeLastProgressEvent();
                         m_extraOperations--;
@@ -377,18 +370,23 @@ namespace Duplicati.Server
                 task.Schedule.ScheduledRunCompleted(); //Register as completed if not aborted
         }
 
-        void Duplicati_OperationProgress(Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
+        void Duplicati_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, Duplicati.Library.Main.DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
         {
-            m_lastPGOperation = operation;
-            m_lastPGMode = specificmode;
-            m_lastPGProgress = progress;
-            m_lastPGSubprogress = subprogress;
-            m_lastPGmessage = message;
-            m_lastPGSubmessage = submessage;
+            Duplicati_OperationProgress(caller, EnumConverter.Convert<DuplicatiOperation>(operation), EnumConverter.Convert<DuplicatiOperationMode>(specificmode), progress, subprogress, message, submessage);
+        }
+
+        void Duplicati_OperationProgress(Duplicati.Library.Main.Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
+        {
+            m_lastEvent.Operation = operation;
+            m_lastEvent.Mode = specificmode;
+            m_lastEvent.Progress = progress;
+            m_lastEvent.SubProgress = subprogress;
+            m_lastEvent.Message = message;
+            m_lastEvent.SubMessage = submessage;
 
             //If there are extra operations, reserve some space for it by reducing the displayed progress
             if (m_extraOperations > 0 && progress > 0)
-                progress = (int)((m_lastPGProgress / 100.0) * (100 - (m_extraOperations * PERCENT_PR_EXTRA_OPERATION)));
+                progress = (int)((m_lastEvent.Progress / 100.0) * (100 - (m_extraOperations * PERCENT_PR_EXTRA_OPERATION)));
 
             if (ProgressEvent != null)
                 try { ProgressEvent(operation, RunnerState.Running, message, submessage, progress, subprogress); }
@@ -397,9 +395,8 @@ namespace Duplicati.Server
 
         public void ReinvokeLastProgressEvent()
         {
-            Duplicati_OperationProgress(null, m_lastPGOperation, m_lastPGMode, m_lastPGProgress, m_lastPGSubprogress, m_lastPGmessage, m_lastPGSubmessage );
+            Duplicati_OperationProgress(null, m_lastEvent.Operation, m_lastEvent.Mode, m_lastEvent.Progress, m_lastEvent.SubProgress, m_lastEvent.Message, m_lastEvent.SubMessage );
         }
-
 
         private void PerformBackup(Schedule schedule, bool forceFull, string fullAfter)
         {
@@ -425,7 +422,7 @@ namespace Duplicati.Server
             return task.Backups;
         }
 
-        public List<ManifestEntry> ListBackupEntries(Schedule schedule)
+        public List<Duplicati.Library.Main.ManifestEntry> ListBackupEntries(Schedule schedule)
         {
             ListBackupEntriesTask task = new ListBackupEntriesTask(schedule);
             ExecuteTask(task);
@@ -526,6 +523,9 @@ namespace Duplicati.Server
                 if (m_currentBackupControlInterface != null)
                     m_currentBackupControlInterface.Resume();
         }
+
+        public RunnerState CurrentState { get { return m_currentRunnerState; } }
+        public ProgressEventData LastEvent { get { return m_lastEvent; } }
 
         public void Stop()
         {
