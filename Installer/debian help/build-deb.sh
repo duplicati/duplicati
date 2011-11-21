@@ -40,7 +40,9 @@ VERSION=`basename "$1"`
 VERSION=${VERSION%%.zip}
 VERSION=${VERSION##Duplicati }
 
-VERSION_FILENAME="${VERSION// /_}"
+VERSION_FILENAME="${VERSION// /-}"
+VERSION_FILENAME="${VERSION_FILENAME//(/}"
+VERSION_FILENAME="${VERSION_FILENAME//)/}"
 ROOT_DIR="duplicati_$VERSION_FILENAME"
 BUILD_TIME=`date -R`
 PWD=`pwd`
@@ -61,10 +63,10 @@ else
 	OUTPUT="output/$OUTPUT"
 fi
 
-OUTPUT_RPM="duplicati-$VERSION-1.noarch.rpm"
-OUTPUT_SLP="duplicati-$VERSION.slp"
-OUTPUT_LSB="lsb-duplicati-$VERSION-1.noarch.rpm"
-OUTPUT_TGZ="duplicati-$VERSION.tgz"
+OUTPUT_RPM="duplicati-$VERSION_FILENAME-1.noarch.rpm"
+OUTPUT_SLP="duplicati-$VERSION_FILENAME.slp"
+OUTPUT_LSB="lsb-duplicati-$VERSION_FILENAME-1.noarch.rpm"
+OUTPUT_TGZ="duplicati-$VERSION_FILENAME.tgz"
 
 OUTPUT_DIR=`dirname "$OUTPUT"`
 
@@ -97,8 +99,8 @@ if [ -f "$OUTPUT_TGZ" ]; then
 	rm "$OUTPUT_TGZ"
 fi
 
-if [ -d "duplicati-$VERSION" ]; then
-	rm -rf "duplicati-$VERSION"
+if [ -d "duplicati-$VERSION_FILENAME" ]; then
+	rm -rf "duplicati-$VERSION_FILENAME"
 fi
 
 # Remove the output dir, but not if it is the source dir!
@@ -134,19 +136,23 @@ mv "Duplicati" "$ROOT_DIR/usr/lib/duplicati"
 
 # Insert pacakage control files
 cp -R DEBIAN "$ROOT_DIR/"
+rm -rf "$ROOT_DIR/DEBIAN/.svn"
 mv "$ROOT_DIR/usr/lib/duplicati/linux-readme.txt" "$ROOT_DIR/usr/share/doc/duplicati/README"
 echo "This package was debianized by Kenneth Skovhede <opensource@hexad.dk> on $BUILD_TIME." > "$ROOT_DIR/usr/share/doc/duplicati/copyright"
 cat "copyright" >> "$ROOT_DIR/usr/share/doc/duplicati/copyright"
 
 # Generate a plausible changelog
-echo "duplicati ($VERSION) unstable; urgency=low" > "$ROOT_DIR/usr/share/doc/duplicati/changelog"
+echo "duplicati ($VERSION_FILENAME) unstable; urgency=low" > "$ROOT_DIR/usr/share/doc/duplicati/changelog"
 echo "" >> "$ROOT_DIR/usr/share/doc/duplicati/changelog"
 echo "  * Duplicati binary release $VERSION" >> "$ROOT_DIR/usr/share/doc/duplicati/changelog"
 echo "" >> "$ROOT_DIR/usr/share/doc/duplicati/changelog"
 echo " -- Kenneth Skovhede <opensource@hexad.dk>  $BUILD_TIME" >> "$ROOT_DIR/usr/share/doc/duplicati/changelog"
 echo "" >> "$ROOT_DIR/usr/share/doc/duplicati/changelog"
 
+cp "$ROOT_DIR/usr/share/doc/duplicati/changelog" "$ROOT_DIR/usr/share/doc/duplicati/changelog.Debian"
+
 gzip --quiet --best "$ROOT_DIR/usr/share/doc/duplicati/changelog"
+gzip --quiet --best "$ROOT_DIR/usr/share/doc/duplicati/changelog.Debian"
 
 # Make sym link to install launcher scripts in /usr/bin
 # We install these before calculating the size
@@ -172,12 +178,12 @@ rm "$CONTROL_FILE"
 OLD_IFS=$IFS    
 IFS=$'\n'
 for LINE in `cat "DEBIAN/control"`; do
-	# If line starts with "Version: ", we replace it,
+	# If line starts with "Version: " or "Installed-Size", we replace it,
 	# otherwise we pass in unchanged	
 	TST=${LINE##Version: }
 	TST2=${LINE##Installed-Size: }
 	if [ "$TST" != "$LINE" ]; then
-		echo "Version: $VERSION" >> "$CONTROL_FILE"
+		echo "Version: $VERSION_FILENAME" >> "$CONTROL_FILE"
 	elif [ "$TST2" != "$LINE" ]; then
 		echo "Installed-Size: $INSTALL_SIZE" >> "$CONTROL_FILE"
 	else
@@ -243,7 +249,7 @@ if [ "$LINTIAN_OUTPUT" != "" ]; then
 	echo ""
 fi
 
-# Convert to a other package formats as well
+# Convert to other package formats as well
 cd "$OUTPUT_DIR"
 DEB_NAME=`basename "$OUTPUT"`
 alien --scripts --to-rpm --keep-version "$DEB_NAME"
