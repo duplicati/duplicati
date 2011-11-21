@@ -45,7 +45,7 @@ def main():
   filename_msi_x64 = filename_base + ".x64.msi"
   filename_deb = filename_base + ".deb"
   filename_dmg = filename_base + ".dmg"
-  filename_rpm = filename_base + "-1.noarch.rpm"
+  filename_rpm = filename_base + ".noarch.rpm"
   filename_tgz = filename_base + ".tgz"
   
   filename_zip = os.path.join(source_folder, filename_zip)
@@ -63,8 +63,8 @@ def main():
   
   try:  
     with open('account_info', 'r') as f:
-      username = f.readline()
-      password = f.readline()
+      username = f.readline().strip()
+      password = f.readline().strip()
   except IOError as e:
     None
   
