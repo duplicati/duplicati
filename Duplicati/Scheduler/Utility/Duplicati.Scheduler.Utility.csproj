@@ -96,7 +96,6 @@
     <Compile Include="SecureTextBox.Designer.cs">
       <DependentUpon>SecureTextBox.cs</DependentUpon>
     </Compile>
-    <Compile Include="ShellUtilities.cs" />
     <Compile Include="Su.cs" />
     <Compile Include="User.cs" />
     <Compile Include="Tools.cs" />

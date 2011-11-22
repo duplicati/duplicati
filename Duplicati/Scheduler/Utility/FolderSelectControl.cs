@@ -155,7 +155,7 @@ namespace Duplicati.Scheduler.Utility
         /// <param name="e"></param>
         private void treeListView_ItemActivate(object sender, EventArgs e)
         {
-            ShellUtilities.Execute(((System.IO.FileSystemInfo)this.treeListView.SelectedObject).FullName);
+            System.Diagnostics.Process.Start(((System.IO.FileSystemInfo)this.treeListView.SelectedObject).FullName);
         }
 
         private void treeListView_CellClick(object sender, BrightIdeasSoftware.CellClickEventArgs e)
