@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -87,10 +87,12 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="Mono.Posix" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HostedInstanceKeeper.cs" />
-    <Compile Include="SerializationHelper.cs" />
     <Compile Include="Strings\WindowsMainForm.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -133,6 +135,11 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="..\..\CommandLine\CommandLineParser.cs">
+      <Link>CommandLineParser.cs</Link>
+    </Compile>
+    <Compile Include="WinFormsRunner.cs" />
+    <Compile Include="GtkRunner.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Server\Duplicati.Server.csproj">
@@ -142,6 +149,14 @@
     <ProjectReference Include="..\..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
       <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>
       <Name>Duplicati.Server.Serialization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

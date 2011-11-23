@@ -65,6 +65,16 @@ namespace Duplicati.Server.Serialization
         FindLastFileVersion,
         Verify
     }
+    
+    public enum SuggestedStatusIcon
+    {
+        Ready,
+        ReadyWarning,
+        ReadyError,
+        Paused,
+        Active,
+        ActivePaused
+    }
 
     public static class EnumConverter
     {

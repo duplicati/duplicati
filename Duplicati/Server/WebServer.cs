@@ -276,7 +276,13 @@ namespace Duplicati.Server
                                 Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));
                         }
                         break;
-
+                    case "clear-warning":
+                        Program.HasWarning = false;
+                        break;
+                    case "clear-error":
+                        Program.HasError = false;
+                        break;
+                    
                     default:
                         ReportError(response, bw, string.Format("Unsupported command {0}", command));
                         break;

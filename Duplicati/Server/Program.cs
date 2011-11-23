@@ -82,6 +82,15 @@ namespace Duplicati.Server
         /// The webserver instance
         /// </summary>
         public static WebServer WebServer;
+        
+        /// <summary>
+        /// An event that is set once the server is ready to respond to requests
+        /// </summary>
+        public static System.Threading.ManualResetEvent ServerStartedEvent = new System.Threading.ManualResetEvent(false);
+        
+        //TODO: These should be persisted to the database
+        public static bool HasError;
+        public static bool HasWarning;
 
         /// <summary>
         /// The main entry point for the application.
@@ -281,7 +290,8 @@ namespace Duplicati.Server
                 Program.WebServer = new Server.WebServer(8080);
 
                 DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
-
+    
+                ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
             }
             catch (Exception ex)

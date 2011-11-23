@@ -10,5 +10,8 @@ namespace Duplicati.Server.Serialization
         LiveControlState ProgramState { get; }
         IProgressEventData RunningBackupStatus { get; }
         System.Collections.Generic.IList<long> SchedulerQueueIds { get; }
+        bool HasWarning { get; }
+        bool HasError { get; }
+        SuggestedStatusIcon SuggestedStatusIcon { get; }
     }
 }

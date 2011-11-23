@@ -61,6 +61,35 @@ namespace Duplicati.Server
         {
             get { return Program.Runner.LastEvent; }
         }
+        
+        public bool HasWarning { get { return Program.HasWarning; } }
+        public bool HasError { get { return Program.HasError; } }
+        
+        public SuggestedStatusIcon SuggestedStatusIcon
+        {
+            get
+            {
+                if (this.ActiveScheduleId < 0)
+                {
+                    if (this.ProgramState == LiveControlState.Paused)
+                        return SuggestedStatusIcon.Paused;
+                    
+                    if (this.HasError)
+                        return SuggestedStatusIcon.ReadyError;
+                    if (this.HasWarning)
+                        return SuggestedStatusIcon.ReadyWarning;
+                    
+                    return SuggestedStatusIcon.Ready;
+                }
+                else
+                {
+                    if (this.ProgramState == LiveControlState.Running)
+                        return SuggestedStatusIcon.Active;
+                    else
+                        return SuggestedStatusIcon.ActivePaused;
+                }
+            }
+        }
     }
 }
 

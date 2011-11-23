@@ -6,11 +6,12 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using Duplicati.Server.Serialization;
 
 namespace Duplicati.GUI.TrayIcon
 {
     public partial class WindowsMainForm : Form
-    {
+    {   
         private bool m_stateIsPaused = false;
         private bool m_hasError = false;
         private bool m_hasWarning = false;
@@ -30,34 +31,37 @@ namespace Duplicati.GUI.TrayIcon
             Connection_StatusUpdated(Program.Connection.Status);
         }
 
-        void Connection_StatusUpdated(Server.Serialization.ISerializableStatus status)
+        void Connection_StatusUpdated(ISerializableStatus status)
         {
             if (this.InvokeRequired)
                 this.Invoke(new HttpServerConnection.StatusUpdate(Connection_StatusUpdated), status);
             else
             {
-                if (status.ActiveScheduleId < 0)
+                switch(status.SuggestedStatusIcon)
                 {
-                    if (status.ProgramState == Server.Serialization.LiveControlState.Running)
-                    {
-                        if (m_hasError)
-                            TrayIcon.Icon = Properties.Resources.TrayNormalError;
-                        else if (m_hasWarning)
-                            TrayIcon.Icon = Properties.Resources.TrayNormalWarning;
-                        else
-                            TrayIcon.Icon = Properties.Resources.TrayNormal;
-                    }
-                    else
-                        TrayIcon.Icon = Properties.Resources.TrayNormalPause;
-                }
-                else
-                {
-                    TrayIcon.Icon =
-                       status.ProgramState == Server.Serialization.LiveControlState.Running ?
-                       Properties.Resources.TrayWorking : Properties.Resources.TrayWorkingPause;
+                    case SuggestedStatusIcon.Active:
+                        TrayIcon.Icon =  Properties.Resources.TrayWorking;
+                        break;
+                    case SuggestedStatusIcon.ActivePaused:
+                        TrayIcon.Icon =  Properties.Resources.TrayWorkingPause;
+                        break;
+                    case SuggestedStatusIcon.ReadyError:
+                        TrayIcon.Icon =  Properties.Resources.TrayNormalError;
+                        break;
+                    case SuggestedStatusIcon.ReadyWarning:
+                        TrayIcon.Icon =  Properties.Resources.TrayNormalWarning;
+                        break;
+                    case SuggestedStatusIcon.Paused:
+                        TrayIcon.Icon =  Properties.Resources.TrayNormalPause;
+                        break;
+                    case SuggestedStatusIcon.Ready:
+                    default:    
+                        TrayIcon.Icon = Properties.Resources.TrayNormal;
+                        break;
+                    
                 }
 
-                if (status.ProgramState == Server.Serialization.LiveControlState.Running)
+                if (status.ProgramState == LiveControlState.Running)
                 {
                     pauseToolStripMenuItem.Image = Properties.Resources.Pause;
                     pauseToolStripMenuItem.Text = Strings.WindowsMainForm.PauseMenuText;

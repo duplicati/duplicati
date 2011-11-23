@@ -237,7 +237,22 @@ namespace Duplicati.GUI.TrayIcon
                 req.Add("full", "true");
             ExecuteAndNotify(req);
         }
+  
+        public void ClearWarning()
+        {
+            Dictionary<string, string> req = new Dictionary<string, string>();
+            req.Add("action", "send-command");
+            req.Add("command", "clear-warning");
+            ExecuteAndNotify(req);
+        }
 
+        public void ClearError()
+        {
+            Dictionary<string, string> req = new Dictionary<string, string>();
+            req.Add("action", "send-command");
+            req.Add("command", "clear-error");
+            ExecuteAndNotify(req);
+        }
 
         public void Dispose()
         {

@@ -17,9 +17,7 @@ namespace Duplicati.GUI.TrayIcon
             m_runner = new System.Threading.Thread(ThreadRunner);
             m_runner.Start(args);
 
-            //TODO: Should wait for a event or similar
-            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
-
+            Duplicati.Server.Program.ServerStartedEvent.WaitOne(TimeSpan.FromSeconds(5), true);
         }
 
         private void ThreadRunner(object a)
