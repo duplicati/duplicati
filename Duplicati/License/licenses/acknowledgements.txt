@@ -1,11 +1,8 @@
- Duplicati is an Open Source project, 
-originally written and maintained by
-Kenneth Skovhede
+Duplicati is an Open Source project, originally written and maintained by Kenneth Skovhede. We would like to thank all contributors who made Duplicati what it is today. A special thanks to the many users who let us know how they are using Duplicati, ask for new features, test development builds and thus help us improve Duplicati further.
 
-You can reach the author at opensource@hexad.dk.
-
-Programming:
-  Kenneth Skovhede
+Software Development:
+  Kenneth Skovhede - kenneth@duplicati.com
+  René Stach - rene@duplicati.com
   Livio Bertacco
   Daniel Halan
   
@@ -26,10 +23,4 @@ Duplicati.Scheduler:
   Kenneth Bergeron, IAP Worldwide Services, Inc
     NOAA :: National Marine Fisheries Service
 
-A special thanks to the many users
-who continues to report problems
-and ask for new features.
-
-The licenses of the thirdparty libraries used 
-by Duplicati can be seen in the list to the
-left.
+The licenses of the third party libraries used by Duplicati can be seen in the list to the left.
