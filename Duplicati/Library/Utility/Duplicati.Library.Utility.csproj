@@ -111,6 +111,7 @@
     <Compile Include="Utility.cs" />
     <Compile Include="Win32.cs" />
     <Compile Include="WorkerThread.cs" />
+    <Compile Include="CommandLineParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

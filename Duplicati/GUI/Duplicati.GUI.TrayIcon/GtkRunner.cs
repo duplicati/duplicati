@@ -15,14 +15,13 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using Gtk;
+using System.Collections.Generic;
 using Gdk;
-using Duplicati.Server.Serialization;
+using Gtk;
 
 namespace Duplicati.GUI.TrayIcon
 {
-    //We use a separate class to start the runner to avoid attempts to load Gtk from Program.cs
-    public class GtkRunner
+    public class GtkRunner : TrayIconBase
     {
         /// <summary>
         /// Static constructor that ensures the Gtk environment is initialized
@@ -32,194 +31,187 @@ namespace Duplicati.GUI.TrayIcon
             Gtk.Application.Init();
         }
         
-        /// <summary>
-        /// Container class for passing the status as an event argument
-        /// </summary>
-        private class StatusEvent : EventArgs
+        private class StatusEventArgs : EventArgs
         {
-            public ISerializableStatus Status;
-            public StatusEvent(ISerializableStatus status) { this.Status = status; }
+            public readonly Duplicati.Server.Serialization.ISerializableStatus Status;
+            public StatusEventArgs(Duplicati.Server.Serialization.ISerializableStatus args) { this.Status = args; }
+        }
+        
+        private class MenuItemWrapper : IMenuItem
+        {
+            private MenuItem m_item;
+            private System.Action m_callback;
+            private static Dictionary<MenuIcons, Gtk.Image> _icons = new Dictionary<MenuIcons, Gtk.Image>();
+            
+            public MenuItem MenuItem { get { return m_item; } }
+            
+            private Gtk.Image GetIcon(MenuIcons icon)
+            {
+                if (!_icons.ContainsKey(icon))
+                {
+                    switch(icon)
+                    {
+                    case MenuIcons.None:
+                        _icons[icon] = null;
+                        break;
+                    case MenuIcons.Options:
+                        _icons[icon] = ImageToGtk(Properties.Resources.SettingsMenuIcon);
+                        break;
+                    case MenuIcons.Pause:
+                        _icons[icon] = ImageToGtk(Properties.Resources.Pause);
+                        break;
+                    case MenuIcons.Pause5:
+                        _icons[icon] = ImageToGtk(Properties.Resources.Clock05);
+                        break;
+                    case MenuIcons.Pause15:
+                        _icons[icon] = ImageToGtk(Properties.Resources.Clock15);
+                        break;
+                    case MenuIcons.Pause30:
+                        _icons[icon] = ImageToGtk(Properties.Resources.Clock30);
+                        break;
+                    case MenuIcons.Pause60:
+                        _icons[icon] = ImageToGtk(Properties.Resources.Clock60);
+                        break;
+                    case MenuIcons.Quit:
+                        _icons[icon] = ImageToGtk(Properties.Resources.CloseMenuIcon);
+                        break;
+                    case MenuIcons.Resume:
+                        _icons[icon] = ImageToGtk(Properties.Resources.Play);
+                        break;
+                    case MenuIcons.Status:
+                        _icons[icon] = ImageToGtk(Properties.Resources.StatusMenuIcon);
+                        break;
+                    case MenuIcons.Stop:
+                        _icons[icon] = ImageToGtk(Properties.Resources.Stop);
+                        break;
+                    case MenuIcons.Throttle:
+                        _icons[icon] = ImageToGtk(Properties.Resources.Throttle);
+                        break;
+                    case MenuIcons.Wizard:
+                        _icons[icon] = ImageToGtk(Properties.Resources.WizardMenuIcon);
+                        break;
+                    default:
+                        _icons[icon] = null;
+                        break;
+                    }
+                }
+                
+                return _icons[icon];
+            }
+
+            public MenuItemWrapper(string text, MenuIcons icon, System.Action callback, IList<IMenuItem> subitems)
+            {
+                if (text == "-")
+                    m_item = new SeparatorMenuItem();
+                else
+                {
+                    m_item = new ImageMenuItem(text);
+                    if (icon != MenuIcons.None) {
+                        ((ImageMenuItem)m_item).Image = GetIcon(icon);
+                        
+                        //TODO: Not sure we should do this, it overrides policy?
+                        m_item.ExposeEvent += DrawImageMenuItemImage;
+                    }
+                    
+                    if (subitems != null && subitems.Count > 0)
+                    {
+                        Menu s = new Menu();
+                        foreach(var sm in subitems)
+                            s.Add(((MenuItemWrapper)sm).m_item);
+                        
+                        m_item.Submenu = s;
+                    }
+                    
+                    if (callback != null)
+                    {
+                        m_item.Activated += ClickHandler;
+                        m_callback = callback;
+                    }
+                }
+            }
+            
+            private void ClickHandler(object sender, EventArgs e)
+            {
+                m_callback();
+            }
+
+            /// <summary> Draw the image to the image menu item. Taken from: http://mono.1490590.n4.nabble.com/ImageMenuItem-does-not-display-the-image-Linux-platform-tp3510861p3511376.html </summary>
+            ///  The event source. <see cref="System.Object"/> 
+            ///  The event args. <see cref="Gtk.ExposeEventArgs"/> 
+            private void DrawImageMenuItemImage(object o, Gtk.ExposeEventArgs args) 
+            { 
+                if (o as Gtk.ImageMenuItem == null) 
+                        return; 
+                        
+                Gtk.Image image = (o as Gtk.ImageMenuItem).Image as Gtk.Image; 
+                if (image == null || image.Pixbuf == null) 
+                        return; 
+        
+                Gdk.GC mainGC = ((Gtk.Widget)o).Style.ForegroundGCs[(int)Gtk.StateType.Normal]; 
+                Gdk.Rectangle r = args.Event.Area; 
+                                
+                args.Event.Window.DrawPixbuf(mainGC, image.Pixbuf, 0, 0, r.Left + 2, 
+                                             r.Top + (r.Height - image.Pixbuf.Height) / 2, -1, -1, Gdk.RgbDither.None, 0, 0); 
+            } 
+            
+            public string Text
+            {
+                get { return ((Gtk.Label)m_item.Child).Text; }
+                set { ((Gtk.Label)m_item.Child).Text = value; }
+            }
+            
+            public MenuIcons Icon
+            {
+                set { ((ImageMenuItem)m_item).Image = GetIcon(value); }
+            }
+            
+            public bool Enabled
+            {
+                get { return m_item.Sensitive; }
+                set { m_item.Sensitive = value; }
+            }
+        }
+        
+        protected StatusIcon m_trayIcon;
+        protected Menu m_popupMenu;
+        
+        protected static Dictionary<TrayIcons, Pixbuf> _images = new Dictionary<TrayIcons, Pixbuf>();
+
+        protected override void Exit ()
+        {
+            Application.Quit();
         }
   
-        /// <summary>
-        /// Creates a new Image menu with a single calls
-        /// </summary>
-        /// <returns>
-        /// The image menu.
-        /// </returns>
-        /// <param name='label'>The menu text</param>
-        /// <param name='subitems'>Any submenu items</param>
-        private static ImageMenuItem NewImageMenu(string label, params MenuItem[] subitems)
+        public override void Init (string[]  args)
         {
-            return NewImageMenu(label, (Gtk.Image)null, null, subitems);
+            CreateTrayInstance();
+            base.Init (args); 
         }
         
-        /// <summary>
-        /// Creates a new Image menu with a single calls
-        /// </summary>
-        /// <returns>
-        /// The image menu.
-        /// </returns>
-        /// <param name='label'>The menu text</param>
-        /// <param name='img'>The image to assing the menu or null</param>
-        /// <param name='clickhandler'>A handler to execute on click</param>
-        /// <param name='subitems'>Any submenu items</param>
-        private static ImageMenuItem NewImageMenu(string label, System.Drawing.Image img, EventHandler clickhandler = null, params MenuItem[] subitems)
+        protected virtual void CreateTrayInstance()
         {
-            return NewImageMenu(label, ImageToGtk(img), clickhandler, subitems);
-        }
-
-        /// <summary>
-        /// Creates a new Image menu with a single calls
-        /// </summary>
-        /// <returns>
-        /// The image menu.
-        /// </returns>
-        /// <param name='label'>The menu text</param>
-        /// <param name='img'>The image to assing the menu or null</param>
-        /// <param name='clickhandler'>A handler to execute on click</param>
-        /// <param name='subitems'>Any submenu items</param>
-        private static ImageMenuItem NewImageMenu(string label, Gtk.Image img, EventHandler clickhandler = null, params MenuItem[] subitems)
-        {
-            ImageMenuItem m = new ImageMenuItem(label);
-            if (img != null)
-                m.Image = img;
-            
-            if (subitems != null && subitems.Length > 0)
-            {
-                Menu s = new Menu();
-                foreach(var sm in subitems)
-                    s.Add(sm);
-                
-                m.Submenu = s;
-            }
-            
-            if (clickhandler != null)
-                m.Activated += clickhandler;
-            
-            return m;
-        }
-                
-        
-        private readonly Gdk.Pixbuf NORMAL_ICON = ImageToPixbuf(Properties.Resources.TrayNormal.ToBitmap());
-        private readonly Gdk.Pixbuf NORMAL_PAUSED_ICON = ImageToPixbuf(Properties.Resources.TrayNormalPause.ToBitmap());
-        private readonly Gdk.Pixbuf NORMAL_WARNING_ICON = ImageToPixbuf(Properties.Resources.TrayNormalWarning.ToBitmap());
-        private readonly Gdk.Pixbuf NORMAL_ERROR_ICON = ImageToPixbuf(Properties.Resources.TrayNormalError.ToBitmap());
-        private readonly Gdk.Pixbuf WORKING_ICON = ImageToPixbuf(Properties.Resources.TrayWorking.ToBitmap());
-        private readonly Gdk.Pixbuf WORKING_PAUSED_ICON = ImageToPixbuf(Properties.Resources.TrayWorkingPause.ToBitmap());
-        
-        private readonly Gtk.Image MENU_PAUSE_IMAGE = ImageToGtk(Properties.Resources.Pause);
-        private readonly Gtk.Image MENU_RESUME_IMAGE = ImageToGtk(Properties.Resources.Play);
-        
-        private Menu m_popupMenu;
-        private bool m_stateIsPaused = false;        
-        
-        private Gtk.StatusIcon trayIcon;
-        private ImageMenuItem pauseMenuItem;
-        private MenuItem stopMenuItem;
-        
-        public void RunMain()
-        {
-            trayIcon = new Gtk.StatusIcon(NORMAL_ICON);
-
-            trayIcon.Visible = true;
-            trayIcon.PopupMenu += OnTrayIconPopup;
-   
-            m_popupMenu = new Menu();
-            
-            //TODO: Translation
-                        
-            var menuitems = new MenuItem[] {
-                NewImageMenu("Status", Properties.Resources.StatusMenuIcon),
-                NewImageMenu("Wizard...", Properties.Resources.WizardMenuIcon),
-                new SeparatorMenuItem(),    
-                NewImageMenu("Options...", Properties.Resources.SettingsMenuIcon),
-                new SeparatorMenuItem(),
-                NewImageMenu("Control", new MenuItem[] {
-                    pauseMenuItem = (ImageMenuItem)NewImageMenu(Strings.WindowsMainForm.PauseMenuText, MENU_PAUSE_IMAGE, delegate (object sender, EventArgs args) { if (m_stateIsPaused) { Program.Connection.Resume(); } else { Program.Connection.Pause(); } } ),
-                    NewImageMenu("Pause period", new MenuItem[] {
-                        NewImageMenu("5 minutes", Properties.Resources.Clock05, delegate (object sender, EventArgs args) { Program.Connection.Pause("5m"); }),
-                        NewImageMenu("15 minutes", Properties.Resources.Clock15, delegate (object sender, EventArgs args) { Program.Connection.Pause("15m"); }),
-                        NewImageMenu("30 minutes", Properties.Resources.Clock30, delegate (object sender, EventArgs args) { Program.Connection.Pause("30m"); }),
-                        NewImageMenu("60 minutes", Properties.Resources.Clock60, delegate (object sender, EventArgs args) { Program.Connection.Pause("60m"); })
-                    }),
-                    stopMenuItem = NewImageMenu("Stop", Properties.Resources.Stop, delegate (object sender, EventArgs args) { Program.Connection.StopBackup(); }),
-                    NewImageMenu("Throttle options", Properties.Resources.Throttle),
-                }),
-                new SeparatorMenuItem(),
-                NewImageMenu("Quit", new Gtk.Image(Stock.Quit, IconSize.Menu), delegate (object sender, EventArgs args) { Gtk.Application.Quit(); }),
-            };
-            
-            stopMenuItem.Sensitive = false;
-            
-            foreach(var m in menuitems)
-                m_popupMenu.Add(m);
-            
-            Program.Connection.StatusUpdated += delegate(ISerializableStatus status) {
-                Gtk.Application.Invoke(Program.Connection, new StatusEvent(status), Status_Updated_EventHandler);         
-            };
-            
-            Status_Updated_EventHandler(Program.Connection, new StatusEvent(Program.Connection.Status));
-            
-            Gtk.Application.Run();
-            
-        }        
-                
-        private void Status_Updated_EventHandler(object sender, EventArgs e)
-        {
-            if (e as StatusEvent == null)
-                return;
-            
-            ISerializableStatus status = ((StatusEvent)e).Status;
-
-            switch(status.SuggestedStatusIcon)
-            {
-                case SuggestedStatusIcon.Active:
-                    trayIcon.Pixbuf = WORKING_ICON;
-                    break;
-                case SuggestedStatusIcon.ActivePaused:
-                    trayIcon.Pixbuf =  WORKING_PAUSED_ICON;
-                    break;
-                case SuggestedStatusIcon.ReadyError:
-                    trayIcon.Pixbuf =  NORMAL_ERROR_ICON;
-                    break;
-                case SuggestedStatusIcon.ReadyWarning:
-                    trayIcon.Pixbuf =  NORMAL_WARNING_ICON;
-                    break;
-                case SuggestedStatusIcon.Paused:
-                    trayIcon.Pixbuf =  NORMAL_PAUSED_ICON;
-                    break;
-                case SuggestedStatusIcon.Ready:
-                default:    
-                    trayIcon.Pixbuf = NORMAL_ICON;
-                    break;
-                
-            }
-
-            if (status.ProgramState == LiveControlState.Running)
-            {
-                pauseMenuItem.Image = MENU_PAUSE_IMAGE;
-                ((Gtk.Label)pauseMenuItem.Child).Text = Strings.WindowsMainForm.PauseMenuText;
-                m_stateIsPaused = false;
-            }
-            else
-            {
-                pauseMenuItem.Image = MENU_RESUME_IMAGE;
-                ((Gtk.Label)pauseMenuItem.Child).Text = Strings.WindowsMainForm.ResumeMenuText;
-                m_stateIsPaused = true;
-            }
-            
-            stopMenuItem.Sensitive = status.ActiveScheduleId >= 0;
+            m_trayIcon = new StatusIcon();
         }
         
+        protected override void Run (string[] args)
+        {
+            m_trayIcon.Visible = true;
+            m_trayIcon.PopupMenu += HandleTrayIconPopupMenu;
+            Application.Run();
+        }
         
-        private void OnTrayIconPopup (object o, EventArgs args) 
+        protected override IMenuItem CreateMenuItem (string text, MenuIcons icon, System.Action callback, IList<IMenuItem> subitems)
+        {
+            return new MenuItemWrapper(text, icon, callback, subitems);   
+        }
+
+        private void HandleTrayIconPopupMenu (object o, Gtk.PopupMenuArgs args)
         {
             m_popupMenu.ShowAll();
             m_popupMenu.Popup(null, null, null, 0u, 0u);
         }
         
-        private static Gdk.Pixbuf ImageToPixbuf(System.Drawing.Image image)
+        public static Gdk.Pixbuf ImageToPixbuf(System.Drawing.Image image)
         {
             using (var stream = new System.IO.MemoryStream()) 
             {
@@ -230,7 +222,7 @@ namespace Duplicati.GUI.TrayIcon
             }
         }    
 
-        private static Gtk.Image ImageToGtk(System.Drawing.Image image)
+        public static Gtk.Image ImageToGtk(System.Drawing.Image image)
         {
             using (var stream = new System.IO.MemoryStream()) 
             {
@@ -239,7 +231,73 @@ namespace Duplicati.GUI.TrayIcon
                 Gtk.Image img = new Gtk.Image(stream);
                 return img;
             }
-        }    
+        } 
+        
+        protected static Pixbuf GetIcon(TrayIcons icon)
+        {
+            if (!_images.ContainsKey(icon))
+            {
+                switch(icon)
+                {
+                case TrayIcons.Paused:
+                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayNormalPause.ToBitmap());
+                    break;
+                case TrayIcons.Running:
+                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayWorking.ToBitmap());
+                    break;
+                case TrayIcons.IdleError:
+                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayNormalError.ToBitmap());
+                    break;
+                case TrayIcons.RunningError:
+                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayWorking.ToBitmap());
+                    break;
+                case TrayIcons.PausedError:
+                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayNormalPause.ToBitmap());
+                    break;
+                case TrayIcons.Idle:
+                default:
+                    _images[icon] = ImageToPixbuf(Properties.Resources.TrayNormal.ToBitmap());
+                    break;
+                }
+            }
+            
+            return _images[icon];
+        }
+        
+        protected override TrayIcons Icon 
+        {
+            set 
+            {
+                m_trayIcon.Pixbuf = GetIcon(value);
+            }
+        }
+        
+        protected override void SetMenu (IEnumerable<IMenuItem> items)
+        {
+            m_popupMenu = new Menu();
+            foreach(var itm in items)
+                m_popupMenu.Add(((MenuItemWrapper)itm).MenuItem);
+        }
+        
+        protected override void RegisterStatusUpdateCallback ()
+        {
+            Program.Connection.StatusUpdated += delegate(Duplicati.Server.Serialization.ISerializableStatus status) {
+                Gtk.Application.Invoke(this, new StatusEventArgs(status), StatusUpdateEvent);
+            };
+        }
+        
+        protected void StatusUpdateEvent(object sender, EventArgs a)
+        {
+            if (a as StatusEventArgs == null)
+                return;
+            
+            this.OnStatusUpdated(((StatusEventArgs)a).Status);
+        }
+
+        public override void Dispose ()
+        {
+        }
+        
     }
 }
 

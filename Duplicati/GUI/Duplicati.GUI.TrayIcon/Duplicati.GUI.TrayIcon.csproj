@@ -36,7 +36,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -46,7 +45,6 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <OutputPath>bin\Debug</OutputPath>
@@ -67,17 +65,23 @@
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
     <CodeAnalysisFailOnMissingRules>true</CodeAnalysisFailOnMissingRules>
     <WarningLevel>4</WarningLevel>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Duplicati.GUI.TrayIcon.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="atk-sharp">
+      <HintPath>BuildSupport\atk-sharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="glib-sharp">
+      <HintPath>BuildSupport\glib-sharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -87,9 +91,21 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
-    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
-    <Reference Include="Mono.Posix" />
+    <Reference Include="appindicator-sharp">
+      <HintPath>BuildSupport\appindicator-sharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="gdk-sharp">
+      <HintPath>BuildSupport\gdk-sharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="gtk-sharp">
+      <HintPath>BuildSupport\gtk-sharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MonoMac">
+      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HostedInstanceKeeper.cs" />
@@ -135,11 +151,26 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="..\..\CommandLine\CommandLineParser.cs">
-      <Link>CommandLineParser.cs</Link>
-    </Compile>
     <Compile Include="WinFormsRunner.cs" />
+    <Compile Include="AppIndicatorRunner.cs" />
+    <Compile Include="CocoaRunner.cs" />
+    <None Include="SVGIcons\dark\duplicati-logo.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Info.plist" />
+    <Compile Include="TrayIconBase.cs" />
     <Compile Include="GtkRunner.cs" />
+    <None Include="OSX Icons\normal-error.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="OSX Icons\normal-pause.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="OSX Icons\normal-running.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="OSX app help\Info.plist" />
+    <None Include="OSX app help\MainMenu.xib" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Server\Duplicati.Server.csproj">
@@ -239,11 +270,10 @@
     <None Include="Resources\Play.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <ItemGroup />
+  <ItemGroup>
+    <Content Include="OSX Icons\normal.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

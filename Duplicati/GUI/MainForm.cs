@@ -560,7 +560,7 @@ namespace Duplicati.GUI
             bool anyUiShown = false;
             
             List<string> args = new List<string>(_args);
-            Dictionary<string, string> options = CommandLine.CommandLineParser.ExtractOptions(args);
+            Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
             //Backwards compatible options
             if (args.Count == 2 && args[0].ToLower().Trim() == "run-backup")

@@ -153,7 +153,7 @@ namespace Duplicati.GUI
 
 
             //Find commandline options here for handling special startup cases
-            Dictionary<string, string> commandlineOptions = CommandLine.CommandLineParser.ExtractOptions(new List<string>(args));
+            Dictionary<string, string> commandlineOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
 
             foreach (string s in args)
                 if (

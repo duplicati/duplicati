@@ -51,7 +51,7 @@ namespace Duplicati.CommandLine.BackendTester
             try
             {
                 List<string> args = new List<string>(_args);
-                Dictionary<string, string> options = CommandLineParser.ExtractOptions(args);
+                Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
                 if (!options.ContainsKey("ftp_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_PASSWORD")))
                     options["ftp_password"] = System.Environment.GetEnvironmentVariable("FTP_PASSWORD");

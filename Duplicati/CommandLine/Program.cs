@@ -33,7 +33,7 @@ namespace Duplicati.CommandLine
             {
                 List<string> cargs = new List<string>(args);
                 string filter = Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(Duplicati.Library.Utility.FilenameFilter.ParseCommandLine(cargs, true));
-                Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
+                Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(cargs);
 
                 foreach (string internaloption in Library.Main.Options.InternalOptions)
                     if (options.ContainsKey(internaloption))
