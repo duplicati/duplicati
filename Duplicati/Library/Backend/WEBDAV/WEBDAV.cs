@@ -29,6 +29,7 @@ namespace Duplicati.Library.Backend
         private System.Net.NetworkCredential m_userInfo;
         private string m_url;
         private string m_path;
+		private string m_sanitizedUrl;
         private string m_rawurl;
         private string m_rawurlPort;
         private bool m_useIntegratedAuthentication = false;
@@ -104,6 +105,7 @@ namespace Duplicati.Library.Backend
                 port = m_useSSL ? 443 : 80;
 
             m_rawurlPort = (m_useSSL ? "https://" : "http://") + u.Host + ":" + port + m_path;
+			m_sanitizedUrl = (m_useSSL ? "https://" : "http://") + u.Host + m_path;
             options.TryGetValue("debug-propfind-file", out m_debugPropfindFile);
         }
 
@@ -173,6 +175,8 @@ namespace Duplicati.Library.Backend
                         cmp_path = m_rawurlPort;
                     else if (name.StartsWith(m_path))
                         cmp_path = m_path;
+                    else if (name.StartsWith(m_sanitizedUrl))
+                        cmp_path = m_sanitizedUrl;
                     else
                         continue;
 
