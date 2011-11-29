@@ -570,7 +570,7 @@ namespace Duplicati.Library.Main
 
                                     completedWithoutChanges = done && !dir.AnyChangesFound;
 
-                                    if (m_options.UploadUnchangedBackups)
+                                    if (m_options.UploadUnchangedBackups || full)
                                         completedWithoutChanges = false;
 
                                     if (!completedWithoutChanges)
