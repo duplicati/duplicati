@@ -30,6 +30,7 @@ namespace Duplicati.Library.Backend
         private string m_url;
         private string m_path;
 		private string m_sanitizedUrl;
+		private string m_reverseProtocolUrl;
         private string m_rawurl;
         private string m_rawurlPort;
         private bool m_useIntegratedAuthentication = false;
@@ -106,6 +107,7 @@ namespace Duplicati.Library.Backend
 
             m_rawurlPort = (m_useSSL ? "https://" : "http://") + u.Host + ":" + port + m_path;
 			m_sanitizedUrl = (m_useSSL ? "https://" : "http://") + u.Host + m_path;
+			m_reverseProtocolUrl = (m_useSSL ? "http://" : "https://") + u.Host + m_path;
             options.TryGetValue("debug-propfind-file", out m_debugPropfindFile);
         }
 
@@ -166,7 +168,9 @@ namespace Duplicati.Library.Backend
                     string name = System.Web.HttpUtility.UrlDecode(n.InnerText.Replace("+", "%2B"));
 
                     string cmp_path;
-
+					
+					//TODO: This list is getting ridiculous, should change to regexps
+					
                     if (name.StartsWith(m_url))
                         cmp_path = m_url;
                     else if (name.StartsWith(m_rawurl))
@@ -177,6 +181,8 @@ namespace Duplicati.Library.Backend
                         cmp_path = m_path;
                     else if (name.StartsWith(m_sanitizedUrl))
                         cmp_path = m_sanitizedUrl;
+                    else if (name.StartsWith(m_reverseProtocolUrl))
+                        cmp_path = m_reverseProtocolUrl;
                     else
                         continue;
 
