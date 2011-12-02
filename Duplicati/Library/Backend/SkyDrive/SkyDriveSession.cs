@@ -1,4 +1,4 @@
-﻿using System;
+ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -22,7 +22,7 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// The main url for the SkyDrive service, used to query for root folders
         /// </summary>
-        private static string SKYDRIVE_URL = "http://docs.live.net/SkyDocsService.svc";
+        private static string SKYDRIVE_URL = "https://docs.live.net/SkyDocsService.svc";
 
         /// <summary>
         /// The url used to get a the url for authenticating the Passport
