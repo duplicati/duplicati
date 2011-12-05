@@ -134,7 +134,9 @@ namespace Duplicati.CommandLine.BackendTester
 
                         curlist = backend.List();
                     }
-                    catch { }
+                    catch ( Exception ex ){
+						Console.WriteLine (ex.ToString());
+					}
                 }
 
                 if (curlist == null)
