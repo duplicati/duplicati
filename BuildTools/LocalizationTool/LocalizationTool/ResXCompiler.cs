@@ -26,37 +26,63 @@ namespace LocalizationTool
 {
     public static class ResXCompiler
     {
+		private static string ExecuteAndRead(string command, string arguments)
+		{
+            var psi = new System.Diagnostics.ProcessStartInfo(command, arguments);
+            psi.RedirectStandardOutput = true;
+            psi.UseShellExecute = false;
+            
+            var pi = System.Diagnostics.Process.Start(psi);
+            pi.WaitForExit(5000);
+            if (pi.HasExited)
+                return pi.StandardOutput.ReadToEnd().Trim();
+			
+			return null;
+		}
+		
         public static void CompileResxFiles(string folder, List<string> excludeFolders, string @namespace, string assemblyname, string versionAssembly, string keyfile, string culture, string productname)
         {
-            folder = Duplicati.Library.Utility.Utility.AppendDirSeparator(folder);
-            string resgenexe = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\resgen.exe");
-            string alexe = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\al.exe");
-
+			string resgenexe;
+			string alexe;
+			
+			if (Duplicati.Library.Utility.Utility.IsClientLinux)
+			{
+				resgenexe = ExecuteAndRead("which", "resgen");
+				alexe = ExecuteAndRead("which", "al");
+			}
+			else
+			{
+				
+	            resgenexe = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\resgen.exe");
+	            alexe = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\al.exe");
+	
+	            if (!System.IO.File.Exists(resgenexe))
+	            {
+	                string resgenexe2 = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft.NET\\SDK\\v2.0\\bin\\resgen.exe");
+	
+	                if (System.IO.File.Exists(resgenexe2))
+	                    resgenexe = resgenexe2;
+	            }
+	            if (!System.IO.File.Exists(alexe))
+	            {
+	                string v30 = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.0\\al.exe");
+	                string v35 = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.5\\al.exe");
+	                string sdk = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\al.exe");
+	
+	                if (System.IO.File.Exists(v30))
+	                    alexe = v30;
+	                else if (System.IO.File.Exists(v35))
+	                    alexe = v35;
+	                else if (System.IO.File.Exists(sdk))
+	                    alexe = sdk;
+	            }
+					
+			}
             if (!System.IO.File.Exists(resgenexe))
             {
-                string resgenexe2 = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft.NET\\SDK\\v2.0\\bin\\resgen.exe");
-
-                if (System.IO.File.Exists(resgenexe2))
-                    resgenexe = resgenexe2;
-                else
-                {
-                    Console.WriteLine("Unable to locate file: {0}", resgenexe);
-                    Console.WriteLine("This can be fixed by installing a microsoft platform SDK, or visual studio (express is fine)");
-                    return;
-                }
-            }
-            if (!System.IO.File.Exists(alexe))
-            {
-                string v30 = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.0\\al.exe");
-                string v35 = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.5\\al.exe");
-                string sdk = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\al.exe");
-
-                if (System.IO.File.Exists(v30))
-                    alexe = v30;
-                else if (System.IO.File.Exists(v35))
-                    alexe = v35;
-                else if (System.IO.File.Exists(sdk))
-                    alexe = sdk;
+                Console.WriteLine("Unable to locate file: {0}", resgenexe);
+                Console.WriteLine("This can be fixed by installing a microsoft platform SDK, or visual studio (express is fine)");
+                return;
             }
 
             if (!System.IO.File.Exists(alexe))
@@ -67,6 +93,8 @@ namespace LocalizationTool
             }
 
             List<string> resources = new List<string>();
+
+			folder = Duplicati.Library.Utility.Utility.AppendDirSeparator(folder);
 
             foreach (string s in Duplicati.Library.Utility.Utility.EnumerateFiles(folder))
             {

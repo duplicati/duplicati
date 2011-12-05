@@ -760,8 +760,34 @@ namespace LocalizationTool
                             using (System.IO.StreamWriter sw = new System.IO.StreamWriter(inf.TargetFile))
                                 sw.Write(Properties.Resources.Empty_resx);
                         else
-                            System.IO.File.Copy(inf.SourceFile, inf.TargetFile);
+						{
+							if (Duplicati.Library.Utility.Utility.IsClientLinux)
+							{
+								var doc = XDocument.Load(inf.SourceFile);
+								var entries = from x in doc.Element("root").Elements("data")
+                                              where
+                                              x.Attribute("type") != null
+                                              &&
+                                              x.Attribute("type").Value == "System.Resources.ResXFileRef, System.Windows.Forms"
+                                              select x;
+						
+								foreach(var e in entries)
+								{
+									string name = e.Element("value").Value;
+									int ixpos = name.IndexOf(";");
+									string path = name.Substring(0, ixpos); 
+									path = path.Replace ("\\", System.IO.Path.DirectorySeparatorChar.ToString());
+									e.Element("value").Value = path + name.Substring(ixpos);
+								}
+								
+								doc.Save(inf.TargetFile);
+						
+							} else {
+                            	System.IO.File.Copy(inf.SourceFile, inf.TargetFile);
+							}
+						}
                     }
+					
 
                     foreach (var item in from y in
                                              (from x in XDocument.Load(inf.SourceFile).Element("root").Elements("data")
@@ -771,8 +797,8 @@ namespace LocalizationTool
                                               x.Attribute("type").Value == "System.Resources.ResXFileRef, System.Windows.Forms"
                                               select x)
                                          let relname = y.Element("value").Value.Substring(0, y.Element("value").Value.IndexOf(";"))
-                                         let sourceRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(inf.SourceFile), relname))
-                                         let targetRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(inf.TargetFile), relname))
+                                         let sourceRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(inf.SourceFile), relname)).Replace("\\", System.IO.Path.DirectorySeparatorChar.ToString())
+                                         let targetRes = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(inf.TargetFile), relname)).Replace("\\", System.IO.Path.DirectorySeparatorChar.ToString())
 
                                          select new { sourceRes, targetRes }
                                            )
@@ -781,7 +807,20 @@ namespace LocalizationTool
                             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(item.targetRes));
 
                         if (!System.IO.File.Exists(item.targetRes))
-                            System.IO.File.Copy(item.sourceRes, item.targetRes);
+						{
+							if (Duplicati.Library.Utility.Utility.IsClientLinux && !System.IO.File.Exists(item.sourceRes)) 
+							{
+								string basefolder = System.IO.Path.GetDirectoryName(item.sourceRes);
+								string sourcefile = System.IO.Directory.GetFiles (basefolder).FirstOrDefault (x => item.sourceRes.Equals(x, StringComparison.InvariantCultureIgnoreCase));
+								if (sourcefile == null)
+									Console.WriteLine ("Source file not found: " + item.sourceRes);
+								else	
+									System.IO.File.Copy (sourcefile, item.targetRes);
+								
+							} else {
+                            	System.IO.File.Copy(item.sourceRes, item.targetRes);
+							}
+						}
                     }
 
                 }
