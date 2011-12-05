@@ -631,9 +631,38 @@ namespace Duplicati.Library.Backend
 
         private void CreateFolderManaged()
         {
-            using (SFTPCon con = CreateManagedConnection(false))
-                con.Mkdir(m_path);
-
+			string p = m_path;
+				
+        	using (SFTPCon con = CreateManagedConnection(false))
+			{
+            	try 
+				{
+					//Some SSH implementations fail if the folder name has a trailing slash
+					if (p.EndsWith ("/"))
+						p = p.Substring (0, p.Length - 1);
+					
+					con.Mkdir(p);
+				} 
+				catch 
+				{
+					//For backwards compatibility, we also try to create the folder WITH a trailing slash,
+					// this should never work, but in case there is a SSH implementation that relies
+					// on this we try that too
+					if (p != m_path)
+					{
+						try 
+						{
+							//If this succeeds, we continue
+							con.Mkdir(m_path);
+							return;
+						}
+						catch { }
+					}
+					
+					//We report the original error
+					throw;
+				}
+			}
         }
 
         #endregion
