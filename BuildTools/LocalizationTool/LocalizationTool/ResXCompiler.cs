@@ -91,7 +91,11 @@ namespace LocalizationTool
                 Console.WriteLine("This can be fixed by installing the .Net framework version 2.0");
                 return;
             }
+			
+            if (!string.IsNullOrEmpty(keyfile) && Duplicati.Library.Utility.Utility.IsClientLinux)
+				keyfile = keyfile.Replace("\\", System.IO.Path.DirectorySeparatorChar.ToString());
 
+			
             List<string> resources = new List<string>();
 
 			folder = Duplicati.Library.Utility.Utility.AppendDirSeparator(folder);
@@ -136,7 +140,10 @@ namespace LocalizationTool
 
             if (resources.Count == 0)
                 return;
-
+			
+			if (!System.IO.File.Exists(versionAssembly) && Duplicati.Library.Utility.Utility.IsClientLinux)
+				versionAssembly = versionAssembly.Replace("\\", System.IO.Path.DirectorySeparatorChar.ToString());
+			
             if (!System.IO.File.Exists(versionAssembly))
             {
                 Console.WriteLine("Unable to locate file: {0}", versionAssembly);

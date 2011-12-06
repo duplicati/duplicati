@@ -33,7 +33,7 @@
 		<assembly name="Duplicati.Winforms.Controls" folder="Winforms\Controls" namespace="Duplicati.Winforms.Controls" />
 		
 		<keyfile>..\GUI\Duplicati.snk</keyfile>
-		<versionassembly>..\GUI\bin\release\Duplicati.exe</versionassembly>
+		<versionassembly>..\GUI\bin\Release\Duplicati.exe</versionassembly>
 		<sourcefolder>..</sourcefolder>
 		<outputfolder>compiled</outputfolder>
 		<productname>Duplicati</productname>
@@ -44,7 +44,7 @@
 		<assembly name="Duplicati.Library.Backend.SSH" folder="Library\Backend\SSH" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.TahoeLAFS" folder="Library\Backend\TahoeLAFS" namespace="Duplicati.Library.Backend" />		
 		
-		<versionassembly>..\GUI\bin\release\Duplicati.exe</versionassembly>
+		<versionassembly>..\GUI\bin\Release\Duplicati.exe</versionassembly>
 		<sourcefolder>..</sourcefolder>
 		<outputfolder>compiled</outputfolder>
 		<productname>Duplicati</productname>
@@ -54,7 +54,7 @@
 		<assembly name="System.Windows.Forms.Wizard" folder="WizardForm" />
 		
 		<keyfile>..\..\WizardForm\WizardForm.snk</keyfile>
-		<versionassembly>..\GUI\bin\release\System.Windows.Forms.Wizard.dll</versionassembly>
+		<versionassembly>..\GUI\bin\Release\System.Windows.Forms.Wizard.dll</versionassembly>
 		<sourcefolder>..\..</sourcefolder>
 		<outputfolder>compiled</outputfolder>
 		<productname>WizardForm</productname>
