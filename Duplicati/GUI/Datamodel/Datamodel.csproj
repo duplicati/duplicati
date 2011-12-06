@@ -10,7 +10,7 @@
     <ApplicationIcon />
     <AssemblyKeyContainerName />
     <AssemblyName>Datamodel</AssemblyName>
-    <AssemblyOriginatorKeyFile>LightDatamodel.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
     <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
@@ -127,7 +127,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="LightDatamodel.snk" />
+    <None Include="Duplicati.snk" />
     <Compile Include="Log.Extension.cs" />
     <Compile Include="LogBlob.Extension.cs" />
     <Compile Include="Schedule.Extension.cs" />
