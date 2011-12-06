@@ -1,0 +1,20 @@
+--- Duplicati-v1.sln	2011-12-06 18:21:00.000000000 +0100
++++ Duplicati-v2.sln	2011-12-06 20:15:33.000000000 +0100
+@@ -11,8 +11,6 @@
+ EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.FTP", "Duplicati\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj", "{F61679A9-E5DE-468A-B5A4-05F92D0143D2}"
+ EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SSH", "Duplicati\Library\Backend\SSH\Duplicati.Library.Backend.SSH.csproj", "{6BA21DCB-1701-4936-B177-3B6D4DE3474E}"
+-EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Compression", "Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
+ EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}"
+@@ -49,8 +47,6 @@
+ EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Modules.Builtin", "Duplicati\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj", "{52826615-7964-47FE-B4B3-1B2DBDF605B9}"
+ EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TahoeLAFS", "Duplicati\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj", "{C0270709-2A40-43B5-8CF1-69581B9FA2A1}"
+-EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SkyDrive", "Duplicati\Library\Backend\SkyDrive\Duplicati.Library.Backend.SkyDrive.csproj", "{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}"
+ EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleDocs", "Duplicati\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj", "{42C91180-11EB-4590-82EA-80FE9D4DEBEC}"

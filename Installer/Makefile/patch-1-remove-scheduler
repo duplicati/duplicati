@@ -1,0 +1,21 @@
+--- Duplicati.sln	2011-12-06 18:09:23.000000000 +0100
++++ Duplicati-v1.sln	2011-12-06 18:21:00.000000000 +0100
+@@ -55,18 +55,6 @@
+ EndProject
+ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleDocs", "Duplicati\Library\Backend\GoogleDocs\Duplicati.Library.Backend.GoogleDocs.csproj", "{42C91180-11EB-4590-82EA-80FE9D4DEBEC}"
+ EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.Data", "Duplicati\Scheduler\Data\Duplicati.Scheduler.Data.csproj", "{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}"
+-EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler", "Duplicati\Scheduler\Duplicati.Scheduler.csproj", "{D1D503E8-5CF7-413B-81FB-403D65B43AAB}"
+-EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.Utility", "Duplicati\Scheduler\Utility\Duplicati.Scheduler.Utility.csproj", "{0E3DF716-5657-4B51-9BF2-3791880930E1}"
+-EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.RunBackup", "Duplicati\Scheduler\RunBackup\Duplicati.Scheduler.RunBackup.csproj", "{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}"
+-EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Scheduler.Monitor.SQL", "Duplicati\Scheduler\Monitor.SQL\Duplicati.Scheduler.Monitor.SQL.csproj", "{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}"
+-EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectListView2010", "thirdparty\ObjectListView\ObjectListView\ObjectListView2010.csproj", "{18FEDA0C-D147-4286-B39A-01204808106A}"
+-EndProject
+ Global
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+ 		Debug|Any CPU = Debug|Any CPU
