@@ -62,6 +62,8 @@ namespace Duplicati.License
                     return "1.3 Beta (r1022)";
                 else if (v == new Version(1, 3, 0, 1047))
                     return "1.3 Beta (r1047)";
+                else if (v == new Version(1, 3, 0, 1058))
+                    return "1.3";
                 else
                     return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             }
