@@ -279,7 +279,7 @@ namespace LocalizationTool
 
                     Dictionary<string, CSVEntry> e = new Dictionary<string, CSVEntry>();
                     elems[filename] = e;
-
+					
                     foreach (var item in file.Element("updated").Elements("item"))
                     {
                         CSVEntry c = new CSVEntry();
@@ -488,6 +488,9 @@ namespace LocalizationTool
                     string path = f.Key;
                     if (f.Key.StartsWith(filenameprefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
                         path = f.Key.Substring(pfl);
+					
+					if (Duplicati.Library.Utility.Utility.IsClientLinux)
+						path = path.Replace(System.IO.Path.DirectorySeparatorChar.ToString(), "\\");
 
                     WriteCSVLine(sw, path, f.Value.Key, status, f.Value.Value.Origvalue, f.Value.Value.Value, f.Value.Value.extraFields);
                 }
@@ -514,8 +517,8 @@ namespace LocalizationTool
                     sw.Write(CSV_SEPARATOR);
                     sw.Write(EscapeCSVString(s));
                 }
-
-            sw.WriteLine();
+			
+			sw.Write("\r\n");
         }
 
         private static string EscapeCSVString(string value)
