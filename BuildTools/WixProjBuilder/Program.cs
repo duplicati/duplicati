@@ -51,8 +51,42 @@ namespace WixProjBuilder
 
             if (string.IsNullOrEmpty(wixpath))
             {
-                wixpath = System.IO.Path.Combine(System.IO.Path.Combine(System.Environment.ExpandEnvironmentVariables("%programfiles%"), "Windows Installer XML v3"), "bin");
-                Console.WriteLine(string.Format("*** wixpath not specified, using: {0}", wixpath));
+                string[] known_wix_names = new string[] 
+                {
+                    "Windows Installer XML v3",
+                    "Windows Installer XML v3.1",
+                    "Windows Installer XML v3.2",
+                    "Windows Installer XML v3.3",
+                    "Windows Installer XML v3.4",
+                    "Windows Installer XML v3.5",
+                    "Windows Installer XML v3.6",
+                    "Windows Installer XML v3.7"
+                };
+
+                foreach(var p in known_wix_names)
+                {
+                    foreach(var p2 in new string[] {"%ProgramFiles(x86)%", "%programfiles%"})
+                    {
+                        wixpath = System.IO.Path.Combine(System.IO.Path.Combine(Environment.ExpandEnvironmentVariables(p2), p), "bin");
+                        if (System.IO.Directory.Exists(wixpath))
+                        {
+                            Console.WriteLine(string.Format("*** wixpath not specified, using: {0}", wixpath));
+                            break;
+                        }
+                    }
+
+                    if (System.IO.Directory.Exists(wixpath))
+                        break;
+                    }
+
+            }
+
+
+            if (!System.IO.Directory.Exists(wixpath))
+            {
+                Console.WriteLine(string.Format("WiX not found, please install Windows Installer XML 3 or greater"));
+                Console.WriteLine(string.Format("  supply path to WiX bin folder with option --wixpath=...path..."));
+                return;
             }
 
             args[0] = System.IO.Path.GetFullPath(args[0]);

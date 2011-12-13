@@ -52,31 +52,35 @@ namespace LocalizationTool
 			}
 			else
 			{
-				
-	            resgenexe = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\resgen.exe");
-	            alexe = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\al.exe");
-	
-	            if (!System.IO.File.Exists(resgenexe))
-	            {
-	                string resgenexe2 = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft.NET\\SDK\\v2.0\\bin\\resgen.exe");
-	
-	                if (System.IO.File.Exists(resgenexe2))
-	                    resgenexe = resgenexe2;
-	            }
-	            if (!System.IO.File.Exists(alexe))
-	            {
-	                string v30 = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.0\\al.exe");
-	                string v35 = System.Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.5\\al.exe");
-	                string sdk = System.Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\al.exe");
-	
-	                if (System.IO.File.Exists(v30))
-	                    alexe = v30;
-	                else if (System.IO.File.Exists(v35))
-	                    alexe = v35;
-	                else if (System.IO.File.Exists(sdk))
-	                    alexe = sdk;
-	            }
-					
+                string[] known_sdk_paths =
+                {
+                    Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\"),
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft.NET\\SDK\\v2.0\\bin\\"),
+                    Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.0\\"),
+                    Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.5\\"),
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\"),
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v7.0A\\bin\\"),
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\")
+
+                };
+
+                resgenexe = "resgen.exe";
+                alexe = "al.exe";
+
+                foreach(var p in known_sdk_paths)
+                    if (System.IO.File.Exists(System.IO.Path.Combine(p, resgenexe)))
+                    {
+                        resgenexe = System.IO.Path.Combine(p, resgenexe);
+                        break;
+                    }
+
+                foreach (var p in known_sdk_paths)
+                    if (System.IO.File.Exists(System.IO.Path.Combine(p, alexe)))
+                    {
+                        alexe = System.IO.Path.Combine(p, alexe);
+                        break;
+                    }
+
 			}
             if (!System.IO.File.Exists(resgenexe))
             {

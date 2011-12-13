@@ -82,9 +82,9 @@ cd "bin\Release"
 "%PROGRAMFILES%\7-zip\7z.exe" a -r "Duplicati.zip" Duplicati
 cd "..\.."
 
-WixProjBuilder.exe --wixpath="C:\Program Files (x86)\Windows Installer XML v3\bin" WixInstaller.wixproj
+WixProjBuilder.exe WixInstaller.wixproj
 move "bin\Release\Duplicati.msi" "bin\Release\Duplicati.x86.msi"
-WixProjBuilder.exe --wixpath="C:\Program Files (x86)\Windows Installer XML v3\bin" --platform=x64 WixInstaller.wixproj
+WixProjBuilder.exe --platform=x64 WixInstaller.wixproj
 move "bin\Release\Duplicati.msi" "bin\Release\Duplicati.x64.msi"
 pause
 
