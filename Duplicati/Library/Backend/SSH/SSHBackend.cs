@@ -241,6 +241,11 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
+			if (m_con != null)
+			{
+				m_con.Dispose();
+				m_con = null;
+			}
         }
 
         #endregion
