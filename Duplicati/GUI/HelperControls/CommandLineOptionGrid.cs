@@ -32,6 +32,8 @@ namespace Duplicati.GUI.HelperControls
         private bool m_unsupported = false;
         private bool m_enabledClicked = false;
 
+        private Dictionary<string, Library.Interface.ICommandLineArgument> m_optionCache = new Dictionary<string,Library.Interface.ICommandLineArgument>();
+
         public CommandLineOptionGrid()
         {
             try
@@ -55,6 +57,7 @@ namespace Duplicati.GUI.HelperControls
             if (!m_unsupported)
             {
                 OverrideTable.Rows.Clear();
+                m_optionCache.Clear();
                 
                 foreach (IList<Library.Interface.ICommandLineArgument> sw in new IList<Library.Interface.ICommandLineArgument>[] { switches, extras })
                     if (sw != null)
@@ -68,6 +71,9 @@ namespace Duplicati.GUI.HelperControls
                             if (options.ContainsKey(arg.Name))
                                 dr["Value"] = options[arg.Name];
                             OverrideTable.Rows.Add(dr);
+                            
+                            //We use this as a lookup table due to a Mono bug
+                            m_optionCache[arg.Name] = arg;
                         }
             }
         }
@@ -100,6 +106,35 @@ namespace Duplicati.GUI.HelperControls
             }
         }
 
+        public Dictionary<string, Library.Interface.ICommandLineArgument> DataElementCache
+        {
+            get { return m_optionCache; }
+            set
+            {
+                if (!m_unsupported)
+                    m_optionCache = value;
+            }
+        }
+
+        private Duplicati.Library.Interface.ICommandLineArgument GetArgument(DataRow r)
+        {
+            Duplicati.Library.Interface.ICommandLineArgument arg;
+            object v = r["argument"];
+            if (v is string)
+            {
+                //For some reason, the newer Mono versions store the object as a string instance instead of the object
+                //To counter this, there is now a seperate argument cache
+                if (r["Name"] == null || r["Name"] == DBNull.Value)
+                    return null;
+                m_optionCache.TryGetValue((string)r["Name"], out arg);
+                return arg;
+            }
+            else if (v is Duplicati.Library.Interface.ICommandLineArgument)
+                return (Duplicati.Library.Interface.ICommandLineArgument)v;
+            else
+                return null;
+        }
+
         private DataRow FindRow(int rowIndex)
         {
             int argIndex = -1;
@@ -110,15 +145,48 @@ namespace Duplicati.GUI.HelperControls
                     break;
                 }
 
+            int nameIndex = -1;
+            foreach (DataGridViewColumn c in OptionsGrid.Columns)
+                if (c.DataPropertyName == "Name")
+                {
+                    nameIndex = c.Index;
+                    break;
+                }
+
             if (argIndex == -1)
                 return null;
 
-            Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument) OptionsGrid.Rows[rowIndex].Cells[argIndex].Value;
+            object _arg = OptionsGrid.Rows[rowIndex].Cells[argIndex].Value;
+            if (_arg == null)
+                return null;
+
+            Library.Interface.ICommandLineArgument arg;
+
+            //For some reason, the newer Mono versions store the object as a string instance instead of the object
+            //To counter this, there is now a seperate argument cache
+            if (_arg is string)
+            {
+                if (nameIndex == -1)
+                    return null;
+
+                string name = OptionsGrid.Rows[rowIndex].Cells[nameIndex].Value as string;
+                if (name == null)
+                    return null;
+                m_optionCache.TryGetValue(name, out arg);
+            }
+            else if (_arg is Library.Interface.ICommandLineArgument)
+            {
+                arg = (Library.Interface.ICommandLineArgument)OptionsGrid.Rows[rowIndex].Cells[argIndex].Value;
+            }
+            else
+            {
+                return null;
+            }
 
             foreach (DataRow r in OverrideTable.Rows)
-                if (r["argument"] == arg)
+                if (GetArgument(r) == arg)
                     return r;
-            
+
             return null;
         }
 
@@ -127,7 +195,7 @@ namespace Duplicati.GUI.HelperControls
             DataRow r = FindRow(e.RowIndex);
             if (r == null)
                 return;
-            Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument)r["argument"];
+            Library.Interface.ICommandLineArgument arg = GetArgument(r);
 
             string typename = arg.Typename;
             if (arg.ValidValues != null && arg.ValidValues.Length > 0)
@@ -149,7 +217,7 @@ namespace Duplicati.GUI.HelperControls
 
             if ((bool)r["Enabled"])
             {
-                Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument)r["argument"];
+                Library.Interface.ICommandLineArgument arg = GetArgument(r);
                 string optionvalue = (string)(r["Value"] == DBNull.Value ? "" : r["Value"] ?? "");
 
                 string validationMessage = Duplicati.Library.Main.Interface.ValidateOptionValue(arg, arg.Name, optionvalue);
@@ -179,7 +247,7 @@ namespace Duplicati.GUI.HelperControls
                 if (r == null)
                     return;
 
-                Library.Interface.ICommandLineArgument arg = (Library.Interface.ICommandLineArgument)r["argument"];
+                Library.Interface.ICommandLineArgument arg = GetArgument(r);
                 if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
                 {
                     if (r["Value"] == DBNull.Value)

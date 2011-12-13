@@ -117,10 +117,12 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     OptionGrid.Setup(primary, secondary, m_wrapper.Overrides);
 
                     m_settings["Overrides:Table"] = OptionGrid.DataSet;
+                    m_settings["Overrides:DataElementCache"] = OptionGrid.DataElementCache;
                 }
                 else
                 {
-                    OptionGrid.DataSet = (DataSet)m_settings["Overrides:Table"]; 
+                    OptionGrid.DataSet = (DataSet)m_settings["Overrides:Table"];
+                    OptionGrid.DataElementCache = (Dictionary<string, Library.Interface.ICommandLineArgument>)m_settings["Overrides:DataElementCache"];
                 }
             }
 

@@ -36,7 +36,8 @@ namespace Duplicati.GUI.Wizard_pages
         protected IList<Library.Interface.ICommandLineArgument> m_commands;
         protected IWizardControl m_nextpage;
 
-        protected string m_key;
+        protected string m_tablekey;
+        protected string m_cachekey;
         protected string m_displayname;
         protected string m_description;
 
@@ -56,7 +57,8 @@ namespace Duplicati.GUI.Wizard_pages
 
             m_commands = commands;
             m_options = options;
-            m_key = "GridContainer:Table:" + key;
+            m_tablekey = "GridContainer:Table:" + key;
+            m_cachekey = "GridContainer:Cache:" + key;
             m_displayname = displayname;
             m_description = description;
             m_nextpage = nextpage;
@@ -81,7 +83,7 @@ namespace Duplicati.GUI.Wizard_pages
         {
             if (!OptionGrid.Unsupported)
             {
-                if (!m_settings.ContainsKey(m_key))
+                if (!m_settings.ContainsKey(m_tablekey) || !m_settings.ContainsKey(m_cachekey))
                 {
                     Dictionary<string, string> switches = new Dictionary<string, string>();
                     foreach (KeyValuePair<string, string> p in m_options)
@@ -89,11 +91,13 @@ namespace Duplicati.GUI.Wizard_pages
                             switches.Add(p.Key.Substring(2), p.Value);
 
                     OptionGrid.Setup(m_commands, null, switches);
-                    m_settings[m_key] = OptionGrid.DataSet;
+                    m_settings[m_tablekey] = OptionGrid.DataSet;
+                    m_settings[m_cachekey] = OptionGrid.DataElementCache;
                 }
                 else
                 {
-                    OptionGrid.DataSet = (DataSet)m_settings[m_key];
+                    OptionGrid.DataSet = (DataSet)m_settings[m_tablekey];
+                    OptionGrid.DataElementCache = (Dictionary<string, Library.Interface.ICommandLineArgument>)m_settings[m_cachekey];
                 }
             }
 
