@@ -185,7 +185,16 @@ namespace LocalizationTool
         {
             //Outer key is filename, inner key is fieldname, inner value is translated text
             Dictionary<string, Dictionary<string, CSVEntry>> values = ImportCSV(p, loc, e => e.Value.Trim().Length == 0 || e.Value == e.Origvalue);
-
+			
+			if (Duplicati.Library.Utility.Utility.IsClientLinux)
+			{
+				Dictionary<string, Dictionary<string, CSVEntry>> remap = new Dictionary<string, Dictionary<string, CSVEntry>>();
+				foreach(string key in values.Keys)
+					remap[key.Replace("\\", System.IO.Path.DirectorySeparatorChar.ToString ())] = values[key];
+				
+				values = remap;
+			}
+			
             string folder = System.IO.Path.Combine(Application.StartupPath, loc);
             if (!System.IO.Directory.Exists(folder))
                 Create(loc);
@@ -688,12 +697,20 @@ namespace LocalizationTool
             List<ResXFileInfo> res = new List<ResXFileInfo>();
             foreach (XElement conf in XDocument.Load(System.IO.Path.Combine(Application.StartupPath, "configuration.xml")).Element("root").Elements("configuration"))
             {
-                string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.Combine(Application.StartupPath, culture)));
-                string sourcefolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(conf.Element("sourcefolder").Value));
+				string sourcefolder = conf.Element("sourcefolder").Value;
+				if (Duplicati.Library.Utility.Utility.IsClientLinux)
+					sourcefolder = sourcefolder.Replace("\\", System.IO.Path.DirectorySeparatorChar.ToString());
+
+				string outputfolder = System.IO.Path.GetFullPath(Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.Combine(Application.StartupPath, culture)));
+                sourcefolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sourcefolder));
 
                 foreach (XElement fn in conf.Elements("assembly"))
                 {
-                    foreach (string s in Duplicati.Library.Utility.Utility.EnumerateFiles(System.IO.Path.Combine(sourcefolder, fn.Attribute("folder").Value)))
+					string subfolder = fn.Attribute("folder").Value;
+					if (Duplicati.Library.Utility.Utility.IsClientLinux)
+						subfolder = subfolder.Replace("\\", System.IO.Path.DirectorySeparatorChar.ToString());
+					
+                    foreach (string s in Duplicati.Library.Utility.Utility.EnumerateFiles(System.IO.Path.Combine(sourcefolder, subfolder)))
                     {
                         if (s.ToLower().StartsWith(Application.StartupPath.ToLower()))
                             continue;
