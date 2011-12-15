@@ -98,8 +98,14 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            using (SftpClient con = CreateConnection(false))
-                con.CreateDirectory(m_path);
+            using (SftpClient con = CreateConnection(false)) 
+            {
+                //Bugfix, some SSH servers do not like a trailing slash
+                string p = m_path;
+                if (p.EndsWith("/"))
+                    p.Substring(0, p.Length - 1);
+                con.CreateDirectory(p);
+            }
         }
 
         public string DisplayName
