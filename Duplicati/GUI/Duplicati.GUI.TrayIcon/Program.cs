@@ -22,9 +22,18 @@ namespace Duplicati.GUI.TrayIcon
         {
             if (Duplicati.Library.Utility.Utility.IsClientOSX && SupportsCocoaStatusIcon)
             {
-                return TOOLKIT_COCOA;
+                //Determine if we are running in an app bundle, otherwise we cannot run Cocoa
+                //The Duplicat.GUI.TrayIcon project, does not create the app bundle,
+                // so this ensures that we can run the normal project when debugging on mac,
+                // and it will just fall-back to Gtk. If we need to debug something Cocoa specific,
+                // we can load the Duplicati.GUI.MacTrayIcon project and use that as start project
+                string basefolder = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                string plist = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(basefolder), "Info.plist");
+                if (System.IO.File.Exists(plist))
+                    return TOOLKIT_COCOA;
             }
-            else if (Duplicati.Library.Utility.Utility.IsClientLinux)
+            
+            if (Duplicati.Library.Utility.Utility.IsClientLinux)
             {
                 if (SupportsAppIndicator)
                     return TOOLKIT_GTK_APP_INDICATOR;
@@ -150,7 +159,7 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
 
-                private static bool SupportsCocoaStatusIcon
+        private static bool SupportsCocoaStatusIcon
         {
             get 
             {
