@@ -38,8 +38,8 @@ namespace Duplicati.GUI
         private Datamodel.ApplicationSettings m_settings;
 
         private delegate void EmptyDelegate();
-		
-		private string[] m_initialArguments;
+        
+        private string[] m_initialArguments;
 
         private bool m_hasAttemptedBackupTermination = false;
 
@@ -48,6 +48,11 @@ namespace Duplicati.GUI
         private string m_currentTooltip;
         private TrayIconProxy m_trayIcon;
 
+        public string[] InitialArguments
+        {
+            get { return m_initialArguments; }
+            set { m_initialArguments = value; }
+        }
         /// <summary>
         /// A recursion protection helper flag
         /// </summary>
@@ -108,12 +113,6 @@ namespace Duplicati.GUI
                 if (m_owner != null)
                     m_owner.ShowBalloonTip(timeout, tipTitle, tipText, tipIcon);
             }
-        }
-
-        public string[] InitialArguments
-        {
-            get { return m_initialArguments; }
-            set { m_initialArguments = value; }
         }
 
         public MainForm()
@@ -302,10 +301,10 @@ namespace Duplicati.GUI
             else if (InitialArguments != null)
                 HandleCommandlineArguments(InitialArguments);
 
-			if (Library.Utility.Utility.IsMono)
-				MonoSupport.BeginInvoke (this, new EmptyDelegate(HideWindow));
-			else
-            	BeginInvoke(new EmptyDelegate(HideWindow));
+            if (Library.Utility.Utility.IsMono)
+                MonoSupport.BeginInvoke (this, new EmptyDelegate(HideWindow));
+            else
+                BeginInvoke(new EmptyDelegate(HideWindow));
             if (Program.TraylessMode)
                 ShowStatus();
         }
@@ -319,16 +318,16 @@ namespace Duplicati.GUI
         {
             TrayIcon_MouseClick(sender, e);
         }
-		
-		private static void AbortOwnThread(object thread)
-		{
-			System.Threading.Thread.Sleep(5000);
-			if (Program.IsRunningMainLoop) 
-			{
-				Program.IsRunningMainLoop = false;	
-				((System.Threading.Thread)thread).Abort();
-			}
-		}
+        
+        private static void AbortOwnThread(object thread)
+        {
+            System.Threading.Thread.Sleep(5000);
+            if (Program.IsRunningMainLoop) 
+            {
+                Program.IsRunningMainLoop = false;	
+                ((System.Threading.Thread)thread).Abort();
+            }
+        }
 
         private void TrayIcon_MouseClick(object sender, MouseEventArgs e)
         {
@@ -531,11 +530,11 @@ namespace Duplicati.GUI
             Program.SingleInstance.SecondInstanceDetected -= new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected);
 
             EnsureBackupIsTerminated(e.CloseReason == CloseReason.UserClosing ? CloseReason.ApplicationExitCall : e.CloseReason);
-			
-			//The form occasionally hangs on Mono, so we force kill it after 5 secs if it did not quit itself
-			if (Library.Utility.Utility.IsMono)
-				new System.Threading.Thread(AbortOwnThread).Start (System.Threading.Thread.CurrentThread);
-		}
+            
+            //The form occasionally hangs on Mono, so we force kill it after 5 secs if it did not quit itself
+            if (Library.Utility.Utility.IsMono)
+                new System.Threading.Thread(AbortOwnThread).Start (System.Threading.Thread.CurrentThread);
+        }
 
         private void SingleInstance_SecondInstanceDetected(string[] commandlineargs)
         {
@@ -558,10 +557,10 @@ namespace Duplicati.GUI
 
         private bool HandleCommandlineArguments(string[] _args)
         {
-			bool anyUiShown = false;
-			
+            bool anyUiShown = false;
+            
             List<string> args = new List<string>(_args);
-            Dictionary<string, string> options = CommandLine.CommandLineParser.ExtractOptions(args);
+            Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
             //Backwards compatible options
             if (args.Count == 2 && args[0].ToLower().Trim() == "run-backup")
@@ -593,26 +592,26 @@ namespace Duplicati.GUI
                         MessageBox.Show(this, string.Format(Strings.MainForm.PauseOperationFailed, ex), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-				
-				anyUiShown = true;
+                
+                anyUiShown = true;
             }
 
             if (options.ContainsKey("run-backup"))
             {
-				string backupname = options["run-backup"];
+                string backupname = options["run-backup"];
                 if (string.IsNullOrEmpty(backupname))
                 {
                     if (WizardDialog == null || !WizardDialog.Visible)
                     {
                         WizardDialog = new WizardHandler(new System.Windows.Forms.Wizard.IWizardControl[] { new Wizard_pages.SelectBackup(Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.RunNow) });
                         WizardDialog.Show();
-						anyUiShown = true;
+                        anyUiShown = true;
                     }
                 }
                 else
                 {
-					anyUiShown = true;
-					
+                    anyUiShown = true;
+                    
                     Datamodel.Schedule[] schedules = Program.DataConnection.GetObjects<Datamodel.Schedule>("Name LIKE ?", backupname.Trim());
                     if (schedules == null || schedules.Length == 0)
                     {
@@ -622,13 +621,13 @@ namespace Duplicati.GUI
                     {
                         MessageBox.Show(string.Format(Strings.MainForm.MultipleNamedBackupsFound, backupname, schedules.Length), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
-					else
-					{
-	                    if (Library.Utility.Utility.ParseBoolOption(options, "full"))
-	                        Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
-	                    else
-	                        Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
-					}
+                    else
+                    {
+                        if (Library.Utility.Utility.ParseBoolOption(options, "full"))
+                            Program.WorkThread.AddTask(new FullBackupTask(schedules[0]));
+                        else
+                            Program.WorkThread.AddTask(new IncrementalBackupTask(schedules[0]));
+                    }
                 }
             }
 
@@ -641,7 +640,7 @@ namespace Duplicati.GUI
                     {
                         WizardDialog = new WizardHandler(new System.Windows.Forms.Wizard.IWizardControl[] { new Wizard_pages.SelectBackup(Duplicati.GUI.Wizard_pages.WizardSettingsWrapper.MainAction.RunNow) });
                         WizardDialog.Show();
-						anyUiShown = true;
+                        anyUiShown = true;
                     }
                 }
                 else
@@ -651,40 +650,40 @@ namespace Duplicati.GUI
                     {
                         MessageBox.Show(string.Format(Strings.MainForm.NamedBackupGroupNotFound, groupname), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     } 
-					else 
-					{
-	                    bool full = Library.Utility.Utility.ParseBoolOption(options, "full");
-	
-	                    foreach(Datamodel.Schedule s in schedules)
-	                        if (full)
-	                            Program.WorkThread.AddTask(new FullBackupTask(s));
-	                        else
-	                            Program.WorkThread.AddTask(new IncrementalBackupTask(s));
-					}
-					
-					anyUiShown = true;
+                    else 
+                    {
+                        bool full = Library.Utility.Utility.ParseBoolOption(options, "full");
+    
+                        foreach(Datamodel.Schedule s in schedules)
+                            if (full)
+                                Program.WorkThread.AddTask(new FullBackupTask(s));
+                            else
+                                Program.WorkThread.AddTask(new IncrementalBackupTask(s));
+                    }
+                    
+                    anyUiShown = true;
                 }
             }
 
             if (Library.Utility.Utility.ParseBoolOption(options, "show-status"))
-			{
+            {
                 ShowStatus();
-				anyUiShown = true;
-			}
+                anyUiShown = true;
+            }
 
-			if (Library.Utility.Utility.ParseBoolOption(options, "show-wizard"))
-			{
+            if (Library.Utility.Utility.ParseBoolOption(options, "show-wizard"))
+            {
                 ShowWizard();
-				anyUiShown = true;
-			}
+                anyUiShown = true;
+            }
 
             //Resume if requested
             if (Library.Utility.Utility.ParseBoolOption(options, "resume")) 
-			{
+            {
                 Program.LiveControl.Resume();
-				anyUiShown = true;
-			}
-			
+                anyUiShown = true;
+            }
+            
             return anyUiShown;
         }
 

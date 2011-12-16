@@ -11,12 +11,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Scheduler</RootNamespace>
     <AssemblyName>Duplicati.Scheduler</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -243,14 +244,6 @@
       <Project>{18FEDA0C-D147-4286-B39A-01204808106A}</Project>
       <Name>ObjectListView2010</Name>
     </ProjectReference>
-    <ProjectReference Include="Monitor.SQL\Duplicati.Scheduler.Monitor.SQL.csproj">
-      <Project>{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}</Project>
-      <Name>Duplicati.Scheduler.Monitor.SQL</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\GUI\Datamodel\Datamodel.csproj">
-      <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
-      <Name>Datamodel</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
       <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
       <Name>Duplicati.Library.Backend.File</Name>
@@ -290,6 +283,10 @@
     <ProjectReference Include="Data\Duplicati.Scheduler.Data.csproj">
       <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>
       <Name>Duplicati.Scheduler.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="Monitor.SQL\Duplicati.Scheduler.Monitor.SQL.csproj">
+      <Project>{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}</Project>
+      <Name>Duplicati.Scheduler.Monitor.SQL</Name>
     </ProjectReference>
     <ProjectReference Include="RunBackup\Duplicati.Scheduler.RunBackup.csproj">
       <Project>{520FA2BD-1C59-40D9-BCB5-EDA11327B7F0}</Project>

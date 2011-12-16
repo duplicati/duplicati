@@ -26,6 +26,7 @@ namespace Duplicati.Library.Interface
     /// <summary>
     /// Primary implementation of the <see cref="ICommandLineArgument">ICommandLineArgument</see> interface.
     /// </summary>
+    [Serializable]
     public class CommandLineArgument : Duplicati.Library.Interface.ICommandLineArgument
     {
         public enum ArgumentType

@@ -28,7 +28,7 @@ namespace WixProjBuilder
         static void Main(string[] _args)
         {
             List<string> args = new List<string>(_args);
-            Dictionary<string, string> options = Duplicati.CommandLine.CommandLineParser.ExtractOptions(args);
+            Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
             if (args.Count != 1)
             {

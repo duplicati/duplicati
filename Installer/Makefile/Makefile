@@ -8,16 +8,8 @@ LOCALIZATION_TOOL=mono $(SOURCE_DIR)/Duplicati/Localization/LocalizationTool.exe
 
 all: package
 
-Duplicati-v1.sln:
-	patch -d "$(SOURCE_DIR)" -i patch-1-remove-scheduler -o Duplicati-v1.sln Duplicati.sln
-
-Duplicati-v2.sln: Duplicati-v1.sln
-	patch -d "$(SOURCE_DIR)" -i patch-2-remove-unsigned-backends -o Duplicati-v2.sln Duplicati-v1.sln
-
-build: Duplicati-v2.sln
-	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/Duplicati-v2.sln"
-	$(BUILD_TOOL) $(BUILD_ARGS) $(OUTPUT_ARGS) "$(SOURCE_DIR)/Duplicati/Library/Backend/SSH/Duplicati.Library.Backend.SSH.csproj"
-	$(BUILD_TOOL) $(BUILD_ARGS) $(OUTPUT_ARGS) "$(SOURCE_DIR)/Duplicati/Library/Backend/TahoeLAFS/Duplicati.Library.Backend.TahoeLAFS.csproj"
+build:
+	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/Duplicati.sln"
 	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/BuildTools/LocalizationTool/LocalizationTool.sln"
 
 translations: build
@@ -91,8 +83,6 @@ package:
 	gzip --best "duplicati.tar"
 
 clean:
-	rm -rf "$(SOURCE_DIR)/Duplicati-v1.sln"
-	rm -rf "$(SOURCE_DIR)/Duplicati-v2.sln"
 	(find "$(SOURCE_DIR)" -type d -name bin -exec rm -rf "{}" \; &> /dev/null) || echo "bin cleaned"
 	(find "$(SOURCE_DIR)" -type d -name obj -exec rm -rf "{}" \; &> /dev/null) || echo "obj cleaned"
 	(find "$(SOURCE_DIR)/Duplicati/Localization/" -type d -not -name Localization -exec rm -rf "{}" \; &> /dev/null) || echo "localization cleaned"

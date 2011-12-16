@@ -575,6 +575,39 @@ namespace Duplicati.Library.Utility
             return data;
         }
 		
+        private static string UNAME;
+        
+        /// <value>
+        /// Gets or sets a value indicating if the client is running OSX
+        /// </value>
+        public static bool IsClientOSX
+        {
+            get
+            {
+                if(!IsClientLinux)
+                    return false;
+                
+                try 
+                {
+                    if (UNAME == null)
+                    {
+                        var psi = new System.Diagnostics.ProcessStartInfo("uname");
+                        psi.RedirectStandardOutput = true;
+                        psi.UseShellExecute = false;
+                        
+                        var pi = System.Diagnostics.Process.Start(psi);
+                        pi.WaitForExit(5000);
+                        if (pi.HasExited)
+                            UNAME = pi.StandardOutput.ReadToEnd().Trim();
+                    }
+                }
+                catch {}
+                
+                return "Darwin".Equals(UNAME);
+                    
+            }
+        }
+        
 		/// <value>
 		/// Gets or sets a value indicating if the client is Linux/Unix based
 		/// </value>
