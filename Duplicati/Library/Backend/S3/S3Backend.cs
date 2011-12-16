@@ -42,11 +42,14 @@ namespace Duplicati.Library.Backend
 
         public static readonly KeyValuePair<string, string>[] KNOWN_S3_LOCATIONS = new KeyValuePair<string, string>[] {
             new KeyValuePair<string, string>("(default)", ""),
-            new KeyValuePair<string, string>("Europe", "eu-west-1"),
+            new KeyValuePair<string, string>("Europe West 1", "eu-west-1"),
+            new KeyValuePair<string, string>("Europe (EU)", "EU"),
             new KeyValuePair<string, string>("US East", "us-east-1"),
-            new KeyValuePair<string, string>("US West", "us-west-1"),
+            new KeyValuePair<string, string>("US West 1", "us-west-1"),
+            new KeyValuePair<string, string>("US West 2", "us-west-2"),
             new KeyValuePair<string, string>("AP Southeast", "ap-southeast-1"),
             new KeyValuePair<string, string>("AP Northeast", "ap-northeast-1"),
+            new KeyValuePair<string, string>("SA Sao Paulo", "sa-east-1"),
         };
         
         private string m_bucket;
