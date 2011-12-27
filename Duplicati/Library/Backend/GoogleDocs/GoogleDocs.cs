@@ -152,7 +152,13 @@ namespace Duplicati.Library.Backend
             Dictionary<string, Google.Documents.Document> dict = new Dictionary<string, Google.Documents.Document>();
 
             foreach (Google.Documents.Document d in data)
-                parentlookup.Add(d.AtomEntry.EditUri.Content, d);
+            {
+                // note: some files have no Edit Uri (for ex. shared by different user)
+                if (d.AtomEntry.EditUri != null && d.AtomEntry.EditUri.Content != null)
+                {
+                    parentlookup.Add(d.AtomEntry.EditUri.Content, d);
+                }
+            }				
 
             foreach (Google.Documents.Document d in parentlookup.Values)
             {
