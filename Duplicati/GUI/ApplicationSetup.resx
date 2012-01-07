@@ -166,7 +166,7 @@
     <value>221, 21</value>
   </data>
   <data name="BalloonNotificationLevel.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+    <value>2</value>
   </data>
   <data name="BalloonNotificationLevel.ToolTip" xml:space="preserve">
     <value>Choose the level of notification given by balloon tips</value>
@@ -226,10 +226,10 @@
     <value>9, 129</value>
   </data>
   <data name="HideDonateButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>219, 17</value>
+    <value>237, 17</value>
   </data>
   <data name="HideDonateButton.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
+    <value>5</value>
   </data>
   <data name="HideDonateButton.Text" xml:space="preserve">
     <value>Hide Donate button on the main wizard page</value>
@@ -256,7 +256,7 @@
     <value>221, 21</value>
   </data>
   <data name="StartupDelayDuration.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="StartupDelayDuration.ToolTip" xml:space="preserve">
     <value>Select the amount of time Duplicat is paused after startup</value>
@@ -376,7 +376,7 @@
     <value>221, 21</value>
   </data>
   <data name="RecentDuration.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>4</value>
   </data>
   <data name="RecentDuration.ToolTip" xml:space="preserve">
     <value>Select the time a backup is displayed in the log window after completion</value>
@@ -430,13 +430,10 @@
     <value>122, 13</value>
   </data>
   <data name="CacheSizeLabel.TabIndex" type="System.Int32, mscorlib">
-    <value>28</value>
+    <value>0</value>
   </data>
   <data name="CacheSizeLabel.Text" xml:space="preserve">
     <value>Calculating cache size...</value>
-  </data>
-  <data name="CacheSizeLabel.ToolTip" xml:space="preserve">
-    <value>The size of the current cache folder</value>
   </data>
   <data name="&gt;&gt;CacheSizeLabel.Name" xml:space="preserve">
     <value>CacheSizeLabel</value>
@@ -460,7 +457,7 @@
     <value>88, 23</value>
   </data>
   <data name="ClearCacheButton.TabIndex" type="System.Int32, mscorlib">
-    <value>27</value>
+    <value>6</value>
   </data>
   <data name="ClearCacheButton.Text" xml:space="preserve">
     <value>Clear cache</value>
@@ -493,7 +490,7 @@
     <value>107, 17</value>
   </data>
   <data name="SignatureCacheEnabled.TabIndex" type="System.Int32, mscorlib">
-    <value>26</value>
+    <value>3</value>
   </data>
   <data name="SignatureCacheEnabled.Text" xml:space="preserve">
     <value>Signature cache:</value>
@@ -526,7 +523,7 @@
     <value>24, 20</value>
   </data>
   <data name="SignatureCachePathBrowse.TabIndex" type="System.Int32, mscorlib">
-    <value>25</value>
+    <value>5</value>
   </data>
   <data name="SignatureCachePathBrowse.Text" xml:space="preserve">
     <value>...</value>
@@ -556,7 +553,7 @@
     <value>265, 20</value>
   </data>
   <data name="SignatureCachePath.TabIndex" type="System.Int32, mscorlib">
-    <value>24</value>
+    <value>4</value>
   </data>
   <data name="&gt;&gt;SignatureCachePath.Name" xml:space="preserve">
     <value>SignatureCachePath</value>
@@ -583,7 +580,7 @@
     <value>24, 20</value>
   </data>
   <data name="TempPathBrowse.TabIndex" type="System.Int32, mscorlib">
-    <value>22</value>
+    <value>2</value>
   </data>
   <data name="TempPathBrowse.Text" xml:space="preserve">
     <value>...</value>
@@ -613,7 +610,7 @@
     <value>265, 20</value>
   </data>
   <data name="TempPath.TabIndex" type="System.Int32, mscorlib">
-    <value>21</value>
+    <value>1</value>
   </data>
   <data name="TempPath.ToolTip" xml:space="preserve">
     <value>Enter the path where Duplicati stores temporary files</value>
@@ -643,13 +640,10 @@
     <value>89, 13</value>
   </data>
   <data name="label4.TabIndex" type="System.Int32, mscorlib">
-    <value>20</value>
+    <value>0</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>Temporary folder:</value>
-  </data>
-  <data name="label4.ToolTip" xml:space="preserve">
-    <value>Enter the path where Duplicati stores temporary files</value>
   </data>
   <data name="&gt;&gt;label4.Name" xml:space="preserve">
     <value>label4</value>
@@ -670,7 +664,7 @@
     <value>434, 110</value>
   </data>
   <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
+    <value>2</value>
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
     <value>Cache</value>
@@ -730,7 +724,7 @@
     <value>221, 21</value>
   </data>
   <data name="EncryptionModule.TabIndex" type="System.Int32, mscorlib">
-    <value>9</value>
+    <value>8</value>
   </data>
   <data name="EncryptionModule.ToolTip" xml:space="preserve">
     <value>Choose the default encryption module to use for new backups</value>
@@ -760,7 +754,7 @@
     <value>178, 17</value>
   </data>
   <data name="UseCommonPassword.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="UseCommonPassword.Text" xml:space="preserve">
     <value>Use password for new backups:</value>
@@ -787,7 +781,7 @@
     <value>221, 20</value>
   </data>
   <data name="CommonPassword.TabIndex" type="System.Int32, mscorlib">
-    <value>8</value>
+    <value>7</value>
   </data>
   <data name="CommonPassword.ToolTip" xml:space="preserve">
     <value>Enter the default password to apply to new backups</value>
@@ -868,7 +862,7 @@
     <value>415, 54</value>
   </data>
   <data name="Bandwidth.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="Bandwidth.ToolTip" xml:space="preserve">
     <value>Set the initial bandwidth limits to use in Duplicati</value>
@@ -892,7 +886,7 @@
     <value>415, 23</value>
   </data>
   <data name="ThreadPriorityPicker.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="ThreadPriorityPicker.ToolTip" xml:space="preserve">
     <value>Set the initial thread priority to be used by Duplicati</value>
@@ -916,7 +910,7 @@
     <value>434, 112</value>
   </data>
   <data name="groupBox4.TabIndex" type="System.Int32, mscorlib">
-    <value>10</value>
+    <value>1</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
     <value>Default throttle settings</value>
@@ -1732,6 +1726,9 @@
         qn+qqqp/qqqqf6qqqn+qqqp/qqqqf6qqqn+pqal/m5ubZGBgYA0AAAAAgAEAAAAAAAAAAAAAAAAAAAAA
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAA==
 </value>
+  </data>
+  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterScreen</value>

@@ -52,6 +52,7 @@ namespace Duplicati.GUI
             this.EncryptionMethod = new System.Windows.Forms.Label();
             this.EncryptionModule = new System.Windows.Forms.ComboBox();
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
+            this.CommonPassword = new Duplicati.Winforms.Controls.PasswordControl();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
             this.TabContainer = new System.Windows.Forms.TabControl();
@@ -67,7 +68,6 @@ namespace Duplicati.GUI
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.OKBtn = new System.Windows.Forms.Button();
             this.CancelBtn = new System.Windows.Forms.Button();
-            this.CommonPassword = new Duplicati.Winforms.Controls.PasswordControl();
             this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.Bandwidth = new Duplicati.GUI.HelperControls.BandwidthLimit();
@@ -250,6 +250,18 @@ namespace Duplicati.GUI
             this.UseCommonPassword.UseVisualStyleBackColor = true;
             this.UseCommonPassword.CheckedChanged += new System.EventHandler(this.UseCommonPassword_CheckedChanged);
             // 
+            // CommonPassword
+            // 
+            this.CommonPassword.AskToEnterNewPassword = false;
+            this.CommonPassword.InitialPassword = null;
+            this.CommonPassword.IsPasswordVisible = false;
+            resources.ApplyResources(this.CommonPassword, "CommonPassword");
+            this.CommonPassword.MaximumSize = new System.Drawing.Size(5000, 20);
+            this.CommonPassword.MinimumSize = new System.Drawing.Size(150, 20);
+            this.CommonPassword.Name = "CommonPassword";
+            this.toolTip.SetToolTip(this.CommonPassword, resources.GetString("CommonPassword.ToolTip"));
+            this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
+            // 
             // CacheSizeCalculator
             // 
             this.CacheSizeCalculator.WorkerSupportsCancellation = true;
@@ -347,18 +359,6 @@ namespace Duplicati.GUI
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.UseVisualStyleBackColor = true;
-            // 
-            // CommonPassword
-            // 
-            this.CommonPassword.AskToEnterNewPassword = false;
-            this.CommonPassword.InitialPassword = null;
-            this.CommonPassword.IsPasswordVisible = false;
-            resources.ApplyResources(this.CommonPassword, "CommonPassword");
-            this.CommonPassword.MaximumSize = new System.Drawing.Size(5000, 20);
-            this.CommonPassword.MinimumSize = new System.Drawing.Size(150, 20);
-            this.CommonPassword.Name = "CommonPassword";
-            this.toolTip.SetToolTip(this.CommonPassword, resources.GetString("CommonPassword.ToolTip"));
-            this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
             // 
             // StartupDelayDuration
             // 

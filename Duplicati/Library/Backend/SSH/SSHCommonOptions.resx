@@ -156,7 +156,7 @@
     <value>166, 17</value>
   </data>
   <data name="UseManagedAsDefault.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="UseManagedAsDefault.Text" xml:space="preserve">
     <value>Use managed SSH by default</value>
@@ -184,7 +184,7 @@
     <value>24, 20</value>
   </data>
   <data name="BrowseForSFTPButton.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+    <value>2</value>
   </data>
   <data name="BrowseForSFTPButton.Text" xml:space="preserve">
     <value>...</value>
@@ -211,7 +211,7 @@
     <value>159, 21</value>
   </data>
   <data name="SFTPPath.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
+    <value>1</value>
   </data>
   <data name="&gt;&gt;SFTPPath.Name" xml:space="preserve">
     <value>SFTPPath</value>

@@ -117,71 +117,11 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="&gt;&gt;RemoveSelectedButton.Name" xml:space="preserve">
-    <value>RemoveSelectedButton</value>
-  </data>
-  <data name="&gt;&gt;RemoveSelectedButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;RemoveSelectedButton.Parent" xml:space="preserve">
-    <value>CredentialGroup</value>
-  </data>
-  <data name="&gt;&gt;RemoveSelectedButton.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;RemoveAllButton.Name" xml:space="preserve">
-    <value>RemoveAllButton</value>
-  </data>
-  <data name="&gt;&gt;RemoveAllButton.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;RemoveAllButton.Parent" xml:space="preserve">
-    <value>CredentialGroup</value>
-  </data>
-  <data name="&gt;&gt;RemoveAllButton.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="&gt;&gt;CredentialList.Name" xml:space="preserve">
-    <value>CredentialList</value>
-  </data>
-  <data name="&gt;&gt;CredentialList.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CredentialList.Parent" xml:space="preserve">
-    <value>CredentialGroup</value>
-  </data>
-  <data name="&gt;&gt;CredentialList.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="CredentialGroup.Location" type="System.Drawing.Point, System.Drawing">
-    <value>5, 32</value>
-  </data>
-  <data name="CredentialGroup.Size" type="System.Drawing.Size, System.Drawing">
-    <value>434, 138</value>
-  </data>
   <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="CredentialGroup.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="CredentialGroup.Text" xml:space="preserve">
-    <value>Stored credentials</value>
-  </data>
-  <data name="&gt;&gt;CredentialGroup.Name" xml:space="preserve">
-    <value>CredentialGroup</value>
-  </data>
-  <data name="&gt;&gt;CredentialGroup.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CredentialGroup.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;CredentialGroup.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
   <data name="RemoveSelectedButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="RemoveSelectedButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>328, 19</value>
   </data>
@@ -213,7 +153,7 @@
     <value>96, 23</value>
   </data>
   <data name="RemoveAllButton.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="RemoveAllButton.Text" xml:space="preserve">
     <value>Remove all</value>
@@ -237,7 +177,7 @@
     <value>313, 108</value>
   </data>
   <data name="CredentialList.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="&gt;&gt;CredentialList.Name" xml:space="preserve">
     <value>CredentialList</value>
@@ -251,6 +191,30 @@
   <data name="&gt;&gt;CredentialList.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
+  <data name="CredentialGroup.Location" type="System.Drawing.Point, System.Drawing">
+    <value>5, 32</value>
+  </data>
+  <data name="CredentialGroup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>434, 138</value>
+  </data>
+  <data name="CredentialGroup.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="CredentialGroup.Text" xml:space="preserve">
+    <value>Stored credentials</value>
+  </data>
+  <data name="&gt;&gt;CredentialGroup.Name" xml:space="preserve">
+    <value>CredentialGroup</value>
+  </data>
+  <data name="&gt;&gt;CredentialGroup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CredentialGroup.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;CredentialGroup.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
   <data name="DefaultServername.Location" type="System.Drawing.Point, System.Drawing">
     <value>103, 18</value>
   </data>
@@ -258,7 +222,7 @@
     <value>321, 21</value>
   </data>
   <data name="DefaultServername.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
+    <value>1</value>
   </data>
   <data name="&gt;&gt;DefaultServername.Name" xml:space="preserve">
     <value>DefaultServername</value>
@@ -286,7 +250,7 @@
     <value>70, 13</value>
   </data>
   <data name="label2.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
+    <value>0</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
     <value>Server name:</value>
@@ -310,7 +274,7 @@
     <value>321, 21</value>
   </data>
   <data name="DefaultBucketRegion.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
+    <value>2</value>
   </data>
   <data name="&gt;&gt;DefaultBucketRegion.Name" xml:space="preserve">
     <value>DefaultBucketRegion</value>
@@ -334,7 +298,7 @@
     <value>76, 13</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>0</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
     <value>Bucket region:</value>
@@ -364,7 +328,7 @@
     <value>196, 17</value>
   </data>
   <data name="UseRRS.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="UseRRS.Text" xml:space="preserve">
     <value>Use Reduced Redundancy Storage</value>
@@ -388,7 +352,7 @@
     <value>434, 100</value>
   </data>
   <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
     <value>Default settings</value>
@@ -418,7 +382,7 @@
     <value>186, 17</value>
   </data>
   <data name="AllowCredentialStorage.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
+    <value>1</value>
   </data>
   <data name="AllowCredentialStorage.Text" xml:space="preserve">
     <value>Store new S3 account information</value>
