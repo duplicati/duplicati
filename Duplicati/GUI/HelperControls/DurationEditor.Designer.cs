@@ -53,6 +53,7 @@ namespace Duplicati.GUI.HelperControls
             // CustomDuration
             // 
             this.errorProvider.SetError(this.CustomDuration, resources.GetString("CustomDuration.Error"));
+            this.errorProvider.SetIconPadding(this.CustomDuration, ((int)(resources.GetObject("CustomDuration.IconPadding"))));
             resources.ApplyResources(this.CustomDuration, "CustomDuration");
             this.CustomDuration.Name = "CustomDuration";
             this.CustomDuration.TextChanged += new System.EventHandler(this.CustomDuration_TextChanged);

@@ -35,11 +35,9 @@ namespace Duplicati.GUI
             this.BalloonNotificationLevel = new System.Windows.Forms.ComboBox();
             this.label8 = new System.Windows.Forms.Label();
             this.HideDonateButton = new System.Windows.Forms.CheckBox();
-            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.label7 = new System.Windows.Forms.Label();
             this.LanguageSelection = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.CacheSizeLabel = new System.Windows.Forms.Label();
             this.ClearCacheButton = new System.Windows.Forms.Button();
@@ -49,15 +47,10 @@ namespace Duplicati.GUI
             this.TempPathBrowse = new System.Windows.Forms.Button();
             this.TempPath = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.OKBtn = new System.Windows.Forms.Button();
-            this.CancelBtn = new System.Windows.Forms.Button();
             this.BrowseTempPath = new System.Windows.Forms.FolderBrowserDialog();
             this.PasswordDefaultsGroup = new System.Windows.Forms.GroupBox();
-            this.PasswordPanel = new System.Windows.Forms.Panel();
-            this.EncryptionModule = new System.Windows.Forms.ComboBox();
             this.EncryptionMethod = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.CommonPassword = new Duplicati.Winforms.Controls.PasswordControl();
+            this.EncryptionModule = new System.Windows.Forms.ComboBox();
             this.UseCommonPassword = new System.Windows.Forms.CheckBox();
             this.BrowseSignatureCachePath = new System.Windows.Forms.FolderBrowserDialog();
             this.CacheSizeCalculator = new System.ComponentModel.BackgroundWorker();
@@ -65,26 +58,28 @@ namespace Duplicati.GUI
             this.BasicTab = new System.Windows.Forms.TabPage();
             this.AdvancedTab = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.Bandwidth = new Duplicati.GUI.HelperControls.BandwidthLimit();
-            this.ThreadPriorityPicker = new Duplicati.GUI.HelperControls.ThreadPriorityPicker();
             this.LicenseTab = new System.Windows.Forms.TabPage();
             this.LicenseLink = new System.Windows.Forms.LinkLabel();
             this.label6 = new System.Windows.Forms.Label();
             this.LicenseText = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.LicenseSections = new System.Windows.Forms.ListBox();
-            this.panel1 = new System.Windows.Forms.Panel();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.OKBtn = new System.Windows.Forms.Button();
+            this.CancelBtn = new System.Windows.Forms.Button();
+            this.CommonPassword = new Duplicati.Winforms.Controls.PasswordControl();
+            this.StartupDelayDuration = new Duplicati.GUI.HelperControls.DurationEditor();
+            this.RecentDuration = new Duplicati.GUI.HelperControls.DurationEditor();
+            this.Bandwidth = new Duplicati.GUI.HelperControls.BandwidthLimit();
+            this.ThreadPriorityPicker = new Duplicati.GUI.HelperControls.ThreadPriorityPicker();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.PasswordDefaultsGroup.SuspendLayout();
-            this.PasswordPanel.SuspendLayout();
             this.TabContainer.SuspendLayout();
             this.BasicTab.SuspendLayout();
             this.AdvancedTab.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.LicenseTab.SuspendLayout();
-            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -107,6 +102,7 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.groupBox1, "groupBox1");
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.TabStop = false;
+            this.groupBox1.Enter += new System.EventHandler(this.groupBox1_Enter);
             // 
             // BalloonNotificationLevel
             // 
@@ -127,17 +123,8 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.HideDonateButton, "HideDonateButton");
             this.HideDonateButton.Name = "HideDonateButton";
-            this.toolTip.SetToolTip(this.HideDonateButton, resources.GetString("HideDonateButton.ToolTip"));
             this.HideDonateButton.UseVisualStyleBackColor = true;
             this.HideDonateButton.CheckedChanged += new System.EventHandler(this.HideDonateButton_CheckedChanged);
-            // 
-            // StartupDelayDuration
-            // 
-            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
-            this.StartupDelayDuration.Name = "StartupDelayDuration";
-            this.toolTip.SetToolTip(this.StartupDelayDuration, resources.GetString("StartupDelayDuration.ToolTip"));
-            this.StartupDelayDuration.Value = "";
-            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
             // 
             // label7
             // 
@@ -160,14 +147,6 @@ namespace Duplicati.GUI
             this.label3.Name = "label3";
             this.toolTip.SetToolTip(this.label3, resources.GetString("label3.ToolTip"));
             // 
-            // RecentDuration
-            // 
-            resources.ApplyResources(this.RecentDuration, "RecentDuration");
-            this.RecentDuration.Name = "RecentDuration";
-            this.toolTip.SetToolTip(this.RecentDuration, resources.GetString("RecentDuration.ToolTip"));
-            this.RecentDuration.Value = "";
-            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
-            // 
             // groupBox2
             // 
             this.groupBox2.Controls.Add(this.CacheSizeLabel);
@@ -186,7 +165,6 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.CacheSizeLabel, "CacheSizeLabel");
             this.CacheSizeLabel.Name = "CacheSizeLabel";
-            this.toolTip.SetToolTip(this.CacheSizeLabel, resources.GetString("CacheSizeLabel.ToolTip"));
             // 
             // ClearCacheButton
             // 
@@ -237,38 +215,22 @@ namespace Duplicati.GUI
             // 
             resources.ApplyResources(this.label4, "label4");
             this.label4.Name = "label4";
-            this.toolTip.SetToolTip(this.label4, resources.GetString("label4.ToolTip"));
-            // 
-            // OKBtn
-            // 
-            resources.ApplyResources(this.OKBtn, "OKBtn");
-            this.OKBtn.Name = "OKBtn";
-            this.OKBtn.UseVisualStyleBackColor = true;
-            this.OKBtn.Click += new System.EventHandler(this.OKBtn_Click);
-            // 
-            // CancelBtn
-            // 
-            resources.ApplyResources(this.CancelBtn, "CancelBtn");
-            this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Name = "CancelBtn";
-            this.CancelBtn.UseVisualStyleBackColor = true;
             // 
             // PasswordDefaultsGroup
             // 
-            this.PasswordDefaultsGroup.Controls.Add(this.PasswordPanel);
+            this.PasswordDefaultsGroup.Controls.Add(this.EncryptionMethod);
+            this.PasswordDefaultsGroup.Controls.Add(this.EncryptionModule);
             this.PasswordDefaultsGroup.Controls.Add(this.UseCommonPassword);
+            this.PasswordDefaultsGroup.Controls.Add(this.CommonPassword);
             resources.ApplyResources(this.PasswordDefaultsGroup, "PasswordDefaultsGroup");
             this.PasswordDefaultsGroup.Name = "PasswordDefaultsGroup";
             this.PasswordDefaultsGroup.TabStop = false;
             // 
-            // PasswordPanel
+            // EncryptionMethod
             // 
-            this.PasswordPanel.Controls.Add(this.EncryptionModule);
-            this.PasswordPanel.Controls.Add(this.EncryptionMethod);
-            this.PasswordPanel.Controls.Add(this.label5);
-            this.PasswordPanel.Controls.Add(this.CommonPassword);
-            resources.ApplyResources(this.PasswordPanel, "PasswordPanel");
-            this.PasswordPanel.Name = "PasswordPanel";
+            resources.ApplyResources(this.EncryptionMethod, "EncryptionMethod");
+            this.EncryptionMethod.Name = "EncryptionMethod";
+            this.toolTip.SetToolTip(this.EncryptionMethod, resources.GetString("EncryptionMethod.ToolTip"));
             // 
             // EncryptionModule
             // 
@@ -279,30 +241,6 @@ namespace Duplicati.GUI
             this.toolTip.SetToolTip(this.EncryptionModule, resources.GetString("EncryptionModule.ToolTip"));
             this.EncryptionModule.SelectedIndexChanged += new System.EventHandler(this.EncryptionModule_SelectedIndexChanged);
             this.EncryptionModule.TextChanged += new System.EventHandler(this.EncryptionModule_SelectedIndexChanged);
-            // 
-            // EncryptionMethod
-            // 
-            resources.ApplyResources(this.EncryptionMethod, "EncryptionMethod");
-            this.EncryptionMethod.Name = "EncryptionMethod";
-            this.toolTip.SetToolTip(this.EncryptionMethod, resources.GetString("EncryptionMethod.ToolTip"));
-            // 
-            // label5
-            // 
-            resources.ApplyResources(this.label5, "label5");
-            this.label5.Name = "label5";
-            this.toolTip.SetToolTip(this.label5, resources.GetString("label5.ToolTip"));
-            // 
-            // CommonPassword
-            // 
-            this.CommonPassword.AskToEnterNewPassword = false;
-            this.CommonPassword.InitialPassword = null;
-            this.CommonPassword.IsPasswordVisible = false;
-            resources.ApplyResources(this.CommonPassword, "CommonPassword");
-            this.CommonPassword.MaximumSize = new System.Drawing.Size(5000, 20);
-            this.CommonPassword.MinimumSize = new System.Drawing.Size(150, 20);
-            this.CommonPassword.Name = "CommonPassword";
-            this.toolTip.SetToolTip(this.CommonPassword, resources.GetString("CommonPassword.ToolTip"));
-            this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
             // 
             // UseCommonPassword
             // 
@@ -326,6 +264,7 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.TabContainer, "TabContainer");
             this.TabContainer.Name = "TabContainer";
             this.TabContainer.SelectedIndex = 0;
+            this.TabContainer.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             // 
             // BasicTab
             // 
@@ -350,25 +289,6 @@ namespace Duplicati.GUI
             resources.ApplyResources(this.groupBox4, "groupBox4");
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.TabStop = false;
-            // 
-            // Bandwidth
-            // 
-            this.Bandwidth.DownloadLimit = null;
-            this.Bandwidth.DownloadLimitInBytes = ((long)(0));
-            resources.ApplyResources(this.Bandwidth, "Bandwidth");
-            this.Bandwidth.Name = "Bandwidth";
-            this.toolTip.SetToolTip(this.Bandwidth, resources.GetString("Bandwidth.ToolTip"));
-            this.Bandwidth.UploadLimit = null;
-            this.Bandwidth.UploadLimitInBytes = ((long)(0));
-            this.Bandwidth.DownloadLimitChanged += new System.EventHandler(this.Bandwidth_DownloadLimitChanged);
-            this.Bandwidth.UploadLimitChanged += new System.EventHandler(this.Bandwidth_UploadLimitChanged);
-            // 
-            // ThreadPriorityPicker
-            // 
-            resources.ApplyResources(this.ThreadPriorityPicker, "ThreadPriorityPicker");
-            this.ThreadPriorityPicker.Name = "ThreadPriorityPicker";
-            this.toolTip.SetToolTip(this.ThreadPriorityPicker, resources.GetString("ThreadPriorityPicker.ToolTip"));
-            this.ThreadPriorityPicker.SelectedPriorityChanged += new System.EventHandler(this.ThreadPriorityPicker_SelectedPriorityChanged);
             // 
             // LicenseTab
             // 
@@ -396,6 +316,7 @@ namespace Duplicati.GUI
             // 
             // LicenseText
             // 
+            this.LicenseText.BackColor = System.Drawing.SystemColors.Window;
             resources.ApplyResources(this.LicenseText, "LicenseText");
             this.LicenseText.Name = "LicenseText";
             this.LicenseText.ReadOnly = true;
@@ -413,41 +334,93 @@ namespace Duplicati.GUI
             this.toolTip.SetToolTip(this.LicenseSections, resources.GetString("LicenseSections.ToolTip"));
             this.LicenseSections.SelectedIndexChanged += new System.EventHandler(this.LicenseSections_SelectedIndexChanged);
             // 
-            // panel1
+            // OKBtn
             // 
-            this.panel1.Controls.Add(this.OKBtn);
-            this.panel1.Controls.Add(this.CancelBtn);
-            resources.ApplyResources(this.panel1, "panel1");
-            this.panel1.Name = "panel1";
+            resources.ApplyResources(this.OKBtn, "OKBtn");
+            this.OKBtn.Name = "OKBtn";
+            this.OKBtn.UseVisualStyleBackColor = true;
+            this.OKBtn.Click += new System.EventHandler(this.OKBtn_Click);
+            // 
+            // CancelBtn
+            // 
+            resources.ApplyResources(this.CancelBtn, "CancelBtn");
+            this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.CancelBtn.Name = "CancelBtn";
+            this.CancelBtn.UseVisualStyleBackColor = true;
+            // 
+            // CommonPassword
+            // 
+            this.CommonPassword.AskToEnterNewPassword = false;
+            this.CommonPassword.InitialPassword = null;
+            this.CommonPassword.IsPasswordVisible = false;
+            resources.ApplyResources(this.CommonPassword, "CommonPassword");
+            this.CommonPassword.MaximumSize = new System.Drawing.Size(5000, 20);
+            this.CommonPassword.MinimumSize = new System.Drawing.Size(150, 20);
+            this.CommonPassword.Name = "CommonPassword";
+            this.toolTip.SetToolTip(this.CommonPassword, resources.GetString("CommonPassword.ToolTip"));
+            this.CommonPassword.TextChanged += new System.EventHandler(this.CommonPassword_TextChanged);
+            // 
+            // StartupDelayDuration
+            // 
+            resources.ApplyResources(this.StartupDelayDuration, "StartupDelayDuration");
+            this.StartupDelayDuration.Name = "StartupDelayDuration";
+            this.toolTip.SetToolTip(this.StartupDelayDuration, resources.GetString("StartupDelayDuration.ToolTip"));
+            this.StartupDelayDuration.Value = "";
+            this.StartupDelayDuration.ValueChanged += new System.EventHandler(this.StartupDelayDuration_ValueChanged);
+            // 
+            // RecentDuration
+            // 
+            resources.ApplyResources(this.RecentDuration, "RecentDuration");
+            this.RecentDuration.Name = "RecentDuration";
+            this.toolTip.SetToolTip(this.RecentDuration, resources.GetString("RecentDuration.ToolTip"));
+            this.RecentDuration.Value = "";
+            this.RecentDuration.ValueChanged += new System.EventHandler(this.RecentDuration_ValueChanged);
+            // 
+            // Bandwidth
+            // 
+            this.Bandwidth.DownloadLimit = null;
+            this.Bandwidth.DownloadLimitInBytes = ((long)(0));
+            resources.ApplyResources(this.Bandwidth, "Bandwidth");
+            this.Bandwidth.Name = "Bandwidth";
+            this.toolTip.SetToolTip(this.Bandwidth, resources.GetString("Bandwidth.ToolTip"));
+            this.Bandwidth.UploadLimit = null;
+            this.Bandwidth.UploadLimitInBytes = ((long)(0));
+            this.Bandwidth.DownloadLimitChanged += new System.EventHandler(this.Bandwidth_DownloadLimitChanged);
+            this.Bandwidth.UploadLimitChanged += new System.EventHandler(this.Bandwidth_UploadLimitChanged);
+            // 
+            // ThreadPriorityPicker
+            // 
+            resources.ApplyResources(this.ThreadPriorityPicker, "ThreadPriorityPicker");
+            this.ThreadPriorityPicker.Name = "ThreadPriorityPicker";
+            this.toolTip.SetToolTip(this.ThreadPriorityPicker, resources.GetString("ThreadPriorityPicker.ToolTip"));
+            this.ThreadPriorityPicker.SelectedPriorityChanged += new System.EventHandler(this.ThreadPriorityPicker_SelectedPriorityChanged);
             // 
             // ApplicationSetup
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
+            this.Controls.Add(this.CancelBtn);
+            this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.TabContainer);
-            this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ApplicationSetup";
-            this.Load += new System.EventHandler(this.ApplicationSetup_Load);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ApplicationSetup_FormClosing);
+            this.Load += new System.EventHandler(this.ApplicationSetup_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.PasswordDefaultsGroup.ResumeLayout(false);
             this.PasswordDefaultsGroup.PerformLayout();
-            this.PasswordPanel.ResumeLayout(false);
-            this.PasswordPanel.PerformLayout();
             this.TabContainer.ResumeLayout(false);
             this.BasicTab.ResumeLayout(false);
             this.AdvancedTab.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.LicenseTab.ResumeLayout(false);
             this.LicenseTab.PerformLayout();
-            this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -457,8 +430,6 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.Button OKBtn;
-        private System.Windows.Forms.Button CancelBtn;
         private Duplicati.GUI.HelperControls.DurationEditor RecentDuration;
         private System.Windows.Forms.Button TempPathBrowse;
         private System.Windows.Forms.TextBox TempPath;
@@ -467,8 +438,6 @@ namespace Duplicati.GUI
         private System.Windows.Forms.GroupBox PasswordDefaultsGroup;
         private Duplicati.Winforms.Controls.PasswordControl CommonPassword;
         private System.Windows.Forms.CheckBox UseCommonPassword;
-        private System.Windows.Forms.Panel PasswordPanel;
-        private System.Windows.Forms.Label label5;
         private System.Windows.Forms.CheckBox SignatureCacheEnabled;
         private System.Windows.Forms.Button SignatureCachePathBrowse;
         private System.Windows.Forms.TextBox SignatureCachePath;
@@ -486,7 +455,6 @@ namespace Duplicati.GUI
         private System.Windows.Forms.GroupBox groupBox4;
         private Duplicati.GUI.HelperControls.BandwidthLimit Bandwidth;
         private Duplicati.GUI.HelperControls.ThreadPriorityPicker ThreadPriorityPicker;
-        private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label EncryptionMethod;
         private System.Windows.Forms.ComboBox EncryptionModule;
         private System.Windows.Forms.CheckBox HideDonateButton;
@@ -499,5 +467,7 @@ namespace Duplicati.GUI
         private System.Windows.Forms.TextBox LicenseText;
         private System.Windows.Forms.ComboBox BalloonNotificationLevel;
         private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.Button OKBtn;
+        private System.Windows.Forms.Button CancelBtn;
     }
 }

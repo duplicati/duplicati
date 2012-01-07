@@ -121,6 +121,6 @@
     <value>Displays various options related to the S3 backend</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
-    <value>S3 Options</value>
+    <value>S3</value>
   </data>
 </root>

@@ -130,6 +130,6 @@
     <value>This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption.</value>
   </data>
   <data name="DisplayName" xml:space="preserve">
-    <value>AES-256 encryption, built in</value>
+    <value>AES-256 encryption, built-in</value>
   </data>
 </root>

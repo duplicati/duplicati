@@ -122,6 +122,7 @@
   <ItemGroup>
     <EmbeddedResource Include="GPGCommonOptions.resx">
       <DependentUpon>GPGCommonOptions.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\AESEncryption.resx">
       <SubType>Designer</SubType>
@@ -145,6 +146,7 @@
     <EmbeddedResource Include="Strings\GPGSettingsControl.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>GPGSettingsControl.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\GPGStreamWrapper.resx">
       <SubType>Designer</SubType>

@@ -229,6 +229,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="HelperControls\TestSearchSelection.resx">
       <DependentUpon>TestSearchSelection.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -890,6 +891,7 @@
     <EmbeddedResource Include="HelperControls\Strings\SizeSelector.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>SizeSelector.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="HelperControls\ThreadPriorityPicker.resx">
       <DependentUpon>ThreadPriorityPicker.cs</DependentUpon>
@@ -1068,6 +1070,7 @@
     <EmbeddedResource Include="Strings\WizardHandler.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>WizardHandler.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

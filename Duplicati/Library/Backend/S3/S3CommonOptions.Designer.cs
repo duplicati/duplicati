@@ -46,10 +46,10 @@
             // 
             // CredentialGroup
             // 
-            resources.ApplyResources(this.CredentialGroup, "CredentialGroup");
             this.CredentialGroup.Controls.Add(this.RemoveSelectedButton);
             this.CredentialGroup.Controls.Add(this.RemoveAllButton);
             this.CredentialGroup.Controls.Add(this.CredentialList);
+            resources.ApplyResources(this.CredentialGroup, "CredentialGroup");
             this.CredentialGroup.Name = "CredentialGroup";
             this.CredentialGroup.TabStop = false;
             // 
@@ -69,26 +69,26 @@
             // 
             // CredentialList
             // 
-            resources.ApplyResources(this.CredentialList, "CredentialList");
             this.CredentialList.FormattingEnabled = true;
+            resources.ApplyResources(this.CredentialList, "CredentialList");
             this.CredentialList.Name = "CredentialList";
             this.CredentialList.SelectedIndexChanged += new System.EventHandler(this.CredentialList_SelectedIndexChanged);
             // 
             // groupBox2
             // 
-            resources.ApplyResources(this.groupBox2, "groupBox2");
             this.groupBox2.Controls.Add(this.DefaultServername);
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Controls.Add(this.DefaultBucketRegion);
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Controls.Add(this.UseRRS);
+            resources.ApplyResources(this.groupBox2, "groupBox2");
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.TabStop = false;
             // 
             // DefaultServername
             // 
-            resources.ApplyResources(this.DefaultServername, "DefaultServername");
             this.DefaultServername.FormattingEnabled = true;
+            resources.ApplyResources(this.DefaultServername, "DefaultServername");
             this.DefaultServername.Name = "DefaultServername";
             this.DefaultServername.SelectedIndexChanged += new System.EventHandler(this.DefaultServername_SelectedIndexChanged);
             // 
@@ -99,8 +99,8 @@
             // 
             // DefaultBucketRegion
             // 
-            resources.ApplyResources(this.DefaultBucketRegion, "DefaultBucketRegion");
             this.DefaultBucketRegion.FormattingEnabled = true;
+            resources.ApplyResources(this.DefaultBucketRegion, "DefaultBucketRegion");
             this.DefaultBucketRegion.Name = "DefaultBucketRegion";
             this.DefaultBucketRegion.SelectedIndexChanged += new System.EventHandler(this.DefaultBucketRegion_SelectedIndexChanged);
             // 

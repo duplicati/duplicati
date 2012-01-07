@@ -70,7 +70,6 @@
             this.Controls.Add(this.BrowseForGPGPathButton);
             this.Controls.Add(this.GPGPath);
             this.Controls.Add(this.label1);
-            this.MinimumSize = new System.Drawing.Size(283, 32);
             this.Name = "GPGCommonOptions";
             this.Load += new System.EventHandler(this.GPGCommonOptions_Load);
             this.ResumeLayout(false);

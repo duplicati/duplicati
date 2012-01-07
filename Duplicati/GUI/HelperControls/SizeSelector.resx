@@ -145,7 +145,7 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="Number.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
+    <value>0, 1</value>
   </data>
   <data name="Number.Size" type="System.Drawing.Size, System.Drawing">
     <value>88, 20</value>

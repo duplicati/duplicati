@@ -118,22 +118,22 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BalloonNotification_Continous" xml:space="preserve">
-    <value>While backup is running (and on errors/warnings)</value>
+    <value>While running, and on errors, warnings</value>
   </data>
   <data name="BalloonNotification_Errors" xml:space="preserve">
-    <value>On backup errors</value>
+    <value>On errors</value>
   </data>
   <data name="BalloonNotification_Off" xml:space="preserve">
-    <value>No balloon notifications</value>
+    <value>No notifications</value>
   </data>
   <data name="BalloonNotification_Start" xml:space="preserve">
-    <value>On backup start (and errors/warnings)</value>
+    <value>On start, errors, warnings</value>
   </data>
   <data name="BalloonNotification_StartAndStop" xml:space="preserve">
-    <value>On backup start and stop (and errors/warnings)</value>
+    <value>On start, stop, errors, warnings</value>
   </data>
   <data name="BalloonNotification_Warnings" xml:space="preserve">
-    <value>On backup errors and warnings</value>
+    <value>On errors, warnings</value>
   </data>
   <data name="CacheSize" xml:space="preserve">
     <value>Cache size: {0}</value>
@@ -153,7 +153,7 @@
     <comment>A string displayed to denote the current default language</comment>
   </data>
   <data name="DialogTitle" xml:space="preserve">
-    <value>Duplicati Setup, version {0}</value>
+    <value>Duplicati Options, version {0}</value>
     <comment>The dialog title with version number</comment>
   </data>
   <data name="EncryptionModuleLoadError" xml:space="preserve">

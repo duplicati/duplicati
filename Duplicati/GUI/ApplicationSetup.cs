@@ -124,6 +124,12 @@ namespace Duplicati.GUI
 
         }
 
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            Font = SystemFonts.MessageBoxFont;
+        }
+
         private void RecentDuration_TextChanged(object sender, EventArgs e)
         {
             if (m_isUpdating || m_settings == null)
@@ -324,7 +330,8 @@ namespace Duplicati.GUI
 
         private void UseCommonPassword_CheckedChanged(object sender, EventArgs e)
         {
-            PasswordPanel.Enabled = UseCommonPassword.Checked;
+            CommonPassword.Enabled = UseCommonPassword.Checked;
+            EncryptionModule.Enabled = UseCommonPassword.Checked;
 
             if (m_isUpdating)
                 return;
@@ -560,6 +567,16 @@ namespace Duplicati.GUI
 
             if (BalloonNotificationLevel.SelectedItem as ComboBoxItemPair<ApplicationSettings.NotificationLevel> != null)
                 m_settings.BallonNotificationLevel = (BalloonNotificationLevel.SelectedItem as ComboBoxItemPair<ApplicationSettings.NotificationLevel>).Value;
+        }
+
+        private void groupBox1_Enter(object sender, EventArgs e)
+        {
+
+        }
+
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }

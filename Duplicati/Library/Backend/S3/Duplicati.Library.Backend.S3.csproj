@@ -130,6 +130,7 @@
     <EmbeddedResource Include="Strings\S3SettingsControl.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>S3SettingsControl.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\S3UI.resx">
       <Generator>ResXFileCodeGenerator</Generator>

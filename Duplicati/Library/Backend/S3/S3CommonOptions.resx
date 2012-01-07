@@ -117,29 +117,82 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="CredentialGroup.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Bottom, Left, Right</value>
+  <data name="&gt;&gt;RemoveSelectedButton.Name" xml:space="preserve">
+    <value>RemoveSelectedButton</value>
   </data>
-  <data name="RemoveSelectedButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Right</value>
+  <data name="&gt;&gt;RemoveSelectedButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RemoveSelectedButton.Parent" xml:space="preserve">
+    <value>CredentialGroup</value>
+  </data>
+  <data name="&gt;&gt;RemoveSelectedButton.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;RemoveAllButton.Name" xml:space="preserve">
+    <value>RemoveAllButton</value>
+  </data>
+  <data name="&gt;&gt;RemoveAllButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RemoveAllButton.Parent" xml:space="preserve">
+    <value>CredentialGroup</value>
+  </data>
+  <data name="&gt;&gt;RemoveAllButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;CredentialList.Name" xml:space="preserve">
+    <value>CredentialList</value>
+  </data>
+  <data name="&gt;&gt;CredentialList.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CredentialList.Parent" xml:space="preserve">
+    <value>CredentialGroup</value>
+  </data>
+  <data name="&gt;&gt;CredentialList.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="CredentialGroup.Location" type="System.Drawing.Point, System.Drawing">
+    <value>5, 32</value>
+  </data>
+  <data name="CredentialGroup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>434, 138</value>
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="CredentialGroup.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="CredentialGroup.Text" xml:space="preserve">
+    <value>Stored credentials</value>
+  </data>
+  <data name="&gt;&gt;CredentialGroup.Name" xml:space="preserve">
+    <value>CredentialGroup</value>
+  </data>
+  <data name="&gt;&gt;CredentialGroup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;CredentialGroup.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;CredentialGroup.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
   <data name="RemoveSelectedButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="RemoveSelectedButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>54, 107</value>
+    <value>328, 19</value>
   </data>
   <data name="RemoveSelectedButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>99, 23</value>
+    <value>96, 23</value>
   </data>
   <data name="RemoveSelectedButton.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
   </data>
   <data name="RemoveSelectedButton.Text" xml:space="preserve">
-    <value>Remove selected</value>
+    <value>Remove</value>
   </data>
   <data name="&gt;&gt;RemoveSelectedButton.Name" xml:space="preserve">
     <value>RemoveSelectedButton</value>
@@ -153,14 +206,11 @@
   <data name="&gt;&gt;RemoveSelectedButton.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="RemoveAllButton.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Right</value>
-  </data>
   <data name="RemoveAllButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>158, 107</value>
+    <value>328, 48</value>
   </data>
   <data name="RemoveAllButton.Size" type="System.Drawing.Size, System.Drawing">
-    <value>75, 23</value>
+    <value>96, 23</value>
   </data>
   <data name="RemoveAllButton.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -180,14 +230,11 @@
   <data name="&gt;&gt;RemoveAllButton.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <data name="CredentialList.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Bottom, Left, Right</value>
-  </data>
   <data name="CredentialList.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 24</value>
+    <value>9, 18</value>
   </data>
   <data name="CredentialList.Size" type="System.Drawing.Size, System.Drawing">
-    <value>214, 69</value>
+    <value>313, 108</value>
   </data>
   <data name="CredentialList.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -204,41 +251,11 @@
   <data name="&gt;&gt;CredentialList.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
-  <data name="CredentialGroup.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 32</value>
-  </data>
-  <data name="CredentialGroup.Size" type="System.Drawing.Size, System.Drawing">
-    <value>246, 139</value>
-  </data>
-  <data name="CredentialGroup.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="CredentialGroup.Text" xml:space="preserve">
-    <value>Stored credentials</value>
-  </data>
-  <data name="&gt;&gt;CredentialGroup.Name" xml:space="preserve">
-    <value>CredentialGroup</value>
-  </data>
-  <data name="&gt;&gt;CredentialGroup.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;CredentialGroup.Parent" xml:space="preserve">
-    <value>$this</value>
-  </data>
-  <data name="&gt;&gt;CredentialGroup.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="groupBox2.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Bottom, Left, Right</value>
-  </data>
-  <data name="DefaultServername.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
-  </data>
   <data name="DefaultServername.Location" type="System.Drawing.Point, System.Drawing">
-    <value>104, 24</value>
+    <value>103, 18</value>
   </data>
   <data name="DefaultServername.Size" type="System.Drawing.Size, System.Drawing">
-    <value>120, 21</value>
+    <value>321, 21</value>
   </data>
   <data name="DefaultServername.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -258,20 +275,21 @@
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="label2.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 24</value>
+    <value>6, 21</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>64, 13</value>
+    <value>70, 13</value>
   </data>
   <data name="label2.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>Servername</value>
+    <value>Server name:</value>
   </data>
   <data name="&gt;&gt;label2.Name" xml:space="preserve">
     <value>label2</value>
@@ -285,14 +303,11 @@
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
     <value>1</value>
   </data>
-  <data name="DefaultBucketRegion.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
-  </data>
   <data name="DefaultBucketRegion.Location" type="System.Drawing.Point, System.Drawing">
-    <value>104, 48</value>
+    <value>103, 45</value>
   </data>
   <data name="DefaultBucketRegion.Size" type="System.Drawing.Size, System.Drawing">
-    <value>120, 21</value>
+    <value>321, 21</value>
   </data>
   <data name="DefaultBucketRegion.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -313,16 +328,16 @@
     <value>True</value>
   </data>
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 48</value>
+    <value>6, 48</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>73, 13</value>
+    <value>76, 13</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Bucket region</value>
+    <value>Bucket region:</value>
   </data>
   <data name="&gt;&gt;label1.Name" xml:space="preserve">
     <value>label1</value>
@@ -343,7 +358,7 @@
     <value>NoControl</value>
   </data>
   <data name="UseRRS.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 72</value>
+    <value>9, 72</value>
   </data>
   <data name="UseRRS.Size" type="System.Drawing.Size, System.Drawing">
     <value>196, 17</value>
@@ -367,10 +382,10 @@
     <value>4</value>
   </data>
   <data name="groupBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 179</value>
+    <value>5, 181</value>
   </data>
   <data name="groupBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>246, 100</value>
+    <value>434, 100</value>
   </data>
   <data name="groupBox2.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -397,7 +412,7 @@
     <value>NoControl</value>
   </data>
   <data name="AllowCredentialStorage.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 8</value>
+    <value>5, 10</value>
   </data>
   <data name="AllowCredentialStorage.Size" type="System.Drawing.Size, System.Drawing">
     <value>186, 17</value>
@@ -430,7 +445,7 @@
     <value>True</value>
   </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
-    <value>265, 284</value>
+    <value>445, 283</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>S3CommonOptions</value>

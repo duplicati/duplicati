@@ -169,7 +169,7 @@
     <value>NoControl</value>
   </data>
   <data name="ThreadPriorityEnabled.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
+    <value>0, 2</value>
   </data>
   <data name="ThreadPriorityEnabled.Size" type="System.Drawing.Size, System.Drawing">
     <value>108, 17</value>

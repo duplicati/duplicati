@@ -182,11 +182,14 @@
   <data name="CustomDuration.Error" xml:space="preserve">
     <value>s</value>
   </data>
+  <data name="CustomDuration.IconPadding" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
   <data name="CustomDuration.Location" type="System.Drawing.Point, System.Drawing">
-    <value>136, 0</value>
+    <value>118, 0</value>
   </data>
   <data name="CustomDuration.Size" type="System.Drawing.Size, System.Drawing">
-    <value>84, 20</value>
+    <value>102, 20</value>
   </data>
   <data name="CustomDuration.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>

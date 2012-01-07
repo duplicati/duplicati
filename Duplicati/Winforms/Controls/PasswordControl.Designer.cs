@@ -33,6 +33,7 @@
             this.TextBox = new System.Windows.Forms.TextBox();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.ShowPassword = new System.Windows.Forms.CheckBox();
+            this.Seperator = new System.Windows.Forms.Panel();
             this.SuspendLayout();
             // 
             // TextBox
@@ -41,8 +42,8 @@
             this.TextBox.Name = "TextBox";
             this.TextBox.UseSystemPasswordChar = true;
             this.TextBox.TextChanged += new System.EventHandler(this.TextBox_TextChanged);
-            this.TextBox.Leave += new System.EventHandler(this.TextBox_Leave);
             this.TextBox.Enter += new System.EventHandler(this.TextBox_Enter);
+            this.TextBox.Leave += new System.EventHandler(this.TextBox_Leave);
             // 
             // ShowPassword
             // 
@@ -51,14 +52,20 @@
             this.ShowPassword.Name = "ShowPassword";
             this.toolTip.SetToolTip(this.ShowPassword, resources.GetString("ShowPassword.ToolTip"));
             this.ShowPassword.UseVisualStyleBackColor = true;
-            this.ShowPassword.Click += new System.EventHandler(this.ShowPassword_Click);
             this.ShowPassword.CheckedChanged += new System.EventHandler(this.ShowPassword_CheckedChanged);
+            this.ShowPassword.Click += new System.EventHandler(this.ShowPassword_Click);
+            // 
+            // Seperator
+            // 
+            resources.ApplyResources(this.Seperator, "Seperator");
+            this.Seperator.Name = "Seperator";
             // 
             // PasswordControl
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.TextBox);
+            this.Controls.Add(this.Seperator);
             this.Controls.Add(this.ShowPassword);
             this.MaximumSize = new System.Drawing.Size(5000, 20);
             this.MinimumSize = new System.Drawing.Size(150, 20);
@@ -73,5 +80,6 @@
         private System.Windows.Forms.TextBox TextBox;
         private System.Windows.Forms.CheckBox ShowPassword;
         private System.Windows.Forms.ToolTip toolTip;
+        private System.Windows.Forms.Panel Seperator;
     }
 }

@@ -121,6 +121,6 @@
     <value>Settings for the SSH backend</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
-    <value>SSH Settings</value>
+    <value>SSH</value>
   </data>
 </root>

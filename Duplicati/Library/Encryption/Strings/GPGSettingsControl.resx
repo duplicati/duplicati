@@ -121,6 +121,6 @@
     <value>Settings for the GPG encryption module</value>
   </data>
   <data name="PageTitle" xml:space="preserve">
-    <value>GPG Settings</value>
+    <value>GPG</value>
   </data>
 </root>

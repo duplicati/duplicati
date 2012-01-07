@@ -124,21 +124,21 @@
     <value>bytes/s</value>
   </data>
   <data name="GBName" xml:space="preserve">
-    <value>gb</value>
+    <value>GB</value>
   </data>
   <data name="GBPerSecond" xml:space="preserve">
-    <value>gb/s</value>
+    <value>GB/s</value>
   </data>
   <data name="KBName" xml:space="preserve">
-    <value>kb</value>
+    <value>kB</value>
   </data>
   <data name="KBPerSecond" xml:space="preserve">
-    <value>kb/s</value>
+    <value>kB/s</value>
   </data>
   <data name="MBName" xml:space="preserve">
-    <value>mb</value>
+    <value>MB</value>
   </data>
   <data name="MBPerSecond" xml:space="preserve">
-    <value>mb/s</value>
+    <value>MB/s</value>
   </data>
 </root>

@@ -154,6 +154,7 @@
     <EmbeddedResource Include="Strings\SSHSettingsControl.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>SSHSettingsControl.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\SSHUI.resx">
       <Generator>ResXFileCodeGenerator</Generator>

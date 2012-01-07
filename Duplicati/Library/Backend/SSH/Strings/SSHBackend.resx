@@ -245,7 +245,7 @@ Error message: {1}</value>
   </data>
   <data name="LaunchErrorWindows" xml:space="preserve">
     <value>Failed to start the SSH application ({0}).
-Make sure that "putty" is installed, and you have set the correct path.
+Make sure that "PuTTY" is installed, and you have set the correct path.
 Error message: {1}</value>
   </data>
   <data name="PasswordMissingError" xml:space="preserve">

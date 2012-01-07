@@ -123,16 +123,16 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 8</value>
+    <value>8, 12</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>109, 13</value>
+    <value>57, 13</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>GPG executable path</value>
+    <value>GPG path:</value>
   </data>
   <data name="&gt;&gt;label1.Name" xml:space="preserve">
     <value>label1</value>
@@ -151,10 +151,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="GPGPath.Location" type="System.Drawing.Point, System.Drawing">
-    <value>120, 8</value>
+    <value>75, 9</value>
   </data>
   <data name="GPGPath.Size" type="System.Drawing.Size, System.Drawing">
-    <value>138, 21</value>
+    <value>159, 21</value>
   </data>
   <data name="GPGPath.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -175,7 +175,7 @@
     <value>Top, Right</value>
   </data>
   <data name="BrowseForGPGPathButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>258, 8</value>
+    <value>240, 9</value>
   </data>
   <data name="BrowseForGPGPathButton.Size" type="System.Drawing.Size, System.Drawing">
     <value>24, 20</value>
@@ -217,7 +217,7 @@
     <value>True</value>
   </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
-    <value>283, 32</value>
+    <value>270, 67</value>
   </data>
   <data name="&gt;&gt;BrowseForGPGDialog.Name" xml:space="preserve">
     <value>BrowseForGPGDialog</value>

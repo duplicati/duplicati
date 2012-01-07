@@ -127,7 +127,7 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="DownloadLimitCheckbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 32</value>
+    <value>0, 30</value>
   </data>
   <data name="DownloadLimitCheckbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>135, 17</value>
@@ -157,7 +157,7 @@
     <value>NoControl</value>
   </data>
   <data name="UploadLimitCheckbox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
+    <value>0, 2</value>
   </data>
   <data name="UploadLimitCheckbox.Size" type="System.Drawing.Size, System.Drawing">
     <value>125, 17</value>
@@ -214,7 +214,7 @@
     <value>False</value>
   </data>
   <data name="DownloadLimitPicker.Location" type="System.Drawing.Point, System.Drawing">
-    <value>152, 32</value>
+    <value>152, 28</value>
   </data>
   <data name="DownloadLimitPicker.Size" type="System.Drawing.Size, System.Drawing">
     <value>170, 21</value>
@@ -241,7 +241,7 @@
     <value>6, 13</value>
   </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
-    <value>321, 54</value>
+    <value>321, 50</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>BandwidthLimit</value>
