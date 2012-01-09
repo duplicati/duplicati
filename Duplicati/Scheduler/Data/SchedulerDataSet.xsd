@@ -12,7 +12,7 @@
   <xs:element name="SchedulerDataSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:EnableTableAdapterManager="true" msprop:Generator_DataSetName="SchedulerDataSet" msprop:Generator_UserDSName="SchedulerDataSet">
     <xs:complexType>
       <xs:choice minOccurs="0" maxOccurs="unbounded">
-        <xs:element name="Jobs" msprop:Generator_UserTableName="Jobs" msprop:Generator_RowEvArgName="JobsRowChangeEvent" msprop:Generator_TableVarName="tableJobs" msprop:Generator_TablePropName="Jobs" msprop:Generator_RowDeletingName="JobsRowDeleting" msprop:Generator_RowChangingName="JobsRowChanging" msprop:Generator_RowDeletedName="JobsRowDeleted" msprop:Generator_TableClassName="JobsDataTable" msprop:Generator_RowChangedName="JobsRowChanged" msprop:Generator_RowEvHandlerName="JobsRowChangeEventHandler" msprop:Generator_RowClassName="JobsRow">
+        <xs:element name="Jobs" msprop:Generator_UserTableName="Jobs" msprop:Generator_RowEvArgName="JobsRowChangeEvent" msprop:Generator_TableVarName="tableJobs" msprop:Generator_TablePropName="Jobs" msprop:Generator_RowDeletingName="JobsRowDeleting" msprop:Generator_RowChangingName="JobsRowChanging" msprop:Generator_RowDeletedName="JobsRowDeleted" msprop:Generator_RowEvHandlerName="JobsRowChangeEventHandler" msprop:Generator_RowChangedName="JobsRowChanged" msprop:Generator_TableClassName="JobsDataTable" msprop:Generator_RowClassName="JobsRow">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Name" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInTable="NameColumn" msprop:Generator_UserColumnName="Name" default="&quot;&quot;">
@@ -37,10 +37,11 @@
               <xs:element name="CheckSrc" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="CheckSrc" msprop:Generator_ColumnVarNameInTable="columnCheckSrc" msprop:Generator_ColumnPropNameInTable="CheckSrcColumn" msprop:Generator_UserColumnName="CheckSrc" type="xs:string" default="" minOccurs="0" />
               <xs:element name="TriggerXML" msprop:Generator_ColumnVarNameInTable="columnTriggerXML" msprop:Generator_ColumnPropNameInRow="TriggerXML" msprop:Generator_ColumnPropNameInTable="TriggerXMLColumn" msprop:Generator_UserColumnName="TriggerXML" type="xs:string" minOccurs="0" />
               <xs:element name="LastMod" msprop:Generator_ColumnVarNameInTable="columnLastMod" msprop:Generator_ColumnPropNameInRow="LastMod" msprop:Generator_ColumnPropNameInTable="LastModColumn" msprop:Generator_UserColumnName="LastMod" type="xs:dateTime" minOccurs="0" />
+              <xs:element name="Details" msprop:Generator_ColumnVarNameInTable="columnDetails" msprop:Generator_ColumnPropNameInRow="Details" msprop:nullValue="_null" msprop:Generator_ColumnPropNameInTable="DetailsColumn" msprop:Generator_UserColumnName="Details" type="xs:string" minOccurs="0" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element name="Options" msprop:Generator_UserTableName="Options" msprop:Generator_RowEvArgName="OptionsRowChangeEvent" msprop:Generator_TableVarName="tableOptions" msprop:Generator_TablePropName="Options" msprop:Generator_RowDeletingName="OptionsRowDeleting" msprop:Generator_RowChangingName="OptionsRowChanging" msprop:Generator_RowDeletedName="OptionsRowDeleted" msprop:Generator_TableClassName="OptionsDataTable" msprop:Generator_RowChangedName="OptionsRowChanged" msprop:Generator_RowEvHandlerName="OptionsRowChangeEventHandler" msprop:Generator_RowClassName="OptionsRow">
+        <xs:element name="Options" msprop:Generator_UserTableName="Options" msprop:Generator_RowEvArgName="OptionsRowChangeEvent" msprop:Generator_TableVarName="tableOptions" msprop:Generator_TablePropName="Options" msprop:Generator_RowDeletingName="OptionsRowDeleting" msprop:Generator_RowChangingName="OptionsRowChanging" msprop:Generator_RowDeletedName="OptionsRowDeleted" msprop:Generator_RowEvHandlerName="OptionsRowChangeEventHandler" msprop:Generator_RowChangedName="OptionsRowChanged" msprop:Generator_TableClassName="OptionsDataTable" msprop:Generator_RowClassName="OptionsRow">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Name" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInTable="NameColumn" msprop:Generator_UserColumnName="Name" type="xs:string" />
@@ -49,7 +50,7 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element name="DriveMaps" msprop:Generator_UserTableName="DriveMaps" msprop:Generator_RowEvArgName="DriveMapsRowChangeEvent" msprop:Generator_TableVarName="tableDriveMaps" msprop:Generator_TablePropName="DriveMaps" msprop:Generator_RowDeletingName="DriveMapsRowDeleting" msprop:Generator_RowChangingName="DriveMapsRowChanging" msprop:Generator_RowDeletedName="DriveMapsRowDeleted" msprop:Generator_TableClassName="DriveMapsDataTable" msprop:Generator_RowChangedName="DriveMapsRowChanged" msprop:Generator_RowEvHandlerName="DriveMapsRowChangeEventHandler" msprop:Generator_RowClassName="DriveMapsRow">
+        <xs:element name="DriveMaps" msprop:Generator_UserTableName="DriveMaps" msprop:Generator_RowEvArgName="DriveMapsRowChangeEvent" msprop:Generator_TableVarName="tableDriveMaps" msprop:Generator_TablePropName="DriveMaps" msprop:Generator_RowDeletingName="DriveMapsRowDeleting" msprop:Generator_RowChangingName="DriveMapsRowChanging" msprop:Generator_RowDeletedName="DriveMapsRowDeleted" msprop:Generator_RowEvHandlerName="DriveMapsRowChangeEventHandler" msprop:Generator_RowChangedName="DriveMapsRowChanged" msprop:Generator_TableClassName="DriveMapsDataTable" msprop:Generator_RowClassName="DriveMapsRow">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnPropNameInTable="NameColumn" msprop:Generator_UserColumnName="Name" type="xs:string" minOccurs="0" />
@@ -58,7 +59,7 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element name="Settings" msprop:Generator_UserTableName="Settings" msprop:Generator_RowEvArgName="SettingsRowChangeEvent" msprop:Generator_TableVarName="tableSettings" msprop:Generator_TablePropName="Settings" msprop:Generator_RowDeletingName="SettingsRowDeleting" msprop:Generator_RowChangingName="SettingsRowChanging" msprop:Generator_RowDeletedName="SettingsRowDeleted" msprop:Generator_TableClassName="SettingsDataTable" msprop:Generator_RowChangedName="SettingsRowChanged" msprop:Generator_RowEvHandlerName="SettingsRowChangeEventHandler" msprop:Generator_RowClassName="SettingsRow">
+        <xs:element name="Settings" msprop:Generator_UserTableName="Settings" msprop:Generator_RowEvArgName="SettingsRowChangeEvent" msprop:Generator_TableVarName="tableSettings" msprop:Generator_TablePropName="Settings" msprop:Generator_RowDeletingName="SettingsRowDeleting" msprop:Generator_RowChangingName="SettingsRowChanging" msprop:Generator_RowDeletedName="SettingsRowDeleted" msprop:Generator_RowEvHandlerName="SettingsRowChangeEventHandler" msprop:Generator_RowChangedName="SettingsRowChanged" msprop:Generator_TableClassName="SettingsDataTable" msprop:Generator_RowClassName="SettingsRow">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="LogFileAgeDays" msprop:Generator_ColumnVarNameInTable="columnLogFileAgeDays" msprop:Generator_ColumnPropNameInRow="LogFileAgeDays" msprop:Generator_ColumnPropNameInTable="LogFileAgeDaysColumn" msprop:Generator_UserColumnName="LogFileAgeDays" type="xs:int" minOccurs="0" />
@@ -71,7 +72,7 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element name="GuiOptions" msprop:Generator_UserTableName="GuiOptions" msprop:Generator_RowEvArgName="GuiOptionsRowChangeEvent" msprop:Generator_TableVarName="tableGuiOptions" msprop:Generator_TablePropName="GuiOptions" msprop:Generator_RowDeletingName="GuiOptionsRowDeleting" msprop:Generator_RowChangingName="GuiOptionsRowChanging" msprop:Generator_RowDeletedName="GuiOptionsRowDeleted" msprop:Generator_TableClassName="GuiOptionsDataTable" msprop:Generator_RowChangedName="GuiOptionsRowChanged" msprop:Generator_RowEvHandlerName="GuiOptionsRowChangeEventHandler" msprop:Generator_RowClassName="GuiOptionsRow">
+        <xs:element name="GuiOptions" msprop:Generator_UserTableName="GuiOptions" msprop:Generator_RowEvArgName="GuiOptionsRowChangeEvent" msprop:Generator_TableVarName="tableGuiOptions" msprop:Generator_TablePropName="GuiOptions" msprop:Generator_RowDeletingName="GuiOptionsRowDeleting" msprop:Generator_RowChangingName="GuiOptionsRowChanging" msprop:Generator_RowDeletedName="GuiOptionsRowDeleted" msprop:Generator_RowEvHandlerName="GuiOptionsRowChangeEventHandler" msprop:Generator_RowChangedName="GuiOptionsRowChanged" msprop:Generator_TableClassName="GuiOptionsDataTable" msprop:Generator_RowClassName="GuiOptionsRow">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Name" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInTable="NameColumn" msprop:Generator_UserColumnName="Name" type="xs:string" />
@@ -89,9 +90,9 @@
   </xs:element>
   <xs:annotation>
     <xs:appinfo>
-      <msdata:Relationship name="Jobs_Options" msdata:parent="Jobs" msdata:child="Options" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="Options" msprop:Generator_ChildPropName="GetOptionsRows" msprop:Generator_UserParentTable="Jobs" msprop:Generator_UserRelationName="Jobs_Options" msprop:Generator_RelationVarName="relationJobs_Options" msprop:Generator_ParentPropName="JobsRow" />
-      <msdata:Relationship name="Jobs_DriveMaps" msdata:parent="Jobs" msdata:child="DriveMaps" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="DriveMaps" msprop:Generator_ChildPropName="GetDriveMapsRows" msprop:Generator_UserParentTable="Jobs" msprop:Generator_UserRelationName="Jobs_DriveMaps" msprop:Generator_RelationVarName="relationJobs_DriveMaps" msprop:Generator_ParentPropName="JobsRow" />
-      <msdata:Relationship name="Jobs_GuiOptions" msdata:parent="Jobs" msdata:child="GuiOptions" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="GuiOptions" msprop:Generator_ChildPropName="GetGuiOptionsRows" msprop:Generator_UserParentTable="Jobs" msprop:Generator_UserRelationName="Jobs_GuiOptions" msprop:Generator_RelationVarName="relationJobs_GuiOptions" msprop:Generator_ParentPropName="JobsRow" />
+      <msdata:Relationship name="Jobs_Options" msdata:parent="Jobs" msdata:child="Options" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="Options" msprop:Generator_ChildPropName="GetOptionsRows" msprop:Generator_ParentPropName="JobsRow" msprop:Generator_UserRelationName="Jobs_Options" msprop:Generator_RelationVarName="relationJobs_Options" msprop:Generator_UserParentTable="Jobs" />
+      <msdata:Relationship name="Jobs_DriveMaps" msdata:parent="Jobs" msdata:child="DriveMaps" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="DriveMaps" msprop:Generator_ChildPropName="GetDriveMapsRows" msprop:Generator_ParentPropName="JobsRow" msprop:Generator_UserRelationName="Jobs_DriveMaps" msprop:Generator_RelationVarName="relationJobs_DriveMaps" msprop:Generator_UserParentTable="Jobs" />
+      <msdata:Relationship name="Jobs_GuiOptions" msdata:parent="Jobs" msdata:child="GuiOptions" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="GuiOptions" msprop:Generator_ChildPropName="GetGuiOptionsRows" msprop:Generator_ParentPropName="JobsRow" msprop:Generator_UserRelationName="Jobs_GuiOptions" msprop:Generator_RelationVarName="relationJobs_GuiOptions" msprop:Generator_UserParentTable="Jobs" />
     </xs:appinfo>
   </xs:annotation>
 </xs:schema>

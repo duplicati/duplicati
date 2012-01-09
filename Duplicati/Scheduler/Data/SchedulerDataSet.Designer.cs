@@ -472,6 +472,8 @@ namespace Duplicati.Scheduler.Data {
             
             private global::System.Data.DataColumn columnLastMod;
             
+            private global::System.Data.DataColumn columnDetails;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             public JobsDataTable() {
@@ -635,6 +637,14 @@ namespace Duplicati.Scheduler.Data {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
+            public global::System.Data.DataColumn DetailsColumn {
+                get {
+                    return this.columnDetails;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -686,7 +696,8 @@ namespace Duplicati.Scheduler.Data {
                         bool MapDrives, 
                         string CheckSrc, 
                         string TriggerXML, 
-                        System.DateTime LastMod) {
+                        System.DateTime LastMod, 
+                        string Details) {
                 JobsRow rowJobsRow = ((JobsRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Name,
@@ -704,7 +715,8 @@ namespace Duplicati.Scheduler.Data {
                         MapDrives,
                         CheckSrc,
                         TriggerXML,
-                        LastMod};
+                        LastMod,
+                        Details};
                 rowJobsRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowJobsRow);
                 return rowJobsRow;
@@ -750,6 +762,7 @@ namespace Duplicati.Scheduler.Data {
                 this.columnCheckSrc = base.Columns["CheckSrc"];
                 this.columnTriggerXML = base.Columns["TriggerXML"];
                 this.columnLastMod = base.Columns["LastMod"];
+                this.columnDetails = base.Columns["Details"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -787,6 +800,8 @@ namespace Duplicati.Scheduler.Data {
                 base.Columns.Add(this.columnTriggerXML);
                 this.columnLastMod = new global::System.Data.DataColumn("LastMod", typeof(global::System.DateTime), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnLastMod);
+                this.columnDetails = new global::System.Data.DataColumn("Details", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnDetails);
                 this.Constraints.Add(new global::System.Data.UniqueConstraint("Constraint1", new global::System.Data.DataColumn[] {
                                 this.columnName}, true));
                 this.columnName.AllowDBNull = false;
@@ -2356,6 +2371,22 @@ namespace Duplicati.Scheduler.Data {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
+            public string Details {
+                get {
+                    if (this.IsDetailsNull()) {
+                        return null;
+                    }
+                    else {
+                        return ((string)(this[this.tableJobs.DetailsColumn]));
+                    }
+                }
+                set {
+                    this[this.tableJobs.DetailsColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             public bool IsSourceNull() {
                 return this.IsNull(this.tableJobs.SourceColumn);
             }
@@ -2532,6 +2563,18 @@ namespace Duplicati.Scheduler.Data {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             public void SetLastModNull() {
                 this[this.tableJobs.LastModColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
+            public bool IsDetailsNull() {
+                return this.IsNull(this.tableJobs.DetailsColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
+            public void SetDetailsNull() {
+                this[this.tableJobs.DetailsColumn] = global::System.Convert.DBNull;
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
