@@ -60,12 +60,12 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// Always present commandline options (--passphrase-fd 0)
         /// </summary>
-        private const string GPG_COMMANDLINE_STANDARD_OPTIONS = "--passphrase-fd 0";
+        private const string GPG_COMMANDLINE_STANDARD_OPTIONS = "--batch --passphrase-fd 0";
 
         /// <summary>
         /// The options that are supplied as default when encrypting (--symmetric --local-user)
         /// </summary>
-        private const string GPG_ENCRYPTION_DEFAULT_OPTIONS = "--symmetric --local-user";
+        private const string GPG_ENCRYPTION_DEFAULT_OPTIONS = "--batch --symmetric --local-user";
 
         /// <summary>
         /// The options that are supplied as default when encrypting (default is empty)
