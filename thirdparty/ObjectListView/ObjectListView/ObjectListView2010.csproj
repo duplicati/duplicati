@@ -62,6 +62,9 @@
     <Compile Include="Implementation\OLVListItem.cs" />
     <Compile Include="Implementation\OLVListSubItem.cs" />
     <Compile Include="Implementation\OlvListViewHitTestInfo.cs" />
+    <Compile Include="ListViewPrinter.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="OLVColumn.cs">
       <SubType>Component</SubType>
     </Compile>
