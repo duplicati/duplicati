@@ -319,20 +319,20 @@
 
         #endregion
 
-        private System.Windows.Forms.RichTextBox MaxAgeTextBox;
-        private System.Windows.Forms.RichTextBox MaxFullTextBox;
-        private System.Windows.Forms.RichTextBox nameTextBox;
-        private System.Windows.Forms.RichTextBox sourceTextBox;
-        private System.Windows.Forms.RichTextBox destinationTextBox;
-        private System.Windows.Forms.RichTextBox DescriptionTextBox;
-        private System.Windows.Forms.RichTextBox fullRepeatStrTextBox;
         private System.Windows.Forms.ErrorProvider SourceErrorProvider;
         private System.Windows.Forms.ErrorProvider DestErrorProvider;
-        private System.Windows.Forms.Label EnableLabel;
-        private System.Windows.Forms.RichTextBox PassRichTextBox;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.ListBox listBox1;
-        private System.Windows.Forms.Label LastModLabel;
+        protected System.Windows.Forms.RichTextBox MaxAgeTextBox;
+        protected System.Windows.Forms.RichTextBox MaxFullTextBox;
+        protected System.Windows.Forms.RichTextBox nameTextBox;
+        protected System.Windows.Forms.RichTextBox sourceTextBox;
+        protected System.Windows.Forms.RichTextBox destinationTextBox;
+        protected System.Windows.Forms.RichTextBox DescriptionTextBox;
+        protected System.Windows.Forms.RichTextBox fullRepeatStrTextBox;
+        protected System.Windows.Forms.RichTextBox PassRichTextBox;
+        protected System.Windows.Forms.Label EnableLabel;
+        protected System.Windows.Forms.Label LastModLabel;
     }
 }

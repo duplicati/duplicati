@@ -56,7 +56,7 @@
             this.JobsBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.SchedulerDataSet = new Duplicati.Scheduler.Data.SchedulerDataSet();
             this.optionsBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.jobSummary1 = new Duplicati.Scheduler.JobSummary();
+            this.jobSummary1 = new Duplicati.Scheduler.Data.JobSummary();
             this.toolStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -369,7 +369,7 @@
         private System.Windows.Forms.ToolStripButton PrevToolStripButton;
         private System.Windows.Forms.ToolStripDropDownButton SelectToolStripDropDownButton;
         private System.Windows.Forms.ToolStripButton NextToolStripButton;
-        private JobSummary jobSummary1;
+        private Duplicati.Scheduler.Data.JobSummary jobSummary1;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripButton helpToolStripButton;
         private System.Windows.Forms.StatusStrip statusStrip1;

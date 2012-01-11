@@ -171,6 +171,7 @@ namespace Duplicati.Scheduler
         {
             if (aRow == null) return; //
             aRow.LastMod = DateTime.Now;
+            aRow.Details = TaskScheduler.Describe(aRow.TaskName);
             // Update the drive table
             System.Collections.Generic.Dictionary<string, string> DriveMap = new System.Collections.Generic.Dictionary<string, string>();
             foreach (System.IO.DriveInfo di in System.IO.DriveInfo.GetDrives())
