@@ -24,7 +24,7 @@ using System.Linq;
 // This is a x86 exe - If you are using Express, see this:
 // http://social.msdn.microsoft.com/Forums/en-US/Vsexpressvcs/thread/4650481d-b385-43f3-89c7-c07546a7f7cd
 //
-[assembly: System.Security.Permissions.PermissionSetAttribute(System.Security.Permissions.SecurityAction.RequestMinimum, Name = "FullTrust")]
+//[assembly: System.Security.Permissions.PermissionSetAttribute(System.Security.Permissions.SecurityAction.RequestMinimum, Name = "FullTrust")]
 namespace Duplicati.Scheduler.RunBackup
 {
     class Program
