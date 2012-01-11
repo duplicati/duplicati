@@ -11,13 +11,14 @@ Artwork:
 
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
-  French,    fr-FR: Matthieu Weber
-  Spanish,   es-ES: JosepV
-  German,    de-DE: Ernst Mair
-                  : Mathias Block
-                  : DooM ElHado
-                  : Leo nowhere
   Danish,    da-DK: Kenneth Skovhede
+  French,    fr-FR: Matthieu Weber
+  German,    de-DE: Ernst Mair
+                    Mathias Block
+                    DooM ElHado
+                    Leo nowhere
+  Italian,   it-IT: Riccardo Stoppani
+  Spanish,   es-ES: JosepV
 
 Duplicati.Scheduler:
   Kenneth Bergeron, IAP Worldwide Services, Inc
