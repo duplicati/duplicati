@@ -112,6 +112,9 @@
       <Feature Id="es_ES_LanguageFeature" Title="Spanish translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Spanish (es-ES)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
         <ComponentGroupRef Id="DUPLICATI_LANG_es_ES" />
       </Feature>
+      <Feature Id="it_IT_LanguageFeature" Title="Italian translation files" Level="1" Description="Installs the required files for displaying the Duplicati userinterface in Italian (it-IT)." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" >
+        <ComponentGroupRef Id="DUPLICATI_LANG_it_IT" />
+      </Feature>
     </Feature>
 
     <!-- Launch duplicati setup -->
