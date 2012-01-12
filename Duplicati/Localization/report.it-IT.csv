@@ -164,10 +164,10 @@ GUI\ApplicationSetup.it-IT.resx,EncryptionMethod.ToolTip,updated,Choose the defa
 GUI\ApplicationSetup.it-IT.resx,EncryptionModule.ToolTip,updated,Choose the default encryption module to use for new backups,Scegliere il modulo di crittografia predefinito da usare per i nuovi backup
 GUI\ApplicationSetup.it-IT.resx,groupBox1.Text,updated,User interface settings,Impostazioni interfaccia utente
 GUI\ApplicationSetup.it-IT.resx,groupBox2.Text,updated,Path settings (Advanced),Impostazione percorsi (Avanzato)
-GUI\ApplicationSetup.it-IT.resx,groupBox4.Text,updated,Backup control settings used at startup,Impostazioni di controllo dei salvataggi usate all'avvio
+GUI\ApplicationSetup.it-IT.resx,groupBox4.Text,updated,Backup control settings used at startup,Impostazioni controllo salvataggi usate all'avvio
 GUI\ApplicationSetup.it-IT.resx,HideDonateButton.Text,updated,Hide the donate button on the main wizard page,"Nascondi il bottone ""Donazione"" dalla procedura guidata"
 GUI\ApplicationSetup.it-IT.resx,HideDonateButton.ToolTip,updated,Check this box to prevent the display of the donation button in the wizard,"Seleziona questa casella per impedire che venga mostrato il bottone ""Donazione"" nella procedura guidata"
-GUI\ApplicationSetup.it-IT.resx,label1.Text,updated,Time a log is shown in recent backups,Viene mostrato un registro temporale dei salvataggi recenti
+GUI\ApplicationSetup.it-IT.resx,label1.Text,updated,Time a log is shown in recent backups,Mostra registro salvataggi recenti di
 GUI\ApplicationSetup.it-IT.resx,label1.ToolTip,updated,Select the time a backup is displayed in the log window after completion,Selezionare l'orario in cui verrà visualizzato un backup nella finestra di registro dopo il completamento
 GUI\ApplicationSetup.it-IT.resx,label2.Text,updated,Sections,Sezioni
 GUI\ApplicationSetup.it-IT.resx,label3.Text,updated,User interface language,Lingua interfaccia utente
@@ -177,12 +177,12 @@ GUI\ApplicationSetup.it-IT.resx,label4.ToolTip,updated,Enter the path where Dupl
 GUI\ApplicationSetup.it-IT.resx,label5.Text,not-updated,Password,Password
 GUI\ApplicationSetup.it-IT.resx,label5.ToolTip,updated,Enter the default password to apply to new backups,Inserire la password predefinita da applicare ai nuovi backup
 GUI\ApplicationSetup.it-IT.resx,label6.Text,updated,Content,Contenuto
-GUI\ApplicationSetup.it-IT.resx,label7.Text,updated,Period to pause duplicati after startup,Periodo in cui Duplicati rimarrà in pausa dopo l'avvio
+GUI\ApplicationSetup.it-IT.resx,label7.Text,updated,Period to pause duplicati after startup,Metti in pausa Duplicati dopo l'avvio per
 GUI\ApplicationSetup.it-IT.resx,label7.ToolTip,updated,Select the amount of time Duplicat is paused after startup,Seleziona il tempo in cui Duplicati rimarrà in pausa dopo l'avvio
 GUI\ApplicationSetup.it-IT.resx,label8.Text,updated,Balloon notifications,Notifiche a fumetto
 GUI\ApplicationSetup.it-IT.resx,label8.ToolTip,updated,Choose the level of notification given by balloon tips,Scegliere il livello di notifica fornito dai suggerimenti a fumetto
 GUI\ApplicationSetup.it-IT.resx,LanguageSelection.ToolTip,updated,Choose the language for the user interface (requires restart),Scegliere la lingua dell'interfaccia utente (richiede un riavvio)
-GUI\ApplicationSetup.it-IT.resx,LicenseLink.Text,updated,Homepage,Pagina iniziale
+GUI\ApplicationSetup.it-IT.resx,LicenseLink.Text,not-updated,Homepage,Homepage
 GUI\ApplicationSetup.it-IT.resx,LicenseLink.ToolTip,updated,Click to go to the homepage of the currently selected section,Clicca per andare alla pagina iniziale della sezione correntemente selezionata
 GUI\ApplicationSetup.it-IT.resx,LicenseSections.ToolTip,updated,Lists the available license sections,Elenca le sezioni di licenza disponibili
 GUI\ApplicationSetup.it-IT.resx,LicenseTab.Text,updated,License,Licenza
@@ -198,15 +198,15 @@ GUI\ApplicationSetup.it-IT.resx,TempPath.ToolTip,updated,Enter the path where Du
 GUI\ApplicationSetup.it-IT.resx,TempPathBrowse.Text,not-updated,...,…
 GUI\ApplicationSetup.it-IT.resx,TempPathBrowse.ToolTip,updated,Browse for the temporary folder,Sfogliare per la cartella temporanea
 GUI\ApplicationSetup.it-IT.resx,ThreadPriorityPicker.ToolTip,updated,Set the initial thread priority to be used by Duplicati,Impostare la priorità iniziale del processo in uso da Duplicati
-GUI\ApplicationSetup.it-IT.resx,UseCommonPassword.Text,updated,Use a password to protect backups,Utilizzare una password per proteggere i backup
+GUI\ApplicationSetup.it-IT.resx,UseCommonPassword.Text,updated,Use a password to protect backups,Password per proteggere i backup
 GUI\ApplicationSetup.it-IT.resx,UseCommonPassword.ToolTip,updated,Enable this to use the same password for multiple backups,Attivare questa opzione per utilizzare la stessa password per più backup
 GUI\HelperControls\BackupFileList.it-IT.resx,changeDestinationToolStripMenuItem.Text,updated,Change destination...,Cambia destinazione…
 GUI\HelperControls\BackupFileList.it-IT.resx,folderBrowserDialog.Description,updated,Select the folder to restore to,Selezionate la cartella dove effettuare il ripristino
 GUI\HelperControls\BackupFileList.it-IT.resx,LoadingIndicator.Text,updated,"Reading filelist, please wait ...","Lettura lista file, attendere…"
 GUI\HelperControls\BackupItems.it-IT.resx,statusLabel.Text,updated,Loading list of backups,Lettura della lista dei salvataggi
 GUI\HelperControls\BackupItems.it-IT.resx,viewFilesToolStripMenuItem.Text,updated,View contents ...,Visualizza contenuti …
-GUI\HelperControls\BandwidthLimit.it-IT.resx,DownloadLimitCheckbox.Text,updated,Download limit (restore),Limite nel download (ripristino)
-GUI\HelperControls\BandwidthLimit.it-IT.resx,UploadLimitCheckbox.Text,updated,Upload limit (backup),Limite nell'upload (backup)
+GUI\HelperControls\BandwidthLimit.it-IT.resx,DownloadLimitCheckbox.Text,updated,Download limit (restore),Limite download (ripristino)
+GUI\HelperControls\BandwidthLimit.it-IT.resx,UploadLimitCheckbox.Text,updated,Upload limit (backup),Limite upload (backup)
 GUI\HelperControls\CommandLineOptionGrid.it-IT.resx,argumentDataGridViewTextBoxColumn.HeaderText,updated,argument,Argomento
 GUI\HelperControls\CommandLineOptionGrid.it-IT.resx,dataGridViewTextBoxColumn1.HeaderText,updated,argument,Argomento
 GUI\HelperControls\CommandLineOptionGrid.it-IT.resx,enabledDataGridViewCheckBoxColumn.HeaderText,updated,Enabled,Abilitato
@@ -221,27 +221,27 @@ GUI\HelperControls\DurationEditor.it-IT.resx,EasyDuration.Items4,updated,Custom 
 GUI\HelperControls\FilterDialog.it-IT.resx,$this.Text,updated,FilterDialog,FiltriDialogo
 GUI\HelperControls\FilterDialog.it-IT.resx,BrowseFileButton.Text,not-updated,...,…
 GUI\HelperControls\FilterDialog.it-IT.resx,CancelBtn.Text,updated,Cancel,Annulla
-GUI\HelperControls\FilterDialog.it-IT.resx,Exclusive.Text,updated,Exclude files matching the filter,Escludi i file corrispondenti al filtro
+GUI\HelperControls\FilterDialog.it-IT.resx,Exclusive.Text,updated,Exclude files matching the filter,Escludere i file corrispondenti al filtro
 GUI\HelperControls\FilterDialog.it-IT.resx,folderBrowserDialog.Description,updated,Select the folder path to use for the filter,Selezionare il percorso della cartella da utilizzare per il filtro
-GUI\HelperControls\FilterDialog.it-IT.resx,HelpLink.Text,updated,Filter help,Aiuto per i filtri
+GUI\HelperControls\FilterDialog.it-IT.resx,HelpLink.Text,updated,Filter help,Aiuto per filtri
 GUI\HelperControls\FilterDialog.it-IT.resx,Inclusive.Text,updated,Include files matching the filter,Includere i file corrispondenti al filtro
-GUI\HelperControls\FilterDialog.it-IT.resx,IsRegExp.Text,updated,Filter is regular expression,Filtro come espressione regolare
+GUI\HelperControls\FilterDialog.it-IT.resx,IsRegExp.Text,updated,Filter is regular expression,Filtro ad espressione regolare
 GUI\HelperControls\FilterDialog.it-IT.resx,label1.Text,updated,Filter,Filtro
 GUI\HelperControls\FilterDialog.it-IT.resx,OKBtn.Text,not-updated,OK,OK
 GUI\HelperControls\FilterDialog.it-IT.resx,openFileDialog.Filter,updated,All files (*.*)|*.*,Tutti i files (*.*)|*.*
 GUI\HelperControls\FilterDialog.it-IT.resx,openFileDialog.Title,updated,Select the file to use for the filter,Selezionare il file da utilizzare per il filtro
 GUI\HelperControls\FilterEditor.it-IT.resx,AddFilterButton.ToolTipText,updated,Add a new filter,Aggiungere un nuovo filtro
-GUI\HelperControls\FilterEditor.it-IT.resx,btnTestSearch.Text,updated,Test Search Selection...,Test selezione di ricerca...
+GUI\HelperControls\FilterEditor.it-IT.resx,btnTestSearch.Text,updated,Test Search Selection...,Test ricerca...
 GUI\HelperControls\FilterEditor.it-IT.resx,EditFilterButton.ToolTipText,updated,Edit the selected filter,Modificare il filtro selezionato
 GUI\HelperControls\FilterEditor.it-IT.resx,ExcludeFolderButton.ToolTipText,updated,Adds an excluded folder to the list,Aggiungere una cartella esclusa dalla lista
 GUI\HelperControls\FilterEditor.it-IT.resx,groupBox1.Text,updated,Filters,Filtri
 GUI\HelperControls\FilterEditor.it-IT.resx,HelpButton.Text,updated,Filter help,Aiuto per i filtri
 GUI\HelperControls\FilterEditor.it-IT.resx,HelpButton.ToolTipText,updated,Opens the Duplicati Filter usage Wiki page,Apre la pagina Wiki sull'utilizzo dei filtri in Duplicati
 GUI\HelperControls\FilterEditor.it-IT.resx,IncludeFolderButton.ToolTipText,updated,Adds an included folder to the list,Aggiungere una cartella inclusa nella lista
-GUI\HelperControls\FilterEditor.it-IT.resx,label1.Text,updated,Test a filename:,Prova un nome di file:
-GUI\HelperControls\FilterEditor.it-IT.resx,MoveFilterBottomButton.ToolTipText,updated,Move the selected filter to the bottom,Sposta in fondo il filtro selezionato
-GUI\HelperControls\FilterEditor.it-IT.resx,MoveFilterDownButton.ToolTipText,updated,Move the selected filter down,Spostare il filtro selezionato in basso
-GUI\HelperControls\FilterEditor.it-IT.resx,MoveFilterTopButton.ToolTipText,updated,Move the selected filter to the top,Sposta il filtro selezionato all'inizio
+GUI\HelperControls\FilterEditor.it-IT.resx,label1.Text,updated,Test a filename:,Prova nome file:
+GUI\HelperControls\FilterEditor.it-IT.resx,MoveFilterBottomButton.ToolTipText,updated,Move the selected filter to the bottom,Spostare in fondo il filtro selezionato
+GUI\HelperControls\FilterEditor.it-IT.resx,MoveFilterDownButton.ToolTipText,updated,Move the selected filter down,Spostare in basso il filtro selezionato
+GUI\HelperControls\FilterEditor.it-IT.resx,MoveFilterTopButton.ToolTipText,updated,Move the selected filter to the top,Spostare all'inizio il filtro selezionato
 GUI\HelperControls\FilterEditor.it-IT.resx,MoveFilterUpButton.ToolTipText,updated,Move the selected filter up,Spostare in alto il filtro selezionato
 GUI\HelperControls\FilterEditor.it-IT.resx,RemoveFilterButton.ToolTipText,updated,Remove the selected filter,Rimuovere il filtro selezionato
 GUI\HelperControls\FolderPathEntry.it-IT.resx,BrowseFolderButton.Text,not-updated,...,…
@@ -339,7 +339,7 @@ GUI\ServiceStatus.it-IT.resx,CurrentStatus.Text,updated,Waiting for next backup,
 GUI\ServiceStatus.it-IT.resx,label1_2.Text,updated,Completed backups,Backup completati
 GUI\ServiceStatus.it-IT.resx,label5.Text,updated,Pending backups,Backup in sospeso
 GUI\ServiceStatus.it-IT.resx,linkLabel1.Text,updated,Duplicati Options,Oipzioni Duplicati
-GUI\ServiceStatus.it-IT.resx,optionsLabel.Text,updated,"(UI Language, Default password, Advanced, ...)","(Lingua interfaccia utente, Password predefinita, Avanzate, ...)"
+GUI\ServiceStatus.it-IT.resx,optionsLabel.Text,updated,"(UI Language, Default password, Advanced, ...)","(Lingua, Password predefinita, Avanzate, ...)"
 GUI\ServiceStatus.it-IT.resx,pauseBackupToolStripMenuItem.Text,updated,Pause backup,Pausa backup
 GUI\ServiceStatus.it-IT.resx,PauseDuration05Menu.Text,updated,5 minutes,5 minuti
 GUI\ServiceStatus.it-IT.resx,PauseDuration15Menu.Text,updated,15 minutes,15 minuti
@@ -393,9 +393,9 @@ GUI\Strings\Common.it-IT.resx,SixtyMinutes,updated,1 hour,1 ora
 GUI\Strings\Common.it-IT.resx,ThirtyMinutes,updated,30 minutes,30 minuti
 GUI\Strings\Common.it-IT.resx,ThreadPriorityAboveNormal,updated,Above normal,Al di sopra del normale
 GUI\Strings\Common.it-IT.resx,ThreadPriorityBelowNormal,updated,Below normal,Al di sotto del normale
-GUI\Strings\Common.it-IT.resx,ThreadPriorityHighest,updated,Highest,Massimo
+GUI\Strings\Common.it-IT.resx,ThreadPriorityHighest,updated,Highest,Massima
 GUI\Strings\Common.it-IT.resx,ThreadPriorityNormal,updated,Normal,Normale
-GUI\Strings\Common.it-IT.resx,ThreadPriortyLowest,updated,Lowest,Minore
+GUI\Strings\Common.it-IT.resx,ThreadPriortyLowest,updated,Lowest,Minima
 GUI\Strings\Common.it-IT.resx,ThreeMonths,updated,Three months,Tre mesi
 GUI\Strings\Common.it-IT.resx,TwoWeeks,updated,Two weeks,Due settimane
 GUI\Strings\DatabaseUpgrader.it-IT.resx,BackupFilenamePrefix,not-updated,backup,backup
@@ -535,16 +535,16 @@ GUI\Strings\WizardHandler.it-IT.resx,WizardFormTitle,updated,Duplicati Setup Wiz
 GUI\Wizard pages\Add backup\AdvancedOptions.it-IT.resx,EditFilters.Text,updated,Modify filters that control what files are included in the backup,Modificare i filtri che controllano quali file sono inclusi nel backup
 GUI\Wizard pages\Add backup\AdvancedOptions.it-IT.resx,EditOverrides.Text,updated,Manually override settings (advanced),Ignorare manualmente le impostazioni (avanzato)
 GUI\Wizard pages\Add backup\AdvancedOptions.it-IT.resx,IncludeDuplicatiSetup.Text,updated,Include the current Duplicati setup in the backup,Includere l'impostazione corrente di Duplicati nel backup
-GUI\Wizard pages\Add backup\AdvancedOptions.it-IT.resx,LimitOptions.Text,updated,"Set limits, such as volumesize and bandwidth limits","Impostare i limiti come, dimensioni del volume e larghezza di banda"
-GUI\Wizard pages\Add backup\AdvancedOptions.it-IT.resx,SelectCleanup.Text,updated,Select when to remove old backups,Selezionare quando rimuovere vecchi backup
+GUI\Wizard pages\Add backup\AdvancedOptions.it-IT.resx,LimitOptions.Text,updated,"Set limits, such as volumesize and bandwidth limits",Impostare i limiti di dimensioni del volume e larghezza di banda
+GUI\Wizard pages\Add backup\AdvancedOptions.it-IT.resx,SelectCleanup.Text,updated,Select when to remove old backups,Selezionare quando rimuovere i vecchi backup
 GUI\Wizard pages\Add backup\AdvancedOptions.it-IT.resx,SelectWhen.Text,updated,Select when and how often the backup should run,Selezionare quando e quanto spesso deve essere eseguito il backup
 GUI\Wizard pages\Add backup\CleanupSettings.it-IT.resx,CleanFullBackupHelptext.Text,updated,"To prevent the backups from growing indefinetly, old backups should be deleted regularly",Per evitare che il backup cresca indefinitamente i vecchi backup dovrebbero essere cancellati regolarmente
-GUI\Wizard pages\Add backup\CleanupSettings.it-IT.resx,EnableCleanupDuration.Text,updated,Never keep backups older than this,Non tenere mai backup più vecchi di questo
-GUI\Wizard pages\Add backup\CleanupSettings.it-IT.resx,EnableFullBackupClean.Text,updated,Never keep more than this many full backups,Non tenere mai più di questi backup totali
+GUI\Wizard pages\Add backup\CleanupSettings.it-IT.resx,EnableCleanupDuration.Text,updated,Never keep backups older than this,Non tenere backup più vecchi di
+GUI\Wizard pages\Add backup\CleanupSettings.it-IT.resx,EnableFullBackupClean.Text,updated,Never keep more than this many full backups,Non tenere mai più di questi backup totali
 GUI\Wizard pages\Add backup\CleanupSettings.it-IT.resx,IgnoreTimestamps.Text,updated,Ignore file modification timestamp when making incremental backups,Ignora la data di modifica dei file quando si effettuano backup incrementali
 GUI\Wizard pages\Add backup\FinishedAdd.it-IT.resx,label1.Text,updated,Summary,Sommario
 GUI\Wizard pages\Add backup\FinishedAdd.it-IT.resx,RunNow.Text,updated,Run backup now,Esegui backup adesso
-GUI\Wizard pages\Add backup\PasswordSettings.it-IT.resx,EnablePassword.Text,updated,Protect the backups with this password,Proteggere i backup con questa password
+GUI\Wizard pages\Add backup\PasswordSettings.it-IT.resx,EnablePassword.Text,updated,Protect the backups with this password,Proteggi i backup con questa password
 GUI\Wizard pages\Add backup\PasswordSettings.it-IT.resx,EncryptionModule.ToolTip,updated,Choose the encryption method,Scegliere il metodo di crittografia
 GUI\Wizard pages\Add backup\PasswordSettings.it-IT.resx,EncryptionModuleLabel.Text,updated,Encryption method,Metodo di crittografia
 GUI\Wizard pages\Add backup\PasswordSettings.it-IT.resx,GeneratePasswordButton.ToolTip,updated,Click here to generate a random password,Clicca qui per generare una password casuale
@@ -555,11 +555,11 @@ GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,appdataSize.Text,not-updated,
 GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,desktopSize.Text,not-updated,(...),(...)
 GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,DocumentsRadio.Text,updated,My documents,I miei documenti
 GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,FolderRadio.Text,updated,Custom folder list,Lista personalizzata cartelle
-GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeDesktop.Text,updated,Include files on the desktop,Includere i file presenti sul desktop
-GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeDocuments.Text,updated,Include documents,Includere i documenti
-GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeImages.Text,updated,Include my images,Includere le mie immagini
-GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeMusic.Text,updated,Include my music,Includere la mia musica
-GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeSettings.Text,updated,Include application settings,Includere le impostazioni dell'applicazione
+GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeDesktop.Text,updated,Include files on the desktop,Includi i file sul desktop
+GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeDocuments.Text,updated,Include documents,Includi i miei documenti
+GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeImages.Text,updated,Include my images,Includi le mie immagini
+GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeMusic.Text,updated,Include my music,Includi la mia musica
+GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,IncludeSettings.Text,updated,Include application settings,Includi le impostazioni dell'applicazione
 GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,myDocumentsSize.Text,not-updated,(...),(...)
 GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,myMusicSize.Text,not-updated,(...),(...)
 GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,myPicturesSize.Text,not-updated,(...),(...)
@@ -567,7 +567,7 @@ GUI\Wizard pages\Add backup\SelectFiles.it-IT.resx,totalSize.Text,updated,Calcul
 GUI\Wizard pages\Add backup\SelectName.it-IT.resx,button1.Text,updated,Add a group,Aggiungere un gruppo
 GUI\Wizard pages\Add backup\SelectName.it-IT.resx,label1.Text,updated,Backup name,Nome del backup
 GUI\Wizard pages\Add backup\SelectName.it-IT.resx,label2.Text,updated,Place the backup in a group (optional),Collocare il backup in un gruppo (opzionale)
-GUI\Wizard pages\Add backup\SelectWhen.it-IT.resx,AlwaysFullRadio.Text,updated,"Always perform a full backup, never incremental (not recommended)","Eseguire sempre un backup completo, mai incrementale (non raccomandato)"
+GUI\Wizard pages\Add backup\SelectWhen.it-IT.resx,AlwaysFullRadio.Text,updated,"Always perform a full backup, never incremental (not recommended)","Eseguire sempre un backup completo, mai un incrementale (non raccomandato)"
 GUI\Wizard pages\Add backup\SelectWhen.it-IT.resx,Day1Label.Text,updated,Mon,Lun
 GUI\Wizard pages\Add backup\SelectWhen.it-IT.resx,Day2Label.Text,updated,Tue,Mar
 GUI\Wizard pages\Add backup\SelectWhen.it-IT.resx,Day3Label.Text,updated,Wen,Mer
@@ -584,7 +584,7 @@ GUI\Wizard pages\Add backup\SelectWhen.it-IT.resx,NeverFullRadio.Text,updated,"A
 GUI\Wizard pages\Add backup\SelectWhen.it-IT.resx,NoScheduleRadio.Text,updated,"Never run automatically, only run when I manually start it (not recommended)","Mai eseguire automaticamente, eseguire solo quando avviato manualmente (non raccomandato)"
 GUI\Wizard pages\Add backup\SelectWhen.it-IT.resx,ScheduleRadio.Text,updated,Run backup at specified interval (recommended),Eseguire il backup ad intervalli specifici (consigliato)
 GUI\Wizard pages\Add backup\SettingOverrides.it-IT.resx,dataGridViewTextBoxColumn1.HeaderText,updated,argument,Argomento
-GUI\Wizard pages\Add backup\Strings\AdvancedOptions.it-IT.resx,PageDescription,updated,"On this page you can select more advanced settings for your backup. If you prefer, you can ignore those settings, and use the duplicati defaults.","In questa pagina è possibile selezionare le impostazioni più avanzate per il backup. Se si preferisce, è possibile ignorare queste impostazioni e utilizzare le impostazioni predefinite di Duplicati"
+GUI\Wizard pages\Add backup\Strings\AdvancedOptions.it-IT.resx,PageDescription,updated,"On this page you can select more advanced settings for your backup. If you prefer, you can ignore those settings, and use the duplicati defaults.",In questa pagina è possibile selezionare le impostazioni più avanzate per il backup. È possibile ignorare queste impostazioni e utilizzare le impostazioni predefinite
 GUI\Wizard pages\Add backup\Strings\AdvancedOptions.it-IT.resx,PageTitle,updated,Advanced settings,Impostazioni avanzate
 GUI\Wizard pages\Add backup\Strings\CleanupSettings.it-IT.resx,DisabledCleanupWarning,updated,"You have disabled backup removal. If no backups are removed, the amount of stored data will increase forever.
 Disabling backup cleanup may result in storage space being exhausted.
@@ -668,7 +668,7 @@ che contenga i file e le cartelle che vi aspettate."
 GUI\Wizard pages\Add backup\Strings\SelectName.it-IT.resx,DuplicateNameEnteredError,updated,There already exists a backup with that name,Un backup con quel nome esiste gia
 GUI\Wizard pages\Add backup\Strings\SelectName.it-IT.resx,InvalidNameEnteredError,updated,Failed to validate the backup name: {0},Impossibile convalidare il nome del backup: {0}
 GUI\Wizard pages\Add backup\Strings\SelectName.it-IT.resx,NoNameEnteredError,updated,You must enter a name for the backup,È necessario inserire un nome per il backup
-GUI\Wizard pages\Add backup\Strings\SelectName.it-IT.resx,PageDescription,updated,"On this page you can enter a name for the backup, so you can find and modify it later",In questa pagina è possibile inserire un nome per il backup in modo da poterlo trovate e modificare in un secondo momento
+GUI\Wizard pages\Add backup\Strings\SelectName.it-IT.resx,PageDescription,updated,"On this page you can enter a name for the backup, so you can find and modify it later",In questa pagina è possibile inserire un nome per il backup in modo da poterlo trovare e modificare in un secondo momento
 GUI\Wizard pages\Add backup\Strings\SelectName.it-IT.resx,PageTitle,updated,Enter a name for the backup,Inserire un nome per il backup
 GUI\Wizard pages\Add backup\Strings\SelectWhen.it-IT.resx,FullDurationShorterThanScheduleDurationError,updated,The interval between each full backup must be larger than the schedule interval.,L'intervallo tra ogni backup completo deve essere più grande dell' intervallo di pianificazione.
 GUI\Wizard pages\Add backup\Strings\SelectWhen.it-IT.resx,NoScheduleWarning,updated,"You have selected not to run the backup automatically.
@@ -692,7 +692,7 @@ Are you sure this is what you want?","Hai scelto di produrre solo backup increme
 Questo potrebbe condurre ad operazioni di ripristino molto lunghe ed aumentare la probabilità di un fallimento nel ripristino.
 
 Sei sicuro che questo è quello che vuoi?"
-GUI\Wizard pages\Add backup\Strings\SelectWhen.it-IT.resx,PageDescription,updated,"On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.","In questa pagina si può definire la programmazione del backup e decidere quando esso dovrà essere eseguita. Ripetere automaticamente il backup garantisce sempre la presenza di una copia di backup disponibile, senza la necessità di alcuna azione da parte vostra."
+GUI\Wizard pages\Add backup\Strings\SelectWhen.it-IT.resx,PageDescription,updated,"On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.",In questa pagina si può definire la programmazione del backup e decidere quando esso dovrà essere eseguito. La ripetizione automatica del backup garantisce sempre la presenza di una copia di backup disponibile senza la necessità di alcuna azione da parte vostra.
 GUI\Wizard pages\Add backup\Strings\SelectWhen.it-IT.resx,PageTitle,updated,Select when the backup should run,Selezionare quando deve essere eseguito il backup
 GUI\Wizard pages\Add backup\Strings\SelectWhen.it-IT.resx,TimeIsInThePastWarning,updated,The time you entered is in the past.,Il tempo inserito è nel passato.
 GUI\Wizard pages\Add backup\Strings\SelectWhen.it-IT.resx,TimeOccursShortlyWarning,updated,The time you entered will occur shortly.,Il tempo inserito sarà a breve.
@@ -709,13 +709,13 @@ GUI\Wizard pages\Add backup\Strings\SettingOverrides.it-IT.resx,BackendLoadError
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.it-IT.resx,CompressionLoadError,updated,An error occured while loading compression settings: {0},Errore durante il caricamento delle impostazioni di compressione: {0}
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.it-IT.resx,EncryptionLoadError,updated,An error occured while loading encryption settings: {0},Errore durante il caricamento delle impostazioni di crittografia: {0}
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.it-IT.resx,GenericModuleLoadError,updated,An error occured while loading generic module settings: {0},Errore durante il caricamento delle impostazioni del modulo generico: {0}
-GUI\Wizard pages\Add backup\Strings\SettingOverrides.it-IT.resx,PageDescription,updated,"On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!","In questa pagina è possibile sostituire tutte le impostazioni supportate da Duplicati. Questo è molto avanzato, per cui fate attenzione!"
+GUI\Wizard pages\Add backup\Strings\SettingOverrides.it-IT.resx,PageDescription,updated,"On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!",In questa pagina è possibile sostituire tutte le impostazioni supportate da Duplicati. Fare attenzione queste impostazioni sono molto avanzate!
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.it-IT.resx,PageTitle,updated,Override settings,Sovrascrivere le impostazioni
 GUI\Wizard pages\Add backup\Strings\ThrottleOptions.it-IT.resx,PageDescription,updated,On this page you may select limits that prevent the backup procedure from using too many resources,In questa pagina è possibile definire dei limiti per impedire alla procedura di backup di utilizzare troppe risorse del sistema
 GUI\Wizard pages\Add backup\Strings\ThrottleOptions.it-IT.resx,PageTitle,updated,Select how to limit the backup,Selezionare come limitare il backup
 GUI\Wizard pages\Add backup\ThrottleOptions.it-IT.resx,AsyncEnabled.Text,updated,Upload asyncronosly,Caricamento asincrono
-GUI\Wizard pages\Add backup\ThrottleOptions.it-IT.resx,BackupLimitEnabled.Text,updated,Each backup size limit ,Limite della dimensione di ogni backup
-GUI\Wizard pages\Add backup\ThrottleOptions.it-IT.resx,label1.Text,updated,Size of each volume,Dimensione di ogni volume
+GUI\Wizard pages\Add backup\ThrottleOptions.it-IT.resx,BackupLimitEnabled.Text,updated,Each backup size limit ,Limite dimensioni backup
+GUI\Wizard pages\Add backup\ThrottleOptions.it-IT.resx,label1.Text,updated,Size of each volume,Dimensioni volume
 GUI\Wizard pages\Backends\RawContainer.it-IT.resx,label1.Text,updated,Destination,Destinazione
 GUI\Wizard pages\Delete backup\DeleteFinished.it-IT.resx,label1.Text,updated,Summary,Sommario
 GUI\Wizard pages\Delete backup\DeleteFinished.it-IT.resx,label2.Text,updated,Warning: You cannot restore the files after the backup is deleted!!!,Attenzione: non è possibile ripristinare i file dopo che il backup è stato eliminato!
@@ -804,7 +804,7 @@ GUI\Wizard pages\SelectBackup.it-IT.resx,RestoreExisting.Text,updated,Restore fr
 GUI\Wizard pages\SelectBackup.it-IT.resx,ShowAdvanced.Text,updated,Show advanced options,Mostra le opzioni avanzate
 GUI\Wizard pages\SelectBackup.it-IT.resx,topLabel.Text,updated,Select backup to modify,Selezionare il backup da modificare
 GUI\Wizard pages\Strings\FirstLaunch.it-IT.resx,NoActionSelection,updated,You must select an action,È necessario selezionare l'azione
-GUI\Wizard pages\Strings\FirstLaunch.it-IT.resx,PageHelptext,updated,"Since this is your first use of Duplicati on this machine, this wizard will guide you through a Duplicati setup","Poiché questo è il primo utilizzo di Duplicati su questa macchina, la seguente procedura vi guiderà attraverso l'istallazione di Duplicati"
+GUI\Wizard pages\Strings\FirstLaunch.it-IT.resx,PageHelptext,updated,"Since this is your first use of Duplicati on this machine, this wizard will guide you through a Duplicati setup","Poichè questo è il primo utilizzo di Duplicati su questa macchina, la seguente procedura vi guiderà attraverso l'istallazione di Duplicati"
 GUI\Wizard pages\Strings\FirstLaunch.it-IT.resx,PageTitle,updated,Welcome to Duplicati,Benvenuti in Duplicati
 GUI\Wizard pages\Strings\FirstLaunch.it-IT.resx,ShowAdvancedQuestion,updated,"Do you need to modify advanced settings?
 (Most users do not need this)","Si desidera modificare le opzioni avanzate?
@@ -812,7 +812,7 @@ GUI\Wizard pages\Strings\FirstLaunch.it-IT.resx,ShowAdvancedQuestion,updated,"Do
 GUI\Wizard pages\Strings\MainPage.it-IT.resx,PageHelptext,updated,Please select the action you want to perform below,Si prega di selezionare l'azione da eseguire sotto
 GUI\Wizard pages\Strings\MainPage.it-IT.resx,PageTitle,updated,Welcome to the Duplicati Wizard,Benvenuti nella procedura guidata di Duplicati
 GUI\Wizard pages\Strings\SelectBackend.it-IT.resx,NoActionSelected,updated,You must enter the storage method before you can continue.,Si deve inserire il metodo di archiviazione prima di continuare.
-GUI\Wizard pages\Strings\SelectBackend.it-IT.resx,PageHelptext,updated,On this page you can select the type of device or service that store the backups. You may need information from the service provider when you continue.,In questa pagina è possibile selezionare il tipo di dispositivo o servizio per la memorizzazione del backup . Potrebbe essere necessario ottenere informazioni dal fornitore di servizi quando si continua.
+GUI\Wizard pages\Strings\SelectBackend.it-IT.resx,PageHelptext,updated,On this page you can select the type of device or service that store the backups. You may need information from the service provider when you continue.,In questa pagina è possibile selezionare il tipo di dispositivo o servizio per la memorizzazione del backup. Potrebbe essere necessario ottenere informazioni dal fornitore di servizi quando si continua.
 GUI\Wizard pages\Strings\SelectBackend.it-IT.resx,PageTitle,updated,Select a place to store the backups,Selezionare uno spazio per riporre i backup
 GUI\Wizard pages\Strings\SelectBackend.it-IT.resx,RestoreSetupTitle,updated,Where is the backup stored?,Dove si trova il backup memorizzato?
 GUI\Wizard pages\Strings\SelectBackup.it-IT.resx,NoActionSelected,updated,You must select a backup before you can continue,È necessario selezionare un backup prima di poter continuare
@@ -828,12 +828,12 @@ GUI\Wizard pages\Strings\SelectBackup.it-IT.resx,PageTitleRunNow,updated,Select 
 GUI\Wizard pages\Strings\SelectBackup.it-IT.resx,PageTitleUnknown,updated,Unknown action,Azione sconosciuta
 Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,CreateContainer.Text,updated,Create container,Creare il contenitore
 Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,label1.Text,updated,CloudFiles Username,Nome utente CloudFiles
-Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,label2.Text,updated,CloudFiles API Key,Chiave API di accesso a CloudFiles
+Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,label2.Text,updated,CloudFiles API Key,Chiave API CloudFiles
 Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,label3.Text,updated,Container name,Nome Contenitore
 Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,label4.Text,updated,"A container can be thought of as a root folder. Use / in the container name, to access subfolders in the container",Un contenitore può essere concepito come una cartella principale. Utilizza una / nel nome del contenitore per accedere alle sottocartelle del contenitore stesso
-Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,label5_2.Text,updated,CloudFiles AuthUrl,Url di autenticazione a CloudFiles
+Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,label5_2.Text,updated,CloudFiles AuthUrl,Url autenticaz. CloudFiles
 Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,SignUpLink.Text,updated,Click here for the sign up page,Clicca qui per la pagina di iscrizione
-Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,TestConnection.Text,updated,Test Connection,Test della connessione
+Library\Backend\CloudFiles\CloudFilesUI.it-IT.resx,TestConnection.Text,updated,Test Connection,Test connessione
 Library\Backend\CloudFiles\Strings\CloudFiles.it-IT.resx,Description_v2,updated,"Supports connections to the CloudFiles backend. Allowed formats is ""cloudfiles://container/folder"".","Supporta connessioni al backend CloudFiles. I formati ammessi sono ""cloudfiles://contenitore/cartella""."
 Library\Backend\CloudFiles\Strings\CloudFiles.it-IT.resx,DescriptionAuthenticationURLLong_v2,updated,"Cloudfiles use different servers for authentification based on where the account was resides, use this option to set an alternate authentication URL. This option overrides --{0}.","Cloudfiles utilizza diversi server per l'autenticazione in base a dove risiede l'account, è preferibile utilizzare questa opzione per impostare un URL alternativo di autenticazione. Questa opzione sovrascrive --{0}."
 Library\Backend\CloudFiles\Strings\CloudFiles.it-IT.resx,DescriptionAuthenticationURLShort,updated,Provide another authentication URL,Fornire un altro URL di autenticazione
@@ -860,7 +860,7 @@ Library\Backend\CloudFiles\Strings\CloudFilesUI.it-IT.resx,EmptyAPIKeyError,upda
 You may click the link to the right
 to open the CloudFiles login page, and retrieve it.","È necessario inserire la tua chiave API di accesso al CloudFiles.
 È possibile cliccare sul collegamento a destra
-per aprire la pagina di login al CloudFiles, e recuperarla."
+per aprire la pagina di login al CloudFiles e recuperarla."
 Library\Backend\CloudFiles\Strings\CloudFilesUI.it-IT.resx,EmptyAuthUrlError,updated,The AuthUrl field cannot be empty,Il campo Url di autenticazione non può essere vuoto
 Library\Backend\CloudFiles\Strings\CloudFilesUI.it-IT.resx,EmptyCloudFilesIDError,updated,"You must enter your CloudFiles user ID.
 You may click the link to the right
@@ -910,7 +910,7 @@ Library\Backend\File\Strings\FileUI.it-IT.resx,NonRootedPathError,updated,You mu
 Library\Backend\File\Strings\FileUI.it-IT.resx,NoRemovableDrivesError,updated,No removable drives were found on your system. Please enter the path manually.,Non sono state trovate unità rimovibil nel sistema. Si prega di inserire il percorso manualmente.
 Library\Backend\File\Strings\FileUI.it-IT.resx,PageDescription,updated,On this page you can select where to store the backup data.,In questa pagina è possibile selezionare dove memorizzare i dati del backup.
 Library\Backend\File\Strings\FileUI.it-IT.resx,PageTitle,updated,Backup storage options,Opzioni di archiviazione del backup
-Library\Backend\FTP\FTPUI.it-IT.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,Accettare qualsiasi certificato non valido
+Library\Backend\FTP\FTPUI.it-IT.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,Accetta certificati non validi
 Library\Backend\FTP\FTPUI.it-IT.resx,AcceptSpecifiedHash.Text,updated,Accept this certificate hash,Accetta questo hash del certificato
 Library\Backend\FTP\FTPUI.it-IT.resx,CreateFolderButton.Text,updated,Create folder,Crea cartella
 Library\Backend\FTP\FTPUI.it-IT.resx,label1.Text,not-updated,Server,Server
@@ -919,7 +919,7 @@ Library\Backend\FTP\FTPUI.it-IT.resx,label3.Text,updated,Username,Nome utente
 Library\Backend\FTP\FTPUI.it-IT.resx,label4.Text,not-updated,Password,Password
 Library\Backend\FTP\FTPUI.it-IT.resx,label5.Text,updated,Port (optional),Porta (opzionale)
 Library\Backend\FTP\FTPUI.it-IT.resx,PassiveConnection.Text,updated,Use passive connection,Utilizzare la connessione passiva
-Library\Backend\FTP\FTPUI.it-IT.resx,TestConnection.Text,updated,Test connection,Test della connessione
+Library\Backend\FTP\FTPUI.it-IT.resx,TestConnection.Text,updated,Test connection,Test connessione
 Library\Backend\FTP\FTPUI.it-IT.resx,UseSSL.Text,updated,Use SSL,Utilizzare SSL
 Library\Backend\FTP\Strings\FTPBackend.it-IT.resx,Description,updated,"This backend can read and write data to an FTP based backend. Allowed formats are ""ftp://hostname/folder"" or ""ftp://username:password@hostname/folder""","Questo backend è in grado di leggere e scrivere dati verso un backend basato su FTP. I formati ammessi sono ""ftp://hostname/folder"" o ""ftp://username:password@hostname/folder"""
 Library\Backend\FTP\Strings\FTPBackend.it-IT.resx,DescriptionFTPActiveLong,updated,"If this flag is set, the FTP connection is made in active mode. Even if the ""ftp-passive"" flag is also set, the connection will be made in active mode","Se questa flag è impostata la connessione FTP sarà realizzata in modalità attiva. Anche se è impostata l'opzione ""ftp-passive"" il collegamento sarà effettuato in modalità attiva"
@@ -945,21 +945,21 @@ Library\Backend\FTP\Strings\FTPUI.it-IT.resx,PageTitle,updated,Backup storage op
 Library\Backend\S3\S3CommonOptions.it-IT.resx,AllowCredentialStorage.Text,updated,Store new S3 account information,Archivia le nuove informazioni dell'account S3
 Library\Backend\S3\S3CommonOptions.it-IT.resx,CredentialGroup.Text,updated,Stored credentials,Credenziali memorizzate
 Library\Backend\S3\S3CommonOptions.it-IT.resx,groupBox2.Text,updated,Default settings,Impostazioni predefinite
-Library\Backend\S3\S3CommonOptions.it-IT.resx,label1.Text,updated,Bucket region,Regione del bucket
+Library\Backend\S3\S3CommonOptions.it-IT.resx,label1.Text,updated,Bucket region,Regione bucket
 Library\Backend\S3\S3CommonOptions.it-IT.resx,label2.Text,updated,Servername,Nome server
 Library\Backend\S3\S3CommonOptions.it-IT.resx,RemoveAllButton.Text,updated,Remove all,Rimuovere tutto
 Library\Backend\S3\S3CommonOptions.it-IT.resx,RemoveSelectedButton.Text,updated,Remove selected,Rimuovi la selezione
 Library\Backend\S3\S3CommonOptions.it-IT.resx,UseRRS.Text,updated,Use Reduced Redundancy Storage,Utilizzare l'Archiviazione a Ridondanza Ridotta (RSS)
 Library\Backend\S3\S3UI.it-IT.resx,CreateBucket.Text,updated,Create bucket,Crea bucket
-Library\Backend\S3\S3UI.it-IT.resx,label1.Text,updated,AWS Access ID,Identificativo di accesso AWS
+Library\Backend\S3\S3UI.it-IT.resx,label1.Text,updated,AWS Access ID,ID di accesso AWS
 Library\Backend\S3\S3UI.it-IT.resx,label2.Text,updated,AWS Secret Key,Chiave segreta AWS
 Library\Backend\S3\S3UI.it-IT.resx,label3.Text,updated,S3 Bucket name,Nome bucket S3
 Library\Backend\S3\S3UI.it-IT.resx,label4.Text,updated,"A bucket can be thought of as a root folder. Use / in the bucket name, to access subfolders in the bucket",Un bucket può essere inteso come una cartella principale. Usa / nel nome del bucket per accedere alle sottocartelle del bucket stesso
 Library\Backend\S3\S3UI.it-IT.resx,label5.Text,updated,RRS is cheaper but less reliable,RSS è più economico ma meno affidabile
-Library\Backend\S3\S3UI.it-IT.resx,label6.Text,updated,Bucket create region,Crea regione del bucket
+Library\Backend\S3\S3UI.it-IT.resx,label6.Text,updated,Bucket create region,Regione bucket
 Library\Backend\S3\S3UI.it-IT.resx,label7.Text,updated,S3 Servername,Nome server S3
 Library\Backend\S3\S3UI.it-IT.resx,SignUpLink.Text,updated,Click here for the sign up page,Clicca qui per la pagina di iscrizione
-Library\Backend\S3\S3UI.it-IT.resx,TestConnection.Text,updated,Test Connection,Test della connessione
+Library\Backend\S3\S3UI.it-IT.resx,TestConnection.Text,updated,Test Connection,Test connessione
 Library\Backend\S3\S3UI.it-IT.resx,UseRRS.Text,updated,Use Reduced Redundancy Storage (RRS),Utilizzare l'Archiviazione a Ridondanza Ridotta (RSS)
 Library\Backend\S3\Strings\S3Backend.it-IT.resx,AMZKeyDescriptionLong,updated,"The AWS ""Secret Access Key"" can be obtained after logging into your AWS account, this can also be supplied through the ""ftp-password"" property","La ""Secret Access Key"" di AWS può essere ottenuta dopo aver fatto accesso nel proprio account AWS, può anche essere fornita attraverso le proprietà ""ftp-password"""
 Library\Backend\S3\Strings\S3Backend.it-IT.resx,AMZKeyDescriptionShort,updated,"The AWS ""Secret Access Key""","La ""Secret Access Key"" di AWS"
@@ -1046,7 +1046,7 @@ Library\Backend\S3\Strings\S3UI.it-IT.resx,PageDescription,updated,On this page 
 Library\Backend\S3\Strings\S3UI.it-IT.resx,PageTitle,updated,Backup storage options,Opzioni di archiviazione del backup
 Library\Backend\SSH\SSHCommonOptions.it-IT.resx,BrowseForSFTPButton.Text,not-updated,...,...
 Library\Backend\SSH\SSHCommonOptions.it-IT.resx,BrowseForSFTPDialog.Filter,updated,Executables (*.exe)|*.exe|All files (*.*)|*.*,Eseguibili (*.exe)|*.exe|Tutti i file (*.*)|*.*
-Library\Backend\SSH\SSHCommonOptions.it-IT.resx,label1.Text,updated,Path to SFTP,Percorso per SFTP
+Library\Backend\SSH\SSHCommonOptions.it-IT.resx,label1.Text,updated,Path to SFTP,Percorso SFTP
 Library\Backend\SSH\SSHCommonOptions.it-IT.resx,UseManagedAsDefault.Text,updated,Use managed SSH as default,Utilizzare l'SSH gestito come impostazione predefinita
 Library\Backend\SSH\SSHUI.it-IT.resx,BrowseForKeyFileButton.Text,not-updated,...,...
 Library\Backend\SSH\SSHUI.it-IT.resx,CreateFolderButton.Text,updated,Create folder,Crea cartella
@@ -1058,7 +1058,7 @@ Library\Backend\SSH\SSHUI.it-IT.resx,label3.Text,updated,Username,Nome utente
 Library\Backend\SSH\SSHUI.it-IT.resx,label5.Text,updated,Port (optional),Porta (opzionale)
 Library\Backend\SSH\SSHUI.it-IT.resx,OpenSSHKeyFileDialog.Filter,updated,All files (*.*)|*.*,Tutti i files (*.*)|*.*
 Library\Backend\SSH\SSHUI.it-IT.resx,OpenSSHKeyFileDialog.Title,updated,Select the OpenSSH keyfile,Selezionare il file di chiavi OpenSSH
-Library\Backend\SSH\SSHUI.it-IT.resx,TestConnection.Text,updated,Test connection,Test della connessione
+Library\Backend\SSH\SSHUI.it-IT.resx,TestConnection.Text,updated,Test connection,Test connessione
 Library\Backend\SSH\SSHUI.it-IT.resx,UsePassword.Text,not-updated,Password,Password
 Library\Backend\SSH\SSHUI.it-IT.resx,UseUnmanagedSSH.Text,updated,Use installed sftp program instead of the built-in SSH library,Utilizzare il programma sftp installato al posto della libreria SSH built-in
 Library\Backend\SSH\Strings\SharpExpectProcess.it-IT.resx,LogDisabled,updated,"Log was disabled, no output","Il registro è stato disabilitato, nessun output"
@@ -1151,7 +1151,7 @@ Si utilizzerà quindi il percorso predefinito per l'applicazione SFTP.
 L'applicazione SFTP non è stata trovata durante il sondaggio del sistema.
 Sei sicuro che questo è quello che vuoi?"
 Library\Backend\SSH\Strings\SSHSettingsControl.it-IT.resx,PageDescription,updated,Settings for the SSH backend,Impostazioni per il backend SSH
-Library\Backend\SSH\Strings\SSHSettingsControl.it-IT.resx,PageTitle,updated,SSH Settings,Impostazioni SSH
+Library\Backend\SSH\Strings\SSHSettingsControl.it-IT.resx,PageTitle,updated,SSH Settings,Settare SSH
 Library\Backend\SSH\Strings\SSHUI.it-IT.resx,CreateMissingFolderQuestion,updated,"The folder does not exist, do you want to create it?","La cartella non esiste, si desidera crearla?"
 Library\Backend\SSH\Strings\SSHUI.it-IT.resx,MissingSCPWarning,updated,"Duplicati was unable to verify the existence of the sftp program.
 sftp may work regardless, if it is located in the system search path.
@@ -1182,13 +1182,13 @@ Library\Backend\TahoeLAFS\Strings\TahoeUI.it-IT.resx,InvalidFolderPathError,upda
 Library\Backend\TahoeLAFS\Strings\TahoeUI.it-IT.resx,InvalidHashError,updated,"The hash string is not valid, it must be of even length and only contain hex chars (0-9 and a-f)","La stringa hash non è valida, essa dovrebbe essere di lunghezza pari e contenere solo caratteri esadecimali (0-9 e a-f)"
 Library\Backend\TahoeLAFS\Strings\TahoeUI.it-IT.resx,PageDescription,updated,On this page you can select where to store the backup data.,In questa pagina è possibile selezionare dove memorizzare i dati del backup.
 Library\Backend\TahoeLAFS\Strings\TahoeUI.it-IT.resx,PageTitle,updated,Backup storage options,Opzioni di archiviazione del backup
-Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,Accettare qualsiasi certificato non valido
+Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,Accetta certificati non validi
 Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,AcceptSpecifiedHash.Text,updated,Accept this certificate hash,Accetta questo hash del certificato
 Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,CreateFolderButton.Text,updated,Create folder,Crea cartella
 Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,label1.Text,not-updated,Server,Server
 Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,label2.Text,updated,Path,Percorso
 Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,label5.Text,updated,Port (optional),Porta (opzionale)
-Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,TestConnection.Text,updated,Test connection,Test della connessione
+Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,TestConnection.Text,updated,Test connection,Test connessione
 Library\Backend\TahoeLAFS\TahoeUI.it-IT.resx,UseSSL.Text,updated,Use SSL,Utilizzare SSL
 Library\Backend\WEBDAV\Strings\WEBDAV.it-IT.resx,Description,updated,"Supports connections to a WEBDAV enabled web server, using the HTTP protocol. Allowed formats are ""webdav://hostname/folder"" or ""webdav://username:password@hostname/folder"".","Supporta connessioni ad un server web abilitato per WebDAV utilizzando il protocollo HTTP. I formati ammessi sono ""webdav://hostname/cartella"" oppure ""webdav://nomeutente:password@hostname/cartella""."
 Library\Backend\WEBDAV\Strings\WEBDAV.it-IT.resx,DescriptionDebugPropfindLong,updated,"To aid in debugging issues, it is possible to set a path to a file that will be overwritten with the PROPFIND response",Per facilitare il debug di problemi è possibile impostare un percorso di un file che verrà sovrascritto con la risposta PROPFIND
@@ -1223,7 +1223,7 @@ Do you want the leading slash to be removed?","Il percorso della cartella inizia
 Si desidera rimuovere la barra iniziale?"
 Library\Backend\WEBDAV\Strings\WebDAVUI.it-IT.resx,PageDescription,updated,On this page you can select where to store the backup data.,In questa pagina è possibile selezionare dove memorizzare i dati del backup.
 Library\Backend\WEBDAV\Strings\WebDAVUI.it-IT.resx,PageTitle,updated,Backup storage options,Opzioni di archiviazione del backup
-Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,Accettare qualsiasi certificato non valido
+Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,Accetta certificati non validi
 Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,AcceptSpecifiedHash.Text,updated,Accept this certificate hash,Accetta questo hash del certificato
 Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,CreateFolderButton.Text,updated,Create folder,Crea cartella
 Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,DigestAuth.Text,updated,"Authentication method must be ""Digest""","Il metodo di autenticazione deve essere ""Digest"""
@@ -1232,7 +1232,7 @@ Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,label2.Text,updated,Path,Percorso
 Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,label3.Text,updated,Username,Nome utente
 Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,label4.Text,not-updated,Password,Password
 Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,label5.Text,updated,Port (optional),Porta (opzionale)
-Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,TestConnection.Text,updated,Test connection,Test della connessione
+Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,TestConnection.Text,updated,Test connection,Test connessione
 Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,UseIntegratedAuth.Text,updated,Use integrated authentication,Utilizzare l'autenticazione integrata
 Library\Backend\WEBDAV\WebDAVUI.it-IT.resx,UseSSL.Text,updated,Use SSL,Utilizzare SSL
 Library\Compression\Strings\FileArchiveZip.it-IT.resx,AttemptReadWhileWritingError,updated,Cannot read data while writing,Non è possibile leggere i dati durante la scrittura
@@ -1249,7 +1249,7 @@ Library\DynamicLoader\Strings\DynamicLoader.it-IT.resx,DynamicAssemblyLoadError,
 Library\DynamicLoader\Strings\DynamicLoader.it-IT.resx,DynamicTypeLoadError,updated,"Failed to load process type {0} assembly {1}, error message: {2}","Impossibile caricare il tipo di processo {0} assembly {1}, messaggio di errore: {2}"
 Library\Encryption\GPGCommonOptions.it-IT.resx,BrowseForGPGDialog.Filter,updated,Executables (*.exe)|*.exe|All files (*.*)|*.*,Eseguibili (*.exe)|*.exe|Tutti i file (*.*)|*.*
 Library\Encryption\GPGCommonOptions.it-IT.resx,BrowseForGPGPathButton.Text,not-updated,...,...
-Library\Encryption\GPGCommonOptions.it-IT.resx,label1.Text,updated,GPG executable path,Percorso dell'eseguibile GPG
+Library\Encryption\GPGCommonOptions.it-IT.resx,label1.Text,updated,GPG executable path,Percorso GPG
 Library\Encryption\Strings\AESEncryption.it-IT.resx,AesencryptiondontallowfallbackLong_v2,updated,"If the decryption fails using AES Crypt, dont attempt to use the previous encryption file format. ","Se la decifratura fallisce utilizzando AES Crypt, non tentare di utilizzare il precedente formato di crittografia dei file."
 Library\Encryption\Strings\AESEncryption.it-IT.resx,AesencryptiondontallowfallbackShort,updated,Do not attempt to decrypt using previous method,Non tentare di decifrare utilizzando il metodo precedente
 Library\Encryption\Strings\AESEncryption.it-IT.resx,BadKeyStretchError,updated,Bad key stretch,Chiave non corretta
@@ -1293,15 +1293,15 @@ Library\Encryption\Strings\GPGEncryption.it-IT.resx,GPGNotFoundWarning,updated,"
 GPG may work regardless, if it is located in the system search path.
 If the encryption fails, no files will be backed up
 Do you want to continue anyway?","Duplicati non è in grado di verificare l'esistenza del programma GNU Privacy Guard.
-GPG può funzionare indipendentemente alla sua presenza nel percorso di ricerca del sistema.
-Se la crittografia non riesce, nessun file verrà sottoposto a backup
+GPG può funzionare indipendentemente dalla sua presenza nel percorso di ricerca del sistema.
+Se la crittografia non riesce nessun file verrà sottoposto a backup
 Vuoi continuare comunque?"
 Library\Encryption\Strings\GPGEncryption.it-IT.resx,GpgprogrampathLong,updated,"The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program ""gpg"" is available in the system path.","Il percorso per il programma GNU Privacy Guard. Se non viene fornito Duplicati considera che il programma ""gpg"" sia disponibile nel percorso di sistema."
 Library\Encryption\Strings\GPGEncryption.it-IT.resx,GpgprogrampathShort,updated,The path to GnuPG,Il percorso per il programma GnuPG
 Library\Encryption\Strings\GPGEncryption.it-IT.resx,SignkeyLong,updated,The GNU Privacy Guard can optionally sign volumes with a special key. This feature is not currently active in Duplicati.,GNU Privacy Guard può facoltativamente firmare i volumi con una chiave speciale. Questa caratteristica non è attualmente attiva in Duplicati.
 Library\Encryption\Strings\GPGEncryption.it-IT.resx,SignkeyShort,updated,Sign key for GnuPG,Firma la chiave per GnuPG
 Library\Encryption\Strings\GPGSettingsControl.it-IT.resx,PageDescription,updated,Settings for the GPG encryption module,Impostazioni per il modulo di cifratura GPG
-Library\Encryption\Strings\GPGSettingsControl.it-IT.resx,PageTitle,updated,GPG Settings,Impostazioni GPG
+Library\Encryption\Strings\GPGSettingsControl.it-IT.resx,PageTitle,updated,GPG Settings,Settare GPG
 Library\Encryption\Strings\GPGStreamWrapper.it-IT.resx,DecryptionError,updated,Decryption failed: {0},Decifrazione fallita: {0}
 Library\Encryption\Strings\GPGStreamWrapper.it-IT.resx,GPGFlushError,updated,"Failure while invoking GnuPG, program won't flush output","Errore durante la chiamata a GnuPG, il programma non eliminerà l'output"
 Library\Encryption\Strings\GPGStreamWrapper.it-IT.resx,GPGTerminateError,updated,"Failure while invoking GnuPG, program won't terminate","Errore durante la chiamata a GnuPG, il programma non terminerà"
@@ -1336,7 +1336,7 @@ Library\Interface\Strings\Common.it-IT.resx,FolderCreated,updated,Folder created
 Library\Interface\Strings\Common.it-IT.resx,FolderMissingError,updated,The requested folder does not exist,La cartella richiesta non esiste
 Library\Interface\Strings\Common.it-IT.resx,InvalidServernameError,updated,"The server name ""{0}"" is not valid","Il nome del server ""{0}"" non è valido"
 Library\Interface\Strings\DataTypes.it-IT.resx,Boolean,updated,Boolean,Boleano
-Library\Interface\Strings\DataTypes.it-IT.resx,Enumeration,updated,Enumeration,Enumerazione
+Library\Interface\Strings\DataTypes.it-IT.resx,Enumeration,updated,Enumeration,Uno di questi
 Library\Interface\Strings\DataTypes.it-IT.resx,Integer,updated,Integer,Numero intero
 Library\Interface\Strings\DataTypes.it-IT.resx,Path,updated,Path,Percorso
 Library\Interface\Strings\DataTypes.it-IT.resx,Size,updated,Size,Dimensioni
@@ -1405,7 +1405,7 @@ Library\Main\Strings\Interface.it-IT.resx,FilesAreNotForceDeletedMessage,updated
 Library\Main\Strings\Interface.it-IT.resx,FileSizeMismatchError,updated,The file {0} has size {1} but should have size {2},"Il file {0} è di dimensione {1}, ma dovrebbe avere dimensione {2}"
 Library\Main\Strings\Interface.it-IT.resx,InternalDeleteCountError,updated,"An internal error occured, and the operation was aborted to protect the backup sets",Si è verificato un errore interno e l'operazione è stata interrotta per proteggere i set di backup
 Library\Main\Strings\Interface.it-IT.resx,ManifestAndFileCountMismatchError,updated,"The manifest file {0} indicates that there should be {1} volumes, but the file list indicates {2}","Il file manifesto {0} indica che ci dovrebbe/ro essere {1} volume/i, ma l'elenco dei file indica {2}"
-Library\Main\Strings\Interface.it-IT.resx,ManifestsMustBeRead,updated,"Disabling manifests is only possible on restores, and it should only be used as a last resort.","E' possibile disabilitare il manifesto solo durante il ripristino, questa scelta dovebbe essere adottata solo come ultima risorsa."
+Library\Main\Strings\Interface.it-IT.resx,ManifestsMustBeRead,updated,"Disabling manifests is only possible on restores, and it should only be used as a last resort.","È possibile disabilitare il manifesto solo durante il ripristino, questa scelta dovebbe essere adottata solo come ultima risorsa."
 Library\Main\Strings\Interface.it-IT.resx,ManifestsMustBeReadOnBackups,updated,"It is not allowed to disable manifest reading when performing a backup. Disabling manifests is only possible on restores, and it should only be used as a last resort.",Non è consentito disabilitare la lettura del manifesto quando si esegue un backup. È possibile disabilitare il manifesto solo durante il ripristino ma dovrebbe essere preso in consideraziono solo come ultima risorsa.
 Library\Main\Strings\Interface.it-IT.resx,ManifestVersionRequiresRelativeNamesWarning,updated,"One or more manifests are from version 1, which requires that filenames searched are relative","Uno o più manifesti sono alla versione 1, la quale richiede che i nomi dei file ricercati siano relativi"
 Library\Main\Strings\Interface.it-IT.resx,MissingSignatureFile,updated,"The signature file for a content volume was missing, date: {0}, volumenumber: {1}, content volume filename: {2}","Il file di firma per il contenuto di un volume risulta mancante, data: {0}, numero volume: {1}, nome del file volume contenuto: {2}"
@@ -1471,14 +1471,14 @@ Library\Main\Strings\Manifestfile.it-IT.resx,MissingPreviousManifestFilename,upd
 Library\Main\Strings\Manifestfile.it-IT.resx,MissingPreviousManifestHash,updated,Manifest has no previous manifest hash,Il manifesto non ha un hash precedente
 Library\Main\Strings\Manifestfile.it-IT.resx,NoFilesError,updated,"Invalid manifest, there were no files in the manifest","Manifesto non valido, non c'erano file nel manifesto"
 Library\Main\Strings\Manifestfile.it-IT.resx,SelfhashMismatch,updated,Manifest file had selfhash {0} but the hash of the file is {1},"Il file manifesto aveva un self-hash {0}, ma l'hash del file è {1}"
-Library\Main\Strings\Manifestfile.it-IT.resx,UnsupportedHashAlgorithmError,updated,"The manifest uses the hash algorithm {0}, which is unsupported",Il manifesto utilizza l'algoritmo di hash {0} non supportato
+Library\Main\Strings\Manifestfile.it-IT.resx,UnsupportedHashAlgorithmError,#ERROR!:parse,"The manifest uses the hash algorithm {0}, which is unsupported",Il manifesto utilizza l'algoritmo di hash {0} non supportato
 Library\Main\Strings\Manifestfile.it-IT.resx,UnsupportedVersionError,updated,"The manifest has version {0}, the current application only supports versions up to {1}","Il manifesto ha la versione {0}, l'attuale applicazione supporta solo versioni inferiori a {1}"
 Library\Main\Strings\Manifestfile.it-IT.resx,WrongCountError,updated,"Invalid manifest, wrong count, signature hashes: {0}, content hashes: {1}","Manifesti non valido, conteggio errato, firme hash: {0}, contenuto hash: {1}"
 Library\Main\Strings\Options.it-IT.resx,AllowfullremoveLong,updated,"As a precaution, the last full backup will never be removed, even if using the ""delete-all-but-n-full 0"" command. Set this option to allow removing the last backup.","Come precauzione l'ultimo backup totale non verrà mai rimosso, anche se si utilizza il comando ""delete-all-but-n-full 0"".
 Impostare questa opzione per consentire la rimozione dell'ultimo backup."
 Library\Main\Strings\Options.it-IT.resx,AllowfullremoveShort,updated,Allow removal of the all backups,Permettere la rimozione di tutti i backup
-Library\Main\Strings\Options.it-IT.resx,AllowsleepShort,updated,Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only),"Permettere al sistema di entrare in modalità ""Risparmio Energetico"" a causa di inattività durante operazioni di backup/ripristino (solo su Windows)"
-Library\Main\Strings\Options.it-IT.resx,AllowsourcefolderchangeLong,updated,"This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing.",Questa opzione può essere utilizzata per disabilitare il controllo per cartelle con stessa origine. E 'utilizzato in unittests e non è inteso per l'uso quotidiano. Non utilizzare questa opzione se non si è sicuri di cosa si stia facendo.
+Library\Main\Strings\Options.it-IT.resx,AllowsleepShort,updated,Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only),"Permettere al sistema di entrare in modalità ""Risparmio Energetico"" per inattività durante operazioni di backup/ripristino (solo su Windows)"
+Library\Main\Strings\Options.it-IT.resx,AllowsourcefolderchangeLong,updated,"This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing.",Questa opzione può essere utilizzata per disabilitare il controllo di cartelle con stessa origine. E 'utilizzato in unittests e non è inteso per l'uso quotidiano. Non utilizzare questa opzione se non si è sicuri di cosa si stia facendo.
 Library\Main\Strings\Options.it-IT.resx,AllowsourcefolderchangeShort,updated,Skip verifying the source folders,Ignora la verifica della cartelle di origine
 Library\Main\Strings\Options.it-IT.resx,AsynchronousuploadDeprecated,updated,"Asynchronous upload is now default, you can turn it off by using the flag --{0}","Il caricamento asincrono è ora l'impostazione predefinita, è possibile disattivarlo utilizzando il parametro --{0}"
 Library\Main\Strings\Options.it-IT.resx,AsynchronousuploadfolderLong,updated,"The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes, despite the name, this also works for synchronous runs","I volumi pre-generati saranno inseriti nella cartella temporanea predefinita, utilizzando questa opzione è possibile impostare una cartella temporanea diversa per l'immissione dei volumi. Nonostante il nome, questo funziona anche per esecuzioni sincrone"
@@ -1491,13 +1491,13 @@ Library\Main\Strings\Options.it-IT.resx,AutocleanupLong,updated,"If a backup is 
 Library\Main\Strings\Options.it-IT.resx,AutocleanupShort,updated,A flag indicating that Duplicati should remove unused files,Flag che indica a Duplicati di rimuovere file inutilizzati
 Library\Main\Strings\Options.it-IT.resx,BackupprefixLong,updated,Any string used to prefix the filenames generated by Duplicati.,Stringa utilizzata come prefisso del nome del file generato da Duplicati.
 Library\Main\Strings\Options.it-IT.resx,BackupprefixShort,updated,Backup volume filename prefix,Prefisso nel nome file di un volume di backup
-Library\Main\Strings\Options.it-IT.resx,CompressionmoduleLong,updated,"Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module.","Duplicati supporta moduli di compressione inseribili. Utilizzare questa opzione per selezionare un modulo da utilizzare per la compressione. Questo si applica solo quando vengono creati nuovi volumi, durante la lettura di un file esistente il file viene usato per selezionare il modulo di compressione."
+Library\Main\Strings\Options.it-IT.resx,CompressionmoduleLong,updated,"Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module.","Duplicati supporta moduli di compressione inseribili. Utilizzare questa opzione per selezionare un modulo da utilizzare per la compressione. Questo si applica solo quando vengono creati nuovi volumi, durante la lettura di un file esistente il file viene usato per selezionare il modulo di compressione da usare."
 Library\Main\Strings\Options.it-IT.resx,CompressionmoduleShort,updated,Select what module to use for compression,Selezionare quale modulo utilizzare per la compressione
 Library\Main\Strings\Options.it-IT.resx,CreateverificationfileLong,updated,"If the backup is encrypted, the remote backend cannot verify the backup contents without the password. If this option is activated, Duplicati stores an unencrypted file on the backend. The file is never read by Duplicati, but allows the remote server to verify the backup integrity without requiring a password. The file contains no sensitive information, only a list of files that are expected to exist on the backend and their respective hashes. This option only has an effect when creating a backup and when verifying a backup set.","Se il backup è crittografato il backend remoto non potrà verificare il contenuto del backup senza la password. Se questa opzione è attiva, Duplicati memorizzerà un file in chiaro sul backend. Il file non viene mai letto da Duplicati, ma consente al server remoto di verificare l'integrità del backup senza richiedere una password. Il file non contiene informazioni sensibili, ma solo un elenco di file che si prevede esistano nel backend insieme ai loro rispettivi hash. Questa opzione ha effetto solo quando si crea un backup o quando si verifica di un set di backup."
 Library\Main\Strings\Options.it-IT.resx,CreateverificationfileShort,updated,Create verification file on server,Creare un file di verifica sul server
 Library\Main\Strings\Options.it-IT.resx,DebugoutputLong,updated,"Activating this option will make some error messages more verbose, which may help you track down a particular issue","Attivando questa opzione si farà in modo che i messaggi di errore siano più dettagliati, questo può essere d'aiuto nel rintracciare un particolare problema"
 Library\Main\Strings\Options.it-IT.resx,DebugoutputShort,updated,Enables debugging output,Abilita il debug
-Library\Main\Strings\Options.it-IT.resx,DebugretryerrorsLong,updated,"When an error occurs, Duplicati will silently retry, and only report the number of retries. Enable this option to have the error messages displayed when a retry is performed.","Quando si verifica un errore, Duplicati effettuerà silenziosamente ulteriori tentativi e segnalerà solamente il numero dei tentativi. Attivare questa opzione per visualizzare i messaggi di errore quando si effettua ogni singolo tentativo."
+Library\Main\Strings\Options.it-IT.resx,DebugretryerrorsLong,updated,"When an error occurs, Duplicati will silently retry, and only report the number of retries. Enable this option to have the error messages displayed when a retry is performed.","Quando si verifica un errore, Duplicati effettuerà silenziosamente ulteriori tentativi e segnalerà solamente il numero dei tentativi. Attivare questa opzione per visualizzare i messaggi di errore per ogni singolo tentativo."
 Library\Main\Strings\Options.it-IT.resx,DebugretryerrorsShort,updated,Show error messages when a retry is performed,Mostra i messaggi di errore quando si esegue un nuovo tentativo
 Library\Main\Strings\Options.it-IT.resx,DisableautocreatefolderLong,updated,"If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation.",Se Duplicati rileva che la cartella di destinazione non è presente la creerà automaticamente. Attivare questa opzione per impedire la creazione automatica delle cartelle.
 Library\Main\Strings\Options.it-IT.resx,DisableautocreatefolderShort,updated,Disables automatic folder creation,Disabilita creazione automatica cartella
@@ -1529,7 +1529,7 @@ Library\Main\Strings\Options.it-IT.resx,ForceLong,updated,"When deleting old fil
 Library\Main\Strings\Options.it-IT.resx,ForceShort,updated,Force the removal of files,Forzare la rimozione di files
 Library\Main\Strings\Options.it-IT.resx,FullifmorethannincrementalsLong,updated,Use this option to limit the length of the backup chain to a certain number. The number supplied here indicates the maximum number of incrementals a chain can contain (not counting the root full backup),Utilizzare questa opzione per limitare la lunghezza della catena di backup di un certo numero. Il numero qui fornito indica il numero massimo di backup incrementali che una catena può contenere (senza contare il backup radice completo)
 Library\Main\Strings\Options.it-IT.resx,FullifmorethannincrementalsShort,updated,The max number of incrementals in a chain,Numero massimo di backup incrementali in una catena
-Library\Main\Strings\Options.it-IT.resx,FullifolderthanLong,updated,"If the last full backup is older than the duration supplied here, Duplicati will make a full backup, otherwise an incremental","Se l'ultimo backup completo è più vecchio della durata specificata Duplicati farà un backup completo, altrimenti uno incrementale"
+Library\Main\Strings\Options.it-IT.resx,FullifolderthanLong,updated,"If the last full backup is older than the duration supplied here, Duplicati will make a full backup, otherwise an incremental","Se l'ultimo backup completo è più vecchio della durata specificata Duplicati farà un backup completo, altrimenti un incrementale"
 Library\Main\Strings\Options.it-IT.resx,FullifolderthanShort,updated,The max duration between full backups,Periodo massimo tra backup completi
 Library\Main\Strings\Options.it-IT.resx,FullifsourcefolderchangedLong,updated,"It is not allowed to change the sourcefolder or the number of source folders. If this option is enabled, the backup will become a full backup if the source folders have changed, which will then start a new chain of backups with the new folder set. If --allow-sourcefolder-change is also set, a full backup is only issued if the number of of source folders have changed","Non è consentito cambiare la cartella di origine o il numero di cartelle di origine. Se questa opzione è abilitata il backup diventerà un backup completo se le cartelle di origine sono cambiate, il che corrisponderà ad avviare una nuova catena di backup con un nuovo set di cartelle. Inoltre, se il parametro --allow-sourcefolder-change è abilitato, un backup completo viene rilasciato solo se il numero di cartelle di origine sono cambiate."
 Library\Main\Strings\Options.it-IT.resx,FullifsourcefolderchangedShort,updated,Run a full backup if the sourcefolder has changed,Eseguire un backup completo se la cartella di origine è cambiata
