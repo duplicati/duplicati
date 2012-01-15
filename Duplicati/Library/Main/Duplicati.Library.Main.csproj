@@ -108,6 +108,8 @@
       <DependentUpon>RSyncDir.resx</DependentUpon>
     </Compile>
     <Compile Include="VerificationFile.cs" />
+    <Compile Include="StateVerification\StateDatabase.cs" />
+    <Compile Include="StateVerification\LogEntryClasses.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">
@@ -190,4 +192,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="StateVerification\" />
+  </ItemGroup>
 </Project>

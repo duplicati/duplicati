@@ -203,6 +203,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepShort, "false"),
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
                     
+                    new CommandLineArgument("backend-log-database", CommandLineArgument.ArgumentType.Path, Strings.Options.BackendlogdatabaseShort, Strings.Options.BackendlogdatabaseLong),
                 });
             }
         }
@@ -978,6 +979,21 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool NoConnectionReuse { get { return GetBool("no-connection-reuse"); } }
 
+        /// <summary>
+        /// The path to a log database file, or null
+        /// </summary>
+        public string Backendlogdatabase 
+        { 
+            get 
+            { 
+                string value;
+                if (!m_options.TryGetValue("backend-log-database", out value))
+                    value = null;
+                
+                return value;
+            } 
+        }
+        
         /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 
         /// </summary>

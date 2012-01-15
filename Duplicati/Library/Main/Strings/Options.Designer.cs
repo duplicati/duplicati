@@ -1229,5 +1229,23 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("VssexcludewritersShort", resourceCulture);
             }
         }
-    }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Database log of remote operations.
+        /// </summary>
+        internal static string BackendlogdatabaseShort {
+            get {
+                return ResourceManager.GetString("BackendlogdatabaseShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use this option to specify a path to a file that will store information about backend operations. This option can be used to track down errors by comparing the backend state with the expected backend state..
+        /// </summary>
+        internal static string BackendlogdatabaseLong {
+            get {
+                return ResourceManager.GetString("BackendlogdatabaseLong", resourceCulture);
+            }
+        }
+}
 }

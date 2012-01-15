@@ -93,6 +93,7 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
+    <Compile Include="IBackendInteraction.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings\CommandLineArgument.resx">

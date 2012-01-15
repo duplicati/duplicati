@@ -170,7 +170,12 @@ namespace Duplicati.Library.Main
         /// Gets the communication statistics assigned to the wrapper
         /// </summary>
         public CommunicationStatistics Statistics { get { return m_statistics; } }
-
+  
+        /// <summary>
+        /// Recorder for remote operations
+        /// </summary>
+        private Duplicati.Library.Interface.IBackendInteraction m_backendInterfaceLogger;
+        
         /// <summary>
         /// Class to represent hash failures
         /// </summary>
@@ -223,7 +228,13 @@ namespace Duplicati.Library.Main
 
             if (!string.IsNullOrEmpty(m_options.SignatureCachePath) && !System.IO.Directory.Exists(m_options.SignatureCachePath))
                 System.IO.Directory.CreateDirectory(m_options.SignatureCachePath);
-
+   
+            if (!string.IsNullOrEmpty(m_options.Backendlogdatabase))
+            {
+                m_backendInterfaceLogger = new StateVerification.StateDatabase(m_options.Backendlogdatabase, statistics);
+                m_backendInterfaceLogger.BeginOperation(m_options.MainAction.ToString());
+            }
+            
             m_async = m_options.AsynchronousUpload;
             if (m_async)
             {
@@ -953,16 +964,23 @@ namespace Duplicati.Library.Main
                 {
                     ResetBackend();
                     m_statistics.AddNumberOfRemoteCalls(1);
-                    return m_backend.List();
+                    List<Duplicati.Library.Interface.IFileEntry> res = m_backend.List();
+                    if (m_backendInterfaceLogger != null)
+                        m_backendInterfaceLogger.RegisterList(res, true, null);
+                    return res;
                 }
-                catch (System.Threading.ThreadAbortException)
+                catch (System.Threading.ThreadAbortException tex)
                 {
+                    if (m_backendInterfaceLogger != null)
+                        m_backendInterfaceLogger.RegisterList(null, false, tex.ToString());
                     throw;
                 }
                 catch (Exception ex)
                 {
                     lastEx = ex;
                     m_statistics.LogRetryAttempt(ex.Message, ex);
+                    if (m_backendInterfaceLogger != null)
+                        m_backendInterfaceLogger.RegisterList(null, false, ex.ToString());
                     DisposeBackend();
 
                     if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
@@ -990,15 +1008,21 @@ namespace Duplicati.Library.Main
                     m_statistics.AddNumberOfRemoteCalls(1);
                     m_backend.Delete(remote.Filename);
                     lastEx = null;
+                    if (m_backendInterfaceLogger != null)
+                        m_backendInterfaceLogger.RegisterDelete(remote.Fileentry, true, null);
                 }
-                catch (System.Threading.ThreadAbortException)
+                catch (System.Threading.ThreadAbortException tex)
                 {
+                    if (m_backendInterfaceLogger != null)
+                        m_backendInterfaceLogger.RegisterDelete(remote.Fileentry, false, tex.ToString());
                     throw;
                 }
                 catch (Exception ex)
                 {
                     lastEx = ex;
                     m_statistics.LogRetryAttempt(ex.Message, ex);
+                    if (m_backendInterfaceLogger != null)
+                        m_backendInterfaceLogger.RegisterDelete(remote.Fileentry, false, ex.ToString());
                     DisposeBackend();
 
                     retries--;
@@ -1206,6 +1230,15 @@ namespace Duplicati.Library.Main
 
                         lastEx = null;
                         tempfile.Protected = true; //Don't delete it
+                        
+                        if (m_backendInterfaceLogger != null)
+                        {
+                        
+                            if (remote is ManifestEntry)
+                                m_backendInterfaceLogger.RegisterGet(remote.Fileentry, true, System.IO.File.ReadAllText(tempfile));
+                            else
+                                m_backendInterfaceLogger.RegisterGet(remote.Fileentry, true, null);
+                        }
                     }
                     finally
                     {
@@ -1219,14 +1252,18 @@ namespace Duplicati.Library.Main
                         }
                     }
                 }
-                catch (System.Threading.ThreadAbortException)
+                catch (System.Threading.ThreadAbortException tex)
                 {
+                    if (m_backendInterfaceLogger != null)
+                        m_backendInterfaceLogger.RegisterGet(remote.Fileentry, false, tex.ToString());
                     throw;
                 }
                 catch (Exception ex)
                 {
                     lastEx = ex;
                     m_statistics.LogRetryAttempt(ex.Message, ex);
+                    if (m_backendInterfaceLogger != null)
+                        m_backendInterfaceLogger.RegisterGet(remote.Fileentry, false, ex.ToString());
                     DisposeBackend();
 
                     retries--;
@@ -1250,7 +1287,8 @@ namespace Duplicati.Library.Main
         {
             string remotename = remote.Filename;
             m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageUploading, remotename, Utility.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length));
-
+            Duplicati.Library.Interface.IFileEntry log_fe = new Duplicati.Library.Interface.FileEntry(remote.Filename, remote.Filesize, DateTime.Now, DateTime.Now);
+            
             try
             {
                 int retries = m_options.NumberOfRetries;
@@ -1329,13 +1367,19 @@ namespace Duplicati.Library.Main
 
                         success = true;
                         lastEx = null;
+                        if (m_backendInterfaceLogger != null)
+                            m_backendInterfaceLogger.RegisterPut(log_fe, true, null);
                     }
-                    catch (System.Threading.ThreadAbortException)
+                    catch (System.Threading.ThreadAbortException tex)
                     {
+                        if (m_backendInterfaceLogger != null)
+                            m_backendInterfaceLogger.RegisterPut(log_fe, false, tex.ToString());
                         throw;
                     }
                     catch (Exception ex)
                     {
+                        if (m_backendInterfaceLogger != null)
+                            m_backendInterfaceLogger.RegisterPut(log_fe, false, ex.ToString());
                         DisposeBackend();
 
                         //Even if we can create the folder, we still count it as an error to prevent trouble with backends
@@ -1391,8 +1435,18 @@ namespace Duplicati.Library.Main
 
         private void CreateFolderInternal()
         {
-            ResetBackend();
-            (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+            try
+            {
+                ResetBackend();
+                (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+                if (m_backendInterfaceLogger != null)
+                    m_backendInterfaceLogger.RegisterCreateFolder(true, null);
+            } catch (Exception ex) {
+                if (m_backendInterfaceLogger != null)
+                    m_backendInterfaceLogger.RegisterCreateFolder(false, ex.ToString());
+                
+                throw;
+            }
         }
 
         public void CreateFolder()
@@ -1624,6 +1678,9 @@ namespace Duplicati.Library.Main
                 ProtectedInvoke("DisposeInternal");
             if (m_encryption != null)
                 m_encryption.Dispose();
+
+            if (m_backendInterfaceLogger != null)
+                m_backendInterfaceLogger.EndOperation();    
         }
 
         #endregion
