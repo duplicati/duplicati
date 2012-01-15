@@ -505,6 +505,12 @@
     <value>If no files have changed, Duplicati will not upload a backup set. If the backup data is used to verify that a backup was executed, this option will make Duplicati upload a backupset even if it is empty</value>
   </data>
   <data name="UploadUnchangedBackupsShort" xml:space="preserve">
-    <value>Upload empty backup files </value>
+    <value>Upload empty backup files</value>
+  </data>
+  <data name="BackendlogdatabaseShort" xml:space="preserve">
+    <value>Database log of remote operations</value>
+  </data>
+  <data name="BackendlogdatabaseLong" xml:space="preserve">
+    <value>Use this option to specify a path to a file that will store information about backend operations. This option can be used to track down errors by comparing the backend state with the expected backend state.</value>
   </data>
 </root>

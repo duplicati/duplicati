@@ -335,7 +335,8 @@ namespace Duplicati.Library.Main
                 m_asyncReserved = ASYNC_RESERVED;
                 m_allowUploadProgress = false;
             }
-
+   
+            //Unused, but triggers errors in the encryption setup here
             Library.Interface.IEncryption encryptionModule = m_options.NoEncryption ? null : DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
 
             using (new Logging.Timer("Backup from " + string.Join(";", sources) + " to " + m_backend))
