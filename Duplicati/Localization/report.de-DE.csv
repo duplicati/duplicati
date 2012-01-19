@@ -32,18 +32,19 @@ CommandLine\Strings\Program.de-DE.resx,ProgramUsageBackend,updated,"A <backend> 
  The delete command can be used to remove backup sets when newer backups are present.","Ein <backend> wird durch eine URL wie ftp://host/ oder ssh://server angegeben. So kann Duplicati erkennen, ob Sie sichern oder wiederherstellen wollen. Die Bereinigungs- und Lösch-Befehle löschen Dateien nicht, außer wenn die Option --force angegeben ist. Damit können Sie vor dem eigentlichen Löschen feststellen, welche Dateien betroffen sind. Der Bereinigungs-Befehl sollte nicht verwendet werden, außer wenn eine Sicherung unterbrochen wurde und daher Dateireste hinterlassen wurden. Duplicati informiert Sie in diesem Fall. Der Lösch-Befehl kann verwendet werden, um Backup-Sets zu entfernen, wenn neuere Backups vorhanden sind.
 ",Translated 2011-05,04/05/2011,Translated in week 18/2011,by E.Mair,,,,1240
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageBackup,updated,"Backup (make a full or incremental backup):
-  Duplicati.CommandLine [full] [options] <sourcefolder> <backend>",Backup (eine vollständige oder inkrementelle Sicherung): Duplicati.CommandLine [full] [options] <sourcefolder> <backend>,Translated 2011-05,04/05/2011,Translated in week 18/2011,by E.Mair,,,,1241
+  Duplicati.CommandLine [full] [options] <sourcefolder> <backend>","Backup (eine vollständige oder inkrementelle Sicherung): 
+ Duplicati.CommandLine [full] [options] <sourcefolder> <backend>",Translated 2011-05,04/05/2011,Translated in week 18/2011,by E.Mair,,,,1241
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageCleanup,updated,"Cleanup (remove partial and unused files):
   Duplicati.CommandLine cleanup [options] <backend>","Aufräumen (Entfernen von Dateiresten oder nicht verwendeten Dateien):
   Duplicati.CommandLine cleanup [options] <backend>",Translated 2011-05,04/05/2011,Translated in week 18/2011,by E.Mair,,,,1242
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageCreateFolders,updated,"Create folder (usually done automatically):
-  Duplicati.CommandLine create-folder [options] <backend>","Ordner anlegen (wird in der Regel automatisch durchgeführt)::
+  Duplicati.CommandLine create-folder [options] <backend>","Ordner anlegen (wird in der Regel automatisch durchgeführt):
   Duplicati.CommandLine create-folder [options] <backend>",Translated 2011-05,04/05/2011,Translated in week 18/2011,by E.Mair,,,,1243
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageDeleteOld,updated,"Delete old backups:
   Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
   Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>","Alte Backups löschen:
-  Duplicati.KommandoZeile delete-all-but-n-full <number of full backups to keep> [options] <backend>
-  Duplicati.KommandoZeile delete-older-than <max allowed age> [options] <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1244
+  Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
+  Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1244
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageFilters,updated,"Filters:
  Duplicati uses filters to include and exclude files.
   Duplicati uses a ""first-touch"" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplicati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:
@@ -59,7 +60,7 @@ Auch wenn der letzte Filter alles beinhaltet, werden keine Dateien mit dem Namen
 Wenn ein Ordner ausgeschlossen ist, sind Dateien in diesem Ordner grundsätzlich ausgeschlossen, auch wenn es Filter gibt, die Dateien in diesem Ordner einschließen. Wenn ein Ordner mit einer Wildcard am Ende mit eingeschlossen ist, werden alle Dateien enthalten sein. Wenn der Ordner ohne eine Wildcard eingeschlossen wird, können Dateien mit zusätzlichen Regeln ausgeschlossen oder einbezogen werden.",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1245
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageFindLastVersion,updated,"Find the last version of a file:
   Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>","Finde die letzte Version einer Datei:
-  Duplicati.KommandoZeile find-last-version [options] --file-to-restore=<files to find> <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1246
+  Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1246
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageHeader,updated,"********** Duplicati v. {0} **********
 
 Usage:","********** Duplicati v. {0} **********
@@ -67,13 +68,13 @@ Usage:","********** Duplicati v. {0} **********
 Verwendung:",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1247
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageListContentFiles,updated,"List content files (files that can be restored):
   Duplicati.CommandLine list-current-files [options] <backend>","Auflistung der beinhalteten Dateien (Dateien, welche wiederhergestellt werden können):
-  Duplicati.KommandoZeile list-current-files [options] <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1248
+  Duplicati.CommandLine list-current-files [options] <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1248
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageListFiles,updated,"List files:
   Duplicati.CommandLine list [options] <backend>","Auflistung von Dateien:
-  Duplicati.KommandoZeile list [options] <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1249
+  Duplicati.CommandLine list [options] <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1249
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageListSets,updated,"List backup sets:
   Duplicati.CommandLine collection-status [options] <backend>","Auflistung der Backup-Sätze:
-  Duplicati.Kommandozeile collection-status [options] <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1250
+  Duplicati.CommandLine collection-status [options] <backend>",Translated 2011-05,05/05/2011,Translated in week 18/2011,by E.Mair,,,,1250
 CommandLine\Strings\Program.de-DE.resx,ProgramUsageListSignatureFiles,updated,"List signature files (files in a single backup volume set):
   Duplicati.CommandLine list-actual-signature-files [options] <backend>","Liste Signatur-Dateien auf (Dateien in einem einzelnen Backup-Volume):
   Duplicati.CommandLine list-actual-signature-files [options] <backend>",Improved 2011-05,09/05/2011,Translated in week 19/2011,by E.Mair,,,,1251
@@ -1498,7 +1499,7 @@ Library\Main\Strings\Interface.de-DE.resx,UnsupportedEnumerationValue,updated,"T
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,633
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedIntegerValue,updated,"The value ""{1}"" supplied to --{0} does not represent a valid integer","Der Wert ""{1}"" angegeben für --{0} ist keine gültige ganze Zahl
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,634
-Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionDisabledModuleWarning,updated,The option --{0} is not supported because the module {1} is not currently loaded,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit ​​nicht geladen ist ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit ​​nicht geladen ist ",635
+Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionDisabledModuleWarning,updated,The option --{0} is not supported because the module {1} is not currently loaded,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit nicht geladen ist ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit nicht geladen ist ",635
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionWarning,updated,The supplied option --{0} is not supported and will be ignored,"Die angegebene Option --{0} wird nicht unterstützt und wird ignoriert
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,636
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedPathValue,updated,"The value ""{1}"" supplied to --{0} does not represent a valid path","Der Wert ""{1}"" angegeben für --{0} ist kein gültiger Pfad
