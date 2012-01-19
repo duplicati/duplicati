@@ -28,11 +28,12 @@ namespace Duplicati.Library.Backend
     public class FTP : IBackend_v2, IStreamingBackend, IBackendGUI
     {
         private System.Net.NetworkCredential m_userInfo;
-        private string m_url;
+        private readonly string m_url;
 
-        private bool m_useSSL = false;
-        private bool m_defaultPassive = true;
-        private bool m_passive = false;
+        private readonly bool m_useSSL = false;
+        private readonly bool m_defaultPassive = true;
+        private readonly bool m_passive = false;
+        private readonly bool m_listVerify = true;
 
         public FTP()
         {
@@ -85,9 +86,7 @@ namespace Duplicati.Library.Backend
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
-            //HACK: We modify the commandline options to alter the setting it the ftp backend is loaded
-            if (!options.ContainsKey("list-verify-uploads"))
-                options.Add("list-verify-uploads", "true");
+            m_listVerify = !Utility.Utility.ParseBoolOption(options, "disable-upload-verify");
 
             if (Utility.Utility.ParseBoolOption(options, "ftp-passive"))
             {
@@ -171,7 +170,12 @@ namespace Duplicati.Library.Backend
 
         public List<IFileEntry> List()
         {
-            System.Net.FtpWebRequest req = CreateRequest("");
+            return List("");
+        }
+        
+        public List<IFileEntry> List(string filename)
+        {
+            System.Net.FtpWebRequest req = CreateRequest(filename);
             req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
             req.UseBinary = false;
 
@@ -209,9 +213,32 @@ namespace Duplicati.Library.Backend
                 req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
                 req.UseBinary = true;
+                
+                long streamLen = -1;
+                try { streamLen = input.Length; }
+                catch {}
 
                 using (System.IO.Stream rs = req.GetRequestStream())
                     Utility.Utility.CopyStream(input, rs, true);
+                
+                if (m_listVerify) 
+                {
+                    List<IFileEntry> files = List(remotename);
+                    StringBuilder sb = new StringBuilder();
+                    foreach(IFileEntry fe in files)
+                        if (fe.Name.Equals(remotename)) 
+                        {
+                            if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
+                                return;
+                        
+                            throw new Exception(string.Format(Strings.FTPBackend.ListVerifySizeFailure, remotename, fe.Size, streamLen));
+                        } 
+                        else
+                            sb.AppendLine(fe.Name);
+                    
+                    throw new Exception(string.Format(Strings.FTPBackend.ListVerifyFailure, remotename, sb.ToString()));
+                }
+                
             }
             catch (System.Net.WebException wex)
             {
@@ -263,6 +290,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPPasswordShort, Strings.FTPBackend.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.FTPBackend.DescriptionFTPUsernameShort, Strings.FTPBackend.DescriptionFTPUsernameLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionUseSSLShort, Strings.FTPBackend.DescriptionUseSSLLong),
+                    new CommandLineArgument("disable-upload-verify", CommandLineArgument.ArgumentType.Boolean, Strings.FTPBackend.DescriptionDisableUploadVerifyShort, Strings.FTPBackend.DescriptionDisableUploadVerifyLong),
                 });
             }
         }
@@ -286,10 +314,19 @@ namespace Duplicati.Library.Backend
         }
 
         #endregion
-
+  
         private System.Net.FtpWebRequest CreateRequest(string remotename)
         {
-            System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(m_url + remotename);
+            return CreateRequest(remotename, false);
+        }
+        
+        private System.Net.FtpWebRequest CreateRequest(string remotename, bool createFolder)
+        {
+            string url = m_url;
+            if (createFolder && url.EndsWith("/"))
+                url = url.Substring(0, url.Length - 1);
+            
+            System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(url + remotename);
 
             if (m_userInfo != null)
                 req.Credentials = m_userInfo;
@@ -317,7 +354,7 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            System.Net.FtpWebRequest req = CreateRequest("");
+            System.Net.FtpWebRequest req = CreateRequest("", true);
             req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
             req.KeepAlive = false;
             using (req.GetResponse())

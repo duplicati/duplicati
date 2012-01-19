@@ -112,13 +112,16 @@ namespace Duplicati.CommandLine
                 options["backup-prefix"] = "duplicati_unittest";
 
             //This would break the test, because the data is not modified the normal way
-            options["disable-filetime-check"] = null;
+            options["disable-filetime-check"] = "true";
             //We do not use the same folder, so we need this option
-            options["allow-sourcefolder-change"] = null;
+            options["allow-sourcefolder-change"] = "true";
             //We want all messages in the log
             options["log-level"] = LogMessageType.Profiling.ToString();
             //We cannot rely on USN numbering, but we can use USN enumeration
-            //options["disable-usn-diff-check"] = null;
+            //options["disable-usn-diff-check"] = "true";
+            
+            //We use precise times
+            options["disable-time-tolerance"] = "true";
 
             options["verification-level"] = "full";
 
@@ -344,6 +347,22 @@ namespace Duplicati.CommandLine
         }
 
         /// <summary>
+        /// Returns the index of a given string, using the file system case sensitivity
+        /// </summary>
+        /// <returns>The index of the entry or -1 if no entry was found</returns>
+        /// <param name='lst'>The list to search</param>
+        /// <param name='m'>The string to find</param>
+        private static int IndexOf(List<string> lst, string m)
+        {
+            StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparision;
+            for(int i = 0; i < lst.Count; i++)
+                if (lst[i].Equals(m, sc))
+                    return i;
+            
+            return -1;
+        }
+        
+        /// <summary>
         /// Verifies the existence of all files and folders, and ensures that all
         /// files are binary equal.
         /// </summary>
@@ -361,13 +380,14 @@ namespace Duplicati.CommandLine
             {
                 string relpath = s.Substring(f1.Length);
                 string target = System.IO.Path.Combine(f2, relpath);
-                if (!folders2.Contains(target))
+                int ix = IndexOf(folders2, target);
+                if (ix < 0)
                 {
                     Log.WriteMessage("Missing folder: " + relpath, LogMessageType.Error);
                     Console.WriteLine("Missing folder: " + relpath);
                 }
                 else
-                    folders2.Remove(target);
+                    folders2.RemoveAt(ix);
             }
 
             foreach (string s in folders2)
@@ -382,14 +402,15 @@ namespace Duplicati.CommandLine
             {
                 string relpath = s.Substring(f1.Length);
                 string target = System.IO.Path.Combine(f2, relpath);
-                if (!files2.Contains(target))
+                int ix = IndexOf(files2, target);
+                if (ix < 0)
                 {
                     Log.WriteMessage("Missing file: " + relpath, LogMessageType.Error);
                     Console.WriteLine("Missing file: " + relpath);
                 }
                 else
                 {
-                    files2.Remove(target);
+                    files2.RemoveAt(ix);
                     if (!CompareFiles(s, target, relpath))
                     {
                         Log.WriteMessage("File differs: " + relpath, LogMessageType.Error);

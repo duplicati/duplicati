@@ -162,4 +162,16 @@
   <data name="MissingFolderError" xml:space="preserve">
     <value>The folder {0} was not found, message: {1}</value>
   </data>
+  <data name="ListVerifyFailure" xml:space="preserve">
+    <value>The file {0} was uploaded but not found afterwards, the file listing returned {1}</value>
+  </data>
+  <data name="ListVerifySizeFailure" xml:space="preserve">
+    <value>The file {0} was uploaded but the returned size was {1} and it was expected to be {2}</value>
+  </data>
+  <data name="DescriptionDisableUploadVerifyShort" xml:space="preserve">
+    <value>Disable upload verification</value>
+  </data>
+  <data name="DescriptionDisableUploadVerifyLong" xml:space="preserve">
+    <value>To protect against network failures, every upload will be attempted verified. Use this option to disable this verfication to make the upload faster by more unsafe.</value>
+  </data>
 </root>
