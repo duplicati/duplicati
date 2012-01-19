@@ -266,5 +266,41 @@ namespace Duplicati.Library.Backend.Strings {
                 return ResourceManager.GetString("UploadVerificationFailure", resourceCulture);
             }
         }
-    }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} was uploaded but not found afterwards, the file listing returned {1}.
+        /// </summary>
+        internal static string ListVerifyFailure {
+            get {
+                return ResourceManager.GetString("ListVerifyFailure", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The file {0} was uploaded but the returned size was {1} and it was expected to be {2}.
+        /// </summary>
+        internal static string ListVerifySizeFailure {
+            get {
+                return ResourceManager.GetString("ListVerifySizeFailure", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Disable upload verification.
+        /// </summary>
+        internal static string DescriptionDisableUploadVerifyShort {
+            get {
+                return ResourceManager.GetString("DescriptionDisableUploadVerifyShort", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to To protect against network failures, every upload will be attempted verified. Use this option to disable this verfication to make the upload faster by more unsafe..
+        /// </summary>
+        internal static string DescriptionDisableUploadVerifyLong {
+            get {
+                return ResourceManager.GetString("DescriptionDisableUploadVerifyLong", resourceCulture);
+            }
+        }
+}
 }
