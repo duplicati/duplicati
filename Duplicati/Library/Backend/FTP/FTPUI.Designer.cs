@@ -47,6 +47,7 @@ namespace Duplicati.Library.Backend
             this.AcceptSpecifiedHash = new System.Windows.Forms.CheckBox();
             this.SpecifiedHash = new System.Windows.Forms.TextBox();
             this.AcceptAnyHash = new System.Windows.Forms.CheckBox();
+            this.label6 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.Port)).BeginInit();
             this.SSLGroup.SuspendLayout();
             this.SuspendLayout();
@@ -177,8 +178,14 @@ namespace Duplicati.Library.Backend
             this.AcceptAnyHash.UseVisualStyleBackColor = true;
             this.AcceptAnyHash.CheckedChanged += new System.EventHandler(this.AcceptAnyHash_CheckedChanged);
             // 
+            // label6
+            // 
+            resources.ApplyResources(this.label6, "label6");
+            this.label6.Name = "label6";
+            // 
             // FTPUI
             // 
+            this.Controls.Add(this.label6);
             this.Controls.Add(this.UseSSL);
             this.Controls.Add(this.SSLGroup);
             this.Controls.Add(this.Username);
@@ -225,5 +232,6 @@ namespace Duplicati.Library.Backend
         private System.Windows.Forms.CheckBox AcceptSpecifiedHash;
         private System.Windows.Forms.TextBox SpecifiedHash;
         private System.Windows.Forms.CheckBox AcceptAnyHash;
+        private System.Windows.Forms.Label label6;
     }
 }
