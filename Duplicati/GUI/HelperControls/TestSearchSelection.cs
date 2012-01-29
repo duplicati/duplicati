@@ -78,7 +78,7 @@ namespace Duplicati.GUI.HelperControls {
                         long iA = (_ascending ? a : b).Size;
                         long iB = (_ascending ? b : a).Size;
                         
-                        return Convert.ToInt32(iA - iB);
+                        return Math.Sign(iA - iB);
                 }
 
                 return 0;
