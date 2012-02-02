@@ -8,7 +8,11 @@ namespace Duplicati.GUI.TrayIcon
 {
     public class HttpServerConnection : IDisposable
     {
-        private Uri m_uri;
+        private const string CONTROL_SCRIPT = "control.cgi";
+        private const string STATUS_WINDOW = "status-window.html";
+        
+        private Uri m_controlUri;
+        private string m_baseUri;
         private System.Net.NetworkCredential m_credentials;
         private static readonly System.Text.Encoding ENCODING = System.Text.Encoding.GetEncoding("utf-8");
         public delegate void StatusUpdate(ISerializableStatus status);
@@ -34,7 +38,11 @@ namespace Duplicati.GUI.TrayIcon
 
         public HttpServerConnection(Uri server, System.Net.NetworkCredential credentials)
         {
-            m_uri = server;
+            m_baseUri = server.ToString();
+            if (!m_baseUri.EndsWith("/"))
+                m_baseUri += "/";
+            
+            m_controlUri = new Uri(m_baseUri + CONTROL_SCRIPT);
             m_serializer = new Serializer();
             m_updateRequest = new Dictionary<string, string>();
             m_updateRequest.Add("action", "get-current-state");
@@ -156,7 +164,7 @@ namespace Duplicati.GUI.TrayIcon
             string query = EncodeQueryString(queryparams);
             byte[] data = ENCODING.GetBytes(query);
 
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_uri);
+            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_controlUri);
             req.Method = "POST";
             req.ContentLength = data.Length;
             req.ContentType = "application/x-www-form-urlencoded ; charset=" + ENCODING.BodyName;
@@ -257,6 +265,11 @@ namespace Duplicati.GUI.TrayIcon
         public void Dispose()
         {
             Close();
+        }
+        
+        public string StatusWindowURL
+        {
+            get { return m_baseUri + STATUS_WINDOW; }
         }
     }
 }

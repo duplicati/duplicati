@@ -110,6 +110,12 @@ namespace Duplicati.GUI.TrayIcon
         
         protected void OnStatusClicked()
         {
+            if (Duplicati.Library.Utility.Utility.IsClientLinux)
+                try { System.Diagnostics.Process.Start("open", "\"" + Program.Connection.StatusWindowURL + "\""); }
+                catch { }
+            else
+                try { System.Diagnostics.Process.Start("\"" + Program.Connection.StatusWindowURL + "\""); }
+                catch { }
         }
 
         protected void OnWizardClicked()

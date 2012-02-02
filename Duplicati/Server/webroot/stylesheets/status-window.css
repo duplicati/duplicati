@@ -1,0 +1,138 @@
+.status-window-toolbar-item
+{
+	height: 44px;
+	margin: 3px;
+	float: right;
+}
+
+#status-window-toolbar
+{
+	height: 50px;
+	width: 100%;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: 100;
+}
+
+#status-window-main-logo
+{
+	float: left;
+	height: 44px;
+	margin: 3px;
+}
+
+#status-window-news
+{
+	height: 100%;
+	line-height: 44px; /* Center vertically */
+	margin-left: 10px;
+	float: left;
+}
+
+#status-window-outer
+{
+	height: 100%;
+}
+
+#status-window-main-contents
+{
+	width: 100%;
+	overflow: auto;	
+    display: block;
+    position: absolute;
+    height: auto;
+    bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin-top: 50px;
+    margin-bottom: 25px;
+}
+
+#status-window-footer
+{
+	height: 25px;
+	width: 100%;
+	position: absolute;
+	bottom: 0px;
+	left: 0px;
+	z-index: 99;
+}
+
+#list-of-backups
+{
+	width: 800px;
+	margin: auto;
+	border-right: 2px solid black;
+	border-left: 2px solid black;
+}
+
+#logo-button
+{
+	height: 100%;
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
+.appname
+{
+	padding-left: 5px;
+	padding-right: 5px;
+	font-size: 1.6em;
+	font-weight: bold;
+	float: left;
+}
+
+.drop-arrow
+{
+	margin-top: 12px;
+	margin-left: 8px;
+	margin-right: 5px;
+}
+
+.backup-schedule
+{
+	align: center;
+	font-weight: 1.6em;
+	padding: 20px;
+}
+
+.backup-schedule-inner
+{
+	width: 800px;
+	height: 80px;
+	margin: auto;
+	border: 1px solid red;
+}
+
+.backup-schedule-name
+{
+}
+
+
+/* DEBUG */
+#status-window-settings-button, #status-window-pause-button, #status-window-add-button
+{
+	width: 80px;
+}
+
+#list-of-backups
+{
+
+}
+
+#status-window-toolbar, #status-window-footer
+{
+	background-color: green;
+}
+
+.status-window-toolbar-item
+{
+	background-color: yellow;
+}
+
+#status-window-main-contents
+{
+	/* background-color: yellow; */
+}

@@ -1,0 +1,112 @@
+body
+{
+	border: 0px none;
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+.modal-cover
+{
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	
+	background-color: #000000;
+	opacity: 0.6;
+	z-index: 9999;
+}
+
+.loader
+{
+	position: absolute;
+	top: 48%;
+	left: 48%;
+	background-image: url('../gfx/spinner.gif');
+	padding-left: 36px;
+	padding-top: 10px;
+	padding-right: 8px;
+	z-index: 10000;
+	background-repeat: no-repeat;
+	background-position: 0px 3px;
+	height: 32px;
+	background-color: white;
+}
+
+.odd { background-color: #efefef;  }
+
+.drop-arrow
+{
+	width: 7px;
+	height: 7px;
+	background-image: url('../gfx/drop-arrow.gif');
+	float: right;
+}
+
+.round-corner-box 
+{
+	border-collapse: collapse;
+	padding: 0;
+	margin: 0;
+	border-spacing; 0px;
+}
+
+.round-corner-box .top, 
+.round-corner-box .bottom 
+{ height: 5px; }
+
+.round-corner-box .top .left, 
+.round-corner-box .top .right, 
+.round-corner-box .center .left, 
+.round-corner-box .center .right, 
+.round-corner-box .bottom .left, 
+.round-corner-box .bottom .right 
+{ 
+	width: 5px;
+	height: 5px;
+}
+
+.round-corner-box .top .left, 
+.round-corner-box .top .right, 
+.round-corner-box .bottom .left, 
+.round-corner-box .bottom .right 
+{ 
+	background-repeat: no-repeat;
+}
+
+.round-corner-box .top .left, 
+.round-corner-box .top .right, 
+.round-corner-box .bottom .left, 
+.round-corner-box .bottom .right
+{
+	background-image: url('../gfx/round-box3.gif');
+}
+
+.round-corner-box .center .left, 
+.round-corner-box .center .right, 
+.round-corner-box .top .middle, 
+.round-corner-box .bottom .middle 
+{
+	background-image: url('../gfx/round-dot.gif');
+}
+
+.round-corner-box .center .left, 
+.round-corner-box .center .right
+{ background-repeat: repeat-y; }
+
+.round-corner-box .top .middle, 
+.round-corner-box .bottom .middle
+{ background-repeat: repeat-x; }
+
+.round-corner-box .top .left { background-position: 0px 0px; }
+.round-corner-box .top .right { background-position: -5px 0px; }
+.round-corner-box .bottom .left { background-position: 0px -5px; }
+.round-corner-box .bottom .right { background-position: -5px -5px; }
+
+.round-corner-box .top .middle { background-position: 0px 0px; }
+.round-corner-box .bottom .middle { background-position: 0px 4px; }
+.round-corner-box .center .left { background-position: 0px 0px; }
+.round-corner-box .center .right { background-position: 4px 0px; }

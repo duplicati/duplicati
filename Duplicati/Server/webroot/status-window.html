@@ -1,0 +1,42 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="stylesheets/common.css" />
+		<link rel="stylesheet" href="stylesheets/status-window.css" />
+		<link rel="stylesheet" href="stylesheets/customized.css" />
+
+		<script language="javascript" src="scripts/jquery-1.7.1.js" ></script>
+		<script language="javascript" src="scripts/app-base.js" ></script>
+		<script language="javascript" src="scripts/app-functions.js" ></script>
+
+		<script language="javascript" src="scripts/status-window.js" ></script>
+
+		<script language="javascript" src="scripts/customized.js" ></script>
+	</head>
+	<body>
+	
+		<div id="modal-cover" class="modal-cover"></div>
+		<div id="progress-loader" class="loader">Loading ...</div>
+	
+		<div id="status-window-toolbar">
+			<div id="status-window-main-logo" class="rounded-corner-box">
+				<div id="appname" class="appname"></div>
+				<div id="app-main-menu" class="drop-arrow"></div>
+			</div>
+			<div id="status-window-news">A new version of Duplicati is available</div>
+
+			<div id="status-window-settings-button" class="status-window-toolbar-item">Settings</div>
+			<div id="status-window-pause-button" class="status-window-toolbar-item">Pause</div>
+			<div id="status-window-add-button" class="status-window-toolbar-item">Add New Backup</div>
+		</div>
+		
+		<div id="status-window-main-contents">
+			<div id="backup-item-1" class="backup-item even"><div class="backup-inner">S3 backup</div></div>
+			<div id="backup-item-2" class="backup-item odd"><div class="backup-inner">SkyDrive backup</div></div>
+			<div id="backup-item-3" class="backup-item even"><div class="backup-inner">Whatever </div></div>
+			<div id="backup-item-4" class="backup-item odd"><div class="backup-inner">Something else</div></div>
+		</div>
+		
+		<div id="status-window-footer">Not sure we need one, but just for ensuring the layout can handle a footer</div>
+		
+	</body>
+</html>

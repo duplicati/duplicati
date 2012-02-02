@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -129,6 +129,44 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
+    <None Include="webroot\scripts\app-base.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\scripts\app-functions.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\scripts\customized.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\scripts\jquery-1.7.1.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\scripts\status-window.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\status-window.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\stylesheets\common.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\stylesheets\customized.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\stylesheets\jquery-ui-cupertino.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\stylesheets\jquery-ui.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\stylesheets\status-window.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webroot\gfx\drop-arrow.gif" />
+    <None Include="webroot\gfx\round-box2.gif" />
+    <None Include="webroot\gfx\round-box3.gif" />
+    <None Include="webroot\gfx\round-dot.gif" />
+    <None Include="webroot\gfx\spinner.gif" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Database schema\1. Support timestamp flag.sql" />

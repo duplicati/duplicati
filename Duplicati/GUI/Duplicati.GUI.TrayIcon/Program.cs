@@ -77,7 +77,7 @@ namespace Duplicati.GUI.TrayIcon
             //TODO: Fix options for non-hosted
             using (new HostedInstanceKeeper(_args))
             {
-                using (Connection = new HttpServerConnection(new Uri("http://localhost:8080/control.cgi"), null))
+                using (Connection = new HttpServerConnection(new Uri("http://localhost:8080"), null))
                 {
                     using(var tk = RunTrayIcon(toolkit))
                     {
