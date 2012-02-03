@@ -117,12 +117,13 @@ namespace Duplicati.GUI
             //We add it last, to allow the user to override with other versions
             if (!Library.Utility.Utility.IsClientLinux)
             {
+                string wintools = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "win-tools");
                 Environment.SetEnvironmentVariable("PATH",
                     Environment.GetEnvironmentVariable("PATH") +
                     System.IO.Path.PathSeparator.ToString() +
-                    System.IO.Path.Combine(
-                        System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                        "win-tools")
+                    wintools +
+                    System.IO.Path.PathSeparator.ToString() +
+                    System.IO.Path.Combine(wintools, "gpg") //GPG needs to be in a subfolder for wrapping reasons
                 );
             }
 
