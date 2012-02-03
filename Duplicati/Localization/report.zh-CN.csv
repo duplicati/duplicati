@@ -27,7 +27,7 @@ CommandLine\Strings\Program.zh-CN.resx,ProgramUsageBackend,updated,"A <backend> 
  Using this system, Duplicati can detect if you want to backup or restore.
  The cleanup and delete commands do not delete files, unless the --force option is specified, so you may examine what files are affected, before actually deleting the files.
  The cleanup command should not be used unless a backup was interrupted and has left partial files. Duplicati will inform you if this happens.
- The delete command can be used to remove backup sets when newer backups are present.",<后端>是指一个类似于 ftp://host/或者ssh://server/的路径。使用本系统，Duplicati可以检测出您是想备份还是恢复。cleanup和delete命令并不会真正删除文件，除非使用了—force参数，这样你就可以在真正删除之前测试一下哪些文件会被删除。cleanup命令只能用于某次备份被意外中断并且有残存文件的情况，如果这种情况发生时，Duplicati会通知您。当新的备份准备好时，delete命令可以用于删除旧的备份文件。
+ The delete command can be used to remove backup sets when newer backups are present.",<后端>是指一个类似于 ftp://host/或者ssh://server/的路径。使用本系统，Duplicati可以检测出您是想备份还是恢复。cleanup和delete命令并不会真正删除文件，除非使用了—force参数，这样您就可以在真正删除之前测试一下哪些文件会被删除。cleanup命令只能用于某次备份被意外中断并且有残存文件的情况，如果这种情况发生时，Duplicati会通知您。当新的备份准备好时，delete命令可以用于删除旧的备份文件。
 CommandLine\Strings\Program.zh-CN.resx,ProgramUsageBackup,updated,"Backup (make a full or incremental backup):
   Duplicati.CommandLine [full] [options] <sourcefolder> <backend>","备份 (创建一个完全或增量备份):
   Duplicati.CommandLine [full] [options] <sourcefolder> <backend>"
@@ -373,10 +373,10 @@ GUI\Strings\ApplicationSetup.zh-CN.resx,DialogTitle,updated,"Duplicati Setup, ve
 GUI\Strings\ApplicationSetup.zh-CN.resx,EncryptionModuleLoadError,updated,An error occured while loading encryption modules: {0},加载加密模块时出错: {0}
 GUI\Strings\ApplicationSetup.zh-CN.resx,ErrorWhileExaminingFolder,updated,"An exception occured while examining the folder: {0}.
 Do you want to use that folder anyway?","检测文件夹时出错: {0}.
-你确信要使用这个目录吗?"
+您确信要使用这个目录吗?"
 GUI\Strings\ApplicationSetup.zh-CN.resx,FolderIsMissingFile,updated,"The folder selected does not contain the file: {0}.
 Do you want to use that folder anyway?","所选的目录中没有文件: {0}.
-你确信要使用这个目录吗?"
+您确信要使用这个目录吗?"
 GUI\Strings\ApplicationSetup.zh-CN.resx,LanguageChangedWarning,updated,The language has changed. This will take effect after you restart Duplicati.,界面语言已经改变，重启Duplicati后生效。
 GUI\Strings\ApplicationSetup.zh-CN.resx,OperationCancelled,updated,Cancelled,取消
 GUI\Strings\ApplicationSetup.zh-CN.resx,SaveExtensionError,updated,An error occured while saving settings: {0},保存设置时出错: {0}
@@ -444,14 +444,14 @@ GUI\Strings\MainForm.zh-CN.resx,BalloonTip_Running,not-updated,{0},{0}
 GUI\Strings\MainForm.zh-CN.resx,BalloonTip_Started,updated,Running {0},正在执行 {0}
 GUI\Strings\MainForm.zh-CN.resx,BalloonTip_Stopped,updated,Finished {0},完成 {0}
 GUI\Strings\MainForm.zh-CN.resx,BalloonTip_Warning,updated,Backup {0} gave a warning,备份 {0} 返回了警告
-GUI\Strings\MainForm.zh-CN.resx,ExitWhileBackupIsRunningQuestion,updated,"A backup is currently running, do you want to stop the backup so Duplicati can exit?",备份正在运行，你想停止备份并退出Duplicati吗？
+GUI\Strings\MainForm.zh-CN.resx,ExitWhileBackupIsRunningQuestion,updated,"A backup is currently running, do you want to stop the backup so Duplicati can exit?",备份正在运行，您想停止备份并退出Duplicati吗？
 GUI\Strings\MainForm.zh-CN.resx,MultipleNamedBackupsFound,updated,"The backup named ""{0}"" was found {1} times","发现了 {1} 次名称为 ""{0}""的备份"
 GUI\Strings\MainForm.zh-CN.resx,NamedBackupGroupNotFound,updated,"The backup group named ""{0}"" was not found","没有发现名称为 ""{0}"" 的备份组"
 GUI\Strings\MainForm.zh-CN.resx,NamedBackupNotFound,updated,"The backup named ""{0}"" was not found","没有发现名称为 ""{0}""的备份"
 GUI\Strings\MainForm.zh-CN.resx,PauseOperationFailed,updated,Failed to execute the Pause request: {0},执行暂停操作失败: {0}
 GUI\Strings\MainForm.zh-CN.resx,TerminateForExitQuestion,updated,"Duplicati is attempting to quit, but a backup is running.
 Do you want Duplicati to continue waiting for the backup to stop?","Duplicati尝试退出，但是还有一个备份在运行.
-你想让Duplicati等备份结束后再退出吗?"
+您想让Duplicati等备份结束后再退出吗?"
 GUI\Strings\MainForm.zh-CN.resx,TrayStatusPause,updated,Duplicati is currently paused,Duplicati 暂停
 GUI\Strings\MainForm.zh-CN.resx,TrayStatusReady,updated,Duplicati is ready,Duplicati 开始
 GUI\Strings\MainForm.zh-CN.resx,TrayStatusRunning,updated,Duplicati is running {0},Duplicati 正在执行 {0}
@@ -525,12 +525,12 @@ GUI\Strings\TrayIconWrapper.zh-CN.resx,GtkNotFoundError,updated,Unable to locate
 GUI\Strings\TrayIconWrapper.zh-CN.resx,GtkTooOldError,updated,"Gtk found, but it has version {0} and must be at least {1}",找到了gtk，但版本是 {0} ，至少需要版本 {1}
 GUI\Strings\WizardHandler.zh-CN.resx,ResumeNowQuestion,updated,"Duplicati is currently paused, so the backup won't run until Duplicati is resumed.
 Do you want Duplicati to resume now so the backup can run immediately?","Duplicati已暂停，直到Duplicati恢复才会继续备份。
-你是否要恢复Duplicati让备份继续运行？"
+您是否要恢复Duplicati让备份继续运行？"
 GUI\Strings\WizardHandler.zh-CN.resx,SetupRestoreSuccess,updated,The previous Duplicati setup is now restored!,之前的Duplicati配置已经恢复！
 GUI\Strings\WizardHandler.zh-CN.resx,StopBackupError,updated,An error occured while attempting to stop the running backup: {0},停止备份时出错: {0}
 GUI\Strings\WizardHandler.zh-CN.resx,StopRunningBackupQuestion,updated,"The backup you want to delete is currently running.
-Do you want to stop it so the delete can proceed?","你要删除的备份正在运行。
-你是否要停止然后删除它?"
+Do you want to stop it so the delete can proceed?","您要删除的备份正在运行。
+您是否要停止然后删除它?"
 GUI\Strings\WizardHandler.zh-CN.resx,UnableToStopBackupError,updated,"Duplicati attempted to stop the backup, but did not succeed.
 Press ""Finish"" to attempt the delete again.","Duplicati尝试停止备份，但是没有成功。
 点击""完成""按钮来尝试再次删除。"
@@ -587,18 +587,18 @@ GUI\Wizard pages\Add backup\SelectWhen.zh-CN.resx,NeverFullRadio.Text,updated,"A
 GUI\Wizard pages\Add backup\SelectWhen.zh-CN.resx,NoScheduleRadio.Text,updated,"Never run automatically, only run when I manually start it (not recommended)",从不自动运行，只手动开始备份（不推荐）
 GUI\Wizard pages\Add backup\SelectWhen.zh-CN.resx,ScheduleRadio.Text,updated,Run backup at specified interval (recommended),在所选的周期执行备份（推荐）
 GUI\Wizard pages\Add backup\SettingOverrides.zh-CN.resx,dataGridViewTextBoxColumn1.HeaderText,updated,argument,自变量
-GUI\Wizard pages\Add backup\Strings\AdvancedOptions.zh-CN.resx,PageDescription,updated,"On this page you can select more advanced settings for your backup. If you prefer, you can ignore those settings, and use the duplicati defaults.",在这个页面中你可以选择更多的高级备份设置。如果你喜欢，你可以忽略这些设置，直接使用Duplicati的默认值。
+GUI\Wizard pages\Add backup\Strings\AdvancedOptions.zh-CN.resx,PageDescription,updated,"On this page you can select more advanced settings for your backup. If you prefer, you can ignore those settings, and use the duplicati defaults.",在这个页面中您可以选择更多的高级备份设置。如果您喜欢，您可以忽略这些设置，直接使用Duplicati的默认值。
 GUI\Wizard pages\Add backup\Strings\AdvancedOptions.zh-CN.resx,PageTitle,updated,Advanced settings,高级设置
 GUI\Wizard pages\Add backup\Strings\CleanupSettings.zh-CN.resx,DisabledCleanupWarning,updated,"You have disabled backup removal. If no backups are removed, the amount of stored data will increase forever.
 Disabling backup cleanup may result in storage space being exhausted.
-Do you want to continue without backup removal backups?",你已经禁止删除备份。如果不删除备份，存储量会一直增长。禁止备份清除将会引起存储空间用尽。你确信要禁止删除备份吗？
+Do you want to continue without backup removal backups?",您已经禁止删除备份。如果不删除备份，存储量会一直增长。禁止备份清除将会引起存储空间用尽。您确信要禁止删除备份吗？
 GUI\Wizard pages\Add backup\Strings\CleanupSettings.zh-CN.resx,PageDescription,updated,"To ensure that backups do not grow indefinately, Duplicati can automatically remove old backups.",为了保证备份无限增长，Duplicati可以自动删除旧备份。
 GUI\Wizard pages\Add backup\Strings\CleanupSettings.zh-CN.resx,PageTitle,updated,Select cleanup options,选择清除选项
 GUI\Wizard pages\Add backup\Strings\CleanupSettings.zh-CN.resx,TooShortCleanupDurationDay,updated,The cleanup duration entered is less than 1 day. This will give very poor system performance.,输入的清除周期小于1天，这将会大大降低系统效率。
 GUI\Wizard pages\Add backup\Strings\CleanupSettings.zh-CN.resx,TooShortFullDuration,updated,The full backup duration entered is less than ten minutes. This will give very poor system performance.,输入的完整备份周期小于10分钟，这将会大大降低系统效率。
-GUI\Wizard pages\Add backup\Strings\EditFilters.zh-CN.resx,PageDescription,updated,On this page you can modify filters that control what files are included in the backup.,在本页中你可以修改过滤器，改变备份包含的文件。
+GUI\Wizard pages\Add backup\Strings\EditFilters.zh-CN.resx,PageDescription,updated,On this page you can modify filters that control what files are included in the backup.,在本页中您可以修改过滤器，改变备份包含的文件。
 GUI\Wizard pages\Add backup\Strings\EditFilters.zh-CN.resx,PageTitle,updated,Edit filters,编辑过滤器
-GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,PageDescription,updated,"You have now entered all the required data, and can now create the backup.",你已经输入了所有需要的数据，现在可以创建备份了。
+GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,PageDescription,updated,"You have now entered all the required data, and can now create the backup.",您已经输入了所有需要的数据，现在可以创建备份了。
 GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,PageDescriptionModify,updated,The backup modifications are now ready to be saved.,备份的修改可以存储了。
 GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,PageTitle,updated,Ready to add backup,可以添加备份
 GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,PageTitleModify,updated,Ready to save changes,可以保存修改
@@ -612,8 +612,8 @@ GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,SummaryKeepFullBackup
 GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,SummaryRepeat,updated,Repeat,重复
 GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,SummarySourceFolder,updated,Source folder,源文件夹
 GUI\Wizard pages\Add backup\Strings\FinishedAdd.zh-CN.resx,SummaryWhen,updated,When,何时
-GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,ChangePasswordQuestion,updated,Are you sure you want to change the current password to a new random one?,你确信将当前密码修改为一个随机密码吗？
-GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,EmptyPasswordError,updated,"You must enter a password, remove the check mark next to the box to disable encryption of the backups.",你必须输入一个密码，删除下面的选择项来取消备份加密。
+GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,ChangePasswordQuestion,updated,Are you sure you want to change the current password to a new random one?,您确信将当前密码修改为一个随机密码吗？
+GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,EmptyPasswordError,updated,"You must enter a password, remove the check mark next to the box to disable encryption of the backups.",您必须输入一个密码，删除下面的选择项来取消备份加密。
 GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,EnablePasswordRestoreText,updated,Backup is protected with password,备份已经用密码加密。
 GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,EncryptionModuleLoadError,updated,Failed to load the encryption modules: {0},加载加密模块出错: {0}
 GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,NewGeneratedPasswordWarning,updated,"You have generated a new random password.
@@ -622,34 +622,34 @@ Without this password, you will not be able to recover a single file from the ba
 
 You cannot recover the password from within Duplicati after saving this setup.
 
-Are you sure you have a safely stored copy of the generated password?","你已经生成了一个新的随机密码。
-请记录密码并保存在一个安全的地方。没有这个密码，你将无法恢复任何一个文件！
+Are you sure you have a safely stored copy of the generated password?","您已经生成了一个新的随机密码。
+请记录密码并保存在一个安全的地方。没有这个密码，您将无法恢复任何一个文件！
 
-保存设置后，你在Duplicati中也无法找到这个密码。
+保存设置后，您在Duplicati中也无法找到这个密码。
 
-你确信已经安全的保存好生成的密码了吗？"
-GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,NoEncryptionMethodSelected,updated,You must select an encryption method.,你必须选择一个加密方法。
+您确信已经安全的保存好生成的密码了吗？"
+GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,NoEncryptionMethodSelected,updated,You must select an encryption method.,您必须选择一个加密方法。
 GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,NoPasswordWarning,updated,"If the backup is stored on machine or device that is not under your direct control,
 it is possible that others may view the files you have stored in the backups.
 It is highly recomended that you enable encryption.
-Do you want to continue without encryption?",如果备份是保存在一个你无法控制的机器或设备上，其他人就有可能看到您备份的文件。强烈建议您使用加密。您确实要不加密吗？
-GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,PageDescription,updated,On this page you can select options that protect your backups from being read or altered.,在这个页面中你可以设置选项以防止他人查看或者修改您的备份。
+Do you want to continue without encryption?",如果备份是保存在一个您无法控制的机器或设备上，其他人就有可能看到您备份的文件。强烈建议您使用加密。您确实要不加密吗？
+GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,PageDescription,updated,On this page you can select options that protect your backups from being read or altered.,在这个页面中您可以设置选项以防止他人查看或者修改您的备份。
 GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,PageDescriptionRestore,updated,Enter the encryption settings that were used to create the backup originally,输入备份使用的加密设置。
 GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,PageTitle,updated,Select password for the backup,选择备份的密码
 GUI\Wizard pages\Add backup\Strings\PasswordSettings.zh-CN.resx,PasswordChangedWarning,updated,"****************** WARNING ***********************
 You are modifying the password settings for an existing backup.
 If you save these changes, you will no longer be able to recover previously backed up files.
 Are you absolutely sure you want to continue?","****************** 警告 ***********************
-你可以一个已有备份的修改密码设置。
-如果你保存这些设置，你将无法恢复之前备份的文件。
-你确信要这样做吗？"
+您可以一个已有备份的修改密码设置。
+如果您保存这些设置，您将无法恢复之前备份的文件。
+您确信要这样做吗？"
 GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,CalculatingSize,updated,Calculating size ...,计算大小 ...
 GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,CalculatingSizeMarker,not-updated,(...),(...)
 GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,DuplicateFolderError,updated,"The folder ""{0}"" is included twice","文件夹 ""{0}"" 被包含了两次"
 GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,FinalSizeCalculated,updated,The selected items take up {0} of space,所选的项目占用了 {0} 空间
 GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,FolderDoesNotExistWarning,updated,"The folder ""{0}"" does not exist.
 How do you want to proceed?","文件夹 ""{0}"" 不存在。
-你想继续吗?"
+您想继续吗?"
 GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,NoFilesSelectedError,updated,You have not included any files.,您没有选中要备份的文件
 GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,PageDescription,updated,On this page you must select the folder and files you wish to backup,请选择您要备份的文件和目录
 GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,PageTitle,updated,Select files to backup,请选择要备份的文件
@@ -659,42 +659,42 @@ GUI\Wizard pages\Add backup\Strings\SelectFiles.zh-CN.resx,UpgradeWarning,update
 If you save the backup settings, the internal storage will be change to the new version.
 Please verify the content of the backup after the next run to ensure
 that it contains the files and folders that you expect.","设置是从一个旧版的Duplicati中加载的。
-如果你保持设置，内部存储将会变为新版本。在下次运行后请检查一下备份中是否有您的文件和文件夹。"
+如果您保持设置，内部存储将会变为新版本。在下次运行后请检查一下备份中是否有您的文件和文件夹。"
 GUI\Wizard pages\Add backup\Strings\SelectName.zh-CN.resx,DuplicateNameEnteredError,updated,There already exists a backup with that name,已经有一个同名的备份存在
 GUI\Wizard pages\Add backup\Strings\SelectName.zh-CN.resx,InvalidNameEnteredError,updated,Failed to validate the backup name: {0},备份验证失败: {0}
-GUI\Wizard pages\Add backup\Strings\SelectName.zh-CN.resx,NoNameEnteredError,updated,You must enter a name for the backup,你必须输入一个备份名称
-GUI\Wizard pages\Add backup\Strings\SelectName.zh-CN.resx,PageDescription,updated,"On this page you can enter a name for the backup, so you can find and modify it later",在这里你可以输入一个备份的名称，这样以后你可以找到并修改它
+GUI\Wizard pages\Add backup\Strings\SelectName.zh-CN.resx,NoNameEnteredError,updated,You must enter a name for the backup,您必须输入一个备份名称
+GUI\Wizard pages\Add backup\Strings\SelectName.zh-CN.resx,PageDescription,updated,"On this page you can enter a name for the backup, so you can find and modify it later",在这里您可以输入一个备份的名称，这样以后您可以找到并修改它
 GUI\Wizard pages\Add backup\Strings\SelectName.zh-CN.resx,PageTitle,updated,Enter a name for the backup,输入备份的名称
 GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,FullDurationShorterThanScheduleDurationError,updated,The interval between each full backup must be larger than the schedule interval.,完整备份的周期必须大于计划的周期
 GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,NoScheduleWarning,updated,"You have selected not to run the backup automatically.
 This means that you have to remember to manually start the backup periodically.
 
-Are you sure this is what you want?","你选择了不自动运行备份。
-这意味着你必须定期手动运行备份。
+Are you sure this is what you want?","您选择了不自动运行备份。
+这意味着您必须定期手动运行备份。
 
-你确信这样吗？"
+您确信这样吗？"
 GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,OnlyFullBackupsWarning,updated,"You have selected to only produce full backups.
 This may take up a lot of space on the backend.
 
-Are you sure this is what you want?","你选择了只进行完整备份。
+Are you sure this is what you want?","您选择了只进行完整备份。
 这将占用后台的大量空间。
 
-你确信这样吗？"
+您确信这样吗？"
 GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,OnlyIncrementalBackupsWarning,updated,"You have selected to only produce incremental backups.
 This may result in very lengthy restore operations, and increases the probability of a restore failure.
 
-Are you sure this is what you want?","你选择了只进行增量备份。
+Are you sure this is what you want?","您选择了只进行增量备份。
 这样将导致还原的时间过长，甚至增加还原失败的概率。
 
-你确信这样吗？"
-GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,PageDescription,updated,"On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.",在这里你可以设置备份运行的时间。设置为自动运行将不需要你的任何操作就可以定期备份。
+您确信这样吗？"
+GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,PageDescription,updated,"On this page you may set up when the backup is run. Automatically repeating the backup ensure that you have a backup, without requiring any action from you.",在这里您可以设置备份运行的时间。设置为自动运行将不需要您的任何操作就可以定期备份。
 GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,PageTitle,updated,Select when the backup should run,选择备份运行的时间
-GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,TimeIsInThePastWarning,updated,The time you entered is in the past.,你输入的是过去的时间。
-GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,TimeOccursShortlyWarning,updated,The time you entered will occur shortly.,你输入的时间马上就到了。
+GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,TimeIsInThePastWarning,updated,The time you entered is in the past.,您输入的是过去的时间。
+GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,TimeOccursShortlyWarning,updated,The time you entered will occur shortly.,您输入的时间马上就到了。
 GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,TooManyIncrementalsWarning,updated,"The settings you have selected will result in {0} incremental backups being created between each full backup.
 This can result in very lengthy restore operations, and increases the probability of a restore failure.
 
-Do you want to keep these settings?",你选择的设置将导致每次全部备份之间有{0}次增量备份。这样会导致还原时间过长，并且增加还原失败的概率。你确信要这样设置吗？
+Do you want to keep these settings?",您选择的设置将导致每次全部备份之间有{0}次增量备份。这样会导致还原时间过长，并且增加还原失败的概率。您确信要这样设置吗？
 GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,TooShortFullDurationError,updated,The interval between full backups must be more than {0} minutes.,完整备份的周期必须大于{0}分钟。
 GUI\Wizard pages\Add backup\Strings\SelectWhen.zh-CN.resx,TooShortScheduleDurationError,updated,The schedule interval must be more than {0} minutes.,计划的周期必须大于{0}分钟。
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.zh-CN.resx,BackendLoadError,updated,An error occured while loading backend settings: {0},加载后台设置时出错: {0}
@@ -703,7 +703,7 @@ GUI\Wizard pages\Add backup\Strings\SettingOverrides.zh-CN.resx,EncryptionLoadEr
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.zh-CN.resx,GenericModuleLoadError,updated,An error occured while loading generic module settings: {0},加载一般模块设置时出错: {0}
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.zh-CN.resx,PageDescription,updated,"On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!",在这里您可以重载所有Duplicati的默认设置。这需要高级技巧，请三思！
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.zh-CN.resx,PageTitle,updated,Override settings,重载设置
-GUI\Wizard pages\Add backup\Strings\ThrottleOptions.zh-CN.resx,PageDescription,updated,On this page you may select limits that prevent the backup procedure from using too many resources,在这里你可以选择限制以防止备份进程占用过多资源
+GUI\Wizard pages\Add backup\Strings\ThrottleOptions.zh-CN.resx,PageDescription,updated,On this page you may select limits that prevent the backup procedure from using too many resources,在这里您可以选择限制以防止备份进程占用过多资源
 GUI\Wizard pages\Add backup\Strings\ThrottleOptions.zh-CN.resx,PageTitle,updated,Select how to limit the backup,选择如何限制备份
 GUI\Wizard pages\Add backup\ThrottleOptions.zh-CN.resx,AsyncEnabled.Text,updated,Upload asyncronosly,异步上传
 GUI\Wizard pages\Add backup\ThrottleOptions.zh-CN.resx,BackupLimitEnabled.Text,updated,Each backup size limit ,每个备份的大小限制
@@ -712,14 +712,14 @@ GUI\Wizard pages\Backends\RawContainer.zh-CN.resx,label1.Text,updated,Destinatio
 GUI\Wizard pages\Delete backup\DeleteFinished.zh-CN.resx,label1.Text,updated,Summary,总结
 GUI\Wizard pages\Delete backup\DeleteFinished.zh-CN.resx,label2.Text,updated,Warning: You cannot restore the files after the backup is deleted!!!,警告：删除备份后您将无法恢复文件。
 GUI\Wizard pages\Delete backup\DeleteFinished.zh-CN.resx,label3.Text,updated,"Note that the actual files will not be removed from the storage backend, you must remove the files manually.",请注意文件不会从存储后台中删除，您必须手工删除。
-GUI\Wizard pages\Delete backup\Strings\DeleteFinished.zh-CN.resx,PageDescription,updated,You are now ready to delete the backup. Please note that you cannot restore the backup ever again,你现在即将删除备份，请注意您将再也无法恢复该备份。
+GUI\Wizard pages\Delete backup\Strings\DeleteFinished.zh-CN.resx,PageDescription,updated,You are now ready to delete the backup. Please note that you cannot restore the backup ever again,您现在即将删除备份，请注意您将再也无法恢复该备份。
 GUI\Wizard pages\Delete backup\Strings\DeleteFinished.zh-CN.resx,PageTitle,updated,Delete backup,删除备份
 GUI\Wizard pages\Delete backup\Strings\DeleteFinished.zh-CN.resx,SummaryText,updated,"Action: Delete backup
 Name: {0}",操作：删除备份 名称: {0}
 GUI\Wizard pages\FirstLaunch.zh-CN.resx,CreateNew.Text,updated,Setup a new backup,创建一个新的备份
 GUI\Wizard pages\FirstLaunch.zh-CN.resx,RestoreFiles.Text,updated,Restore files from a backup,从一个备份中还原文件
 GUI\Wizard pages\FirstLaunch.zh-CN.resx,RestoreFilesHelp.Text,updated,"You do not want to set up Duplicati, but just want to restore some files",不对Duplicati进行配置，只是恢复文件
-GUI\Wizard pages\FirstLaunch.zh-CN.resx,RestoreSettingsHelp.Text,updated,"You have used Duplicati before, and want to restore your setup",你以前使用过Duplicati，现在恢复之前的设置
+GUI\Wizard pages\FirstLaunch.zh-CN.resx,RestoreSettingsHelp.Text,updated,"You have used Duplicati before, and want to restore your setup",您以前使用过Duplicati，现在恢复之前的设置
 GUI\Wizard pages\FirstLaunch.zh-CN.resx,RestoreSetup.Text,updated,Restore settings from a previous Duplicati installation,将Duplicati的设置还原为以前的一个配置
 GUI\Wizard pages\FirstLaunch.zh-CN.resx,SetupNewBackupHelp.Text,updated,"You have not used Duplicati before, or want to start over",您还没有使用过Duplicati，或者想创建一个新的备份
 GUI\Wizard pages\FirstLaunch.zh-CN.resx,SimpleHelpHeader.Text,updated,"Select one of the options below, and click next",选择您要使用的备份方式，然后点击下一步
@@ -729,7 +729,7 @@ GUI\Wizard pages\MainPage.zh-CN.resx,donate_button.ToolTip,updated,"Show your ap
 GUI\Wizard pages\MainPage.zh-CN.resx,donate_link.Text,updated,Support Duplicati,支持Duplicati
 GUI\Wizard pages\MainPage.zh-CN.resx,donate_link.ToolTip,updated,"Show your appreciation by donating, any amount is accepted",如果您觉得本软件好用，请捐助我们，多少随意
 GUI\Wizard pages\MainPage.zh-CN.resx,Edit.Text,updated,Edit an existing backup,编辑一个已经存在的备份
-GUI\Wizard pages\MainPage.zh-CN.resx,label1.Text,updated,What do you want to do?,你想做什么？
+GUI\Wizard pages\MainPage.zh-CN.resx,label1.Text,updated,What do you want to do?,您想做什么？
 GUI\Wizard pages\MainPage.zh-CN.resx,Remove.Text,updated,Remove an existing backup,删除一个已经存在的备份
 GUI\Wizard pages\MainPage.zh-CN.resx,Restore.Text,updated,Restore files from a backup,使用备份还原文件
 GUI\Wizard pages\Restore\FinishedRestore.zh-CN.resx,label1.Text,updated,Summary,总结
@@ -770,7 +770,7 @@ GUI\Wizard pages\Restore\TargetFolder.zh-CN.resx,folderBrowserDialog.Description
 GUI\Wizard pages\Restore\TargetFolder.zh-CN.resx,label2.Text,updated,Restore to this folder,还原到这个目录
 GUI\Wizard pages\Restore\TargetFolder.zh-CN.resx,PartialRestore.Text,updated,Restore only the items selected below,只还原选择的项目
 GUI\Wizard pages\RestoreSetup\FinishedRestoreSetup.zh-CN.resx,label1.Text,updated,Summary,总结
-GUI\Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.zh-CN.resx,PageDescription,updated,"You have now entered all the required data, and can now restore the setup.",你已经输入了所有必须的数据，现在可以恢复设置了。
+GUI\Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.zh-CN.resx,PageDescription,updated,"You have now entered all the required data, and can now restore the setup.",您已经输入了所有必须的数据，现在可以恢复设置了。
 GUI\Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.zh-CN.resx,PageTitle,updated,Ready to restore settings,准备好恢复设置
 GUI\Wizard pages\RestoreSetup\Strings\FinishedRestoreSetup.zh-CN.resx,RestoreFailedError,updated,"Failed to restore setup files, the error message was:
  {0}","恢复设置失败，错误信息:
@@ -788,7 +788,7 @@ GUI\Wizard pages\RunNow\Strings\RunNowFinished.zh-CN.resx,PageTitle,updated,Read
 GUI\Wizard pages\RunNow\Strings\RunNowFinished.zh-CN.resx,SummaryText,updated,"Action: Run backup now
 Name: {0}","操作：运行备份
 名称: {0}"
-GUI\Wizard pages\SelectBackend.zh-CN.resx,Question.Text,updated,Where do you want to store the backups?,你想把备份存储到什么地方？
+GUI\Wizard pages\SelectBackend.zh-CN.resx,Question.Text,updated,Where do you want to store the backups?,您想把备份存储到什么地方？
 GUI\Wizard pages\SelectBackup.zh-CN.resx,DirectRestore.Text,updated,Restore files directly,直接恢复文件
 GUI\Wizard pages\SelectBackup.zh-CN.resx,RestoreExisting.Text,updated,Restore from an existing backup,从一个已有的备份中还原
 GUI\Wizard pages\SelectBackup.zh-CN.resx,ShowAdvanced.Text,updated,Show advanced options,显示高级选项
@@ -873,12 +873,12 @@ Library\Backend\File\Strings\FileBackend.zh-CN.resx,AlternateDestinationMarkerLo
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,AlternateDestinationMarkerShort,updated,Look for a file in the destination folder,在目标文件夹中寻找文件
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,AlternateTargetPathsLong,updated,"This option allows multiple targets to be specified. The primary target path is placed before the list of paths supplied with this option. Before starting the backup, each folder in the list is checked for existence and optionally the presence of the marker file supplied by --{0}. The first existing path that optionally contains the marker file is then used as the destination. Multiple destinations are separated with a {1},. On Windows, the path may be a UNC path, and the drive letter may be substituted with an asterisk (*), eg.: ""*:\backup"", which will examine all drive letters. If a username and password is supplied, the same credentials are used for all destinations.",这个选项允许指定多个备份对象。主要对象放在这个选项的路径列表之前。在开始备份之前，每个备份对象都会被检查一遍，如果选择了选项—{0}，定位文件也会被检查。第一个包含定位文件的文件夹会被当作目的地。多个目的地会被{1}隔开。在windows系统中，路径可以是UNC路径，并且盘符可以用*号替代，比如“*:\backup”，这样会检测所有的盘符。如果指定了用户名和密码，将会被用于所有的目的地。
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,AlternateTargetPathsShort,updated,A list of secondary target paths,次要备份对象列表
-Library\Backend\File\Strings\FileBackend.zh-CN.resx,Description,updated,"This backend can read and write data to an file based backend. Allowed formats are ""file://hostname/folder"" or ""file://username:password@hostname/folder"". You may supply UNC paths (eg: ""file://\\server\folder"") or local paths (eg: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files"")","这个后台可以读写数据到一个文件对象。允许的格式是： ""file://hostname/folder"" or ""file://username:password@hostname/folder"". 你可以使用UNC路径(eg: ""file://\\server\folder"")或者本地路径 (eg: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files"")"
+Library\Backend\File\Strings\FileBackend.zh-CN.resx,Description,updated,"This backend can read and write data to an file based backend. Allowed formats are ""file://hostname/folder"" or ""file://username:password@hostname/folder"". You may supply UNC paths (eg: ""file://\\server\folder"") or local paths (eg: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files"")","这个后台可以读写数据到一个文件对象。允许的格式是： ""file://hostname/folder"" or ""file://username:password@hostname/folder"". 您可以使用UNC路径(eg: ""file://\\server\folder"")或者本地路径 (eg: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files"")"
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,DescriptionFTPPasswordLong,updated,"The password used to connect to the server. This may also be supplied as the environment variable ""FTP_PASSWORD"".","用于连接服务器的密码，也可以通过系统环境变量 ""FTP_PASSWORD""来提供。"
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,DescriptionFTPPasswordShort,updated,Supplies the password used to connect to the server,提供连接服务器的密码
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,DescriptionFTPUsernameLong,updated,"The username used to connect to the server. This may also be supplied as the environment variable ""FTP_USERNAME"".","用于连接服务器的用户名，也可以通过系统环境变量""FTP_USERNAME""来提供。"
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,DescriptionFTPUsernameShort,updated,Supplies the username used to connect to the server,提供连接服务器的用户名
-Library\Backend\File\Strings\FileBackend.zh-CN.resx,DisplayName,updated,File based,基于文件
+Library\Backend\File\Strings\FileBackend.zh-CN.resx,DisplayName,updated,File based,文件服务器
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,FolderMissingError,updated,The folder {0} does not exist,文件夹{0}不存在
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,NoDestinationWithMarkerFileError,updated,"The marker file ""{0}"" was not found in any of the examined destinations: {1}","定位文件 ""{0}""在下列地址中都没有找到: {1}"
 Library\Backend\File\Strings\FileBackend.zh-CN.resx,UseMoveForPutLong,updated,"When storing the file, the standard operation is to copy the file and delete the original. This sequence ensures that the operation can be retried if something goes wrong. Activating this option may cause the retry operation to fail.  This option has no effect unless the --disable-streaming-transfers options is activated.",当存储文件时，标准的操作是先拷贝文件，然后再删除原始文件。这个顺序可以保证当错误发生时可以恢复操作。激活这个选项会导致retry操作失败。这个选项只有在 –disable-streaming-transfers选项激活时才有效。
@@ -897,7 +897,7 @@ Library\Backend\File\Strings\FileUI.zh-CN.resx,PageTitle,updated,Backup storage 
 Library\Backend\FTP\FTPUI.zh-CN.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,接受无效证书
 Library\Backend\FTP\FTPUI.zh-CN.resx,AcceptSpecifiedHash.Text,updated,Accept this certificate hash,接受这个证书摘要
 Library\Backend\FTP\FTPUI.zh-CN.resx,CreateFolderButton.Text,updated,Create folder,创建文件夹
-Library\Backend\FTP\FTPUI.zh-CN.resx,label1.Text,updated,Server,服务器
+Library\Backend\FTP\FTPUI.zh-CN.resx,label1.Text,updated,Server,服务器IP
 Library\Backend\FTP\FTPUI.zh-CN.resx,label2.Text,updated,Path,路径
 Library\Backend\FTP\FTPUI.zh-CN.resx,label3.Text,updated,Username,用户名
 Library\Backend\FTP\FTPUI.zh-CN.resx,label4.Text,updated,Password,密码
@@ -918,7 +918,7 @@ Library\Backend\FTP\Strings\FTPBackend.zh-CN.resx,DescriptionIntegratedAuthentic
 Library\Backend\FTP\Strings\FTPBackend.zh-CN.resx,DescriptionIntegratedAuthenticationShort,updated,Use windows integrated authentication to connect to the server,使用windows集成认证连接到服务器
 Library\Backend\FTP\Strings\FTPBackend.zh-CN.resx,DescriptionUseSSLLong,updated,Use this flag to communicate using Secure Socket Layer (SSL) over ftp (ftps).,使用基于 (SSL) 的ftp (ftps)
 Library\Backend\FTP\Strings\FTPBackend.zh-CN.resx,DescriptionUseSSLShort,updated,Instructs Duplicati to use an SSL (ftps) connection,设置 Duplicati使用 (ftps) 连接
-Library\Backend\FTP\Strings\FTPBackend.zh-CN.resx,DisplayName,updated,FTP based,基于FTP
+Library\Backend\FTP\Strings\FTPBackend.zh-CN.resx,DisplayName,updated,FTP based,FTP服务器
 Library\Backend\FTP\Strings\FTPBackend.zh-CN.resx,MissingFolderError,updated,"The folder {0} was not found, message: {1}",文件夹 {0}没有找到，错误信息是： {1}
 Library\Backend\FTP\Strings\FTPUI.zh-CN.resx,ApproveCertificateHashQuestion,updated,The certificate was not valid ({0}). Do you want to approve the certificate anyway and retry?,证书错误 ({0})。您想接受证书并继续吗？
 Library\Backend\FTP\Strings\FTPUI.zh-CN.resx,CreateMissingFolderQuestion,updated,"The folder does not exist, do you want to create it?",文件夹不存在，您想创建它吗？
@@ -1001,7 +1001,7 @@ to open the AWS login page, and retrieve it.","请输入您的 AWS 用户密码�
 您可以点击右边的链接，打开AWS登陆页面，找回您的用户密码。"
 Library\Backend\S3\Strings\S3UI.zh-CN.resx,EmptyBucketnameError,updated,"You must enter a name for the bucket.
 You must use a unique name for each backup.
-You may enter any name you like.",您必须输入bucket的名称。您必须为每个备份使用一个唯一的名称。你可以输入任意喜欢的名字。
+You may enter any name you like.",您必须输入bucket的名称。您必须为每个备份使用一个唯一的名称。您可以输入任意喜欢的名字。
 Library\Backend\S3\Strings\S3UI.zh-CN.resx,HostnameInvalidWarning,updated,"The supplied bucket name, ""{0}"", does not appear to be a valid hostname label. 
 This may still work if the non-subdomain calling style is used, but it is not recommended.
 
@@ -1026,7 +1026,7 @@ Library\Backend\SSH\SSHUI.zh-CN.resx,BrowseForKeyFileButton.Text,not-updated,...
 Library\Backend\SSH\SSHUI.zh-CN.resx,CreateFolderButton.Text,updated,Create folder,创建文件夹
 Library\Backend\SSH\SSHUI.zh-CN.resx,GenerateDebugOutput.Text,updated,Generate debug output,生成debug输出
 Library\Backend\SSH\SSHUI.zh-CN.resx,Keyfilelabel.Text,updated,Keyfile,密钥文件
-Library\Backend\SSH\SSHUI.zh-CN.resx,label1.Text,updated,Server,服务器
+Library\Backend\SSH\SSHUI.zh-CN.resx,label1.Text,updated,Server,服务器IP
 Library\Backend\SSH\SSHUI.zh-CN.resx,label2.Text,updated,Path,路径
 Library\Backend\SSH\SSHUI.zh-CN.resx,label3.Text,updated,Username,用户名
 Library\Backend\SSH\SSHUI.zh-CN.resx,label5.Text,updated,Port (optional),端口（可选）
@@ -1071,7 +1071,7 @@ Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,DescriptionTransferTimeoutLong
 Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,DescriptionTransferTimeoutShort,updated,Sets the timeout for transfering a file,设置传输文件的超时时间
 Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,DescriptionUnmanagedLong,updated,Set this flag to use the sftp command from --sftp-command to communicate with the server. Setting this flag also requires that --disable-streaming-transfers is set,设置此项来使用sftp命令来与服务器通信。设置此项需要同时选择—disable-streaming-transfers选项。
 Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,DescriptionUnmanagedShort,updated,Use an external sftp application,使用外部sftp程序
-Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,DisplayName,updated,SSH based,基于SSH
+Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,DisplayName,updated,SSH based,SSH服务器
 Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,DownloadTimeoutError,updated,Timeout while downloading file,下载文件的超时时间
 Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,FolderNotFoundError,updated,"Folder not found: {0}, log: {1}",文件夹没有找到: {0}，日志: {1}
 Library\Backend\SSH\Strings\SSHBackend.zh-CN.resx,FolderNotFoundManagedError,updated,"Unable to set folder to {0}, error message: {1}","无法设置文件夹到 {0}, 错误信息: {1}"
@@ -1157,7 +1157,7 @@ Library\Backend\TahoeLAFS\Strings\TahoeUI.zh-CN.resx,PageTitle,updated,Backup st
 Library\Backend\TahoeLAFS\TahoeUI.zh-CN.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,接受无效证书
 Library\Backend\TahoeLAFS\TahoeUI.zh-CN.resx,AcceptSpecifiedHash.Text,updated,Accept this certificate hash,接受这个证书摘要
 Library\Backend\TahoeLAFS\TahoeUI.zh-CN.resx,CreateFolderButton.Text,updated,Create folder,创建文件夹
-Library\Backend\TahoeLAFS\TahoeUI.zh-CN.resx,label1.Text,updated,Server,服务器
+Library\Backend\TahoeLAFS\TahoeUI.zh-CN.resx,label1.Text,updated,Server,服务器地址
 Library\Backend\TahoeLAFS\TahoeUI.zh-CN.resx,label2.Text,updated,Path,路径
 Library\Backend\TahoeLAFS\TahoeUI.zh-CN.resx,label5.Text,updated,Port (optional),端口（可选）
 Library\Backend\TahoeLAFS\TahoeUI.zh-CN.resx,TestConnection.Text,updated,Test connection,测试连接
@@ -1175,7 +1175,7 @@ Library\Backend\WEBDAV\Strings\WEBDAV.zh-CN.resx,DescriptionIntegratedAuthentica
 Library\Backend\WEBDAV\Strings\WEBDAV.zh-CN.resx,DescriptionIntegratedAuthenticationShort,updated,Use windows integrated authentication to connect to the server,使用windows集成认证来连接到服务器
 Library\Backend\WEBDAV\Strings\WEBDAV.zh-CN.resx,DescriptionUseSSLLong,updated,Use this flag to communicate using Secure Socket Layer (SSL) over http (https).,使用这个选项来使用基于SSL的http（https）
 Library\Backend\WEBDAV\Strings\WEBDAV.zh-CN.resx,DescriptionUseSSLShort,updated,Instructs Duplicati to use an SSL (https) connection,设置Duplicati使用SSL（https）连接
-Library\Backend\WEBDAV\Strings\WEBDAV.zh-CN.resx,DisplayName,updated,WEBDAV based,基于WEBDAV
+Library\Backend\WEBDAV\Strings\WEBDAV.zh-CN.resx,DisplayName,updated,WEBDAV based,WEBDAV服务器
 Library\Backend\WEBDAV\Strings\WEBDAV.zh-CN.resx,MissingFolderError,updated,"The folder {0} was not found, message: {1}",文件夹{0} 没有找到，错误: {1}
 Library\Backend\WEBDAV\Strings\WEBDAV.zh-CN.resx,SeenThenNotFoundError,updated,"When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.
 This can be because the file is deleted or unavailable, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.
@@ -1286,17 +1286,17 @@ Library\Interface\Strings\Common.zh-CN.resx,ConnectionSuccess,updated,Connection
 Library\Interface\Strings\Common.zh-CN.resx,DefaultDirectoryWarning,updated,You have not entered a path. This will store all backups in the default directory. Is this what you want?,您还没有输入一个路径。所有的备份都将存储在默认的路径中。您要继续吗？
 Library\Interface\Strings\Common.zh-CN.resx,EmptyPasswordError,updated,You must enter a password,您必须输入密码
 Library\Interface\Strings\Common.zh-CN.resx,EmptyPasswordWarning,updated,"You have not entered a password.
-Proceed without a password?",你还没有输入密码。你确信不输入密码吗？
+Proceed without a password?",您还没有输入密码。您确信不输入密码吗？
 Library\Interface\Strings\Common.zh-CN.resx,EmptyServernameError,updated,You must enter the name of the server,您必须输入一个服务器上的用户名
 Library\Interface\Strings\Common.zh-CN.resx,EmptyUsernameError,updated,You must enter a username,您必须输入一个用户名
 Library\Interface\Strings\Common.zh-CN.resx,EmptyUsernameWarning,updated,"You have not entered a username.
 This is fine if the server allows anonymous uploads, but likely a username is required
-Proceed without a username?",你还没有输入一个用户名。如果服务器允许匿名上传的话是可以的，但一般还是需要用户名。您确信不输入用户名吗？
+Proceed without a username?",您还没有输入一个用户名。如果服务器允许匿名上传的话是可以的，但一般还是需要用户名。您确信不输入用户名吗？
 Library\Interface\Strings\Common.zh-CN.resx,ExistingBackupDetectedQuestion,updated,"The connection succeeded but another backup was found in the destination folder. It is possible to configure Duplicati to store multiple backups in the same folder, but it is not recommended.
 
 Do you want to use the selected folder?","连接成功，但是在目的文件夹中发现了其他备份。Duplicati支持在同样的文件夹中存储多个备份，但是并不推荐这样做。
 
-你想继续使用这个文件夹吗？"
+您想继续使用这个文件夹吗？"
 Library\Interface\Strings\Common.zh-CN.resx,FolderAlreadyExistsError,updated,The folder cannot be created because it already exists,无法创建文件夹，因为它已经存在
 Library\Interface\Strings\Common.zh-CN.resx,FolderCreated,updated,Folder created!,文件夹已经创建
 Library\Interface\Strings\Common.zh-CN.resx,FolderMissingError,updated,The requested folder does not exist,要读取的文件夹不存在
@@ -1443,7 +1443,7 @@ Library\Main\Strings\Manifestfile.zh-CN.resx,WrongCountError,updated,"Invalid ma
 Library\Main\Strings\Options.zh-CN.resx,AllowfullremoveLong,updated,"As a precaution, the last full backup will never be removed, even if using the ""delete-all-but-n-full 0"" command. Set this option to allow removing the last backup.","作为一个预防措施，最后一个完整备份是不会被删除的，即使使用了 ""delete-all-but-n-full 0""命令。设置此选项将允许删除最后一个备份。"
 Library\Main\Strings\Options.zh-CN.resx,AllowfullremoveShort,updated,Allow removal of the all backups,允许删除所有的备份
 Library\Main\Strings\Options.zh-CN.resx,AllowsleepShort,updated,Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only),当备份和还原的间歇时，允许系统进入节能模式（只支持windows）
-Library\Main\Strings\Options.zh-CN.resx,AllowsourcefolderchangeLong,updated,"This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing.",使用这个参数将禁止检查相同的源文件夹。这仅用于单元测试，并不是为日常使用设计。请不要使用此选项，除非你知道自己在做什么。
+Library\Main\Strings\Options.zh-CN.resx,AllowsourcefolderchangeLong,updated,"This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing.",使用这个参数将禁止检查相同的源文件夹。这仅用于单元测试，并不是为日常使用设计。请不要使用此选项，除非您知道自己在做什么。
 Library\Main\Strings\Options.zh-CN.resx,AllowsourcefolderchangeShort,updated,Skip verifying the source folders,跳过验证源文件夹
 Library\Main\Strings\Options.zh-CN.resx,AsynchronousuploadDeprecated,updated,"Asynchronous upload is now default, you can turn it off by using the flag --{0}",默认是采用异步上传模式，您可以使用选项 –{0}来禁止异步上传。
 Library\Main\Strings\Options.zh-CN.resx,AsynchronousuploadfolderLong,updated,"The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes, despite the name, this also works for synchronous runs",预生成的卷将会被放在一个默认的临时目录中，使用此项将设置一个新的临时卷目录，在同步上传时此选项也有效。
@@ -1460,7 +1460,7 @@ Library\Main\Strings\Options.zh-CN.resx,CompressionmoduleLong,updated,"Duplicati
 Library\Main\Strings\Options.zh-CN.resx,CompressionmoduleShort,updated,Select what module to use for compression,选择使用哪个压缩模块
 Library\Main\Strings\Options.zh-CN.resx,CreateverificationfileLong,updated,"If the backup is encrypted, the remote backend cannot verify the backup contents without the password. If this option is activated, Duplicati stores an unencrypted file on the backend. The file is never read by Duplicati, but allows the remote server to verify the backup integrity without requiring a password. The file contains no sensitive information, only a list of files that are expected to exist on the backend and their respective hashes. This option only has an effect when creating a backup and when verifying a backup set.",如果备份是加密的，没有密码的情况下远端的后台将无法验证备份的内容。如果使用此选项，Duplicati将存储一个未加密的到后台。这个文件不会被Duplicati读取，但是允许远程的服务器在没有密码的情况下验证文件的完整性。这个文件没有包含敏感信息，只有一个文件列表和他们对应的哈希码。这个选项只在创建一个新的备份和验证一个备份集合时有效。
 Library\Main\Strings\Options.zh-CN.resx,CreateverificationfileShort,updated,Create verification file on server,在服务器上创建验证文件
-Library\Main\Strings\Options.zh-CN.resx,DebugoutputLong,updated,"Activating this option will make some error messages more verbose, which may help you track down a particular issue",激活此选项将显示更多错误信息，这将有助于你跟踪某些特定的问题。
+Library\Main\Strings\Options.zh-CN.resx,DebugoutputLong,updated,"Activating this option will make some error messages more verbose, which may help you track down a particular issue",激活此选项将显示更多错误信息，这将有助于您跟踪某些特定的问题。
 Library\Main\Strings\Options.zh-CN.resx,DebugoutputShort,updated,Enables debugging output,激活调试输出
 Library\Main\Strings\Options.zh-CN.resx,DebugretryerrorsLong,updated,"When an error occurs, Duplicati will silently retry, and only report the number of retries. Enable this option to have the error messages displayed when a retry is performed.",当错误发生时，dupicati将在后台重试，并显示重试的次数。激活此项将在重试时显示错误信息。
 Library\Main\Strings\Options.zh-CN.resx,DebugretryerrorsShort,updated,Show error messages when a retry is performed,当重试时显示错误信息
@@ -1484,8 +1484,8 @@ Library\Main\Strings\Options.zh-CN.resx,EncryptionmoduleLong,updated,"Duplicati 
 Library\Main\Strings\Options.zh-CN.resx,EncryptionmoduleShort,updated,Select what module to use for encryption,选择使用哪个加密模块
 Library\Main\Strings\Options.zh-CN.resx,ExcludeemptyfoldersLong,updated,"By setting this option to true, a folder which has no files that match the filter will be excluded from the backup",启用此选项后，符合过滤条件的空文件夹将会被排除
 Library\Main\Strings\Options.zh-CN.resx,ExcludeemptyfoldersShort,updated,Controls empty folder actions,控制空白文件夹的操作
-Library\Main\Strings\Options.zh-CN.resx,ExcludeLong,updated,"Exclude files that match this filter. The filter is a ""file-globbing"" filter, much like commandline options. You can use ""*.txt"" to exclude all text files.","排除符合此过滤条件的文件。这个过滤器是一个“文件替代”过滤器，更像一个命令行参数。你可以使用 ""*.txt""来排除所有文本文件。"
-Library\Main\Strings\Options.zh-CN.resx,ExcluderegexpLong,updated,"Exclude files that match this filter. The filter is a regular expression filter. You can use ""(.*)\.txt"" to exclude all text files.","排除符合此过滤条件的文件。这个过滤器是一个规则表达式。你可以使用""(.*)\.txt""来排除所有文本文件。"
+Library\Main\Strings\Options.zh-CN.resx,ExcludeLong,updated,"Exclude files that match this filter. The filter is a ""file-globbing"" filter, much like commandline options. You can use ""*.txt"" to exclude all text files.","排除符合此过滤条件的文件。这个过滤器是一个“文件替代”过滤器，更像一个命令行参数。您可以使用 ""*.txt""来排除所有文本文件。"
+Library\Main\Strings\Options.zh-CN.resx,ExcluderegexpLong,updated,"Exclude files that match this filter. The filter is a regular expression filter. You can use ""(.*)\.txt"" to exclude all text files.","排除符合此过滤条件的文件。这个过滤器是一个规则表达式。您可以使用""(.*)\.txt""来排除所有文本文件。"
 Library\Main\Strings\Options.zh-CN.resx,ExcluderegexpShort,updated,Exclude files regular expression,排除文件规则表达式
 Library\Main\Strings\Options.zh-CN.resx,ExcludeShort,updated,Exclude files,排除文件
 Library\Main\Strings\Options.zh-CN.resx,FiletorestoreLong,updated,"By default, duplicati will restore all files in the backup. Use this option to restore only a subset of the files",Duplicati默认将还原所有备份的文件。使用此选项来只恢复部分文件。
@@ -1503,8 +1503,8 @@ Library\Main\Strings\Options.zh-CN.resx,FullShort,updated,A flag used to force f
 Library\Main\Strings\Options.zh-CN.resx,GpgencryptionDeprecated,updated,Use --encryption-module=gpg instead,使用 –encryption-module=gpg来替代
 Library\Main\Strings\Options.zh-CN.resx,GpgencryptionLong,updated,"By default, Duplicati will use the AES encryption algorithm to encrypt the backup volumes, setting this flag makes Duplicati use the GNU Privacy Guard instead. GnuPG must be installed on the machine for this to work.",Duplicati默认使用AES加密算法来加密备份卷，使用此选项Duplicati将使用gnupg加密。机器中必须安装好gnupg程序才能正常工作。
 Library\Main\Strings\Options.zh-CN.resx,GpgencryptionShort,updated,Use GnuPG for encryption,使用gnupg加密
-Library\Main\Strings\Options.zh-CN.resx,IncludeLong,updated,"Include files that match this filter. The filter is a ""file-globbing"" filter, much like commandline options. You can use ""*.txt"" to include all text files.","包含符合此过滤条件的文件。这个过滤器是一个“文件替代”过滤器，更像一个命令行参数。你可以使用 ""*.txt""来包含所有文本文件。"
-Library\Main\Strings\Options.zh-CN.resx,IncluderegexpLong,updated,"Include files that match this filter. The filter is a regular expression filter. You can use ""(.*)\.txt"" to include all text files.","包含符合此过滤条件的文件。这个过滤器是一个规则表达式。你可以使用""(.*)\.txt""来包含所有文本文件。"
+Library\Main\Strings\Options.zh-CN.resx,IncludeLong,updated,"Include files that match this filter. The filter is a ""file-globbing"" filter, much like commandline options. You can use ""*.txt"" to include all text files.","包含符合此过滤条件的文件。这个过滤器是一个“文件替代”过滤器，更像一个命令行参数。您可以使用 ""*.txt""来包含所有文本文件。"
+Library\Main\Strings\Options.zh-CN.resx,IncluderegexpLong,updated,"Include files that match this filter. The filter is a regular expression filter. You can use ""(.*)\.txt"" to include all text files.","包含符合此过滤条件的文件。这个过滤器是一个规则表达式。您可以使用""(.*)\.txt""来包含所有文本文件。"
 Library\Main\Strings\Options.zh-CN.resx,IncluderegexpShort,updated,Include files regular expression,包含文件规则表达式
 Library\Main\Strings\Options.zh-CN.resx,IncludeShort,updated,Include files,包含文件
 Library\Main\Strings\Options.zh-CN.resx,ListverifyuploadsLong,updated,"Some protocols, like FTP, and some servers have problems detecting an interrupted transfer and will assume that the transfer completed, even if it did not. If this option is enabled Duplicati will list the contents of the backend after each upload and verify that the file exists and has the expected size.",有些协议，符ftp，以及有些服务器在发生传输中断时仍然假设传输完成，即使它没有完成。启用此选项，Duplicati将会在上传完成后检查后台上的文件是否存在以及大小是否正确。
@@ -1530,7 +1530,7 @@ Library\Main\Strings\Options.zh-CN.resx,OpenfilepolicyLong,updated,"If Duplicati
 Library\Main\Strings\Options.zh-CN.resx,OpenfilepolicyShort,updated,Determines how to handle open files,决定如何处理打开的文件
 Library\Main\Strings\Options.zh-CN.resx,PassphraseLong,updated,"Supply a passphrase that Duplicati will use to encrypt the backup volumes, making them unreadable without the passphrase. This variable can also be supplied through the environment variable PASSPHRASE.",提供一个密码短语，Duplicati将用来加密备份的卷，加密后的卷没有此密码将无法读取。这个变量也可以通过环境变量 PASSPHRASE来提供。
 Library\Main\Strings\Options.zh-CN.resx,PassphraseShort,updated,Passphrase used to encrypt backups,加密备份的密码短语
-Library\Main\Strings\Options.zh-CN.resx,RestoretimeLong,updated,"By default, Duplicati will restore files from the most recent backup, use this option to select another item. You may use relative times, like ""-2M"" for a backup from two months ago.",Duplicati默认会从最近的备份中恢复数据，使用此选项来选择一个其他的备份。你可以使用相对的时间，如“-2M”会读取2个月之前的备份。
+Library\Main\Strings\Options.zh-CN.resx,RestoretimeLong,updated,"By default, Duplicati will restore files from the most recent backup, use this option to select another item. You may use relative times, like ""-2M"" for a backup from two months ago.",Duplicati默认会从最近的备份中恢复数据，使用此选项来选择一个其他的备份。您可以使用相对的时间，如“-2M”会读取2个月之前的备份。
 Library\Main\Strings\Options.zh-CN.resx,RestoretimeShort,updated,The time to restore files,还原文件的时间
 Library\Main\Strings\Options.zh-CN.resx,RetrydelayLong,updated,"After a failed transmission, Duplicati will wait a short period before attempting again. This is usefull if the network drops out occasionally during transmissions.",在传输失败后，Duplicati会等待一段时间，然后再重试。这个特性在网络偶尔中断时很有用。
 Library\Main\Strings\Options.zh-CN.resx,RetrydelayShort,updated,Time to wait between retries,重试前的等待时间
@@ -1615,7 +1615,7 @@ Library\Modules\Builtin\Strings\ConsolePasswordInput.zh-CN.resx,PassphraseMismat
 Library\Modules\Builtin\Strings\HttpOptions.zh-CN.resx,Description,updated,This module exposes a number of properties that can be used to change the way http requests are issued,在这个模块中可以设置一些参数来改变http请求的处理方式
 Library\Modules\Builtin\Strings\HttpOptions.zh-CN.resx,DescriptionAcceptAnyCertificateLong,updated,"Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible.",使用此选项来接受任何服务器证书，不管发生什么错误。请尽量使用 –accept-specified-ssl-hash参数来替代。
 Library\Modules\Builtin\Strings\HttpOptions.zh-CN.resx,DescriptionAcceptAnyCertificateShort,updated,Accept any server certificate,接受任意服务器证书
-Library\Modules\Builtin\Strings\HttpOptions.zh-CN.resx,DescriptionAcceptHashLong,updated,"If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces.",如果服务器证书被报告无效（比如自签名证书），你可以输入证书摘要来确认它。输入的哈希码必须是没有空格的十六进制格式。
+Library\Modules\Builtin\Strings\HttpOptions.zh-CN.resx,DescriptionAcceptHashLong,updated,"If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces.",如果服务器证书被报告无效（比如自签名证书），您可以输入证书摘要来确认它。输入的哈希码必须是没有空格的十六进制格式。
 Library\Modules\Builtin\Strings\HttpOptions.zh-CN.resx,DescriptionAcceptHashShort,updated,Optionally accept a known SSL certificate,可选的接受一个已知的SSL证书
 Library\Modules\Builtin\Strings\HttpOptions.zh-CN.resx,DisableExpect100Long,updated,"The default HTTP request has the header ""Expect: 100-Continue"" attached, which allows some optimizations when authenticating, but also breaks some web servers, causing them to report ""417 - Expectation failed""","默认的HTTP请求中包含一个头信息： ""Expect: 100-Continue"" ，这将优化认证过程，但是也会导致某些web服务器报错： ""417 - Expectation failed"""
 Library\Modules\Builtin\Strings\HttpOptions.zh-CN.resx,DisableExpect100Short,updated,Disable the expect header,禁止expect头信息
