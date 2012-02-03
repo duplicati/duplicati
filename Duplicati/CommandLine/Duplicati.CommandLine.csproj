@@ -152,12 +152,36 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <Content Include="..\..\thirdparty\gpg\gpg.exe">
-      <Link>win-tools\gpg.exe</Link>
+    <Content Include="..\..\thirdparty\gpg\gpg2.exe">
+      <Link>win-tools\gpg2.exe</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gpg\gpg\gpg.exe">
+      <Link>win-tools\gpg\gpg.exe</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\gpg\iconv.dll">
       <Link>win-tools\iconv.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gpg\libadns-1.dll">
+      <Link>win-tools\libadns-1.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gpg\libassuan-0.dll">
+      <Link>win-tools\libassuan-0.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gpg\libgcrypt-11.dll">
+      <Link>win-tools\libgcrypt-11.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gpg\libgpg-error-0.dll">
+      <Link>win-tools\libgpg-error-0.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\gpg\zlib1.dll">
+      <Link>win-tools\zlib1.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\Putty\pscp.exe">
