@@ -12,6 +12,7 @@ Artwork:
 
 Translations:
   Brazilian, pt-BR: Gabriell Hahmann
+  Chinese, zh-CN: Born Kanas
   Danish, da-DK: Kenneth Skovhede
   French, fr-FR: Matthieu Weber
   German, de-DE: Ernst Mair, Mathias Block, DooM ElHado, Leo nowhere
