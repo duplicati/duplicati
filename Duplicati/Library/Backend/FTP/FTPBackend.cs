@@ -226,7 +226,7 @@ namespace Duplicati.Library.Backend
                     List<IFileEntry> files = List(remotename);
                     StringBuilder sb = new StringBuilder();
                     foreach(IFileEntry fe in files)
-                        if (fe.Name.Equals(remotename)) 
+                        if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename) || fe.Name.EndsWith("\\" + remotename)) 
                         {
                             if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
                                 return;
