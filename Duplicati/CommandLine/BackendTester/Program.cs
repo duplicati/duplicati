@@ -134,7 +134,10 @@ namespace Duplicati.CommandLine.BackendTester
 
                         curlist = backend.List();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Autocreate folder failed with message: " + ex.Message);
+                    }
                 }
 
                 if (curlist == null)
