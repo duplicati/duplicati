@@ -37,8 +37,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>
-    </ApplicationIcon>
+    <ApplicationIcon>Duplicati.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.ExceptionMessageBox, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL" />
@@ -285,6 +284,14 @@
       <Project>{C8F0DD19-E242-4E9C-A707-2FFADE8D7970}</Project>
       <Name>Duplicati.Scheduler.Data</Name>
     </ProjectReference>
+    <ProjectReference Include="Monitor.Oracle\Duplicati.Scheduler.Monitor.Oracle.csproj">
+      <Project>{58972ACB-FC37-404D-A842-A7B5264EAC19}</Project>
+      <Name>Duplicati.Scheduler.Monitor.Oracle</Name>
+    </ProjectReference>
+    <ProjectReference Include="Monitor.Oracle\Reports\Duplicati.Scheduler.Monitor.Oracle.Reports.csproj">
+      <Project>{99A449C5-CD35-42BF-9AB0-1F353672B832}</Project>
+      <Name>Duplicati.Scheduler.Monitor.Oracle.Reports</Name>
+    </ProjectReference>
     <ProjectReference Include="Monitor.SQL\Duplicati.Scheduler.Monitor.SQL.csproj">
       <Project>{ECA674A3-CC59-4C75-90E3-5AACA591EC5D}</Project>
       <Name>Duplicati.Scheduler.Monitor.SQL</Name>
@@ -297,6 +304,9 @@
       <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
       <Name>Duplicati.Scheduler.Utility</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Duplicati.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

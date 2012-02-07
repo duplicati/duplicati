@@ -67,7 +67,7 @@
             this.MaxAgeCheckBox = new System.Windows.Forms.CheckBox();
             this.CleanFullBackupHelptext = new System.Windows.Forms.Label();
             this.SummaryTabPage = new System.Windows.Forms.TabPage();
-            this.jobSummary1 = new Duplicati.Scheduler.Data.JobSummary();
+            this.jobSummary1 = new Duplicati.Scheduler.JobSummary();
             this.TabsImageList = new System.Windows.Forms.ImageList(this.components);
             this.BottomToolStrip = new System.Windows.Forms.ToolStrip();
             this.CanButton = new System.Windows.Forms.ToolStripButton();
@@ -1084,7 +1084,7 @@
         private System.Windows.Forms.NumericUpDown FullAfterNNumericUpDown;
         private System.Windows.Forms.NumericUpDown FullDaysNumericUpDown;
         private TaskEditControl TaskEditor;
-        private Duplicati.Scheduler.Data.JobSummary jobSummary1;
+        private Duplicati.Scheduler.JobSummary jobSummary1;
         private System.Windows.Forms.ImageList TabsImageList;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label label2;

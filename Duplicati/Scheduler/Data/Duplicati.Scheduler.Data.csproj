@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -61,12 +61,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="IMonitorPlugin.cs" />
-    <Compile Include="JobSummary.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="JobSummary.Designer.cs">
-      <DependentUpon>JobSummary.cs</DependentUpon>
-    </Compile>
     <Compile Include="SchedulerDataSet.cs">
       <DependentUpon>SchedulerDataSet.xsd</DependentUpon>
       <SubType>Component</SubType>
@@ -111,11 +105,6 @@
       <Project>{0E3DF716-5657-4B51-9BF2-3791880930E1}</Project>
       <Name>Duplicati.Scheduler.Utility</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="JobSummary.resx">
-      <DependentUpon>JobSummary.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
