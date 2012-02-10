@@ -91,16 +91,24 @@ namespace Duplicati.Scheduler
                 // If there was an error or user pressed Cancel, bail.
                 if (!Result || dr != DialogResult.OK) return false;
                 // Send the Trigger to the task scheduler
-                Result = Utility.Tools.NoException((Action)delegate()
+                try
                 {
                     TaskScheduler.CreateOrUpdateTask(aRow.TaskName,
                         System.IO.Path.Combine(Application.StartupPath, "Duplicati.Scheduler.RunBackup.exe"),
                         "Duplicati backup task", Utility.User.UserName, ss, aTrigger,
                         "\"" + aRow.Name + "\" \"" + Duplicati.Scheduler.Data.SchedulerDataSet.DefaultPath() + "\"");
-                });
-                // Assume any error is a security thing and make user enter password again.
-                if (!Result && MessageBox.Show("Logon information is not valid for " + Utility.User.UserName + ", [OK] to try again?",
-                    "Wrong", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.Cancel) return false;
+                    Result = true;
+                }
+                catch (Exception ex)
+                {
+                    if (MessageBox.Show(ex.ToString() + "\n[OK] to try again?",
+                        "ERROR", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.Cancel)
+                        return false;
+                    Result = false;
+                }
+                //// Assume any error is a security thing and make user enter password again.
+                //if (!Result && MessageBox.Show("Logon information is not valid for " + Utility.User.UserName + ", [OK] to try again?",
+                //    "Wrong", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.Cancel) return false;
             } while (!Result);
             return Result; // gonna be true
         }
