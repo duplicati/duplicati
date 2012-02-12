@@ -61,7 +61,7 @@ namespace Duplicati.Library.Backend
             // 
             resources.ApplyResources(this.Port, "Port");
             this.Port.Maximum = new decimal(new int[] {
-            65500,
+            65535,
             0,
             0,
             0});
