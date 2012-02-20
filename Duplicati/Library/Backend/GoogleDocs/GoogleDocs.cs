@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -439,7 +439,9 @@ namespace Duplicati.Library.Backend
 
                         //This is a blank marker request
                         req.ContentLength = 0;
-                        req.ContentType = "text/plain";
+                        //Bad... docs say "text/plain" or "text/xml", but really needs to be content type, otherwise overwrite fails
+                        //req.ContentType = "text/plain";
+                        req.ContentType = "application/octet-stream";
 
                         //Authenticate our request
                         m_cla.ApplyAuthenticationToRequest(req);
@@ -508,8 +510,6 @@ namespace Duplicati.Library.Backend
                                 System.Xml.XmlDocument xml = new XmlDocument();
                                 using (System.IO.Stream s = resp.GetResponseStream())
                                     xml.Load(s);
-
-                                string tmp = xml.ToString();
 
                                 System.Xml.XmlNamespaceManager mgr = new XmlNamespaceManager(xml.NameTable);
                                 mgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
