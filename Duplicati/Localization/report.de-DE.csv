@@ -933,8 +933,8 @@ Library\Backend\File\Strings\FileUI.de-DE.resx,NonRootedPathError,updated,You mu
 Library\Backend\File\Strings\FileUI.de-DE.resx,NoRemovableDrivesError,updated,No removable drives were found on your system. Please enter the path manually.,Kein Wechseldatenträger gefunden. Bitte geben Sie den Pfad händisch ein.,Translated 2011-04,20/04/2011,Translated in week 16/2011,by Leo,,,,969
 Library\Backend\File\Strings\FileUI.de-DE.resx,PageDescription,updated,On this page you can select where to store the backup data.,"Auf dieser Seite können Sie wählen, wo die Sicherungsdateien angelegt werden sollen.",Translated 2011-04,07/04/2011,Translated in week 14/2011,by Mathias,,,,970
 Library\Backend\File\Strings\FileUI.de-DE.resx,PageTitle,updated,Backup storage options,Optionen für das Sicherungsziel,Translated 2011-04,07/04/2011,Translated in week 14/2011,by Mathias,,,,971
-Library\Backend\FTP\FTPUI.de-DE.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,Akzeptiere jegliches ungültiges Zertifikat,Translated 2011-04,07/04/2011,Translated in week 14/2011,by Mathias,,,Akzeptiere jegliches ungültiges Zertifikat,917
-Library\Backend\FTP\FTPUI.de-DE.resx,AcceptSpecifiedHash.Text,updated,Accept this certificate hash,"Akzeptieren Sie diese Zertifikat-Prüfsumme
+Library\Backend\FTP\FTPUI.de-DE.resx,AcceptAnyHash.Text,updated,Accept any invalid certificate,Ungültige Zertifikate akzeptieren,Translated 2011-04,07/04/2011,Translated in week 14/2011,by Mathias,,,Akzeptiere jegliches ungültiges Zertifikat,917
+Library\Backend\FTP\FTPUI.de-DE.resx,AcceptSpecifiedHash.Text,updated,Accept this certificate hash,"Zertifikat-Prüfsumme akzeptieren
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,916
 Library\Backend\FTP\FTPUI.de-DE.resx,CreateFolderButton.Text,updated,Create folder,Ordner erstellen,Translated 2011-04,07/04/2011,Translated in week 14/2011,by Mathias,,,,914
 Library\Backend\FTP\FTPUI.de-DE.resx,label1.Text,equal expression,Server,Server,Translated 2011-11,21/11/2011,Translated in week 47/2011,by E.Mair,,,,907
@@ -1499,7 +1499,7 @@ Library\Main\Strings\Interface.de-DE.resx,UnsupportedEnumerationValue,updated,"T
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,633
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedIntegerValue,updated,"The value ""{1}"" supplied to --{0} does not represent a valid integer","Der Wert ""{1}"" angegeben für --{0} ist keine gültige ganze Zahl
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,634
-Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionDisabledModuleWarning,updated,The option --{0} is not supported because the module {1} is not currently loaded,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit nicht geladen ist ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit nicht geladen ist ",635
+Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionDisabledModuleWarning,updated,The option --{0} is not supported because the module {1} is not currently loaded,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit ​​nicht geladen ist ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit ​​nicht geladen ist ",635
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionWarning,updated,The supplied option --{0} is not supported and will be ignored,"Die angegebene Option --{0} wird nicht unterstützt und wird ignoriert
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,636
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedPathValue,updated,"The value ""{1}"" supplied to --{0} does not represent a valid path","Der Wert ""{1}"" angegeben für --{0} ist kein gültiger Pfad
