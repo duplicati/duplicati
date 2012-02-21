@@ -26,6 +26,11 @@ namespace Duplicati.Library.Utility
     public static class Utility
     {
         /// <summary>
+        /// Size of buffers for copying stream
+        /// </summary>
+        public static long DEFAULT_BUFFER_SIZE = 64 * 1024;
+
+        /// <summary>        /// <summary>
         /// Gets the hash algorithm used for calculating a hash
         /// </summary>
         public static string HashAlgorithm { get { return "SHA256"; } }
@@ -70,7 +75,7 @@ namespace Duplicati.Library.Utility
                 try { source.Position = 0; }
                 catch { }
 
-            byte[] buf = new byte[4096];
+            byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
             int read;
 
             while ((read = source.Read(buf, 0, buf.Length)) != 0)
