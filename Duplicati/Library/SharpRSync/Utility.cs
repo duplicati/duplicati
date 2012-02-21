@@ -26,6 +26,11 @@ namespace Duplicati.Library.SharpRSync
     public static class Utility
     {
         /// <summary>
+        /// Size of buffers for copying stream
+        /// </summary>
+        public static long DEFAULT_BUFFER_SIZE = 64 * 1024;
+
+        /// <summary>
         /// Some streams can return a number that is less than the requested number of bytes.
         /// This is usually due to fragmentation, and is solved by issuing a new read.
         /// This function wraps that functionality.
@@ -90,7 +95,7 @@ namespace Duplicati.Library.SharpRSync
         /// <param name="count">The number of bytes to copy</param>
         public static void StreamCopy(System.IO.Stream input, System.IO.Stream output, long count)
         {
-            byte[] buf = new byte[4096];
+            byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
             while (count > 0)
             {
                 int a = input.Read(buf, 0, (int)Math.Min(count, buf.Length));
