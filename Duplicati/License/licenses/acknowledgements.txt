@@ -6,6 +6,7 @@ Software Development:
   Livio Bertacco
   Daniel Halan
   Birunthan Mohanathas
+  James Colton
   
 Artwork:
   Kenneth Skovhede
