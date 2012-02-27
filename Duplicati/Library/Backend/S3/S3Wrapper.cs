@@ -46,6 +46,7 @@ namespace Duplicati.Library.Backend
             cfg.ServiceURL = servername;
             cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
             cfg.UseSecureStringForAwsSecretKey = false;
+            cfg.BufferSize = (int)Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE;
 
             m_client = new Amazon.S3.AmazonS3Client(awsID, awsKey, cfg);
 
