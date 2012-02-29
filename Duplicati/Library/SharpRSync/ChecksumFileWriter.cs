@@ -85,7 +85,7 @@ namespace Duplicati.Library.SharpRSync
             m_blocklen = blocklength;
             m_stronglen = stronglength;
             m_outstream = outputstream;
-            m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
+            m_hashAlgorithm = MD4Helper.Create();
 
             m_hashAlgorithm.Initialize();
 

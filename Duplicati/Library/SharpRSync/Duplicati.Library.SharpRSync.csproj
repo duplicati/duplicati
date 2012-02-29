@@ -107,6 +107,7 @@
     </Compile>
     <Compile Include="UnitTest.cs" />
     <Compile Include="Utility.cs" />
+    <Compile Include="MD4Helper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

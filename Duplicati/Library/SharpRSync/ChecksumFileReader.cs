@@ -80,7 +80,7 @@ namespace Duplicati.Library.SharpRSync
         /// <param name="input">The stream to read from</param>
         public ChecksumFileReader(System.IO.Stream input)
         {
-            m_hashAlgorithm = Mono.Security.Cryptography.MD4.Create("MD4");
+            m_hashAlgorithm = MD4Helper.Create();
             m_hashAlgorithm.Initialize();
 
             //Read and verify that the file header is valid
