@@ -35,13 +35,6 @@ namespace Duplicati.CommandLine
                 string filter = Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(Duplicati.Library.Utility.FilenameFilter.ParseCommandLine(cargs, true));
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(cargs);
 
-                foreach (string internaloption in Library.Main.Options.InternalOptions)
-                    if (options.ContainsKey(internaloption))
-                    {
-                        Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
-                        return;
-                    }
-
                 if (!string.IsNullOrEmpty(filter))
                     options["filter"] = filter;
 
@@ -92,6 +85,14 @@ namespace Duplicati.CommandLine
                             cargs[0] = s;
                         }
                 }
+
+                //AFTER converting options to commands, we check for internal switches
+                foreach (string internaloption in Library.Main.Options.InternalOptions)
+                    if (options.ContainsKey(internaloption))
+                    {
+                        Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
+                        return;
+                    }
 
                 if (cargs.Count == 1)
                 {
