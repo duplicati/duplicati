@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BadSortingDetectedError" xml:space="preserve">
     <value>Bad sorting of backup times detected</value>
@@ -332,5 +332,29 @@
   </data>
   <data name="DeleteManifestsSuggestion" xml:space="preserve">
     <value>If this error cannot be resolved, you can either create a new full backup or delete the offending manifests manually, followed by a cleanup command. The offending manifest files are:</value>
+  </data>
+  <data name="FullBecauseBackendIsEmpty" xml:space="preserve">
+    <value>A full backup is made because no existing backup chains were found on the destination</value>
+  </data>
+  <data name="FullBecauseFlagWasSet" xml:space="preserve">
+    <value>A full backup was forced with the --{0} flag</value>
+  </data>
+  <data name="FullBecauseLastFullIsFrom" xml:space="preserve">
+    <value>A full backup is made because the latest full backup is from {0} and the full backup threshold is {1}</value>
+  </data>
+  <data name="FullBecauseSourceFoldersChanged" xml:space="preserve">
+    <value>A full backup is made because the source folders have changed</value>
+  </data>
+  <data name="FullBecauseThereAreNIncrementals" xml:space="preserve">
+    <value>A full backup is made because the current chain has {0} incremental backups and the full backup threshold is {1}</value>
+  </data>
+  <data name="IncrementalBecauseLastFullIsFrom" xml:space="preserve">
+    <value>An incremental backup is made because the latest full backup is from {0} and the full backup threshold is {1}</value>
+  </data>
+  <data name="IncrementalBecauseNoFlagsWereSet" xml:space="preserve">
+    <value>An incremental backup is made because no full backup criteria was found</value>
+  </data>
+  <data name="IncrementalBecauseThereAreNIncrementals" xml:space="preserve">
+    <value>An incremental backup is made because the current chain has {0} incremental backups and the full backup threshold is {1}</value>
   </data>
 </root>

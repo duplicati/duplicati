@@ -41,6 +41,7 @@ namespace Duplicati.Library.Main
         private long m_tooLargeFiles;
         private long m_filesWithError;
         private bool m_full = false;
+        private string m_typeReason = null;
 
         public BackupStatistics(DuplicatiOperationMode operationMode)
             : base(operationMode)
@@ -149,12 +150,18 @@ namespace Duplicati.Library.Main
             set { m_filesWithError = value; }
         }
 
+        public void SetTypeReason(string reason)
+        {
+            m_typeReason = reason;
+        }
 
         public override string ToString()
         {
             //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
             sb.Append("BackupType      : " + (this.Full ? "Full" : "Incremental") + "\r\n");
+            if (this.m_typeReason != null)
+                sb.Append("TypeReason      : " + this.m_typeReason + "\r\n");
             sb.Append("BeginTime       : " + this.BeginTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("EndTime         : " + this.EndTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("Duration        : " + this.Duration.ToString() + "\r\n");
