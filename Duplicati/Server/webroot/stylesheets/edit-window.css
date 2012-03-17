@@ -1,0 +1,36 @@
+body {
+	font-size: 12px;
+}
+
+.edit-window-tab-header {
+	padding-top: 12px;
+	padding-bottom: 12px;
+	font-weight: bold;
+	font-size: 42px;
+}
+
+
+#edit-window-general-tab, #edit-window-backup-name {
+	width: 500px;
+}
+
+#edit-window-general-tab input, #edit-window-general-tab select{
+	width: 200px;
+	float: right;
+}
+
+#edit-window-backup-name div, #edit-window-backup-labels div, #edit-window-encryption-helptext div, #edit-window-encryption-method div, #edit-window-encryption-passphrase div, #edit-window-encryption-passphrase-repeat div {
+	float: left;
+}
+
+#edit-window-backup-name, #edit-window-backup-labels, #edit-window-encryption-helptext, #edit-window-encryption-method, #edit-window-encryption-passphrase, #edit-window-encryption-passphrase-repeat { clear: both }
+
+#edit-window-encryption-helptext {
+	padding-top: 10px;
+	padding-bottom: 20px;
+	font-style: italic;
+}
+
+#edit-window-encryption-passphrase-repeat {
+	padding-bottom: 20px;
+}
