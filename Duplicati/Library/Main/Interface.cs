@@ -350,6 +350,8 @@ namespace Duplicati.Library.Main
                     CheckLiveControl();
 
                     bool full = m_options.Full;
+                    if (full)
+                        bs.SetTypeReason(string.Format(Strings.Interface.FullBecauseFlagWasSet, "full"));
 
                     backend = new BackendWrapper(bs, m_backend, m_options);
                     backend.ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(BackupTransfer_ProgressEvent);
@@ -365,6 +367,8 @@ namespace Duplicati.Library.Main
 
                     if (backupsets.Count == 0)
                     {
+                        if (!full)
+                            bs.SetTypeReason(Strings.Interface.FullBecauseBackendIsEmpty);
                         full = true;
                     }
                     else
@@ -401,11 +405,39 @@ namespace Duplicati.Library.Main
                         }
                     }
 
+                    string fullCriteria1 = null;
+                    string fullCriteria2 = null;
                     if (!full)
+                    {
                         full = DateTime.Now > m_options.FullIfOlderThan(backupsets[backupsets.Count - 1].Time);
-                    if (!full && m_options.FullIfMoreThanNInvcrementals > 0)
-                        full = backupsets[backupsets.Count - 1].Incrementals.Count >= m_options.FullIfMoreThanNInvcrementals;
+                        if (full)
+                            bs.SetTypeReason(string.Format(Strings.Interface.FullBecauseLastFullIsFrom, backupsets[backupsets.Count - 1].Time, m_options.FullIfOlderThanValue));
+                        else
+                            fullCriteria1 = string.Format(Strings.Interface.IncrementalBecauseLastFullIsFrom, backupsets[backupsets.Count - 1].Time, m_options.FullIfOlderThanValue);
+                    }
+                    
+                    if (!full && m_options.FullIfMoreThanNIncrementals > 0)
+                    {
+                        full = backupsets[backupsets.Count - 1].Incrementals.Count >= m_options.FullIfMoreThanNIncrementals;
+                        if (full)
+                            bs.SetTypeReason(string.Format(Strings.Interface.FullBecauseThereAreNIncrementals, backupsets[backupsets.Count - 1].Incrementals.Count, m_options.FullIfMoreThanNIncrementals));
+                        else
+                            fullCriteria2 = string.Format(Strings.Interface.IncrementalBecauseThereAreNIncrementals, backupsets[backupsets.Count - 1].Incrementals.Count, m_options.FullIfMoreThanNIncrementals);
+
+                    }
                     bs.Full = full;
+                    if (!full)
+                    {
+                        if (fullCriteria1 == null && fullCriteria2 == null)
+                            bs.SetTypeReason(Strings.Interface.IncrementalBecauseNoFlagsWereSet);
+                        else if (fullCriteria2 == null)
+                            bs.SetTypeReason(fullCriteria1);
+                        else if (fullCriteria1 == null)
+                            bs.SetTypeReason(fullCriteria2);
+                        else
+                            bs.SetTypeReason(fullCriteria1 + ". " + fullCriteria2);
+
+                    }
 
                     List<string> controlfiles = new List<string>();
                     if (!string.IsNullOrEmpty(m_options.SignatureControlFiles))

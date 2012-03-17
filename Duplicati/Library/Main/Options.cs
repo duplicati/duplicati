@@ -290,9 +290,25 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the string describing when a full backup should be performed
+        /// </summary>
+        public string FullIfOlderThanValue
+        {
+            get
+            {
+                string v;
+                if (!m_options.TryGetValue("full-if-older-than", out v))
+                    return null;
+                else if (string.IsNullOrEmpty(v))
+                    return null;
+                return v;
+            }
+        }
+
+        /// <summary>
         /// A value indicating how many incrementals are required to trigger a full backup
         /// </summary>
-        public int FullIfMoreThanNInvcrementals
+        public int FullIfMoreThanNIncrementals
         {
             get
             {
