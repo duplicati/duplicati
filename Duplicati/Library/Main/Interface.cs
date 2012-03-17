@@ -481,6 +481,8 @@ namespace Duplicati.Library.Main
                                 if (m_options.FullIfSourceFolderChanged)
                                 {
                                     Logging.Log.WriteMessage("Source folder count changed, issuing full backup", Duplicati.Library.Logging.LogMessageType.Information);
+                                    if (!full)
+                                        bs.SetTypeReason(Strings.Interface.FullBecauseSourceFoldersChanged);
                                     full = true;
                                 }
                                 else
@@ -506,6 +508,8 @@ namespace Duplicati.Library.Main
                                             if (m_options.FullIfSourceFolderChanged)
                                             {
                                                 Logging.Log.WriteMessage("Source folders changed, issuing full backup", Duplicati.Library.Logging.LogMessageType.Information);
+                                                if (!full)
+                                                    bs.SetTypeReason(Strings.Interface.FullBecauseSourceFoldersChanged);
                                                 full = true;
                                                 break; //Exit the folder loop
                                             }
