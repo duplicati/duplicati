@@ -60,7 +60,11 @@ namespace LocalizationTool
                     Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.5\\"),
                     Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\"),
                     Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v7.0A\\bin\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\")
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\"),
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft.NET\\SDK\\v2.0\\bin\\"),
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\"),
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v7.0A\\bin\\"),
+                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\")
 
                 };
 
