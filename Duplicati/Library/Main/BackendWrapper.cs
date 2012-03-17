@@ -1288,7 +1288,8 @@ namespace Duplicati.Library.Main
             string remotename = remote.Filename;
             m_statusmessage = string.Format(Strings.BackendWrapper.StatusMessageUploading, remotename, Utility.Utility.FormatSizeString(new System.IO.FileInfo(filename).Length));
             Duplicati.Library.Interface.IFileEntry log_fe = new Duplicati.Library.Interface.FileEntry(remote.Filename, remote.Filesize, DateTime.Now, DateTime.Now);
-            
+            long sourceFileSize = new System.IO.FileInfo(filename).Length;
+
             try
             {
                 int retries = m_options.NumberOfRetries;
@@ -1408,7 +1409,7 @@ namespace Duplicati.Library.Main
                 if (!success)
                     throw new Exception(string.Format(Strings.BackendWrapper.FileUploadError2, remotename, lastEx == null ? "<null>" : lastEx.Message), lastEx);
 
-                m_statistics.AddBytesUploaded(new System.IO.FileInfo(filename).Length);
+                m_statistics.AddBytesUploaded(sourceFileSize);
             }
             finally
             {
