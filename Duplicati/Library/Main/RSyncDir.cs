@@ -2224,6 +2224,13 @@ namespace Duplicati.Library.Main.RSync
 
         public void Dispose()
         {
+            if (m_lastPartialFile != null)
+            {
+                try { m_lastPartialFile.Dispose(); }
+                catch { }
+                m_lastPartialFile = null;
+            }
+
             if (m_patches != null)
             {
                 foreach (Library.Interface.ICompression arc in m_patches)
