@@ -125,6 +125,9 @@ namespace Duplicati.CommandLine
 
             options["verification-level"] = "full";
 
+            //We need all sets, even if they are unchanged
+            options["upload-unchanged-backups"] = "true";
+
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
