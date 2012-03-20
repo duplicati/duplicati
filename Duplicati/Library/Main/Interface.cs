@@ -412,7 +412,7 @@ namespace Duplicati.Library.Main
                         full = DateTime.Now > m_options.FullIfOlderThan(backupsets[backupsets.Count - 1].Time);
                         if (full)
                             bs.SetTypeReason(string.Format(Strings.Interface.FullBecauseLastFullIsFrom, backupsets[backupsets.Count - 1].Time, m_options.FullIfOlderThanValue));
-                        else
+                        else if (!string.IsNullOrEmpty(m_options.FullIfOlderThanValue))
                             fullCriteria1 = string.Format(Strings.Interface.IncrementalBecauseLastFullIsFrom, backupsets[backupsets.Count - 1].Time, m_options.FullIfOlderThanValue);
                     }
                     
