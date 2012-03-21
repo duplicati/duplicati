@@ -215,8 +215,8 @@ GUI\HelperControls\BackupFileList.de-DE.resx,folderBrowserDialog.Description,upd
 GUI\HelperControls\BackupFileList.de-DE.resx,LoadingIndicator.Text,updated,"Reading filelist, please wait ...","Dateiliste wird gelesen, bitte warten …",Translated 2011-04,07/04/2011,Translated in week 14/2011,by Mathias,,,,1225
 GUI\HelperControls\BackupItems.de-DE.resx,statusLabel.Text,updated,Loading list of backups,Laden der Sicherungsliste,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,95
 GUI\HelperControls\BackupItems.de-DE.resx,viewFilesToolStripMenuItem.Text,updated,View contents ...,Inhalte ansehen ...,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,94
-GUI\HelperControls\BandwidthLimit.de-DE.resx,DownloadLimitCheckbox.Text,updated,Download limit (restore),Download Limit (Wiederherstellung),Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,96
-GUI\HelperControls\BandwidthLimit.de-DE.resx,UploadLimitCheckbox.Text,updated,Upload limit (backup),Upload Limit (Sicherung),Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,97
+GUI\HelperControls\BandwidthLimit.de-DE.resx,DownloadLimitCheckbox.Text,updated,Download limit (restore),Download-Limit,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,96
+GUI\HelperControls\BandwidthLimit.de-DE.resx,UploadLimitCheckbox.Text,updated,Upload limit (backup),Upload-Limit (Sicherung),Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,97
 GUI\HelperControls\CommandLineOptionGrid.de-DE.resx,argumentDataGridViewTextBoxColumn.HeaderText,updated,argument,Parameter,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,101
 GUI\HelperControls\CommandLineOptionGrid.de-DE.resx,dataGridViewTextBoxColumn1.HeaderText,updated,argument,Parameter,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,102
 GUI\HelperControls\CommandLineOptionGrid.de-DE.resx,enabledDataGridViewCheckBoxColumn.HeaderText,updated,Enabled,Aktiviert,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,98
@@ -355,7 +355,7 @@ GUI\ServiceStatus.de-DE.resx,CurrentStatus.Text,updated,Waiting for next backup,
 GUI\ServiceStatus.de-DE.resx,label1_2.Text,updated,Completed backups,Abgeschlossene Sicherungen,Translated 2011-11,19/11/2011,Translated in week 46/2011,by E.Mair
 GUI\ServiceStatus.de-DE.resx,label5.Text,updated,Pending backups,Anstehende Sicherungen,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,77
 GUI\ServiceStatus.de-DE.resx,linkLabel1.Text,updated,Duplicati Options,Duplicati Optionen,Translated 2011-11,19/11/2011,Translated in week 46/2011,by E.Mair
-GUI\ServiceStatus.de-DE.resx,optionsLabel.Text,updated,"(UI Language, Default password, Advanced, ...)","(Sprache der Benutzeroberfläche, Kennwort, Erweitert,...) ",Translated 2011-11,19/11/2011,Translated in week 46/2011,by E.Mair
+GUI\ServiceStatus.de-DE.resx,optionsLabel.Text,updated,"(UI Language, Default password, Advanced, ...)","(Sprache der Benutzeroberfläche, Kennwort, ...) ",Translated 2011-11,19/11/2011,Translated in week 46/2011,by E.Mair
 GUI\ServiceStatus.de-DE.resx,pauseBackupToolStripMenuItem.Text,updated,Pause backup,Sicherung vorübergehend unterbrechen,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,86
 GUI\ServiceStatus.de-DE.resx,PauseDuration05Menu.Text,updated,5 minutes,5 Minuten,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,88
 GUI\ServiceStatus.de-DE.resx,PauseDuration15Menu.Text,updated,15 minutes,15 Minuten,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,89
@@ -368,7 +368,7 @@ GUI\ServiceStatus.de-DE.resx,runBackupNowToolStripMenuItem1.Text,updated,Run bac
 GUI\ServiceStatus.de-DE.resx,stopBackupToolStripMenuItem.Text,updated,Stop backup,Sicherung abbrechen,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,92
 GUI\ServiceStatus.de-DE.resx,viewFilesToolStripMenuItem.Text,updated,View contents ...,Inhalte ansehen ...,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,85
 GUI\ServiceStatus.de-DE.resx,viewLogToolStripMenuItem.Text,updated,View log ...,Protokoll ansehen ...,Translated 2011-02,12/02/2011,Translated in week 06/2011,by E.Mair,,,,84
-GUI\ServiceStatus.de-DE.resx,wizardHelpLabel.Text,updated,"(Create, edit, delete, run, restore backups)","(Sicherungen anlegen, editieren, löschen, wiederherstellen) ",Translated 2011-11,19/11/2011,Translated in week 46/2011,by E.Mair
+GUI\ServiceStatus.de-DE.resx,wizardHelpLabel.Text,updated,"(Create, edit, delete, run, restore backups)","(Sicherungen anlegen, editieren, löschen, ...) ",Translated 2011-11,19/11/2011,Translated in week 46/2011,by E.Mair
 GUI\ServiceStatus.de-DE.resx,wizardLink.Text,updated,Duplicati Wizard,Duplicati Assistent,Translated 2011-11,19/11/2011,Translated in week 46/2011,by E.Mair
 GUI\Strings\ApplicationSetup.de-DE.resx,BalloonNotification_Continous,updated,While backup is running (and on errors/warnings),Während die Sicherung ausgeführt wird (und bei Fehlern und Warnungen),Translated 2011-04,07/04/2011,Translated in week 14/2011,by Mathias,,,,1227
 GUI\Strings\ApplicationSetup.de-DE.resx,BalloonNotification_Errors,updated,On backup errors,Bei Fehlern ,Translated 2011-04,07/04/2011,Translated in week 14/2011,by Mathias,,,,1228
@@ -732,7 +732,7 @@ GUI\Wizard pages\Add backup\Strings\SettingOverrides.de-DE.resx,GenericModuleLoa
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.de-DE.resx,PageDescription,updated,"On this page you can override all settings supported by Duplicati. This is very advanced, so be carefull!",Hier können Sie alle Einstellungen von Duplicati durch eigene Einstellungen ersetzen. Dies erfordert genaue Kenntnisse. Bitte gehen Sie vorsichtig damit um!,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,471
 GUI\Wizard pages\Add backup\Strings\SettingOverrides.de-DE.resx,PageTitle,updated,Override settings,Einstellungen ersetzen,Translated 2011-02,21/02/2011,Translated in week 08/2011,by E.Mair,,,,472
 GUI\Wizard pages\Add backup\Strings\ThrottleOptions.de-DE.resx,PageDescription,updated,On this page you may select limits that prevent the backup procedure from using too many resources,"Hier können Sie Grenzen definieren, die verhindern, dass die Sicherung zu viele Ressourcen in Anspruch nimmt.",Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,473
-GUI\Wizard pages\Add backup\Strings\ThrottleOptions.de-DE.resx,PageTitle,updated,Select how to limit the backup,"Wie soll erreicht werden, dass nicht zu viele Ressourcen durch die Sicherung beansprucht werden?",Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,474
+GUI\Wizard pages\Add backup\Strings\ThrottleOptions.de-DE.resx,PageTitle,updated,Select how to limit the backup,Ressourcennutzung für die Sicherung limitieren.,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,474
 GUI\Wizard pages\Add backup\ThrottleOptions.de-DE.resx,AsyncEnabled.Text,updated,Upload asynchronously,Asynchrones Hochladen,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,369
 GUI\Wizard pages\Add backup\ThrottleOptions.de-DE.resx,BackupLimitEnabled.Text,updated,Each backup size limit ,Max. Größe der Sicherung,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,368
 GUI\Wizard pages\Add backup\ThrottleOptions.de-DE.resx,label1.Text,updated,Size of each volume,Größe eines Volumes,Improved 2011-04,08/04/2011,Translated in week 14/2011,by Mathias,,,,370
@@ -1499,7 +1499,7 @@ Library\Main\Strings\Interface.de-DE.resx,UnsupportedEnumerationValue,updated,"T
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,633
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedIntegerValue,updated,"The value ""{1}"" supplied to --{0} does not represent a valid integer","Der Wert ""{1}"" angegeben für --{0} ist keine gültige ganze Zahl
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,634
-Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionDisabledModuleWarning,updated,The option --{0} is not supported because the module {1} is not currently loaded,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit ​​nicht geladen ist ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit ​​nicht geladen ist ",635
+Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionDisabledModuleWarning,updated,The option --{0} is not supported because the module {1} is not currently loaded,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit nicht geladen ist ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,"Die Option --{0} wird nicht unterstützt, da das Modul {1} derzeit nicht geladen ist ",635
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedOptionWarning,updated,The supplied option --{0} is not supported and will be ignored,"Die angegebene Option --{0} wird nicht unterstützt und wird ignoriert
 ",Translated 2011-03,19/03/2011,Translated in week 11/2011,by E.Mair,,,,636
 Library\Main\Strings\Interface.de-DE.resx,UnsupportedPathValue,updated,"The value ""{1}"" supplied to --{0} does not represent a valid path","Der Wert ""{1}"" angegeben für --{0} ist kein gültiger Pfad
