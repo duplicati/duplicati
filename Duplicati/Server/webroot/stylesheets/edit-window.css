@@ -1,36 +1,115 @@
-body {
+body 
+{
 	font-size: 12px;
 }
 
-.edit-window-tab-header {
-	padding-top: 12px;
+.edit-window-tab-header 
+{
+	padding-top: 8px;
 	padding-bottom: 12px;
 	font-weight: bold;
-	font-size: 42px;
+	font-size: 28px;
 }
 
-
-#edit-window-general-tab, #edit-window-backup-name {
-	width: 500px;
+.edit-window-link
+{
+	color: darkblue;
+	text-decoration: underline;
 }
 
-#edit-window-general-tab input, #edit-window-general-tab select{
+.edit-window-hidden
+{
+	display: none;
+}
+
+#edit-window-general-tab
+{
+	width: 400px;
+	padding-bottom: 40px;
+}
+
+#edit-window-source-tab 
+{
+	width: 540px;
+	padding-bottom: 40px;
+}
+
+.edit-window-group-header
+{
+	font-size: 16px;
+	font-weight: bold;
+	padding-bottom: 10px;
+}
+
+#edit-window-standard-locations 
+{
+	width: 200px;
+	float: left;
+}
+
+#edit-window-additional-locations 
+{
+	width: 300px;
+	float: left;
+	padding-left: 40px;
+}
+
+.edit-window-field-control
+{
 	width: 200px;
 	float: right;
 }
 
-#edit-window-backup-name div, #edit-window-backup-labels div, #edit-window-encryption-helptext div, #edit-window-encryption-method div, #edit-window-encryption-passphrase div, #edit-window-encryption-passphrase-repeat div {
+.edit-window-field-label
+{
 	float: left;
 }
 
-#edit-window-backup-name, #edit-window-backup-labels, #edit-window-encryption-helptext, #edit-window-encryption-method, #edit-window-encryption-passphrase, #edit-window-encryption-passphrase-repeat { clear: both }
+.edit-window-field-checkbox
+{
+	float: left;
+}
 
-#edit-window-encryption-helptext {
+.edit-window-label-extra
+{
+	float: right;
+}
+
+.edit-window-field-box, #edit-window-encryption-helptext, #edit-window-filters
+{ 
+	clear: both;
+}
+
+#edit-window-encryption-helptext 
+{
 	padding-top: 10px;
 	padding-bottom: 20px;
 	font-style: italic;
 }
 
-#edit-window-encryption-passphrase-repeat {
+#edit-window-filters-wizard-helptext
+{
+	padding-top: 10px;
 	padding-bottom: 20px;
+}
+
+#edit-window-filters-wizard-hide
+{
+	display: inline;
+}
+
+#edit-window-filters-wizard-exclude
+{
+	padding-top: 10px;
+}
+
+#edit-window-additional-locations-add
+{
+	padding-top: 10px;
+}
+
+#edit-window-filters-preview
+{
+	padding-top: 10px;
+	float: right;
 }

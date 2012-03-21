@@ -28,72 +28,76 @@
 			<div id="edit-window-general-tab">
 				<!--<div class="edit-window-tab-header">Basics</div>-->
 			
-				<div id="edit-window-backup-name">
-					<div>Name of backup</div>
-					<input type="text" />
+				<div class="edit-window-field-box">
+					<div class="edit-window-field-label">Name of backup</div>
+					<input class="edit-window-field-control" id="edit-window-backup-name" type="text" />
 				</div>
 	
-				<div id="edit-window-backup-labels">
-					<div>Labels</div>
-					<input type="text" />
+				<div class="edit-window-field-box">
+					<div class="edit-window-field-label">Labels</div>
+					<input class="edit-window-field-control" id="edit-window-backup-control" type="text" />
 				</div>
 	
 				<div id="edit-window-encryption-helptext">
 					It is recommended to encrypt all backups that are stored on remote servers
 				</div>
 	
-				<div id="edit-window-encryption-method">
-					<div>Encryption method</div>
-					<select>
+				<div class="edit-window-field-box">
+					<div class="edit-window-field-label">Encryption method</div>
+					<select id="edit-window-encryption-method" class="edit-window-field-control">
 						<option>AES-256 (built-in)</option>
 						<option>GNU Privacy Guard (external)</option>
 						<option>No encryption</option>
 					</select>
 				</div>
 	
-				<div id="edit-window-encryption-passphrase">
-					<div>Encryption passphrase</div>
-					<input type="text" />
+				<div class="edit-window-field-box" >
+					<div class="edit-window-field-label">Encryption passphrase</div>
+					<input class="edit-window-field-control" id="edit-window-encryption-passphrase" type="text" />
 				</div>
 	
-				<div id="edit-window-encryption-passphrase-repeat">
-					<div>Repeat passphrase</div>
-					<input type="text" />
+				<div class="edit-window-field-box">
+					<div class="edit-window-field-label">Repeat passphrase</div>
+					<input class="edit-window-field-control" id="edit-window-encryption-passphrase-repeat" type="text" />
 				</div>
 			</div>
 	
 			<div id="edit-window-source-tab">
 			
-				<div class="edit-window-tab-header">Standard Locations</div>
+				<!--<div class="edit-window-tab-header">Standard Locations</div>-->
 	
 				<div id="edit-window-standard-locations">
-					<div id="edit-window-standard-locations-my-documents"><input type="checkbox"/> My Documents <div id="edit-window-standard-locations-my-documents-size">(...)</div></div>
+					<div class="edit-window-group-header">Standard locations</div>
+				
+					<div class="edit-window-field-box" id="edit-window-standard-locations-my-documents"><input class="edit-window-field-checkbox" type="checkbox"/> My Documents <div id="edit-window-standard-locations-my-documents-size" class="edit-window-label-extra">(...)</div></div>
 	
-					<div id="edit-window-standard-locations-my-music"><input type="checkbox"/> My Music<div id="edit-window-standard-locations-my-music-size">(...)</div></div>
+					<div class="edit-window-field-box" id="edit-window-standard-locations-my-music"><input class="edit-window-field-checkbox" type="checkbox"/> My Music<div id="edit-window-standard-locations-my-music-size" class="edit-window-label-extra">(...)</div></div>
 	
-					<div id="edit-window-standard-locations-my-video"><input type="checkbox"/> My Video<div id="edit-window-standard-locations-my-video-size">(...)</div></div>
+					<div class="edit-window-field-box" id="edit-window-standard-locations-my-video"><input class="edit-window-field-checkbox" type="checkbox"/> My Video<div id="edit-window-standard-locations-my-video-size" class="edit-window-label-extra">(...)</div></div>
 	
-					<div id="edit-window-standard-locations-my-pictures"><input type="checkbox"/> My Pictures<div id="edit-window-standard-locations-my-pictures-size">(...)</div></div>
+					<div class="edit-window-field-box" id="edit-window-standard-locations-my-pictures"><input class="edit-window-field-checkbox" type="checkbox"/> My Pictures<div id="edit-window-standard-locations-my-pictures-size" class="edit-window-label-extra">(...)</div></div>
 	
-					<div id="edit-window-standard-locations-my-appdata"><input type="checkbox"/> Application Settings<div id="edit-window-standard-locations-my-appdata-size">(...)</div></div>
+					<div class="edit-window-field-box" id="edit-window-standard-locations-my-appdata"><input  class="edit-window-field-checkbox" type="checkbox"/> Application Settings<div id="edit-window-standard-locations-my-appdata-size" class="edit-window-label-extra">(...)</div></div>
 				</div>
 				
 				<div id="edit-window-additional-locations">
+					<div class="edit-window-group-header">Additional paths</div>
+
 					<div id="edit-window-additional-locations-1">
 					D:\MyPrivateStuff <div class="edit-window-remove-additional-button"></div>
 					</div>
 					<div id="edit-window-additional-locations-1">
 					D:\SecretPath\Some more stuff <div class="edit-window-remove-additional-button"></div>
 					</div>
-					<div id="edit-window-additional-locations-add">Add another path from your local PC</div>
+					<div id="edit-window-additional-locations-add" class="edit-window-link">Add another path from your local PC</div>
 				</div>
 				
 				<div id="edit-window-filters">
 					<div id="edit-window-filters-wizard">
-						<div id="edit-window-filters-wizard-helptext">Some filter rules are applied to the source data for this backup. <div id="edit-window-filters-wizard-hide">Hide filters</div></div>
+						<div id="edit-window-filters-wizard-helptext">Some filter rules are applied to the source data for this backup. <div id="edit-window-filters-wizard-hide" class="edit-window-link">Hide filters</div></div>
 						
 						<div id="edit-window-filters-wizard-include">
-							<div id="edit-window-filters-wizard-include-img"></div>
+							<div id="edit-window-filters-wizard-include-img">Backup only</div>
 							
 							<div id="edit-window-filters-wizard-include-1">
 								<select>
@@ -106,12 +110,12 @@
 								<div class="edit-window-filters-wizard-remove-button"></div>
 							</div>
 							
-							<div id="edit-window-filters-wizard-include-add">Add another rule</div>
+							<div id="edit-window-filters-wizard-include-add" class="edit-window-link">Add another rule</div>
 		
 						</div>
 	
 						<div id="edit-window-filters-wizard-exclude">
-							<div id="edit-window-filters-wizard-exclude-img"></div>
+							<div id="edit-window-filters-wizard-exclude-img">Do not backup</div>
 							
 							<div id="edit-window-filters-wizard-exclude-1">
 								<select>
@@ -127,19 +131,19 @@
 								<div class="edit-window-filters-wizard-remove-button"></div>
 							</div>
 							
-							<div id="edit-window-filters-wizard-exclude-add">Add another rule</div>
+							<div id="edit-window-filters-wizard-exclude-add" class="edit-window-link">Add another rule</div>
 		
 						</div>
 						
 					</div>
 	
-					<div id="edit-window-filters-manual">
+					<div id="edit-window-filters-manual" class="edit-window-hidden">
 						<textarea>- Thumbs.db
 	- *.bak
 						</textarea>
 					</div>
 	
-					<div id="edit-window-filters-preview">See what exactly is included or excluded from the backup</div>
+					<div id="edit-window-filters-preview" class="edit-window-link">See what exactly is included or excluded from the backup</div>
 				</div>
 			</div>
 	
