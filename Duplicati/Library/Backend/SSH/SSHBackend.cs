@@ -560,38 +560,44 @@ namespace Duplicati.Library.Backend
             if (changeDir && m_con != null)
                 return m_con;
 
-            SFTPCon con;
-            
-            string keyfile;
-            m_options.TryGetValue(SSH_KEYFILE_OPTION, out keyfile);
-            
-            if ((keyfile ?? "").Trim().Length > 0)
-            {
-                ValidateKeyFile(m_options[SSH_KEYFILE_OPTION]);
-
-                con = new SFTPCon(m_server, m_username);
-                con.AddIdentityFile(m_options[SSH_KEYFILE_OPTION], m_password);
-            }
-            else
-                con = new SFTPCon(m_server, m_username, m_password);
-            
-            con.Connect(m_port);
-
             try
             {
-                if (!m_noCdCommand && !string.IsNullOrEmpty(m_path) && changeDir)
-                    con.SetCurrenDir(m_path);
-            }
-            catch (Exception ex)
-            {
-                throw new Interface.FolderMissingException(string.Format(Strings.SSHBackend.FolderNotFoundManagedError, m_path, ex.Message), ex);
-            }
+                SFTPCon con;
+                string keyfile;
+                m_options.TryGetValue(SSH_KEYFILE_OPTION, out keyfile);
 
-            //If the connection is initialized to the right folder, we cache it
-            if (changeDir)
-                m_con = con;
+                if ((keyfile ?? "").Trim().Length > 0)
+                {
+                    ValidateKeyFile(m_options[SSH_KEYFILE_OPTION]);
 
-            return con;
+                    con = new SFTPCon(m_server, m_username);
+                    con.AddIdentityFile(m_options[SSH_KEYFILE_OPTION], m_password);
+                }
+                else
+                    con = new SFTPCon(m_server, m_username, m_password);
+
+                con.Connect(m_port);
+
+                try
+                {
+                    if (!m_noCdCommand && !string.IsNullOrEmpty(m_path) && changeDir)
+                        con.SetCurrenDir(m_path);
+                }
+                catch (Exception ex)
+                {
+                    throw new Interface.FolderMissingException(string.Format(Strings.SSHBackend.FolderNotFoundManagedError, m_path, ex.Message), ex);
+                }
+
+                //If the connection is initialized to the right folder, we cache it
+                if (changeDir)
+                    m_con = con;
+
+                return con;
+            }
+            catch (Tamir.SharpSsh.jsch.SftpException sx) 
+            { 
+                throw ReshapeSharpSSHException(sx); 
+            }
         }
 
         private string getFullPath(string path)
@@ -610,11 +616,18 @@ namespace Duplicati.Library.Backend
 
             string path = m_noCdCommand ? m_path : ".";
 
-            foreach (Tamir.SharpSsh.jsch.ChannelSftp.LsEntry ls in CreateManagedConnection(true).ListFiles(path))
-                if (ls.getFilename().ToString() != "." && ls.getFilename().ToString() != "..")
-                    files.Add(new FileEntry(ls.getFilename().ToString(), ls.getAttrs().getSize(), epochOffset.Add(new TimeSpan(ls.getAttrs().getATime() * TimeSpan.TicksPerSecond)), epochOffset.Add(new TimeSpan(ls.getAttrs().getMTime() * TimeSpan.TicksPerSecond))));
 
-            return files;
+            try
+            {
+                foreach (Tamir.SharpSsh.jsch.ChannelSftp.LsEntry ls in CreateManagedConnection(true).ListFiles(path))
+                    if (ls.getFilename().ToString() != "." && ls.getFilename().ToString() != "..")
+                        files.Add(new FileEntry(ls.getFilename().ToString(), ls.getAttrs().getSize(), epochOffset.Add(new TimeSpan(ls.getAttrs().getATime() * TimeSpan.TicksPerSecond)), epochOffset.Add(new TimeSpan(ls.getAttrs().getMTime() * TimeSpan.TicksPerSecond))));
+                return files;
+            }
+            catch (Tamir.SharpSsh.jsch.SftpException sx) 
+            { 
+                throw ReshapeSharpSSHException(sx); 
+            }
         }
 
         private void PutManaged(string remotename, string filename)
@@ -631,43 +644,52 @@ namespace Duplicati.Library.Backend
 
         private void DeleteManaged(string remotename)
         {
-            CreateManagedConnection(true).Delete(remotename);
+            try { CreateManagedConnection(true).Delete(remotename); }
+            catch (Tamir.SharpSsh.jsch.SftpException sx) { throw ReshapeSharpSSHException(sx); }
+
         }
 
         private void CreateFolderManaged()
         {
 			string p = m_path;
-				
-        	using (SFTPCon con = CreateManagedConnection(false))
-			{
-            	try 
-				{
-					//Some SSH implementations fail if the folder name has a trailing slash
-					if (p.EndsWith ("/"))
-						p = p.Substring (0, p.Length - 1);
-					
-					con.Mkdir(p);
-				} 
-				catch 
-				{
-					//For backwards compatibility, we also try to create the folder WITH a trailing slash,
-					// this should never work, but in case there is a SSH implementation that relies
-					// on this we try that too
-					if (p != m_path)
-					{
-						try 
-						{
-							//If this succeeds, we continue
-							con.Mkdir(m_path);
-							return;
-						}
-						catch { }
-					}
-					
-					//We report the original error
-					throw;
-				}
-			}
+
+            try
+            {
+                using (SFTPCon con = CreateManagedConnection(false))
+                {
+                    try
+                    {
+                        //Some SSH implementations fail if the folder name has a trailing slash
+                        if (p.EndsWith("/"))
+                            p = p.Substring(0, p.Length - 1);
+
+                        con.Mkdir(p);
+                    }
+                    catch
+                    {
+                        //For backwards compatibility, we also try to create the folder WITH a trailing slash,
+                        // this should never work, but in case there is a SSH implementation that relies
+                        // on this we try that too
+                        if (p != m_path)
+                        {
+                            try
+                            {
+                                //If this succeeds, we continue
+                                con.Mkdir(m_path);
+                                return;
+                            }
+                            catch { }
+                        }
+
+                        //We report the original error
+                        throw;
+                    }
+                }
+            }
+            catch (Tamir.SharpSsh.jsch.SftpException sx) 
+            { 
+                throw ReshapeSharpSSHException(sx); 
+            }
         }
 
         #endregion
@@ -712,7 +734,8 @@ namespace Duplicati.Library.Backend
             if (!m_useManaged)
                 throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
 
-            CreateManagedConnection(true).Put(getFullPath(remotename), stream);
+            try { CreateManagedConnection(true).Put(getFullPath(remotename), stream); }
+            catch (Tamir.SharpSsh.jsch.SftpException sx) { throw ReshapeSharpSSHException(sx); }
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -720,10 +743,43 @@ namespace Duplicati.Library.Backend
             if (!m_useManaged)
                 throw new Exception(Strings.SSHBackend.StreamingNotSupportedError);
 
-            CreateManagedConnection(true).Get(getFullPath(remotename), stream);
+            try { CreateManagedConnection(true).Get(getFullPath(remotename), stream); }
+            catch (Tamir.SharpSsh.jsch.SftpException sx) { throw ReshapeSharpSSHException(sx); }
         }
 
         #endregion
+
+        /// <summary>
+        /// Helper function that extracts error messages from SharpSSH style exceptions and converts them into regular .Net exception messages
+        /// </summary>
+        /// <param name="sx">The exception to convert</param>
+        /// <returns>The converted exception</returns>
+        private static Exception ReshapeSharpSSHException(Tamir.SharpSsh.jsch.SftpException sx)
+        {
+            string idstr;
+            if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_OK)
+                idstr = "OK";
+            else if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_EOF)
+                idstr = "EOF";
+            else if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_NO_SUCH_FILE)
+                idstr = "NO_SUCH_FILE";
+            else if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_PERMISSION_DENIED)
+                idstr = "PERMISSION_DENIED";
+            else if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_FAILURE)
+                idstr = "FAILURE";
+            else if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_BAD_MESSAGE)
+                idstr = "BAD_MESSAGE";
+            else if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_NO_CONNECTION)
+                idstr = "NO_CONNECTION";
+            else if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_CONNECTION_LOST)
+                idstr = "CONNECTION_LOST";
+            else if (sx.id == Tamir.SharpSsh.jsch.ChannelSftp.SSH_FX_OP_UNSUPPORTED)
+                idstr = "UNSUPPORTED";
+            else
+                idstr = "UNKNOWN";
+
+            return new Exception(string.Format("{0} - {1}: {2}", sx.id, idstr, sx.message), sx);
+        }
 
         /// <summary>
         /// A helper function for validating SSH key files, as the support for those is limited in the SharpSSH library
