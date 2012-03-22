@@ -371,7 +371,7 @@ namespace Duplicati.GUI.HelperControls {
                 miExcludeFileExt.Text = fileExt; 
                 
                 // Add Path items
-                miExludeFilePath.DropDownItems.Clear();
+                miExcludeFilePath.DropDownItems.Clear();
                 miIncludeFilePath.DropDownItems.Clear();
 
                 string fullpath = Utility.AppendDirSeparator(itm.Path);
@@ -395,14 +395,14 @@ namespace Duplicati.GUI.HelperControls {
 
                     string filter = string.Format(@"*\{0}", fullpath.Substring(s.Length));
                     miIncludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = true;
-                    miExludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = false;
+                    miExcludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = false;
                 }
 
                 foreach (string s in folderlist)
                 {
                     string filter = string.Format(@"{0}", s);
                     miIncludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = true;
-                    miExludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = false;
+                    miExcludeFilePath.DropDownItems.Add(filter, null, FilterFilePath_Click).Tag = false;
                 }
 
             }
