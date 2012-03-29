@@ -56,6 +56,18 @@
 		$.getJSON(this.getActionUrl('list-schedules'), callback);
 	};
 	
-	$(document).ready(function(){ APP_SCOPE.applyRoundedCornerClass(); });
+	$(document).ready(function(){ 
+		if (window.external) {
+			window.activateFunction = function(code) { 
+				window.external.openWindow(code); 
+			}
+		} else {
+			window.activateFunction = function(code) {
+				alert("Unimplemented " + code);
+			}
+		}
+		
+		APP_SCOPE.applyRoundedCornerClass(); 
+	});
 	
 })();

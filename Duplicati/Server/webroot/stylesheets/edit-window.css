@@ -15,6 +15,7 @@ body
 {
 	color: darkblue;
 	text-decoration: underline;
+	cursor: pointer;
 }
 
 .edit-window-hidden
@@ -22,10 +23,15 @@ body
 	display: none;
 }
 
+#edit-window-general-tab, #edit-window-source-tab, #edit-window-target-tab, #edit-window-schedule-tab
+{
+	height: 350px;
+}
+
 #edit-window-general-tab
 {
 	width: 400px;
-	padding-bottom: 40px;
+	padding-bottom: 60px;
 }
 
 #edit-window-source-tab 
@@ -34,11 +40,31 @@ body
 	padding-bottom: 40px;
 }
 
+#edit-window-target-tab 
+{
+	width: 400px;
+	padding-bottom: 40px;
+}
+
+#edit-window-schedule-tab 
+{
+	width: 400px;
+	padding-bottom: 40px;
+}
+
 .edit-window-group-header
 {
 	font-size: 16px;
 	font-weight: bold;
 	padding-bottom: 10px;
+}
+
+.edit-window-mini-header
+{
+	font-size: 12px;
+	font-weight: bold;
+	padding-top: 5px;
+	padding-bottom: 5px;
 }
 
 #edit-window-standard-locations 
@@ -75,7 +101,23 @@ body
 	float: right;
 }
 
-.edit-window-field-box, #edit-window-encryption-helptext, #edit-window-filters
+.edit-window-short-text
+{
+	width: 40px;
+}
+
+.edit-window-duration-range
+{
+	width: 80px;
+	margin-left: 5px;
+}
+
+.edit-window-no-duration
+{
+	margin-right: 85px;
+}
+
+.edit-window-field-box, #edit-window-encryption-helptext, #edit-window-filters, #edit-window-space-settings, #edit-window-number-of-backups, #edit-window-number-of-fulls, #edit-window-schedule-missed
 { 
 	clear: both;
 }
@@ -93,7 +135,13 @@ body
 	padding-bottom: 20px;
 }
 
-#edit-window-filters-wizard-hide
+#edit-window-space-settings-helptext
+{
+	padding-top: 10px;
+	padding-bottom: 20px;
+}
+
+#edit-window-filters-wizard-hide, #edit-window-hide-space-settings
 {
 	display: inline;
 }
@@ -113,3 +161,21 @@ body
 	padding-top: 10px;
 	float: right;
 }
+
+#edit-window-encryption-passphrase-generate
+{
+	clear: both;
+	padding-top: 10px;
+	float: right;
+}
+
+#edit-window-schedule-missed
+{
+	padding-top: 10px;
+}
+
+#edit-window-number-of-fulls-always, #edit-window-number-of-fulls-count, #edit-window-number-of-fulls-every, #edit-window-number-of-fulls-never, #edit-window-number-of-backups-count, #edit-window-number-of-backups-time, #edit-window-schedule-missed-ask, #edit-window-schedule-missed-soon, #edit-window-schedule-missed-next, #edit-window-schedule-times-days, #edit-window-schedule-times-interval, #edit-window-schedule-times-time
+{
+	margin-left: 20px;
+}
+

@@ -14,6 +14,15 @@ $(document).ready(function(){
 		APP_SCOPE.backupSchedules = data;
 		APP_SCOPE.afterInitialRequest();
 	});
+		
+	if (window.external)
+		window.external.setMinSize(675, 200);
+		
+	APP_SCOPE.add_new_backup = function()
+	{
+		window.activateFunction("new-backup");
+	}
+	
 });
 
 (function(){

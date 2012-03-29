@@ -1,5 +1,8 @@
 <html>
 	<head>
+		<link rel="stylesheet" href="stylesheets/jquery-ui.css" />
+		<link rel="stylesheet" href="stylesheets/jquery-ui-cupertino.css" />
+
 		<link rel="stylesheet" href="stylesheets/common.css" />
 		<link rel="stylesheet" href="stylesheets/status-window.css" />
 		<link rel="stylesheet" href="stylesheets/customized.css" />
@@ -15,18 +18,18 @@
 	<body>
 	
 		<div id="modal-cover" class="modal-cover"></div>
-		<div id="progress-loader" class="loader">Loading ...</div>
+		<div id="progress-loader" class="loader ui-corner-all">Loading ...</div>
 	
 		<div id="status-window-toolbar">
-			<div id="status-window-main-logo" class="rounded-corner-box">
+			<div id="status-window-main-logo" class="ui-corner-all">
 				<div id="appname" class="appname"></div>
 				<div id="app-main-menu" class="drop-arrow"></div>
 			</div>
 			<div id="status-window-news">A new version of Duplicati is available</div>
 
-			<div id="status-window-settings-button" class="status-window-toolbar-item">Settings</div>
-			<div id="status-window-pause-button" class="status-window-toolbar-item">Pause</div>
-			<div id="status-window-add-button" class="status-window-toolbar-item">Add New Backup</div>
+			<div id="status-window-settings-button" class="status-window-toolbar-item ui-corner-all">Settings</div>
+			<div id="status-window-pause-button" class="status-window-toolbar-item ui-corner-all">Pause</div>
+			<div id="status-window-add-button" class="status-window-toolbar-item ui-corner-all" onclick="APP_SCOPE.add_new_backup()" >Add New Backup</div>
 		</div>
 		
 		<div id="status-window-main-contents">

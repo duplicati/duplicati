@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -108,17 +108,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IBrowserWindow.cs" />
+    <Compile Include="WindowsImplementation\WindowsBrowser.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WindowsImplementation\WindowsBrowser.Designer.cs">
+      <DependentUpon>WindowsBrowser.cs</DependentUpon>
+    </Compile>
     <Compile Include="HostedInstanceKeeper.cs" />
     <Compile Include="Strings\WindowsMainForm.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>WindowsMainForm.resx</DependentUpon>
-    </Compile>
-    <Compile Include="WindowsMainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="WindowsMainForm.Designer.cs">
-      <DependentUpon>WindowsMainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -127,8 +128,8 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>WindowsMainForm.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="WindowsMainForm.resx">
-      <DependentUpon>WindowsMainForm.cs</DependentUpon>
+    <EmbeddedResource Include="WindowsImplementation\WindowsBrowser.resx">
+      <DependentUpon>WindowsBrowser.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -151,7 +152,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="WinFormsRunner.cs" />
+    <Compile Include="WindowsImplementation\WinFormsRunner.cs" />
     <Compile Include="AppIndicatorRunner.cs" />
     <Compile Include="CocoaRunner.cs" />
     <None Include="SVGIcons\dark\duplicati-logo.svg">
@@ -270,7 +271,6 @@
     <None Include="Resources\Play.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <ItemGroup />
   <ItemGroup>
     <Content Include="OSX Icons\normal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

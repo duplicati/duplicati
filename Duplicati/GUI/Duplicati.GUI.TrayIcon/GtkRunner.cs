@@ -294,7 +294,7 @@ namespace Duplicati.GUI.TrayIcon
             this.OnStatusUpdated(((StatusEventArgs)a).Status);
         }
 
-        public override void Dispose ()
+        public override void Dispose()
         {
         }
         

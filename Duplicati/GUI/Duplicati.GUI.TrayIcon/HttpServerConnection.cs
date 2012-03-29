@@ -10,6 +10,7 @@ namespace Duplicati.GUI.TrayIcon
     {
         private const string CONTROL_SCRIPT = "control.cgi";
         private const string STATUS_WINDOW = "status-window.html";
+        private const string EDIT_WINDOW = "edit-window.html";
         
         private Uri m_controlUri;
         private string m_baseUri;
@@ -271,5 +272,11 @@ namespace Duplicati.GUI.TrayIcon
         {
             get { return m_baseUri + STATUS_WINDOW; }
         }
+
+        public string EditWindowURL
+        {
+            get { return m_baseUri + EDIT_WINDOW; }
+        }
+
     }
 }

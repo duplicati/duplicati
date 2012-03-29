@@ -1,3 +1,15 @@
+body 
+{
+	min-width: 675px;
+    min-height: 200px;
+}
+
+.modal-cover
+{
+	min-width: 675px;
+    min-height: 200px;
+}
+
 .status-window-toolbar-item
 {
 	height: 44px;
@@ -20,6 +32,7 @@
 	float: left;
 	height: 44px;
 	margin: 3px;
+	background-color: lightgreen;
 }
 
 #status-window-news

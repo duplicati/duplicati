@@ -26,6 +26,11 @@ namespace Duplicati.Server
             fh.AddDefaultMimeTypes();
             m_server.Add(fh);
 
+#if DEBUG
+            //For debugging, it is nice to know when we get a 404
+            m_server.Add(new DebugReportHandler());
+#endif
+
             m_server.Start(System.Net.IPAddress.Any, port);
         }
 
@@ -54,6 +59,15 @@ namespace Duplicati.Server
                     m_resp.Send();
                 }
                 base.Dispose(disposing);
+            }
+        }
+
+        private class DebugReportHandler : HttpModule
+        {
+            public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
+            {
+                System.Diagnostics.Trace.WriteLine(string.Format("Rejecting request for {0}", request.Uri));
+                return false;
             }
         }
 

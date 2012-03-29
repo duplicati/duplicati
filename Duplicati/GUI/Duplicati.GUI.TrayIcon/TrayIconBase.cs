@@ -46,6 +46,12 @@ namespace Duplicati.GUI.TrayIcon
         PausedError,
         RunningError
     }
+
+    public enum WindowIcons
+    {
+        Regular,
+        LogWindow
+    }
     
     public interface IMenuItem
     {
@@ -83,7 +89,20 @@ namespace Duplicati.GUI.TrayIcon
         {
             Program.Connection.StatusUpdated += OnStatusUpdated;
         }
-        
+
+        public virtual IBrowserWindow ShowUrlInWindow(string url)
+        {
+            //Fallback is to just show the window in a browser
+            if (Duplicati.Library.Utility.Utility.IsClientLinux)
+                try { System.Diagnostics.Process.Start("open", "\"" + Program.Connection.StatusWindowURL + "\""); }
+                catch { }
+            else
+                try { System.Diagnostics.Process.Start("\"" + Program.Connection.StatusWindowURL + "\""); }
+                catch { }
+
+            return null;
+        }
+
         protected IEnumerable<IMenuItem> BuildMenu() 
         {
             return new IMenuItem[] {
@@ -108,14 +127,19 @@ namespace Duplicati.GUI.TrayIcon
             };
         }
         
+        protected void ShowStatusWindow()
+        {
+            var window = ShowUrlInWindow(Program.Connection.StatusWindowURL);
+            if (window != null)
+            {
+                window.Icon = WindowIcons.Regular;
+                window.Title = "Duplicati status";
+            }
+        }
+
         protected void OnStatusClicked()
         {
-            if (Duplicati.Library.Utility.Utility.IsClientLinux)
-                try { System.Diagnostics.Process.Start("open", "\"" + Program.Connection.StatusWindowURL + "\""); }
-                catch { }
-            else
-                try { System.Diagnostics.Process.Start("\"" + Program.Connection.StatusWindowURL + "\""); }
-                catch { }
+            ShowStatusWindow();
         }
 
         protected void OnWizardClicked()

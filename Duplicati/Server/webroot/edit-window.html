@@ -60,6 +60,8 @@
 					<div class="edit-window-field-label">Repeat passphrase</div>
 					<input class="edit-window-field-control" id="edit-window-encryption-passphrase-repeat" type="text" />
 				</div>
+				
+				<div id="edit-window-encryption-passphrase-generate" class="edit-window-link">Generate a new password</div>
 			</div>
 	
 			<div id="edit-window-source-tab">
@@ -97,7 +99,7 @@
 						<div id="edit-window-filters-wizard-helptext">Some filter rules are applied to the source data for this backup. <div id="edit-window-filters-wizard-hide" class="edit-window-link">Hide filters</div></div>
 						
 						<div id="edit-window-filters-wizard-include">
-							<div id="edit-window-filters-wizard-include-img">Backup only</div>
+							<div id="edit-window-filters-wizard-include-img" class="edit-window-mini-header">Backup only</div>
 							
 							<div id="edit-window-filters-wizard-include-1">
 								<select>
@@ -115,7 +117,7 @@
 						</div>
 	
 						<div id="edit-window-filters-wizard-exclude">
-							<div id="edit-window-filters-wizard-exclude-img">Do not backup</div>
+							<div id="edit-window-filters-wizard-exclude-img" class="edit-window-mini-header">Do not backup</div>
 							
 							<div id="edit-window-filters-wizard-exclude-1">
 								<select>
@@ -148,84 +150,85 @@
 			</div>
 	
 			<div id="edit-window-target-tab">
-				<div class="edit-window-tab-header">Connection</div>
 	
 				<div id="edit-window-connection">
-					<div id="edit-window-connection-uri">
-						<div>Connection URI</div>
-						<input type="text" />
-						<div class="edit-window-edit-uri"></div>
+					<div class="edit-window-group-header">Connection</div>
+
+					<div class="edit-window-field-box" id="edit-window-connection-uri">
+						<div class="edit-window-field-label">Connection URI</div>
+						<input type="text" class="edit-window-field-control"/>
+						<div class="edit-window-edit-uri-button"></div>
 					</div>
 	
-					<div id="edit-window-connection-username">
-						<div>Username</div>
-						<input type="text" />
+					<div class="edit-window-field-box" id="edit-window-connection-username">
+						<div class="edit-window-field-label">Username</div>
+						<input type="text" class="edit-window-field-control"/>
 					</div>
 					
-					<div id="edit-window-connection-password">
-						<div>Password</div>
-						<input type="text" />
+					<div class="edit-window-field-box" id="edit-window-connection-password">
+						<div class="edit-window-field-label">Password</div>
+						<input type="text" class="edit-window-field-control" />
 					</div>
 				</div>
 				
 				<div id="edit-window-space-settings">
 					<div id="edit-window-space-settings-helptext">
-						Duplicati is configured to perform 10 incremental backups before another full backup is made. You can change this. <div>Hide custom backup settings</div>
+						Duplicati is configured to perform 10 incremental backups before another full backup is made. You can change this. <div id="edit-window-hide-space-settings" class="edit-window-link">Hide custom backup settings</div>
 					</div>
 					
 					<div id="edit-window-number-of-backups">
 					
-						<div id="edit-window-number-of-backups-helptext">Number of backups</div>
-						<div id="edit-window-number-of-backups-count">
-							<input type="radio" />
-							<div>Store up to this many backups</div>
-							<input type="text"/>
+						<div id="edit-window-number-of-backups-helptext" class="edit-window-mini-header">Number of backups</div>
+						<div id="edit-window-number-of-backups-count" class="edit-window-field-box">
+							<input type="radio" name="edit-window-backups" class="edit-window-field-checkbox" />
+							<div class="edit-window-field-checkbox">Store up to this many backups</div>
+							<input class="edit-window-label-extra edit-window-short-text edit-window-no-duration" type="text"/>
 						</div>
 	
-						<div id="edit-window-number-of-backups-time">
-							<input type="radio" />
-							<div>Store backups for</div>
-							<input type="text"/>
-							<select>
+						<div id="edit-window-number-of-backups-time" class="edit-window-field-box">
+							<input class="edit-window-field-checkbox" type="radio" name="edit-window-backups"/>
+							<div class="edit-window-field-checkbox">Store backups for</div>
+							<select class="edit-window-label-extra edit-window-duration-range">
 								<option>Hours</option>
 								<option>Days</option>
 								<option>Weeks</option>
 								<option>Months</option>
 								<option>Years</option>
 							</select>
+							<input class="edit-window-label-extra edit-window-short-text" type="text"/>
 						</div>
 					</div>
 					
 					<div id="edit-window-number-of-fulls">
-						<div id="edit-window-number-of-fulls-helptext">Make a full backup</div>
+						<div id="edit-window-number-of-fulls-helptext" class="edit-window-mini-header">Make a full backup</div>
 						
-						<div id="edit-window-number-of-fulls-always">
-							<input type="radio" />
-							<div>Everytime</div>
+						<div id="edit-window-number-of-fulls-always" class="edit-window-field-box">
+							<input class="edit-window-field-checkbox" name="edit-window-fulls" type="radio" />
+							<div class="edit-window-field-checkbox">Everytime</div>
 						</div>
 	
-						<div id="edit-window-number-of-fulls-count">
-							<input type="radio" />
-							<div>After this many backups</div>
-							<input type="text"/>
+						<div id="edit-window-number-of-fulls-count" class="edit-window-field-box">
+							<input class="edit-window-field-checkbox" name="edit-window-fulls" type="radio" />
+							<div class="edit-window-field-checkbox">After this many backups</div>
+							<input class="edit-window-label-extra edit-window-short-text edit-window-no-duration" type="text"/>
 						</div>
 	
-						<div id="edit-window-number-of-fulls-every">
-							<input type="radio" />
-							<div>Every</div>
-							<input type="text"/>
-							<select>
+						<div id="edit-window-number-of-fulls-every" class="edit-window-field-box">
+							<input class="edit-window-field-checkbox" type="radio" name="edit-window-fulls"/>
+							<div class="edit-window-field-checkbox">Every</div>
+							<select class="edit-window-label-extra edit-window-duration-range">
 								<option>Hours</option>
 								<option>Days</option>
 								<option>Weeks</option>
 								<option>Months</option>
 								<option>Years</option>
 							</select>
+							<input class="edit-window-label-extra edit-window-short-text" type="text"/>
 						</div>
 	
-						<div id="edit-window-number-of-fulls-never">
-							<input type="radio" />
-							<div>Only at the beginning</div>
+						<div id="edit-window-number-of-fulls-never" class="edit-window-field-box">
+							<input class="edit-window-field-checkbox" type="radio" name="edit-window-fulls"/>
+							<div class="edit-window-field-checkbox">Only at the beginning</div>
 						</div>
 	
 					</div>
@@ -234,36 +237,36 @@
 			</div>
 	
 			<div id="edit-window-schedule-tab">
-				<div class="edit-window-tab-header">Standard Locations</div>
+				<div class="edit-window-tab-header">When to run the backup</div>
 	
 				<div id="edit-window-schedule-manually">
-					<input type="radio" />
+					<input type="radio" name="edit-window-schedule"/>
 					Run backup manually
 				</div>
 	
 				<div id="edit-window-schedule-times">
-					<input type="radio" />
+					<input type="radio" name="edit-window-schedule"/>
 					Run backup regularly at the specified times
 					
 					<div id="edit-window-schedule-times-specific">
-						<div id="edit-window-schedule-times-time">
-							<div>Time</div>
-							<input type="text" />
+						<div id="edit-window-schedule-times-time" class="edit-window-field-box">
+							<div class="edit-window-field-label">Time</div>
+							<input type="text" class="edit-window-field-control"/>
 						</div>
 	
-						<div id="edit-window-schedule-times-interval">
-							<div>Interval</div>
-							<select>
+						<div id="edit-window-schedule-times-interval" class="edit-window-field-box">
+							<div class="edit-window-field-label">Interval</div>
+							<select class="edit-window-field-control">
 								<option>Every day</option>
 								<option>Every week</option>
 								<option>Every month</option>
 							</select>
 						</div>
 						
-						<div id="edit-window-schedule-times-days">
-							<div>Allowed days</div>
+						<div id="edit-window-schedule-times-days" class="edit-window-field-box">
+							<div class="edit-window-field-label">Allowed days</div>
 							
-							<div id="edit-window-schedule-times-days-day">
+							<div id="edit-window-schedule-times-days-day" class="edit-window-field-control">
 								<div><input type="checkbox" /> Monday</div>						
 	
 								<div><input type="checkbox" /> Tuesday</div>						
@@ -282,21 +285,21 @@
 						</div>
 						
 						<div id="edit-window-schedule-missed">
-							<div id="edit-window-schedule-missed-helptext">When a backup was missed
+							<div id="edit-window-schedule-missed-helptext" class="edit-window-mini-header">When a backup was missed
 							</div>
 						
 							<div id="edit-window-schedule-missed-ask">
-								<input type="radio" />
+								<input type="radio" name="edit-window-missed-action" />
 								Ask what to do
 							</div>
 	
 							<div id="edit-window-schedule-missed-soon">
-								<input type="radio" />
+								<input type="radio" name="edit-window-missed-action"/>
 								Run the backup as soon as possible
 							</div>
 	
-							<div id="edit-window-schedule-missed-next">
-								<input type="radio" />
+							<div id="edit-window-schedule-missed-next" >
+								<input type="radio" name="edit-window-missed-action"/>
 								Run the backup at the next specified time
 							</div>
 						</div>
