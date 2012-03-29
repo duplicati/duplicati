@@ -234,6 +234,8 @@ namespace Duplicati.Library.Encryption
             public ProtectedCryptoStream(System.IO.Stream stream, Exception reportException, bool defaultFallback)
                 : base(stream)
             {
+                m_reportException = reportException;
+                m_defaultFallback = defaultFallback;
             }
 
             /// <summary>
