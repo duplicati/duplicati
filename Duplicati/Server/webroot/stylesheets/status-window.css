@@ -8,13 +8,18 @@ body
 {
 	min-width: 675px;
     min-height: 200px;
+    display: none;
 }
 
 .status-window-toolbar-item
 {
-	height: 44px;
 	margin: 3px;
 	float: right;
+	margin-top: 7px;
+	margin-right: 5px;
+	padding: .5em 1em;
+	cursor: pointer;
+
 }
 
 #status-window-toolbar
@@ -30,9 +35,9 @@ body
 #status-window-main-logo
 {
 	float: left;
-	height: 44px;
-	margin: 3px;
-	background-color: lightgreen;
+	padding: .5em 1em;
+	margin-left: 2px;
+	cursor: pointer;
 }
 
 #status-window-news
@@ -41,6 +46,7 @@ body
 	line-height: 44px; /* Center vertically */
 	margin-left: 10px;
 	float: left;
+	cursor: pointer;
 }
 
 #status-window-outer
@@ -71,6 +77,12 @@ body
 	bottom: 0px;
 	left: 0px;
 	z-index: 99;
+	margin: 0px;
+}
+
+#status-window-footer-inner
+{
+	padding: 3px;
 }
 
 #list-of-backups
@@ -121,31 +133,4 @@ body
 
 .backup-schedule-name
 {
-}
-
-
-/* DEBUG */
-#status-window-settings-button, #status-window-pause-button, #status-window-add-button
-{
-	width: 80px;
-}
-
-#list-of-backups
-{
-
-}
-
-#status-window-toolbar, #status-window-footer
-{
-	background-color: green;
-}
-
-.status-window-toolbar-item
-{
-	background-color: yellow;
-}
-
-#status-window-main-contents
-{
-	/* background-color: yellow; */
 }

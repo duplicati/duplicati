@@ -21,15 +21,16 @@
 		<div id="progress-loader" class="loader ui-corner-all">Loading ...</div>
 	
 		<div id="status-window-toolbar">
-			<div id="status-window-main-logo" class="ui-corner-all">
-				<div id="appname" class="appname"></div>
-				<div id="app-main-menu" class="drop-arrow"></div>
+			<div id="status-window-toolbar-inner" class="ui-state-default ui-helper-clearfix ui-helper ui-widget-header">
+				<div id="status-window-main-logo" title="Click to access basic functions" class="ui-state-default ui-helper-clearfix ui-helper ui-widget-header ui-corner-all">
+					<div id="appname" class="appname"></div>
+				</div>
+				<div id="status-window-news" title="Click here to open the news page">A new version of Duplicati is available</div>
+	
+				<div id="status-window-settings-button" title="Click to open settings" class="ui-state-default status-window-toolbar-item ui-helper-clearfix ui-helper ui-widget-header ui-corner-all">Settings</div>
+				<div id="status-window-pause-button" title="Click to pause all backups" class="ui-state-default status-window-toolbar-item ui-helper-clearfix ui-helper ui-widget-header ui-corner-all">Pause</div>
+				<div id="status-window-add-button" title="Click here to add a new backup" class="ui-state-default status-window-toolbar-item ui-helper-clearfix ui-helper ui-widget-header ui-corner-all" onclick="APP_SCOPE.add_new_backup()" >Add Backup</div>
 			</div>
-			<div id="status-window-news">A new version of Duplicati is available</div>
-
-			<div id="status-window-settings-button" class="status-window-toolbar-item ui-corner-all">Settings</div>
-			<div id="status-window-pause-button" class="status-window-toolbar-item ui-corner-all">Pause</div>
-			<div id="status-window-add-button" class="status-window-toolbar-item ui-corner-all" onclick="APP_SCOPE.add_new_backup()" >Add New Backup</div>
 		</div>
 		
 		<div id="status-window-main-contents">
@@ -39,7 +40,7 @@
 			<div id="backup-item-4" class="backup-item odd"><div class="backup-inner">Something else</div></div>
 		</div>
 		
-		<div id="status-window-footer">Not sure we need one, but just for ensuring the layout can handle a footer</div>
+		<div id="status-window-footer"><div id="status-window-footer-inner" class="ui-state-default ui-helper-clearfix ui-helper ui-widget-header">Not sure we need one, but just for ensuring the layout can handle a footer</div></div>
 		
 	</body>
 </html>

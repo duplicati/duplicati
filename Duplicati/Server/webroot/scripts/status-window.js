@@ -16,7 +16,7 @@ $(document).ready(function(){
 	});
 		
 	if (window.external)
-		window.external.setMinSize(675, 200);
+		window.external.setMinSize(775, 200);
 		
 	APP_SCOPE.add_new_backup = function()
 	{
