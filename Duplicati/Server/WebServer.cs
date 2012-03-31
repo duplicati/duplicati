@@ -22,7 +22,23 @@ namespace Duplicati.Server
 
             m_server.Add(new DynamicHandler());
 
-            FileModule fh = new FileModule("/", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "webroot"));
+            string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+#if DEBUG
+            //For debug we go "../../../.." to get out of "GUI/Duplicati.GUI.TrayIcon/bin/debug"
+            string tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", ".."));
+            tmpwebroot = System.IO.Path.Combine(tmpwebroot, "Server");
+            if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
+                webroot = tmpwebroot;
+            else
+            {
+                //If we are running the server standalone, we only need to exit "bin/Debug"
+                tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", ".."));
+                if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
+                    webroot = tmpwebroot;
+            }
+
+#endif
+            FileModule fh = new FileModule("/", System.IO.Path.Combine(webroot, "webroot"));
             fh.AddDefaultMimeTypes();
             m_server.Add(fh);
 

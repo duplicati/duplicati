@@ -129,48 +129,54 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
-    <None Include="webroot\scripts\app-base.js">
+    <Content Include="webroot\scripts\app-base.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\scripts\app-functions.js">
+    </Content>
+    <Content Include="webroot\scripts\app-functions.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\scripts\customized.js">
+    </Content>
+    <Content Include="webroot\scripts\customized.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\scripts\jquery-1.7.1.js">
+    </Content>
+    <Content Include="webroot\scripts\jquery-1.7.1.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\scripts\status-window.js">
+    </Content>
+    <Content Include="webroot\scripts\status-window.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\status-window.html">
+    </Content>
+    <Content Include="webroot\status-window.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\stylesheets\common.css">
+    </Content>
+    <Content Include="webroot\stylesheets\common.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\stylesheets\customized.css">
+    </Content>
+    <Content Include="webroot\stylesheets\customized.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\stylesheets\jquery-ui-cupertino.css">
+    </Content>
+    <Content Include="webroot\stylesheets\jquery-ui-cupertino.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\stylesheets\jquery-ui.css">
+    </Content>
+    <Content Include="webroot\stylesheets\jquery-ui.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\stylesheets\status-window.css">
+    </Content>
+    <Content Include="webroot\stylesheets\status-window.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\gfx\drop-arrow.gif">
+    </Content>
+    <Content Include="webroot\gfx\drop-arrow.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="webroot\gfx\round-box2.gif" />
-    <None Include="webroot\gfx\round-box3.gif" />
-    <None Include="webroot\gfx\round-dot.gif" />
-    <None Include="webroot\gfx\spinner.gif">
+    </Content>
+    <Content Include="webroot\gfx\round-box2.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
+    <Content Include="webroot\gfx\round-box3.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="webroot\gfx\round-dot.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="webroot\gfx\spinner.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="webroot\edit-window.html">
