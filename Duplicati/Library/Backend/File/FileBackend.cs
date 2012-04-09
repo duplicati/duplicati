@@ -47,17 +47,29 @@ namespace Duplicati.Library.Backend
             if (m_path.IndexOf("@") > 0)
             {
                 m_username = m_path.Substring(0, m_path.IndexOf("@"));
-                m_path = m_path.Substring(m_path.IndexOf("@") + 1);
-
-                if (m_username.IndexOf(":") > 0)
+                //Bugfix: cannot access paths with @ in the path
+                if (m_username.Contains("/") || m_username.Contains("\\") || m_username.Contains(System.IO.Path.DirectorySeparatorChar.ToString()))
                 {
-                    m_password = m_username.Substring(0, m_username.IndexOf(":"));
-                    m_username = m_username.Substring(m_username.IndexOf(":") + 1);
+                    m_username = null;
+                    if (options.ContainsKey("ftp-username"))
+                        m_username = options["ftp-username"];
+                    if (options.ContainsKey("ftp-password"))
+                        m_password = options["ftp-password"];
                 }
                 else
                 {
-                    if (options.ContainsKey("ftp-password"))
-                        m_password = options["ftp-password"];
+                    m_path = m_path.Substring(m_path.IndexOf("@") + 1);
+
+                    if (m_username.IndexOf(":") > 0)
+                    {
+                        m_password = m_username.Substring(0, m_username.IndexOf(":"));
+                        m_username = m_username.Substring(m_username.IndexOf(":") + 1);
+                    }
+                    else
+                    {
+                        if (options.ContainsKey("ftp-password"))
+                            m_password = options["ftp-password"];
+                    }
                 }
             }
             else
