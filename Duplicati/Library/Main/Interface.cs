@@ -183,8 +183,14 @@ namespace Duplicati.Library.Main
         /// The number of restore patches
         /// </summary>
         private int m_restorePatches = 0;
-
+        /// <summary>
+        /// Cache of the last progress message
+        /// </summary>
         private string m_lastProgressMessage = "";
+        /// <summary>
+        /// A flag indicating if logging has been set, used to dispose the logging
+        /// </summary>
+        private bool m_hasSetLogging = false;
 
         /// <summary>
         /// A flag toggling if the upload progress is reported, 
@@ -1848,7 +1854,10 @@ namespace Duplicati.Library.Main
             OperationRunning(true);
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
+            {
+                m_hasSetLogging = true;
                 Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
+            }
 
             if (stats != null)
             {
@@ -2537,6 +2546,14 @@ namespace Duplicati.Library.Main
 
                 m_options.LoadedModules.Clear();
                 OperationRunning(false);
+            }
+
+            if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
+            {
+                Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
+                Logging.Log.CurrentLog = null;
+                sl.Dispose();
+                m_hasSetLogging = false;
             }
         }
 
