@@ -26,5 +26,4 @@
 	<ignore>{0:N} GB</ignore>
 	<ignore>{0:N} KB</ignore>
 	<ignore>{0:N} MB</ignore>
-	<ignore>password</ignore>
 </root>
