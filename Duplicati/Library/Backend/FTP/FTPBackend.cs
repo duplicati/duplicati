@@ -80,6 +80,10 @@ namespace Duplicati.Library.Backend
                 }
             }
 
+            //Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
+            if (m_userInfo != null)
+                m_userInfo.Domain = "";
+
             m_url = url;
             if (!m_url.EndsWith("/"))
                 m_url += "/";
