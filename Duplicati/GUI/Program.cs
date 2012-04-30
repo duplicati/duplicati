@@ -549,6 +549,7 @@ namespace Duplicati.GUI
                 return new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("run-backup", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.RunbackupCommandDescription, Strings.Program.RunbackupCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("run-backup-group", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.RunbackupGroupCommandDescription, Strings.Program.RunbackupGroupCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("full", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.FullCommandDescription, Strings.Program.FullCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("resume", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ResumeCommandDescription, Strings.Program.ResumeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("pause", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.PauseCommandDescription, Strings.Program.PauseCommandDescription),

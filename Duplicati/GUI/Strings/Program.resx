@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AnotherInstanceDetected" xml:space="preserve">
     <value>Another instance is running, and was notified</value>
@@ -186,5 +186,8 @@ Error message: {0}</value>
   </data>
   <data name="TraylessCommandDescription" xml:space="preserve">
     <value>Runs Duplicati without showing the tray icon, closing the main window closes Duplicati</value>
+  </data>
+  <data name="RunbackupGroupCommandDescription" xml:space="preserve">
+    <value>Runs all backups in the group with the name supplied. If no group name is supplied, the available backups are displayed. If the group name is not found, an error message is displayed.</value>
   </data>
 </root>
