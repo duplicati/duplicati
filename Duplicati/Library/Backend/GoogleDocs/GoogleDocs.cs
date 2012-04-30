@@ -141,7 +141,7 @@ namespace Duplicati.Library.Backend
                         break;
                     }
 
-                results.Add(file.Title, new TaggedFileEntry(file.Title, (long)file.QuotaBytesUsed, file.LastViewed, file.Updated, file.ResourceId, file.DocumentEntry.Content.Src.ToString(), updateUrl, file.ETag));
+                results.Add(file.Title, new TaggedFileEntry(file.Title, file.QuotaBytesUsed, file.LastViewed, file.Updated, file.ResourceId, file.DocumentEntry.Content.Src.ToString(), updateUrl, file.ETag));
             }
             return results;
         }
