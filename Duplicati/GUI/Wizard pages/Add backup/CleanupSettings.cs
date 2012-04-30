@@ -125,24 +125,28 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
         private void EnableFullBackupClean_CheckedChanged(object sender, EventArgs e)
         {
             CleanFullBackupCount.Enabled = EnableFullBackupClean.Checked;
-            m_wrapper.CleanupSettingsUI.HasWarnedClean = false;
+            ResetUserHasBeenWarned();
         }
 
         private void EnableCleanupDuration_CheckedChanged(object sender, EventArgs e)
         {
             CleanupDuration.Enabled = EnableCleanupDuration.Checked;
-            m_wrapper.CleanupSettingsUI.HasWarnedClean = false;
+            ResetUserHasBeenWarned();
         }
 
         private void CleanFullBackupCount_ValueChanged(object sender, EventArgs e)
         {
-            m_wrapper.CleanupSettingsUI.HasWarnedClean = false; 
+            ResetUserHasBeenWarned();
         }
 
         private void CleanupDuration_ValueChanged(object sender, EventArgs e)
         {
-            m_wrapper.CleanupSettingsUI.HasWarnedClean = false;
+            ResetUserHasBeenWarned();
         }
 
+        private void ResetUserHasBeenWarned()
+        {
+            if (m_wrapper != null) m_wrapper.CleanupSettingsUI.HasWarnedClean = false;
+        }
     }
 }
