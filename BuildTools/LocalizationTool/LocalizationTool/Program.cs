@@ -487,7 +487,7 @@ namespace LocalizationTool
 
                     string path = f.Key;
                     if (f.Key.StartsWith(filenameprefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        path = f.Key.Substring(Math.Min(pfl, f.Key.Length));
+                        path = f.Key.Substring(pfl);
 					
 					if (Duplicati.Library.Utility.Utility.IsClientLinux)
 						path = path.Replace(System.IO.Path.DirectorySeparatorChar.ToString(), "\\");

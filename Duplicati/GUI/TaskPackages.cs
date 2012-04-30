@@ -404,7 +404,7 @@ namespace Duplicati.GUI
         {
             string destination = base.GetConfiguration(options);
 
-            if (!(string.IsNullOrEmpty(this.FullAfter) || options.ContainsKey("full-if-older-than")))
+            if (!string.IsNullOrEmpty(this.FullAfter))
                 options.Add("full-if-older-than", this.FullAfter);
 
             return destination;
