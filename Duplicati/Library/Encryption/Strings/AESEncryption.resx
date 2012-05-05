@@ -112,16 +112,25 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AesencryptionallowfallbackdecryptionLong" xml:space="preserve">
+    <value>Older versions of Duplicati used a non-standard encryption mode, which is no longer supported. Enable this flag to activate decryption support so you can restore backups made with old versions. This option has no effect if the backup files are made with Duplicati 1.2 or newer.</value>
+  </data>
+  <data name="AesencryptionallowfallbackdecryptionShort" xml:space="preserve">
+    <value>Use this option to enable the old decryption mode</value>
+  </data>
   <data name="AesencryptiondontallowfallbackLong_v2" xml:space="preserve">
     <value>If the decryption fails using AES Crypt, dont attempt to use the previous encryption file format. </value>
   </data>
   <data name="AesencryptiondontallowfallbackShort" xml:space="preserve">
     <value>Do not attempt to decrypt using previous method</value>
+  </data>
+  <data name="AesencryptionfallbackDeprecated" xml:space="preserve">
+    <value>AES decryption fallback is disabled by default, use the option {0} to change this instead</value>
   </data>
   <data name="BadKeyStretchError" xml:space="preserve">
     <value>Bad key stretch</value>

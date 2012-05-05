@@ -36,6 +36,10 @@ namespace Duplicati.Library.Encryption
         /// The commandline switch used to specify that fallback decryption is not allowed
         /// </summary>
         private const string COMMAND_LINE_NO_FALLBACK = "aes-encryption-dont-allow-fallback";
+        /// <summary>
+        /// The commandline switch used to specify that fallback decryption is allowed
+        /// </summary>
+        private const string COMMAND_LINE_FALLBACK = "aes-decryption-allow-old-fallback";
         #endregion
 
         /// <summary>
@@ -64,8 +68,11 @@ namespace Duplicati.Library.Encryption
         /// <param name="key">The key used for encryption. The key gets stretched through SHA hashing to fit the key size requirements</param>
         public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
-            m_allowFallback = !Utility.Utility.ParseBoolOption(options, COMMAND_LINE_NO_FALLBACK);
-            m_defaultFallback = !options.ContainsKey(COMMAND_LINE_NO_FALLBACK);
+            if (options.ContainsKey(COMMAND_LINE_NO_FALLBACK))
+                m_allowFallback = !Utility.Utility.ParseBoolOption(options, COMMAND_LINE_NO_FALLBACK);
+            m_allowFallback = Utility.Utility.ParseBoolOption(options, COMMAND_LINE_FALLBACK);
+
+            m_defaultFallback = false;
             m_key = passphrase;
         }
 
@@ -123,7 +130,8 @@ namespace Duplicati.Library.Encryption
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(COMMAND_LINE_NO_FALLBACK, CommandLineArgument.ArgumentType.Boolean, Strings.AESEncryption.AesencryptiondontallowfallbackShort, Strings.AESEncryption.AesencryptiondontallowfallbackLong_v2, "false")
+                    new CommandLineArgument(COMMAND_LINE_NO_FALLBACK, CommandLineArgument.ArgumentType.Boolean, Strings.AESEncryption.AesencryptiondontallowfallbackShort, Strings.AESEncryption.AesencryptiondontallowfallbackLong_v2, "false", null, null, string.Format(Strings.AESEncryption.AesencryptionfallbackDeprecated, COMMAND_LINE_FALLBACK)),
+                    new CommandLineArgument(COMMAND_LINE_FALLBACK, CommandLineArgument.ArgumentType.Boolean, Strings.AESEncryption.AesencryptionallowfallbackdecryptionShort, Strings.AESEncryption.AesencryptionallowfallbackdecryptionLong, "false"),
                 });
             }
         }
