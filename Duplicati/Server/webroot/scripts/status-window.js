@@ -45,7 +45,7 @@ $(document).ready(function(){
 			var id = 'backup-schedule-' + sc.ID;
 			var oddClass = (i % 2) == 1 ? 'odd' : 'even';
 			html += '<div id="'+ id + '" class="backup-schedule ' + oddClass + '">';
-			html += '<div class="backup-schedule-inner rounded-corner-box">';
+			html += '<div class="backup-schedule-inner ui-corner-all ui-helper-clearfix ui-helper">';
 			html += '<div class="backup-schedule-name">' + sc.Name + '</div>';
 			if (sc.Tags != null && sc.Tags != '')
 				html += '<div class="backup-schedule-tags">' + sc.Tags + '</div>';

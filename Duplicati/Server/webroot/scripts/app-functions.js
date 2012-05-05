@@ -8,6 +8,19 @@
 	//Remove this line to shield the inner of the class from the outer
 	APP_SCOPE.localscope = ls;
 	
+	APP_SCOPE.parseBool = function(v) 
+	{
+		if (typeof(v) == "string")
+		{
+			if (v == "true" || v == "yes" || v == "on" || v == "1")
+				return true;
+			else
+				return false;
+		}
+		else
+			return v || false;
+	}
+	
 	APP_SCOPE.createHtmlItems = function(html) {
 		if (ls.creator_div == null) {
 			ls.creator_div = document.createElement("div");
@@ -55,14 +68,64 @@
 	APP_SCOPE.getBackupSchedules = function(callback) {
 		$.getJSON(this.getActionUrl('list-schedules'), callback);
 	};
+
+	APP_SCOPE.getBackupDefaults = function(callback) {
+		$.getJSON(this.getActionUrl('get-backup-defaults'), callback);
+	};
+	
+	APP_SCOPE.getInstalledCompressionModules = function(callback) {
+		if (APP_SCOPE.CompressionModules == null) {
+			$.getJSON(this.getActionUrl('list-installed-compression-modules'), function(resp) {
+				APP_SCOPE.CompressionModules = resp;
+				callback(APP_SCOPE.CompressionModules);
+			});
+		} else {
+			callback(APP_SCOPE.CompressionModules);
+		}
+	};
+
+	APP_SCOPE.getInstalledGenericModules = function(callback) {
+		if (APP_SCOPE.CompressionModules == null) {
+			$.getJSON(this.getActionUrl('list-installed-generic-modules'), function(resp) {
+				APP_SCOPE.GenericModules = resp;
+				callback(APP_SCOPE.GenericModules);
+			});
+		} else {
+			callback(APP_SCOPE.GenericModules);
+		}
+	};
+
+	APP_SCOPE.getInstalledEncryptionModules = function(callback) {
+		if (APP_SCOPE.EncryptionModules == null) {
+			$.getJSON(this.getActionUrl('list-installed-encryption-modules'), function(resp) {
+				APP_SCOPE.EncryptionModules = resp;
+				callback(APP_SCOPE.EncryptionModules);
+			});
+		} else {
+			callback(APP_SCOPE.EncryptionModules);
+		}
+	};
+
+	
+	APP_SCOPE.getQueryParameter = function(name) {
+		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+		var regexS = "[\\?&]" + name + "=([^&#]*)";
+		var regex = new RegExp(regexS);
+		var results = regex.exec(window.location.search);
+		if(results == null)
+			return "";
+		else
+			return decodeURIComponent(results[1].replace(/\+/g, " "));
+	};
 	
 	$(document).ready(function(){ 
-		if (window.external) {
-			window.activateFunction = function(code) { 
-				window.external.openWindow(code); 
+		if (window.external && window.external.AddSearch == null && window.external.AddSearchProvider == null) {
+			APP_SCOPE.external = window.external;
+			APP_SCOPE.activateFunction = function(code) {
+				APP_SCOPE.external.openWindow(code); 
 			}
 		} else {
-			window.activateFunction = function(code) {
+			APP_SCOPE.activateFunction = function(code) {
 				alert("Unimplemented " + code);
 			}
 		}

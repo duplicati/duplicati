@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!-- 
+
+This file contains built-in defaults.
+To override or suppply custom default settings,
+put a new file into the server root folder,
+and name it "backup defaults.xml".
+
+-->
+<settings>
+  <IncludeSetup>true</IncludeSetup>
+  <EncryptionModule>AES</EncryptionModule>
+
+  <settings>
+    <key name="--full-if-older-than" value="1M" />
+    <key name="--volsize" value="10MB" />
+    <key name="--exclude-regepx" value=".*\\Thumbs.db"/>
+    
+    <key name="Files:IncludeDocuments" value="true" />
+    <key name="Files:IncludeDesktop" value="true" />
+    <key name="Files:IncludeMusic" value="false" />
+    <key name="Files:IncludeImages" value="true" />
+    <key name="Files:IncludeAppData" value="false" />
+  </settings>
+
+  <schedulersettings>
+    <key name="max-full-backups" value="4"/>
+    <key name="repeat-interval"  value="1D"/>
+    <key name="backup-time-offset" value="13h"/>
+    <key name="max-full-backups" value="4"/>
+  </schedulersettings>
+</settings>

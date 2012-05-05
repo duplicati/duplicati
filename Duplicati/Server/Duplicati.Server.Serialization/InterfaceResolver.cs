@@ -6,11 +6,11 @@ using Newtonsoft.Json.Converters;
 
 namespace Duplicati.Server.Serialization
 {
-    public class SerializableStatusCreator : CustomCreationConverter<ISerializableStatus>
+    public class SerializableStatusCreator : CustomCreationConverter<IServerStatus>
     {
-        public override ISerializableStatus Create(Type objectType)
+        public override IServerStatus Create(Type objectType)
         {
-            return new Implementations.SerializableStatus();
+            return new Implementations.ServerStatus();
         }
     }
 
@@ -19,6 +19,30 @@ namespace Duplicati.Server.Serialization
         public override IProgressEventData Create(Type objectType)
         {
             return new Implementations.ProgressEventData();
+        }
+    }
+
+    public class JobSettingsDataCreator : CustomCreationConverter<IJobSettings>
+    {
+        public override IJobSettings Create(Type objectType)
+        {
+            return new Implementations.JobSettings();
+        }
+    }
+
+    public class BackendSettingsCreator : CustomCreationConverter<IBackendSettings>
+    {
+        public override IBackendSettings Create(Type objectType)
+        {
+            return new Implementations.BackendSettings();
+        }
+    }
+
+    public class FilterSetCreator : CustomCreationConverter<IFilterSet>
+    {
+        public override IFilterSet Create(Type objectType)
+        {
+            return new Implementations.FilterSet();
         }
     }
 }

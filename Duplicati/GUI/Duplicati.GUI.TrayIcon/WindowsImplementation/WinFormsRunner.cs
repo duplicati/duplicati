@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using Duplicati.Server.Serialization;
 
-namespace Duplicati.GUI.TrayIcon
+namespace Duplicati.GUI.TrayIcon.Windows
 {
     //We use a separate class to start the runner to avoid attempts to load WinForms from Program.cs
     public class WinFormsRunner : TrayIconBase
@@ -129,8 +129,8 @@ namespace Duplicati.GUI.TrayIcon
         
         protected override void RegisterStatusUpdateCallback ()
         {
-            Program.Connection.StatusUpdated += delegate(ISerializableStatus status) {
-                m_trayIcon.ContextMenuStrip.Invoke(new Action<ISerializableStatus>(OnStatusUpdated), status);
+            Program.Connection.StatusUpdated += delegate(IServerStatus status) {
+                m_trayIcon.ContextMenuStrip.Invoke(new Action<IServerStatus>(OnStatusUpdated), status);
             };
         }
         

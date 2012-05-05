@@ -104,7 +104,7 @@ namespace Duplicati.GUI.TrayIcon
         //We keep these in functions to avoid attempting to load the instance,
         // because the required assemblies may not exist on the machine 
         private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
-        private static TrayIconBase GetWinformsInstance() { return new WinFormsRunner(); }
+        private static TrayIconBase GetWinformsInstance() { return new Windows.WinFormsRunner(); }
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); }
         

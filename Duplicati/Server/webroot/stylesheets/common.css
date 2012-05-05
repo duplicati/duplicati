@@ -19,7 +19,7 @@ body
 	
 	background-color: #000000;
 	opacity: 0.6;
-	filter: alpha(opacity = 50);
+	filter: alpha(opacity = 60);
 	z-index: 9999;
 }
 

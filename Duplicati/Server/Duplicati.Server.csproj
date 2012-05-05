@@ -90,6 +90,9 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scheduler.cs" />
+    <Compile Include="Serializable\BackendSettings.cs" />
+    <Compile Include="Serializable\FilterSet.cs" />
+    <Compile Include="Serializable\JobSettings.cs" />
     <Compile Include="SingleInstance.cs" />
     <Compile Include="SQLiteLoader.cs" />
     <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
@@ -124,11 +127,12 @@
     </Compile>
     <Compile Include="TaskPackages.cs" />
     <Compile Include="WebServer.cs" />
-    <Compile Include="SerializableStatus.cs" />
+    <Compile Include="Serializable\ServerStatus.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
+    <EmbeddedResource Include="backup defaults.xml" />
     <Content Include="webroot\scripts\app-base.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

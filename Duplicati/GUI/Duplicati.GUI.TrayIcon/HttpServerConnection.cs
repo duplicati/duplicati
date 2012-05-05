@@ -16,10 +16,10 @@ namespace Duplicati.GUI.TrayIcon
         private string m_baseUri;
         private System.Net.NetworkCredential m_credentials;
         private static readonly System.Text.Encoding ENCODING = System.Text.Encoding.GetEncoding("utf-8");
-        public delegate void StatusUpdate(ISerializableStatus status);
+        public delegate void StatusUpdate(IServerStatus status);
         public event StatusUpdate StatusUpdated;
 
-        private ISerializableStatus m_status;
+        private IServerStatus m_status;
 
         private TimeSpan m_updateIntervalIdle = TimeSpan.FromSeconds(15);
         private TimeSpan m_updateIntervalActive = TimeSpan.FromSeconds(5);
@@ -32,7 +32,7 @@ namespace Duplicati.GUI.TrayIcon
         private Serializer m_serializer;
         private readonly Dictionary<string, string> m_updateRequest;
 
-        public ISerializableStatus Status { get { return m_status; } }
+        public IServerStatus Status { get { return m_status; } }
 
         private object m_lock = new object();
         private Queue<Dictionary<string, string>> m_workQueue = new Queue<Dictionary<string,string>>();
@@ -57,8 +57,8 @@ namespace Duplicati.GUI.TrayIcon
 
         private void UpdateStatus()
         {
-            ISerializableStatus old_status = m_status;
-            m_status = PerformRequest<ISerializableStatus>(m_updateRequest);
+            IServerStatus old_status = m_status;
+            m_status = PerformRequest<IServerStatus>(m_updateRequest);
 
             m_currentInterval = m_status.ProgramState == Server.Serialization.LiveControlState.Paused ? m_updateIntervalIdle :
                     m_status.ActiveScheduleId < 0 ? m_updateIntervalIdle : m_updateIntervalActive;

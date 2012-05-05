@@ -111,6 +111,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("list-recent-completed", ListRecentCompleted);
                 SUPPORTED_METHODS.Add("get-recent-log-details", GetLogBlob);
                 SUPPORTED_METHODS.Add("send-command", SendCommand);
+                SUPPORTED_METHODS.Add("get-backup-defaults", GetBackupDefaults);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -192,7 +193,7 @@ namespace Duplicati.Server
 
             private void GetCurrentState (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
-                OutputObject(bw, new SerializableStatus());
+                OutputObject(bw, new Serializable.ServerStatus());
             }
 
             private void GetInstalledBackends(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -242,6 +243,12 @@ namespace Duplicati.Server
             {
                 OutputObject(bw, new Datamodel.ApplicationSettings(Program.DataConnection));
             }
+
+            private void GetBackupDefaults(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                OutputObject(bw, new Serializable.JobSettings());
+            }
+
 
             private void SendCommand(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {

@@ -191,7 +191,7 @@ namespace Duplicati.GUI.TrayIcon
             Program.Connection.Pause("60m");
         }
 
-        protected void OnStatusUpdated(ISerializableStatus status)
+        protected void OnStatusUpdated(IServerStatus status)
         {
             switch(status.SuggestedStatusIcon)
             {

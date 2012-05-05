@@ -33,8 +33,8 @@ namespace Duplicati.GUI.TrayIcon
         
         private class StatusEventArgs : EventArgs
         {
-            public readonly Duplicati.Server.Serialization.ISerializableStatus Status;
-            public StatusEventArgs(Duplicati.Server.Serialization.ISerializableStatus args) { this.Status = args; }
+            public readonly Duplicati.Server.Serialization.IServerStatus Status;
+            public StatusEventArgs(Duplicati.Server.Serialization.IServerStatus args) { this.Status = args; }
         }
         
         private class MenuItemWrapper : IMenuItem
@@ -281,7 +281,7 @@ namespace Duplicati.GUI.TrayIcon
         
         protected override void RegisterStatusUpdateCallback ()
         {
-            Program.Connection.StatusUpdated += delegate(Duplicati.Server.Serialization.ISerializableStatus status) {
+            Program.Connection.StatusUpdated += delegate(Duplicati.Server.Serialization.IServerStatus status) {
                 Gtk.Application.Invoke(this, new StatusEventArgs(status), StatusUpdateEvent);
             };
         }

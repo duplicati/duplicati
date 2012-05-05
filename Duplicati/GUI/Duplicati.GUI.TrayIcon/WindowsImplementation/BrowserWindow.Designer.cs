@@ -1,4 +1,4 @@
-﻿namespace Duplicati.GUI.TrayIcon
+﻿namespace Duplicati.GUI.TrayIcon.Windows
 {
     partial class WindowsBrowser
     {

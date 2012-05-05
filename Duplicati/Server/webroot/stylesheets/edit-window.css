@@ -67,19 +67,6 @@ body
 	padding-bottom: 5px;
 }
 
-#edit-window-standard-locations 
-{
-	width: 200px;
-	float: left;
-}
-
-#edit-window-additional-locations 
-{
-	width: 300px;
-	float: left;
-	padding-left: 40px;
-}
-
 .edit-window-field-control
 {
 	width: 200px;
@@ -179,3 +166,22 @@ body
 	margin-left: 20px;
 }
 
+#edit-window-standard-locations 
+{
+	width: 300px;
+}
+
+#edit-window-filters, #edit-window-additional-locations 
+{
+	margin-top: 25px;
+}
+
+#edit-window-filters-preview
+{
+	margin-top: 10px;
+}
+
+#edit-window-filters-header, #edit-window-filters-add, #edit-window-filters-copy
+{
+	display: inline;
+}

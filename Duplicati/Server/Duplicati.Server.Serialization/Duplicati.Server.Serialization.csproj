@@ -77,11 +77,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enums.cs" />
+    <Compile Include="IBackendSettings.cs" />
+    <Compile Include="IFilterSet.cs" />
+    <Compile Include="IJobSettings.cs" />
+    <Compile Include="Implementations\BackendSettings.cs" />
+    <Compile Include="Implementations\FilterSet.cs" />
+    <Compile Include="Implementations\JobSettings.cs" />
     <Compile Include="Implementations\ProgressEventData.cs" />
-    <Compile Include="Implementations\SerializableStatus.cs" />
+    <Compile Include="Implementations\ServerStatus.cs" />
     <Compile Include="InterfaceResolver.cs" />
     <Compile Include="IProgressEventData.cs" />
-    <Compile Include="ISerializableStatus.cs" />
+    <Compile Include="IServerStatus.cs" />
     <Compile Include="JsonSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />

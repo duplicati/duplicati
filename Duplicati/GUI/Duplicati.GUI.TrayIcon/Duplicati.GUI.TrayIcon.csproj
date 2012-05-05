@@ -109,11 +109,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />
-    <Compile Include="WindowsImplementation\WindowsBrowser.cs">
+    <Compile Include="WindowsImplementation\CallbackShim.cs" />
+    <Compile Include="WindowsImplementation\BrowserWindow.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="WindowsImplementation\WindowsBrowser.Designer.cs">
-      <DependentUpon>WindowsBrowser.cs</DependentUpon>
+    <Compile Include="WindowsImplementation\BrowserWindow.Designer.cs">
+      <DependentUpon>BrowserWindow.cs</DependentUpon>
     </Compile>
     <Compile Include="HostedInstanceKeeper.cs" />
     <Compile Include="Strings\WindowsMainForm.Designer.cs">
@@ -128,8 +129,8 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>WindowsMainForm.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="WindowsImplementation\WindowsBrowser.resx">
-      <DependentUpon>WindowsBrowser.cs</DependentUpon>
+    <EmbeddedResource Include="WindowsImplementation\BrowserWindow.resx">
+      <DependentUpon>BrowserWindow.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
