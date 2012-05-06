@@ -35,9 +35,6 @@ namespace Duplicati.CommandLine
                 string filter = Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(Duplicati.Library.Utility.FilenameFilter.ParseCommandLine(cargs, true));
                 Dictionary<string, string> options = CommandLineParser.ExtractOptions(cargs);
 
-                if (!string.IsNullOrEmpty(filter))
-                    options["filter"] = filter;
-
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions
                 if (!Library.Utility.Utility.IsClientLinux)
@@ -93,6 +90,10 @@ namespace Duplicati.CommandLine
                         Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
                         return;
                     }
+
+                //After checking for internal options, we set the filter option
+                if (!string.IsNullOrEmpty(filter))
+                    options["filter"] = filter;
 
                 if (cargs.Count == 1)
                 {
