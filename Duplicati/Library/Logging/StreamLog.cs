@@ -44,7 +44,7 @@ namespace Duplicati.Library.Logging
         /// </summary>
         /// <param name="filename">The file to write to</param>
         public StreamLog(string filename)
-            : this(System.IO.File.Create(filename))
+            : this(new System.IO.FileStream(filename, System.IO.FileMode.Append, System.IO.FileAccess.Write))
         {
         }
 
