@@ -109,10 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />
-    <Compile Include="WindowsImplementation\CallbackShim.cs" />
-    <Compile Include="WindowsImplementation\BrowserWindow.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="WindowsImplementation\BrowserWindow.cs" />
     <Compile Include="WindowsImplementation\BrowserWindow.Designer.cs">
       <DependentUpon>BrowserWindow.cs</DependentUpon>
     </Compile>
@@ -153,6 +150,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="WindowsImplementation\CallbackShim.cs" />
     <Compile Include="WindowsImplementation\WinFormsRunner.cs" />
     <Compile Include="AppIndicatorRunner.cs" />
     <Compile Include="CocoaRunner.cs" />
