@@ -52,6 +52,15 @@ namespace Duplicati.Library.Compression
         /// </summary>
         private long m_headersize = 0;
 
+        /// <summary>
+        /// The encoding used for filenames.
+        /// Used to calculate the size of the Central Header.
+        /// </summary>
+        private static readonly Encoding _filenameEncoding = Encoding.UTF8; 
+        //NOTE: We should use ICSharpCode.SharpZipLib.Zip.ZipConstants.DefaultCodePage),
+        // but since we set the bit flag Unicode, it becomes UTF-8 as defined in
+        // the Zip 6.3.0 format description, Appendix D - Language Encoding (EFS)
+
 #if !SHARPZIPLIBWORKS
         /// <summary>
         /// We need an output stream because we cannot update an existing file
@@ -367,7 +376,7 @@ namespace Duplicati.Library.Compression
                 throw new Exception(Strings.FileArchiveZip.AttemptWriteWhileReadingError);
 #endif
             string entryname = PathFromFilesystem(file);
-            m_headersize += 46 + 24 + Encoding.GetEncoding(ICSharpCode.SharpZipLib.Zip.ZipConstants.DefaultCodePage).GetByteCount(entryname);
+            m_headersize += 46 + 24 + _filenameEncoding.GetByteCount(entryname);
 #if SHARPZIPLIBWORKS
             if (FileExists(file))
                 DeleteFile(file);
