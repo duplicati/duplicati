@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -232,5 +232,8 @@ If this problem happens more than once, it is possible that the delete transacti
   </data>
   <data name="NonExistingDeleteTransactionError" xml:space="preserve">
     <value>An internal error has occured, a request was made to complete a delete transaction, but there was not a transaction in progress</value>
+  </data>
+  <data name="AutoCreateFolderFailed" xml:space="preserve">
+    <value>Failed to automatically create folder, error message: {0}</value>
   </data>
 </root>

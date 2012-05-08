@@ -369,7 +369,8 @@ namespace Duplicati.Library.Main
                     
                     CheckLiveControl();
 
-                    List<ManifestEntry> backupsets = full ? new List<ManifestEntry>() : backend.GetBackupSets();
+                    //This will list all files on the backend and create the target folder
+                    List<ManifestEntry> backupsets = backend.GetBackupSets();
 
                     if (backupsets.Count == 0)
                     {
@@ -1848,6 +1849,20 @@ namespace Duplicati.Library.Main
         private void SetupCommonOptions(CommunicationStatistics stats)
         {            
             m_options.MainAction = stats.OperationMode;
+            
+            switch (m_options.MainAction)
+            {
+                case DuplicatiOperationMode.Backup:
+                case DuplicatiOperationMode.BackupFull:
+                case DuplicatiOperationMode.BackupIncremental:
+                    break;
+                
+                default:
+                    //It only makes sense to enable auto-creation if we are writing files.
+                    if (!m_options.RawOptions.ContainsKey("disable-autocreate-folder"))
+                        m_options.RawOptions["disable-autocreate-folder"] = "true";
+                    break;
+            }
 
             Library.Logging.Log.LogLevel = m_options.Loglevel;
 
