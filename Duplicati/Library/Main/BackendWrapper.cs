@@ -984,7 +984,19 @@ namespace Duplicati.Library.Main
                     DisposeBackend();
 
                     if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
-                        return new List<Library.Interface.IFileEntry>();
+                    {
+                        ResetBackend();
+                        try
+                        {
+                            m_statistics.AddNumberOfRemoteCalls(1);
+                            ((Library.Interface.IBackend_v2)m_backend).CreateFolder();
+                        }
+                        catch(Exception exc) 
+                        {
+                            m_statistics.LogWarning(string.Format(Strings.BackendWrapper.AutoCreateFolderFailed, exc.Message), exc);
+                            DisposeBackend();
+                        }
+                    }
 
                     retries--;
                     if (retries > 0 && m_options.RetryDelay.Ticks > 0)
@@ -1382,20 +1394,6 @@ namespace Duplicati.Library.Main
                         if (m_backendInterfaceLogger != null)
                             m_backendInterfaceLogger.RegisterPut(log_fe, false, ex.ToString());
                         DisposeBackend();
-
-                        //Even if we can create the folder, we still count it as an error to prevent trouble with backends
-                        // that report OK for CreateFolder, but still report the folder as missing
-                        if (ex is Library.Interface.FolderMissingException && m_backendSupportsCreateFolder && m_options.AutocreateFolders)
-                        {
-                            ResetBackend();
-                            try 
-                            {
-                                m_statistics.AddNumberOfRemoteCalls(1);
-                                (m_backend as Library.Interface.IBackend_v2).CreateFolder(); 
-                            }
-                            catch { DisposeBackend(); }
-                        }
-                            
                         
                         lastEx = ex;
                         m_statistics.LogRetryAttempt(ex.Message, ex);

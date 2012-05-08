@@ -73,7 +73,7 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine();
                     List<string> lines = new List<string>();
                     foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
-                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg, " ");
+                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg);
 
                     foreach (string s in lines)
                         Console.WriteLine(s);

@@ -288,20 +288,25 @@ namespace Duplicati.Library.Interface
 
         public static void PrintArgument(List<string> lines, ICommandLineArgument arg)
         {
-            lines.Add(" --" + arg.Name + " (" + arg.Typename + "): " + arg.ShortDescription);
+            PrintArgument(lines, arg, " ");
+        }
+
+        public static void PrintArgument(List<string> lines, ICommandLineArgument arg, string indent)
+        {
+            lines.Add(indent + "--" + arg.Name + " (" + arg.Typename + "): " + arg.ShortDescription);
             
             if (arg.Deprecated)
-                lines.Add("   " + Strings.CommandLineArgument.DeprecationMarker + ": " + arg.DeprecationMessage);
+                lines.Add(indent + "  " + Strings.CommandLineArgument.DeprecationMarker + ": " + arg.DeprecationMessage);
 
-            lines.Add("   " + arg.LongDescription);
+            lines.Add(indent + "  " + arg.LongDescription);
             if (arg.Aliases != null && arg.Aliases.Length > 0)
-                lines.Add("   * " + Strings.CommandLineArgument.AliasesHeader + ": --" + string.Join(", --", arg.Aliases));
+                lines.Add(indent + "  * " + Strings.CommandLineArgument.AliasesHeader + ": --" + string.Join(", --", arg.Aliases));
 
             if (arg.ValidValues != null && arg.ValidValues.Length > 0)
-                lines.Add("   * " + Strings.CommandLineArgument.ValuesHeader + ": " + string.Join(", ", arg.ValidValues));
+                lines.Add(indent + "  * " + Strings.CommandLineArgument.ValuesHeader + ": " + string.Join(", ", arg.ValidValues));
 
             if (!string.IsNullOrEmpty(arg.DefaultValue))
-                lines.Add("   * " + Strings.CommandLineArgument.DefaultValueHeader + ": " + arg.DefaultValue);
+                lines.Add(indent + "  * " + Strings.CommandLineArgument.DefaultValueHeader + ": " + arg.DefaultValue);
 
 
         }

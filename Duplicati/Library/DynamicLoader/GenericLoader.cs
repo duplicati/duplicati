@@ -60,6 +60,11 @@ namespace Duplicati.Library.DynamicLoader
         /// </summary>
         public static IGenericModule[] Modules { get { return new GenericLoaderSub().Interfaces; } }
 
+        /// <summary>
+        /// Gets a list of keys supported
+        /// </summary>
+        public static string[] Keys { get { return new GenericLoaderSub().Keys; } }
+
         #endregion
 
     }
