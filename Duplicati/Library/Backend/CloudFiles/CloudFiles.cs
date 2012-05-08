@@ -139,9 +139,22 @@ namespace Duplicati.Library.Backend
                 System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
 
                 HttpWebRequest req = CreateRequest("", extraUrl + markerUrl);
-                using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
-                using (System.IO.Stream s = resp.GetResponseStream())
-                    doc.Load(s);
+
+                try
+                {
+                    using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                    using (System.IO.Stream s = resp.GetResponseStream())
+                        doc.Load(s);
+                }
+                catch (WebException wex)
+                {
+                    if (markerUrl == "") //Only check on first itteration
+                        if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                            throw new FolderMissingException(wex);
+                    
+                    //Other error, just re-throw
+                    throw;
+                }
 
                 System.Xml.XmlNodeList lst = doc.SelectNodes("container/object");
 
@@ -340,11 +353,24 @@ namespace Duplicati.Library.Backend
                 req.Timeout = 100000;
 
                 //We need to verify the eTag locally
-                using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
-                    if ((int)resp.StatusCode >= 300)
-                        throw new WebException(Strings.CloudFiles.FileUploadError, null, WebExceptionStatus.ProtocolError, resp);
-                    else
-                        md5Hash = resp.Headers["ETag"];
+                try
+                {
+                    using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                        if ((int)resp.StatusCode >= 300)
+                            throw new WebException(Strings.CloudFiles.FileUploadError, null, WebExceptionStatus.ProtocolError, resp);
+                        else
+                            md5Hash = resp.Headers["ETag"];
+                }
+                catch (WebException wex)
+                {
+                    //Catch 404 and turn it into a FolderNotFound error
+                    if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                        throw new FolderMissingException(wex);
+
+                    //Other error, just re-throw
+                    throw;
+                }
+
 
                 if (md5Hash == null || md5Hash.ToLower() != fileHash.ToLower())
                 {
