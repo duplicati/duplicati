@@ -109,7 +109,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />
-    <Compile Include="WindowsImplementation\BrowserWindow.cs" />
+    <Compile Include="WindowsImplementation\BrowserWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="WindowsImplementation\BrowserWindow.Designer.cs">
       <DependentUpon>BrowserWindow.cs</DependentUpon>
     </Compile>
