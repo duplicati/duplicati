@@ -116,6 +116,169 @@ namespace Duplicati.Library.Main
             get { return new string[] { "ftp-password", "ftp-username" }; }
         }
 
+
+        /// <summary>
+        /// Gets all commands that effect a backup
+        /// </summary>
+        public static string[] BackupOptions
+        {
+            get
+            {
+                return new string[] {
+                    "full",
+                    "full-if-older-than",
+                    "full-if-more-than-n-incrementals",
+                    "volsize",
+                    "totalsize",
+                    "disable-autocreate-folder",
+                    "disable-filetime-check",
+                    "disable-time-tolerance",
+                    "include",
+                    "exclude",
+                    "include-regexp",
+                    "exclude-regexp",
+                    "sorted-filelist",
+                    "skip-files-larger-than",
+                    "allow-sourcefolder-change",
+                    "full-if-sourcefolder-changed",
+                    "upload-unchanged-backups",
+                    "list-verify-uploads",
+                    "create-verification-file",
+                    "signature-control-files",
+                    "snapshot-policy",
+                    "vss-exclude-writers",
+                    "usn-policy",
+                    "open-file-policy",
+                    "exclude-empty-folders",
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all options that affect a connection
+        /// </summary>
+        public static string[] ConnectionOptions
+        {
+            get
+            {
+                return new string[] {
+                    "thread-priority",
+                    "number-of-retries",
+                    "retry-delay",
+                    "synchronous-upload",
+                    "asynchronous-upload",
+                    "asynchronous-upload-limit",
+                    "asynchronous-upload-folder",
+                    "disable-streaming-transfer",
+                    "max-upload-pr-second",
+                    "max-download-pr-second",
+                    "no-connection-reuse",
+                    "allow-sleep"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all options that affect a filename parsing
+        /// </summary>
+        public static string[] FilenameOptions
+        {
+            get
+            {
+                return new string[] {
+                    "backup-prefix",
+                    "time-separator",
+                    "short-filenames",
+                    "old-filenames",
+                    "tempdir"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all options that can be used for debugging
+        /// </summary>
+        public static string[] DebugOptions
+        {
+            get
+            {
+                return new string[] {
+                    "debug-output",
+                    "debug-retry-errors",
+                    "log-file",
+                    "log-level",
+                    "backend-log-database"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all options that affect module loading
+        /// </summary>
+        public static string[] ModuleOptions
+        {
+            get
+            {
+                return new string[] {
+                    "encryption-module",
+                    "compression-module",
+                    "enable-module",
+                    "disable-module",
+                    "gpg-encryption",
+                    "no-encryption"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all options that affect encryption
+        /// </summary>
+        public static string[] EncryptionOptions
+        {
+            get
+            {
+                return new string[] {
+                    "encryption-module",
+                    "passphrase",
+                    "gpg-encryption",
+                    "no-encryption"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all options that affect cleanup commands
+        /// </summary>
+        public static string[] CleanupOptions
+        {
+            get
+            {
+                return new string[] {
+                    "allow-full-removal",
+                    "force"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all options that affect restore commands
+        /// </summary>
+        public static string[] RestoreOptions
+        {
+            get
+            {
+                return new string[] {
+                    "skip-file-hash-checks",
+                    "dont-read-manifests",
+                    "file-to-restore",
+                    "restore-time"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets all supported commands
+        /// </summary>
         public IList<ICommandLineArgument> SupportedCommands
         {
             get

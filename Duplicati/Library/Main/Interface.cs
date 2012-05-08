@@ -2341,6 +2341,8 @@ namespace Duplicati.Library.Main
                         stats.LogWarning(validationMessage, null);
                 }
             }
+
+            //TODO: Based on the action, see if all options are relevant
         }
 
         #region Static interface
