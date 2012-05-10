@@ -18,7 +18,7 @@ namespace Duplicati.CommandLine
             {
                 List<string> keywords = new List<string>();
                 StringBuilder sb = new StringBuilder();
-                foreach(var line in sr.ReadToEnd().Split(new string[] { "\r\n" }, StringSplitOptions.None))
+                foreach(var line in sr.ReadToEnd().Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
                 {
                     if (line.Trim().StartsWith("#"))
                         continue;
@@ -189,7 +189,9 @@ namespace Duplicati.CommandLine
                     {
                         Console.WriteLine("Topic not found: {0}", topic);
                         Console.WriteLine();
-                        PrintUsage("help", new Dictionary<string, string>());
+                        //Prevent recursive lookups
+                        if (topic != "help")
+                            PrintUsage("help", new Dictionary<string, string>());
                         return;
                     }
                 }
