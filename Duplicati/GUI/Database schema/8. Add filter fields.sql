@@ -1,1 +1,0 @@
-﻿ALTER TABLE "TaskFilter" ADD COLUMN "GlobbingFilter" TEXT NULL;

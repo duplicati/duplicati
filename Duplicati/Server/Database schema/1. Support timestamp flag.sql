@@ -1,1 +1,0 @@
-ALTER TABLE "Task" ADD COLUMN "IgnoreTimestamps" BOOLEAN NULL;
