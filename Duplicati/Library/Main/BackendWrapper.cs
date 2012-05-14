@@ -326,7 +326,7 @@ namespace Duplicati.Library.Main
 
                 if (totalSpace > 0)
                     m_metadata.TotalQuotaSpace = totalSpace;
-                if (spaceLeft < 0)
+                if (spaceLeft > 0)
                     m_metadata.FreeQuotaSpace = spaceLeft;
             }
 

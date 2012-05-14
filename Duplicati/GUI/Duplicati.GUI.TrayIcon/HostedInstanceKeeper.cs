@@ -18,7 +18,7 @@ namespace Duplicati.GUI.TrayIcon
             m_runner = new System.Threading.Thread(ThreadRunner);
             m_runner.Start(args);
 
-            if (!Duplicati.Server.Program.ServerStartedEvent.WaitOne(TimeSpan.FromSeconds(10), true))
+            if (!Duplicati.Server.Program.ServerStartedEvent.WaitOne(TimeSpan.FromSeconds(100), true))
             {
                 if (m_runnerException != null)
                     throw m_runnerException;
@@ -31,7 +31,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             try
             {
-            Duplicati.Server.Program.Main((string[])a);
+                Duplicati.Server.Program.Main((string[])a);
             } catch (Exception ex) {
                 m_runnerException = ex;
             }

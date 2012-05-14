@@ -56,6 +56,8 @@ namespace Duplicati.Server
         private Library.Main.LiveControl.ILiveControl m_currentBackupControlInterface;
         private bool m_isAborted = false;
 
+        private Dictionary<string, string> m_reportedMetadata = null;
+
         private RunnerState m_currentRunnerState = RunnerState.Suspended;
 
         public DuplicatiRunner()
@@ -71,7 +73,7 @@ namespace Duplicati.Server
         public void ExecuteTask(IDuplicityTask task)
         {
             Dictionary<string, string> options = new Dictionary<string,string>();
-            
+
             //Set the log level to be that of the GUI
             options["log-level"] = Duplicati.Library.Logging.Log.LogLevel.ToString();
 
@@ -79,6 +81,7 @@ namespace Duplicati.Server
 
             string results = "";
             string parsedMessage = "";
+            m_reportedMetadata = null;
             m_isAborted = false;
 
             try
@@ -95,6 +98,7 @@ namespace Duplicati.Server
                     SetupControlInterface();
 
                     i.OperationProgress += new Duplicati.Library.Main.OperationProgressEvent(Duplicati_OperationProgress);
+                    i.MetadataReport += new Library.Main.MetadataReportDelegate(Duplicati_MetadataReport);
 
                     switch (task.TaskType)
                     {
@@ -361,12 +365,44 @@ namespace Duplicati.Server
                     else if (l.ParsedStatus == DuplicatiOutputParser.WarningStatus)
                         r = RunnerResult.Warning;
 
-                    ResultEvent(r, parsedMessage, results);
+                    if (ResultEvent != null)
+                        ResultEvent(r, parsedMessage, results);
                 }
             }
 
             if (task.Schedule != null && !m_isAborted)
+            {
+                //Write metadata to schedule prior to commit
+                if (m_reportedMetadata != null)
+                {
+                    //Update existing and remove unused
+                    foreach (string k in new List<string>(task.Schedule.MetadataLookup.Values))
+                        if (m_reportedMetadata.ContainsKey(k))
+                        {
+                            task.Schedule.MetadataLookup[k] = m_reportedMetadata[k];
+                            m_reportedMetadata.Remove(k);
+                        }
+                        else
+                            task.Schedule.MetadataLookup.Remove(k);
+
+                    //Add new elements
+                    foreach (KeyValuePair<string, string> kv in m_reportedMetadata)
+                        task.Schedule.MetadataLookup[kv.Key] = kv.Value;
+                }
+
                 task.Schedule.ScheduledRunCompleted(); //Register as completed if not aborted
+            }
+
+            m_reportedMetadata = null;
+        }
+
+        void Duplicati_MetadataReport(IDictionary<string, string> metadata)
+        {
+            if (m_reportedMetadata == null)
+                m_reportedMetadata = new Dictionary<string, string>();
+
+            foreach (KeyValuePair<string, string> kvp in metadata)
+                m_reportedMetadata[kvp.Key] = kvp.Value;
         }
 
         void Duplicati_OperationProgress(Duplicati.Library.Main.Interface caller, Duplicati.Library.Main.DuplicatiOperation operation, Duplicati.Library.Main.DuplicatiOperationMode specificmode, int progress, int subprogress, string message, string submessage)
