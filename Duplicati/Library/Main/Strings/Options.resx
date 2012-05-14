@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AsynchronousuploadLong" xml:space="preserve">
     <value>By supplying this option, Duplicati will transmit files, while building volumes. This can shorten the time it takes to perform a backup, but requires more diskspace.</value>
@@ -512,5 +512,11 @@
   </data>
   <data name="BackendlogdatabaseLong" xml:space="preserve">
     <value>Use this option to specify a path to a file that will store information about backend operations. This option can be used to track down errors by comparing the backend state with the expected backend state.</value>
+  </data>
+  <data name="QuotasizeLong" xml:space="preserve">
+    <value>This value can be used to set a known upper limit on the amount of space a backend has. If the backend reports the size itself, this value is ignored</value>
+  </data>
+  <data name="QuotasizeShort" xml:space="preserve">
+    <value>A reported maximum storage</value>
   </data>
 </root>

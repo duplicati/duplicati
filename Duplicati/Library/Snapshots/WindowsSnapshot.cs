@@ -305,6 +305,16 @@ namespace Duplicati.Library.Snapshots
             return Alphaleonis.Win32.Filesystem.File.OpenRead(GetSnapshotPath(file));
         }
 
+        /// <summary>
+        /// Returns the size of a file
+        /// </summary>
+        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <returns>The lenth of the file</returns>
+        public long GetFileSize(string file)
+        {
+            return new Alphaleonis.Win32.Filesystem.FileInfo(GetSnapshotPath(file)).Length;
+        }
+
         #endregion
 
         #region IDisposable Members

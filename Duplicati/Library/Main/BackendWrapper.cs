@@ -55,6 +55,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         private CommunicationStatistics m_statistics;
         /// <summary>
+        /// The set of metadata gathered during various operations
+        /// </summary>
+        private Backupmetadata m_metadata;
+
+        /// <summary>
         /// The set of options used by Duplicati
         /// </summary>
         private Options m_options;
@@ -209,6 +214,7 @@ namespace Duplicati.Library.Main
         /// <param name="options">A set of backend options</param>
         public BackendWrapper(CommunicationStatistics statistics, string backend, Options options)
         {
+            m_metadata = new Backupmetadata();
             m_statistics = statistics;
             m_options = options;
 
@@ -278,6 +284,10 @@ namespace Duplicati.Library.Main
 
         public void AddOrphan(BackupEntryBase entry)
         {
+            m_metadata.OrphanFileCount++;
+            if (entry.Filesize > 0)
+                m_metadata.OrphanFileSize += entry.Filesize;
+
             if (m_orphans != null)
                 m_orphans.Add(entry);
             else
@@ -301,6 +311,33 @@ namespace Duplicati.Library.Main
         {
             List<Library.Interface.IFileEntry> result = (List<Library.Interface.IFileEntry>)ProtectedInvoke("ListInternal");
 
+            long totalSpace = -1;
+            long spaceLeft = -1;
+
+            if (m_backend is Duplicati.Library.Interface.IQuotaEnabledBackend)
+            {
+                try { spaceLeft = ((Duplicati.Library.Interface.IQuotaEnabledBackend)m_backend).FreeQuotaSpace; }
+                catch { }
+                try { totalSpace = ((Duplicati.Library.Interface.IQuotaEnabledBackend)m_backend).TotalQuotaSpace; }
+                catch { }
+
+                if (totalSpace < 0)
+                    totalSpace = m_options.QuotaSize;
+
+                if (totalSpace > 0)
+                    m_metadata.TotalQuotaSpace = totalSpace;
+                if (spaceLeft < 0)
+                    m_metadata.FreeQuotaSpace = spaceLeft;
+            }
+
+            long totalSize = 0;
+            foreach (Library.Interface.IFileEntry f in result)
+                if (f.Size > 0)
+                    totalSize += f.Size;
+
+            this.m_metadata.TotalSize = totalSize;
+            this.m_metadata.TotalFileCount = result.Count;
+
             if (!filter)
                 return result;
 
@@ -321,6 +358,10 @@ namespace Duplicati.Library.Main
 
                 m_transactionFile = found[0];
                 result.Remove(m_transactionFile.Fileentry);
+                m_metadata.OrphanFileCount++;
+                
+                if (m_transactionFile.Filesize > 0)
+                    m_metadata.OrphanFileSize += m_transactionFile.Filesize;
 
                 if (m_statistics != null)
                 {
@@ -374,9 +415,14 @@ namespace Duplicati.Library.Main
                 for (int i = 0; i < result.Count; i++)
                     if (lookup.ContainsKey(result[i].Name))
                     {
+                        m_metadata.SourceFileCount++;
+                        if (result[i].Size > 0)
+                            m_metadata.OrphanFileSize += result[i].Size;
+
                         m_leftovers.Add(result[i]);
                         result.RemoveAt(i);
                         i--;
+
                     }
             }
 
@@ -422,7 +468,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="files">The list of filenames found on the backend</param>
         /// <returns>A list of full backups</returns>
-        public List<ManifestEntry> SortAndPairSets(List<Duplicati.Library.Interface.IFileEntry> files)
+        private List<ManifestEntry> SortAndPairSets(List<Duplicati.Library.Interface.IFileEntry> files)
         {
             Sorter sortHelper = new Sorter();
             files.Sort(sortHelper);
@@ -451,6 +497,11 @@ namespace Duplicati.Library.Main
                 {
                     if (m_statistics != null && m_statistics.VerboseErrors && !fe.IsFolder)
                         m_statistics.LogWarning(string.Format(Strings.BackendWrapper.UnmatchedFilenameWarning, fe.Name), null);
+
+                    m_metadata.AlienFileCount++;
+                    if (fe.Size > 0)
+                        m_metadata.AlienFileSize += fe.Size;
+
                     continue; //Non-duplicati files
                 }
 
@@ -621,7 +672,62 @@ namespace Duplicati.Library.Main
                 }
             }
 
+            m_metadata.FullBackupCount = fulls.Count;
+            long maxlen = 0;
+            long volumecount = 0;
+            long fullsize = 0;
+            foreach (ManifestEntry me in fulls)
+            {
+                maxlen = Math.Max(maxlen, me.Incrementals.Count + 1);
+                volumecount += me.Volumes.Count;
+                foreach (ManifestEntry mex in me.Incrementals)
+                    volumecount += mex.Volumes.Count;
+                fullsize += CalculateSizeOfBackupSet(me, true);
+            }
+            m_metadata.LongestChainLength = maxlen;
+            m_metadata.TotalVolumeCount = volumecount;
+            m_metadata.TotalBackupSize = fullsize;
+
+            if (fulls.Count > 0)
+            {
+                ManifestEntry cur = fulls[fulls.Count - 1];
+                m_metadata.CurrentChainLength = cur.Incrementals.Count + 1;
+                m_metadata.CurrentFullDate = cur.Time;
+                m_metadata.CurrentChainSize = CalculateSizeOfBackupSet(cur, true);
+
+                if (cur.Incrementals.Count > 0)
+                    cur = cur.Incrementals[cur.Incrementals.Count - 1];
+
+                m_metadata.LastBackupDate = cur.Time;
+                m_metadata.LastBackupSize = CalculateSizeOfBackupSet(cur, false);
+            }
+
             return fulls;
+        }
+
+        private long CalculateSizeOfBackupSet(ManifestEntry c, bool recurse)
+        {
+            long size = 0;
+            foreach (KeyValuePair<SignatureEntry, ContentEntry> x in c.Volumes)
+            {
+                if (x.Key.Filesize > 0)
+                    size += x.Key.Filesize;
+                if (x.Value.Filesize > 0)
+                    size += x.Value.Filesize;
+            }
+
+            if (c.Filesize > 0)
+                size += c.Filesize;
+            if (c.Alternate != null && c.Alternate.Filesize > 0)
+                size += c.Alternate.Filesize;
+            if (c.Verification != null && c.Verification.Filesize > 0)
+                size += c.Verification.Filesize;
+
+            if (recurse)
+                foreach (ManifestEntry me in c.Incrementals)
+                    size += CalculateSizeOfBackupSet(me, false);
+
+            return size;
         }
 
         private ManifestEntry SwapManifestAlternates(ManifestEntry m)
@@ -1660,6 +1766,8 @@ namespace Duplicati.Library.Main
             }
 
         }
+
+        public Backupmetadata Metadata { get { return m_metadata; } }
 
         private void DisposeInternal()
         {

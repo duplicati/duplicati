@@ -429,6 +429,16 @@ namespace Duplicati.Library.Snapshots
             return System.IO.File.OpenRead(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
         }
 
+        /// <summary>
+        /// Returns the size of a file
+        /// </summary>
+        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <returns>The lenth of the file</returns>
+        public long GetFileSize(string file)
+        {
+            return new System.IO.FileInfo(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file)).Length;
+        }
+
         #endregion
 
         #region IDisposable Members

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -77,6 +77,7 @@
     <Compile Include="IGenericModule.cs" />
     <Compile Include="IGUIControl.cs" />
     <Compile Include="IGUIMiniControl.cs" />
+    <Compile Include="IQuotaEnabledBackend.cs" />
     <Compile Include="ISettingsControl.cs" />
     <Compile Include="IStreamingBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

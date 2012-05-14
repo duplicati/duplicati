@@ -367,6 +367,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
                     
                     new CommandLineArgument("backend-log-database", CommandLineArgument.ArgumentType.Path, Strings.Options.BackendlogdatabaseShort, Strings.Options.BackendlogdatabaseLong),
+                    new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
                 });
             }
         }
@@ -1172,7 +1173,21 @@ namespace Duplicati.Library.Main
                 return value;
             } 
         }
-        
+
+        /// <summary>
+        /// Gets the total size in bytes that the backend supports, returns -1 if there is no upper limit
+        /// </summary>
+        public long QuotaSize
+        {
+            get
+            {
+                if (!m_options.ContainsKey("quota-size") || string.IsNullOrEmpty(m_options["quota-size"]))
+                    return -1;
+                else
+                    return Utility.Sizeparser.ParseSize(m_options["quota-size"], "mb");
+            }
+        }
+
         /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 
         /// </summary>

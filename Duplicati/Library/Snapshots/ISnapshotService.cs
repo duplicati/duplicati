@@ -56,5 +56,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The full path to the file in non-snapshot format</param>
         /// <returns>An open filestream that can be read and seeked</returns>
         Stream OpenRead(string file);
+
+        /// <summary>
+        /// Returns the size of a file
+        /// </summary>
+        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <returns>The lenth of the file</returns>
+        long GetFileSize(string file);
     }
 }

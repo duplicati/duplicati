@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class File : IBackend_v2, IStreamingBackend, IBackendGUI
+    public class File : IBackend_v2, IStreamingBackend, IBackendGUI, IQuotaEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
@@ -338,5 +338,51 @@ namespace Duplicati.Library.Backend
         }
 
         #endregion
+
+        private System.IO.DriveInfo GetDrive()
+        {
+            string root;
+            if (Utility.Utility.IsClientLinux)
+            {
+                string path = Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(m_path));
+                root = "/";
+
+                //Find longest common prefix from mounted devices
+                //TODO: Can trick this with symlinks, where the symlink is on one mounted volume,
+                // and the actual storage is on another
+                foreach (System.IO.DriveInfo di in System.IO.DriveInfo.GetDrives())
+                    if (path.StartsWith(Utility.Utility.AppendDirSeparator(di.Name)) && di.Name.Length > root.Length)
+                        root = di.Name;
+            }
+            else
+            {
+                root = System.IO.Path.GetPathRoot(m_path);
+            }
+
+            return new System.IO.DriveInfo(root);
+        }
+
+        public long TotalQuotaSpace
+        {
+            get
+            {
+                try { return GetDrive().TotalSize; }
+                catch { }
+
+                return -1;
+            }
+        }
+
+
+        public long FreeQuotaSpace
+        {
+            get
+            {
+                try { return GetDrive().AvailableFreeSpace; }
+                catch { }
+
+                return -1;
+            }
+        }
     }
 }

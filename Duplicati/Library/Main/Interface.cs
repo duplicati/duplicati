@@ -153,6 +153,12 @@ namespace Duplicati.Library.Main
     /// <param name="submessage">A message describing the current transfer operation</param>
     public delegate void OperationProgressEvent(Interface caller, DuplicatiOperation operation, DuplicatiOperationMode specificoperation, int progress, int subprogress, string message, string submessage);
 
+    /// <summary>
+    /// A delegate used to report metadata about the current backup, obtained while running a normal operation
+    /// </summary>
+    /// <param name="metadata">A table with various metadata informations</param>
+    public delegate void MetadataReportDelegate(IDictionary<string, string> metadata);
+
     public class Interface : IDisposable, LiveControl.ILiveControl
     {
         /// <summary>
@@ -213,6 +219,7 @@ namespace Duplicati.Library.Main
         public event OperationProgressEvent OperationCompleted;
         public event OperationProgressEvent OperationProgress;
         public event OperationProgressEvent OperationError;
+        public event MetadataReportDelegate MetadataReport;
 
         /// <summary>
         /// The live control interface
@@ -559,7 +566,7 @@ namespace Duplicati.Library.Main
 
                         bool completedWithoutChanges;
 
-                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(manifest.SourceDirs, bs, m_options.Filter, patches))
+                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(manifest.SourceDirs, bs, backend.Metadata, m_options.Filter, patches))
                         {
                             CheckLiveControl();
 
@@ -792,6 +799,9 @@ namespace Duplicati.Library.Main
                 finally
                 {
                     m_progress = 100.0;
+                    if (MetadataReport != null && backend != null)
+                        MetadataReport(backend.Metadata.AsReport());
+
                     if (backend != null)
                         try { backend.Dispose(); }
                         catch { }
@@ -1246,7 +1256,7 @@ namespace Duplicati.Library.Main
                         if (!System.IO.Directory.Exists(s))
                             System.IO.Directory.CreateDirectory(s);
 
-                    using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs, filter))
+                    using (RSync.RSyncDir sync = new Duplicati.Library.Main.RSync.RSyncDir(target, rs, backend.Metadata, filter))
                     {
                         sync.ProgressEvent += new Duplicati.Library.Main.RSync.RSyncDir.ProgressEventDelegate(RestoreRSyncDir_ProgressEvent);
 
@@ -1344,6 +1354,9 @@ namespace Duplicati.Library.Main
                 }
                 finally
                 {
+                    if (MetadataReport != null && backend != null)
+                        MetadataReport(backend.Metadata.AsReport());
+
                     if (backend != null)
                         backend.Dispose();
 
@@ -1497,6 +1510,9 @@ namespace Duplicati.Library.Main
                 }
                 finally
                 {
+                    if (MetadataReport != null && backend != null)
+                        MetadataReport(backend.Metadata.AsReport());
+
                     if (OperationCompleted != null)
                         OperationCompleted(this, DuplicatiOperation.Remove, stats.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
                 }
@@ -1545,6 +1561,9 @@ namespace Duplicati.Library.Main
             }
             finally
             {
+                if (MetadataReport != null)
+                    MetadataReport(backend.Metadata.AsReport());
+
                 if (OperationCompleted != null)
                     OperationCompleted(this, DuplicatiOperation.Remove, stats.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
             }
@@ -1614,6 +1633,9 @@ namespace Duplicati.Library.Main
             }
             finally
             {
+                if (MetadataReport != null && backend != null)
+                    MetadataReport(backend.Metadata.AsReport());
+
                 if (OperationCompleted != null)
                     OperationCompleted(this, DuplicatiOperation.Remove, stats.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");
             }
@@ -1805,7 +1827,7 @@ namespace Duplicati.Library.Main
 
                 List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches = FindPatches(backend, entries, basefolder, false, rs);
 
-                using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { basefolder }, rs, filter, patches))
+                using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { basefolder }, rs, backend.Metadata, filter, patches))
                     res = dir.UnmatchedFiles();
             }
 
@@ -2030,7 +2052,7 @@ namespace Duplicati.Library.Main
                     foreach (KeyValuePair<ManifestEntry, Library.Interface.ICompression> entry in FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder, false, stats))
                         patches.Add(entry.Value);
 
-                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { folder }, stats, null))
+                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { folder }, stats, backend.Metadata, null))
                         return dir.ListPatchFiles(patches);
                 }
             }

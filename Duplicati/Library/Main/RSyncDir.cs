@@ -556,6 +556,10 @@ namespace Duplicati.Library.Main.RSync
         /// The combined size of all added files
         /// </summary>
         private long m_addedfilessize;
+        /// <summary>
+        /// Metadata collector, assigned to dummy instance to avoid null checks
+        /// </summary>
+        private Backupmetadata m_metadata = new Backupmetadata();
 
         /// <summary>
         /// The filter applied to restore or backup
@@ -651,8 +655,8 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="stat">The status report object</param>
         /// <param name="filter">An optional filter that controls what files to include</param>
         /// <param name="patches">A list of signature archives to read, MUST be sorted in the creation order, oldest first</param>
-        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Utility.FilenameFilter filter, List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches)
-            : this(sourcefolder, stat, filter)
+        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Backupmetadata metadata, Utility.FilenameFilter filter, List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches)
+            : this(sourcefolder, stat, metadata, filter)
         {
             string[] prefixes = new string[] {
                 Utility.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
@@ -740,9 +744,10 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="sourcefolder">The folders to create a backup from</param>
         /// <param name="stat">The status report object</param>
         /// <param name="filter">An optional filter that controls what files to include</param>
-        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Utility.FilenameFilter filter)
+        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Backupmetadata metadata, Utility.FilenameFilter filter)
         {
             m_filter = filter;
+            m_metadata = metadata == null ? new Backupmetadata() : metadata;
             m_oldSignatures = new Dictionary<string, ArchiveWrapper>(Utility.Utility.ClientFilenameStringComparer);
             m_oldFolders = new Dictionary<string, DateTime>(Utility.Utility.ClientFilenameStringComparer);
             m_lastVerificationTime = new Dictionary<string, DateTime>(Utility.Utility.ClientFilenameStringComparer);
@@ -1012,6 +1017,8 @@ namespace Duplicati.Library.Main.RSync
                     }
                 }
             }
+
+            m_metadata.SourceFolderCount = m_unproccesed.Folders.Count;
 
             //Build folder diffs
             foreach(string s in m_unproccesed.Folders)
@@ -1303,6 +1310,17 @@ namespace Duplicati.Library.Main.RSync
                 int next = m_sortedfilelist ? 0 : r.Next(0, m_unproccesed.Files.Count);
                 string s = m_unproccesed.Files[next];
                 m_unproccesed.Files.RemoveAt(next);
+
+                try 
+                { 
+                    long size = m_snapshot.GetFileSize(s);
+                    if (size <= MaxFileSize && size > 0)
+                    {
+                        m_metadata.SourceFileSize += size;
+                        m_metadata.SourceFileCount++;
+                    }
+                }
+                catch { }
 
                 if (ProgressEvent != null && DateTime.Now > nextProgressEvent)
                 {
