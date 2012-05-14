@@ -379,7 +379,7 @@ namespace Duplicati.Library.Main
                     //This will list all files on the backend and create the target folder
                     List<ManifestEntry> backupsets = backend.GetBackupSets();
 
-                    if (backupsets.Count == 0)
+                    if (backupsets.Count == 0 || full)
                     {
                         if (!full)
                             bs.SetTypeReason(Strings.Interface.FullBecauseBackendIsEmpty);
