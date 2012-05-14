@@ -14,11 +14,6 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class SkyDriveSession : IDisposable
     {
-
-        /// <summary>
-        /// The EPOCH time, used to generate nonces
-        /// </summary>
-        private static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
         /// <summary>
         /// The main url for the SkyDrive service, used to query for root folders
         /// </summary>
@@ -429,7 +424,7 @@ namespace Duplicati.Library.Backend
             //The nonce template seems to be statically defined as:
             //"Passport1.4 ct={0},rver=6.1.6206.0,wp=MBI,lc=1033,id=250206"
             // but just to be sure, we pick it up from the server
-            return String.Format(m_noncetemplate, (int)Math.Floor((DateTime.Now - EPOCH).TotalSeconds));
+            return String.Format(m_noncetemplate, (int)Math.Floor((DateTime.Now - Library.Utility.Utility.EPOCH).TotalSeconds));
         }
 
         /// <summary>

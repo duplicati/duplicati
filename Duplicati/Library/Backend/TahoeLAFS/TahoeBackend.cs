@@ -26,11 +26,6 @@ namespace Duplicati.Library.Backend
 {
     public class TahoeBackend : IBackend_v2, IStreamingBackend, IBackendGUI
     {
-        /// <summary>
-        /// This is the time offset for all timestamps (unix style)
-        /// </summary>
-        private static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
-
         private string m_url;
         private bool m_useSSL = false;
 
@@ -170,7 +165,7 @@ namespace Duplicati.Library.Backend
 
                         if (fentry.IsObject && ((System.Collections.IDictionary)fentry).Contains("linkmotime"))
                         {
-                            try { fe.LastModification = ((DateTime)(EPOCH + TimeSpan.FromSeconds((double)fentry["linkmotime"])).ToLocalTime()); }
+                            try { fe.LastModification = ((DateTime)(Library.Utility.Utility.EPOCH + TimeSpan.FromSeconds((double)fentry["linkmotime"])).ToLocalTime()); }
                             catch { }
                         }
                     }

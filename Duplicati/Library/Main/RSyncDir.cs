@@ -30,11 +30,6 @@ namespace Duplicati.Library.Main.RSync
     public class RSyncDir : IDisposable
     {
         /// <summary>
-        /// This is the time offset for all timestamps (unix style)
-        /// </summary>
-        private static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
-
-        /// <summary>
         /// The time between each progress event
         /// </summary>
         private static readonly TimeSpan PROGRESS_TIMESPAN = TimeSpan.FromSeconds(1);
@@ -705,7 +700,7 @@ namespace Duplicati.Library.Main.RSync
                         long l;
                         for(int i = 0; i < Math.Min(filenames.Length, timestamps.Length); i++)
                             if (long.TryParse(timestamps[i], out l))
-                                m_oldFolders[filenames[i]] = EPOCH.AddSeconds(l);
+                                m_oldFolders[filenames[i]] = Library.Utility.Utility.EPOCH.AddSeconds(l);
                             else
                                 m_oldFolders[filenames[i]] = t;
                     }
@@ -724,7 +719,7 @@ namespace Duplicati.Library.Main.RSync
 
                     for (int i = 0; i < Math.Min(filenames.Length, timestamps.Length); i++)
                         if (long.TryParse(timestamps[i], out l))
-                            m_oldFolders[filenames[i]] = EPOCH.AddSeconds(l);
+                            m_oldFolders[filenames[i]] = Utility.Utility.EPOCH.AddSeconds(l);
                 }
 
                 //The latest file is the most valid
@@ -1250,7 +1245,7 @@ namespace Duplicati.Library.Main.RSync
                     for (int i = 0; i < m_newfolders.Count; i++)
                     {
                         folders[i] = m_newfolders[i].Key;
-                        timestamps[i] = ((long)((m_newfolders[i].Value - EPOCH).TotalSeconds)).ToString();
+                        timestamps[i] = ((long)((m_newfolders[i].Value - Utility.Utility.EPOCH).TotalSeconds)).ToString();
                     }
 
                     folders = FilenamesToPlatformIndependant(folders);
@@ -1268,7 +1263,7 @@ namespace Duplicati.Library.Main.RSync
                     for (int i = 0; i < m_updatedfolders.Count; i++)
                     {
                         folders[i] = m_updatedfolders[i].Key;
-                        timestamps[i] = ((long)((m_updatedfolders[i].Value - EPOCH).TotalSeconds)).ToString();
+                        timestamps[i] = ((long)((m_updatedfolders[i].Value - Utility.Utility.EPOCH).TotalSeconds)).ToString();
                     }
 
                     folders = FilenamesToPlatformIndependant(folders);
@@ -1375,7 +1370,7 @@ namespace Duplicati.Library.Main.RSync
                             }
 
 
-                            DateTime lastWrite = EPOCH;
+                            DateTime lastWrite = Utility.Utility.EPOCH;
                             try 
                             {
                                 //Record the change time after we opened (and thus locked) the file
@@ -1954,7 +1949,7 @@ namespace Duplicati.Library.Main.RSync
                 string[] timestamps = patch.ReadAllLines(ADDED_FOLDERS_TIMESTAMPS);
 
                 for (int i = 0; i < folders.Length; i++)
-                    m_folderTimestamps[RSyncDir.GetFullPathFromRelname(destination, folders[i])] = EPOCH.AddSeconds(long.Parse(timestamps[i]));
+                    m_folderTimestamps[RSyncDir.GetFullPathFromRelname(destination, folders[i])] = Utility.Utility.EPOCH.AddSeconds(long.Parse(timestamps[i]));
             }
 
             if (patch.FileExists(UPDATED_FOLDERS) && patch.FileExists(UPDATED_FOLDERS_TIMESTAMPS))
@@ -1966,7 +1961,7 @@ namespace Duplicati.Library.Main.RSync
 
                 for (int i = 0; i < folders.Length; i++)
                     if (long.TryParse(timestamps[i], out l))
-                        m_folderTimestamps[RSyncDir.GetFullPathFromRelname(destination, folders[i])] = EPOCH.AddSeconds(l);
+                        m_folderTimestamps[RSyncDir.GetFullPathFromRelname(destination, folders[i])] = Utility.Utility.EPOCH.AddSeconds(l);
             }
 
             PartialEntryRecord pe = null;

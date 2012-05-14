@@ -41,6 +41,11 @@ namespace Duplicati.Library.Utility
         public static string HashAlgorithm { get { return "SHA256"; } }
 
         /// <summary>
+        /// The EPOCH offset (unix style)
+        /// </summary>
+        public static readonly DateTime EPOCH = new DateTime(1970, 1, 1, 0, 0, 0);
+
+        /// <summary>
         /// An enumeration used to identify file types when performing file listings
         /// </summary>
         public enum EnumeratedFileStatus
