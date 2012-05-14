@@ -19,8 +19,16 @@
 		}
 		else
 			return v || false;
-	}
+	};
 	
+	APP_SCOPE.toJsDate = function(str) {
+		if (str == null)
+			return null;
+		
+		var strtmp = str.replace(/\/Date\((-?\d+(((\+|\-)\d+)|Z|z)?)\)\//gi, "new Date($1)");
+		return eval(strtmp);
+	};
+
 	APP_SCOPE.createHtmlItems = function(html) {
 		if (ls.creator_div == null) {
 			ls.creator_div = document.createElement("div");
@@ -44,22 +52,16 @@
 		}
 		
 	};
-	
-	APP_SCOPE.applyRoundedCornerClass = function() {
-		$('.rounded-corner-box').each(function(index, el) {
-			if (!$(el).hasClass('created-round-corner-box')) {
-				$(el).removeClass('rounded-corner-box');
-				var x = el.innerHTML;
-				el.innerHTML = '<table class="round-corner-box created-round-corner-box"><tr class="top"><td class="left"></td><td class="middle"></td><td class="right"></td></tr><tr class="center"><td class="left"></td><td class="middle">' + x + '</div></td><td class="right"></td></tr><tr class="bottom"><td class="left"></td><td class="middle"></td><td class="right"></td></tr></table>';
-			}
-		});
-	}
-
+		
 	APP_SCOPE.getActionUrl = function(action) {
 		//During the design phase, we emulate the server with a folder
 		//return './server-responses/' + encodeURIComponent(action) + '.txt';
 		return APP_SCOPE.ServerURL + 'control.cgi?action=' + encodeURIComponent(action);
 	}
+
+	APP_SCOPE.getCurrentState = function(callback) {
+		$.getJSON(this.getActionUrl('get-current-state'), callback);
+	};
 
 	APP_SCOPE.getApplicationSettings = function(callback) {
 		$.getJSON(this.getActionUrl('list-application-settings'), callback);
@@ -83,7 +85,7 @@
 			callback(APP_SCOPE.CompressionModules);
 		}
 	};
-
+	
 	APP_SCOPE.getInstalledGenericModules = function(callback) {
 		if (APP_SCOPE.CompressionModules == null) {
 			$.getJSON(this.getActionUrl('list-installed-generic-modules'), function(resp) {
@@ -119,7 +121,21 @@
 	};
 	
 	$(document).ready(function(){ 
-		if (window.external && window.external.AddSearch == null && window.external.AddSearchProvider == null) {
+		ads = null;
+		adsp = null;
+		extmin = null;
+	
+		if (window.external)
+		{
+			try { ads = window.external.AddSearch; }
+			catch (e) {}
+			try { adsp = window.external.AddSearchProvider; }
+			catch (e) {}
+			try { extmin = window.external.setMinSiz; }
+			catch (e) {}
+		}
+	
+		if (window.external && ads == null && adsp == null && extmin != null) {
 			APP_SCOPE.external = window.external;
 			APP_SCOPE.activateFunction = function(code) {
 				APP_SCOPE.external.openWindow(code); 
@@ -129,8 +145,6 @@
 				alert("Unimplemented " + code);
 			}
 		}
-		
-		APP_SCOPE.applyRoundedCornerClass(); 
 	});
 	
 })();

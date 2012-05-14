@@ -8,7 +8,7 @@ body
 {
 	min-width: 675px;
     min-height: 200px;
-    display: none;
+    display: block;
 }
 
 .status-window-toolbar-item
@@ -131,6 +131,54 @@ body
 	border: 1px solid red;
 }
 
-.backup-schedule-name
+.status-window-name-bubble
 {
+	width: 240px;
+}
+
+.status-window-row
+{
+	height: 120px; 
+	padding-top: 10px; 
+	padding-bottom: 10px;
+}
+
+.status-window-row-inner
+{
+	width: 33%; 
+	height: 100%; 
+	float: left;
+	vertical-align: middle;
+}
+
+.status-window-row-inner-left
+{
+	text-align: right; 
+}
+
+.status-window-row-inner-middle
+{
+	text-align: center; 
+}
+
+.status-window-row-inner-right
+{
+	text-align: left;
+}
+
+.status-window-row-inner-content
+{
+	padding-right: 20px; 
+	padding-left: 20px; 
+	padding-top: 30px;
+}
+
+.status-window-detail-area
+{
+	margin-top: -1px; 
+	padding-top: 11px; 
+	padding-bottom: 10px; 
+	padding-left: 10px; 
+	padding-right: 10px; 
+	min-width: 220px;
 }

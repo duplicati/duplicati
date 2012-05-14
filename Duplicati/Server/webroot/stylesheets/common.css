@@ -39,77 +39,14 @@ body
 	background-color: white;
 }
 
-.odd { background-color: #efefef;  }
-
-.drop-arrow
+.even { background-color: #efefef;  }
+.odd { background-color: #ffffff;  }
+.link
 {
-	width: 7px;
-	height: 7px;
-	background-image: url('../gfx/drop-arrow.gif');
-	background-repeat: no-repeat;
+	color: darkblue;
+	text-decoration: underline;
+	cursor: pointer;
 }
 
-.round-corner-box 
-{
-	border-collapse: collapse;
-	padding: 0;
-	margin: 0;
-	border-spacing; 0px;
-}
 
-.round-corner-box .top, 
-.round-corner-box .bottom 
-{ height: 5px; }
-
-.round-corner-box .top .left, 
-.round-corner-box .top .right, 
-.round-corner-box .center .left, 
-.round-corner-box .center .right, 
-.round-corner-box .bottom .left, 
-.round-corner-box .bottom .right 
-{ 
-	width: 5px;
-	height: 5px;
-}
-
-.round-corner-box .top .left, 
-.round-corner-box .top .right, 
-.round-corner-box .bottom .left, 
-.round-corner-box .bottom .right 
-{ 
-	background-repeat: no-repeat;
-}
-
-.round-corner-box .top .left, 
-.round-corner-box .top .right, 
-.round-corner-box .bottom .left, 
-.round-corner-box .bottom .right
-{
-	background-image: url('../gfx/round-box3.gif');
-}
-
-.round-corner-box .center .left, 
-.round-corner-box .center .right, 
-.round-corner-box .top .middle, 
-.round-corner-box .bottom .middle 
-{
-	background-image: url('../gfx/round-dot.gif');
-}
-
-.round-corner-box .center .left, 
-.round-corner-box .center .right
-{ background-repeat: repeat-y; }
-
-.round-corner-box .top .middle, 
-.round-corner-box .bottom .middle
-{ background-repeat: repeat-x; }
-
-.round-corner-box .top .left { background-position: 0px 0px; }
-.round-corner-box .top .right { background-position: -5px 0px; }
-.round-corner-box .bottom .left { background-position: 0px -5px; }
-.round-corner-box .bottom .right { background-position: -5px -5px; }
-
-.round-corner-box .top .middle { background-position: 0px 0px; }
-.round-corner-box .bottom .middle { background-position: 0px 4px; }
-.round-corner-box .center .left { background-position: 0px 0px; }
-.round-corner-box .center .right { background-position: 4px 0px; }
+.vertical-center { margin: 0px auto; }
