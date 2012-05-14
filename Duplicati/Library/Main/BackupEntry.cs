@@ -125,7 +125,8 @@ namespace Duplicati.Library.Main
         {
             m_filename = filename;
             m_fileentry = entry;
-            m_size = entry.Size;
+            if (entry != null)
+                m_size = entry.Size;
             m_time = time;
             m_isFull = isFull;
             m_timeString = timeString;
