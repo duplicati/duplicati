@@ -162,11 +162,29 @@ namespace Duplicati.Library.Backend
 
             foreach (Google.Documents.Document d in parentlookup.Values)
             {
-                string[] p = new string[d.ParentFolders.Count + 1];
-                for (int i = 0; i < p.Length - 1; i++)
-                    p[i] = parentlookup[d.ParentFolders[i]].Title;
+                List<Google.Documents.Document> parents = new List<Google.Documents.Document>();
+                Google.Documents.Document cur = d;
+                while (cur.ParentFolders.Count == 1)
+                {
+                    parents.Add(cur);
+                    cur = parentlookup[cur.ParentFolders[0]];
+                }
+                parents.Add(cur);
 
-                p[p.Length - 1] = d.Title;
+                if (cur.ParentFolders.Count != 0)
+                {
+                    string[] pids = new string[cur.ParentFolders.Count];
+                    for(int i = 0; i < pids.Length; i++)
+                        pids[i] = parentlookup[cur.ParentFolders[i]].Title;
+
+                    throw new Exception(string.Format(Strings.GoogleDocs.FolderHasMultipleOwnersError, cur.Title, string.Join(", ", pids)));
+                }
+
+                parents.Reverse();
+                string[] p = new string[parents.Count];
+                for (int i = 0; i < p.Length; i++)
+                    p[i] = parents[i].Title;
+
                 string key = string.Join("/", p);
                 if (dict.ContainsKey(key))
                     throw new Exception(string.Format(Strings.GoogleDocs.DuplicateFoldernameFoundError, key));
