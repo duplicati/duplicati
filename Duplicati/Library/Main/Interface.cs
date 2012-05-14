@@ -382,7 +382,7 @@ namespace Duplicati.Library.Main
                     {
                         //This will create the target folder
                         backend.List(false);
-                        backupsets = null;
+                        backupsets = new List<ManifestEntry>();
                     }
                     else
                     {
