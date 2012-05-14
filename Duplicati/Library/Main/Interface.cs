@@ -376,10 +376,21 @@ namespace Duplicati.Library.Main
                     
                     CheckLiveControl();
 
-                    //This will list all files on the backend and create the target folder
-                    List<ManifestEntry> backupsets = backend.GetBackupSets();
+                    List<ManifestEntry> backupsets;
 
-                    if (backupsets.Count == 0 || full)
+                    if (full)
+                    {
+                        //This will create the target folder
+                        backend.List(false);
+                        backupsets = null;
+                    }
+                    else
+                    {
+                        //This will list all files on the backend and create the target folder
+                        backupsets = backend.GetBackupSets();
+                    }
+
+                    if (backupsets.Count == 0)
                     {
                         if (!full)
                             bs.SetTypeReason(Strings.Interface.FullBecauseBackendIsEmpty);
