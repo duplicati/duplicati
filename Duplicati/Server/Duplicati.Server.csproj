@@ -82,7 +82,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DatabaseUpgrader.cs" />
     <Compile Include="DuplicatiOutputParser.cs" />
     <Compile Include="DuplicatiRunner.cs" />
     <Compile Include="DynamicSetupHelper.cs" />
@@ -95,11 +94,6 @@
     <Compile Include="Serializable\JobSettings.cs" />
     <Compile Include="SingleInstance.cs" />
     <Compile Include="SQLiteLoader.cs" />
-    <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
-      <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="Strings\DuplicatiRunner.Designer.cs">
       <DependentUpon>DuplicatiRunner.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -195,15 +189,6 @@
     <Content Include="webroot\stylesheets\edit-window.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <EmbeddedResource Include="Database schema\1. Support timestamp flag.sql" />
-    <EmbeddedResource Include="Database schema\2. Refactor for easier extensions.sql" />
-    <EmbeddedResource Include="Database schema\3. Default managed SSH.sql" />
-    <EmbeddedResource Include="Database schema\4. Support for setting controls.sql" />
-    <EmbeddedResource Include="Database schema\5. Remove signaturekey.sql" />
-    <EmbeddedResource Include="Database schema\6. Remove TimeSeparator and UseShortFilenames.sql" />
-    <EmbeddedResource Include="Database schema\7. Add error message field to log.sql" />
-    <EmbeddedResource Include="Database schema\Schema.sql" />
-    <EmbeddedResource Include="Database schema\8. Add filter fields.sql" />
     <Content Include="SQLite\pinvoke\System.Data.SQLite.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -312,11 +297,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Strings\DatabaseUpgrader.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\DuplicatiRunner.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>DuplicatiRunner.Designer.cs</LastGenOutput>

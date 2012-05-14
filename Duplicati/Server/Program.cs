@@ -250,7 +250,7 @@ namespace Duplicati.Server
                     //Attempt to open the database, handling any encryption present
                     OpenDatabase(con);
 
-                    DatabaseUpgrader.UpgradeDatabase(con, DatabasePath);
+                    Duplicati.Datamodel.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath);
                 }
                 catch (Exception ex)
                 {

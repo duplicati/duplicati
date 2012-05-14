@@ -23,6 +23,8 @@ using System.Windows.Forms;
 using System.Data.LightDatamodel;
 using System.Drawing;
 using Duplicati.Datamodel;
+using Duplicati.Server;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.GUI
 {
@@ -328,7 +330,17 @@ namespace Duplicati.GUI
 
                 DisplayHelper = new MainForm();
                 DisplayHelper.InitialArguments = args;
-				
+
+                //Replicate variables to both entries
+                Server.Program.DataConnection = Program.DataConnection;
+                Server.Program.DatabasePath = Program.DatabasePath;
+                Server.Program.LiveControl = Program.LiveControl;
+                Server.Program.MainLock = Program.MainLock;
+                Server.Program.Runner = Program.Runner;
+                Server.Program.Scheduler = Program.Scheduler;
+                Server.Program.UseDatabaseEncryption = Program.UseDatabaseEncryption;
+                Server.Program.WorkThread = Program.WorkThread;
+
 				Program.IsRunningMainLoop = true;
                 Application.Run(DisplayHelper);
 				Program.IsRunningMainLoop = false;
@@ -448,31 +460,7 @@ namespace Duplicati.GUI
         /// <returns></returns>
         public static string LocalizeTaskType(DuplicityTaskType type)
         {
-            switch (type)
-            {
-                case DuplicityTaskType.FullBackup:
-                    return Strings.TaskType.FullBackup;
-                case DuplicityTaskType.IncrementalBackup:
-                    return Strings.TaskType.IncrementalBackup;
-                case DuplicityTaskType.ListActualFiles:
-                    return Strings.TaskType.ListActualFiles;
-                case DuplicityTaskType.ListBackupEntries:
-                    return Strings.TaskType.ListBackupEntries;
-                case DuplicityTaskType.ListBackups:
-                    return Strings.TaskType.ListBackups;
-                case DuplicityTaskType.ListFiles:
-                    return Strings.TaskType.ListFiles;
-                case DuplicityTaskType.RemoveAllButNFull:
-                    return Strings.TaskType.RemoveAllButNFull;
-                case DuplicityTaskType.RemoveOlderThan:
-                    return Strings.TaskType.RemoveOlderThan;
-                case DuplicityTaskType.Restore:
-                    return Strings.TaskType.Restore;
-                case DuplicityTaskType.RestoreSetup:
-                    return Strings.TaskType.RestoreSetup;
-                default:
-                    return type.ToString();
-            }
+            return Duplicati.Server.Program.LocalizeTaskType(type);
         }
 
         /// <summary>

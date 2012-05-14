@@ -26,6 +26,8 @@ using System.Text;
 using System.Windows.Forms;
 using Duplicati.Datamodel;
 using Duplicati.Library.Utility;
+using Duplicati.Server;
+using Duplicati.Server.Serialization;
 
 namespace Duplicati.GUI
 {
@@ -214,13 +216,13 @@ namespace Duplicati.GUI
             }
         }
 
-        void Runner_DuplicatiProgress(Duplicati.Library.Main.DuplicatiOperation operation, DuplicatiRunner.RunnerState state, string message, string submessage, int progress, int subprogress)
+        void Runner_DuplicatiProgress(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress)
         {
             if (this.InvokeRequired)
                 this.Invoke(new DuplicatiRunner.ProgressEventDelegate(Runner_DuplicatiProgress), operation, state, message, submessage, progress, subprogress);
             else
             {
-                WorkProgressbar.Visible = ProgressMessage.Visible = state != DuplicatiRunner.RunnerState.Stopped;
+                WorkProgressbar.Visible = ProgressMessage.Visible = state != RunnerState.Stopped;
                 WorkProgressbar.Style = progress < 0 ? ProgressBarStyle.Marquee : ProgressBarStyle.Blocks;
                 WorkProgressbar.Value = Math.Max(Math.Min(WorkProgressbar.Maximum, progress), WorkProgressbar.Minimum);
                 ProgressMessage.Text = message;
@@ -469,7 +471,7 @@ namespace Duplicati.GUI
 
         private void stopBackupToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Program.Runner.Stop(CloseReason.UserClosing);
+            Program.Runner.Stop(Duplicati.Server.Serialization.CloseReason.UserClosing);
         }
 
         private void statusImage_Click(object sender, EventArgs e)
@@ -536,7 +538,7 @@ namespace Duplicati.GUI
                         Program.LiveControl.Pause("60m");
                         break;
                     case QuickActionType.StopBackup:
-                        Program.Runner.Stop(CloseReason.UserClosing);
+                        Program.Runner.Stop(Duplicati.Server.Serialization.CloseReason.UserClosing);
                         break;
                     case QuickActionType.ThrottleDialog:
                         new ThrottleControl().ShowDialog(Program.DisplayHelper);

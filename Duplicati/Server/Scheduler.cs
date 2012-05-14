@@ -100,7 +100,7 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// A copy of the current schedule list
+        /// A snapshot copy of the current schedule list
         /// </summary>
         public List<Schedule> Schedule 
         { 
@@ -109,6 +109,22 @@ namespace Duplicati.Server
                 lock (m_lock)
                     return new List<Schedule>(m_schedule);
             } 
+        }
+
+        /// <summary>
+        /// A snapshot copy of the current worker queue, that is items that are scheduled, but waiting for execution
+        /// </summary>
+        public List<Schedule> WorkerQueue
+        {
+            get
+            {
+                List<IDuplicityTask> tasks = m_worker.CurrentTasks;
+                List<Schedule> result = new List<Schedule>();
+                foreach (var t in tasks)
+                    if (t != null && t.Schedule != null)
+                        result.Add(t.Schedule);
+                return result;
+            }
         }
 
         /// <summary>

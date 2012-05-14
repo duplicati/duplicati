@@ -139,6 +139,19 @@ namespace Duplicati.Datamodel
                 }
             }
         }
-        
+
+        private SettingsHelper<ScheduleMetadata, string, string> m_metadataLookup;
+
+        public IDictionary<string, string> MetadataLookup
+        {
+            get
+            {
+                //Extra check because the datamodel copies the collection between contexts... not nice
+                if (m_metadataLookup == null || m_metadataLookup.DataParent != this.DataParent || m_metadataLookup.Collection != this.Metadata) 
+                    m_metadataLookup = new SettingsHelper<ScheduleMetadata, string, string>(this.DataParent, this.Metadata, "Name", "Value");
+
+                return m_metadataLookup;
+            }
+        }
     }
 }

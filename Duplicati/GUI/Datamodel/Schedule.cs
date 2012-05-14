@@ -38,7 +38,7 @@ namespace Duplicati.Datamodel
 
 #region " private members "
 
-		[AutoIncrement, PrimaryKey, Relation("TaskSchedule", typeof(Task), "ScheduleID", false), DatabaseField("ID")]
+		[AutoIncrement, PrimaryKey, Relation("TaskSchedule", typeof(Task), "ScheduleID", false), Relation("ScheduleMetadataSchedule", typeof(ScheduleMetadata), "ScheduleID", false), DatabaseField("ID")]
 		private System.Int64 m_ID = long.MinValue;
 		[DatabaseField("Name")]
 		private System.String m_Name = "";
@@ -99,6 +99,15 @@ namespace Duplicati.Datamodel
 		{
 			get{ return ((DataFetcherWithRelations)m_dataparent).GetRelatedObject<Task>("TaskSchedule", this); }
 			set{ ((DataFetcherWithRelations)m_dataparent).SetRelatedObject("TaskSchedule", this, value); }
+		}
+
+		[Affects(typeof(ScheduleMetadata))]
+		public System.Collections.Generic.IList<ScheduleMetadata> Metadata
+		{
+			get
+			{
+				return ((DataFetcherWithRelations)m_dataparent).GetRelatedObjects<ScheduleMetadata>("ScheduleMetadataSchedule", this);
+			}
 		}
 
 #endregion

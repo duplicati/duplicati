@@ -24,6 +24,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Wizard;
 using System.Data.LightDatamodel;
 using Duplicati.Datamodel;
+using Duplicati.Server;
 
 namespace Duplicati.GUI
 {

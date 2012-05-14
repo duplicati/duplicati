@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
@@ -93,7 +93,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="DatabaseUpgrader.cs" />
     <Compile Include="SettingsHelper.cs" />
+    <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
+      <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="Task.Extension.cs" />
     <Compile Include="Task.cs" />
     <Compile Include="Schedule.cs" />
@@ -109,6 +115,7 @@
     <Compile Include="SettingExtension.cs" />
     <Compile Include="CompressionSetting.cs" />
     <Compile Include="EncryptionSetting.cs" />
+    <Compile Include="ScheduleMetadata.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -123,6 +130,41 @@
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\1. Support timestamp flag.sql" />
+    <EmbeddedResource Include="Strings\DatabaseUpgrader.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\2. Refactor for easier extensions.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\3. Default managed SSH.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\4. Support for setting controls.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\5. Remove signaturekey.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\6. Remove TimeSeparator and UseShortFilenames.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\7. Add error message field to log.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\8. Add filter fields.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\9. Add Schedule Metadata table.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database schema\Schema.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

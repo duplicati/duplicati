@@ -24,6 +24,8 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using Duplicati.Server;
+using Duplicati.Server.Serialization;
 
 namespace Duplicati.GUI
 {
@@ -43,7 +45,7 @@ namespace Duplicati.GUI
 
         private bool m_hasAttemptedBackupTermination = false;
 
-        private DuplicatiRunner.RunnerResult m_currentIconState;
+        private RunnerResult m_currentIconState;
         private Icon m_currentIcon;
         private string m_currentTooltip;
         private TrayIconProxy m_trayIcon;
@@ -138,16 +140,16 @@ namespace Duplicati.GUI
 #endif
         }
 
-        public void SetCurrentIcon(DuplicatiRunner.RunnerResult icon, string message)
+        public void SetCurrentIcon(RunnerResult icon, string message)
         {
-            if (icon == DuplicatiRunner.RunnerResult.Error)
+            if (icon == RunnerResult.Error)
             {
                 m_currentIcon = Properties.Resources.TrayNormalError;
                 m_currentIconState = icon;
                 m_currentTooltip = message;
 
             }
-            else if ((icon == DuplicatiRunner.RunnerResult.Warning || icon == DuplicatiRunner.RunnerResult.Partial) && m_currentIconState != DuplicatiRunner.RunnerResult.Error)
+            else if ((icon == RunnerResult.Warning || icon == RunnerResult.Partial) && m_currentIconState != RunnerResult.Error)
             {
                 m_currentIcon = Properties.Resources.TrayNormalWarning;
                 m_currentIconState = icon;
@@ -161,7 +163,7 @@ namespace Duplicati.GUI
         {
             m_currentIcon = Properties.Resources.TrayNormal;
             m_currentTooltip = Strings.MainForm.TrayStatusReady;
-            m_currentIconState = DuplicatiRunner.RunnerResult.OK;
+            m_currentIconState = RunnerResult.OK;
             UpdateTrayIcon();
         }
 
@@ -175,7 +177,7 @@ namespace Duplicati.GUI
             }
         }
 
-        void Runner_ResultEvent(DuplicatiRunner.RunnerResult result, string parsedMessage, string message)
+        void Runner_ResultEvent(RunnerResult result, string parsedMessage, string message)
         {
             if (this.InvokeRequired)
             {
@@ -189,19 +191,19 @@ namespace Duplicati.GUI
             try { name = Program.WorkThread.CurrentTask.Schedule.Name; }
             catch { }
 
-            if (result == DuplicatiRunner.RunnerResult.Error)
+            if (result == RunnerResult.Error)
                 SetCurrentIcon(result, String.Format(Strings.MainForm.BalloonTip_Error, name, parsedMessage));
-            else if (result == DuplicatiRunner.RunnerResult.Partial || result == DuplicatiRunner.RunnerResult.Warning)
+            else if (result == RunnerResult.Partial || result == RunnerResult.Warning)
                 SetCurrentIcon(result, String.Format(Strings.MainForm.BalloonTip_Warning, name));
                 
 
-            if (result == DuplicatiRunner.RunnerResult.OK || m_settings.BallonNotificationLevel == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Off)
+            if (result == RunnerResult.OK || m_settings.BallonNotificationLevel == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Off)
                 return;
 
-            if (result == DuplicatiRunner.RunnerResult.Error)
+            if (result == RunnerResult.Error)
                 m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Error, name, parsedMessage), ToolTipIcon.Error);
 
-            else if (result == DuplicatiRunner.RunnerResult.Warning || result == DuplicatiRunner.RunnerResult.Partial)
+            else if (result == RunnerResult.Warning || result == RunnerResult.Partial)
                 m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Warning, name), ToolTipIcon.Warning);
         }
 
@@ -219,7 +221,7 @@ namespace Duplicati.GUI
             m_settings = new Duplicati.Datamodel.ApplicationSettings(Program.DataConnection);
         }
 
-        void Runner_DuplicatiProgress(Duplicati.Library.Main.DuplicatiOperation operation, DuplicatiRunner.RunnerState state, string message, string submessage, int progress, int subprogress)
+        void Runner_DuplicatiProgress(DuplicatiOperation operation, RunnerState state, string message, string submessage, int progress, int subprogress)
         {
             if (this.InvokeRequired)
             {
@@ -236,17 +238,17 @@ namespace Duplicati.GUI
             catch  {}
 
 
-            if (state == DuplicatiRunner.RunnerState.Started && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Start || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
+            if (state == RunnerState.Started && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Start || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
             {
                 //Show start balloon
                 m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Started, name), ToolTipIcon.Info);
             }
-            else if (state == DuplicatiRunner.RunnerState.Stopped && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
+            else if (state == RunnerState.Stopped && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
             {
                 //Show stop balloon
                 m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Stopped, name), ToolTipIcon.Info);
             }
-            else if (state == DuplicatiRunner.RunnerState.Running && level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous)
+            else if (state == RunnerState.Running && level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous)
             {
                 //Show update balloon
                 m_trayIcon.ShowBalloonTip(BALLOON_SHOW_TIME, Application.ProductName, String.Format(Strings.MainForm.BalloonTip_Running, message), ToolTipIcon.Info);
@@ -355,7 +357,7 @@ namespace Duplicati.GUI
 
         private void stopToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Program.Runner.Stop(CloseReason.UserClosing);
+            Program.Runner.Stop(Duplicati.Server.Serialization.CloseReason.UserClosing);
         }
 
         private void SetTrayIconText(string text)
@@ -423,7 +425,7 @@ namespace Duplicati.GUI
                     return false;
 
                 Program.LiveControl.Pause();
-                Program.Runner.Stop(CloseReason.ApplicationExitCall);
+                Program.Runner.Stop(Duplicati.Server.Serialization.CloseReason.ApplicationExitCall);
 
                 m_trayIcon.Visible = false;
                 if (StatusDialog != null && StatusDialog.Visible)
@@ -431,7 +433,7 @@ namespace Duplicati.GUI
                 if (WizardDialog != null && WizardDialog.Visible)
                     WizardDialog.Close();
 
-                EnsureBackupIsTerminated(CloseReason.ApplicationExitCall);
+                EnsureBackupIsTerminated(Duplicati.Server.Serialization.CloseReason.ApplicationExitCall);
 
                 Application.Exit();
 
@@ -529,7 +531,27 @@ namespace Duplicati.GUI
             Program.WorkThread.CompletedWork -= new EventHandler(WorkThread_CompletedWork);
             Program.SingleInstance.SecondInstanceDetected -= new SingleInstance.SecondInstanceDelegate(SingleInstance_SecondInstanceDetected);
 
-            EnsureBackupIsTerminated(e.CloseReason == CloseReason.UserClosing ? CloseReason.ApplicationExitCall : e.CloseReason);
+            Duplicati.Server.Serialization.CloseReason cr = Server.Serialization.CloseReason.None;
+            switch (e.CloseReason)
+            {
+                case System.Windows.Forms.CloseReason.UserClosing:
+                case System.Windows.Forms.CloseReason.ApplicationExitCall:
+                case System.Windows.Forms.CloseReason.FormOwnerClosing:
+                case System.Windows.Forms.CloseReason.MdiFormClosing:
+                    cr = Duplicati.Server.Serialization.CloseReason.ApplicationExitCall;
+                    break;
+                case System.Windows.Forms.CloseReason.None:
+                    cr = Server.Serialization.CloseReason.None;
+                    break;
+                case System.Windows.Forms.CloseReason.TaskManagerClosing:
+                    cr = Server.Serialization.CloseReason.TaskManagerClosing;
+                    break;
+                case System.Windows.Forms.CloseReason.WindowsShutDown:
+                    cr = Server.Serialization.CloseReason.WindowsShutDown;
+                    break;
+            }
+
+            EnsureBackupIsTerminated(cr);
             
             //The form occasionally hangs on Mono, so we force kill it after 5 secs if it did not quit itself
             if (Library.Utility.Utility.IsMono)
@@ -687,7 +709,7 @@ namespace Duplicati.GUI
             return anyUiShown;
         }
 
-        private void EnsureBackupIsTerminated(CloseReason reason)
+        private void EnsureBackupIsTerminated(Duplicati.Server.Serialization.CloseReason reason)
         {
             //Ensure that this function can only be called once, 
             // as this prevents multiple termination questions presented to the user

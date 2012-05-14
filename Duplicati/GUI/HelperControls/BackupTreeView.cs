@@ -26,6 +26,7 @@ using System.Text;
 using System.Windows.Forms;
 using Duplicati.Datamodel;
 using System.Data.LightDatamodel;
+using Duplicati.Server;
 
 namespace Duplicati.GUI.HelperControls
 {

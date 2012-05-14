@@ -58,7 +58,14 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             filterEditor1.FilterXml = m_wrapper.EncodedFilterXml;
 
             List<KeyValuePair<bool, string>> lst = new List<KeyValuePair<bool, string>>();
-            filterEditor1.BasePath = DynamicSetupHelper.GetSourceFolders(m_wrapper, new ApplicationSettings(m_wrapper.DataConnection ?? Program.DataConnection), lst);
+            var dcon = m_wrapper.DataConnection ?? Program.DataConnection;
+            Task t;
+            if (m_wrapper.ScheduleID < 0)
+                t = dcon.Add<Task>();
+            else
+                t = dcon.GetObjectById<Schedule>(m_wrapper.ScheduleID).Task;
+
+            filterEditor1.BasePath = Duplicati.Server.DynamicSetupHelper.GetSourceFolders(t , new ApplicationSettings(dcon), lst);
             filterEditor1.DynamicFilter = Library.Utility.FilenameFilter.EncodeAsFilter(lst);
         }
     }

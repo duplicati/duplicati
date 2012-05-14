@@ -80,7 +80,7 @@ namespace Duplicati.GUI
                 if (MessageBox.Show(this, "The selected folder does not exist.\r\nDo you want to restore there anyway?", Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
                     return;
 
-            Program.WorkThread.AddTask(new RestoreTask(m_schedule, TargetFolder.Text, dt));
+            Program.WorkThread.AddTask(new Duplicati.Server.RestoreTask(m_schedule, TargetFolder.Text, dt));
             Program.DisplayHelper.ShowStatus();
             this.DialogResult = DialogResult.OK;
             this.Close();

@@ -54,7 +54,7 @@ namespace Duplicati.Server.Serializable
 
         public IList<long> SchedulerQueueIds
         {
-            get { return Program.Scheduler.Schedule.Select(x => x.ID).ToList(); }
+            get { return Program.Scheduler.WorkerQueue.Select(x => x.ID).ToList(); }
         }
 
         public IProgressEventData RunningBackupStatus

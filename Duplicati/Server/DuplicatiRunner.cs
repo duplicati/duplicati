@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Datamodel;
-//using Duplicati.Library.Main;
 using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -79,7 +79,6 @@
     <Compile Include="ApplicationSetup.Designer.cs">
       <DependentUpon>ApplicationSetup.cs</DependentUpon>
     </Compile>
-    <Compile Include="DynamicSetupHelper.cs" />
     <Compile Include="HelperControls\BandwidthLimit.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -149,7 +148,6 @@
     <Compile Include="HelperControls\ThreadPriorityPicker.Designer.cs">
       <DependentUpon>ThreadPriorityPicker.cs</DependentUpon>
     </Compile>
-    <Compile Include="LiveControls.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -157,7 +155,6 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MonoSupport.cs" />
-    <Compile Include="SQLiteLoader.cs" />
     <Compile Include="Strings\ApplicationSetup.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -168,9 +165,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Common.resx</DependentUpon>
     </Compile>
-    <Compile Include="DatabaseUpgrader.cs" />
-    <Compile Include="DuplicatiRunner.cs" />
-    <Compile Include="DuplicatiOutputParser.cs" />
     <Compile Include="HelperControls\BackupFileList.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -254,28 +248,11 @@
     <Compile Include="RestoreBackup.Designer.cs">
       <DependentUpon>RestoreBackup.cs</DependentUpon>
     </Compile>
-    <Compile Include="Scheduler.cs" />
     <Compile Include="ServiceStatus.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="ServiceStatus.Designer.cs">
       <DependentUpon>ServiceStatus.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SingleInstance.cs" />
-    <Compile Include="Strings\DatabaseUpgrader.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>DatabaseUpgrader.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\DuplicatiRunner.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>DuplicatiRunner.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\DynamicSetupHelper.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>DynamicSetupHelper.resx</DependentUpon>
     </Compile>
     <Compile Include="Strings\ListBackupFiles.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -292,27 +269,16 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Program.resx</DependentUpon>
     </Compile>
-    <Compile Include="Strings\Scheduler.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Scheduler.resx</DependentUpon>
-    </Compile>
     <Compile Include="Strings\ServiceStatus.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>ServiceStatus.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Strings\TaskType.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>TaskType.resx</DependentUpon>
     </Compile>
     <Compile Include="Strings\TrayIconWrapper.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>TrayIconWrapper.resx</DependentUpon>
     </Compile>
-    <Compile Include="TaskPackages.cs" />
     <Compile Include="ThrottleControl.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -587,7 +553,6 @@
     </Compile>
     <Compile Include="Wizard pages\WizardSettingsWrapper.cs" />
     <Compile Include="WizardHandler.cs" />
-    <Compile Include="WorkerThread.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\WizardForm\WizardForm.csproj">
@@ -682,6 +647,14 @@
       <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
       <Name>Duplicati.License</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Server\Duplicati.Server.csproj">
+      <Project>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</Project>
+      <Name>Duplicati.Server</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
+      <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>
+      <Name>Duplicati.Server.Serialization</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Winforms\Controls\Duplicati.Winforms.Controls.csproj">
       <Project>{7886BA79-A38A-4288-8B8A-9F29D0E15AC0}</Project>
       <Name>Duplicati.Winforms.Controls</Name>
@@ -696,7 +669,6 @@
       <SubType>Designer</SubType>
       <DependentUpon>ApplicationSetup.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Database schema\Schema.sql" />
     <EmbeddedResource Include="HelperControls\BackupFileList.resx">
       <SubType>Designer</SubType>
       <DependentUpon>BackupFileList.cs</DependentUpon>
@@ -817,9 +789,6 @@
     <EmbeddedResource Include="TrayUnknown.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Database schema\1. Support timestamp flag.sql" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\TrayWorking.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -905,19 +874,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Common.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Database schema\2. Refactor for easier extensions.sql" />
     <EmbeddedResource Include="ListBackupFiles.resx">
       <SubType>Designer</SubType>
       <DependentUpon>ListBackupFiles.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\DatabaseUpgrader.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DatabaseUpgrader.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\DuplicatiRunner.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DuplicatiRunner.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\ListBackupFiles.resx">
       <SubType>Designer</SubType>
@@ -937,11 +896,6 @@
       <SubType>Designer</SubType>
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ServiceStatus.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Strings\TaskType.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>TaskType.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="ThrottleControl.resx">
       <DependentUpon>ThrottleControl.cs</DependentUpon>
@@ -1109,7 +1063,6 @@
     <None Include="Resources\LogViewer.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Database schema\3. Default managed SSH.sql" />
     <EmbeddedResource Include="HelperControls\FolderPathEntry.resx">
       <DependentUpon>FolderPathEntry.cs</DependentUpon>
     </EmbeddedResource>
@@ -1125,15 +1078,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>WaitForOperation.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Strings\DynamicSetupHelper.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DynamicSetupHelper.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Database schema\4. Support for setting controls.sql" />
-    <EmbeddedResource Include="Strings\Scheduler.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Scheduler.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
     <EmbeddedResource Include="Strings\TrayIconWrapper.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>TrayIconWrapper.Designer.cs</LastGenOutput>
@@ -1141,10 +1085,6 @@
     <EmbeddedResource Include="Wizard pages\Backends\RawContainer.resx">
       <DependentUpon>RawContainer.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Database schema\5. Remove signaturekey.sql" />
-    <EmbeddedResource Include="Database schema\6. Remove TimeSeparator and UseShortFilenames.sql" />
-    <EmbeddedResource Include="Database schema\7. Add error message field to log.sql" />
-    <EmbeddedResource Include="Database schema\8. Add filter fields.sql" />
     <None Include="Resources\Play.png" />
     <None Include="Resources\Delay.png" />
     <None Include="Resources\Pause.png" />
