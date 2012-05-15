@@ -381,7 +381,12 @@ namespace Duplicati.Library.Main
                     if (full)
                     {
                         //This will create the target folder
-                        backend.List(false);
+                        List<Duplicati.Library.Interface.IFileEntry> tmp = backend.List(false);
+
+                        //If it is possible to parse the chain, we extract some metadata
+                        try { backend.ExtractMetadataFromList(tmp); }
+                        catch { }
+
                         backupsets = new List<ManifestEntry>();
                     }
                     else
@@ -575,7 +580,7 @@ namespace Duplicati.Library.Main
 
                         OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, -1, -1, Strings.Interface.StatusBuildingFilelist, "");
 
-                        bool completedWithoutChanges;
+                        bool completedWithoutChanges = true;
 
                         using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(manifest.SourceDirs, bs, backend.Metadata, m_options.Filter, patches))
                         {
@@ -722,6 +727,25 @@ namespace Duplicati.Library.Main
                                     vol++;
                                 }
                             }
+
+                            if (!completedWithoutChanges)
+                            {
+                                if (full)
+                                {
+                                    backend.Metadata.CurrentChainLength = 1;
+                                    backend.Metadata.CurrentFullDate = backupchaintime;
+                                    backend.Metadata.FullBackupCount++;
+                                }
+                                else
+                                {
+                                    backend.Metadata.CurrentChainLength++;
+                                }
+                                backend.Metadata.LastBackupDate = backupchaintime;
+                                backend.Metadata.LongestChainLength = Math.Max(backend.Metadata.CurrentChainLength, backend.Metadata.LongestChainLength);
+                                backend.Metadata.TotalVolumeCount += vol;
+                                backend.Metadata.TotalBackupSets++;
+                            }
+
                         }
 
 
@@ -1518,6 +1542,7 @@ namespace Duplicati.Library.Main
                         throw new Exception(Strings.Interface.InternalDeleteCountError);
 
                     sb.Append(RemoveBackupSets(backend, toremove));
+                    backend.RecalculateChainMetadata(flatlist);
                 }
                 finally
                 {
@@ -1569,6 +1594,7 @@ namespace Duplicati.Library.Main
                     throw new Exception(Strings.Interface.InternalDeleteCountError);
 
                 sb.Append(RemoveBackupSets(backend, toremove));
+                backend.RecalculateChainMetadata(entries);
             }
             finally
             {
@@ -1641,6 +1667,7 @@ namespace Duplicati.Library.Main
                     throw new Exception(Strings.Interface.InternalDeleteCountError);
 
                 sb.Append(RemoveBackupSets(backend, toremove));
+                backend.RecalculateChainMetadata(entries);
             }
             finally
             {
@@ -1711,7 +1738,13 @@ namespace Duplicati.Library.Main
                         {
                             backend.Delete(kx.Key);
                             backend.Delete(kx.Value);
+                            backend.Metadata.TotalVolumeCount--;
                         }
+
+                        if (me.IsFull)
+                            backend.Metadata.FullBackupCount--;
+                        
+                        backend.Metadata.TotalBackupSets--;
                     }
                 }
 

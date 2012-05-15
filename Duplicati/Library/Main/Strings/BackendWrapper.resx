@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BackendNotFoundError" xml:space="preserve">
     <value>Unable to find backend for: {0}</value>
@@ -235,5 +235,11 @@ If this problem happens more than once, it is possible that the delete transacti
   </data>
   <data name="AutoCreateFolderFailed" xml:space="preserve">
     <value>Failed to automatically create folder, error message: {0}</value>
+  </data>
+  <data name="UnmatchedCompressionModuleWarning" xml:space="preserve">
+    <value>The file "{0}" has compression module "{1}" which is not supported, ignoring file</value>
+  </data>
+  <data name="UnmatchedEncryptionModuleWarning" xml:space="preserve">
+    <value>The file "{0}" has encryption module "{1}" which is not supported, ignoring file</value>
   </data>
 </root>
