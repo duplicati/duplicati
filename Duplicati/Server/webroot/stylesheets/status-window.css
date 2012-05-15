@@ -181,4 +181,15 @@ body
 	padding-left: 10px; 
 	padding-right: 10px; 
 	min-width: 220px;
+	font-weight: normal;
+}
+
+.low-storage-space
+{
+	color: red;
+}
+
+.important-information
+{
+	font-weight: bold;
 }

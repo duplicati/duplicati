@@ -28,6 +28,23 @@
 		var strtmp = str.replace(/\/Date\((-?\d+(((\+|\-)\d+)|Z|z)?)\)\//gi, "new Date($1)");
 		return eval(strtmp);
 	};
+	
+	APP_SCOPE.formatSizeString = function(size) {
+		size = parseInt(size);
+		if (isNaN(size))
+			return size;
+			
+		if (size >= 1024 * 1024 * 1024 * 1024)
+			return (size / (1024 * 1024 * 1024 * 1024.0)).toFixed(2) + ' TB';
+		else if (size >= 1024 * 1024 * 1024)
+			return (size / (1024 * 1024 * 1024.0)).toFixed(2) + ' GB';
+		else if (size >= 1024 * 1024)
+			return (size / (1024 * 1024.0)).toFixed(2) + ' MB';
+		else if (size >= 1024)
+			return (size / (1024.0)).toFixed(2) + ' KB';
+		else
+			return size + ' bytes';		
+	}
 
 	APP_SCOPE.createHtmlItems = function(html) {
 		if (ls.creator_div == null) {

@@ -85,7 +85,6 @@ $(document).ready(function(){
 					labels += sc.Path;
 			}
 			
-			//TODO: Figure out what the scheduler state is
 			var schedule = '';
 			
 			//Is the backup running?
@@ -118,9 +117,69 @@ $(document).ready(function(){
 			
 			//TODO: Make some logic to extract the last error message
 			var error = 'placeholder for error message';
+
+			var metadata = '';			
 			
-			//TODO: Extract some metadata
-			var metadata = 'placeholder for metadata';
+			if (sc.MetadataLookup != null)
+			{
+				var metadataItems = [];
+				var mt = sc.MetadataLookup;
+				if (mt['source-file-size'] != null)
+					metadataItems.push('<span>Source files: ' + APP_SCOPE.formatSizeString(mt['source-file-size']) + '</span>');
+					
+				if (mt['total-backup-size'] != null && parseInt(mt['total-backup-size']) > 0)
+					metadataItems.push('<span>Backup size: ' + APP_SCOPE.formatSizeString(mt['total-backup-size']) + '</span>');
+
+				
+				if (mt['assigned-quota-space'] != null || mt['free-quota-space'] != null)
+				{
+					var spaceLeft = null;
+					if (mt['assigned-quota-space'] != null && mt['free-quota-space'] != null && mt['total-backup-size'] != null)
+						spaceLeft = Math.min(parseInt(mt['assigned-quota-space']) - parseInt(mt['total-backup-size']), parseInt(mt['free-quota-space']));
+					else if (mt['assigned-quota-space'] != null && mt['total-backup-size'] != null)
+						spaceLeft = parseInt(mt['assigned-quota-space']) - parseInt(mt['total-backup-size']);
+					else if (mt['free-quota-space'] != null)
+						spaceLeft = parseInt(mt['free-quota-space']);
+
+					var extracls = '';
+					if (mt['total-backup-size'] != null)
+					{
+						//We mark it as low if there is less than 10% free
+						if (spaceLeft < (parseInt(mt['total-backup-size']) * 0.1))
+							extracls = 'class="low-storage-space"';
+					}
+
+					if (spaceLeft != null)
+						metadataItems.push('<span>Free space: <span ' + extracls + '>' + APP_SCOPE.formatSizeString(spaceLeft) + '</span></span>');
+				}
+				
+				if (mt['changed-file-count'] != null)
+				{
+					var changedFiles = parseInt(mt['changed-file-count']);
+					var str = changedFiles + ' ' + changedFiles == 1 ? "change" : "changes";
+					
+					if (mt['last-backup-date'] != null)
+						str += ' since ' + jQuery.timeago(new Date(mt['last-backup-date']));
+					
+					metadataItems.push('<span>' + str + '</span>');
+				} else if (mt['last-backup-date'] != null) {
+					metadataItems.push('<span>Last backup: ' + jQuery.timeago(new Date(mt['last-backup-date'])) + '</span>');
+					
+				}
+
+				
+				for(var ix = 0; ix < metadataItems.length; ix++) 
+				{
+					if (ix != 0)
+						metadata += ", ";
+						
+					metadata += metadataItems[ix];
+				}
+					
+			}
+			
+			if (metadata == '')
+				metadata = '<span class="important-information">No backup information was found, <span class="link">run the backup</span> to obtain data</span>'
 			
 			templateFilled = templateFilled.replace("%labels%", labels).replace("%schedule%", schedule).replace("%error%", error).replace("%metadata%", metadata);
 
