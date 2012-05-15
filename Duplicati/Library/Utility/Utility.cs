@@ -448,7 +448,9 @@ namespace Duplicati.Library.Utility
         /// <returns>A human readable string representing the size</returns>
         public static string FormatSizeString(long size)
         {
-            if (size >= 1024 * 1024 * 1024)
+            if (size >= 1024 * 1024 * 1024 * 1024L)
+                return string.Format(Strings.Utility.FormatStringTB, (double)size / (1024 * 1024 * 1024 * 1024L));
+            else if (size >= 1024 * 1024 * 1024)
                 return string.Format(Strings.Utility.FormatStringGB, (double)size / (1024 * 1024 * 1024));
             else if (size >= 1024 * 1024)
                 return string.Format(Strings.Utility.FormatStringMB, (double)size / (1024 * 1024));
