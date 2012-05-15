@@ -46,6 +46,8 @@ namespace Duplicati.Server
     {
         DuplicityTaskType TaskType { get; }
         event TaskCompletedHandler TaskCompleted;
+        Dictionary<string, string> Metadata { get; set; }
+
         void RaiseTaskCompleted(string output, string parsedMessage);
 
         DateTime BeginTime { get; set; }
@@ -64,6 +66,7 @@ namespace Duplicati.Server
     {
         protected Schedule m_schedule;
         protected DateTime m_beginTime;
+        protected Dictionary<string, string> m_metadata;
 
         protected string m_result;
         protected bool m_isAborted = false;
@@ -73,6 +76,7 @@ namespace Duplicati.Server
 
         public Schedule Schedule { get { return m_schedule; } }
         public Task Task { get { return m_schedule.Task; } }
+        public Dictionary<string, string> Metadata { get { return m_metadata; } set { m_metadata = value; } }
         public event TaskCompletedHandler TaskCompleted;
         public virtual DateTime BeginTime 
         {
