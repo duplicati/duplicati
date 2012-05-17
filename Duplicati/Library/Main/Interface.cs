@@ -326,16 +326,18 @@ namespace Duplicati.Library.Main
             if (sources == null || sources.Length == 0)
                 throw new Exception(Strings.Interface.NoSourceFoldersError);
 
-            //Make sure they all have the same format
+            //Make sure they all have the same format and exist
             for (int i = 0; i < sources.Length; i++)
-                sources[i] = Utility.Utility.AppendDirSeparator(sources[i]);
+            {
+                sources[i] = Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sources[i]));
+
+                if (!System.IO.Directory.Exists(sources[i]))
+                    throw new System.IO.IOException(String.Format(Strings.Interface.SourceFolderIsMissingError, sources[i]));
+            }
 
             //Sanity check for duplicate folders and multiple inclusions of the same folder
             for (int i = 0; i < sources.Length - 1; i++)
             {
-                if (!System.IO.Directory.Exists(sources[i]))
-                    throw new System.IO.IOException(String.Format(Strings.Interface.SourceFolderIsMissingError, sources[i]));
-
                 for (int j = i + 1; j < sources.Length; j++)
                     if (sources[i].Equals(sources[j], Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
                         throw new Exception(string.Format(Strings.Interface.SourceDirIsIncludedMultipleTimesError, sources[i]));

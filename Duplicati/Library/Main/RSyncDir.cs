@@ -1839,6 +1839,16 @@ namespace Duplicati.Library.Main.RSync
             /// <returns>True if the element is accepted, false if it is filtered</returns>
             private bool FilterPredicate(string element)
             {
+                return m_filter.ShouldInclude(Utility.Utility.DirectorySeparatorString, Utility.Utility.DirectorySeparatorString + element);
+            }
+
+            /// <summary>
+            /// A filter predicate used to filter unwanted folder elements from the list
+            /// </summary>
+            /// <param name="element">The relative string to examine</param>
+            /// <returns>True if the folder element is accepted, false if it is filtered</returns>
+            private bool FilterFoldersPredicate(string element)
+            {
                 return m_filter.ShouldInclude(Utility.Utility.DirectorySeparatorString, Utility.Utility.DirectorySeparatorString + Utility.Utility.AppendDirSeparator(element));
             }
 
@@ -1856,10 +1866,11 @@ namespace Duplicati.Library.Main.RSync
             /// Filters a list by hooking into the enumeration system, rather than copying the list
             /// </summary>
             /// <param name="input">The list of relative filenames to filter</param>
+            /// <param name="isFolderList">True if all elements should be interpreted as folders, false otherwise</param>
             /// <returns>A filtered list</returns>
-            public IEnumerable<string> Filterlist(IEnumerable<string> input)
+            public IEnumerable<string> Filterlist(IEnumerable<string> input, bool isFolderList)
             {
-                return new Utility.PlugableEnumerable<string>(new Predicate<string>(FilterPredicate), new Utility.Func<string,string>(GetFullpathFunc), input);
+                return new Utility.PlugableEnumerable<string>(isFolderList ? new Predicate<string>(FilterFoldersPredicate) : new Predicate<string>(FilterPredicate), new Utility.Func<string, string>(GetFullpathFunc), input);
             }
         }
 
@@ -1886,7 +1897,7 @@ namespace Duplicati.Library.Main.RSync
 
             //Delete all files that were removed
             if (patch.FileExists(DELETED_FILES))
-                foreach (string s in fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES))))
+                foreach (string s in fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES)), false))
                 {
                     if (System.IO.File.Exists(s))
                     {
@@ -1921,7 +1932,7 @@ namespace Duplicati.Library.Main.RSync
             {
                 if (m_folders_to_delete == null)
                     m_folders_to_delete = new List<string>();
-                List<string> deletedfolders = new List<string>(fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FOLDERS))));
+                List<string> deletedfolders = new List<string>(fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FOLDERS)), true));
                 //Make sure subfolders are deleted first
                 deletedfolders.Sort();
                 deletedfolders.Reverse();
@@ -1937,7 +1948,7 @@ namespace Duplicati.Library.Main.RSync
             //as non-empty folders will also be created when files are restored
             if (patch.FileExists(ADDED_FOLDERS))
             {
-                List<string> addedfolders = new List<string>(fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS))));
+                List<string> addedfolders = new List<string>(fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS)), true));
 
                 //Make sure topfolders are created first
                 addedfolders.Sort();
