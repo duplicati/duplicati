@@ -25,6 +25,28 @@
 			<div id="status-window-toolbar-inner" class="ui-state-default ui-helper-clearfix ui-helper ui-widget-header">
 				<div id="status-window-main-logo" title="Click to access basic functions" class="ui-state-default ui-helper-clearfix ui-helper ui-widget-header ui-corner-all">
 					<div id="appname" class="appname"></div><span class="ui-button-icon-primary ui-icon ui-icon-triangle-1-s"></span>
+					
+					<ul id="status-window-primary-menu" style="display-hidden" class="ui-menu" xxclass="context-menu ui-state-default">
+						<li class="ui-menu-item"><a href="#">Pause Duplicati</a></li>
+						<li class="ui-menu-item"><a href="#">Pause for x minutes</a>
+							<ul>
+								<li class="ui-menu-item"><a href="#">Pause for 5 minutes</a></li>
+								<li class="ui-menu-item"><a href="#">Pause for 15 minutes</a></li>
+								<li class="ui-menu-item"><a href="#">Pause for 30 minutes</a></li>
+								<li class="ui-menu-item"><a href="#">Pause for 60 minutes</a></li>
+							</ul>
+						</li>
+						<li class="ui-menu-item"><a href="#">Throttle ...</a></li>
+						<li class="ui-menu-item"><a href="#">Run backups</a>
+							<ul id="status-window-run-by-label">
+								<li class="ui-menu-item"><a href="#">All backups</a></li>
+								<li class="ui-menu-item"><a href="#">Label: xx</a></li>
+								<li class="ui-menu-item"><a href="#">Label: yy</a></li>
+							</ul>
+						</li>
+						<li class="ui-menu-item"><a href="#">Settings ...</a></li>
+						<li class="ui-menu-item"><a href="#">About</a></li>
+					</ul>
 				</div>
 				<div id="status-window-news" title="Click here to open the news page">A new version of Duplicati is available</div>
 	

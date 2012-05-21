@@ -50,7 +50,6 @@ $(document).ready(function(){
 		'    </div>' +
 		'</div>';
 
-	
 });
 
 (function(){
@@ -164,10 +163,8 @@ $(document).ready(function(){
 					metadataItems.push('<span>' + str + '</span>');
 				} else if (mt['last-backup-date'] != null) {
 					metadataItems.push('<span>Last backup: ' + jQuery.timeago(new Date(mt['last-backup-date'])) + '</span>');
-					
 				}
 
-				
 				for(var ix = 0; ix < metadataItems.length; ix++) 
 				{
 					if (ix != 0)
@@ -175,11 +172,10 @@ $(document).ready(function(){
 						
 					metadata += metadataItems[ix];
 				}
-					
 			}
 			
 			if (metadata == '')
-				metadata = '<span class="important-information">No backup information was found, <span class="link">run the backup</span> to obtain data</span>'
+				metadata = '<span class="important-information">No backup information was found, <span class="link">run a backup</span> to obtain data</span>'
 			
 			templateFilled = templateFilled.replace("%labels%", labels).replace("%schedule%", schedule).replace("%error%", error).replace("%metadata%", metadata);
 

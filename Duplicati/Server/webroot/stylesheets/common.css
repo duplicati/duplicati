@@ -50,3 +50,36 @@ body
 
 
 .vertical-center { margin: 0px auto; }
+
+.ui-menu .ui-menu-item a
+{
+	line-height:1;
+}
+
+.context-menu
+{
+	list-style: none;
+	position: absolute;
+	left: 0; top: 35px;
+	margin: 0; padding: 0;
+	display: block;
+	float: left;
+	width: 170px;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+	-khtml-border-bottom-left-radius: 5px;
+	-kthtml-border-bottom-right-radius: 5px;
+	-moz-border-radius-bottomleft: 5px;
+	-moz-border-radius-bottomright: 5px;
+	-webkit-border-bottom-left-radius: 5px;
+	-webkit-border-bottom-right-radius: 5px;
+}
+
+.context-menu li a 
+{
+	width: 100%;
+	display: block;
+}
+.context-menu li a:hover {
+	background: #222 url(dropdown_linkbg.gif) no-repeat 10px center;
+}

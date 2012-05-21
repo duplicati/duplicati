@@ -162,6 +162,14 @@
 				alert("Unimplemented " + code);
 			}
 		}
+		
+		$(".ui-menu-item a").each(function(i, e) {
+			var x = $(e)
+			x.hover(
+				function(){x.addClass("ui-state-hover")},
+				function(){x.removeClass("ui-state-hover")}
+			);
+		});
 	});
 	
 })();
