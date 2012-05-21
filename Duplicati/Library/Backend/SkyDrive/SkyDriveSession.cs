@@ -462,25 +462,42 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(m_noncetemplate))
                 return null;
 
-            //Get a authentification token
-            HttpWebRequest getToken = (HttpWebRequest)WebRequest.Create(m_loginUrl);
-            getToken.UserAgent = USER_AGENT;
-            getToken.Headers[AUTHORIZATION_HEADER] = string.Format(LOGIN_HEADER_TEMPLATE, HttpUtility.UrlEncode(m_username), HttpUtility.UrlEncode(m_password), verb, url, CreateNonce(verb, url));
-
-            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(getToken))
+            try
             {
-                string token_header = resp.Headers[AUTHENTIFICATION_RESULT_HEADER];
-                string redir = resp.Headers[REDIR_LOCATION_HEADER];
+                //Get a authentification token
+                HttpWebRequest getToken = (HttpWebRequest)WebRequest.Create(m_loginUrl);
+                getToken.UserAgent = USER_AGENT;
+                getToken.Headers[AUTHORIZATION_HEADER] = string.Format(LOGIN_HEADER_TEMPLATE, HttpUtility.UrlEncode(m_username), HttpUtility.UrlEncode(m_password), verb, url, CreateNonce(verb, url));
 
-                string status = LOGIN_STATUS_MATCH.Match(token_header).Groups["status"].Value;
-                string token = LOGIN_TOKEN_MATCH.Match(token_header).Groups["token"].Value;
+                using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(getToken))
+                {
+                    string token_header = resp.Headers[AUTHENTIFICATION_RESULT_HEADER];
+                    string redir = resp.Headers[REDIR_LOCATION_HEADER];
 
-                if (status != "success")
-                    throw new Exception(string.Format(Strings.SkyDrive.LoginFailedError, status));
-                if (string.IsNullOrEmpty(token))
-                    throw new Exception(Strings.SkyDrive.NoTokenError);
+                    string status = LOGIN_STATUS_MATCH.Match(token_header).Groups["status"].Value;
+                    string token = LOGIN_TOKEN_MATCH.Match(token_header).Groups["token"].Value;
 
-                return string.Format(TOKEN_FORMAT_TEMPLATE, token);
+                    if (status != "success")
+                        throw new Exception(string.Format(Strings.SkyDrive.LoginFailedError, status));
+                    if (string.IsNullOrEmpty(token))
+                        throw new Exception(Strings.SkyDrive.NoTokenError);
+
+                    return string.Format(TOKEN_FORMAT_TEMPLATE, token);
+                }
+            }
+            catch (WebException wex)
+            {
+                if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    if (IsPasswordTooLong(m_password))
+                        throw new Exception(Strings.SkyDriveSession.InvalidPasswordLongPasswordFound, wex);
+                    else if (HasInvalidChars(m_password))
+                        throw new Exception(Strings.SkyDriveSession.InvalidPasswordInvalidCharsFound, wex);
+                    else
+                        throw new Exception(Strings.SkyDriveSession.InvalidUsernameOrPassword, wex);
+                }
+
+                throw;
             }
         }
 
@@ -960,5 +977,33 @@ namespace Duplicati.Library.Backend
         }
 
         #endregion
+
+
+        /// <summary>
+        /// Utility function to test if password is so long that it can cause problems
+        /// </summary>
+        /// <param name="password">The password to validate</param>
+        /// <returns>True if the password is too long, false otherwise</returns>
+        public static bool IsPasswordTooLong(string password)
+        {
+            if (string.IsNullOrEmpty(password))
+                return false;
+
+            return password.Length > 16;
+        }
+
+        /// <summary>
+        /// Utility function to test if the password contains non-standard characters
+        /// </summary>
+        /// <param name="password">The password to validate</param>
+        /// <returns>True if the password has invalid chars, false otherwise</returns>
+        public static bool HasInvalidChars(string password)
+        {
+            bool invalidChars = false;
+            foreach (char c in password)
+                invalidChars |= !("!&()[~@".IndexOf(c) >= 0 || char.IsLetterOrDigit(c));
+
+            return invalidChars;
+        }
     }
 }
