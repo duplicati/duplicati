@@ -12,11 +12,20 @@ namespace Duplicati.Server
     public class WebServer
     {
         /// <summary>
+        /// Option for changing the webroot folder
+        /// </summary>
+        private const string OPTION_WEBROOT = "webservice-webroot";
+        /// <summary>
+        /// Option for changing the webservice listen port
+        /// </summary>
+        private const string OPTION_PORT = "webservice-port";
+
+        /// <summary>
         /// The single webserver instance
         /// </summary>
         private HttpServer.HttpServer m_server;
              
-        public WebServer(int port)
+        public WebServer(IDictionary<string, string> options)
         {
             m_server = new HttpServer.HttpServer();
 
@@ -38,14 +47,46 @@ namespace Duplicati.Server
             }
 
 #endif
-            FileModule fh = new FileModule("/", System.IO.Path.Combine(webroot, "webroot"));
+            webroot = System.IO.Path.Combine(webroot, "webroot");
+
+            if (options.ContainsKey(OPTION_WEBROOT))
+            {
+                string userroot = options[OPTION_WEBROOT];
+#if DEBUG
+                //In debug mode we do not care where the path points
+#else
+                //In release mode we check that the usersupplied path is located
+                // in the same folders as the running application, to avoid users
+                // that inadvertently expose top level folders
+                if (!string.IsNullOrWhiteSpace(userroot)
+                    &&
+                    (
+                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparision)
+                        ||
+                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparision)
+                    )
+                )
+#endif
+                {
+                    webroot = userroot;
+                }
+            }
+
+            FileModule fh = new FileModule("/", webroot);
             fh.AddDefaultMimeTypes();
+            fh.MimeTypes.Add("htc", "text/x-component");
+            fh.MimeTypes.Add("json", "application/json");
             m_server.Add(fh);
 
 #if DEBUG
             //For debugging, it is nice to know when we get a 404
             m_server.Add(new DebugReportHandler());
 #endif
+
+            int port;
+            string portstring;
+            if (!options.TryGetValue(OPTION_PORT, out portstring) || !int.TryParse(portstring, out port))
+                port = 8080;
 
             m_server.Start(System.Net.IPAddress.Any, port);
         }
@@ -260,7 +301,7 @@ namespace Duplicati.Server
                 switch (command.ToLowerInvariant())
                 {
                     case "pause":
-                        if (input.Contains("duration"))
+                        if (input.Contains("duration") && !string.IsNullOrWhiteSpace(input["duration"].Value))
                         {
                             TimeSpan ts;
                             try { ts = Library.Utility.Timeparser.ParseTimeSpan(input["duration"].Value); }
@@ -269,7 +310,10 @@ namespace Duplicati.Server
                                 ReportError(response, bw, ex.Message);
                                 return;
                             }
-                            Program.LiveControl.Pause(ts);
+                            if (ts.TotalMilliseconds > 0)
+                                Program.LiveControl.Pause(ts);
+                            else
+                                Program.LiveControl.Pause();
                         }
                         else
                         {
@@ -307,7 +351,7 @@ namespace Duplicati.Server
                                 return;
                             }
 
-                            if (Library.Utility.Utility.ParseBoolOption(input["full"].ToDictionary(x => x.Name, x => x.Value), "full"))
+                            if (Library.Utility.Utility.ParseBoolOption(input.ToDictionary(x => x.Name, x => x.Value), "full"))
                                 Program.WorkThread.AddTask(new FullBackupTask(schedule));
                             else
                                 Program.WorkThread.AddTask(new IncrementalBackupTask(schedule));

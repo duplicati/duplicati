@@ -287,7 +287,7 @@ namespace Duplicati.Server
                 LiveControl.ThrottleSpeedChanged += new EventHandler(Events.LiveControl_ThrottleSpeedChanged);*/
 
 
-                Program.WebServer = new Server.WebServer(8080);
+                Program.WebServer = new Server.WebServer(commandlineOptions);
 
                 DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
     
