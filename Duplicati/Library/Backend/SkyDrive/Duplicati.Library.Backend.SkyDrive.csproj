@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -12,6 +12,7 @@
     <AssemblyName>Duplicati.Library.Backend.SkyDrive</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -61,6 +62,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SkyDrive.resx</DependentUpon>
     </Compile>
+    <Compile Include="Strings\SkyDriveSession.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SkyDriveSession.resx</DependentUpon>
+    </Compile>
     <Compile Include="Strings\SkyDriveUI.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -89,6 +95,10 @@
     <EmbeddedResource Include="Strings\SkyDrive.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>SkyDrive.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\SkyDriveSession.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SkyDriveSession.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\SkyDriveUI.resx">
       <Generator>ResXFileCodeGenerator</Generator>

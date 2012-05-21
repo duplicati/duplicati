@@ -16,8 +16,12 @@ namespace Duplicati.Library.Backend
 
         private const string HAS_TESTED = "UI: Has tested";
         private const string INITIALPASSWORD = "UI: Temp password";
+        private const string HAS_WARNED_LONG_PASSWORD = "UI: Warned long password";
+        private const string HAS_WARNED_PASSWORD_CHARS = "UI: Warned password chars";
 
         private bool m_hasTested;
+        private bool m_hasWarnedPasswordChars;
+        private bool m_hasWarnedLongPassword;
 
         private const string DUPLICATI_ACTION_MARKER = "*duplicati-action*";
         private string m_uiAction = null;
@@ -83,6 +87,12 @@ namespace Duplicati.Library.Backend
             if (!m_options.ContainsKey(HAS_TESTED) || !bool.TryParse(m_options[HAS_TESTED], out m_hasTested))
                 m_hasTested = false;
 
+            if (!m_options.ContainsKey(HAS_WARNED_LONG_PASSWORD) || !bool.TryParse(m_options[HAS_WARNED_LONG_PASSWORD], out m_hasWarnedLongPassword))
+                m_hasWarnedLongPassword = false;
+
+            if (!m_options.ContainsKey(HAS_WARNED_PASSWORD_CHARS) || !bool.TryParse(m_options[HAS_WARNED_PASSWORD_CHARS], out m_hasWarnedPasswordChars))
+                m_hasWarnedPasswordChars = false;
+
             m_options.TryGetValue(DUPLICATI_ACTION_MARKER, out m_uiAction);
         }
 
@@ -116,6 +126,32 @@ namespace Duplicati.Library.Backend
                 return false;
             }
 
+            if (!m_hasWarnedLongPassword && SkyDriveSession.IsPasswordTooLong(Password.Text))
+            {
+                if (MessageBox.Show(this, Strings.SkyDriveUI.LongPasswordWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    try { Password.Focus(); }
+                    catch { }
+
+                    return false;
+                }
+
+                m_hasWarnedLongPassword = true;
+            }
+                
+            if (!m_hasWarnedPasswordChars && SkyDriveSession.HasInvalidChars(Password.Text))
+            {
+                if (MessageBox.Show(this, Strings.SkyDriveUI.PasswordCharactersWarning, Application.ProductName, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    try { Password.Focus(); }
+                    catch { }
+
+                    return false;
+                }
+
+                m_hasWarnedPasswordChars = true;
+            }
+
             return true;
         }
 
@@ -126,6 +162,8 @@ namespace Duplicati.Library.Backend
 
             m_options.Clear();
             m_options[HAS_TESTED] = m_hasTested.ToString();
+            m_options[HAS_WARNED_LONG_PASSWORD] = m_hasWarnedLongPassword.ToString();
+            m_options[HAS_WARNED_PASSWORD_CHARS] = m_hasWarnedPasswordChars.ToString();
             m_options[FOLDER] = Path.Text;
             m_options[USERNAME] = Username.Text;
             m_options[PASSWORD] = Password.Text;
@@ -208,6 +246,8 @@ namespace Duplicati.Library.Backend
         private void Password_TextChanged(object sender, EventArgs e)
         {
             m_hasTested = false;
+            m_hasWarnedLongPassword = false;
+            m_hasWarnedPasswordChars = false;
         }
 
         private void Path_TextChanged(object sender, EventArgs e)
