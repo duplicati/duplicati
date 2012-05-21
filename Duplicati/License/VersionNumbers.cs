@@ -43,29 +43,9 @@ namespace Duplicati.License
         {
             get
             {
-                Version v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-
-
-                if (v == new Version(1, 0, 0, 183))
-                    return "1.0";
-                else if (v == new Version(1, 99, 0, 605))
-                    return "1.2 beta 1";
-                else if (v == new Version(1, 1, 99, 663))
-                    return "1.2 beta 2";
-                else if (v == new Version(1, 1, 99, 779))
-                    return "1.2 RC";
-                else if (v == new Version(1, 1, 99, 794))
-                    return "1.2 Final";
-                else if (v == new Version(1, 3, 0, 969))
-                    return "1.3 Beta (r969)";
-                else if (v == new Version(1, 3, 0, 1022))
-                    return "1.3 Beta (r1022)";
-                else if (v == new Version(1, 3, 0, 1047))
-                    return "1.3 Beta (r1047)";
-                else if (v == new Version(1, 3, 0, 1066))
-                    return "1.3";
-                else
-                    return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                //Override this to display a custom version, e.g.
+                //return "1.3.2";
+                return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             }
         }
     }
