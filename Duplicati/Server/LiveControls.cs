@@ -146,6 +146,11 @@ namespace Duplicati.Server
         private System.Threading.Timer m_waitTimer;
 
         /// <summary>
+        /// The time that the current pause is expected to expire
+        /// </summary>
+        private DateTime m_waitTimeExpiration = new DateTime(0);
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
         /// <param name="initialTimeout">The duration that the backups should be initially suspended</param>
@@ -155,7 +160,9 @@ namespace Duplicati.Server
             m_waitTimer = new System.Threading.Timer(m_waitTimer_Tick, this, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
             if (!string.IsNullOrEmpty(settings.StartupDelayDuration) && settings.StartupDelayDuration != "0")
             {
-                m_waitTimer.Change((long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds, System.Threading.Timeout.Infinite);
+                long milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds;
+                m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
+                m_waitTimer.Change(milliseconds, System.Threading.Timeout.Infinite);
                 m_state = LiveControlState.Paused;
             }
 
@@ -185,9 +192,16 @@ namespace Duplicati.Server
         {
             lock (m_lock)
                 if (!string.IsNullOrEmpty(timeout))
-                    m_waitTimer.Change((long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds, System.Threading.Timeout.Infinite);
+                {
+                    long milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds;
+                    m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
+                    m_waitTimer.Change(milliseconds, System.Threading.Timeout.Infinite);
+                }
                 else
+                {
+                    m_waitTimeExpiration = new DateTime(0);
                     m_waitTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+                }
         }
 
         /// <summary>
@@ -216,6 +230,7 @@ namespace Duplicati.Server
                 if (m_state == LiveControlState.Paused)
                 {
                     //Make sure that the timer is cleared
+                    m_waitTimeExpiration = new DateTime(0);
                     m_waitTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
 
                     m_state = LiveControlState.Running;
@@ -231,14 +246,7 @@ namespace Duplicati.Server
         /// <param name="timeout">The duration to wait</param>
         public void Pause(string timeout)
         {
-            lock (m_lock)
-            {
-                if (m_state == LiveControlState.Running)
-                {
-                    Pause();
-                    m_waitTimer.Change((long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds, System.Threading.Timeout.Infinite);
-                }
-            }
+            Pause(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout));
         }
 
         /// <summary>
@@ -249,12 +257,19 @@ namespace Duplicati.Server
         {
             lock (m_lock)
             {
-                if (m_state == LiveControlState.Running)
-                {
-                    Pause();
-                    m_waitTimer.Change((long)timeout.TotalMilliseconds, System.Threading.Timeout.Infinite);
-                }
+                //We change the time, so we issue a new event
+                if (m_state == LiveControlState.Paused && StateChanged != null)
+                    StateChanged(this, null);
+
+                Pause();
+                m_waitTimeExpiration = DateTime.Now.AddMilliseconds((long)timeout.TotalMilliseconds);
+                m_waitTimer.Change((long)timeout.TotalMilliseconds, System.Threading.Timeout.Infinite);
             }
         }
+
+        /// <summary>
+        /// Gets the time the current pause is expected to end
+        /// </summary>
+        public DateTime EstimatedPauseEnd { get { return m_waitTimeExpiration; } }
     }
 }

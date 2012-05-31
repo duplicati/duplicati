@@ -90,6 +90,35 @@ namespace Duplicati.Server.Serializable
                 }
             }
         }
+
+        public DateTime LastLogUpdate
+        {
+            get 
+            { 
+                var lst = Program.DataConnection.GetObjects<Datamodel.Log>().Select(x => x.EndTime).ToList();
+                if (lst.Count == 0)
+                    return new DateTime(0);
+                else
+                    return lst.Max();
+            }
+        }
+
+        public DateTime EstimatedPauseEnd 
+        {
+            get 
+            { 
+                return Program.LiveControl.EstimatedPauseEnd; 
+            }
+        }
+
+        public long LastEventID 
+        { 
+            get 
+            { 
+                return Program.EventNotifyer.EventNo; 
+            } 
+        }
+
     }
 }
 

@@ -19,14 +19,11 @@ namespace Duplicati.GUI.TrayIcon
         public delegate void StatusUpdate(IServerStatus status);
         public event StatusUpdate StatusUpdated;
 
-        private IServerStatus m_status;
-
-        private TimeSpan m_updateIntervalIdle = TimeSpan.FromSeconds(15);
-        private TimeSpan m_updateIntervalActive = TimeSpan.FromSeconds(5);
-        private TimeSpan m_currentInterval;
+        private volatile IServerStatus m_status;
 
         private volatile bool m_shutdown = false;
-        private volatile System.Threading.Thread m_thread;
+        private volatile System.Threading.Thread m_requestThread;
+        private volatile System.Threading.Thread m_pollThread;
         private System.Threading.AutoResetEvent m_waitLock;
 
         private Serializer m_serializer;
@@ -46,59 +43,50 @@ namespace Duplicati.GUI.TrayIcon
             m_controlUri = new Uri(m_baseUri + CONTROL_SCRIPT);
             m_serializer = new Serializer();
             m_updateRequest = new Dictionary<string, string>();
-            m_updateRequest.Add("action", "get-current-state");
+            m_updateRequest["action"] = "get-current-state";
+            m_updateRequest["longpoll"] = "false";
+            m_updateRequest["duration"] = "5m";
+            m_updateRequest["lasteventid"] = "0";
 
             UpdateStatus();
 
+            //We do the first request without long poll,
+            // and all the rest with longpoll
+            m_updateRequest["longpoll"] = "true";
+            
             m_waitLock = new System.Threading.AutoResetEvent(false);
-            m_thread = new System.Threading.Thread(ThreadRunner);
-            m_thread.Start();
+            m_requestThread = new System.Threading.Thread(ThreadRunner);
+            m_pollThread = new System.Threading.Thread(LongPollRunner);
+
+            m_requestThread.Name = "TrayIcon Request Thread";
+            m_pollThread.Name = "TrayIcon Longpoll Thread";
+
+            m_requestThread.Start();
+            m_pollThread.Start();
         }
 
         private void UpdateStatus()
         {
-            IServerStatus old_status = m_status;
             m_status = PerformRequest<IServerStatus>(m_updateRequest);
+            m_updateRequest["lasteventid"] = m_status.LastEventID.ToString();
 
-            m_currentInterval = m_status.ProgramState == Server.Serialization.LiveControlState.Paused ? m_updateIntervalIdle :
-                    m_status.ActiveScheduleId < 0 ? m_updateIntervalIdle : m_updateIntervalActive;
+            if (StatusUpdated != null)
+                StatusUpdated(m_status);
+        }
 
-            bool somethingChanged = false;
-            if (old_status != null)
+        private void LongPollRunner()
+        {
+            while (!m_shutdown)
             {
-                somethingChanged |=
-                    old_status.ActiveBackupState != m_status.ActiveBackupState
-                    ||
-                    old_status.ActiveScheduleId != m_status.ActiveScheduleId
-                    ||
-                    old_status.ProgramState != m_status.ProgramState
-                    ||
-                    old_status.SchedulerQueueIds.Count != m_status.SchedulerQueueIds.Count;
-
-                if (!somethingChanged && old_status.RunningBackupStatus != null && m_status.RunningBackupStatus != null && m_status.ActiveScheduleId >= 0)
+                try
                 {
-                    somethingChanged |=
-                        old_status.RunningBackupStatus.Message != m_status.RunningBackupStatus.Message
-                        ||
-                        old_status.RunningBackupStatus.Mode != m_status.RunningBackupStatus.Mode
-                        ||
-                        old_status.RunningBackupStatus.Operation != m_status.RunningBackupStatus.Operation
-                        ||
-                        old_status.RunningBackupStatus.Progress != m_status.RunningBackupStatus.Progress
-                        ||
-                        old_status.RunningBackupStatus.SubMessage != m_status.RunningBackupStatus.SubMessage
-                        ||
-                        old_status.RunningBackupStatus.SubProgress != m_status.RunningBackupStatus.SubProgress;
+                    UpdateStatus();
                 }
-
-                if (!somethingChanged)
+                catch (Exception ex)
                 {
-                    for (int i = 0; i < m_status.SchedulerQueueIds.Count; i++)
-                        somethingChanged |= old_status.SchedulerQueueIds[i] != m_status.SchedulerQueueIds[i];
+                    System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
+                    Console.WriteLine("Request error: " + ex.Message);
                 }
-
-                if (somethingChanged && StatusUpdated != null)
-                    StatusUpdated(m_status);
             }
         }
 
@@ -119,7 +107,7 @@ namespace Duplicati.GUI.TrayIcon
                                 req = m_workQueue.Dequeue();
 
                         if (m_shutdown)
-                            return;
+                            break;
 
                         if (req != null)
                         {
@@ -130,15 +118,11 @@ namespace Duplicati.GUI.TrayIcon
                     } while (req != null);
                     
                     if (!(any || m_shutdown))
-                        m_waitLock.WaitOne(m_currentInterval, true);
-                    
-                    if (m_shutdown)
-                        return;
-
-                    UpdateStatus();
+                        m_waitLock.WaitOne(TimeSpan.FromMinutes(1), true);
                 }
                 catch (Exception ex)
                 {
+                    System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
                     Console.WriteLine("Request error: " + ex.Message);
                 }
             }
@@ -148,9 +132,11 @@ namespace Duplicati.GUI.TrayIcon
         {
             m_shutdown = true;
             m_waitLock.Set();
-            if (!m_thread.Join(TimeSpan.FromSeconds(10)))
-                m_thread.Abort();
-            m_thread.Join(TimeSpan.FromSeconds(10));
+            m_pollThread.Abort();
+            m_pollThread.Join(TimeSpan.FromSeconds(10));
+            if (!m_requestThread.Join(TimeSpan.FromSeconds(10)))
+                m_requestThread.Abort();
+            m_requestThread.Join(TimeSpan.FromSeconds(10));
         }
 
         private static string EncodeQueryString(Dictionary<string, string> dict)
@@ -170,7 +156,12 @@ namespace Duplicati.GUI.TrayIcon
             req.ContentLength = data.Length;
             req.ContentType = "application/x-www-form-urlencoded ; charset=" + ENCODING.BodyName;
             req.Headers.Add("Accept-Charset", ENCODING.BodyName);
-            
+            req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+            //Assign the timeout, and add a little processing time as well
+            if (queryparams["action"] == "get-current-state" && queryparams.ContainsKey("duration"))
+                req.Timeout = (int)(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(queryparams["duration"]) + TimeSpan.FromSeconds(5)).TotalMilliseconds;
+
             using (System.IO.Stream s = req.GetRequestStream())
                 s.Write(data, 0, data.Length);
 

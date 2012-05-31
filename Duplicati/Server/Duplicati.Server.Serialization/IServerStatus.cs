@@ -13,5 +13,8 @@ namespace Duplicati.Server.Serialization
         bool HasWarning { get; }
         bool HasError { get; }
         SuggestedStatusIcon SuggestedStatusIcon { get; }
+        DateTime LastLogUpdate { get; }
+        DateTime EstimatedPauseEnd { get; }
+        long LastEventID { get; }
     }
 }

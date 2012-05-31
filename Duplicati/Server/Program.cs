@@ -87,7 +87,12 @@ namespace Duplicati.Server
         /// An event that is set once the server is ready to respond to requests
         /// </summary>
         public static System.Threading.ManualResetEvent ServerStartedEvent = new System.Threading.ManualResetEvent(false);
-        
+
+        /// <summary>
+        /// The general event signaler, used to controll long polling of status updates
+        /// </summary>
+        public static EventPollNotify EventNotifyer = new EventPollNotify();
+
         //TODO: These should be persisted to the database
         public static bool HasError;
         public static bool HasWarning;
@@ -296,9 +301,11 @@ namespace Duplicati.Server
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Trace.WriteLine(string.Format(Strings.Program.SeriousError, ex.ToString()));
                 Console.WriteLine(Strings.Program.SeriousError, ex.ToString());
             }
 
+            EventNotifyer.SignalNewEvent();
 
             if (Scheduler != null)
                 Scheduler.Terminate(true);
@@ -325,6 +332,8 @@ namespace Duplicati.Server
                 Runner.UnsetThreadPriority();
             else
                 Runner.SetThreadPriority(LiveControl.ThreadPriority.Value);
+        
+            EventNotifyer.SignalNewEvent();
         }
 
         /// <summary>
@@ -343,6 +352,8 @@ namespace Duplicati.Server
                 Runner.SetUploadLimit(null);
             else
                 Runner.SetUploadLimit(LiveControl.UploadLimit.Value.ToString() + "b");
+
+            EventNotifyer.SignalNewEvent();
         }
 
         /// <summary>
@@ -361,13 +372,18 @@ namespace Duplicati.Server
                     Runner.Resume();
                     break;
             }
+
+            EventNotifyer.SignalNewEvent();
         }
 
 
         private static void DataConnection_AfterDataConnection(object sender, DataActions action)
         {
             if (action == DataActions.Insert || action == DataActions.Update)
+            {
                 Scheduler.Reschedule();
+                EventNotifyer.SignalNewEvent();
+            }
         }
 
         /// <summary>

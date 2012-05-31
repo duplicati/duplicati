@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -77,7 +77,7 @@ namespace Duplicati.Server
             fh.MimeTypes.Add("htc", "text/x-component");
             fh.MimeTypes.Add("json", "application/json");
             m_server.Add(fh);
-
+            m_server.Add(new IndexHtmlHandler(System.IO.Path.Combine(webroot, "status-window.html")));
 #if DEBUG
             //For debugging, it is nice to know when we get a 404
             m_server.Add(new DebugReportHandler());
@@ -116,6 +116,34 @@ namespace Duplicati.Server
                     m_resp.Send();
                 }
                 base.Dispose(disposing);
+            }
+        }
+
+        private class IndexHtmlHandler : HttpModule
+        {
+            private string m_defaultdoc;
+
+            public IndexHtmlHandler(string defaultdoc) { m_defaultdoc = defaultdoc; }
+
+            public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
+            {
+                if ((request.Uri.AbsolutePath == "/" || request.Uri.AbsolutePath == "/index.html" || request.Uri.AbsolutePath == "/index.htm") && System.IO.File.Exists(m_defaultdoc))
+                {
+                    response.Status = System.Net.HttpStatusCode.OK;
+                    response.Reason = "OK";
+                    response.ContentType = "text/html";
+
+                    using (var fs = System.IO.File.OpenRead(m_defaultdoc))
+                    {
+                        response.ContentLength = fs.Length;
+                        response.Body = fs;
+                        response.Send();
+                    }
+
+                    return true;
+                }
+
+                return false;
             }
         }
 
@@ -234,6 +262,33 @@ namespace Duplicati.Server
 
             private void GetCurrentState (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                if (Library.Utility.Utility.ParseBool(input["longpoll"].Value, false))
+                {
+                    long lastEventId;
+                    if (!long.TryParse(input["lasteventid"].Value, out lastEventId))
+                    {
+                        ReportError(response, bw, "When activating long poll, the request must include the last event id");
+                        return;
+                    }
+
+                    TimeSpan ts;
+                    try { ts = Library.Utility.Timeparser.ParseTimeSpan(input["duration"].Value); }
+                    catch (Exception ex)
+                    {
+                        ReportError(response, bw, "Invalid duration: " + ex.Message);
+                        return;
+                    }
+
+                    if (ts <= TimeSpan.FromSeconds(10) || ts.TotalMilliseconds > int.MaxValue)
+                    {
+                        ReportError(response, bw, "Invalid duration, must be at least 10 seconds, and less than " + int.MaxValue + " milliseconds");
+                        return;
+                    }
+
+                    long id = Program.EventNotifyer.Wait(lastEventId, (int)ts.TotalMilliseconds);
+                }
+
                 OutputObject(bw, new Serializable.ServerStatus());
             }
 

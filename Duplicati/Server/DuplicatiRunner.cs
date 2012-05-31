@@ -393,6 +393,9 @@ namespace Duplicati.Server
                         //Add new elements
                         foreach (KeyValuePair<string, string> kv in tmp)
                             task.Schedule.MetadataLookup[kv.Key] = kv.Value;
+
+                        //Add a value stating that we have run a backup now
+                        task.Schedule.MetadataLookup["last-backup-completed-time"] = DateTime.Now.ToUniversalTime().ToString("u");
                     }
                     else
                     {
@@ -404,6 +407,8 @@ namespace Duplicati.Server
 
                 task.Schedule.ScheduledRunCompleted(); //Register as completed if not aborted
             }
+
+            Program.EventNotifyer.SignalNewEvent();
         }
 
         private class MetadataReportCapture
