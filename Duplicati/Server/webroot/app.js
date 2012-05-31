@@ -38,11 +38,31 @@ Ext.application({
     	
 		//Pretend the app can fire the update event, this helps with initialization in controllers
     	this.service.on('current-state-updated', function(e) { 
-    		BackupApp.instance.fireEvent('current-state-updated', e) 
+    		var updatedTitle = false;
+    		if (e.ActiveScheduleId >= 0) {
+    			var store = Ext.getStore('Schedules');
+    			if (store != null) {
+	    			var index = store.find('ID', e.ActiveScheduleId);
+	    			if (index >= 0) {
+	    				updatedTitle = true;
+	    				document.title = 'Duplicati backup - running ' + store.getAt(index).get('Name');
+	    			}
+    			}
+    		}
+    		
+    		if (!updatedTitle)
+    		{
+    			if (e.SuggestedStatusIcon == 'Paused')
+	    			document.title = 'Duplicati backup - Paused';
+    			else
+	    			document.title = 'Duplicati backup - Ready';
+    		}
+    			
+    		BackupApp.instance.fireEvent('current-state-updated', e);
     	});
 
     	this.service.on('count-down-pause-timer', function(e) { 
-    		BackupApp.instance.fireEvent('count-down-pause-timer', e) 
+    		BackupApp.instance.fireEvent('count-down-pause-timer', e); 
     	});
 
 		//Fetch the current status
