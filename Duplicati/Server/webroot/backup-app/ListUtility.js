@@ -13,6 +13,23 @@ Ext.define('BackupApp.ListUtility', {
 		
 		formatSizeString: function(size) { return BackupApp.Utility.formatSizeString(size); },
 		timeAgo: function(date) { return BackupApp.Utility.timeAgo(date); },
+		formatCountString: function(count, singular, plural) {
+			count = parseInt(count);
+			if (count == 1)
+				return 1 + ' ' + singluar;
+			
+			//Make a string
+			count = count + '';
+			var tmp = '';
+			while (count.length > 3) {
+				tmp = count.substr(count.length - 3, 3) + (tmp.length == 0 ? '' : '.') + tmp;
+				count = count.substr(0, count.length - 3);				
+			}
+			
+			tmp = count + (tmp.length == 0 ? '' : '.') + tmp;
+			
+			return tmp + ' ' + plural;
+		},
 		
 		formatBackupScheduleDetails: function(values)
 		{	
@@ -22,11 +39,28 @@ Ext.define('BackupApp.ListUtility', {
 			{
 				var metadataItems = [];
 				var mt = values.MetadataLookup;
-				if (mt['source-file-size'] != null)
-					metadataItems.push('<span class="backup-schedule-detail-source-size">Source files: ' + this.formatSizeString(mt['source-file-size']) + '</span>');
+				
+				var sourceData = '';
+				if (mt['source-file-size'] != null && mt['source-file-count'] != null)
+					sourceData = this.formatSizeString(mt['source-file-size']) + ' (' + this.formatCountString(mt['source-file-count'], 'file', 'files') + ')';
+				else if (mt['source-file-size'] != null)
+					sourceData = this.formatSizeString(mt['source-file-size']);
+				else if (mt['source-file-count'] != null)
+					sourceData = this.formatCountString(mt['source-file-count'], 'file', 'files');
 					
-				if (mt['total-backup-size'] != null && parseInt(mt['total-backup-size']) > 0)
-					metadataItems.push('<span class="backup-schedule-detail-backup-size">Backup size: ' + this.formatSizeString(mt['total-backup-size']) + '</span>');
+				if (sourceData != '')	
+					metadataItems.push('<span class="backup-schedule-detail-source-size">Source: ' + sourceData + '</span>');
+				
+				var backupData = '';
+				if (mt['total-backup-size'] != null && parseInt(mt['total-backup-size']) > 0 && mt['total-file-count'] != null && parseInt(mt['total-file-count']) > 0)
+					backupData = this.formatSizeString(mt['total-backup-size']) + ' (' + this.formatCountString(mt['total-file-count'], 'file', 'files') + ')';
+				else if (mt['total-backup-size'] != null && parseInt(mt['total-backup-size']) > 0)
+					backupData = this.formatSizeString(mt['total-backup-size']);
+				else if (mt['total-file-count'] != null && parseInt(mt['total-file-count']) > 0)
+					backupData = this.formatCountString(mt['total-file-count'], 'file', 'files');
+
+				if (backupData != '')
+					metadataItems.push('<span class="backup-schedule-detail-backup-size">Backup: ' + backupData + '</span>');
 				
 				if (mt['assigned-quota-space'] != null || mt['free-quota-space'] != null)
 				{
