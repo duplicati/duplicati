@@ -287,9 +287,16 @@ namespace Duplicati.Server
                     }
 
                     long id = Program.EventNotifyer.Wait(lastEventId, (int)ts.TotalMilliseconds);
+                    
+                    //Make sure we do not report a higher number than the eventnotifyer says
+                    var st = new Serializable.ServerStatus();
+                    st.LastEventID = id;
+                    OutputObject(bw, st);
                 }
-
-                OutputObject(bw, new Serializable.ServerStatus());
+                else
+                {
+                    OutputObject(bw, new Serializable.ServerStatus());
+                }
             }
 
             private void GetInstalledBackends(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)

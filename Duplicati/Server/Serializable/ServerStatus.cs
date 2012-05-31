@@ -111,12 +111,12 @@ namespace Duplicati.Server.Serializable
             }
         }
 
+        private long m_lastEventID = Program.EventNotifyer.EventNo;
+
         public long LastEventID 
         { 
-            get 
-            { 
-                return Program.EventNotifyer.EventNo; 
-            } 
+            get { return m_lastEventID; }
+            set { m_lastEventID = value; }
         }
 
     }

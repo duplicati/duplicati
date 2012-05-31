@@ -280,17 +280,15 @@ namespace Duplicati.Server
                 WorkThread = new Duplicati.Library.Utility.WorkerThread<IDuplicityTask>(new Duplicati.Library.Utility.WorkerThread<IDuplicityTask>.ProcessItemDelegate(Runner.ExecuteTask), LiveControl.State == LiveControls.LiveControlState.Paused);
                 Scheduler = new Scheduler(DataConnection, WorkThread, MainLock);
 
-                /*WorkThread.StartingWork += new EventHandler(Events.WorkThread_StartingWork);
-                WorkThread.CompletedWork += new EventHandler(Events.WorkThread_CompletedWork);
-                WorkThread.WorkQueueChanged += new EventHandler(Events.WorkThread_WorkQueueChanged);
-                Scheduler.NewSchedule += new EventHandler(Events.Scheduler_NewSchedule);
-                Runner.ProgressEvent += new DuplicatiRunner.ProgressEventDelegate(Events.Runner_DuplicatiProgress);
-                DataConnection.AfterDataConnection += new System.Data.LightDatamodel.DataConnectionEventHandler(Events.DataConnection_AfterDataConnection);
-                
-                LiveControl.StateChanged += new EventHandler(Events.LiveControl_StateChanged);
-                LiveControl.ThreadPriorityChanged += new EventHandler(Events.LiveControl_ThreadPriorityChanged);
-                LiveControl.ThrottleSpeedChanged += new EventHandler(Events.LiveControl_ThrottleSpeedChanged);*/
+                Program.WorkThread.StartingWork += new EventHandler(SignalNewEvent);
+                Program.WorkThread.CompletedWork += new EventHandler(SignalNewEvent);
+                Program.WorkThread.WorkQueueChanged += new EventHandler(SignalNewEvent);
+                Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
+                Program.Runner.ProgressEvent += new DuplicatiRunner.ProgressEventDelegate(Runner_ProgressEvent);
 
+                LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
+                LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
+                LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
 
                 Program.WebServer = new Server.WebServer(commandlineOptions);
 
@@ -320,6 +318,17 @@ namespace Duplicati.Server
                 Duplicati.Library.Logging.Log.CurrentLog = null;
 #endif
         }
+
+        private static void Runner_ProgressEvent(Serialization.DuplicatiOperation operation, Serialization.RunnerState state, string message, string submessage, int progress, int subprogress)
+        {
+            EventNotifyer.SignalNewEvent();
+        }
+
+        private static void SignalNewEvent(object sender, EventArgs e)
+        {
+            EventNotifyer.SignalNewEvent();
+        }
+
 
         /// <summary>
         /// Handles a change in the LiveControl and updates the Runner
