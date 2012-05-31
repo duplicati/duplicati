@@ -775,5 +775,41 @@ namespace Duplicati.GUI
         {
             ShowStatus();
         }
+
+        private void TrayMenu_LocationChanged(object sender, EventArgs e)
+        {
+            // This is a workaround by Jenlehma for not displaying the context menu on the right screen:
+            // http://code.google.com/p/duplicati/issues/detail?id=600
+
+            // We assume that only Windows is broken here
+            if (!Duplicati.Library.Utility.Utility.IsClientLinux)
+            {
+                // First we get the top/left position of the TrayMenu and the current mouse position
+                Point TrayMenuTopLeft = new Point(TrayMenu.Left, TrayMenu.Top);
+                Point mousePos = Cursor.Position;
+
+                // Now get the screen objects of both coordinates (mouse / traymenu)
+                Screen ScrContextMenu = Screen.FromPoint(TrayMenuTopLeft);
+                Screen ScrCursor = Screen.FromPoint(mousePos);
+
+                // if the mouse and the tray menu is on different screens ...
+                if (ScrContextMenu.DeviceName != ScrCursor.DeviceName)
+                {
+                    // if the mouse sits exactly on the top or the bottom of the menu, the menu might have an offset on the x-axis
+                    if (TrayMenuTopLeft.Y + TrayMenu.Height == mousePos.Y || TrayMenuTopLeft.Y == mousePos.Y)
+                    {
+                        if (TrayMenuTopLeft.X < mousePos.X)
+                            TrayMenu.Left = mousePos.X;
+                        else if (TrayMenuTopLeft.X > mousePos.X)
+                            TrayMenu.Left = mousePos.X - TrayMenu.Width;
+                    }
+                    else
+                    {
+                        // if the y-axis is off .. just move that.
+                        TrayMenu.Top = mousePos.Y;
+                    }
+                }
+            }
+        }
     }
 }

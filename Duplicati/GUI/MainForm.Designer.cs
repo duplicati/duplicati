@@ -73,6 +73,7 @@
             this.quitToolStripMenuItem});
             this.TrayMenu.Name = "TrayMenu";
             resources.ApplyResources(this.TrayMenu, "TrayMenu");
+            this.TrayMenu.LocationChanged += new System.EventHandler(this.TrayMenu_LocationChanged);
             // 
             // statusToolStripMenuItem
             // 
