@@ -186,7 +186,8 @@ namespace Duplicati.Library.Backend
             try
             {
                 List<IFileEntry> lst = new List<IFileEntry>();
-                using (System.Net.WebResponse resp = req.GetResponse())
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.Net.WebResponse resp = areq.GetResponse())
                 using (System.IO.Stream rs = resp.GetResponseStream())
                 using (System.IO.StreamReader sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
                 {
@@ -222,7 +223,8 @@ namespace Duplicati.Library.Backend
                 try { streamLen = input.Length; }
                 catch {}
 
-                using (System.IO.Stream rs = req.GetRequestStream())
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.IO.Stream rs = areq.GetRequestStream())
                     Utility.Utility.CopyStream(input, rs, true);
                 
                 if (m_listVerify) 
@@ -265,7 +267,8 @@ namespace Duplicati.Library.Backend
             req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
             req.UseBinary = true;
 
-            using (System.Net.WebResponse resp = req.GetResponse())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (System.Net.WebResponse resp = areq.GetResponse())
             using (System.IO.Stream rs = resp.GetResponseStream())
                 Utility.Utility.CopyStream(rs, output, false);
         }
@@ -280,7 +283,8 @@ namespace Duplicati.Library.Backend
         {
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DeleteFile;
-            using (req.GetResponse())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (areq.GetResponse())
             { }
         }
 
@@ -342,10 +346,6 @@ namespace Duplicati.Library.Backend
             if (m_useSSL)
                 req.EnableSsl = m_useSSL;
 
-            //Set half-hour total timeout and 5 minutes acticity timeout
-            req.Timeout = (int)TimeSpan.FromMinutes(30).TotalMilliseconds;
-            req.ReadWriteTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
-
             return req;
         }
 
@@ -361,7 +361,8 @@ namespace Duplicati.Library.Backend
             System.Net.FtpWebRequest req = CreateRequest("", true);
             req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
             req.KeepAlive = false;
-            using (req.GetResponse())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (areq.GetResponse())
             { }
         }
 

@@ -432,10 +432,11 @@ namespace Duplicati.Library.Backend
                         //Authenticate our request
                         m_cla.ApplyAuthenticationToRequest(req);
 
-                        using (System.IO.Stream s = req.GetRequestStream())
+                        Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                        using (System.IO.Stream s = areq.GetRequestStream())
                             s.Write(data, 0, data.Length);
 
-                        using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                        using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
                         {
                             int code = (int)resp.StatusCode;
                             if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -464,7 +465,8 @@ namespace Duplicati.Library.Backend
                         //Authenticate our request
                         m_cla.ApplyAuthenticationToRequest(req);
 
-                        using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                        Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                        using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
                         {
                             int code = (int)resp.StatusCode;
                             if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -498,7 +500,8 @@ namespace Duplicati.Library.Backend
                         req.Headers.Add("Content-Range", string.Format("bytes {0}-{1}/{2}", initialPosition, initialPosition + (postbytes - 1), stream.Length.ToString()));
 
                         //Copy the current fragment of bytes
-                        using (System.IO.Stream s = req.GetRequestStream())
+                        Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                        using (System.IO.Stream s = areq.GetRequestStream())
                         {
                             long bytesleft = postbytes;
                             long written = 0;
@@ -518,7 +521,7 @@ namespace Duplicati.Library.Backend
 
                         try
                         {
-                            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                            using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
                             {
                                 int code = (int)resp.StatusCode;
                                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically

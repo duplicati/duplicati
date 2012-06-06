@@ -132,13 +132,14 @@ namespace Duplicati.Library.Backend
             req.ContentType = "text/xml";
             req.ContentLength = PROPFIND_BODY.Length;
 
-            using (System.IO.Stream s = req.GetRequestStream())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (System.IO.Stream s = areq.GetRequestStream())
                 s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
 
             try
             {
                 System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -252,7 +253,8 @@ namespace Duplicati.Library.Backend
         {
             System.Net.HttpWebRequest req = CreateRequest(remotename);
             req.Method = "DELETE";
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -294,7 +296,8 @@ namespace Duplicati.Library.Backend
             System.Net.HttpWebRequest req = CreateRequest("");
             req.Method = System.Net.WebRequestMethods.Http.MkCol;
             req.KeepAlive = false;
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -345,16 +348,15 @@ namespace Duplicati.Library.Backend
                 System.Net.HttpWebRequest req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Http.Put;
                 req.ContentType = "application/octet-stream";
-                //We only depend on the ReadWriteTimeout
-                req.Timeout = System.Threading.Timeout.Infinite;
 
                 try { req.ContentLength = stream.Length; }
                 catch { }
 
-                using (System.IO.Stream s = req.GetRequestStream())
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.IO.Stream s = areq.GetRequestStream())
                     Utility.Utility.CopyStream(stream, s);
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -376,12 +378,11 @@ namespace Duplicati.Library.Backend
         {
             System.Net.HttpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Http.Get;
-            //We only depend on the ReadWriteTimeout
-            req.Timeout = System.Threading.Timeout.Infinite;
 
             try
             {
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically

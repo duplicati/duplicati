@@ -206,7 +206,9 @@ namespace Duplicati.Library.Backend
         {
             HttpWebRequest getUrls = (HttpWebRequest)WebRequest.Create(PASSPORT_LIST_URL);
             getUrls.UserAgent = USER_AGENT;
-            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(getUrls))
+
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(getUrls);
+            using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
             {
                 string header = resp.Headers[PASSPORT_URL_LIST_HEADER];
                 if (string.IsNullOrEmpty(header))
@@ -235,7 +237,8 @@ namespace Duplicati.Library.Backend
             //We use the first request to extract the nonce template
             if (string.IsNullOrEmpty(m_noncetemplate))
             {
-                using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(listRequest))
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(listRequest);
+                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
                 {
                     string nonce = resp.Headers[NONCE_HEADER];
                     if (string.IsNullOrEmpty(nonce))
@@ -255,7 +258,8 @@ namespace Duplicati.Library.Backend
 
             //Get the list of root folders, the user CID and the urls for webdav folders
             XmlDocument doc = new XmlDocument();
-            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(listRequest))
+            Utility.AsyncHttpRequest areq2 = new Utility.AsyncHttpRequest(listRequest);
+            using (HttpWebResponse resp = (HttpWebResponse)areq2.GetResponse())
             using (System.IO.Stream s = resp.GetResponseStream())
                 doc.Load(s);
 
@@ -353,7 +357,8 @@ namespace Duplicati.Library.Backend
             SetAuthenticationToken(soapRequest);
 
             byte[] data = System.Text.Encoding.UTF8.GetBytes(SOAP_GETACCOUNT_INFO_REQUEST);
-            using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(soapRequest))
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(soapRequest);
+            using (System.IO.Stream s = areq.GetRequestStream())
                 s.Write(data, 0, data.Length);
 
             return soapRequest;
@@ -469,7 +474,8 @@ namespace Duplicati.Library.Backend
                 getToken.UserAgent = USER_AGENT;
                 getToken.Headers[AUTHORIZATION_HEADER] = string.Format(LOGIN_HEADER_TEMPLATE, HttpUtility.UrlEncode(m_username), HttpUtility.UrlEncode(m_password), verb, url, CreateNonce(verb, url));
 
-                using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(getToken))
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(getToken);
+                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
                 {
                     string token_header = resp.Headers[AUTHENTIFICATION_RESULT_HEADER];
                     string redir = resp.Headers[REDIR_LOCATION_HEADER];
@@ -540,10 +546,12 @@ namespace Duplicati.Library.Backend
 
             req.ContentLength = data.Length;
 
-            using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(req))
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+
+            using (System.IO.Stream s = areq.GetRequestStream())
                 s.Write(data, 0, data.Length);
 
-            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
+            using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -642,7 +650,8 @@ namespace Duplicati.Library.Backend
             SetWlidAuthenticationToken(req);
 
             XmlDocument doc = new XmlDocument();
-            using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
             using (System.IO.Stream s = resp.GetResponseStream())
                 doc.Load(s);
 
@@ -735,8 +744,9 @@ namespace Duplicati.Library.Backend
                 //Delete uses the default timeout
                 //req.Timeout = System.Threading.Timeout.Infinite;
                 SetWlidAuthenticationToken(req);
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
 
-                using (HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
+                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -800,8 +810,6 @@ namespace Duplicati.Library.Backend
                     req.AllowAutoRedirect = false;
                     req.KeepAlive = false;
 
-                    //We only depend on the ReadWriteTimeout
-                    req.Timeout = System.Threading.Timeout.Infinite;
                     SetWlidAuthenticationToken(req);
 
                     byte[] createRequest = System.Text.Encoding.UTF8.GetBytes(string.Format(CREATE_FILE_TEMPLATE, HttpUtility.HtmlEncode(remotename)));
@@ -824,7 +832,9 @@ namespace Duplicati.Library.Backend
                     try { req.ContentLength = xmlHeader.Length + createRequest.Length + newLine.Length + dataHeader.Length + data.Length + newLine.Length + lastBoundary.Length; }
                     catch { }
 
-                    using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(req))
+                    Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+
+                    using (System.IO.Stream s = areq.GetRequestStream())
                     {
                         s.Write(xmlHeader, 0, xmlHeader.Length);
                         s.Write(createRequest, 0, createRequest.Length);
@@ -835,7 +845,7 @@ namespace Duplicati.Library.Backend
                         s.Write(lastBoundary, 0, lastBoundary.Length);
                     }
 
-                    using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
+                    using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                     {
                         int code = (int)resp.StatusCode;
                         if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -871,14 +881,14 @@ namespace Duplicati.Library.Backend
                 req.AllowAutoRedirect = false;
                 req.KeepAlive = false;
 
-                //We only depend on the ReadWriteTimeout
-                req.Timeout = System.Threading.Timeout.Infinite;
                 SetWlidAuthenticationToken(req);
 
-                using (System.IO.Stream s = Utility.Utility.SafeGetRequestStream(req))
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+
+                using (System.IO.Stream s = areq.GetRequestStream())
                     Utility.Utility.CopyStream(data, s);
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req))
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -921,12 +931,12 @@ namespace Duplicati.Library.Backend
             req.Method = WebRequestMethods.Http.Get;
             req.AllowAutoRedirect = false;
             req.KeepAlive = false;
-            //We only depend on the ReadWriteTimeout
-            req.Timeout = System.Threading.Timeout.Infinite;
             req.UserAgent = USER_AGENT;
             req.Headers[AUTHORIZATION_HEADER] = m_mainpassporttoken;
 
-            HttpWebResponse resp = (HttpWebResponse)Library.Utility.Utility.SafeGetResponse(req);
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+
+            HttpWebResponse resp = (HttpWebResponse)areq.GetResponse();
             int code = (int)resp.StatusCode;
 
             //For some reason Mono does not throw this automatically

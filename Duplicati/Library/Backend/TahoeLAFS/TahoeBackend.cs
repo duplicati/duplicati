@@ -72,7 +72,8 @@ namespace Duplicati.Library.Backend
         {
             System.Net.HttpWebRequest req = CreateRequest("", "t=mkdir");
             req.Method = System.Net.WebRequestMethods.Http.Post;
-            using (req.GetResponse())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (areq.GetResponse())
             { }
         }
 
@@ -99,7 +100,8 @@ namespace Duplicati.Library.Backend
                 System.Net.HttpWebRequest req = CreateRequest("", "t=json");
                 req.Method = System.Net.WebRequestMethods.Http.Get;
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -205,7 +207,8 @@ namespace Duplicati.Library.Backend
         {
             System.Net.HttpWebRequest req = CreateRequest(remotename, "");
             req.Method = "DELETE";
-            using (req.GetResponse())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (areq.GetResponse())
             { }
         }
 
@@ -243,16 +246,15 @@ namespace Duplicati.Library.Backend
                 System.Net.HttpWebRequest req = CreateRequest(remotename, "");
                 req.Method = System.Net.WebRequestMethods.Http.Put;
                 req.ContentType = "application/binary";
-                //We only depend on the ReadWriteTimeout
-                req.Timeout = System.Threading.Timeout.Infinite;
 
                 try { req.ContentLength = stream.Length; }
                 catch { }
 
-                using (System.IO.Stream s = req.GetRequestStream())
+                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                using (System.IO.Stream s = areq.GetRequestStream())
                     Utility.Utility.CopyStream(stream, s);
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
@@ -274,10 +276,9 @@ namespace Duplicati.Library.Backend
         {
             System.Net.HttpWebRequest req = CreateRequest(remotename, "");
             req.Method = System.Net.WebRequestMethods.Http.Get;
-            //We only depend on the ReadWriteTimeout
-            req.Timeout = System.Threading.Timeout.Infinite;
 
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)req.GetResponse())
+            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
             {
                 int code = (int)resp.StatusCode;
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
