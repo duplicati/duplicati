@@ -45,7 +45,6 @@ namespace Duplicati.GUI.TrayIcon
             m_updateRequest = new Dictionary<string, string>();
             m_updateRequest["action"] = "get-current-state";
             m_updateRequest["longpoll"] = "false";
-            m_updateRequest["duration"] = "5m";
             m_updateRequest["lasteventid"] = "0";
 
             UpdateStatus();
@@ -53,6 +52,7 @@ namespace Duplicati.GUI.TrayIcon
             //We do the first request without long poll,
             // and all the rest with longpoll
             m_updateRequest["longpoll"] = "true";
+            m_updateRequest["duration"] = "5m";
             
             m_waitLock = new System.Threading.AutoResetEvent(false);
             m_requestThread = new System.Threading.Thread(ThreadRunner);
@@ -135,8 +135,10 @@ namespace Duplicati.GUI.TrayIcon
             m_pollThread.Abort();
             m_pollThread.Join(TimeSpan.FromSeconds(10));
             if (!m_requestThread.Join(TimeSpan.FromSeconds(10)))
+            {
                 m_requestThread.Abort();
-            m_requestThread.Join(TimeSpan.FromSeconds(10));
+                m_requestThread.Join(TimeSpan.FromSeconds(10));
+            }
         }
 
         private static string EncodeQueryString(Dictionary<string, string> dict)
@@ -157,15 +159,18 @@ namespace Duplicati.GUI.TrayIcon
             req.ContentType = "application/x-www-form-urlencoded ; charset=" + ENCODING.BodyName;
             req.Headers.Add("Accept-Charset", ENCODING.BodyName);
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            
+            //Wrap it all in async stuff
+            Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
+
+            using (System.IO.Stream s = areq.GetRequestStream())
+                s.Write(data, 0, data.Length);
 
             //Assign the timeout, and add a little processing time as well
             if (queryparams["action"] == "get-current-state" && queryparams.ContainsKey("duration"))
-                req.Timeout = (int)(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(queryparams["duration"]) + TimeSpan.FromSeconds(5)).TotalMilliseconds;
+                areq.Timeout = (int)(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(queryparams["duration"]) + TimeSpan.FromSeconds(5)).TotalMilliseconds;
 
-            using (System.IO.Stream s = req.GetRequestStream())
-                s.Write(data, 0, data.Length);
-
-            using(System.Net.HttpWebResponse r = (System.Net.HttpWebResponse)req.GetResponse())
+            using(System.Net.HttpWebResponse r = (System.Net.HttpWebResponse)areq.GetResponse())
             using (System.IO.Stream s = r.GetResponseStream())
                 if (typeof(T) == typeof(string))
                 {

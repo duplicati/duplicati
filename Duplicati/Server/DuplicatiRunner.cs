@@ -408,7 +408,7 @@ namespace Duplicati.Server
                 task.Schedule.ScheduledRunCompleted(); //Register as completed if not aborted
             }
 
-            Program.EventNotifyer.SignalNewEvent();
+            Program.StatusEventNotifyer.SignalNewEvent();
         }
 
         private class MetadataReportCapture

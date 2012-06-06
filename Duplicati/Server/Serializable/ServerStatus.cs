@@ -56,11 +56,6 @@ namespace Duplicati.Server.Serializable
         {
             get { return Program.Scheduler.WorkerQueue.Select(x => x.ID).ToList(); }
         }
-
-        public IProgressEventData RunningBackupStatus
-        {
-            get { return Program.Runner.LastEvent; }
-        }
         
         public bool HasWarning { get { return Program.HasWarning; } }
         public bool HasError { get { return Program.HasError; } }
@@ -111,7 +106,7 @@ namespace Duplicati.Server.Serializable
             }
         }
 
-        private long m_lastEventID = Program.EventNotifyer.EventNo;
+        private long m_lastEventID = Program.StatusEventNotifyer.EventNo;
 
         public long LastEventID 
         { 
@@ -119,6 +114,7 @@ namespace Duplicati.Server.Serializable
             set { m_lastEventID = value; }
         }
 
+        public long LastDataUpdateID { get { return Program.LastDataUpdateID; } }
     }
 }
 

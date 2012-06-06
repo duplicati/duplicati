@@ -171,6 +171,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("supported-actions", ListSupportedActions);
                 SUPPORTED_METHODS.Add("list-schedules", ListSchedules);
                 SUPPORTED_METHODS.Add("get-current-state", GetCurrentState);
+                SUPPORTED_METHODS.Add("get-progress-state", GetProgressState);
                 SUPPORTED_METHODS.Add("list-application-settings", ListApplicationSettings);
                 SUPPORTED_METHODS.Add("list-installed-backends", GetInstalledBackends);
                 SUPPORTED_METHODS.Add("list-installed-encryption-modules", ListInstalledEncryptionModules);
@@ -260,7 +261,7 @@ namespace Duplicati.Server
                 OutputObject(bw, Program.DataConnection.GetObjects<Datamodel.Schedule>());
             }
 
-            private void GetCurrentState (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            private bool LongPollCheck(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, BodyWriter bw, EventPollNotify poller, ref long id, out bool isError)
             {
                 HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
                 if (Library.Utility.Utility.ParseBool(input["longpoll"].Value, false))
@@ -269,7 +270,8 @@ namespace Duplicati.Server
                     if (!long.TryParse(input["lasteventid"].Value, out lastEventId))
                     {
                         ReportError(response, bw, "When activating long poll, the request must include the last event id");
-                        return;
+                        isError = true;
+                        return false;
                     }
 
                     TimeSpan ts;
@@ -277,23 +279,49 @@ namespace Duplicati.Server
                     catch (Exception ex)
                     {
                         ReportError(response, bw, "Invalid duration: " + ex.Message);
-                        return;
+                        isError = true;
+                        return false;
                     }
 
                     if (ts <= TimeSpan.FromSeconds(10) || ts.TotalMilliseconds > int.MaxValue)
                     {
                         ReportError(response, bw, "Invalid duration, must be at least 10 seconds, and less than " + int.MaxValue + " milliseconds");
-                        return;
+                        isError = true;
+                        return false;
                     }
 
-                    long id = Program.EventNotifyer.Wait(lastEventId, (int)ts.TotalMilliseconds);
-                    
+                    isError = false;
+                    id = Program.StatusEventNotifyer.Wait(lastEventId, (int)ts.TotalMilliseconds);
+                    return true;
+                }
+
+                isError = false;
+                return false;
+            }
+
+            private void GetProgressState(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                bool isError;
+                long id = 0;
+                if (LongPollCheck(request, response, bw, Program.ProgressEventNotifyer, ref id, out isError) || !isError)
+                {
+                    //TODO: Don't block if the backup is completed when entering the wait state
+                    OutputObject(bw, Program.Runner.LastEvent);
+                }
+            }
+
+            private void GetCurrentState (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                bool isError;
+                long id = 0;
+                if (LongPollCheck(request, response, bw, Program.StatusEventNotifyer, ref id, out isError))
+                {
                     //Make sure we do not report a higher number than the eventnotifyer says
                     var st = new Serializable.ServerStatus();
                     st.LastEventID = id;
                     OutputObject(bw, st);
                 }
-                else
+                else if (!isError)
                 {
                     OutputObject(bw, new Serializable.ServerStatus());
                 }

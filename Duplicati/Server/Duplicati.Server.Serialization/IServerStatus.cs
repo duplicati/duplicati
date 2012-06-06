@@ -8,7 +8,6 @@ namespace Duplicati.Server.Serialization
         RunnerState ActiveBackupState { get; }
         long ActiveScheduleId { get; }
         LiveControlState ProgramState { get; }
-        IProgressEventData RunningBackupStatus { get; }
         System.Collections.Generic.IList<long> SchedulerQueueIds { get; }
         bool HasWarning { get; }
         bool HasError { get; }
@@ -16,5 +15,6 @@ namespace Duplicati.Server.Serialization
         DateTime LastLogUpdate { get; }
         DateTime EstimatedPauseEnd { get; }
         long LastEventID { get; }
+        long LastDataUpdateID { get;  }
     }
 }

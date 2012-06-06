@@ -89,9 +89,19 @@ namespace Duplicati.Server
         public static System.Threading.ManualResetEvent ServerStartedEvent = new System.Threading.ManualResetEvent(false);
 
         /// <summary>
-        /// The general event signaler, used to controll long polling of status updates
+        /// The status event signaler, used to controll long polling of status updates
         /// </summary>
-        public static EventPollNotify EventNotifyer = new EventPollNotify();
+        public static EventPollNotify StatusEventNotifyer = new EventPollNotify();
+
+        /// <summary>
+        /// The progress event signaler, used to control long polling of current backup progress
+        /// </summary>
+        public static EventPollNotify ProgressEventNotifyer = new EventPollNotify();
+
+        /// <summary>
+        /// An event ID that increases whenever the database is updated
+        /// </summary>
+        public static long LastDataUpdateID = 0;
 
         //TODO: These should be persisted to the database
         public static bool HasError;
@@ -303,7 +313,8 @@ namespace Duplicati.Server
                 Console.WriteLine(Strings.Program.SeriousError, ex.ToString());
             }
 
-            EventNotifyer.SignalNewEvent();
+            StatusEventNotifyer.SignalNewEvent();
+            ProgressEventNotifyer.SignalNewEvent();
 
             if (Scheduler != null)
                 Scheduler.Terminate(true);
@@ -321,13 +332,13 @@ namespace Duplicati.Server
 
         private static void Runner_ProgressEvent(Serialization.DuplicatiOperation operation, Serialization.RunnerState state, string message, string submessage, int progress, int subprogress)
         {
-            EventNotifyer.SignalNewEvent();
+            ProgressEventNotifyer.SignalNewEvent();
         }
 
         private static void SignalNewEvent(object sender, EventArgs e)
         {
-            EventNotifyer.SignalNewEvent();
-        }
+            StatusEventNotifyer.SignalNewEvent();
+        }   
 
 
         /// <summary>
@@ -342,7 +353,7 @@ namespace Duplicati.Server
             else
                 Runner.SetThreadPriority(LiveControl.ThreadPriority.Value);
         
-            EventNotifyer.SignalNewEvent();
+            StatusEventNotifyer.SignalNewEvent();
         }
 
         /// <summary>
@@ -362,7 +373,7 @@ namespace Duplicati.Server
             else
                 Runner.SetUploadLimit(LiveControl.UploadLimit.Value.ToString() + "b");
 
-            EventNotifyer.SignalNewEvent();
+            StatusEventNotifyer.SignalNewEvent();
         }
 
         /// <summary>
@@ -382,7 +393,7 @@ namespace Duplicati.Server
                     break;
             }
 
-            EventNotifyer.SignalNewEvent();
+            StatusEventNotifyer.SignalNewEvent();
         }
 
 
@@ -390,8 +401,9 @@ namespace Duplicati.Server
         {
             if (action == DataActions.Insert || action == DataActions.Update)
             {
+                System.Threading.Interlocked.Increment(ref LastDataUpdateID);
                 Scheduler.Reschedule();
-                EventNotifyer.SignalNewEvent();
+                StatusEventNotifyer.SignalNewEvent();
             }
         }
 

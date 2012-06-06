@@ -10,7 +10,6 @@ namespace Duplicati.Server.Serialization.Implementations
         public RunnerState ActiveBackupState { get; set; }
         public long ActiveScheduleId { get; set; }
         public LiveControlState ProgramState { get; set; }
-        public IProgressEventData RunningBackupStatus { get; set; }
         public IList<long> SchedulerQueueIds { get; set; }
         public bool HasError { get; set; }
         public bool HasWarning { get; set; }
@@ -18,5 +17,6 @@ namespace Duplicati.Server.Serialization.Implementations
         public DateTime LastLogUpdate { get; set; }
         public DateTime EstimatedPauseEnd { get; set; }
         public long LastEventID { get; set; }
+        public long LastDataUpdateID { get; set; }
     }
 }
