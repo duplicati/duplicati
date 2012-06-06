@@ -1,17 +1,22 @@
 Ext.define('BackupApp.Service', {
+    requires: [
+		'BackupApp.CountDownHelper'
+	],
     mixins: {
         observable: 'Ext.util.Observable'
     },
 
 	controlUrl: '/control.cgi',
-	pauseCountDownTimer: null,
+	pauseCountDownHelper: null,
+	lostConnectionCountDownHelper: null,
 	updateRequestParams: {
 		action: 'get-current-state',
 		longpoll: true,
 		lasteventid: '-1',
-		duration: '5m',
+		duration: '5m'
 	},
 	updateRequestRunning: false,
+	updateRequestFailureCount: 0,
 
 	//Bugfix for extjs
 	hasListeners: {},
@@ -26,7 +31,36 @@ Ext.define('BackupApp.Service', {
 	},
     
     constructor: function(config) {
-    	this.addEvents('current-state-updated', 'count-down-pause-timer');
+    	this.addEvents('current-state-updated', 'count-down-pause-timer', 'lost-connection', 'reconnected', 'lost-connection-retry', 'lost-connection-retry-delay');
+    	this.lostConnectionCountDownHelper = new BackupApp.CountDownHelper();
+    	this.pauseCountDownHelper = new BackupApp.CountDownHelper();
+    	
+    	this.pauseCountDownHelper.on({
+    		'count-down-tick': function(secondsleft) { 
+    				this.fireEvent('count-down-pause-timer', secondsleft); 
+    		},
+    		'count-down-complete': function() { 
+    			this.fireEvent('count-down-pause-timer', 0); 
+    		},
+    		scope: this
+    	});
+    	
+    	this.lostConnectionCountDownHelper.on({
+    		'count-down-tick': function(seconds) { 
+    			this.fireEvent('lost-connection-retry-delay', seconds); 
+    		},
+    		'count-down-complete': function() { 
+    			this.updateCurrentState(); 
+    			this.fireEvent('lost-connection-retry'); 
+    		},
+    		scope: this
+    	})
+    },
+    
+    reconnectNow: function() {
+    	if (this.lostConnectionCountDownHelper.isRunning()) {
+    		this.lostConnectionCountDownHelper.stop(true);
+    	}
     },
 	
 	updateCurrentState: function(force) {
@@ -37,7 +71,17 @@ Ext.define('BackupApp.Service', {
 		var timeout = force ?  5000 : (1000 * ((60 * 5) + 5));
 		
 		if (!force)
+		{
 			this.updateRequestRunning = true;
+			if (this.updateRequestFailureCount > 0)
+			{
+				//Last request failed, so lets retry,
+				// with a short timeout and make sure we
+				// don't wait for an update 
+				timeout = 10000; //10 sec
+				this.updateRequestParams.lasteventid = -1;
+			}
+		}
 		
 		Ext.Ajax.request({
 			url: this.controlUrl,
@@ -48,6 +92,10 @@ Ext.define('BackupApp.Service', {
 				var res = eval('(' + response.responseText + ')');
 				if (res != null)
 				{
+					if (this.updateRequestFailureCount >= 2)
+						this.fireEvent('reconnected');
+						
+					this.updateRequestFailureCount = 0;
 					Ext.log('Got update: ' + res.LastEventID + ', last: ' + this.updateRequestParams.lasteventid);
 					var realUpdate = this.updateRequestParams.lasteventid != res.LastEventID;
 					this.serverdata['current-state'] = res;
@@ -63,40 +111,36 @@ Ext.define('BackupApp.Service', {
 					if (realUpdate)
 						this.fireEvent('current-state-updated', this.serverdata['current-state']);
 					if (this.getExpectedPauseEnd() != null)
-						this.startPauseCountDownTimer();
+						this.pauseCountDownHelper.start(this.getExpectedPauseEnd());
+					else if (this.pauseCountDownHelper.isRunning())
+						this.pauseCountDownHelper.stop(true);
 				}					
 			},
 			failure: function(response, opts) {
-				//TODO: Grey out or similar
-				
-				
 				//Register next request
 				if (!force) 
 				{
 					Ext.log('Failure in longpoll: ' + response.status + ', timeout: ' + response.timedout);
+
+					this.updateRequestFailureCount++;
 					this.updateRequestRunning = false;
-					this.updateCurrentState();
+
+					if (this.updateRequestFailureCount == 2)
+						this.fireEvent('lost-connection');
+
+					if (this.updateRequestFailureCount >= 2) {
+						
+						this.lostConnectionCountDownHelper.start(Ext.Date.add(new Date(), Ext.Date.SECOND, 30));
+					}
+					else
+					{
+						this.updateCurrentState();
+					}
 				}
 			}
 		});
 	},
-	
-	startPauseCountDownTimer: function() {
-		if (this.pauseCountDownTimer == null)
-			this.pauseCountDownTimer = window.setTimeout('BackupApp.service.onPauseCountDownTimer()', 500);
-	},
-	
-	onPauseCountDownTimer: function() {
-		this.pauseCountDownTimer = null;
-		var pauseEnd = this.getExpectedPauseEnd();
-		if (pauseEnd == null) {
-			this.fireEvent('count-down-pause-timer', 0);
-		} else {
-			this.fireEvent('count-down-pause-timer', parseInt((pauseEnd.getTime() - new Date().getTime()) / 1000));
-			this.startPauseCountDownTimer();
-		}
-	},
-	
+			
 	getExpectedPauseEnd: function() {
 		var pauseEnd = this.serverdata['current-state'].EstimatedPauseEnd;
 		if (pauseEnd != null) {

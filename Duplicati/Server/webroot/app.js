@@ -5,7 +5,8 @@ Ext.application({
     	'BackupApp.Service', 
     	'BackupApp.Utility', 
     	'BackupApp.ListUtility',
-		'BackupApp.view.AboutWindow'
+		'BackupApp.view.AboutWindow',
+		'BackupApp.view.LostConnectionWindow'
     ],
 
     name: 'BackupApp',
@@ -37,32 +38,51 @@ Ext.application({
     	BackupApp.utility = this.utility;
     	
 		//Pretend the app can fire the update event, this helps with initialization in controllers
-    	this.service.on('current-state-updated', function(e) { 
-    		var updatedTitle = false;
-    		if (e.ActiveScheduleId >= 0) {
-    			var store = Ext.getStore('Schedules');
-    			if (store != null) {
-	    			var index = store.find('ID', e.ActiveScheduleId);
-	    			if (index >= 0) {
-	    				updatedTitle = true;
-	    				document.title = 'Duplicati backup - running ' + store.getAt(index).get('Name');
+    	this.service.on({
+    		'current-state-updated': function(e) { 
+	    		var updatedTitle = false;
+	    		if (e.ActiveScheduleId >= 0) {
+	    			var store = Ext.getStore('Schedules');
+	    			if (store != null) {
+		    			var index = store.find('ID', e.ActiveScheduleId);
+		    			if (index >= 0) {
+		    				updatedTitle = true;
+		    				document.title = 'Duplicati backup - running ' + store.getAt(index).get('Name');
+		    			}
 	    			}
-    			}
-    		}
-    		
-    		if (!updatedTitle)
-    		{
-    			if (e.SuggestedStatusIcon == 'Paused')
-	    			document.title = 'Duplicati backup - Paused';
-    			else
-	    			document.title = 'Duplicati backup - Ready';
-    		}
-    			
-    		BackupApp.instance.fireEvent('current-state-updated', e);
-    	});
+	    		}
+	    		
+	    		if (!updatedTitle)
+	    		{
+	    			if (e.SuggestedStatusIcon == 'Paused')
+		    			document.title = 'Duplicati backup - Paused';
+	    			else
+		    			document.title = 'Duplicati backup - Ready';
+	    		}
+	    			
+	    		this.fireEvent('current-state-updated', e);
+	    	},
+	    	
+	    	'lost-connection': function() {
+	    		BackupApp.view.LostConnectionWindow.show();
+	    	},
 
-    	this.service.on('count-down-pause-timer', function(e) { 
-    		BackupApp.instance.fireEvent('count-down-pause-timer', e); 
+	    	'reconnected': function() {
+	    		BackupApp.view.LostConnectionWindow.hide();
+	    	},
+	    	
+	    	'lost-connection-retry': function() {
+	    		BackupApp.view.LostConnectionWindow.setStatusAsRunning();
+	    	},
+
+	    	'lost-connection-retry-delay': function(seconds) {
+	    		BackupApp.view.LostConnectionWindow.setStatusAsWaiting(seconds);
+	    	},
+
+			'count-down-pause-timer': function(e) { 
+    			BackupApp.instance.fireEvent('count-down-pause-timer', e); 
+    		},	    	
+	    	scope: this
     	});
 
 		//Fetch the current status

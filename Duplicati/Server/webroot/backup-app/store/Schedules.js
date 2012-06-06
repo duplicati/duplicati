@@ -82,7 +82,7 @@ Ext.define('BackupApp.store.Schedules', {
 				return 0;
 		}	
 	}, {
-		property: 'Name',
+		property: 'Name'
 	}],
 
     proxy: {

@@ -7,7 +7,7 @@ Ext.define('BackupApp.controller.StatuswindowHeader', {
 		ref: 'pauseButton'
 	}, {
 		selector: '#status-window-header-pause-menu',
-		ref: 'pauseMenu',
+		ref: 'pauseMenu'
 	}],
 
     init: function() {
