@@ -565,10 +565,24 @@ namespace Duplicati.Library.Backend
                         }
                         catch (WebException wex)
                         {
-                            //Accept the 308 until we are complete
-                            if (wex.Status == WebExceptionStatus.ProtocolError &&
+							bool acceptedError =
+								wex.Status == WebExceptionStatus.ProtocolError &&
                                 wex.Response is HttpWebResponse &&
-                                (int)((HttpWebResponse)wex.Response).StatusCode == 308 &&
+                                (int)((HttpWebResponse)wex.Response).StatusCode == 308;
+
+							//Mono does not give us the response object,
+							// so we rely on the error code being present
+							// in the string, not ideal, but I have found
+							// no other workaround :(
+							if (Duplicati.Library.Utility.Utility.IsMono)
+							{
+								acceptedError |= 
+									wex.Status == WebExceptionStatus.ProtocolError &&
+									wex.Message.Contains("308");
+							}
+
+                            //Accept the 308 until we are complete
+                            if (acceptedError &&
                                 initialPosition + postbytes != stream.Length)
                             {
                                 retries = 0;
@@ -583,7 +597,7 @@ namespace Duplicati.Library.Backend
                                 if (retries > 2)
                                     throw;
                                 else
-                                    System.Threading.Thread.Sleep(1000);
+                                    System.Threading.Thread.Sleep(2000 * retries);
 
                                 stream.Position = initialPosition;
                             }
