@@ -1678,7 +1678,7 @@ namespace Duplicati.Library.Main.RSync
                 if (!entry.DumpSignature(signaturefile))
                 {
                     if (m_stat != null)
-                        m_stat.LogWarning(string.Format(Strings.RSyncDir.FileChangedWhileReadWarning, GetFullPathFromRelname(entry.relativeName)), null);
+                        m_stat.LogWarning(string.Format(Strings.RSyncDir.FileChangedWhileReadWarning, entry.fullname), null);
                 }
 
                 entry.Dispose();
