@@ -65,6 +65,16 @@ namespace Duplicati.GUI
         private LiveControlState m_state;
 
         /// <summary>
+        /// A value that indicates if the current pause state is caused by being suspended
+        /// </summary>
+        private bool m_pausedForSuspend = false;
+
+        /// <summary>
+        /// The time to pause for, used to ensure that a user set pause can override the suspend pause
+        /// </summary>
+        private DateTime m_suspendMinimumPause = new DateTime(0);
+
+        /// <summary>
         /// Gets the current state for the control
         /// </summary>
         public LiveControlState State { get { return m_state; } }
@@ -143,6 +153,11 @@ namespace Duplicati.GUI
         private System.Windows.Forms.Timer m_waitTimer;
 
         /// <summary>
+        /// The time that the current pause is expected to expire
+        /// </summary>
+        private DateTime m_waitTimeExpiration = new DateTime(0);
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
         /// <param name="initialTimeout">The duration that the backups should be initially suspended</param>
@@ -163,6 +178,13 @@ namespace Duplicati.GUI
                 m_downloadLimit = Library.Utility.Sizeparser.ParseSize(settings.DownloadSpeedLimit, "kb");
             if (!string.IsNullOrEmpty(settings.UploadSpeedLimit))
                 m_uploadLimit = Library.Utility.Sizeparser.ParseSize(settings.UploadSpeedLimit, "kb");
+
+            try
+            {
+                if (!Library.Utility.Utility.IsClientLinux)
+                    RegisterHibernateMonitor();
+            }
+            catch { }
         }
 
         /// <summary>
@@ -172,6 +194,7 @@ namespace Duplicati.GUI
         /// <param name="e">An unused event argument</param>
         private void  m_waitTimer_Tick(object sender, EventArgs e)
         {
+            m_waitTimeExpiration = new DateTime(0);
             Resume();
         }
 
@@ -185,7 +208,12 @@ namespace Duplicati.GUI
             if (!string.IsNullOrEmpty(timeout))
             {
                 m_waitTimer.Interval = ((int)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds);
+                m_waitTimeExpiration = DateTime.Now + TimeSpan.FromMilliseconds(m_waitTimer.Interval);
                 m_waitTimer.Enabled = true;
+            }
+            else
+            {
+                m_waitTimeExpiration = new DateTime(0);
             }
         }
 
@@ -222,15 +250,99 @@ namespace Duplicati.GUI
         /// Suspends the backups for a given period
         /// </summary>
         /// <param name="timeout">The duration to wait</param>
-        public void Pause(string timeout)
+        public void Pause(TimeSpan timeout)
         {
             if (m_state == LiveControlState.Running)
             {
                 Pause();
                 m_waitTimer.Enabled = false;
-                m_waitTimer.Interval = ((int)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds);
+                m_waitTimer.Interval = ((int)timeout.TotalMilliseconds);
+                m_waitTimeExpiration = DateTime.Now + TimeSpan.FromMilliseconds(m_waitTimer.Interval);
                 m_waitTimer.Enabled = true;
             }
         }
+
+        /// <summary>
+        /// Suspends the backups for a given period
+        /// </summary>
+        /// <param name="timeout">The duration to wait</param>
+        public void Pause(string timeout)
+        {
+            Pause(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout));
+        }
+
+        /// <summary>
+        /// Method for calling a Win32 API
+        /// </summary>
+        private void RegisterHibernateMonitor()
+        {
+            Microsoft.Win32.SystemEvents.PowerModeChanged += new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
+        }
+
+        /// <summary>
+        /// Method for calling a Win32 API
+        /// </summary>
+        private void UnregisterHibernateMonitor()
+        {
+            Microsoft.Win32.SystemEvents.PowerModeChanged -= new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
+        }
+
+        /// <summary>
+        /// A monitor for detecting when the system hibernates or resumes
+        /// </summary>
+        /// <param name="sender">Unused sender parameter</param>
+        /// <param name="_e">The event information</param>
+        private void SystemEvents_PowerModeChanged(object sender, object _e)
+        {
+            Microsoft.Win32.PowerModeChangedEventArgs e = _e as Microsoft.Win32.PowerModeChangedEventArgs;
+            if (e == null)
+                return;
+
+            if (e.Mode == Microsoft.Win32.PowerModes.Suspend)
+            {
+                //If we are running, register as being paused due to suspending
+                if (this.m_state == LiveControlState.Running)
+                {
+                    this.Pause();
+                    m_pausedForSuspend = true;
+                    m_suspendMinimumPause = new DateTime(0);
+                }
+                else
+                {
+                    if (m_waitTimeExpiration.Ticks != 0)
+                    {
+                        m_pausedForSuspend = true;
+                        m_suspendMinimumPause = m_waitTimeExpiration;
+                        ResetTimer(null);
+                    }
+
+                }
+            }
+            else if (e.Mode == Microsoft.Win32.PowerModes.Resume)
+            {
+                //If we have been been paused due to suspending, we un-pause now
+                if (m_pausedForSuspend)
+                {
+                    long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
+                    
+                    Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);
+                    if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
+                        delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks);
+
+                    if (delayTicks > 0)
+                    {
+                        this.Pause(TimeSpan.FromTicks(delayTicks));
+                    }
+                    else
+                    {
+                        this.Resume();
+                    }
+                }
+
+                m_pausedForSuspend = false;
+                m_suspendMinimumPause = new DateTime(0);
+            }
+        }
+
     }
 }
