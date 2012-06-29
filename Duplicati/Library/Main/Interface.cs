@@ -798,8 +798,12 @@ namespace Duplicati.Library.Main
                     }
 
                     if (backend == null || backend.ManifestUploads == 0)
+                    {
+                        Logging.Log.WriteMessage(string.Format(Strings.Interface.ErrorRunningBackup, ex.Message), Logging.LogMessageType.Error);
                         throw; //This also activates "finally", unlike in other languages...
+                    }
 
+                    Logging.Log.WriteMessage(string.Format(Strings.Interface.PartialUploadMessage, backend.ManifestUploads, ex.Message), Logging.LogMessageType.Warning);
                     bs.LogError(string.Format(Strings.Interface.PartialUploadMessage, backend.ManifestUploads, ex.Message), ex);
                 }
                 finally
@@ -1368,10 +1372,6 @@ namespace Duplicati.Library.Main
             } 
 
             rs.EndTime = DateTime.Now;
-            
-            //TODO: The RS should have the number of restored files, and the size of those
-            //but that is a little difficult, because some may be restored, and then removed
-
             return rs.ToString();
         }
 
@@ -1910,6 +1910,8 @@ namespace Duplicati.Library.Main
             foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                 if (mx.Key)
                     mx.Value.Configure(m_options.RawOptions);
+
+            Library.Logging.Log.WriteMessage(string.Format(Strings.Interface.StartingOperationMessage, m_options.MainAction), Logging.LogMessageType.Information);
         }
 
         /// <summary>
