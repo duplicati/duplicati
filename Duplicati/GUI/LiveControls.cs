@@ -168,8 +168,10 @@ namespace Duplicati.GUI
             m_waitTimer.Tick += new EventHandler(m_waitTimer_Tick);
             if (!string.IsNullOrEmpty(settings.StartupDelayDuration) && settings.StartupDelayDuration != "0")
             {
-                m_waitTimer.Interval = (int)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds;
+                TimeSpan ts = Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration);
+                m_waitTimer.Interval = (int)ts.TotalMilliseconds;
                 m_waitTimer.Enabled = true;
+                m_waitTimeExpiration = DateTime.Now + ts;
                 m_state = LiveControlState.Paused;
             }
 
@@ -196,25 +198,6 @@ namespace Duplicati.GUI
         {
             m_waitTimeExpiration = new DateTime(0);
             Resume();
-        }
-
-        /// <summary>
-        /// Internal helper to reset the timeout timer
-        /// </summary>
-        /// <param name="timeout">The time to wait</param>
-        private void ResetTimer(string timeout)
-        {
-            m_waitTimer.Enabled = false;
-            if (!string.IsNullOrEmpty(timeout))
-            {
-                m_waitTimer.Interval = ((int)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds);
-                m_waitTimeExpiration = DateTime.Now + TimeSpan.FromMilliseconds(m_waitTimer.Interval);
-                m_waitTimer.Enabled = true;
-            }
-            else
-            {
-                m_waitTimeExpiration = new DateTime(0);
-            }
         }
 
         /// <summary>
@@ -252,14 +235,11 @@ namespace Duplicati.GUI
         /// <param name="timeout">The duration to wait</param>
         public void Pause(TimeSpan timeout)
         {
-            if (m_state == LiveControlState.Running)
-            {
-                Pause();
-                m_waitTimer.Enabled = false;
-                m_waitTimer.Interval = ((int)timeout.TotalMilliseconds);
-                m_waitTimeExpiration = DateTime.Now + TimeSpan.FromMilliseconds(m_waitTimer.Interval);
-                m_waitTimer.Enabled = true;
-            }
+            Pause();
+            m_waitTimer.Enabled = false;
+            m_waitTimer.Interval = ((int)timeout.TotalMilliseconds);
+            m_waitTimeExpiration = DateTime.Now + TimeSpan.FromMilliseconds(m_waitTimer.Interval);
+            m_waitTimer.Enabled = true;
         }
 
         /// <summary>
@@ -313,7 +293,8 @@ namespace Duplicati.GUI
                     {
                         m_pausedForSuspend = true;
                         m_suspendMinimumPause = m_waitTimeExpiration;
-                        ResetTimer(null);
+                        m_waitTimeExpiration = new DateTime(0);
+                        m_waitTimer.Enabled = false;
                     }
 
                 }
