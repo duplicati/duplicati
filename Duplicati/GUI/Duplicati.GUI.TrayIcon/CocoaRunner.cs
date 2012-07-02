@@ -93,6 +93,13 @@ namespace Duplicati.GUI.TrayIcon
                     m_item.Enabled = value;
                 }
             }
+
+            public bool Default
+            {
+                set
+                {
+                }
+            }
             #endregion
         }
         

@@ -54,23 +54,8 @@ namespace Duplicati.GUI.TrayIcon
                     case MenuIcons.None:
                         _icons[icon] = null;
                         break;
-                    case MenuIcons.Options:
-                        _icons[icon] = ImageToGtk(Properties.Resources.SettingsMenuIcon);
-                        break;
                     case MenuIcons.Pause:
                         _icons[icon] = ImageToGtk(Properties.Resources.Pause);
-                        break;
-                    case MenuIcons.Pause5:
-                        _icons[icon] = ImageToGtk(Properties.Resources.Clock05);
-                        break;
-                    case MenuIcons.Pause15:
-                        _icons[icon] = ImageToGtk(Properties.Resources.Clock15);
-                        break;
-                    case MenuIcons.Pause30:
-                        _icons[icon] = ImageToGtk(Properties.Resources.Clock30);
-                        break;
-                    case MenuIcons.Pause60:
-                        _icons[icon] = ImageToGtk(Properties.Resources.Clock60);
                         break;
                     case MenuIcons.Quit:
                         _icons[icon] = ImageToGtk(Properties.Resources.CloseMenuIcon);
@@ -80,15 +65,6 @@ namespace Duplicati.GUI.TrayIcon
                         break;
                     case MenuIcons.Status:
                         _icons[icon] = ImageToGtk(Properties.Resources.StatusMenuIcon);
-                        break;
-                    case MenuIcons.Stop:
-                        _icons[icon] = ImageToGtk(Properties.Resources.Stop);
-                        break;
-                    case MenuIcons.Throttle:
-                        _icons[icon] = ImageToGtk(Properties.Resources.Throttle);
-                        break;
-                    case MenuIcons.Wizard:
-                        _icons[icon] = ImageToGtk(Properties.Resources.WizardMenuIcon);
                         break;
                     default:
                         _icons[icon] = null;
@@ -169,6 +145,11 @@ namespace Duplicati.GUI.TrayIcon
             {
                 get { return m_item.Sensitive; }
                 set { m_item.Sensitive = value; }
+            }
+
+            public bool Default
+            {
+                set { }
             }
         }
         

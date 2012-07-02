@@ -23,18 +23,10 @@ namespace Duplicati.GUI.TrayIcon
     public enum MenuIcons
     {
         None,
-        Wizard,
         Status,
         Quit,
-        Options,
         Pause,
         Resume,
-        Stop,
-        Pause5,
-        Pause15,
-        Pause30,
-        Pause60,
-        Throttle
     }
     
     public enum TrayIcons
@@ -58,19 +50,22 @@ namespace Duplicati.GUI.TrayIcon
         string Text { set; }
         MenuIcons Icon { set; }
         bool Enabled { set; }
+        bool Default { set; }
     }
     
     public abstract class TrayIconBase : IDisposable
     {           
-        protected IMenuItem m_stopMenu;
         protected IMenuItem m_pauseMenu;
         protected bool m_stateIsPaused;
+        protected Action m_onSingleClick;
+        protected Action m_onDoubleClick;
         
         public virtual void Init(string[] args)
         {
             SetMenu(BuildMenu());
             RegisterStatusUpdateCallback();
             OnStatusUpdated(Program.Connection.Status);
+            m_onDoubleClick = ShowStatusWindow;
             Run(args);
         }
         
@@ -105,24 +100,11 @@ namespace Duplicati.GUI.TrayIcon
 
         protected IEnumerable<IMenuItem> BuildMenu() 
         {
+            var tmp = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
+            tmp.Default = true;
             return new IMenuItem[] {
-                CreateMenuItem("Status", MenuIcons.Status, OnStatusClicked, null),
-                CreateMenuItem("Wizard...", MenuIcons.Wizard, OnWizardClicked, null),
-                CreateMenuItem("-",  MenuIcons.None, null, null),    
-                CreateMenuItem("Options...", MenuIcons.Options, OnOptionsClicked, null),
-                CreateMenuItem("-",  MenuIcons.None, null, null),    
-                CreateMenuItem("Control", MenuIcons.None, null, new IMenuItem[] {
-                    m_pauseMenu = CreateMenuItem("Pause", MenuIcons.Pause, OnPauseClicked, null ),
-                    CreateMenuItem("Pause period", MenuIcons.None, null, new IMenuItem[] {
-                        CreateMenuItem("5 minutes", MenuIcons.Pause5, OnPause5Clicked, null),
-                        CreateMenuItem("15 minutes", MenuIcons.Pause15, OnPause15Clicked, null),
-                        CreateMenuItem("30 minutes", MenuIcons.Pause30, OnPause30Clicked, null),
-                        CreateMenuItem("60 minutes", MenuIcons.Pause60, OnPause60Clicked, null)
-                    }),
-                    m_stopMenu = CreateMenuItem("Stop", MenuIcons.Stop, OnStopClicked, null),
-                    CreateMenuItem("Throttle options", MenuIcons.Throttle, OnThrottleClicked, null),
-                }),
-                CreateMenuItem("-",  MenuIcons.None, null, null),    
+                tmp,
+                m_pauseMenu = CreateMenuItem("Pause", MenuIcons.Pause, OnPauseClicked, null ),
                 CreateMenuItem("Quit", MenuIcons.Quit, OnQuitClicked, null),
             };
         }
@@ -171,26 +153,6 @@ namespace Duplicati.GUI.TrayIcon
                 Program.Connection.Pause();
         }
         
-        protected void OnPause5Clicked()
-        {
-            Program.Connection.Pause("5m");
-        }
-
-        protected void OnPause15Clicked()
-        {
-            Program.Connection.Pause("15m");
-        }
-
-        protected void OnPause30Clicked()
-        {
-            Program.Connection.Pause("30m");
-        }
-
-        protected void OnPause60Clicked()
-        {
-            Program.Connection.Pause("60m");
-        }
-
         protected void OnStatusUpdated(IServerStatus status)
         {
             switch(status.SuggestedStatusIcon)
@@ -229,8 +191,6 @@ namespace Duplicati.GUI.TrayIcon
                 m_pauseMenu.Text = "Resume";
                 m_stateIsPaused = true;
             }
-            
-            m_stopMenu.Enabled = status.ActiveScheduleId >= 0;
             
         }
 

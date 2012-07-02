@@ -62,30 +62,14 @@ namespace Duplicati.GUI.TrayIcon.Windows
             {
                 switch(icon)
                 {
-                case MenuIcons.Options:
-                    return Properties.Resources.SettingsMenuIcon;
                 case MenuIcons.Pause:
                     return Properties.Resources.Pause;
-                case MenuIcons.Pause5:
-                    return Properties.Resources.Clock05;
-                case MenuIcons.Pause15:
-                    return Properties.Resources.Clock15;
-                case MenuIcons.Pause30:
-                    return Properties.Resources.Clock30;
-                case MenuIcons.Pause60:
-                    return Properties.Resources.Clock60;
                 case MenuIcons.Quit:
                     return Properties.Resources.CloseMenuIcon;
                 case MenuIcons.Resume:
                     return Properties.Resources.Play;
                 case MenuIcons.Status:
                     return Properties.Resources.StatusMenuIcon;
-                case MenuIcons.Stop:
-                    return Properties.Resources.Stop;
-                case MenuIcons.Throttle:
-                    return Properties.Resources.Throttle;
-                case MenuIcons.Wizard:
-                    return Properties.Resources.WizardMenuIcon;
                 case MenuIcons.None:
                 default:
                     return null;
@@ -110,6 +94,12 @@ namespace Duplicati.GUI.TrayIcon.Windows
                     m_menu.Enabled = value;
                 }
             }
+
+            public bool Default {
+                set {
+                    m_menu.Font = new System.Drawing.Font(m_menu.Font, System.Drawing.FontStyle.Bold);
+                }
+            }
             #endregion
         }
         
@@ -124,7 +114,21 @@ namespace Duplicati.GUI.TrayIcon.Windows
 
             WinFormsRunner.Instance = this;
             m_trayIcon = new NotifyIcon();
-            base.Init (args);
+            m_trayIcon.DoubleClick += new EventHandler(m_trayIcon_DoubleClick);
+            m_trayIcon.Click += new EventHandler(m_trayIcon_Click);
+            base.Init(args);
+        }
+
+        private void m_trayIcon_Click(object sender, EventArgs e)
+        {
+            if (m_onSingleClick != null)
+                m_onSingleClick();
+        }
+        
+        private void m_trayIcon_DoubleClick(object sender, EventArgs e)
+        {
+            if (m_onDoubleClick != null)
+                m_onDoubleClick();
         }
         
         protected override void RegisterStatusUpdateCallback ()
@@ -190,12 +194,12 @@ namespace Duplicati.GUI.TrayIcon.Windows
         }
         #endregion
 
-        public override IBrowserWindow ShowUrlInWindow(string url)
+        /*public override IBrowserWindow ShowUrlInWindow(string url)
         {
             var v = new WindowsBrowser(url);
             v.Show();
             return v;
-        }
+        }*/
     }
 }
 
