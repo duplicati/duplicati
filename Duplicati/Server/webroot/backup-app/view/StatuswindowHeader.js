@@ -9,18 +9,40 @@ Ext.define('BackupApp.view.StatuswindowHeader' ,{
 	cls: 'header-panel',
 	
 	items: [{
-		xtype: 'splitbutton',
+		xtype: 'button',
 		cls: 'main-button',
 		text: 'Duplicati',
 		id: 'status-window-header-main-button',
 		margin: 10,
-		
-		handler: function() { this.showMenu(); },
 		menu: [{
 			id: 'status-window-header-pause-menu',
 			text: 'Pause Duplicati',
 			handler: function() { BackupApp.service.togglePause(); }
 		},{
+			id: 'status-window-header-pause-duration-menu',
+			xtype: 'form',
+			layout: 'hbox',
+			plain: true,
+			items: [{
+				xtype: 'label',
+				cls: 'x-menu-item-text',
+				text: 'Pause '
+			},{
+				id: 'status-window-header-pause-duration-picker',
+				cls: 'x-menu-item-text',
+				xtype: 'numberfield',
+				hideLabel: true,
+				minValue: 1,
+				maxValue: 600,
+				value: 5,
+				flex: 1,
+				handler: function() { BackupApp.service.pause('5m'); }
+			},{
+				xtype: 'label',
+				cls: 'x-menu-item-text',
+				text: ' min.'
+			}]
+		}/*{
 			text: 'Pause for x minutes',
 			menu: [{
 				text: 'Pause for 5 minutes',
@@ -35,7 +57,7 @@ Ext.define('BackupApp.view.StatuswindowHeader' ,{
 				text: 'Pause for 60 minutes',
 				handler: function() { BackupApp.service.pause('60m'); }
 			}]
-		},{
+		}*/,{
 			text: '*** Throttle ...'
 		},{
 			xtype: 'menuseparator'

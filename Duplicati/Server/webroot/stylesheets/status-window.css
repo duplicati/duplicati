@@ -8,7 +8,7 @@
 	background-color: #ccffcc;
 }
 
-.main-button .x-btn-split, .add-new-backup-button .x-btn-center, .pause-backup-button .x-btn-center
+.main-button .x-btn-arrow, .add-new-backup-button .x-btn-center, .pause-backup-button .x-btn-center
 {
  	height: 40px;
 }
@@ -191,3 +191,27 @@
     -khtml-border-radius: 6px;
     border-radius: 6px;
 }
+
+#status-window-header-pause-duration-menu
+{
+	color: #222;
+	font-size: 11px;
+}
+
+#status-window-header-pause-duration-menu div
+{
+	padding-left: 32px;
+	border: 0px none;
+	background-color: transparent;
+}
+
+#status-window-header-pause-duration-picker
+{
+	margin-left: 6px;
+	margin-right: 6px;
+}
+#status-window-header-pause-duration-picker div
+{
+	padding-left: 0px;
+}
+
