@@ -13,5 +13,6 @@ namespace Duplicati.Server.Serialization
         string SubMessage { get; }
         int Progress { get; }
         int SubProgress { get; }
+        long LastEventID { get; }
     }
 }

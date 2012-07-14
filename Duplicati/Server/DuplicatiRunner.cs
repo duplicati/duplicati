@@ -38,6 +38,7 @@ namespace Duplicati.Server
             public string SubMessage { get; set; }
             public int Progress { get; set; }
             public int SubProgress { get; set; }
+            public long LastEventID { get; set; }
         }
 
         public delegate void ResultEventDelegate(RunnerResult result, string parsedMessage, string message);
@@ -444,6 +445,7 @@ namespace Duplicati.Server
             m_lastEvent.SubProgress = subprogress;
             m_lastEvent.Message = message;
             m_lastEvent.SubMessage = submessage;
+            m_lastEvent.LastEventID++;
 
             //If there are extra operations, reserve some space for it by reducing the displayed progress
             if (m_extraOperations > 0 && progress > 0)

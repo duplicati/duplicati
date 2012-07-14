@@ -291,7 +291,7 @@ namespace Duplicati.Server
                     }
 
                     isError = false;
-                    id = Program.StatusEventNotifyer.Wait(lastEventId, (int)ts.TotalMilliseconds);
+                    id = poller.Wait(lastEventId, (int)ts.TotalMilliseconds);
                     return true;
                 }
 
@@ -306,7 +306,9 @@ namespace Duplicati.Server
                 if (LongPollCheck(request, response, bw, Program.ProgressEventNotifyer, ref id, out isError) || !isError)
                 {
                     //TODO: Don't block if the backup is completed when entering the wait state
-                    OutputObject(bw, Program.Runner.LastEvent);
+                    var ev = Program.Runner.LastEvent;
+                    ev.LastEventID = id;
+                    OutputObject(bw, ev);
                 }
             }
 

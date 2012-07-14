@@ -18,5 +18,12 @@ namespace Duplicati.Server.Serialization.Implementations
         public int Progress { get; set; }
 
         public int SubProgress { get; set; }
+
+        public long LastEventID { get; set; }
+
+        public IProgressEventData Clone()
+        {
+            return (ProgressEventData)this.MemberwiseClone();
+        }
     }
 }
