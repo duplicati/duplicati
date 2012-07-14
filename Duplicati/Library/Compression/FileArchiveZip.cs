@@ -263,7 +263,7 @@ namespace Duplicati.Library.Compression
         public string[] ReadAllLines(string file)
         {
             List<string> lines = new List<string>();
-            using (System.IO.StreamReader sr = new System.IO.StreamReader(OpenRead(file)))
+            using (System.IO.StreamReader sr = new System.IO.StreamReader(OpenRead(file), System.Text.Encoding.UTF8, true))
                 while (!sr.EndOfStream)
                     lines.Add(sr.ReadLine());
             return lines.ToArray();
@@ -318,7 +318,7 @@ namespace Duplicati.Library.Compression
         /// <param name="data">The lines to write</param>
         public void WriteAllLines(string file, string[] data)
         {
-            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(CreateFile(file)))
+            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(CreateFile(file), System.Text.Encoding.UTF8))
                 foreach (string s in data)
                     sw.WriteLine(s);
         }
