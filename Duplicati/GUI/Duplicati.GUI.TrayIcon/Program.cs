@@ -15,8 +15,12 @@ namespace Duplicati.GUI.TrayIcon
         private const string TOOLKIT_GTK = "gtk";
         private const string TOOLKIT_GTK_APP_INDICATOR = "gtk-appindicator";
         private const string TOOLKIT_COCOA = "cocoa";
-        
+
+        private const string HOSTURL_OPTION = "hosturl";
+        private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
+
         private static readonly string DEFAULT_TOOLKIT = GetDefaultToolKit();
+        private const string DEFAULT_HOSTURL = "http://localhost:8080";
         
         private static string GetDefaultToolKit()
         {
@@ -74,10 +78,27 @@ namespace Duplicati.GUI.TrayIcon
             }
             
             
-            //TODO: Fix options for non-hosted
-            using (new HostedInstanceKeeper(_args))
+            using (var hosted = Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) ? null : new HostedInstanceKeeper(_args))
             {
-                using (Connection = new HttpServerConnection(new Uri("http://localhost:8080"), null))
+                string url;
+                if (!options.TryGetValue(HOSTURL_OPTION, out url))
+                {
+                    if (hosted == null)
+                    {
+                        url = DEFAULT_HOSTURL;
+                    }
+                    else
+                    {
+                        int port;
+                        string p;
+                        if (!options.TryGetValue("webservice-port", out p) || !int.TryParse(p, out port))
+                            port = 8080;
+
+                        url = "http://localhost:" + port;
+                    }
+                }
+
+                using (Connection = new HttpServerConnection(new Uri(url), null))
                 {
                     using(var tk = RunTrayIcon(toolkit))
                     {
@@ -188,6 +209,8 @@ namespace Duplicati.GUI.TrayIcon
                 return new Duplicati.Library.Interface.ICommandLineArgument[]
                 {
                     new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", DEFAULT_TOOLKIT, null, new string[] {TOOLKIT_WINDOWS_FORMS, TOOLKIT_GTK, TOOLKIT_GTK_APP_INDICATOR, TOOLKIT_COCOA}),
+                    new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
+                    new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                 };
             }
         }
