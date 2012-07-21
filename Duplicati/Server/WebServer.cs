@@ -182,6 +182,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("get-recent-log-details", GetLogBlob);
                 SUPPORTED_METHODS.Add("send-command", SendCommand);
                 SUPPORTED_METHODS.Add("get-backup-defaults", GetBackupDefaults);
+                SUPPORTED_METHODS.Add("get-folder-contents", GetFolderContents);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -259,6 +260,60 @@ namespace Duplicati.Server
             private void ListSchedules (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
                 OutputObject(bw, Program.DataConnection.GetObjects<Datamodel.Schedule>());
+            }
+
+            private void GetFolderContents(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                if(input["path"] == null || input["path"].Value == null)
+                {
+                    ReportError(response, bw, "The path parameter was not set");
+                    return;
+                }
+
+                string path = input["path"].Value;
+                if (!path.StartsWith("/"))
+                {
+                    ReportError(response, bw, "The path parameter must start with a forward-slash");
+                    return;
+                }
+
+                try
+                {
+                    path = Duplicati.Library.Utility.Utility.AppendDirSeparator(path);
+
+                    List<string> res = new List<string>();
+                    if (!Library.Utility.Utility.IsClientLinux)
+                    {
+                        if (path.Equals("/"))
+                        {
+                            foreach (DriveInfo di in System.IO.DriveInfo.GetDrives())
+                                res.Add("/" + di.RootDirectory.FullName.Replace('\\', '/'));
+
+                        }
+                        else
+                        {
+                            string winpath = path.Substring(1).Replace('/', '\\');
+                            foreach (string s in System.IO.Directory.GetDirectories(winpath))
+                                res.Add("/" + Library.Utility.Utility.AppendDirSeparator(s).Replace('\\', '/'));
+                            foreach (string s in System.IO.Directory.GetFiles(winpath))
+                                res.Add("/" + s.Replace('\\', '/'));
+                        }
+                    }
+                    else
+                    {
+                        foreach (string s in System.IO.Directory.GetDirectories(path))
+                            res.Add(Library.Utility.Utility.AppendDirSeparator(s));
+                        foreach (string s in System.IO.Directory.GetFiles(path))
+                            res.Add(s);
+                    }
+
+                    OutputObject(bw, res);
+                }
+                catch (Exception ex)
+                {
+                    ReportError(response, bw, "Failed to process the path: " + ex.Message);
+                }
             }
 
             private bool LongPollCheck(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, BodyWriter bw, EventPollNotify poller, ref long id, out bool isError)
