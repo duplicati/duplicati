@@ -271,6 +271,8 @@ namespace Duplicati.Server
                     return;
                 }
 
+                bool skipFiles = Library.Utility.Utility.ParseBool(input["onlyfolders"].Value, false);
+
                 string path = input["path"].Value;
                 if (!path.StartsWith("/"))
                 {
@@ -296,16 +298,18 @@ namespace Duplicati.Server
                             string winpath = path.Substring(1).Replace('/', '\\');
                             foreach (string s in System.IO.Directory.GetDirectories(winpath))
                                 res.Add("/" + Library.Utility.Utility.AppendDirSeparator(s).Replace('\\', '/'));
-                            foreach (string s in System.IO.Directory.GetFiles(winpath))
-                                res.Add("/" + s.Replace('\\', '/'));
+                            if (!skipFiles)
+                                foreach (string s in System.IO.Directory.GetFiles(winpath))
+                                    res.Add("/" + s.Replace('\\', '/'));
                         }
                     }
                     else
                     {
                         foreach (string s in System.IO.Directory.GetDirectories(path))
                             res.Add(Library.Utility.Utility.AppendDirSeparator(s));
-                        foreach (string s in System.IO.Directory.GetFiles(path))
-                            res.Add(s);
+                        if (!skipFiles)
+                            foreach (string s in System.IO.Directory.GetFiles(path))
+                                res.Add(s);
                     }
 
                     OutputObject(bw, res);
