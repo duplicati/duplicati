@@ -183,6 +183,7 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("send-command", SendCommand);
                 SUPPORTED_METHODS.Add("get-backup-defaults", GetBackupDefaults);
                 SUPPORTED_METHODS.Add("get-folder-contents", GetFolderContents);
+                SUPPORTED_METHODS.Add("get-schedule-details", GetScheduleDetails);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -441,6 +442,21 @@ namespace Duplicati.Server
                 OutputObject(bw, new Serializable.JobSettings());
             }
 
+            private void GetScheduleDetails(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+                long id;
+                if (!long.TryParse(input["id"].Value, out id))
+                    ReportError(response, bw, "Invalid or missing schedule id");
+                else
+                {
+                    Datamodel.Schedule sc = Program.DataConnection.GetObjectById<Datamodel.Schedule>(id);
+                    OutputObject(bw, new {
+                        Schedule = sc,
+                        Task = sc.Task
+                    });
+                }
+            }
 
             private void SendCommand(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
