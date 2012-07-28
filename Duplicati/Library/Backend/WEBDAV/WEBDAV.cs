@@ -319,7 +319,9 @@ namespace Duplicati.Library.Backend
         {
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + System.Web.HttpUtility.UrlEncode(remotename).Replace("+", "%20"));
             if (m_useIntegratedAuthentication)
+            {
                 req.UseDefaultCredentials = true;
+            }
             else if (m_forceDigestAuthentication)
             {
                 System.Net.CredentialCache cred = new System.Net.CredentialCache();
@@ -329,8 +331,9 @@ namespace Duplicati.Library.Backend
             else
 			{
                 req.Credentials = m_userInfo;
-                if (Library.Utility.Utility.IsClientLinux)
-					req.PreAuthenticate = true; //We need this under Mono for some reason
+                //We need this under Mono for some reason,
+                // and it appears some servers require this as well
+				req.PreAuthenticate = true; 
 			}
 
             req.KeepAlive = false;
