@@ -1265,5 +1265,42 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("VssexcludewritersShort", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Using this option to handle symlinks different. The "{0}" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option "{1}" to ignore all symlinks and not store any information about them. Previous versions of Duplicati used the setting "{2}", which will cause symlinked files to be included and restore as normal files..
+        /// </summary>
+        internal static string SymlinkpolicyLong {
+            get {
+                return ResourceManager.GetString("SymlinkpolicyLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Symlink handling.
+        /// </summary>
+        internal static string SymlinkpolicyShort {
+            get {
+                return ResourceManager.GetString("SymlinkpolicyShort", resourceCulture);
+            }
+        }
+
+
+        /// <summary>
+        ///   Exclude files by attribute.
+        /// </summary>
+        internal static string ExcludefilesattributesShort {
+            get {
+                return ResourceManager.GetString("ExcludefilesattributesShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Use this option to exclude files with certain attributes. Use a comma separated list of attribute names to specify more that one. Possible values are: {0}.
+        /// </summary>
+        internal static string ExcludefilesattributesLong {
+            get {
+                return ResourceManager.GetString("ExcludefilesattributesLong", resourceCulture);
+            }
+        }
     }
 }

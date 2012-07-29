@@ -75,6 +75,27 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// The possible settings for the symlink strategy
+        /// </summary>
+        public enum SymlinkStrategy
+        {
+            /// <summary>
+            /// Store information about the symlink
+            /// </summary>
+            Store,
+
+            /// <summary>
+            /// Treat symlinks as normal files or folders
+            /// </summary>
+            Follow,
+
+            /// <summary>
+            /// Ignore all symlinks
+            /// </summary>
+            Ignore
+        }
+
+        /// <summary>
         /// Lock that protects the options collection
         /// </summary>
         private object m_lock = new object();
@@ -150,6 +171,8 @@ namespace Duplicati.Library.Main
                     "usn-policy",
                     "open-file-policy",
                     "exclude-empty-folders",
+                    "symlink-policy",
+                    "exclude-files-attributes"
                 };
             }
         }
@@ -368,6 +391,9 @@ namespace Duplicati.Library.Main
                     
                     new CommandLineArgument("backend-log-database", CommandLineArgument.ArgumentType.Path, Strings.Options.BackendlogdatabaseShort, Strings.Options.BackendlogdatabaseLong),
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
+
+                    new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, string.Format(Strings.Options.SymlinkpolicyLong, "store", "ignore", "follow"), "store", null, Enum.GetNames(typeof(SymlinkStrategy))),
+                    new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, string.Format(Strings.Options.ExcludefilesattributesLong, string.Join(", ", Enum.GetNames(typeof(System.IO.FileAttributes))))),
                 });
             }
         }
@@ -1009,6 +1035,24 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the snapshot strategy to use
         /// </summary>
+        public SymlinkStrategy SymlinkPolicy
+        {
+            get
+            {
+                string strategy;
+                if (!m_options.TryGetValue("symlink-policy", out strategy))
+                    strategy = "";
+
+                SymlinkStrategy r;
+                if (!Enum.TryParse(strategy, true, out r))
+                    r = SymlinkStrategy.Store;
+
+                return r;
+            }
+        }
+        /// <summary>
+        /// Gets the snapshot strategy to use
+        /// </summary>
         public OptimizationStrategy UsnStrategy
         {
             get
@@ -1141,6 +1185,29 @@ namespace Duplicati.Library.Main
                         return (Duplicati.Library.Main.VerificationLevel)Enum.Parse(typeof(Duplicati.Library.Main.VerificationLevel), s);
 
                 return Duplicati.Library.Main.VerificationLevel.Manifest;
+            }
+        }
+
+        /// <summary>
+        /// Gets the attribute filter used to exclude files and folders.
+        /// </summary>
+        public System.IO.FileAttributes FileAttributeFilter
+        {
+            get
+            {
+                System.IO.FileAttributes res = (System.IO.FileAttributes)0;
+                string v;
+                if (!m_options.TryGetValue("", out v))
+                    return res;
+
+                foreach(string s in v.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    System.IO.FileAttributes f;
+                    if (Enum.TryParse(s.Trim(), true, out f))
+                        res |= f;
+                }
+
+                return res;
             }
         }
 

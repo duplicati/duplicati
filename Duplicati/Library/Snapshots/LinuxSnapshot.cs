@@ -386,12 +386,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="startpath">The path from which to retrieve files and folders</param>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (KeyValuePair<string, SnapShot> s in m_entries)
                 if (s.Key.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
                 {
-                    Utility.Utility.EnumerateFileSystemEntries(s.Key, filter, callback, this.ListFolders, this.ListFiles);
+                    Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles);
                     return;
                 }
 
@@ -403,10 +403,10 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (KeyValuePair<string, SnapShot> s in m_entries)
-                Utility.Utility.EnumerateFileSystemEntries(s.Key, filter, callback, this.ListFolders, this.ListFiles);
+                Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles);
         }
 
         /// <summary>
@@ -437,6 +437,26 @@ namespace Duplicati.Library.Snapshots
         public long GetFileSize(string file)
         {
             return new System.IO.FileInfo(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file)).Length;
+        }
+
+        /// <summary>
+        /// Gets the attributes for the given file or folder
+        /// </summary>
+        /// <returns>The file attributes</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public System.IO.FileAttributes GetAttributes(string file)
+        {
+            return System.IO.File.GetAttributes(file);
+        }
+
+        /// <summary>
+        /// Returns the symlink target if the entry is a symlink, and null otherwise
+        /// </summary>
+        /// <param name="file">The file or folder to examine</param>
+        /// <returns>The symlink target</returns>
+        public string GetSymlinkTarget(string file)
+        {
+            return UnixSupport.File.GetSymlinkTarget(file);
         }
 
         #endregion

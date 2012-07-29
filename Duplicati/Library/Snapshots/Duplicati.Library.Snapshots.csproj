@@ -64,6 +64,9 @@
     <Reference Include="AlphaVSS.Common">
       <HintPath>..\..\..\thirdparty\alphavss\Bin\AlphaVSS.Common.dll</HintPath>
     </Reference>
+    <Reference Include="UnixSupport">
+      <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileHasChangedException.cs" />
@@ -97,6 +100,11 @@
     <Compile Include="Win32USN.cs" />
     <Compile Include="WindowsSnapshot.cs" />
     <Compile Include="WinNativeMethods.cs" />
+    <Compile Include="NoSnapshotLinux.cs" />
+    <Compile Include="NoSnapshotWindows.cs" />
+    <Compile Include="ISystemIO.cs" />
+    <Compile Include="SystemIOLinux.cs" />
+    <Compile Include="SystemIOWindows.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

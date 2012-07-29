@@ -9,7 +9,7 @@ namespace UnixSupport
 		/// Opens the file and honors advisory locking.
 		/// </summary>
 		/// <returns>A open stream that references the file</returns>
-		/// <param name='path'>The full path to the file</param>
+		/// <param name="path">The full path to the file</param>
 		public static System.IO.Stream OpenExclusive(string path, System.IO.FileAccess mode) 
 		{
 			return OpenExclusive(path, mode, (int)Mono.Unix.Native.FilePermissions.DEFFILEMODE);
@@ -80,6 +80,31 @@ namespace UnixSupport
 			{
 			}
 		}
+
+        /// <summary>
+        /// Gets the symlink target for the given path
+        /// </summary>
+        /// <param name="path">The path to get the symlink target for</param>
+        /// <returns>The symlink target</returns>
+        public static string GetSymlinkTarget(string path)
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder(2048); //2kb, should cover utf16 * 1023 chars
+            if (Mono.Unix.Native.Syscall.readlink(path, sb, (ulong)sb.Capacity) >= 0)
+                return sb.ToString();
+
+            throw new System.IO.FileLoadException(string.Format("Unable to get symlink for \"{0}\", error: {1} ({2})", path, Syscall.GetLastError(), (int)Syscall.GetLastError()));
+        }
+
+        /// <summary>
+        /// Creates a new symlink
+        /// </summary>
+        /// <param name="path">The path to create the symbolic link entry</param>
+        /// <param name="target">The path the symbolic link points to</param>
+        public static void CreateSymlink(string path, string target)
+        {
+            if (Mono.Unix.Native.Syscall.symlink(target, path) != 0)
+                throw new System.IO.IOException(string.Format("Unable to create symlink from \"{0}\" to \"{1}\", error: {2} ({3})", path, target, Syscall.GetLastError(), (int)Syscall.GetLastError()));
+        }
 	}
 }
 

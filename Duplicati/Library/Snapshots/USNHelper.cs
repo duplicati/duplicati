@@ -121,9 +121,8 @@ namespace Duplicati.Library.Snapshots
         /// Helper function to support the Duplicati enumeration callback system
         /// </summary>
         /// <param name="rootpath">The root path to look in and use as filter base</param>
-        /// <param name="filter">The filter to apply</param>
         /// <param name="callback">The callback function that collects the output</param>
-        public void EnumerateFilesAndFolders(string rootpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(string rootpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             //Under normal enumeration, the filter will prevent visiting subfolders for excluded folders
             //But when using USN all files/folders are present in the list, so we have to maintain
@@ -141,9 +140,7 @@ namespace Duplicati.Library.Snapshots
 
                     if (isFolder)
                     {
-                        if (filter == null || filter.ShouldInclude(rootpath, Utility.Utility.AppendDirSeparator(r.Key)))
-                            callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.Folder);
-                        else
+                        if (!callback(rootpath, r.Key, (System.IO.FileAttributes)((int)r.Value.FileAttributes & 0xff)))
                         {
                             if (local_filter.Length != 0)
                                 local_filter.Append("|");
@@ -159,8 +156,8 @@ namespace Duplicati.Library.Snapshots
                     }
                     else
                     {
-                        if (filter == null || filter.ShouldInclude(rootpath, r.Key))
-                            callback(rootpath, r.Key, Duplicati.Library.Utility.Utility.EnumeratedFileStatus.File);
+                        if (local_filter.Length == 0 || !excludedFolders.IsMatch(r.Key))
+                            callback(rootpath, r.Key, (System.IO.FileAttributes)((int)r.Value.FileAttributes & 0xff));
                     }
                 }
         }

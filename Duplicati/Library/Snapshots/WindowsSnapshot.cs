@@ -178,14 +178,16 @@ namespace Duplicati.Library.Snapshots
             /// <param name="rootpath">The source folder</param>
             /// <param name="path">The full entry path</param>
             /// <param name="status">The entry type</param>
-            public void callback(string rootpath, string path, Utility.Utility.EnumeratedFileStatus status)
+            public bool callback(string rootpath, string path, FileAttributes attributes)
             {
-                if (status == Duplicati.Library.Utility.Utility.EnumeratedFileStatus.File)
-                    files.Add(path);
-                else if (status == Duplicati.Library.Utility.Utility.EnumeratedFileStatus.Folder)
+                if ((attributes & Utility.Utility.ATTRIBUTE_ERROR) != 0)
+                    errors.Add(path);
+                else if ((attributes & FileAttributes.Directory) != 0)
                     folders.Add(path);
                 else
-                    errors.Add(path);
+                    files.Add(path);
+
+                return true;
             }
         }
 #endif
@@ -262,12 +264,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="startpath">The path from which to retrieve files and folders</param>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.FilenameFilter filter, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(string startpath, Duplicati.Library.Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (string s in m_sourcepaths)
                 if (s.Equals(startpath, Utility.Utility.ClientFilenameStringComparision))
                 {
-                    Utility.Utility.EnumerateFileSystemEntries(s, filter, callback, this.ListFolders, this.ListFiles);
+                    Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes);
                     return;
                 }
 
@@ -279,10 +281,10 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public void EnumerateFilesAndFolders(Utility.FilenameFilter filter, Utility.Utility.EnumerationCallbackDelegate callback)
+        public void EnumerateFilesAndFolders(Utility.Utility.EnumerationCallbackDelegate callback)
         {
             foreach (string s in m_sourcepaths)
-                Utility.Utility.EnumerateFileSystemEntries(s, filter, callback, this.ListFolders, this.ListFiles);
+                Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes);
         }
 
         /// <summary>
@@ -315,6 +317,25 @@ namespace Duplicati.Library.Snapshots
             return new Alphaleonis.Win32.Filesystem.FileInfo(GetSnapshotPath(file)).Length;
         }
 
+        /// <summary>
+        /// Gets the attributes for the given file or folder
+        /// </summary>
+        /// <returns>The file attributes</returns>
+        /// <param name="file">The file or folder to examine</param>
+        public System.IO.FileAttributes GetAttributes(string file)
+        {
+            return (System.IO.FileAttributes)Alphaleonis.Win32.Filesystem.File.GetAttributes(GetSnapshotPath(file));
+        }
+
+        /// <summary>
+        /// Returns the symlink target if the entry is a symlink, and null otherwise
+        /// </summary>
+        /// <param name="file">The file or folder to examine</param>
+        /// <returns>The symlink target</returns>
+        public string GetSymlinkTarget(string file)
+        {
+            return Alphaleonis.Win32.Filesystem.File.GetLinkTargetInfo(file).PrintName;
+        }
         #endregion
 
         #region IDisposable Members
