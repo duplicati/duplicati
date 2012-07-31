@@ -140,7 +140,7 @@ namespace Duplicati.GUI.Wizard_pages
 
         private void donate_clicked(object sender, EventArgs e)
         {
-            Duplicati.Library.Utility.UrlUtillity.OpenUrl("https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8");
+            Duplicati.Library.Utility.UrlUtillity.OpenUrl("https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US");
         }
 
         private void donate_link_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
