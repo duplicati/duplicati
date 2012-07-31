@@ -75,6 +75,27 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// The possible settings for the symlink strategy
+        /// </summary>
+        public enum SymlinkStrategy
+        {
+            /// <summary>
+            /// Store information about the symlink
+            /// </summary>
+            Store,
+
+            /// <summary>
+            /// Treat symlinks as normal files or folders
+            /// </summary>
+            Follow,
+
+            /// <summary>
+            /// Ignore all symlinks
+            /// </summary>
+            Ignore
+        }
+
+        /// <summary>
         /// Lock that protects the options collection
         /// </summary>
         private object m_lock = new object();
@@ -150,6 +171,8 @@ namespace Duplicati.Library.Main
                     "usn-policy",
                     "open-file-policy",
                     "exclude-empty-folders",
+                    "symlink-policy",
+                    "exclude-files-attributes"
                 };
             }
         }
@@ -367,6 +390,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
                     
                     new CommandLineArgument("backend-log-database", CommandLineArgument.ArgumentType.Path, Strings.Options.BackendlogdatabaseShort, Strings.Options.BackendlogdatabaseLong),
+
+                    new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, string.Format(Strings.Options.SymlinkpolicyLong, "store", "ignore", "follow"), "store", null, Enum.GetNames(typeof(SymlinkStrategy))),
+                    new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, string.Format(Strings.Options.ExcludefilesattributesLong, string.Join(", ", Enum.GetNames(typeof(System.IO.FileAttributes))))),
                 });
             }
         }
@@ -1008,6 +1034,24 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the snapshot strategy to use
         /// </summary>
+        public SymlinkStrategy SymlinkPolicy
+        {
+            get
+            {
+                string strategy;
+                if (!m_options.TryGetValue("symlink-policy", out strategy))
+                    strategy = "";
+
+                SymlinkStrategy r;
+                if (!EnumTryParse(strategy, true, out r))
+                    r = SymlinkStrategy.Store;
+
+                return r;
+            }
+        }
+        /// <summary>
+        /// Gets the snapshot strategy to use
+        /// </summary>
         public OptimizationStrategy UsnStrategy
         {
             get
@@ -1141,6 +1185,52 @@ namespace Duplicati.Library.Main
 
                 return Duplicati.Library.Main.VerificationLevel.Manifest;
             }
+        }
+
+        /// <summary>
+        /// Gets the attribute filter used to exclude files and folders.
+        /// </summary>
+        public System.IO.FileAttributes FileAttributeFilter
+        {
+            get
+            {
+                System.IO.FileAttributes res = (System.IO.FileAttributes)0;
+                string v;
+                if (!m_options.TryGetValue("", out v))
+                    return res;
+
+                foreach(string s in v.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    System.IO.FileAttributes f;
+                    if (EnumTryParse(s.Trim(), true, out f))
+                        res |= f;
+                }
+
+                return res;
+            }
+        }
+
+        /// <summary>
+        /// Helper method that adds Enum.TryParse to .Net 2.0
+        /// </summary>
+        /// <typeparam name="TEnum">The enum type to process</typeparam>
+        /// <param name="s">The string to look for</param>
+        /// <param name="ignoreCase">True to ignore case, false otherwise</param>
+        /// <param name="result">The parsed value</param>
+        /// <returns>True if the string was parsed, false otherwise</returns>
+        private bool EnumTryParse<TEnum>(string s, bool ignoreCase, out TEnum result)
+            where TEnum : struct
+        {
+            string[] names = Enum.GetNames(typeof(TEnum));
+            for(int i = 0; i < names.Length; i++)
+                if (string.Equals(names[i], s, ignoreCase ? StringComparison.InvariantCultureIgnoreCase : StringComparison.InvariantCulture))
+                {
+                    result = (TEnum)(Enum.GetValues(typeof(TEnum)).GetValue(i));
+                    return true;
+                }
+
+            result = default(TEnum);
+            return false;
         }
 
         /// <summary>

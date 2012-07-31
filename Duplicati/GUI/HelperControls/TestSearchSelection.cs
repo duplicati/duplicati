@@ -219,11 +219,11 @@ namespace Duplicati.GUI.HelperControls {
 
             try
             {
-                CallbackHandler handler = new CallbackHandler(scanWorker);
+                CallbackHandler handler = new CallbackHandler(scanWorker, fn);
                 foreach (string scanDir in Paths)
                 {
                     if (!scanWorker.CancellationPending)
-                        Library.Utility.Utility.EnumerateFileSystemEntries(scanDir, fn, handler.AddFileToList_Callback);
+                        Library.Utility.Utility.EnumerateFileSystemEntries(scanDir, handler.AddFileToList_Callback);
                 }
 
                 return handler.Results;
@@ -239,26 +239,29 @@ namespace Duplicati.GUI.HelperControls {
         {
             public List<ResultItem> Results = new List<ResultItem>();
             private BackgroundWorker Worker;
+            private FilenameFilter Filter;
 
-            public CallbackHandler(BackgroundWorker worker)
+            public CallbackHandler(BackgroundWorker worker, FilenameFilter filter)
             {
                 Worker = worker;
+                Filter = filter;
             }
 
-            public void AddFileToList_Callback(string rootpath, string path, Duplicati.Library.Utility.Utility.EnumeratedFileStatus status)
+            public bool AddFileToList_Callback(string rootpath, string path, FileAttributes attributes)
             {
 
                 if (Worker.CancellationPending)
                     throw new AbortException();
 
-                if (status == Utility.EnumeratedFileStatus.File)
+                if (!Filter.ShouldInclude(rootpath, path))
+                    return false;
+
+                if ((attributes & FileAttributes.Directory) == 0 && (attributes & Utility.ATTRIBUTE_ERROR) == 0)
                 {
                     Results.Add(new ResultItem(path));
                 }
-                else if (status == Utility.EnumeratedFileStatus.Folder)
-                {
-                    //Should be displayed in tree so the user can exclude with right click?
-                }
+
+                return true;
             }
         }
 

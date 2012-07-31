@@ -210,4 +210,7 @@ Error message: {1}</value>
   <data name="InvalidTimeStampError" xml:space="preserve">
     <value>The timestamp information for file {0} could not be read: {1}</value>
   </data>
+  <data name="SymlinkReadError" xml:space="preserve">
+    <value>The symlink information for {0} could not be read: {1}</value>
+  </data>
 </root>

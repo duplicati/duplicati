@@ -513,4 +513,23 @@
   <data name="BackendlogdatabaseLong" xml:space="preserve">
     <value>Use this option to specify a path to a file that will store information about backend operations. This option can be used to track down errors by comparing the backend state with the expected backend state.</value>
   </data>
+  <data name="QuotasizeLong" xml:space="preserve">
+    <value>This value can be used to set a known upper limit on the amount of space a backend has. If the backend reports the size itself, this value is ignored</value>
+  </data>
+  <data name="QuotasizeShort" xml:space="preserve">
+    <value>A reported maximum storage</value>
+  </data>  
+  <data name="SymlinkpolicyShort" xml:space="preserve">
+    <value>Symlink handling</value>
+  </data>
+  <data name="SymlinkpolicyLong" xml:space="preserve">
+    <value>Using this option to handle symlinks different. The "{0}" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option "{1}" to ignore all symlinks and not store any information about them. Previous versions of Duplicati used the setting "{2}", which will cause symlinked files to be included and restore as normal files.</value>
+  </data>
+  <data name="ExcludefilesattributesShort" xml:space="preserve">
+    <value>Exclude files by attribute</value>
+  </data>
+  <data name="ExcludefilesattributesLong" xml:space="preserve">
+    <value>Use this option to exclude files with certain attributes. Use a comma separated list of attribute names to specify more that one. Possible values are: {0}</value>
+  </data>
+
 </root>

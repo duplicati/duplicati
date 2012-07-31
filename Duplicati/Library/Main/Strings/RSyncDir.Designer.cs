@@ -332,5 +332,14 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("UsnNumberingFaultWarning", resourceCulture);
             }
         }
-    }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The symlink information for {0} could not be read: {1}.
+        /// </summary>
+        internal static string SymlinkReadError {
+            get {
+                return ResourceManager.GetString("SymlinkReadError", resourceCulture);
+            }
+        }
+}
 }

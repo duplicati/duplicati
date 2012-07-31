@@ -439,14 +439,15 @@ namespace Duplicati.Library.Main.RSync
         #endregion
 
         #region Filenames
-        internal static readonly string COMBINED_SIGNATURE_ROOT = "signature";
-        internal static readonly string CONTENT_SIGNATURE_ROOT = "content_signature";
-        internal static readonly string DELTA_SIGNATURE_ROOT = "delta_signature";
+        internal const string COMBINED_SIGNATURE_ROOT = "signature";
+        internal const string CONTENT_SIGNATURE_ROOT = "content_signature";
+        internal const string DELTA_SIGNATURE_ROOT = "delta_signature";
 
-        internal static readonly string CONTENT_ROOT = "snapshot";
-        internal static readonly string DELTA_ROOT = "diff";
-        //private static readonly string DACL_ROOT = "dacl";
-        internal static readonly string CONTROL_ROOT = "controlfiles";
+        internal const string CONTENT_ROOT = "snapshot";
+        internal const string DELTA_ROOT = "diff";
+        //private const string DACL_ROOT = "dacl";
+        internal const string CONTROL_ROOT = "controlfiles";
+        internal const string SYMLINK_ROOT = "symlinks"; 
 
         internal static readonly string DELETED_FILES = "deleted_files.txt";
         internal static readonly string DELETED_FOLDERS = "deleted_folders.txt";
@@ -481,6 +482,10 @@ namespace Duplicati.Library.Main.RSync
         /// This is a list of existing folders.
         /// </summary>
         private Dictionary<string, DateTime> m_oldFolders;
+        /// <summary>
+        /// This is a list of old symlinks
+        /// </summary>
+        private Dictionary<string, string> m_oldSymlinks;
 
         /// <summary>
         /// This is the list of added files
@@ -668,6 +673,7 @@ namespace Duplicati.Library.Main.RSync
                     {
                         m_oldSignatures.Remove(s);
                         m_lastVerificationTime.Remove(s);
+                        m_oldSymlinks.Remove(s);
                     }
 
                 foreach (string prefix in prefixes)
@@ -679,6 +685,13 @@ namespace Duplicati.Library.Main.RSync
                         m_oldSignatures[name] = aw;
                         m_lastVerificationTime.Remove(name);
                     }
+                }
+
+                string symlinkprefix = Utility.Utility.AppendDirSeparator(SYMLINK_ROOT);
+                foreach(string s in FilenamesFromPlatformIndependant(patch.Value.ListFiles(symlinkprefix)))
+                {
+                    string tmp = FilenamesFromPlatformIndependant( new string[] { Encoding.UTF8.GetString(patch.Value.ReadAllBytes(s)) })[0];
+                    m_oldSymlinks[s.Substring(symlinkprefix.Length)] = tmp;
                 }
 
                 if (z.FileExists(UNMODIFIED_FILES))
@@ -740,6 +753,7 @@ namespace Duplicati.Library.Main.RSync
             m_filter = filter;
             m_oldSignatures = new Dictionary<string, ArchiveWrapper>(Utility.Utility.ClientFilenameStringComparer);
             m_oldFolders = new Dictionary<string, DateTime>(Utility.Utility.ClientFilenameStringComparer);
+            m_oldSymlinks = new Dictionary<string, string>(Utility.Utility.ClientFilenameStringComparer);
             m_lastVerificationTime = new Dictionary<string, DateTime>(Utility.Utility.ClientFilenameStringComparer);
 
             for (int i = 0; i < sourcefolder.Length; i++)
@@ -788,6 +802,7 @@ namespace Duplicati.Library.Main.RSync
             {
                 m_oldFolders = new Dictionary<string, DateTime>();
                 m_oldSignatures = new Dictionary<string, ArchiveWrapper>();
+                m_oldSymlinks = new Dictionary<string, string>();
             }
 
             m_newfiles = new Dictionary<string, string>();
@@ -819,13 +834,16 @@ namespace Duplicati.Library.Main.RSync
             //Failsafe, just use a plain implementation
             if (m_snapshot == null)
             {
-                m_snapshot = new Duplicati.Library.Snapshots.NoSnapshot(m_sourcefolder, options.RawOptions);
+                m_snapshot = Utility.Utility.IsClientLinux ? 
+                    (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(m_sourcefolder, options.RawOptions)
+                        :
+                    (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(m_sourcefolder, options.RawOptions);
                 m_openfilepolicy = options.OpenFilePolicy;
             }
             
             Dictionary<string, Snapshots.USNHelper> usnHelpers = null;
             List<string> unchanged = new List<string>();
-            m_unproccesed = new PathCollector();
+            m_unproccesed = new PathCollector(m_snapshot, options.SymlinkPolicy, options.FileAttributeFilter, m_filter, m_stat);
 
             try
             {
@@ -899,7 +917,7 @@ namespace Duplicati.Library.Main.RSync
                             }
                             else */
                             {
-                                usnHelpers[rootFolder].EnumerateFilesAndFolders(s, m_filter, m_unproccesed.Callback);
+                                usnHelpers[rootFolder].EnumerateFilesAndFolders(s, m_unproccesed.Callback);
                             }
                         }
 
@@ -925,7 +943,7 @@ namespace Duplicati.Library.Main.RSync
 
                 //If we get here, something went really wrong with USN, so we disable it
                 m_currentUSN = null;
-                m_unproccesed = new PathCollector();
+                m_unproccesed = new PathCollector(m_snapshot, options.SymlinkPolicy, options.FileAttributeFilter, m_filter, m_stat);
                 unchanged = null;
             }
             finally
@@ -943,7 +961,7 @@ namespace Duplicati.Library.Main.RSync
 
             if (m_currentUSN == null)
             {
-                m_snapshot.EnumerateFilesAndFolders(m_filter, m_unproccesed.Callback);
+                m_snapshot.EnumerateFilesAndFolders(m_unproccesed.Callback);
             }
             else
             {
@@ -953,12 +971,13 @@ namespace Duplicati.Library.Main.RSync
                     string relpath = GetRelativeName(x);
                     m_oldSignatures.Remove(relpath);
                     m_oldFolders.Remove(relpath);
+                    m_oldSymlinks.Remove(relpath);
                 }
 
                 //If some folders did not support USN, add their files now
                 foreach (string s in m_sourcefolder)
                     if (!m_currentUSN.ContainsKey(System.IO.Path.GetPathRoot(s)))
-                        m_snapshot.EnumerateFilesAndFolders(s, m_filter, m_unproccesed.Callback);
+                        m_snapshot.EnumerateFilesAndFolders(s, m_unproccesed.Callback);
             }
 
             m_totalfiles = m_unproccesed.Files.Count;
@@ -1016,7 +1035,7 @@ namespace Duplicati.Library.Main.RSync
                     string relpath = GetRelativeName(s);
                     if (relpath.Trim().Length != 0)
                     {
-                        DateTime lastWrite = Directory.GetLastWriteTimeUtc(s);
+                        DateTime lastWrite = m_snapshot.GetLastWriteTime(s).ToUniversalTime();
 
                         //Cut off as we only have seconds stored
                         lastWrite = new DateTime(lastWrite.Year, lastWrite.Month, lastWrite.Day, lastWrite.Hour, lastWrite.Minute, lastWrite.Second, DateTimeKind.Utc);
@@ -1042,6 +1061,39 @@ namespace Duplicati.Library.Main.RSync
             foreach(string s in m_oldFolders.Keys)
                 if (!m_unproccesed.IsAffectedByError(s))
                     m_deletedfolders.Add(s);
+
+             //Build symlink diffs
+            if (m_oldSymlinks.Count > 0)
+            {
+                for (int i = m_unproccesed.Symlinks.Count - 1; i >= 0; i--)
+                {
+                    string s = m_unproccesed.Symlinks[i].Key;
+                    try
+                    {
+                        string relpath = GetRelativeName(s);
+                        if (relpath.Trim().Length != 0)
+                        {
+                            string oldLink;
+                            if (m_oldSymlinks.TryGetValue(relpath, out oldLink))
+                            {
+                                m_oldSymlinks.Remove(relpath);
+                                if (string.Equals(oldLink, m_unproccesed.Symlinks[i].Value, Utility.Utility.ClientFilenameStringComparision))
+                                {
+                                    m_unproccesed.Symlinks.RemoveAt(i);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        m_unproccesed.Errors.Add(s);
+                        m_stat.LogError(string.Format(Strings.RSyncDir.SymlinkReadError, s, ex.Message), ex);
+                    }
+                }
+            }
+
+            m_deletedfiles.AddRange(m_oldSymlinks.Keys);
+            m_oldSymlinks.Clear();
 
             m_sortedfilelist = options.SortedFilelist;
             if (m_sortedfilelist)
@@ -1166,7 +1218,7 @@ namespace Duplicati.Library.Main.RSync
                             if (!m_unproccesed.IsAffectedByError(fullpath))
                             {
                                 m_deletedfiles.Add(s);
-                                stringsize += System.Text.Encoding.UTF8.GetByteCount(s + Environment.NewLine);
+                                stringsize += System.Text.Encoding.UTF8.GetByteCount(s + "\r\n");
                             }
                         }
                         catch (Exception ex)
@@ -1178,6 +1230,8 @@ namespace Duplicati.Library.Main.RSync
                         }
                     }
 
+                    m_oldSignatures.Clear();
+
                     if (m_deletedfiles.Count > 0)
                     {
                         //The +100 is a safety margin
@@ -1187,6 +1241,7 @@ namespace Duplicati.Library.Main.RSync
 
                         signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
                         contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
+                        m_deletedfiles.Clear();
                     }
 
                     //We only write the USN if all files were processed
@@ -1197,6 +1252,20 @@ namespace Duplicati.Library.Main.RSync
                     //Only write this if all files were processed
                     if (m_checkedUnchangedFiles.Count > 0)
                         signaturefile.WriteAllLines(UNMODIFIED_FILES, m_checkedUnchangedFiles.ToArray());
+
+                    if (m_unproccesed.Symlinks.Count > 0)
+                    {
+                        foreach(KeyValuePair<string, string> kvp in m_unproccesed.Symlinks)
+                        {
+                            string target = FilenamesToPlatformIndependant(new string[] { kvp.Value })[0];
+                            string source = Path.Combine(SYMLINK_ROOT, GetRelativeName(kvp.Key));
+                            byte[] targetBytes = Encoding.UTF8.GetBytes(target);
+
+                            contentfile.WriteAllBytes(source, targetBytes);
+                            signaturefile.WriteAllBytes(source, targetBytes);
+                        }
+                        m_unproccesed.Symlinks.Clear();
+                    }
                 }
 
                 m_finalized = true;
@@ -1292,9 +1361,14 @@ namespace Duplicati.Library.Main.RSync
                 m_lastPartialFile = WritePossiblePartial(m_lastPartialFile, contentfile, signaturefile, volumesize);
             }
 
+            if (m_lastPartialFile != null)
+                return false;
 
-            while (m_unproccesed.Files.Count > 0 && totalSize < volumesize && m_lastPartialFile == null)
+            while (m_unproccesed.Files.Count > 0)
             {
+                if (totalSize >= volumesize)
+                    break;
+
                 int next = m_sortedfilelist ? 0 : r.Next(0, m_unproccesed.Files.Count);
                 string s = m_unproccesed.Files[next];
                 m_unproccesed.Files.RemoveAt(next);
@@ -1486,7 +1560,7 @@ namespace Duplicati.Library.Main.RSync
                 }
             }
 
-            if (m_unproccesed.Files.Count == 0 && m_lastPartialFile == null)
+            if (m_unproccesed.Files.Count == 0)
                 return FinalizeMultiPass(signaturefile, contentfile, volumesize);
             else
                 return false;
@@ -1722,15 +1796,16 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         public void FinalizeRestore()
         {
+            Snapshots.ISystemIO SystemIO = Utility.Utility.IsClientLinux ? (Snapshots.ISystemIO)new Snapshots.SystemIOLinux() : (Snapshots.ISystemIO)new Snapshots.SystemIOWindows();
             if (m_folders_to_delete != null)
             {
                 foreach (string s in m_folders_to_delete)
                 {
-                    if (System.IO.Directory.Exists(s))
+                    if (SystemIO.DirectoryExists(s))
                         try
                         {
                             //TODO: Perhaps read ahead in patches to prevent creation
-                            System.IO.Directory.Delete(s, false);
+                            SystemIO.DirectoryDelete(s, false);
                             if (m_stat as RestoreStatistics != null)
                             {
                                 (m_stat as RestoreStatistics).FoldersDeleted++;
@@ -1772,8 +1847,8 @@ namespace Duplicati.Library.Main.RSync
 
             if (m_folderTimestamps != null)
                 foreach (KeyValuePair<string, DateTime> t in m_folderTimestamps)
-                    if (System.IO.Directory.Exists(t.Key))
-                        try { System.IO.Directory.SetLastWriteTimeUtc(t.Key, t.Value); }
+                    if (SystemIO.DirectoryExists(t.Key))
+                        try { SystemIO.DirectorySetLastWriteTimeUtc(t.Key, t.Value); }
                         catch (Exception ex)
                         {
                             m_stat.LogWarning(string.Format(Strings.RSyncDir.FailedToSetFolderWriteTime, t.Key, ex.Message), ex);
@@ -1863,6 +1938,8 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="patch">The content file that the destination is patched with</param>
         public void Patch(string[] destination, Library.Interface.ICompression patch)
         {
+            Snapshots.ISystemIO SystemIO = Utility.Utility.IsClientLinux ? (Snapshots.ISystemIO)new Snapshots.SystemIOLinux() : (Snapshots.ISystemIO)new Snapshots.SystemIOWindows();
+
             if (m_partialDeltas == null)
                 m_partialDeltas = new Dictionary<string, Duplicati.Library.Utility.TempFile>();
 
@@ -1881,14 +1958,14 @@ namespace Duplicati.Library.Main.RSync
             if (patch.FileExists(DELETED_FILES))
                 foreach (string s in fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES)), false))
                 {
-                    if (System.IO.File.Exists(s))
+                    if (SystemIO.FileExists(s))
                     {
                         try
                         {
                             //TODO: Perhaps read ahead in patches to prevent creation
-                            long size = new FileInfo(s).Length;
+                            long size = SystemIO.FileLength(s);
 
-                            System.IO.File.Delete(s);
+                            SystemIO.FileDelete(s);
                             if (m_stat as RestoreStatistics != null)
                             {
                                 (m_stat as RestoreStatistics).FilesRestored--;
@@ -1937,10 +2014,10 @@ namespace Duplicati.Library.Main.RSync
 
                 foreach (string s in addedfolders)
                 {
-                    if (!System.IO.Directory.Exists(s))
+                    if (!SystemIO.DirectoryExists(s))
                         try
                         {
-                            System.IO.Directory.CreateDirectory(s);
+                            SystemIO.DirectoryCreate(s);
                             if (m_stat as RestoreStatistics != null)
                                 (m_stat as RestoreStatistics).FoldersRestored++;
                         }
@@ -1991,6 +2068,9 @@ namespace Duplicati.Library.Main.RSync
             string deltaprefix = Utility.Utility.AppendDirSeparator(DELTA_ROOT);
             List<string> deltafiles = m_filter.FilterList(deltaprefix, patch.ListFiles(deltaprefix));
 
+            string symlinkprefix = Utility.Utility.AppendDirSeparator(SYMLINK_ROOT);
+            List<string> symlinks = m_filter.FilterList(symlinkprefix, patch.ListFiles(symlinkprefix));
+
             long totalfiles = deltafiles.Count + contentfiles.Count;
             long fileindex = 0;
 
@@ -2000,10 +2080,10 @@ namespace Duplicati.Library.Main.RSync
                 string target = GetFullPathFromRelname(destination, s.Substring(contentprefix.Length));
                 try
                 {
-                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                    if (!SystemIO.DirectoryExists(SystemIO.PathGetDirectoryName(target)))
                     {
                         Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFolderMissingError, target), Duplicati.Library.Logging.LogMessageType.Warning);
-                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                        SystemIO.DirectoryCreate(SystemIO.PathGetDirectoryName(target));
                     }
 
                     //Update each 0.5%
@@ -2040,7 +2120,7 @@ namespace Duplicati.Library.Main.RSync
                             throw new Exception(string.Format(Strings.RSyncDir.FileShouldBePartialError, s));
 
                         long startOffset = pex == null ? 0 : pex.StartOffset;
-                        using (System.IO.FileStream s2 = System.IO.File.OpenWrite(partialFile == null ? target : (string)partialFile))
+                        using (System.IO.Stream s2 = SystemIO.FileOpenWrite(partialFile == null ? target : (string)partialFile))
                         {
                             if (s2.Length != startOffset)
                                 throw new Exception(string.Format(Strings.RSyncDir.InvalidPartialFileEntry, s));
@@ -2054,9 +2134,9 @@ namespace Duplicati.Library.Main.RSync
 
                         if (pex != null && pex == fe)
                         {
-                            if (System.IO.File.Exists(target))
-                                System.IO.File.Delete(target);
-                            System.IO.File.Move(partialFile, target);
+                            if (SystemIO.FileExists(target))
+                                SystemIO.FileDelete(target);
+                            SystemIO.FileMove(partialFile, target);
                             partialFile.Dispose();
                             m_partialDeltas.Remove(s);
                         }
@@ -2064,7 +2144,7 @@ namespace Duplicati.Library.Main.RSync
                         if (m_stat is RestoreStatistics && (partialFile == null || pex == fe))
                         {
                             (m_stat as RestoreStatistics).FilesRestored++;
-                            (m_stat as RestoreStatistics).SizeOfRestoredFiles += new FileInfo(target).Length;
+                            (m_stat as RestoreStatistics).SizeOfRestoredFiles += SystemIO.FileLength(target);
                         }
                     }
 
@@ -2073,7 +2153,7 @@ namespace Duplicati.Library.Main.RSync
                         DateTime t = patch.GetLastWriteTime(s);
                         if (!isUtc)
                             t = t.ToUniversalTime();
-                        try { File.SetLastWriteTimeUtc(target, t); }
+                        try { SystemIO.FileSetLastWriteTimeUtc(target, t); }
                         catch (Exception ex)
                         {
                             if (m_stat != null)
@@ -2104,10 +2184,10 @@ namespace Duplicati.Library.Main.RSync
                         lastPg = pg;
                     }
 
-                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(target)))
+                    if (!SystemIO.DirectoryExists(SystemIO.PathGetDirectoryName(target)))
                     {
                         Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFolderDeltaError, target), Duplicati.Library.Logging.LogMessageType.Warning);
-                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target));
+                        SystemIO.DirectoryCreate(SystemIO.PathGetDirectoryName(target));
                     }
 
                     PartialEntryRecord pex = null;
@@ -2129,7 +2209,7 @@ namespace Duplicati.Library.Main.RSync
                             m_partialDeltas.Add(s, new Duplicati.Library.Utility.TempFile());
 
                         //Dump the content in the temp file at the specified offset
-                        using (System.IO.Stream st = System.IO.File.OpenWrite(m_partialDeltas[s]))
+                        using (System.IO.Stream st = SystemIO.FileOpenWrite(m_partialDeltas[s]))
                         {
                             if (st.Length != pex.StartOffset)
                                 throw new Exception(string.Format(Strings.RSyncDir.InvalidPartialFileEntry, s));
@@ -2153,28 +2233,28 @@ namespace Duplicati.Library.Main.RSync
                     using (tempDelta) //May be null, but the using directive does not care
                     {
                         //Use either the patch directly, or the partial temp file
-                        System.IO.Stream deltaStream = tempDelta == null ? patch.OpenRead(s) : System.IO.File.OpenRead(tempDelta);
+                        System.IO.Stream deltaStream = tempDelta == null ? patch.OpenRead(s) : SystemIO.FileOpenRead(tempDelta);
                         using (System.IO.Stream s2 = deltaStream)
-                        using (System.IO.FileStream s1 = System.IO.File.OpenRead(target))
-                        using (System.IO.FileStream s3 = System.IO.File.Create(tempfile))
+                        using (System.IO.Stream s1 = SystemIO.FileOpenRead(target))
+                        using (System.IO.Stream s3 = SystemIO.FileCreate(tempfile))
                             SharpRSync.Interface.PatchFile(s1, s2, s3);
 
                         if (m_stat as RestoreStatistics != null)
                         {
-                            (m_stat as RestoreStatistics).SizeOfRestoredFiles -= new FileInfo(target).Length;
-                            (m_stat as RestoreStatistics).SizeOfRestoredFiles += new FileInfo(tempfile).Length;
+                            (m_stat as RestoreStatistics).SizeOfRestoredFiles -= SystemIO.FileLength(target);
+                            (m_stat as RestoreStatistics).SizeOfRestoredFiles += SystemIO.FileLength(tempfile);
                             (m_stat as RestoreStatistics).FilesPatched++;
                         }
 
-                        System.IO.File.Delete(target);
+                        SystemIO.FileDelete(target);
 
-                        try { System.IO.File.Move(tempfile, target); }
+                        try { SystemIO.FileMove(tempfile, target); }
                         catch
                         {
                             //The OS sometimes reports the file as existing even after a delete
                             // this seems to be related to MS Security Essentials?
                             System.Threading.Thread.Sleep(500);
-                            System.IO.File.Move(tempfile, target);
+                            SystemIO.FileMove(tempfile, target);
                         }
                     }
 
@@ -2184,7 +2264,7 @@ namespace Duplicati.Library.Main.RSync
                         if (!isUtc)
                             t = t.ToUniversalTime();
                         
-                        try { File.SetLastWriteTimeUtc(target, t); }
+                        try { SystemIO.FileSetLastWriteTimeUtc(target, t); }
                         catch (Exception ex)
                         {
                             if (m_stat != null)
@@ -2198,11 +2278,58 @@ namespace Duplicati.Library.Main.RSync
                         m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), ex);
                     Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
 
-                    try { System.IO.File.Delete(target); }
+                    try { SystemIO.FileDelete(target); }
                     catch { }
                 }
                 fileindex++;
             }
+
+            //Re-create symlinks (no progress report here, should be really fast)
+            foreach (string s in symlinks)
+            {
+                string target = GetFullPathFromRelname(destination, s.Substring(symlinkprefix.Length));
+                string symlinktarget = "";
+                try
+                {
+                    symlinktarget = FilenamesFromPlatformIndependant(new string[] { Encoding.UTF8.GetString(patch.ReadAllBytes(s)) })[0];
+                    bool isDir = symlinktarget[symlinktarget.Length - 1] == Path.DirectorySeparatorChar;
+                    if (isDir)
+                        symlinktarget = symlinktarget.Substring(0, symlinktarget.Length - 1);
+
+                    try 
+                    {
+                        //In case another symlink is present, we "update" it
+                        if (SystemIO.FileExists(target) && (SystemIO.GetFileAttributes(target) & FileAttributes.ReparsePoint) != 0)
+                            SystemIO.FileDelete(target);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
+                    }
+
+                    SystemIO.CreateSymlink(target, symlinktarget, isDir);
+                }
+                catch (Exception ex)
+                {
+                    if (m_stat != null)
+                        m_stat.LogError(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), ex);
+                    Logging.Log.WriteMessage(string.Format(Strings.RSyncDir.RestoreFileError, s, ex.Message), Duplicati.Library.Logging.LogMessageType.Error, ex);
+
+                    try { SystemIO.FileDelete(target); }
+                    catch { }
+
+                    try 
+                    {
+                        if (!string.IsNullOrEmpty(symlinktarget))
+                            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(SystemIO.FileOpenWrite(target)))
+                                sw.Write(symlinktarget);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
         }
 
 
@@ -2361,6 +2488,7 @@ namespace Duplicati.Library.Main.RSync
             List<string> lst = new List<string>();
             lst.AddRange(m_oldFolders.Keys);
             lst.AddRange(m_oldSignatures.Keys);
+            lst.AddRange(m_oldSymlinks.Keys);
             return lst;
         }
 
@@ -2490,20 +2618,79 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private class PathCollector
         {
+            private readonly Options.SymlinkStrategy m_symlinkHandling;
+            private readonly FileAttributes m_attributeMask;
+            private readonly Utility.FilenameFilter m_filter;
+            private readonly Snapshots.ISnapshotService m_snapshot;
+            private readonly CommunicationStatistics m_stat;
+
             private List<string> m_files = new List<string>();
             private List<string> m_folders = new List<string>();
             private List<string> m_errors = new List<string>();
             private List<string> m_filesWithError = new List<string>();
             private List<string> m_filesTooLarge = new List<string>();
+            private List<KeyValuePair<string, string>> m_symlinks = new List<KeyValuePair<string, string>>();
 
-            public void Callback(string rootpath, string path, Utility.Utility.EnumeratedFileStatus status)
+            public PathCollector(Snapshots.ISnapshotService snapshot, Options.SymlinkStrategy symlinkHandling, FileAttributes attributeMask, Utility.FilenameFilter filter, CommunicationStatistics stat)
             {
-                if (status == Utility.Utility.EnumeratedFileStatus.Folder)
-                    m_folders.Add(path);
-                else if (status == Utility.Utility.EnumeratedFileStatus.File)
-                    m_files.Add(path);
-                else if (status == Utility.Utility.EnumeratedFileStatus.Error)
+                m_symlinkHandling = symlinkHandling;
+                m_filter = filter;
+                m_attributeMask = attributeMask;
+                m_snapshot = snapshot;
+                m_stat = stat;
+            }
+
+            public bool Callback(string rootpath, string path, FileAttributes attributes)
+            {
+                if ((attributes & Utility.Utility.ATTRIBUTE_ERROR) != 0)
+                {
                     m_errors.Add(path);
+                    return false;
+                }
+
+                if ((attributes & m_attributeMask) != 0)
+                    return false;
+
+                if (!m_filter.ShouldInclude(rootpath, path))
+                    return false;
+
+                if ((attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    if (m_symlinkHandling == Options.SymlinkStrategy.Ignore)
+                        return false;
+                    else if (m_symlinkHandling == Options.SymlinkStrategy.Store)
+                    {
+                        try 
+                        {
+                            //We treat symlinks as files, even if they point to folders
+                            if (path[path.Length - 1] == Path.DirectorySeparatorChar)
+                                path = path.Substring(0, path.Length - 1);
+
+                            string s = m_snapshot.GetSymlinkTarget(path);
+                            if (s != null)
+                            {
+                                if ((attributes & FileAttributes.Directory) != 0)
+                                    s = Utility.Utility.AppendDirSeparator(s);
+                                m_symlinks.Add(new KeyValuePair<string, string>(path, s));
+                            }
+                        }
+                        catch(Exception ex)
+                        {
+                            Logging.Log.WriteMessage(string.Format("Failed to obtain symlink target for {0}, message: {1}", path, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                            if (m_stat != null)
+                                m_stat.LogWarning(string.Format("Failed to obtain symlink target for {0}, message: {1}", path, ex.Message), ex);
+                            m_errors.Add(path);
+                        }
+                        return false;
+                    }
+                }
+
+                if ((attributes & FileAttributes.Directory) != 0)
+                    m_folders.Add(path);
+                else 
+                    m_files.Add(path);
+
+                return true;
             }
 
             public List<string> Files { get { return m_files; } }
@@ -2511,6 +2698,7 @@ namespace Duplicati.Library.Main.RSync
             public List<string> Errors { get { return m_errors; } }
             public List<string> FilesWithError { get { return m_filesWithError; } }
             public List<string> FilesTooLarge { get { return m_filesTooLarge; } }
+            public List<KeyValuePair<string, string>> Symlinks { get { return m_symlinks; } }
 
             public bool IsAffectedByError(string path)
             {

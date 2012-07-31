@@ -45,6 +45,8 @@
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -53,10 +55,13 @@
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AlphaFS, Version=1.0.9155.0, Culture=neutral, PublicKeyToken=4b76c8c88cc75802, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="AlphaFS">
       <HintPath>..\..\..\thirdparty\alphavss\Bin\AlphaFS.dll</HintPath>
     </Reference>
     <Reference Include="AlphaVSS.Common, Version=1.0.9156.0, Culture=neutral, PublicKeyToken=3033cf2dbd31cad3, processorArchitecture=MSIL">
@@ -66,6 +71,9 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="UnixSupport">
+      <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileHasChangedException.cs" />
@@ -99,6 +107,11 @@
     <Compile Include="Win32USN.cs" />
     <Compile Include="WindowsSnapshot.cs" />
     <Compile Include="WinNativeMethods.cs" />
+    <Compile Include="NoSnapshotLinux.cs" />
+    <Compile Include="NoSnapshotWindows.cs" />
+    <Compile Include="ISystemIO.cs" />
+    <Compile Include="SystemIOLinux.cs" />
+    <Compile Include="SystemIOWindows.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
