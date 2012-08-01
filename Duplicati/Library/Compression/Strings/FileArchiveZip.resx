@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AttemptReadWhileWritingError" xml:space="preserve">
     <value>Cannot read data while writing</value>
@@ -123,11 +123,20 @@
   <data name="AttemptWriteWhileReadingError" xml:space="preserve">
     <value>Cannot write while reading</value>
   </data>
+  <data name="CompressionlevelDeprecated" xml:space="preserve">
+    <value>Please use the {0} option instead</value>
+  </data>
   <data name="CompressionlevelLong" xml:space="preserve">
     <value>This option controls the compression level used. A setting of zero gives no compression, and a setting of 9 gives maximum compression.</value>
   </data>
   <data name="CompressionlevelShort" xml:space="preserve">
     <value>Sets the Zip compression level</value>
+  </data>
+  <data name="CompressionmethodLong" xml:space="preserve">
+    <value>This option can be used to set an alternative compressor method, such as LZMA. Note that using another value than Deflate will cause the {0} option to be ignored.</value>
+  </data>
+  <data name="CompressionmethodShort" xml:space="preserve">
+    <value>Sets the Zip compression method</value>
   </data>
   <data name="DeleteUnsupportedError" xml:space="preserve">
     <value>Zip does not support deleting</value>

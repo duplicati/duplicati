@@ -44,13 +44,6 @@ namespace Duplicati.Library.Interface
         string[] ListFiles(string prefix);
         
         /// <summary>
-        /// Returns all directories in the archive, matching the prefix, if any.
-        /// </summary>
-        /// <param name="prefix">An optional prefix for limiting the directories returned</param>
-        /// <returns>All directories in the archive, matching the prefix, if any</returns>
-        string[] ListDirectories(string prefix);
-        
-        /// <summary>
         /// Returns all files and directories in the archive, matching the prefix, if any.
         /// </summary>
         /// <param name="prefix">An optional prefix for limiting the files and directories returned</param>
@@ -121,30 +114,11 @@ namespace Duplicati.Library.Interface
         System.IO.Stream CreateFile(string file, DateTime lastWrite);
 
         /// <summary>
-        /// Deletes the named directory, if it is empty
-        /// </summary>
-        /// <param name="file">The directory to remove</param>
-        void DeleteDirectory(string file);
-
-        /// <summary>
-        /// Adds a directory to the archive
-        /// </summary>
-        /// <param name="file">The name of the archive to create</param>
-        void AddDirectory(string file);
-
-        /// <summary>
         /// Returns a value indicating if the specified file exists
         /// </summary>
         /// <param name="file">The name of the file to examine</param>
         /// <returns>True if the file exists, false otherwise</returns>
         bool FileExists(string file);
-
-        /// <summary>
-        /// Returns a value indicating if the specified directory exists
-        /// </summary>
-        /// <param name="file">The name of the directory to examine</param>
-        /// <returns>True if the directory exists, false otherwise</returns>
-        bool DirectoryExists(string file);
 
         /// <summary>
         /// The total size of the archive
