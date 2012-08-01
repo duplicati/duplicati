@@ -49,6 +49,7 @@ cd "..\Duplicati\Localization"
 rmdir /S /Q compiled
 
 LocalizationTool.exe update
+LocalizationTool.exe webupdate
 for %%d in (".\*.csv") do call :reimportcsv %%d
 
 LocalizationTool.exe update
