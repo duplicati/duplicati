@@ -22,6 +22,8 @@ using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
+using System.IO;
+using System.Net;
 
 namespace LocalizationTool
 {
@@ -97,6 +99,12 @@ namespace LocalizationTool
                     Report(loc);
                     new UpdateGUI(System.IO.Path.Combine(Application.StartupPath, "report." + loc + ".xml")).ShowDialog();
                     break;
+                case "webpull":
+                    WebPull(loc, false);
+                    break;
+                case "webupdate":
+                    WebPull(loc, true);
+                    break;
                 default:
                     PrintUsage();
                     return;
@@ -117,6 +125,8 @@ namespace LocalizationTool
             Console.WriteLine("LocalizationTool.exe EXPORT [locale identifier]");
             Console.WriteLine("LocalizationTool.exe IMPORT <locale identifier> <input CSV file>");
             Console.WriteLine("LocalizationTool.exe EXPORTDIFF <locale identifier> <input CSV file>");
+            Console.WriteLine("LocalizationTool.exe WEBPULL [locale identifier]");
+            Console.WriteLine("LocalizationTool.exe WEBUPDATE [locale identifier]");
         }
 
         private struct CSVEntry
@@ -145,6 +155,79 @@ namespace LocalizationTool
                 else
                     extraFields = null;
             }
+        }
+
+        private static bool IsValidCulture(string c)
+        {
+            try
+            {
+                System.Globalization.CultureInfo.GetCultureInfo(c);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }        
+
+        /// <summary>
+        /// Downloads updated CSV files from the web and generates diff files, and optionally updates the local CSV files
+        /// </summary>
+        /// <param name="loc">The culture to use</param>
+        /// <param name="update">True if the elements should be updated as well</param>
+        private static void WebPull(string loc, bool update)
+        {
+            var locs =
+                from n in Directory.GetFiles(Application.StartupPath, "report.*.url")
+                where IsValidCulture(Path.GetFileNameWithoutExtension(n).Substring("report.".Length))
+                select Path.GetFileNameWithoutExtension(n).Substring("report.".Length);
+
+            if (!string.IsNullOrEmpty(loc))
+            {
+                locs = locs.Where(c => string.Equals(c, loc, StringComparison.CurrentCultureIgnoreCase));
+                if (locs.Count() == 0)
+                {
+                    Console.WriteLine("No URL file found for culture {0}", loc);
+                    return;
+                }
+            }
+
+            if (locs.Count() == 0)
+            {
+                Console.WriteLine("No culture.url files found");
+                return;
+            }
+
+            foreach (var culture in locs)
+            {
+                var url = string.Format("report.{0}.url", culture);
+                var file = string.Format("report.{0}.new.csv", culture);
+
+                if (File.Exists(file))
+                    File.Delete(file);
+                Console.Write("Downloading updated CSV for {0} ... ", culture);
+                try { new WebClient().DownloadFile(File.ReadAllText(url).Trim(), file); }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed!");
+                    Console.WriteLine(" -> {0}", ex.Message);
+                    continue;
+                }
+                Console.WriteLine("Done!");
+
+                if (update)
+                {
+                    Console.Write("Updating local files for {0} .", culture);
+                    ExportDiff(culture, file);
+                    Console.Write(".");
+                    Import(culture, file);
+                    Console.Write(".");
+                    Export(culture);
+                    Console.WriteLine(" Done!");
+                }
+
+            }
+
         }
 
         /// <summary>
@@ -216,7 +299,7 @@ namespace LocalizationTool
                     foreach (var item in sourceVals)
                         if (targetVals.ContainsKey(item.Key))
                         {
-                            if (targetVals[item.Key].Element("value").Value != item.Value.Value)
+                            if (targetVals[item.Key].Element("value").Value.Replace("\r\n", "\n") != item.Value.Value.Replace("\r\n", "\n"))
                             {
                                 updated = true;
                                 targetVals[item.Key].Element("value").Value = item.Value.Value;
@@ -611,8 +694,8 @@ namespace LocalizationTool
                     }
 
                     //Filter the source and target before proceeding
-                    sourceElements = sourceElements.Where(c => !ignores.ContainsKey(c.Element("value").Value.Trim().ToLower()) && !c.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\"));
-                    targetElements = targetElements.Where(c => !ignores.ContainsKey(c.Element("value").Value.Trim().ToLower()) && !c.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\"));
+                    sourceElements = sourceElements.Where(c => !ignores.ContainsKey(c.Element("value").Value.Trim().ToLower()) && !c.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\") && !c.Element("value").Value.Trim().ToLower().StartsWith("../resources/"));
+                    targetElements = targetElements.Where(c => !ignores.ContainsKey(c.Element("value").Value.Trim().ToLower()) && !c.Element("value").Value.Trim().ToLower().StartsWith("..\\resources\\") && !c.Element("value").Value.Trim().ToLower().StartsWith("../resources/"));
 
                     var sourceVals = sourceElements.ToSafeDictionary(c => c.Attribute("name").Value, inf.SourceFile);
                     var targetVals = targetElements.ToSafeDictionary(c => c.Attribute("name").Value, inf.TargetFile);
@@ -633,6 +716,11 @@ namespace LocalizationTool
                         &&
                         targetVals.ContainsKey(c.Key)
                     );
+
+                    var yy = sourceVals.Values.Where(x => x.Value.Contains("System.Draw")).Concat(targetVals.Values.Where(x => x.Value.Contains("System.Draw")));
+                    if (yy.Count() != 0)
+                    {
+                    }
 
                     reportRoot.Add(
                         new XElement("file",
