@@ -518,7 +518,7 @@
   </data>
   <data name="QuotasizeShort" xml:space="preserve">
     <value>A reported maximum storage</value>
-  </data>  
+  </data>
   <data name="SymlinkpolicyShort" xml:space="preserve">
     <value>Symlink handling</value>
   </data>
@@ -531,5 +531,10 @@
   <data name="ExcludefilesattributesLong" xml:space="preserve">
     <value>Use this option to exclude files with certain attributes. Use a comma separated list of attribute names to specify more that one. Possible values are: {0}</value>
   </data>
-
+  <data name="VssusemappingLong" xml:space="preserve">
+    <value>Activate this option to map VSS snapshots to a drive (similar to SUBST, using Win32 DefineDosDevice). This will create temporary drives that are then used to access the contents of a snapshot. This workaround can speed up file access on Windows XP.</value>
+  </data>
+  <data name="VssusemappingShort" xml:space="preserve">
+    <value>Map snapshots to a drive (Windows only)</value>
+  </data>
 </root>

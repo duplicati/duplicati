@@ -52,9 +52,22 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         private Dictionary<string, Guid> m_volumes;
         /// <summary>
+        /// The mapping of snapshot sources to their snapshot entries , key is the path root, eg C:\.
+        /// The dictionary is case insensitive
+        /// </summary>
+        private Dictionary<string, string> m_volumeMap;
+        /// <summary>
+        /// A list of mapped drives
+        /// </summary>
+        private List<DefineDosDevice> m_mappedDrives;
+        /// <summary>
         /// Commonly used string element
         /// </summary>
         private static string SLASH = Path.DirectorySeparatorChar.ToString();
+        /// <summary>
+        /// A cached lookup for windows methods for dealing with long filenames
+        /// </summary>
+        private static readonly SystemIOWindows _ioWin = new SystemIOWindows();
 
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
@@ -77,6 +90,9 @@ namespace Duplicati.Library.Snapshots
                         if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
                             excludedWriters.Add(new Guid(s));
                 }
+
+                //Check if we should map any drives
+                bool useSubst = Utility.Utility.ParseBoolOption(options, "vss-use-mapping");
 
                 //Prepare the backup
                 m_backup = vss.CreateVssBackupComponents();
@@ -111,7 +127,7 @@ namespace Duplicati.Library.Snapshots
                 m_volumes = new Dictionary<string, Guid>(StringComparer.InvariantCultureIgnoreCase);
                 foreach (string s in m_sourcepaths)
                 {
-                    string drive = Path.GetPathRoot(s);
+                    string drive = Alphaleonis.Win32.Filesystem.Path.GetPathRoot(s);
                     if (!m_volumes.ContainsKey(drive))
                     {
                         if (!m_backup.IsVolumeSupported(drive))
@@ -131,6 +147,27 @@ namespace Duplicati.Library.Snapshots
                 //Create the shadow volumes
                 using (IVssAsync async = m_backup.DoSnapshotSet())
                     async.Wait();
+
+                //Make a little lookup table for faster translation
+                m_volumeMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+                foreach(KeyValuePair<string, Guid> kvp in m_volumes)
+                    m_volumeMap.Add(kvp.Key, m_backup.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject);
+
+                //If we should map the drives, we do that now and update the volumeMap
+                if (useSubst)
+                {
+                    m_mappedDrives = new List<DefineDosDevice>();
+                    foreach (string k in new List<string>(m_volumeMap.Keys))
+                    {
+                        try
+                        {
+                            DefineDosDevice d;
+                            m_mappedDrives.Add(d = new DefineDosDevice(m_volumeMap[k]));
+                            m_volumeMap[k] = Utility.Utility.AppendDirSeparator(d.Drive);
+                        }
+                        catch { }
+                    }
+                }
             }
             catch
             {
@@ -202,10 +239,28 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         private string[] ListFolders(string folder)
         {
-            string root = Utility.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
+            string root = Utility.Utility.AppendDirSeparator(Alphaleonis.Win32.Filesystem.Path.GetPathRoot(folder));
             string volumePath = Utility.Utility.AppendDirSeparator(GetSnapshotPath(root));
 
-            string[] tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(GetSnapshotPath(folder));
+            string[] tmp = null;
+            string spath = GetSnapshotPath(folder);
+
+            if (SystemIOWindows.IsPathTooLong(spath))
+                try { tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(spath); }
+                catch (PathTooLongException) { }
+                catch (DirectoryNotFoundException) { }
+            else
+                try { tmp = System.IO.Directory.GetDirectories(spath); }
+                catch (PathTooLongException) { }
+
+            if (tmp == null)
+            {
+                spath = SystemIOWindows.PrefixWithUNC(spath);
+                volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
+                tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(spath);
+            }
+
+
             for (int i = 0; i < tmp.Length; i++)
                 tmp[i] = root + tmp[i].Substring(volumePath.Length);
             return tmp;
@@ -220,9 +275,27 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         private string[] ListFiles(string folder)
         {
-            string root = Utility.Utility.AppendDirSeparator(Path.GetPathRoot(folder));
+            string root = Utility.Utility.AppendDirSeparator(Alphaleonis.Win32.Filesystem.Path.GetPathRoot(folder));
             string volumePath = Utility.Utility.AppendDirSeparator(GetSnapshotPath(root));
-            string[] tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(GetSnapshotPath(folder));
+
+            string[] tmp = null;
+            string spath = GetSnapshotPath(folder);
+            
+            if (SystemIOWindows.IsPathTooLong(spath))
+                try { tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(spath); }
+                catch (PathTooLongException) { }
+                catch (DirectoryNotFoundException) { }
+            else
+                try { tmp = System.IO.Directory.GetFiles(spath); }
+                catch (PathTooLongException) { }
+
+            if (tmp == null)
+            {
+                spath = SystemIOWindows.PrefixWithUNC(spath);
+                volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
+                tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(spath);
+            }
+
             for (int i = 0; i < tmp.Length; i++)
                 tmp[i] = root + tmp[i].Substring(volumePath.Length);
             return tmp;
@@ -238,14 +311,13 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();
 
-            string root = Path.GetPathRoot(localPath);
+            string root = Alphaleonis.Win32.Filesystem.Path.GetPathRoot(localPath);
 
-            if (!m_volumes.ContainsKey(root))
+            string volumePath;
+            if (!m_volumeMap.TryGetValue(root, out volumePath))
                 throw new InvalidOperationException();
 
             localPath = localPath.Replace(root, String.Empty);
-
-            string volumePath = m_backup.GetSnapshotProperties(m_volumes[root]).SnapshotDeviceObject;
 
             if (!volumePath.EndsWith(SLASH) && !localPath.StartsWith(SLASH))
                 localPath = localPath.Insert(0, SLASH);
@@ -294,7 +366,15 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The last write time of the file</returns>
         public DateTime GetLastWriteTime(string file)
         {
-            return Alphaleonis.Win32.Filesystem.File.GetLastWriteTime(GetSnapshotPath(file));
+            string spath = GetSnapshotPath(file);
+            if (!SystemIOWindows.IsPathTooLong(spath))
+                try
+                {
+                    return File.GetLastWriteTime(spath);
+                }
+                catch (PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.File.GetLastWriteTime(SystemIOWindows.PrefixWithUNC(spath));
         }
 
         /// <summary>
@@ -304,7 +384,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>An open filestream that can be read</returns>
         public System.IO.Stream OpenRead(string file)
         {
-            return Alphaleonis.Win32.Filesystem.File.OpenRead(GetSnapshotPath(file));
+            return _ioWin.FileOpenRead(GetSnapshotPath(file));
         }
 
         /// <summary>
@@ -314,7 +394,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The lenth of the file</returns>
         public long GetFileSize(string file)
         {
-            return new Alphaleonis.Win32.Filesystem.FileInfo(GetSnapshotPath(file)).Length;
+            return _ioWin.FileLength(GetSnapshotPath(file));
         }
 
         /// <summary>
@@ -324,7 +404,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="file">The file or folder to examine</param>
         public System.IO.FileAttributes GetAttributes(string file)
         {
-            return (System.IO.FileAttributes)Alphaleonis.Win32.Filesystem.File.GetAttributes(GetSnapshotPath(file));
+            return _ioWin.GetFileAttributes(GetSnapshotPath(file));
         }
 
         /// <summary>
@@ -334,17 +414,35 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public string GetSymlinkTarget(string file)
         {
-            return Alphaleonis.Win32.Filesystem.File.GetLinkTargetInfo(file).PrintName;
+            string spath = GetSnapshotPath(file);
+            try
+            {
+                return Alphaleonis.Win32.Filesystem.File.GetLinkTargetInfo(spath).PrintName;
+            }
+            catch (PathTooLongException) { }
+
+            return Alphaleonis.Win32.Filesystem.File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(spath)).PrintName;
         }
         #endregion
 
         #region IDisposable Members
-
         /// <summary>
         /// Cleans up any resources and closes the backup set
         /// </summary>
         public void Dispose()
         {
+            try
+            {
+                if (m_mappedDrives != null)
+                {
+                    foreach (DefineDosDevice d in m_mappedDrives)
+                        d.Dispose();
+                    m_mappedDrives = null;
+                    m_volumeMap = null;
+                }
+            }
+            catch { }
+
             try 
             {
                 if (m_backup != null)

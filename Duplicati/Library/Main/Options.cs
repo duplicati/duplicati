@@ -168,6 +168,7 @@ namespace Duplicati.Library.Main
                     "signature-control-files",
                     "snapshot-policy",
                     "vss-exclude-writers",
+                    "vss-use-mapping",
                     "usn-policy",
                     "open-file-policy",
                     "exclude-empty-folders",
@@ -367,6 +368,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong),
+                    new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false"),
                     new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, new string[] {"auto", "off", "on", "required"}),
                     new CommandLineArgument("open-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.OpenfilepolicyShort, Strings.Options.OpenfilepolicyLong, "snapshot", null, new string[] { "ignore", "snapshot", "copy" }),
 
