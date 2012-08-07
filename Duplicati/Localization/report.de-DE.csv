@@ -32,18 +32,18 @@ Typ\tZeit\t\t\tVolumes\tGröße"
 "
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageBackup","updated","Backup (make a full or incremental backup):
   Duplicati.CommandLine [full] [options] <sourcefolder> <backend>","Backup (eine vollständige oder inkrementelle Sicherung): 
-Duplicati.CommandLine [full] [options] <sourcefolder> <backend>"
+ Duplicati.CommandLine [full] [options] <sourcefolder> <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageCleanup","updated","Cleanup (remove partial and unused files):
   Duplicati.CommandLine cleanup [options] <backend>","Aufräumen (Entfernen von Dateiresten oder nicht verwendeten Dateien):
-Duplicati.CommandLine cleanup [options] <backend>"
+  Duplicati.CommandLine cleanup [options] <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageCreateFolders","updated","Create folder (usually done automatically):
   Duplicati.CommandLine create-folder [options] <backend>","Ordner anlegen (wird in der Regel automatisch durchgeführt):
-Duplicati.CommandLine create-folder [options] <backend>"
+  Duplicati.CommandLine create-folder [options] <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageDeleteOld","updated","Delete old backups:
   Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
   Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>","Alte Backups löschen:
-Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
-Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>"
+  Duplicati.CommandLine delete-all-but-n-full <number of full backups to keep> [options] <backend>
+  Duplicati.CommandLine delete-older-than <max allowed age> [options] <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageFilters","updated","Filters:
  Duplicati uses filters to include and exclude files.
   Duplicati uses a ""first-touch"" filter where the first rule that matches a file determines if the file is included or excluded. Internally Duplicati uses regular expression filters, but supports filters in the form of filename globbing. The order of the commandline arguments also determine what order they are applied in. An example:
@@ -59,7 +59,7 @@ Auch wenn der letzte Filter alles beinhaltet, werden keine Dateien mit dem Namen
 Wenn ein Ordner ausgeschlossen ist, sind Dateien in diesem Ordner grundsätzlich ausgeschlossen, auch wenn es Filter gibt, die Dateien in diesem Ordner einschließen. Wenn ein Ordner mit einer Wildcard am Ende mit eingeschlossen ist, werden alle Dateien enthalten sein. Wenn der Ordner ohne eine Wildcard eingeschlossen wird, können Dateien mit zusätzlichen Regeln ausgeschlossen oder einbezogen werden."
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageFindLastVersion","updated","Find the last version of a file:
   Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>","Finde die letzte Version einer Datei:
-Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>"
+  Duplicati.CommandLine find-last-version [options] --file-to-restore=<files to find> <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageHeader","updated","********** Duplicati v. {0} **********
 
 Usage:","********** Duplicati v. {0} **********
@@ -67,19 +67,19 @@ Usage:","********** Duplicati v. {0} **********
 Verwendung:"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageListContentFiles","updated","List content files (files that can be restored):
   Duplicati.CommandLine list-current-files [options] <backend>","Auflistung der beinhalteten Dateien (Dateien, welche wiederhergestellt werden können):
-Duplicati.CommandLine list-current-files [options] <backend>"
+  Duplicati.CommandLine list-current-files [options] <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageListFiles","updated","List files:
   Duplicati.CommandLine list [options] <backend>","Auflistung von Dateien:
-Duplicati.CommandLine list [options] <backend>"
+  Duplicati.CommandLine list [options] <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageListSets","updated","List backup sets:
   Duplicati.CommandLine collection-status [options] <backend>","Auflistung der Backup-Sätze:
-Duplicati.CommandLine collection-status [options] <backend>"
+  Duplicati.CommandLine collection-status [options] <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageListSignatureFiles","updated","List signature files (files in a single backup volume set):
   Duplicati.CommandLine list-actual-signature-files [options] <backend>","Liste Signatur-Dateien auf (Dateien in einem einzelnen Backup-Volume):
-Duplicati.CommandLine list-actual-signature-files [options] <backend>"
+  Duplicati.CommandLine list-actual-signature-files [options] <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageListSourceFolders","updated","List source folders (folders backed up from):
   Duplicati.CommandLine list-source-folders [options] <backend>","Liste Quell-Ordner auf (Ordner, die gesichert werden):
-Duplicati.CommandLine list-source-folders [options] <backend>"
+  Duplicati.CommandLine list-source-folders [options] <backend>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageOptionTypes","updated","Option types:
  The following option types are available:
   Integer: a numerical value
@@ -99,10 +99,10 @@ Path: der Pfad zu einem Ordner oder einer Datei
 String: jeder andere Typ"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsagePurgeCache","updated","Purge signature cache:
   Duplicati.CommandLine purge-signature-cache [options]","Bereinigung des Signatur-Cache:
-Duplicati.CommandLine purge-signature-cache [options]"
+  Duplicati.CommandLine purge-signature-cache [options]"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageRestore","updated","Restore (restore all or some files):
   Duplicati.CommandLine [options] <backend> <destinationfolder>","Wiederherstellung (einzelner oder aller Dateien):
-Duplicati.CommandLine [options] <backend> <destinationfolder>"
+  Duplicati.CommandLine [options] <backend> <destinationfolder>"
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageTimes","updated","Times:
  Duplicati uses the time system from duplicity, where times may be presented as:
   1: the string ""now"", indicating the current time
@@ -116,7 +116,7 @@ Duplicati verwendet das Zeit-System von Duplicity, wobei Zeiten wie folgt darges
 4: ein Intervall-String mit den Abkürzungen Y, M, W, D, h, m, s für Jahr, Monat, Woche, Tag, Stunde, Minute oder Sekunde. z.B: ""1M4D"" bedeutet 1 Monat und 4 Tage; oder ""5m"" steht für 5 Minuten."
 "CommandLine\Strings\Program.de-DE.resx","ProgramUsageVerify","updated","Verify backup integrity:
   Duplicati.CommandLine verify <backend> --verification-level=manifest|signatures|full","Überprüfen der Unversehrtheit des Backups:
-Duplicati.CommandLine verify <backend> --verification-level=manifest|signatures|full"
+  Duplicati.CommandLine verify <backend> --verification-level=manifest|signatures|full"
 "CommandLine\Strings\Program.de-DE.resx","SupportedBackendsHeader","updated","Supported backends:","Unterstützte Sicherungsziele:"
 "CommandLine\Strings\Program.de-DE.resx","SupportedCompressionModulesHeader","updated","Supported compression modules:","Untertützte Kompressions-Module:"
 "CommandLine\Strings\Program.de-DE.resx","SupportedEncryptionModulesHeader","updated","Supported encryption modules:","Unterstützte Verschlüsselungs-Module:"
@@ -155,8 +155,7 @@ Fehler: {3}"
 "GUI\ApplicationSetup.de-DE.resx","Bandwidth.ToolTip","updated","Set the initial bandwidth limits to use in Duplicati","Geben Sie die anfänglichen Bandbreitenbegrenzungen ein, die Duplicati verwenden soll"
 "GUI\ApplicationSetup.de-DE.resx","BasicTab.Text","updated","Basic","Allgemein"
 "GUI\ApplicationSetup.de-DE.resx","CacheSizeLabel.Text","updated","Calculating cache size...","Berechnung Cache-Größe ..."
-"GUI\ApplicationSetup.de-DE.resx","CacheSizeLabel.ToolTip","unused","","Die Größe des aktuellen Cache-Ordners
-"
+"GUI\ApplicationSetup.de-DE.resx","CacheSizeLabel.ToolTip","unused","","Die Größe des aktuellen Cache-Ordners"
 "GUI\ApplicationSetup.de-DE.resx","CancelBtn.Text","updated","Cancel","Abbrechen"
 "GUI\ApplicationSetup.de-DE.resx","ClearCacheButton.Text","updated","Clear cache","Cache löschen
 "
@@ -170,7 +169,7 @@ Fehler: {3}"
 "GUI\ApplicationSetup.de-DE.resx","groupBox4.Text","updated","Default throttle settings","Sicherungseinstellungen (beim Start wirksam)"
 "GUI\ApplicationSetup.de-DE.resx","HideDonateButton.Text","updated","Hide Donate button on the main wizard page","Spenden-Button auf der Hauptseite des Assistenten ausblenden"
 "GUI\ApplicationSetup.de-DE.resx","HideDonateButton.ToolTip","unused","","Markieren Sie dieses Kästchen, um die Anzeige des Spende-Buttons in den Assistenten zu verhindern"
-"GUI\ApplicationSetup.de-DE.resx","label1.Text","updated","Time to display past backups in log:","Protokolle in den letzten Sicherungen anzeigen"
+"GUI\ApplicationSetup.de-DE.resx","label1.Text","updated","Time to display past backups in log:","Protokollanzeige in letzten Sicherungen"
 "GUI\ApplicationSetup.de-DE.resx","label1.ToolTip","updated","Select the time a backup is displayed in the log window after completion","Wählen Sie die Zeit, wie lange eine Sicherung im Protokoll-Fenster nach der Durchführung gezeigt wird"
 "GUI\ApplicationSetup.de-DE.resx","label2.Text","updated","Sections:","Abschnitte"
 "GUI\ApplicationSetup.de-DE.resx","label3.Text","updated","Language:","Sprache für die Benutzeroberfläche"
@@ -288,24 +287,24 @@ A newer version of Mono will enable this page.","Diese Seite wird auf der aktuel
 "GUI\HelperControls\Strings\TestSearchSelection.de-DE.resx","TotalSizeLabel","updated","Total {0} files at {1}","Insgesamt {0} Dateien in {1}"
 "GUI\HelperControls\Strings\WaitForOperation.de-DE.resx","ReallyAbortQuestion","updated","Are you sure you want to abort the operation?","Sind Sie sicher, dass Sie den Vorgang abbrechen wollen?"
 "GUI\HelperControls\Strings\WaitForOperation.de-DE.resx","UserCancelled","updated","The user cancelled the operation","Der Vorgang wurde durch den Benutzer abgebrochen"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","$this.Text","updated","Test Search Selection","Test Suche Auswahl"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","$this.Text","updated","Test Search Selection","Test der Suchtext-Auswahl ..."
 "GUI\HelperControls\TestSearchSelection.de-DE.resx","btnCancel.Text","updated","Cancel","Abbrechen"
 "GUI\HelperControls\TestSearchSelection.de-DE.resx","chFile.Text","updated","Filename","Dateiname"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","chFileExt.Text","updated","Ext","End"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","chFileExt.Text","updated","Ext","Erweiterung"
 "GUI\HelperControls\TestSearchSelection.de-DE.resx","chPath.Text","updated","Path","Pfad"
 "GUI\HelperControls\TestSearchSelection.de-DE.resx","chSize.Text","updated","Size","Größe"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","label1.Text","updated","Filters:","Filter:"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","label2.Text","updated","Use context menu to add and remove filters","Kontextmenü verwenden um Filter hinzu- oder wegzugeben"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","label3.Text","updated","Files to be included:","Zu inkludierende Dateien:"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","lbLoading.Text","updated","Scanning files, please wait....","Durchsuche Dateien, bitte warten. …"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","miExclude.Text","updated","Exclude","Ausschließen"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","miExcludeFileExt.Text","updated","Add file extension filter","Filter für Dateiendungen hinzufügen"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","miExcludeFileName.Text","updated","Add filename filter","Filter für Dateinamen hinzufügen"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","miExcludeFilePath.Text","updated","File Path","Dateipfad"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","miInclude.Text","updated","Include","Inkludiere"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","miIncludeFileExt.Text","updated","Add file extension filter","Filter für Dateiendungen hinzufügen"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","miIncludeFileName.Text","updated","Add filename filer","Filter für Dateinamen hinzufügen"
-"GUI\HelperControls\TestSearchSelection.de-DE.resx","miIncludeFilePath.Text","updated","File path","Dateipfad"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","label1.Text","updated","Filters:","Filter: "
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","label2.Text","updated","Use context menu to add and remove filters","Filter-Hinzufügen u. -Löschen mit Kontext-Menü"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","label3.Text","updated","Files to be included:","Einzuschließende Dateien "
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","lbLoading.Text","updated","Scanning files, please wait....","Sacnnen v. Dateien, bitte warten..."
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","miExclude.Text","updated","Exclude","Auszuschließen"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","miExcludeFileExt.Text","updated","Add file extension filter","Dateierweiterungs-Filter hinzufügen"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","miExcludeFileName.Text","updated","Add filename filter","Dateinamen-Filter hinzufügen"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","miExcludeFilePath.Text","updated","File Path","Datei-Pfad"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","miInclude.Text","updated","Include","Einzuschließen"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","miIncludeFileExt.Text","updated","Add file extension filter","Dateierweiterungs-Filter hinzufügen"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","miIncludeFileName.Text","updated","Add filename filer","Dateinamen-Filter hinzufügen"
+"GUI\HelperControls\TestSearchSelection.de-DE.resx","miIncludeFilePath.Text","updated","File path","Datei-Pfad"
 "GUI\HelperControls\TestSearchSelection.de-DE.resx","removeFilterToolStripMenuItem.Text","updated","Remove Filter","Filter entfernen"
 "GUI\HelperControls\ThreadPriorityPicker.de-DE.resx","ThreadPriority.Items","updated","High (Not recommended)","Hoch (Nicht empfohlen)"
 "GUI\HelperControls\ThreadPriorityPicker.de-DE.resx","ThreadPriority.Items1","updated","Above normal","Höher als normal"
@@ -876,7 +875,7 @@ Sie können jeden beliebigen Namen verwenden."
 "Library\Backend\File\FileUI.de-DE.resx","label1.Text","updated","Username","Benutzername"
 "Library\Backend\File\FileUI.de-DE.resx","label2.Text","updated","Password","Kennwort"
 "Library\Backend\File\FileUI.de-DE.resx","UseCredentials.Text","updated","Use alternate credentials","Benutze alternative Anmeldedaten"
-"Library\Backend\File\FileUI.de-DE.resx","UseDisk.Text","updated","Removable disk","Wechseldatenträger"
+"Library\Backend\File\FileUI.de-DE.resx","UseDisk.Text","updated","Removable disk","Wechsellaufwerk"
 "Library\Backend\File\FileUI.de-DE.resx","UsePath.Text","updated","Path","Pfad"
 "Library\Backend\File\Strings\FileBackend.de-DE.resx","AlternateDestinationMarkerLong","updated","This option only works when the --{0} option is also specified. If there are alternate paths specified, this option indicates the name of a marker file that must be present in the folder. This can be used to handle situations where an external drive changes drive letter or mount point. By ensuring that a certain file exists, it is possible to prevent writing data to an unwanted external drive. The contents of the file are never examined, only file existence.","Diese Option funktioniert nur, wenn auch die --{0} Option angegeben ist. Wenn alternative Pfade angegeben werden, zeigt diese Option den Namen einer Kennzeichnungs-Datei, die im Ordner vorhanden sein muss. Damit kann man auch Sonderfälle beherrschen, wenn ein externes Laufwerk den Laufwerksbuchstaben oder Mount-Punkt ändert. Durch die Absicherung, dass eine bestimmte Datei vorhanden sein muss, kann man das Schreiben von Daten zu einem unerwünschten externen Laufwerk verhindern. Der Inhalt der Kennzeichnungs-Datei wird nie untersucht, nur das Vorhandensein der Datei.
 "
@@ -913,13 +912,13 @@ Fehlermeldung: {0}"
 "Library\Backend\FTP\FTPUI.de-DE.resx","label2.Text","updated","Path","Pfad"
 "Library\Backend\FTP\FTPUI.de-DE.resx","label3.Text","updated","Username","Benutzername"
 "Library\Backend\FTP\FTPUI.de-DE.resx","label4.Text","updated","Password","Kennwort"
-"Library\Backend\FTP\FTPUI.de-DE.resx","label6.Text","missing","Note: Some FTP servers have trouble dealing with more than 2000 files. For this reason, you are advised to select a large volume size so the number of files is low.",""
+"Library\Backend\FTP\FTPUI.de-DE.resx","label6.Text","updated","Note: Some FTP servers have trouble dealing with more than 2000 files. For this reason, you are advised to select a large volume size so the number of files is low.","Hinweis: Einige FTP-Server haben Probleme im Fall von mehr als 2000 Dateien. Aus diesem Grund empfehlen wir, große Dateien zu wählen, so dass die Anzahl der Dateien gering ist."
 "Library\Backend\FTP\FTPUI.de-DE.resx","PassiveConnection.Text","updated","Use passive connection","Passive Verbindung benutzen"
 "Library\Backend\FTP\FTPUI.de-DE.resx","TestConnection.Text","updated","Test connection","Verbindung testen"
 "Library\Backend\FTP\FTPUI.de-DE.resx","UseSSL.Text","updated","Use SSL","Benutze SSL"
 "Library\Backend\FTP\Strings\FTPBackend.de-DE.resx","Description","updated","This backend can read and write data to an FTP based backend. Allowed formats are ""ftp://hostname/folder"" or ""ftp://username:password@hostname/folder""","Dieses Sicherungsziel kann Daten von/zu einem FTP-basierten Speicher übertragen. Erlaubte Formate sind ""ftp://hostname/ordner"" oder ""ftp://benutzername:kennwort@hostname/ordner"""
-"Library\Backend\FTP\Strings\FTPBackend.de-DE.resx","DescriptionDisableUploadVerifyLong","not-updated","To protect against network failures, every upload will be attempted verified. Use this option to disable this verfication to make the upload faster by more unsafe.",""
-"Library\Backend\FTP\Strings\FTPBackend.de-DE.resx","DescriptionDisableUploadVerifyShort","not-updated","Disable upload verification",""
+"Library\Backend\FTP\Strings\FTPBackend.de-DE.resx","DescriptionDisableUploadVerifyLong","updated","To protect against network failures, every upload will be attempted verified. Use this option to disable this verfication to make the upload faster by more unsafe.","Zum Schutz vor Netzwerk-Fehlern wird bei jedem Upload eine Verifizierung versucht. Verwenden Sie diese Option, um diese automatische Überprüfung zu deaktivieren, damit der Upload schneller, jedoch unsicherer wird."
+"Library\Backend\FTP\Strings\FTPBackend.de-DE.resx","DescriptionDisableUploadVerifyShort","updated","Disable upload verification","Deaktivierung der Upload-Verifizierung"
 "Library\Backend\FTP\Strings\FTPBackend.de-DE.resx","DescriptionFTPActiveLong","updated","If this flag is set, the FTP connection is made in active mode. Even if the ""ftp-passive"" flag is also set, the connection will be made in active mode","Mit dieser Option wird die FTP-Verbindung im aktiven Modus hergestellt, auch wenn die Option ""ftp-passive"" gesetzt ist."
 "Library\Backend\FTP\Strings\FTPBackend.de-DE.resx","DescriptionFTPActiveShort","updated","Toggles the FTP connections method","Ändert die Verbindungsmethode für FTP"
 "Library\Backend\FTP\Strings\FTPBackend.de-DE.resx","DescriptionFTPPassiveLong","updated","If this flag is set, the FTP connection is made in passive mode, which works better with some firewalls. If the ""ftp-regular"" flag is also set, this flag is ignored","Mit dieser Option wird die FTP-Verbindung im passiven Modus hergestellt, auch wenn die Option ""ftp-regular"" gesetzt ist. Der passive Modus funktioniert mit manchen Firewalls besser."
@@ -951,7 +950,7 @@ Fehlermeldung: {0}"
 "Library\Backend\S3\S3CommonOptions.de-DE.resx","label2.Text","updated","Server name:","Server-Name"
 "Library\Backend\S3\S3CommonOptions.de-DE.resx","RemoveAllButton.Text","updated","Remove all","Alle löschen"
 "Library\Backend\S3\S3CommonOptions.de-DE.resx","RemoveSelectedButton.Text","updated","Remove","Ausgewähle löschen"
-"Library\Backend\S3\S3CommonOptions.de-DE.resx","UseRRS.Text","updated","Use Reduced Redundancy Storage","Verwende Reduced Redundancy Storage"
+"Library\Backend\S3\S3CommonOptions.de-DE.resx","UseRRS.Text","updated","Use Reduced Redundancy Storage","Mit reduzierter Redundanz speichern "
 "Library\Backend\S3\S3UI.de-DE.resx","CreateBucket.Text","updated","Create bucket","Ein Bucket anlegen"
 "Library\Backend\S3\S3UI.de-DE.resx","label2.Text","updated","AWS Secret Key","AWS Geheimer Schlüssel"
 "Library\Backend\S3\S3UI.de-DE.resx","label3.Text","updated","S3 Bucket name","S3 Bucket-Name"
@@ -961,7 +960,7 @@ Fehlermeldung: {0}"
 "Library\Backend\S3\S3UI.de-DE.resx","label7.Text","updated","S3 Servername","Amazon S3 Server-Name"
 "Library\Backend\S3\S3UI.de-DE.resx","SignUpLink.Text","updated","Click here for the sign up page","Klicken Sie hier für die Anmeldeseite"
 "Library\Backend\S3\S3UI.de-DE.resx","TestConnection.Text","updated","Test Connection","Verbindung testen"
-"Library\Backend\S3\S3UI.de-DE.resx","UseRRS.Text","updated","Use Reduced Redundancy Storage (RRS)","Verwende Reduced Redundancy Storage (RRS)"
+"Library\Backend\S3\S3UI.de-DE.resx","UseRRS.Text","updated","Use Reduced Redundancy Storage (RRS)","Mit reduzierter Redundanz speichern  (RRS)"
 "Library\Backend\S3\Strings\S3Backend.de-DE.resx","AMZKeyDescriptionLong","updated","The AWS ""Secret Access Key"" can be obtained after logging into your AWS account, this can also be supplied through the ""ftp-password"" property","Den AWS ""Secret Access Key"" erhalten Sie nach Anmeldung bei Ihrem AWS-Konto. Dieser Key kann aber auch durch die ""ftp-Passwort""-Eigenschaft beigestellt werden
 "
 "Library\Backend\S3\Strings\S3Backend.de-DE.resx","AMZKeyDescriptionShort","updated","The AWS ""Secret Access Key""","AWS ""Secret Access Key"" "
@@ -1398,14 +1397,14 @@ Wenn dieses Problem nochmals auftritt, dann kann es sein, dass die Lösch- Vorga
 "Library\Main\Strings\Interface.de-DE.resx","FilenameMismatchError","updated","The manifest report that the file should be named {0} but it was named {1}","Gemäß Sicherungslisten-Datei sollte die Datei mit {0} benannt sein, aber deren Name ist {1}."
 "Library\Main\Strings\Interface.de-DE.resx","FilesAreNotForceDeletedMessage","updated","Files are not deleted, use the --force command to actually remove files","Dateien werden nicht gelöscht, verwenden Sie den --force Befehl zum tatsächlichen Entfernen von Dateien"
 "Library\Main\Strings\Interface.de-DE.resx","FileSizeMismatchError","updated","The file {0} has size {1} but should have size {2}","Die Datei {0} hat Größe {1}, aber sollte eigentlich folgende Größe haben {2}."
-"Library\Main\Strings\Interface.de-DE.resx","FullBecauseBackendIsEmpty","updated","A full backup is made because no existing backup chains were found on the destination","Ein vollständiges Backup wird erstellt, da keine existierende Backups an dem Zielort gefunden wurden"
-"Library\Main\Strings\Interface.de-DE.resx","FullBecauseFlagWasSet","updated","A full backup was forced with the --{0} flag","Ein vollständiges Backup wurde mit der –{0} Option erzwungen"
-"Library\Main\Strings\Interface.de-DE.resx","FullBecauseLastFullIsFrom","updated","A full backup is made because the latest full backup is from {0} and the full backup threshold is {1}","Ein vollständiges Backup wird erstellt, da das neueste vollständige Backup von {0} länger zurückliegt als die eingestellten {1} "
-"Library\Main\Strings\Interface.de-DE.resx","FullBecauseSourceFoldersChanged","updated","A full backup is made because the source folders have changed","Ein vollständiges Backup wird erstellt, da sich die Quell-Verzeichnisse geändert haben "
-"Library\Main\Strings\Interface.de-DE.resx","FullBecauseThereAreNIncrementals","updated","A full backup is made because the current chain has {0} incremental backups and the full backup threshold is {1}","Ein vollständiges Backup wird erstellt, da derzeit {0} inkrementelle Backups hintereinander gemacht wurden und die eingestellte Grenze {1} ist."
-"Library\Main\Strings\Interface.de-DE.resx","IncrementalBecauseLastFullIsFrom","updated","An incremental backup is made because the latest full backup is from {0} and the full backup threshold is {1}","Ein inkrementelles Backup wird erstellt, da das letzte volle Backup vom {0} ist und die eingestellte Grenze {1} ist."
-"Library\Main\Strings\Interface.de-DE.resx","IncrementalBecauseNoFlagsWereSet","updated","An incremental backup is made because no full backup criteria was found","Ein inkrementelles Backup wird erstellt, da keine Einstellungen zu vollständigen Backups gefunden wurden"
-"Library\Main\Strings\Interface.de-DE.resx","IncrementalBecauseThereAreNIncrementals","updated","An incremental backup is made because the current chain has {0} incremental backups and the full backup threshold is {1}","Ein inkrementelles Backup wird erstellt, da hintereinander {0} inkrementelle Backups gemacht wurden und die Einstellung für ein vollständiges Backup {1} ist"
+"Library\Main\Strings\Interface.de-DE.resx","FullBecauseBackendIsEmpty","updated","A full backup is made because no existing backup chains were found on the destination","Ein vollständiges Backup wird durchgeführt, da keine Backup-Ketten im Backup-Ziel gefunden wurden"
+"Library\Main\Strings\Interface.de-DE.resx","FullBecauseFlagWasSet","updated","A full backup was forced with the --{0} flag","Ein vollständiges Backup wurde erzwungen mit dem --{0} Flag"
+"Library\Main\Strings\Interface.de-DE.resx","FullBecauseLastFullIsFrom","updated","A full backup is made because the latest full backup is from {0} and the full backup threshold is {1}","Ein vollständiges Backup wird durchgeführt, weil das letzte vollständige Backup vom {0} ist und das nächste Voll-Backup am {1} erfolgen soll."
+"Library\Main\Strings\Interface.de-DE.resx","FullBecauseSourceFoldersChanged","updated","A full backup is made because the source folders have changed","Eine vollständige Sicherung wird gemacht, weil bei den Quell-Ordnern eine Veränderung erfolgt ist"
+"Library\Main\Strings\Interface.de-DE.resx","FullBecauseThereAreNIncrementals","updated","A full backup is made because the current chain has {0} incremental backups and the full backup threshold is {1}","Eine vollständige Sicherung wird gemacht, weil die Backup-Kette {0} inkrementelle Backups hat, und die Schwelle für das nächste Voll-Backup {1} ist"
+"Library\Main\Strings\Interface.de-DE.resx","IncrementalBecauseLastFullIsFrom","updated","An incremental backup is made because the latest full backup is from {0} and the full backup threshold is {1}","Ein vollständiges Backup wird durchgeführt, weil das letzte vollständige Backup vom {0} ist und das nächste Voll-Backup am {1} erfolgen soll."
+"Library\Main\Strings\Interface.de-DE.resx","IncrementalBecauseNoFlagsWereSet","updated","An incremental backup is made because no full backup criteria was found","Ein inkrementelles Backup wird durchgeführt, weil die Kriterien für ein Voll-Backup nicht erfüllt sind."
+"Library\Main\Strings\Interface.de-DE.resx","IncrementalBecauseThereAreNIncrementals","updated","An incremental backup is made because the current chain has {0} incremental backups and the full backup threshold is {1}","Eine vollständige Sicherung wird gemacht, weil die Backup-Kette {0} inkrementelle Backups hat, und die Schwelle für das nächste Voll-Backup {1} ist"
 "Library\Main\Strings\Interface.de-DE.resx","InternalDeleteCountError","updated","An internal error occured, and the operation was aborted to protect the backup sets","Ein interner Fehler ist aufgetreten, und der Vorgang wurde abgebrochen um die Sicherungssätze zu schützen"
 "Library\Main\Strings\Interface.de-DE.resx","ManifestAndFileCountMismatchError","updated","The manifest file {0} indicates that there should be {1} volumes, but the file list indicates {2}","Die Sicherungslisten-Datei {0} zeigt an, dass {1} Volumes vorhanden sein sollten, aber die Dateiliste zeigt nur {2}"
 "Library\Main\Strings\Interface.de-DE.resx","ManifestsMustBeRead","updated","Disabling manifests is only possible on restores, and it should only be used as a last resort.","Die Sicherungsliste kann nur bei der Wiederherstellung deaktiviert werden. Die Deaktivierung sollte als letzte Möglichkeit in Betracht gezogen werden."
@@ -1516,8 +1515,8 @@ Unerwarteter Komprimierungs-Modus: {0}"
 "Library\Main\Strings\Options.de-DE.resx","AsynchronousuploadShort","updated","Transmit files on a separate thread","Übertragen von Dateien in einem separaten Thread"
 "Library\Main\Strings\Options.de-DE.resx","AutocleanupLong","updated","If a backup is interrupted there will likely be partial files present on the backend. Using this flag, Duplicati will automatically remove such files when encountered.","Wenn eine Sicherung unterbrochen wird, dann werden wahrscheinlich unvollständige Dateien auf dem Sicherungs-Ziel vorhanden sein. Mit dieser Option wird Duplicati diese automatisch entfernen, wenn das festgestellt wird."
 "Library\Main\Strings\Options.de-DE.resx","AutocleanupShort","updated","A flag indicating that Duplicati should remove unused files","Eine Option, die Duplicati anweist, nicht mehr benötigte Dateien zu entfernen"
-"Library\Main\Strings\Options.de-DE.resx","BackendlogdatabaseLong","updated","Use this option to specify a path to a file that will store information about backend operations. This option can be used to track down errors by comparing the backend state with the expected backend state.","Diese Option verwenden, um Backend Fehler durch Vergleich des aktuellen und erwarteten Backend Status entdecken zu können.  Einen Pfad zu einer Datei angeben, die Informationen über Backend-Anweisungen speichert."
-"Library\Main\Strings\Options.de-DE.resx","BackendlogdatabaseShort","updated","Database log of remote operations","Datenbankprotokoll von remote Anweisungen"
+"Library\Main\Strings\Options.de-DE.resx","BackendlogdatabaseLong","updated","Use this option to specify a path to a file that will store information about backend operations. This option can be used to track down errors by comparing the backend state with the expected backend state.","Verwenden Sie diese Option, um einen Pfad zu einer Datei anzugeben, in der Informationen über Backup-Ziel-Operationen gespeichert werden sollen. Diese Option kann verwendet werden, um Fehler aufzuspüren, indem der Backup-Ziel-Zustand mit dem erwarteten Backup-Ziel-Zustand verglichen wird."
+"Library\Main\Strings\Options.de-DE.resx","BackendlogdatabaseShort","updated","Database log of remote operations","Datenbank-Protokoll entfernter Vorgänge"
 "Library\Main\Strings\Options.de-DE.resx","BackupprefixLong","updated","Any string used to prefix the filenames generated by Duplicati.","Eine Zeichenkette, die den von Duplicati erzeugten Dateinamen vorangestellt wird."
 "Library\Main\Strings\Options.de-DE.resx","BackupprefixShort","updated","Backup volume filename prefix","Präfix für die Volume-Dateinamen"
 "Library\Main\Strings\Options.de-DE.resx","CompressionmoduleLong","updated","Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module.","Duplicati unterstützt konfigurierbare Komprimierungs-Module. Verwenden Sie diese Option, um ein Modul für die Komprimierung auszuwählen. Dies wirkt sich nur auf neue Sicherungsvolumes aus, beim Lesen vorhandener Dateien wird das Komprimierungs-Modul anhand des Dateinamens ausgewählt."
@@ -1665,6 +1664,8 @@ Unerwarteter Komprimierungs-Modus: {0}"
 "Library\Main\Strings\Options.de-DE.resx","VssexcludewritersLong","updated","Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces.","Mit dieser Option können Sie fehlerhafte Schreiber von einem VSS-Schnappschuss ausschließen. Dies ist gleichbedeutend mit dem -wx Flag des Tools vshadow.exe, außer dass es nur GUIDs und nicht Komponenten-Namen oder Instanz-GUIDs als Schreiber akzeptiert. Mehrere GUIDs müssen mit einem Strichpunkt getrennt werden, und die meisten Arten von GUIDs sind erlaubt, einschließlich mit und ohne geschwungene Klammer."
 "Library\Main\Strings\Options.de-DE.resx","VssexcludewritersShort","updated","A semicolon separated list of guids of VSS writers to exclude (Windows only)","Mit Strichpunkten getrennte Liste von als VSS-Schreiber auszuschließenden GUIDs (nur Windows)
 "
+"Library\Main\Strings\Options.de-DE.resx","VssusemappingLong","not-updated","Activate this option to map VSS snapshots to a drive (similar to SUBST, using Win32 DefineDosDevice). This will create temporary drives that are then used to access the contents of a snapshot. This workaround can speed up file access on Windows XP.",""
+"Library\Main\Strings\Options.de-DE.resx","VssusemappingShort","not-updated","Map snapshots to a drive (Windows only)",""
 "Library\Main\Strings\RSyncDir.de-DE.resx","CreateFolderError","updated","Failed to create folder: ""{0}"", Error message: {1}","Fehler beim Erstellen des Ordners: ""{0}"", Fehlermeldung: {1}"
 "Library\Main\Strings\RSyncDir.de-DE.resx","DeletedFilenameError","updated","An error occured while determining file status, filename: {0}, folder name:{1}","Fehler beim Bestimmen des Dateizustands, Dateiname: {0}, Ordnername: {1}"
 "Library\Main\Strings\RSyncDir.de-DE.resx","DeleteFileError","updated","Failed to delete file: ""{0}"", Error message: {1}","Fehler beim Löschen der Datei: ""{0}"", Fehlermeldung: {1}"
@@ -1756,9 +1757,9 @@ Error message: {1}","Konnte den Datei-Änderungs-Zeitstempel nicht lesen: {0}. F
   {0} signature <input-file> <signature-file>
   {0} delta <signature-file> <input-file> <delta-file>
   {0} patch <base-file> <delta-file> <output-file>","Benutzung:
-{0} signature <Eingabedatei> <Signaturdatei>
-{0} delta <Signaturdatei> <Eingabedatei> <Differenzdatei>
-{0} patch <Basisdatei> <Differenzdatei> <Ausgabedatei>"
+  {0} signature <Eingabedatei> <Signaturdatei>
+  {0} delta <Signaturdatei> <Eingabedatei> <Differenzdatei>
+  {0} patch <Basisdatei> <Differenzdatei> <Ausgabedatei>"
 "Library\SharpRSync\Strings\RDiffBinary.de-DE.resx","EncodedLengthError","updated","Encoded value had unexpected length","Unerwartete Länge des kodierten Wertes"
 "Library\SharpRSync\Strings\RDiffBinary.de-DE.resx","InvalidDataLengthError","updated","Invalid data length","Ungültige Länge der Daten"
 "Library\SharpRSync\Strings\RDiffBinary.de-DE.resx","InvalidDeltaCopyCommandError","updated","Invalid delta copy command: {0}","Ungültiger Befehl für Differenz-Kopieren: {0}"
