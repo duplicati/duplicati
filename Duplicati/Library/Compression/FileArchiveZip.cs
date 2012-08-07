@@ -181,11 +181,17 @@ namespace Duplicati.Library.Compression
             foreach (IArchiveEntry e in m_archive.Entries)
             {
                 if (prefix == null)
+                {
+                    results.Add(e.FilePath);
+                }
+                else
+                {
                     if (e.FilePath.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
                         results.Add(e.FilePath);
                     //Some old archives may have been created with windows style paths
                     else if (e.FilePath.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
                         results.Add(e.FilePath);
+                }
             }
 
             return results.ToArray();
