@@ -29,11 +29,14 @@ namespace Duplicati.CommandLine
 
         static void Main(string[] args)
         {
+            bool verboseErrors = false;
             try
             {
                 List<string> cargs = new List<string>(args);
                 string filter = Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(Duplicati.Library.Utility.FilenameFilter.ParseCommandLine(cargs, true));
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(cargs);
+
+                verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
 
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions
@@ -435,7 +438,7 @@ namespace Duplicati.CommandLine
                     if (!string.IsNullOrEmpty(ex.Message))
                     {
                         Console.Error.WriteLine();
-                        Console.Error.WriteLine(ex.Message);
+                        Console.Error.WriteLine(verboseErrors ? ex.ToString() : ex.Message);
                     }
                 }
                 else
