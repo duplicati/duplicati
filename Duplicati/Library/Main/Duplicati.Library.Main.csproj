@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -63,6 +63,7 @@
     <Compile Include="BackupEntry.cs" />
     <Compile Include="Backupmetadata.cs" />
     <Compile Include="CommunicationStatistics.cs" />
+    <Compile Include="CompressionWrapper.cs" />
     <Compile Include="FilenameStrategy.cs" />
     <Compile Include="Interface.cs" />
     <Compile Include="LiveControl\ExecutionStoppedException.cs" />

@@ -141,28 +141,6 @@ namespace Duplicati.Library.Compression
             }
         }
 
-        /// <summary>
-        /// Converts a zip file path to the format used by the local filesystem.
-        /// Internally all files are stored in the archive use / as directory separator.
-        /// </summary>
-        /// <param name="path">The path to convert in internal format</param>
-        /// <returns>The path in filesystem format</returns>
-        private static string PathToOsFilesystem(string path)
-        {
-            return Path.DirectorySeparatorChar != '/' ? path.Replace('/', Path.DirectorySeparatorChar) : path;
-        }
-
-        /// <summary>
-        /// Converts a file system path to the internal format.
-        /// Internally all files are stored in the archive use / as directory separator.
-        /// </summary>
-        /// <param name="path">The path to convert in filesystem format</param>
-        /// <returns>The path in the internal format</returns>
-        private static string PathToZipFilesystem(string path)
-        {
-            return Path.DirectorySeparatorChar != '/' ? path.Replace(Path.DirectorySeparatorChar, '/') : path;
-        }
-
         #region IFileArchive Members
         /// <summary>
         /// Gets the filename extension used by the compression module
@@ -193,71 +171,24 @@ namespace Duplicati.Library.Compression
         }
 
         /// <summary>
-        /// Filters entries based on a prefix
-        /// </summary>
-        /// <param name="prefix">An optional prefix</param>
-        /// <returns>A list of filenames</returns>
-        private IEnumerable<string> FilterEntries(string prefix)
-        {
-            prefix = PathToZipFilesystem(prefix);
-            List<string> results = new List<string>();
-            foreach(IArchiveEntry e in m_archive.Entries)
-            {
-                if (prefix == null || e.FilePath.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                    results.Add(PathToOsFilesystem(e.FilePath));
-            }
-
-            return results;
-        }
-
-        /// <summary>
         /// Returns a list of files matching the given prefix
         /// </summary>
         /// <param name="prefix">The prefix to match</param>
         /// <returns>A list of files matching the prefix</returns>
         public string[] ListFiles(string prefix)
         {
-            return FilterEntries(prefix).ToArray();
-        }
-
-        /// <summary>
-        /// Returns a list of entries matching the given prefix
-        /// </summary>
-        /// <param name="prefix">The prefix to match</param>
-        /// <returns>A list of entries matching the prefix</returns>
-        public string[] ListEntries(string prefix)
-        {
-            return FilterEntries(prefix).ToArray();
-        }
-
-        /// <summary>
-        /// Reads all bytes from a file and returns it as an array
-        /// </summary>
-        /// <param name="file">The name of the file to read</param>
-        /// <returns>The contents of the file as a byte array</returns>
-        public byte[] ReadAllBytes(string file)
-        {
-            using (var ms = new MemoryStream())
-            using (var s = OpenRead(file))
+            List<string> results = new List<string>();
+            foreach (IArchiveEntry e in m_archive.Entries)
             {
-                Utility.Utility.CopyStream(s, ms);
-                return ms.ToArray();
+                if (prefix == null)
+                    if (e.FilePath.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        results.Add(e.FilePath);
+                    //Some old archives may have been created with windows style paths
+                    else if (e.FilePath.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                        results.Add(e.FilePath);
             }
-        }
 
-        /// <summary>
-        /// Reads all lines from a text file, and returns them
-        /// </summary>
-        /// <param name="file">The name of the file to read</param>
-        /// <returns>The lines read from the file</returns>
-        public string[] ReadAllLines(string file)
-        {
-            var lines = new List<string>();
-            using (var sr = new StreamReader(OpenRead(file), System.Text.Encoding.UTF8, true))
-                while (!sr.EndOfStream)
-                    lines.Add(sr.ReadLine());
-
-            return lines.ToArray();
+            return results.ToArray();
         }
 
         /// <summary>
@@ -276,39 +207,6 @@ namespace Duplicati.Library.Compression
         }
 
         /// <summary>
-        /// Opens a file for writing
-        /// </summary>
-        /// <param name="file">The name of the file to write</param>
-        /// <returns>A stream that can be updated with file contents</returns>
-        public Stream OpenWrite(string file)
-        {
-            return CreateFile(file);
-        }
-
-        /// <summary>
-        /// Writes all bytes from the array into the file
-        /// </summary>
-        /// <param name="file">The name of the file</param>
-        /// <param name="data">The data contents of the file</param>
-        public void WriteAllBytes(string file, byte[] data)
-        {
-            using (var s = CreateFile(file))
-                s.Write(data, 0, data.Length);
-        }
-
-        /// <summary>
-        /// Writes the given lines into the file
-        /// </summary>
-        /// <param name="file">The name of the file</param>
-        /// <param name="data">The lines to write</param>
-        public void WriteAllLines(string file, string[] data)
-        {
-            using (var sw = new StreamWriter(CreateFile(file), System.Text.Encoding.UTF8))
-                foreach (var s in data)
-                    sw.WriteLine(s);
-        }
-
-        /// <summary>
         /// Internal function that returns a ZipEntry for a filename, or null if no such file exists
         /// </summary>
         /// <param name="file">The name of the file to find</param>
@@ -318,14 +216,15 @@ namespace Duplicati.Library.Compression
             if (m_isWriting)
                 throw new InvalidOperationException("Cannot read while writing");
 
-            string path = PathToZipFilesystem(file);
+            string path = file;
             foreach(IArchiveEntry e in m_archive.Entries)
             {
                 if (string.Equals(e.FilePath, path, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
                     return e;
             }
 
-            string path2 = PathToOsFilesystem(file);
+            //Try with the windows format, old archives may have this format
+            string path2 = file.Replace('/', '\\');
             if (path != path2)
             {
                 path = path2;
@@ -337,25 +236,6 @@ namespace Duplicati.Library.Compression
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Deletes a file from the archive
-        /// </summary>
-        /// <param name="file">The name of the file to delete</param>
-        public virtual void DeleteFile(string file)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Creates a file in the archive and returns a writeable stream
-        /// </summary>
-        /// <param name="file">The name of the file to create</param>
-        /// <returns>A writeable stream for the file contents</returns>
-        public Stream CreateFile(string file)
-        {
-            return CreateFile(file, DateTime.Now);
         }
 
         /// <summary>

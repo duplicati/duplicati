@@ -89,7 +89,7 @@ namespace Duplicati.Library.Main.RSync
             /// <summary>
             /// The archive to wrap
             /// </summary>
-            private Library.Interface.ICompression m_archive;
+            private CompressionWrapper m_archive;
 
             /// <summary>
             /// The prefix to append to request
@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.RSync
             /// <param name="arch">The archive to wrap</param>
             /// <param name="prefix">The prefix to use</param>
             /// <param name="backupTime">The time the backup was created</param>
-            public ArchiveWrapper(Library.Interface.ICompression arch, DateTime createTime, string prefix)
+            public ArchiveWrapper(CompressionWrapper arch, DateTime createTime, string prefix)
             {
                 m_archive = arch;
                 m_prefix = prefix;
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.RSync
 
             public System.IO.Stream OriginalSignatureStream { get { return m_originalSignatureStream; } set { m_originalSignatureStream = value; } }
 
-            public bool DumpSignature(Library.Interface.ICompression signatureArchive)
+            public bool DumpSignature(CompressionWrapper signatureArchive)
             {
                 bool success = true;
                 //Add signature AFTER content.
@@ -598,7 +598,7 @@ namespace Duplicati.Library.Main.RSync
         /// <summary>
         /// A list of patch files for removal
         /// </summary>
-        private List<Library.Interface.ICompression> m_patches;
+        private List<CompressionWrapper> m_patches;
 
         /// <summary>
         /// A leftover file that is partially written, used when creating backups
@@ -655,7 +655,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="stat">The status report object</param>
         /// <param name="filter">An optional filter that controls what files to include</param>
         /// <param name="patches">A list of signature archives to read, MUST be sorted in the creation order, oldest first</param>
-        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Backupmetadata metadata, Utility.FilenameFilter filter, List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches)
+        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Backupmetadata metadata, Utility.FilenameFilter filter, List<KeyValuePair<ManifestEntry, CompressionWrapper>> patches)
             : this(sourcefolder, stat, metadata, filter)
         {
             string[] prefixes = new string[] {
@@ -664,16 +664,16 @@ namespace Duplicati.Library.Main.RSync
                 Utility.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
             };
 
-            m_patches = new List<Duplicati.Library.Interface.ICompression>();
-            foreach (KeyValuePair<ManifestEntry, Library.Interface.ICompression> patch in patches)
+            m_patches = new List<CompressionWrapper>();
+            foreach (KeyValuePair<ManifestEntry, CompressionWrapper> patch in patches)
                 m_patches.Add(patch.Value);
 
-            foreach (KeyValuePair<ManifestEntry, Library.Interface.ICompression> patch in patches)
+            foreach (KeyValuePair<ManifestEntry, CompressionWrapper> patch in patches)
             {
-                Library.Interface.ICompression z = patch.Value;
+                CompressionWrapper z = patch.Value;
 
                 if (z.FileExists(DELETED_FILES))
-                    foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(DELETED_FILES)))
+                    foreach (string s in z.ReadPathLines(DELETED_FILES))
                     {
                         m_oldSignatures.Remove(s);
                         m_lastVerificationTime.Remove(s);
@@ -683,7 +683,7 @@ namespace Duplicati.Library.Main.RSync
                 foreach (string prefix in prefixes)
                 {
                     ArchiveWrapper aw = new ArchiveWrapper(z, patch.Key.Time.ToUniversalTime(), prefix);
-                    foreach (string f in FilenamesFromPlatformIndependant(z.ListFiles(prefix)))
+                    foreach (string f in z.ListFiles(prefix))
                     {
                         string name = f.Substring(prefix.Length);
                         m_oldSignatures[name] = aw;
@@ -692,24 +692,21 @@ namespace Duplicati.Library.Main.RSync
                 }
 
                 string symlinkprefix = Utility.Utility.AppendDirSeparator(SYMLINK_ROOT);
-                foreach(string s in FilenamesFromPlatformIndependant(patch.Value.ListFiles(symlinkprefix)))
-                {
-                    string tmp = FilenamesFromPlatformIndependant( new string[] { Encoding.UTF8.GetString(patch.Value.ReadAllBytes(s)) })[0];
-                    m_oldSymlinks[s.Substring(symlinkprefix.Length)] = tmp;
-                }
+                foreach(string s in z.ListFiles(symlinkprefix))
+                    m_oldSymlinks[s.Substring(symlinkprefix.Length)] = z.ReadPathString(s);
 
                 if (z.FileExists(UNMODIFIED_FILES))
-                    foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(UNMODIFIED_FILES)))
+                    foreach (string s in z.ReadPathLines(UNMODIFIED_FILES))
                         m_lastVerificationTime[s] = patch.Key.Time.ToUniversalTime();
 
                 if (z.FileExists(DELETED_FOLDERS))
-                    foreach (string s in FilenamesFromPlatformIndependant(z.ReadAllLines(DELETED_FOLDERS)))
+                    foreach (string s in z.ReadPathLines(DELETED_FOLDERS))
                         m_oldFolders.Remove(s);
 
                 if (z.FileExists(ADDED_FOLDERS))
                 {
                     DateTime t = z.GetLastWriteTime(ADDED_FOLDERS).ToUniversalTime();
-                    string[] filenames = FilenamesFromPlatformIndependant(z.ReadAllLines(ADDED_FOLDERS));
+                    string[] filenames = z.ReadPathLines(ADDED_FOLDERS);
 
                     if (z.FileExists(ADDED_FOLDERS_TIMESTAMPS))
                     {
@@ -730,7 +727,7 @@ namespace Duplicati.Library.Main.RSync
 
                 if (z.FileExists(UPDATED_FOLDERS) && z.FileExists(UPDATED_FOLDERS_TIMESTAMPS))
                 {
-                    string[] filenames = FilenamesFromPlatformIndependant(z.ReadAllLines(UPDATED_FOLDERS));
+                    string[] filenames = z.ReadPathLines(UPDATED_FOLDERS);
                     string[] timestamps = z.ReadAllLines(UPDATED_FOLDERS_TIMESTAMPS);
                     long l;
 
@@ -780,7 +777,7 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="signatures">An archive where signatures can be put into</param>
         /// <param name="content">An archive where content can be put into</param>
-        public void CreatePatch(Library.Interface.ICompression signatures, Library.Interface.ICompression content)
+        public void CreatePatch(CompressionWrapper signatures, CompressionWrapper content)
         {
             InitiateMultiPassDiff(false);
             MakeMultiPassDiff(signatures, content, long.MaxValue);
@@ -1208,7 +1205,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="contentfile">The content archive file</param>
         /// <param name="volumesize">The max volume size</param>
         /// <returns>True if the volume is completed, false otherwise</returns>
-        public bool FinalizeMultiPass(Library.Interface.ICompression signaturefile, Library.Interface.ICompression contentfile, long volumesize)
+        public bool FinalizeMultiPass(CompressionWrapper signaturefile, CompressionWrapper contentfile, long volumesize)
         {
             if (!m_finalized)
             {
@@ -1246,30 +1243,28 @@ namespace Duplicati.Library.Main.RSync
                         if (contentfile.Size + contentfile.FlushBufferSize + stringsize > volumesize)
                             return false; //The followup cannot fit in the volume, so we make a full new volume
 
-                        signaturefile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
-                        contentfile.WriteAllLines(DELETED_FILES, m_deletedfiles.ToArray());
+                        signaturefile.WritePathLines(DELETED_FILES, m_deletedfiles.ToArray());
+                        contentfile.WritePathLines(DELETED_FILES, m_deletedfiles.ToArray());
                         m_deletedfiles.Clear();
                     }
 
                     //We only write the USN if all files were processed
                     if (m_currentUSN != null)
-                        using (System.IO.Stream s = signaturefile.CreateFile(USN_VALUES))
+                        using (System.IO.Stream s = signaturefile.CreateFile(USN_VALUES, DateTime.Now))
                             m_currentUSN.Save(s);
 
                     //Only write this if all files were processed
                     if (m_checkedUnchangedFiles.Count > 0)
-                        signaturefile.WriteAllLines(UNMODIFIED_FILES, m_checkedUnchangedFiles.ToArray());
+                        signaturefile.WritePathLines(UNMODIFIED_FILES, m_checkedUnchangedFiles.ToArray());
 
                     if (m_unproccesed.Symlinks.Count > 0)
                     {
                         foreach(KeyValuePair<string, string> kvp in m_unproccesed.Symlinks)
                         {
-                            string target = FilenamesToPlatformIndependant(new string[] { kvp.Value })[0];
                             string source = Path.Combine(SYMLINK_ROOT, GetRelativeName(kvp.Key));
-                            byte[] targetBytes = Encoding.UTF8.GetBytes(target);
 
-                            contentfile.WriteAllBytes(source, targetBytes);
-                            signaturefile.WriteAllBytes(source, targetBytes);
+                            contentfile.WritePathString(source, kvp.Value);
+                            signaturefile.WritePathString(source, kvp.Value);
                         }
                         m_unproccesed.Symlinks.Clear();
                     }
@@ -1292,7 +1287,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="volumesize">The max size of this volume</param>
         /// <param name="remainingSize">The max remaining size of arhive space</param>
         /// <returns>False if there are still files to process, true if all files are processed</returns>
-        public bool MakeMultiPassDiff(Library.Interface.ICompression signaturefile, Library.Interface.ICompression contentfile, long volumesize)
+        public bool MakeMultiPassDiff(CompressionWrapper signaturefile, CompressionWrapper contentfile, long volumesize)
         {
             if (m_unproccesed == null)
                 throw new Exception(Strings.RSyncDir.MultipassUsageError);
@@ -1301,16 +1296,17 @@ namespace Duplicati.Library.Main.RSync
             long totalSize = 0;
 
             //Insert the marker file
-            contentfile.CreateFile(UTC_TIME_MARKER).Dispose();
-            signaturefile.CreateFile(UTC_TIME_MARKER).Dispose();
+            contentfile.CreateFile(UTC_TIME_MARKER, DateTime.Now).Dispose();
+            signaturefile.CreateFile(UTC_TIME_MARKER, DateTime.Now).Dispose();
 
             if (m_isfirstmultipass)
             {
                 //We write these files to the very first volume
                 if (m_deletedfolders.Count > 0)
                 {
-                    signaturefile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
-                    contentfile.WriteAllLines(DELETED_FOLDERS, m_deletedfolders.ToArray());
+                    string[] folders = m_deletedfolders.ToArray();
+                    signaturefile.WritePathLines(DELETED_FOLDERS, folders);
+                    contentfile.WritePathLines(DELETED_FOLDERS, folders);
                 }
 
                 if (m_newfolders.Count > 0)
@@ -1324,11 +1320,9 @@ namespace Duplicati.Library.Main.RSync
                         timestamps[i] = ((long)((m_newfolders[i].Value - Utility.Utility.EPOCH).TotalSeconds)).ToString();
                     }
 
-                    folders = FilenamesToPlatformIndependant(folders);
-
-                    signaturefile.WriteAllLines(ADDED_FOLDERS, folders);
+                    signaturefile.WritePathLines(ADDED_FOLDERS, folders);
                     signaturefile.WriteAllLines(ADDED_FOLDERS_TIMESTAMPS, timestamps);
-                    contentfile.WriteAllLines(ADDED_FOLDERS, folders);
+                    contentfile.WritePathLines(ADDED_FOLDERS, folders);
                     contentfile.WriteAllLines(ADDED_FOLDERS_TIMESTAMPS, timestamps);
                 }
 
@@ -1342,11 +1336,9 @@ namespace Duplicati.Library.Main.RSync
                         timestamps[i] = ((long)((m_updatedfolders[i].Value - Utility.Utility.EPOCH).TotalSeconds)).ToString();
                     }
 
-                    folders = FilenamesToPlatformIndependant(folders);
-
-                    signaturefile.WriteAllLines(UPDATED_FOLDERS, folders);
+                    signaturefile.WritePathLines(UPDATED_FOLDERS, folders);
                     signaturefile.WriteAllLines(UPDATED_FOLDERS_TIMESTAMPS, timestamps);
-                    contentfile.WriteAllLines(UPDATED_FOLDERS, folders);
+                    contentfile.WritePathLines(UPDATED_FOLDERS, folders);
                     contentfile.WriteAllLines(UPDATED_FOLDERS_TIMESTAMPS, timestamps);
                 }
 
@@ -1591,7 +1583,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="s">The full name of the file</param>
         /// <param name="signaturefile">The signature archive file</param>
         /// <returns>The signature stream if the file is new or modified, null if the file has not been modified</returns>
-        private System.IO.Stream ProccessDiff(System.IO.Stream fs, string s, Library.Interface.ICompression signaturefile)
+        private System.IO.Stream ProccessDiff(System.IO.Stream fs, string s, CompressionWrapper signaturefile)
         {
             string relpath = GetRelativeName(s);
 
@@ -1649,7 +1641,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="volumesize">The max size of the volume</param>
         /// <param name="lastWrite">The time the source file was last written</param>
         /// <returns>The current size of the content archive</returns>
-        private long AddFileToCompression(System.IO.Stream fs, string s, System.IO.Stream signature, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize, DateTime lastWrite)
+        private long AddFileToCompression(System.IO.Stream fs, string s, System.IO.Stream signature, CompressionWrapper contentfile, CompressionWrapper signaturefile, long volumesize, DateTime lastWrite)
         {
             fs.Position = 0;
             string relpath = GetRelativeName(s);
@@ -1716,7 +1708,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="signaturefile">The signature archive file</param>
         /// <param name="volumesize">The max allowed volumesize</param>
         /// <returns>The partial file entry if the volume size was exceeded. Returns null if the file was written entirely.</returns>
-        private PartialFileEntry WritePossiblePartial(PartialFileEntry entry, Library.Interface.ICompression contentfile, Library.Interface.ICompression signaturefile, long volumesize)
+        private PartialFileEntry WritePossiblePartial(PartialFileEntry entry, CompressionWrapper contentfile, CompressionWrapper signaturefile, long volumesize)
         {
             long startPos = entry.Stream.Position;
 
@@ -1770,7 +1762,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="contentfile">The content archive file</param>
         /// <param name="volumesize">The max allowed volumesize</param>
         /// <returns>The partial file entry if the volume size was exceeded. Returns null if the file was written entirely.</returns>
-        private PartialFileEntry WritePossiblePartialInternal(PartialFileEntry entry, Library.Interface.ICompression contentfile, long volumesize)
+        private PartialFileEntry WritePossiblePartialInternal(PartialFileEntry entry, CompressionWrapper contentfile, long volumesize)
         {
             //append chuncks of 1kb, checking on the total size after each write
             byte[] tmp = new byte[1024];
@@ -1796,11 +1788,11 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="destination">The destination to restore to</param>
         /// <param name="patches">The list of patches (content files) to process</param>
-        public void Restore(string[] destination, List<Library.Interface.ICompression> patches)
+        public void Restore(string[] destination, List<CompressionWrapper> patches)
         {
             if (patches != null)
             {
-                foreach (Library.Interface.ICompression s in patches)
+                foreach (CompressionWrapper s in patches)
                     Patch(destination, s);
 
                 FinalizeRestore();
@@ -1954,7 +1946,7 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="destination">The destination that contains the previous version of the data</param>
         /// <param name="patch">The content file that the destination is patched with</param>
-        public void Patch(string[] destination, Library.Interface.ICompression patch)
+        public void Patch(string[] destination, CompressionWrapper patch)
         {
             Snapshots.ISystemIO SystemIO = Utility.Utility.IsClientLinux ? (Snapshots.ISystemIO)new Snapshots.SystemIOLinux() : (Snapshots.ISystemIO)new Snapshots.SystemIOWindows();
 
@@ -1974,7 +1966,7 @@ namespace Duplicati.Library.Main.RSync
 
             //Delete all files that were removed
             if (patch.FileExists(DELETED_FILES))
-                foreach (string s in fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FILES)), false))
+                foreach (string s in fh.Filterlist(patch.ReadPathLines(DELETED_FILES), false))
                 {
                     if (SystemIO.FileExists(s))
                     {
@@ -2009,7 +2001,7 @@ namespace Duplicati.Library.Main.RSync
             {
                 if (m_folders_to_delete == null)
                     m_folders_to_delete = new List<string>();
-                List<string> deletedfolders = new List<string>(fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(DELETED_FOLDERS)), true));
+                List<string> deletedfolders = new List<string>(fh.Filterlist(patch.ReadPathLines(DELETED_FOLDERS), true));
                 //Make sure subfolders are deleted first
                 deletedfolders.Sort();
                 deletedfolders.Reverse();
@@ -2025,7 +2017,7 @@ namespace Duplicati.Library.Main.RSync
             //as non-empty folders will also be created when files are restored
             if (patch.FileExists(ADDED_FOLDERS))
             {
-                List<string> addedfolders = new List<string>(fh.Filterlist(FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS)), true));
+                List<string> addedfolders = new List<string>(fh.Filterlist(patch.ReadPathLines(ADDED_FOLDERS), true));
 
                 //Make sure topfolders are created first
                 addedfolders.Sort();
@@ -2051,17 +2043,19 @@ namespace Duplicati.Library.Main.RSync
             if (patch.FileExists(ADDED_FOLDERS_TIMESTAMPS))
             {
                 //These times are always utc
-                string[] folders = FilenamesFromPlatformIndependant(patch.ReadAllLines(ADDED_FOLDERS));
+                string[] folders = patch.ReadPathLines(ADDED_FOLDERS);
                 string[] timestamps = patch.ReadAllLines(ADDED_FOLDERS_TIMESTAMPS);
+                long l;
 
                 for (int i = 0; i < folders.Length; i++)
-                    m_folderTimestamps[RSyncDir.GetFullPathFromRelname(destination, folders[i])] = Utility.Utility.EPOCH.AddSeconds(long.Parse(timestamps[i]));
+                    if (long.TryParse(timestamps[i], out l))
+                        m_folderTimestamps[RSyncDir.GetFullPathFromRelname(destination, folders[i])] = Utility.Utility.EPOCH.AddSeconds(l);
             }
 
             if (patch.FileExists(UPDATED_FOLDERS) && patch.FileExists(UPDATED_FOLDERS_TIMESTAMPS))
             {
                 //These times are always utc
-                string[] folders = FilenamesFromPlatformIndependant(patch.ReadAllLines(UPDATED_FOLDERS));
+                string[] folders = patch.ReadPathLines(UPDATED_FOLDERS);
                 string[] timestamps = patch.ReadAllLines(UPDATED_FOLDERS_TIMESTAMPS);
                 long l;
 
@@ -2309,7 +2303,7 @@ namespace Duplicati.Library.Main.RSync
                 string symlinktarget = "";
                 try
                 {
-                    symlinktarget = FilenamesFromPlatformIndependant(new string[] { Encoding.UTF8.GetString(patch.ReadAllBytes(s)) })[0];
+                    symlinktarget = patch.ReadPathString(s);
                     bool isDir = symlinktarget[symlinktarget.Length - 1] == Path.DirectorySeparatorChar;
                     if (isDir)
                         symlinktarget = symlinktarget.Substring(0, symlinktarget.Length - 1);
@@ -2384,7 +2378,7 @@ namespace Duplicati.Library.Main.RSync
 
             if (m_patches != null)
             {
-                foreach (Library.Interface.ICompression arc in m_patches)
+                foreach (CompressionWrapper arc in m_patches)
                     try { arc.Dispose(); }
                     catch { }
                 m_patches = null;
@@ -2433,52 +2427,6 @@ namespace Duplicati.Library.Main.RSync
         }
 
         #endregion
-
-        /// <summary>
-        /// Converts all filenames to use / as the dir separator
-        /// </summary>
-        /// <param name="filenames">The list of filenames to modify</param>
-        /// <returns>A modified list of filenames</returns>
-        public static string[] FilenamesToPlatformIndependant(string[] filenames)
-        {
-            if (System.IO.Path.DirectorySeparatorChar != '/')
-                for (int i = 0; i < filenames.Length; i++)
-                    filenames[i] = filenames[i].Replace(System.IO.Path.DirectorySeparatorChar, '/');
-
-            return filenames;
-        }
-
-        /// <summary>
-        /// Converts a list of filenames with / as the dir separator to use the OS separator.
-        /// </summary>
-        /// <param name="filenames">The list of filenames to convert</param>
-        /// <param name="prefix">An optional prefix that is appended to the filenames</param>
-        /// <returns>A list of filenames that use the prefix and the OS dirseparator</returns>
-        public static string[] FilenamesFromPlatformIndependant(string[] filenames, string[] prefixes)
-        {
-            if (prefixes == null)
-                prefixes = new string[] { "" };
-
-            for (int i = 0; i < filenames.Length; i++)
-                if (System.IO.Path.DirectorySeparatorChar != '/')
-                    filenames[i] = GetFullPathFromRelname(prefixes, filenames[i].Replace('/', System.IO.Path.DirectorySeparatorChar));
-                else
-                    filenames[i] = GetFullPathFromRelname(prefixes, filenames[i]);
-
-            return filenames;
-        }
-
-
-        /// <summary>
-        /// Converts a list of filenames with / as the dir separator to use the OS separator.
-        /// </summary>
-        /// <param name="filenames">The list of filenames to convert</param>
-        /// <returns>A list of filenames that use the prefix and the OS dirseparator</returns>
-        public static string[] FilenamesFromPlatformIndependant(string[] filenames)
-        {
-            return FilenamesFromPlatformIndependant(filenames, null);
-        }
-
         /// <summary>
         /// Gets or sets a value that indicates if the file modification time should be used as an indicator for file modification
         /// </summary>
@@ -2515,9 +2463,9 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="patch">The signature volume to read</param>
         /// <returns>A list of file or folder names and their types</returns>
-        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(Library.Interface.ICompression patch)
+        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(CompressionWrapper patch)
         {
-            List<Library.Interface.ICompression> patches = new List<Library.Interface.ICompression>();
+            List<CompressionWrapper> patches = new List<CompressionWrapper>();
             patches.Add(patch);
             return ListPatchFiles(patches);
         }
@@ -2527,7 +2475,7 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         /// <param name="patchs">The signature volumes to read</param>
         /// <returns>A list of file or folder names and their types</returns>
-        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(List<Library.Interface.ICompression> patches)
+        public List<KeyValuePair<PatchFileType, string>> ListPatchFiles(List<CompressionWrapper> patches)
         {
             List<KeyValuePair<PatchFileType, string>> files = new List<KeyValuePair<PatchFileType, string>>();
 
@@ -2542,36 +2490,36 @@ namespace Duplicati.Library.Main.RSync
             string control_prefix = Utility.Utility.AppendDirSeparator(CONTROL_ROOT);
             Dictionary<string, bool> partials = new Dictionary<string, bool>();
 
-            foreach (Library.Interface.ICompression arch in patches)
+            foreach (CompressionWrapper arch in patches)
             {
                 if (arch.FileExists(DELETED_FILES))
-                    foreach (string s in FilenamesFromPlatformIndependant(arch.ReadAllLines(DELETED_FILES)))
+                    foreach (string s in arch.ReadPathLines(DELETED_FILES))
                         files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.DeletedFile, s));
 
                 foreach(KeyValuePair<PatchFileType, string> sigentry in signatures)
-                    foreach (string f in FilenamesFromPlatformIndependant(arch.ListFiles(sigentry.Value)))
+                    foreach (string f in arch.ListFiles(sigentry.Value))
                     {
                         if (partials.ContainsKey(f))
                             partials.Remove(f);
                         files.Add(new KeyValuePair<PatchFileType, string>(sigentry.Key, f.Substring(sigentry.Value.Length)));
                     }
 
-                foreach (string f in FilenamesFromPlatformIndependant(arch.ListFiles(control_prefix)))
+                foreach (string f in arch.ListFiles(control_prefix))
                     files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.ControlFile, f.Substring(control_prefix.Length)));
 
                 if (arch.FileExists(DELETED_FOLDERS))
-                    foreach (string s in FilenamesFromPlatformIndependant(arch.ReadAllLines(DELETED_FOLDERS)))
+                    foreach (string s in arch.ReadPathLines(DELETED_FOLDERS))
                         files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.DeletedFolder, s));
 
                 if (arch.FileExists(ADDED_FOLDERS))
-                    foreach (string s in FilenamesFromPlatformIndependant(arch.ReadAllLines(ADDED_FOLDERS)))
+                    foreach (string s in arch.ReadPathLines(ADDED_FOLDERS))
                         files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.AddedFolder, s));
 
                 if (arch.FileExists(INCOMPLETE_FILE))
                 {
                     PartialEntryRecord pre = new PartialEntryRecord(arch.ReadAllLines(INCOMPLETE_FILE));
 
-                    string filename = FilenamesFromPlatformIndependant(new string[] { pre.Filename })[0];
+                    string filename = CompressionWrapper.ToSystemPath(pre.Filename);
                     if (filename.StartsWith(content_prefix))
                     {
                         if (!partials.ContainsKey(filename.Substring(content_prefix.Length)))
@@ -2588,7 +2536,7 @@ namespace Duplicati.Library.Main.RSync
                 {
                     PartialEntryRecord pre = new PartialEntryRecord(arch.ReadAllLines(COMPLETED_FILE));
 
-                    string filename = FilenamesFromPlatformIndependant(new string[] { pre.Filename })[0];
+                    string filename = CompressionWrapper.ToSystemPath(pre.Filename);
                     if (filename.StartsWith(content_prefix))
                         partials[filename.Substring(content_prefix.Length)]= true;
                     else if (filename.StartsWith(delta_prefix))
@@ -2735,7 +2683,7 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="mfi">The manifest that the signature file derives from</param>
         /// <param name="fileToFind">The files to find</param>
         /// <param name="signature">The signature file</param>
-        internal static void ContainsFile(Manifestfile mfi, string[] filesToFind, Duplicati.Library.Interface.ICompression signature)
+        internal static void ContainsFile(Manifestfile mfi, string[] filesToFind, CompressionWrapper signature)
         {
             string[] prefixes = new string[] {
                 Utility.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
@@ -2744,7 +2692,7 @@ namespace Duplicati.Library.Main.RSync
             };
 
             foreach (string prefix in prefixes)
-                foreach (string f in FilenamesFromPlatformIndependant(signature.ListFiles(prefix)))
+                foreach (string f in signature.ListFiles(prefix))
                 {
                     string fname = f.Substring(prefix.Length);
                     for (int i = 0; i < filesToFind.Length; i++)

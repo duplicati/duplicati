@@ -42,68 +42,13 @@ namespace Duplicati.Library.Interface
         /// <param name="prefix">An optional prefix for limiting the files returned</param>
         /// <returns>All files in the archive, matching the prefix, if any</returns>
         string[] ListFiles(string prefix);
-        
-        /// <summary>
-        /// Returns all files and directories in the archive, matching the prefix, if any.
-        /// </summary>
-        /// <param name="prefix">An optional prefix for limiting the files and directories returned</param>
-        /// <returns>All files and directories in the archive, matching the prefix, if any</returns>
-        string[] ListEntries(string prefix);
-
-        /// <summary>
-        /// Returns all the bytes from a given file
-        /// </summary>
-        /// <param name="file">The file to read data from</param>
-        /// <returns>All bytes from the given file</returns>
-        byte[] ReadAllBytes(string file);
-        
-        /// <summary>
-        /// Returns all lines in the given file
-        /// </summary>
-        /// <param name="file">The file to read the data from</param>
-        /// <returns>All lines in the given file</returns>
-        string[] ReadAllLines(string file);
-        
+                
         /// <summary>
         /// Returns a stream with data from the given file
         /// </summary>
         /// <param name="file">The file to read the data from</param>
         /// <returns>A stream with data from the given file</returns>
         System.IO.Stream OpenRead(string file);
-
-        /// <summary>
-        /// Returns a stream with data from the given file
-        /// </summary>
-        /// <param name="file">The file to write the data to</param>
-        /// <returns>A stream with data from the given file</returns>
-        System.IO.Stream OpenWrite(string file);
-
-        /// <summary>
-        /// Writes data to a file
-        /// </summary>
-        /// <param name="file">The file to write to</param>
-        /// <param name="data">The data to write</param>
-        void WriteAllBytes(string file, byte[] data);
-        
-        /// <summary>
-        /// Writes the given lines to the files
-        /// </summary>
-        /// <param name="file">The file to write to</param>
-        /// <param name="data">The data to write</param>
-        void WriteAllLines(string file, string[] data);
-
-        /// <summary>
-        /// Removes a file from the archive
-        /// </summary>
-        /// <param name="file">The file to remove</param>
-        void DeleteFile(string file);
-        
-        /// <summary>
-        /// Creates a file in the archive
-        /// </summary>
-        /// <param name="file">The file to create</param>
-        /// <returns>A stream with the data to write into the file</returns>
-        System.IO.Stream CreateFile(string file);
 
         /// <summary>
         /// Creates a file in the archive

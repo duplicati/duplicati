@@ -437,6 +437,31 @@ namespace Duplicati.Library.Main
                         }
                     }
 
+                    bool compressionFound = false;
+                    foreach(string s in DynamicLoader.CompressionLoader.Keys)
+                        if (string.Equals(s, m_options.CompressionModule, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            compressionFound = true;
+                            break;
+                        }
+
+                    if (!compressionFound)
+                        throw new Exception(string.Format(Strings.Interface.CompressionModuleNotFoundError, m_options.CompressionModule, string.Join(", ", DynamicLoader.CompressionLoader.Keys)));
+
+                    if (!m_options.NoEncryption)
+                    {
+                        bool encryptionFound = false;
+                        foreach (string s in DynamicLoader.EncryptionLoader.Keys)
+                            if (string.Equals(s, m_options.EncryptionModule, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                encryptionFound = true;
+                                break;
+                            }
+
+                        if (!encryptionFound)
+                            throw new Exception(string.Format(Strings.Interface.EncryptionModuleNotFoundError, m_options.EncryptionModule, string.Join(", ", DynamicLoader.EncryptionLoader.Keys)));
+                    }
+
                     string fullCriteria1 = null;
                     string fullCriteria2 = null;
                     if (!full)
@@ -481,7 +506,7 @@ namespace Duplicati.Library.Main
 
                     using (Utility.TempFolder tempfolder = new Duplicati.Library.Utility.TempFolder())
                     {
-                        List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches = new List<KeyValuePair<ManifestEntry, Duplicati.Library.Interface.ICompression>>();
+                        List<KeyValuePair<ManifestEntry, CompressionWrapper>> patches = new List<KeyValuePair<ManifestEntry, CompressionWrapper>>();
                         if (!full)
                         {
                             m_incrementalFraction = INCREMENAL_COST;
@@ -608,8 +633,8 @@ namespace Duplicati.Library.Main
 
                                     CheckLiveControl();
 
-                                    using (Library.Interface.ICompression signaturearchive = DynamicLoader.CompressionLoader.GetModule(m_options.CompressionModule, signaturefile, m_options.RawOptions))
-                                    using (Library.Interface.ICompression contentarchive = DynamicLoader.CompressionLoader.GetModule(m_options.CompressionModule, contentfile, m_options.RawOptions))
+                                    using (CompressionWrapper signaturearchive = CompressionWrapper.GetModule(m_options.CompressionModule, signaturefile, m_options.RawOptions))
+                                    using (CompressionWrapper contentarchive = CompressionWrapper.GetModule(m_options.CompressionModule, contentfile, m_options.RawOptions))
                                     {
                                         //If we are all out, stop now, this may cause incomplete partial files
                                         if (m_options.MaxSize - totalsize < (contentarchive.FlushBufferSize + backend.FileSizeOverhead))
@@ -618,7 +643,7 @@ namespace Duplicati.Library.Main
                                         //Add signature files to archive
                                         foreach (string s in controlfiles)
                                             if (!string.IsNullOrEmpty(s))
-                                                using (System.IO.Stream cs = signaturearchive.CreateFile(System.IO.Path.Combine(RSync.RSyncDir.CONTROL_ROOT, System.IO.Path.GetFileName(s))))
+                                                using (System.IO.Stream cs = signaturearchive.CreateFile(System.IO.Path.Combine(RSync.RSyncDir.CONTROL_ROOT, System.IO.Path.GetFileName(s)), DateTime.Now))
                                                 using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
                                                     Utility.Utility.CopyStream(fs, cs);
 
@@ -1353,7 +1378,7 @@ namespace Duplicati.Library.Main
                                              }
 
                                              if (!hasFiles)
-                                                 using (Library.Interface.ICompression patch = DynamicLoader.CompressionLoader.GetModule(signatureVol.Compression, sigFile, m_options.RawOptions))
+                                                 using (CompressionWrapper patch = CompressionWrapper.GetModule(signatureVol.Compression, sigFile, m_options.RawOptions))
                                                  {
                                                      foreach(KeyValuePair<RSync.RSyncDir.PatchFileType, string> k in sync.ListPatchFiles(patch))
                                                          if (filter.ShouldInclude("", System.IO.Path.DirectorySeparatorChar.ToString() + k.Value))
@@ -1382,7 +1407,7 @@ namespace Duplicati.Library.Main
                                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
                                     
                                     using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
-                                    using (Library.Interface.ICompression patch = DynamicLoader.CompressionLoader.GetModule(contentVol.Compression, patchzip, m_options.RawOptions))
+                                    using (CompressionWrapper patch = CompressionWrapper.GetModule(contentVol.Compression, patchzip, m_options.RawOptions))
                                         sync.Patch(target, patch);
                                 }
                                 patchno++;
@@ -1459,8 +1484,8 @@ namespace Duplicati.Library.Main
 
                                 using (new Logging.Timer("Get " + be.Volumes[0].Key.Filename))
                                     backend.Get(be.Volumes[0].Key, mf, z, mf.SignatureHashes == null ? null : mf.SignatureHashes[0]);
-                                
-                                using(Library.Interface.ICompression fz = DynamicLoader.CompressionLoader.GetModule(be.Volumes[0].Key.Compression, z, m_options.RawOptions))
+
+                                using (CompressionWrapper fz = CompressionWrapper.GetModule(be.Volumes[0].Key.Compression, z, m_options.RawOptions))
                                 {
                                     bool any = false;
                                     foreach (string f in fz.ListFiles(prefix))
@@ -1871,7 +1896,7 @@ namespace Duplicati.Library.Main
                 entries.Add(bestFit);
                 entries.AddRange(bestFit.Incrementals);
 
-                List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches = FindPatches(backend, entries, basefolder, false, rs);
+                List<KeyValuePair<ManifestEntry, CompressionWrapper>> patches = FindPatches(backend, entries, basefolder, false, rs);
 
                 using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { basefolder }, rs, backend.Metadata, filter, patches))
                     res = dir.UnmatchedFiles();
@@ -1977,9 +2002,9 @@ namespace Duplicati.Library.Main
         /// <param name="tempfolder">The tempfolder set for this operation</param>
         /// <param name="allowHashFail">True to ignore files with failed hash signature</param>
         /// <returns>A list of file archives</returns>
-        private List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> FindPatches(BackendWrapper backend, List<ManifestEntry> entries, string tempfolder, bool allowHashFail, CommunicationStatistics stat)
+        private List<KeyValuePair<ManifestEntry, CompressionWrapper>> FindPatches(BackendWrapper backend, List<ManifestEntry> entries, string tempfolder, bool allowHashFail, CommunicationStatistics stat)
         {
-            List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>> patches = new List<KeyValuePair<ManifestEntry, Library.Interface.ICompression>>();
+            List<KeyValuePair<ManifestEntry, CompressionWrapper>> patches = new List<KeyValuePair<ManifestEntry, CompressionWrapper>>();
 
             using (new Logging.Timer("Reading incremental data"))
             {
@@ -2056,7 +2081,7 @@ namespace Duplicati.Library.Main
                                 throw;
                         }
 
-                        patches.Add(new KeyValuePair<ManifestEntry,Duplicati.Library.Interface.ICompression>(be, DynamicLoader.CompressionLoader.GetModule(bes.Key.Compression, filename, m_options.RawOptions)));
+                        patches.Add(new KeyValuePair<ManifestEntry, CompressionWrapper>(be, CompressionWrapper.GetModule(bes.Key.Compression, filename, m_options.RawOptions)));
                     }
                 }
             }
@@ -2096,8 +2121,8 @@ namespace Duplicati.Library.Main
 
                 using (Utility.TempFolder folder = new Duplicati.Library.Utility.TempFolder())
                 {
-                    List<Library.Interface.ICompression> patches = new List<Duplicati.Library.Interface.ICompression>();
-                    foreach (KeyValuePair<ManifestEntry, Library.Interface.ICompression> entry in FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder, false, stats))
+                    List<CompressionWrapper> patches = new List<CompressionWrapper>();
+                    foreach (KeyValuePair<ManifestEntry, CompressionWrapper> entry in FindPatches(backend, new List<ManifestEntry>(new ManifestEntry[] { bestFit }), folder, false, stats))
                         patches.Add(entry.Value);
 
                     using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { folder }, stats, backend.Metadata, null))
@@ -2295,7 +2320,7 @@ namespace Duplicati.Library.Main
 
                             any_unmatched = false;
 
-                            RSync.RSyncDir.ContainsFile(mfi, filesToFind, DynamicLoader.CompressionLoader.GetModule(e.Key.Compression, tf, m_options.RawOptions));
+                            RSync.RSyncDir.ContainsFile(mfi, filesToFind, CompressionWrapper.GetModule(e.Key.Compression, tf, m_options.RawOptions));
 
                             for (int i = 0; i < filesToFind.Length; i++)
                             {
