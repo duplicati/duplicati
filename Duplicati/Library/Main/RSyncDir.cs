@@ -2513,7 +2513,7 @@ namespace Duplicati.Library.Main.RSync
                     files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.ControlFile, f.Substring(control_prefix.Length)));
 
                 foreach (string f in arch.ListFiles(symlink_prefix))
-                    files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.Symlink, f.Substring(control_prefix.Length)));
+                    files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.Symlink, f.Substring(symlink_prefix.Length)));
 
                 if (arch.FileExists(DELETED_FOLDERS))
                     foreach (string s in arch.ReadPathLines(DELETED_FOLDERS))
