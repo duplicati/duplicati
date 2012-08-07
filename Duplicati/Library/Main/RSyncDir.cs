@@ -77,7 +77,11 @@ namespace Duplicati.Library.Main.RSync
             /// Indicates that the entry is a file that is either added or updated.
             /// This state is only possible in Duplicati 1.0 archives.
             /// </summary>
-            AddedOrUpdatedFile
+            AddedOrUpdatedFile,
+            /// <summary>
+            /// Indicates that the file is a symbolic link
+            /// </summary>
+            Symlink
         };
 
         #region Helper classes
@@ -2488,6 +2492,7 @@ namespace Duplicati.Library.Main.RSync
             string content_prefix = Utility.Utility.AppendDirSeparator(CONTENT_ROOT);
             string delta_prefix = Utility.Utility.AppendDirSeparator(DELTA_ROOT);
             string control_prefix = Utility.Utility.AppendDirSeparator(CONTROL_ROOT);
+            string symlink_prefix = Utility.Utility.AppendDirSeparator(SYMLINK_ROOT);
             Dictionary<string, bool> partials = new Dictionary<string, bool>();
 
             foreach (CompressionWrapper arch in patches)
@@ -2506,6 +2511,9 @@ namespace Duplicati.Library.Main.RSync
 
                 foreach (string f in arch.ListFiles(control_prefix))
                     files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.ControlFile, f.Substring(control_prefix.Length)));
+
+                foreach (string f in arch.ListFiles(symlink_prefix))
+                    files.Add(new KeyValuePair<PatchFileType, string>(PatchFileType.Symlink, f.Substring(control_prefix.Length)));
 
                 if (arch.FileExists(DELETED_FOLDERS))
                     foreach (string s in arch.ReadPathLines(DELETED_FOLDERS))
@@ -2541,7 +2549,6 @@ namespace Duplicati.Library.Main.RSync
                         partials[filename.Substring(content_prefix.Length)]= true;
                     else if (filename.StartsWith(delta_prefix))
                         partials[filename.Substring(delta_prefix.Length)] = true;
-
                 }
             }
 

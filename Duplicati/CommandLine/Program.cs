@@ -240,6 +240,12 @@ namespace Duplicati.CommandLine
                     foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
                         if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.ControlFile)
                             Console.WriteLine(x.Value);
+
+                    Console.WriteLine();
+                    Console.WriteLine("* " + Strings.Program.SymlinksHeader + ":");
+                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
+                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.Symlink)
+                            Console.WriteLine(x.Value);
                 }
                 else if (source.Trim().ToLower() == "collection-status")
                 {

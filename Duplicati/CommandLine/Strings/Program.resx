@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AddedFoldersHeader" xml:space="preserve">
     <value>Added folders</value>
@@ -285,6 +285,9 @@ Usage:</value>
   </data>
   <data name="SupportedOptionsHeader" xml:space="preserve">
     <value>Supported options:</value>
+  </data>
+  <data name="SymlinksHeader" xml:space="preserve">
+    <value>Symbolic links</value>
   </data>
   <data name="TimeParseError" xml:space="preserve">
     <value>Unable to parse "{0}" into a time offset: {1}</value>
