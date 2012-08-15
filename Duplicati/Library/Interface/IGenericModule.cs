@@ -28,6 +28,11 @@ namespace Duplicati.Library.Interface
     /// An instance of a module is loaded prior to a backup or restore operation,
     /// and can perform tasks relating to the general execution environment, as
     /// well as modify the options used in Duplicati.
+    /// 
+    /// The implementation must have a default constructor.
+    /// If the module is actually loaded, the Configure method is called.
+    /// All instances where the Configure method is called will be disposed,
+    /// if they implement the IDisposable interface as well.
     /// </summary>
     public interface IGenericModule
     {

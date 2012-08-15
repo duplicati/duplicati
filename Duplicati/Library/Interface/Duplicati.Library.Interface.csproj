@@ -97,6 +97,7 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="IBackendInteraction.cs" />
+    <Compile Include="IGenericCallbackModule.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Strings\CommandLineArgument.resx">
