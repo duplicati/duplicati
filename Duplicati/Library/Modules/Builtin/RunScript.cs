@@ -16,16 +16,19 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Modules.Builtin
 {
     public class RunScript : Duplicati.Library.Interface.IGenericCallbackModule
     {
-        private const string STARTUP_OPTION = "run-script-on-start";
-        private const string FINISH_OPTION = "run-script-on-finish";
-        private const string REQUIRED_OPTION = "run-script-on-start-required";
+        private const string STARTUP_OPTION = "run-script-before";
+        private const string FINISH_OPTION = "run-script-after";
+        private const string REQUIRED_OPTION = "run-script-before-required";
         private const string TIMEOUT_OPTION = "run-script-timeout";
 
         private const string DEFAULT_TIMEOUT = "60s";
@@ -56,8 +59,8 @@ namespace Duplicati.Library.Modules.Builtin
         }
 
         public string Key { get { return "runscript"; } }
-        public string DisplayName { get { return "Run script"; } }
-        public string Description { get { return "Executes a script before starting an operation, and again on completion"; } }
+        public string DisplayName { get { return Strings.RunScript.DisplayName; } }
+        public string Description { get { return Strings.RunScript.Description; } }
         public bool LoadAsDefault  { get { return true; } }
 
         public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands
@@ -65,10 +68,10 @@ namespace Duplicati.Library.Modules.Builtin
             get
             {
                 return new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
-                    new Duplicati.Library.Interface.CommandLineArgument(STARTUP_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, "", ""),
-                    new Duplicati.Library.Interface.CommandLineArgument(FINISH_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, "", ""),
-                    new Duplicati.Library.Interface.CommandLineArgument(REQUIRED_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, "", "", "false"),
-                    new Duplicati.Library.Interface.CommandLineArgument(TIMEOUT_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, "", "", DEFAULT_TIMEOUT),
+                    new Duplicati.Library.Interface.CommandLineArgument(STARTUP_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.StartupoptionShort, Strings.RunScript.StartupoptionLong),
+                    new Duplicati.Library.Interface.CommandLineArgument(FINISH_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
+                    new Duplicati.Library.Interface.CommandLineArgument(REQUIRED_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
+                    new Duplicati.Library.Interface.CommandLineArgument(TIMEOUT_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
                 });
             }
         }
@@ -84,75 +87,88 @@ namespace Duplicati.Library.Modules.Builtin
 
 
             if (!string.IsNullOrEmpty(m_requiredScript))
-                Execute(m_requiredScript, "START", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, true, m_options, null);
+                Execute(m_requiredScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, true, m_options, null);
 
             if (!string.IsNullOrEmpty(m_startScript))
-                Execute(m_startScript, "START", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, null);
+                Execute(m_startScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, null);
         }
 
         public void OnFinish (object result)
         {
-            string r;
-            if (result == null)
-                r = "null?";
-            else if (result is System.Collections.IEnumerable) {
-                StringBuilder sb = new StringBuilder();
-                System.Collections.IEnumerable ie = (System.Collections.IEnumerable)result;
-                System.Collections.IEnumerator ien = ie.GetEnumerator();
-                ien.Reset();
+            if (string.IsNullOrEmpty(m_finishScript))
+                return;
 
-                while (ien.MoveNext()) {
-                    object c = ien.Current;
-                    if (c == null)
-                        continue;
+            using (TempFile tmpfile = new TempFile())
+            {
+                using (StreamWriter sw = new StreamWriter(tmpfile))
+                {
+                    if (result == null)
+                    {
+                        sw.WriteLine("null?");
+                    }
+                    else if (result is System.Collections.IEnumerable)
+                    {
+                        System.Collections.IEnumerable ie = (System.Collections.IEnumerable)result;
+                        System.Collections.IEnumerator ien = ie.GetEnumerator();
+                        ien.Reset();
 
-                    if (c.GetType().IsGenericType && !c.GetType().IsGenericTypeDefinition && c.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>)) {
-                        object key = c.GetType().GetProperty("Key").GetValue(c, null);
-                        object value = c.GetType().GetProperty("Value").GetValue(c, null);
-                        sb.AppendFormat("{0}: {1}{2}", key, value, Environment.NewLine);
-                    } else
-                        sb.AppendLine(c.ToString());
+                        while (ien.MoveNext())
+                        {
+                            object c = ien.Current;
+                            if (c == null)
+                                continue;
+
+                            if (c.GetType().IsGenericType && !c.GetType().IsGenericTypeDefinition && c.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                            {
+                                object key = c.GetType().GetProperty("Key").GetValue(c, null);
+                                object value = c.GetType().GetProperty("Value").GetValue(c, null);
+                                sw.WriteLine("{0}: {1}", key, value);
+                            }
+                            else
+                                sw.WriteLine(c.ToString());
+                        }
+                    }
+                    else if (result.GetType().IsArray)
+                    {
+                        Array a = (Array)result;
+
+                        for (int i = a.GetLowerBound(0); i <= a.GetUpperBound(0); i++)
+                        {
+                            object c = a.GetValue(i);
+
+                            if (c == null)
+                                continue;
+
+                            if (c.GetType().IsGenericType && !c.GetType().IsGenericTypeDefinition && c.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                            {
+                                object key = c.GetType().GetProperty("Key").GetValue(c, null);
+                                object value = c.GetType().GetProperty("Value").GetValue(c, null);
+                                sw.WriteLine("{0}: {1}", key, value);
+                            }
+                            else
+                                sw.WriteLine(c.ToString());
+                        }
+                    }
+                    else if (result is Exception)
+                    {
+                        //No localization, must be parseable by script
+                        Exception e = (Exception)result;
+                        sw.WriteLine("Failed: {0}" ,e.Message);
+                        sw.WriteLine("Details: {0}", e.ToString());
+                    }
+                    else
+                    {
+                        sw.WriteLine(result.ToString());
+                    }
                 }
 
-                r = sb.ToString();
-            } else if (result.GetType().IsArray) {
-                StringBuilder sb = new StringBuilder();
-                Array a = (Array)result;
-
-                for (int i = a.GetLowerBound(0); i <= a.GetUpperBound(0); i++) {
-                    object c = a.GetValue(i);
-
-                    if (c == null)
-                        continue;
-
-                    if (c.GetType().IsGenericType && !c.GetType().IsGenericTypeDefinition && c.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>)) {
-                        object key = c.GetType().GetProperty("Key").GetValue(c, null);
-                        object value = c.GetType().GetProperty("Value").GetValue(c, null);
-                        sb.AppendFormat("{0}: {1}{2}", key, value, Environment.NewLine);
-                    } else
-                        sb.AppendLine(c.ToString());
-                }
-
-                r = sb.ToString();
+                Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile);
             }
-            else if (result is Exception) 
-            {
-                Exception e = (Exception)result;
-                r = string.Format("Failed: {0}{1}Details: {2}", e.Message, Environment.NewLine, e.ToString());
-            }
-            else 
-            {
-                r = result.ToString(); 
-            }
-
-            if (!string.IsNullOrEmpty(m_finishScript))
-                Execute(m_finishScript, "FINISH", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, r);
         }
         #endregion
 
-        private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, IDictionary<string, string> options, string stdInData)
+        private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, IDictionary<string, string> options, string datafile)
         {
-            bool catchError = true;
             try
             {
                 System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
@@ -170,7 +186,6 @@ namespace Duplicati.Library.Modules.Builtin
                 psi.UseShellExecute = false;
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
-                psi.RedirectStandardInput = true;
 
                 foreach(KeyValuePair<string, string> kv in options)
                     psi.EnvironmentVariables["DUPLICATI__" + kv.Key.Replace('-', '_')] = kv.Value;
@@ -184,13 +199,12 @@ namespace Duplicati.Library.Modules.Builtin
                 string stderr = null;
                 string stdout = null;
 
+                if (!string.IsNullOrEmpty(datafile))
+                    psi.EnvironmentVariables["DUPLICATI__RESULTFILE"] = datafile;
+
                 using(System.Diagnostics.Process p = System.Diagnostics.Process.Start(psi))
                 {
                     ConsoleDataHandler cs = new ConsoleDataHandler(p);
-
-                    if (!string.IsNullOrEmpty(stdInData))
-                        using(System.IO.StreamWriter sw = p.StandardInput)
-                            sw.Write(stdInData);
 
                     if (timeout <= 0)
                         p.WaitForExit();
@@ -200,15 +214,9 @@ namespace Duplicati.Library.Modules.Builtin
                     if (requiredScript)
                     {
                         if (!p.HasExited)
-                        {
-                            catchError = false;
-                            throw new Exception(string.Format("Execution of the script \"{0}\" timed out", scriptpath));
-                        }
+                            throw new Exception(string.Format(Strings.RunScript.ScriptTimeoutError, scriptpath));
                         else if (p.ExitCode != 0)
-                        {
-                            catchError = false;
-                            throw new Exception(string.Format("The script \"{0}\" returned with exit code {1}", scriptpath, p.ExitCode));
-                        }
+                            throw new Exception(string.Format(Strings.RunScript.InvalidExitCodeError, scriptpath, p.ExitCode));
                     }
 
                     if (p.HasExited)
@@ -216,23 +224,23 @@ namespace Duplicati.Library.Modules.Builtin
                         stderr = cs.StandardError;
                         stdout = cs.StandardOutput;
                         if (p.ExitCode != 0)
-                            Logging.Log.WriteMessage(string.Format("The script \"{0}\" returned with exit code {1}", scriptpath, p.ExitCode), Duplicati.Library.Logging.LogMessageType.Warning);
+                            Logging.Log.WriteMessage(string.Format(Strings.RunScript.InvalidExitCodeError, scriptpath, p.ExitCode), Duplicati.Library.Logging.LogMessageType.Warning);
                     }
                     else
                     {
-                        Logging.Log.WriteMessage(string.Format("Execution of the script \"{0}\" timed out", scriptpath), Duplicati.Library.Logging.LogMessageType.Warning);
+                        Logging.Log.WriteMessage(string.Format(Strings.RunScript.ScriptTimeoutError, scriptpath), Duplicati.Library.Logging.LogMessageType.Warning);
                     }
                 }
 
                 if (!string.IsNullOrEmpty(stderr))
-                    Logging.Log.WriteMessage(string.Format("The script \"{0}\" reported error messages: {1}", scriptpath, stderr), Duplicati.Library.Logging.LogMessageType.Warning);
+                    Logging.Log.WriteMessage(string.Format(Strings.RunScript.StdErrorReport, scriptpath, stderr), Duplicati.Library.Logging.LogMessageType.Warning);
 
                 //We only allow setting parameters on startup
-                if (eventname == "START")
+                if (eventname == "BEFORE" && stdout != null)
                 {
-                    foreach(string _line in stdout.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach(string rawline in stdout.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                     {
-                        string line = _line.Trim();
+                        string line = rawline.Trim();
                         if (!line.StartsWith("--"))
                             continue; //Ingore anything that does not start with --
 
@@ -283,8 +291,8 @@ namespace Duplicati.Library.Modules.Builtin
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteMessage(string.Format("Error while executing script \"{0}\": {1}", scriptpath, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
-                if (!catchError || parseExitCodes)
+                Logging.Log.WriteMessage(string.Format(Strings.RunScript.ScriptExecuteError, scriptpath, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                if (requiredScript)
                     throw;
             }
         }
@@ -302,18 +310,18 @@ namespace Duplicati.Library.Modules.Builtin
 
             private readonly StringBuilder m_standardOutput = new StringBuilder();
             private readonly StringBuilder m_standardError = new StringBuilder();
-            private object m_lock = new object();
+            private readonly object m_lock = new object();
 
             private void HandleOutputDataReceived (object sender, System.Diagnostics.DataReceivedEventArgs e)
             {
                 lock(m_lock)
-                    m_standardOutput.Append(e.Data);
+                    m_standardOutput.AppendLine(e.Data);
             }
 
             private void HandleErrorDataReceived (object sender, System.Diagnostics.DataReceivedEventArgs e)
             {
                 lock(m_lock)
-                    m_standardError.Append(e.Data);
+                    m_standardError.AppendLine(e.Data);
             }
 
             public string StandardOutput
@@ -321,7 +329,7 @@ namespace Duplicati.Library.Modules.Builtin
                 get
                 {
                     lock(m_lock)
-                        return m_standardOutput.ToString();
+                        return m_standardOutput.ToString().Trim();
                 }
             }
 
@@ -330,7 +338,7 @@ namespace Duplicati.Library.Modules.Builtin
                 get
                 {
                     lock(m_lock)
-                        return m_standardError.ToString();
+                        return m_standardError.ToString().Trim();
                 }
             }
         }
