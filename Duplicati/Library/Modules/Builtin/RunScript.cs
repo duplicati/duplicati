@@ -171,16 +171,7 @@ namespace Duplicati.Library.Modules.Builtin
         {
             try
             {
-                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-                int space_ix = scriptpath.IndexOf(' ');
-                if (space_ix > 0)
-                {
-                    psi.FileName = scriptpath.Substring(0, space_ix);
-                    psi.Arguments = scriptpath.Substring(space_ix + 1);
-                }
-                else
-                    psi.FileName = scriptpath;
-
+                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo(scriptpath);
                 psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
                 psi.CreateNoWindow = true;
                 psi.UseShellExecute = false;
