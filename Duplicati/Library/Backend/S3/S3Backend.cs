@@ -40,9 +40,9 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("Dunkel", "dcs.dunkel.de"),
         };
 
+        //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
         public static readonly KeyValuePair<string, string>[] KNOWN_S3_LOCATIONS = new KeyValuePair<string, string>[] {
             new KeyValuePair<string, string>("(default)", ""),
-            new KeyValuePair<string, string>("Europe West 1", "eu-west-1"),
             new KeyValuePair<string, string>("Europe (EU)", "EU"),
             new KeyValuePair<string, string>("US East", "us-east-1"),
             new KeyValuePair<string, string>("US West 1", "us-west-1"),
@@ -51,7 +51,6 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("AP Northeast", "ap-northeast-1"),
             new KeyValuePair<string, string>("SA Sao Paulo", "sa-east-1"),
         };
-        
         private string m_bucket;
         private string m_prefix;
 
