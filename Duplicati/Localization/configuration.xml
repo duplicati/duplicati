@@ -29,6 +29,7 @@
 		<assembly name="Duplicati.Library.Backend.S3" folder="Library\Backend\S3" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.WEBDAV" folder="Library\Backend\WEBDAV" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.CloudFiles" folder="Library\Backend\CloudFiles" namespace="Duplicati.Library.Backend" />
+		<assembly name="Duplicati.Library.Backend.SSHv2" folder="Library\Backend\SSHv2" namespace="Duplicati.Library.Backend" />
 		
 		<assembly name="Duplicati.Winforms.Controls" folder="Winforms\Controls" namespace="Duplicati.Winforms.Controls" />
 		
@@ -41,7 +42,6 @@
 
 	<!-- We need these without a keyfile, because they depend on unsigned dll's -->
 	<configuration name="SSH">
-		<assembly name="Duplicati.Library.Backend.SSH" folder="Library\Backend\SSH" namespace="Duplicati.Library.Backend" />
 		<assembly name="Duplicati.Library.Backend.TahoeLAFS" folder="Library\Backend\TahoeLAFS" namespace="Duplicati.Library.Backend" />		
 		
 		<versionassembly>..\GUI\bin\Release\Duplicati.exe</versionassembly>
