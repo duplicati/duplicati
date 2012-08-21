@@ -1,0 +1,203 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Description" xml:space="preserve">
+    <value>This module can send email after an operation completes</value>
+  </data>
+  <data name="Displayname" xml:space="preserve">
+    <value>Send mail</value>
+  </data>
+  <data name="FailedToLookupMXServer" xml:space="preserve">
+    <value>Unable to find the destination mail server through MX lookup, please use the option {0} to specify what smtp server to use.</value>
+  </data>
+  <data name="OptionBodyLong" xml:space="preserve">
+    <value>This value can be a filename. If a the file exists, the file contents will be used as the message body.
+
+In the message body, certain tokens are replaced:
+%OPERATIONNAME% - The name of the operation, normally "Backup"
+%REMOTEURL% - Remote server url
+%LOCALPATH% - The path to the local files or folders involved in the operation (if any)
+
+All commandline options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed.</value>
+  </data>
+  <data name="OptionBodyShort" xml:space="preserve">
+    <value>The message body</value>
+  </data>
+  <data name="OptionPasswordLong" xml:space="preserve">
+    <value>The password used to authenticate with the SMTP server if required.</value>
+  </data>
+  <data name="OptionPasswordShort" xml:space="preserve">
+    <value>SMTP Password</value>
+  </data>
+  <data name="OptionRecipientLong" xml:space="preserve">
+    <value>This setting is required if mail should be sent, all other settings have default values. You can supply multiple email adresses seperated with commas, and you can use the normal adress format as specifed by RFC2822 section 3.4.
+Example with 3 recipients: 
+
+Peter Sample &lt;peter@example.com&gt;, John Sample &lt;john@example.com&gt;, admin@example.com</value>
+  </data>
+  <data name="OptionRecipientShort" xml:space="preserve">
+    <value>Email recipient(s)</value>
+  </data>
+  <data name="OptionSendallLong" xml:space="preserve">
+    <value>By default, mail will only be sent after a Backup operation. Use this option to send mail for all operations.</value>
+  </data>
+  <data name="OptionSendallShort" xml:space="preserve">
+    <value>Send email for all operations</value>
+  </data>
+  <data name="OptionSenderLong" xml:space="preserve">
+    <value>Adress of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:
+
+sender
+sender@example.com
+Mail Sender &lt;sender&gt;
+Mail Sender &lt;sender@example.com&gt;</value>
+  </data>
+  <data name="OptionSenderShort" xml:space="preserve">
+    <value>Email sender</value>
+  </data>
+  <data name="OptionSendlevelLong" xml:space="preserve">
+    <value>If this option is set to {0} a message will be sent after each backup. A setting of {1} will only send messages if the backup produced a warning. A setting of {2} will only send messages if the backup failed.</value>
+  </data>
+  <data name="OptionSendlevelShort" xml:space="preserve">
+    <value>The messages to send</value>
+  </data>
+  <data name="OptionServerLong" xml:space="preserve">
+    <value>A url for the SMTP server, e.g. smtp://example.com:25. If no server is supplied, a DNS lookup is performed to find the first recipient's MX record. A random server from the top priority servers is chosen and used as the SMTP server.
+
+To enable TLS, use the format smtptls://example.com or tls://example.com. If no port is specified, port 25 is used for non-ssl, and 587 for SSL connections. Note that only TLS/STARTTLS is supported and not SMTP over SSL.</value>
+  </data>
+  <data name="OptionServerShort" xml:space="preserve">
+    <value>SMTP Url</value>
+  </data>
+  <data name="OptionSubjectLong" xml:space="preserve">
+    <value>This setting supplies the email subject. Values are replaced as described in the description for --{0}.</value>
+  </data>
+  <data name="OptionSubjectShort" xml:space="preserve">
+    <value>The email subject</value>
+  </data>
+  <data name="OptionUsernameLong" xml:space="preserve">
+    <value>The username used to authenticate with the SMTP server if required.</value>
+  </data>
+  <data name="OptionUsernameShort" xml:space="preserve">
+    <value>SMTP Username</value>
+  </data>
+  <data name="SendMailFailedError" xml:space="preserve">
+    <value>Failed to send email: {0}</value>
+  </data>
+</root>

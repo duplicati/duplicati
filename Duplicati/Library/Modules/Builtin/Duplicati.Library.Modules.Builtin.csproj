@@ -55,14 +55,19 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DnsLib">
+      <HintPath>..\..\..\..\thirdparty\DnsLite\DnsLib.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Net" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConsolePasswordInput.cs" />
     <Compile Include="HttpOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SendMail.cs" />
     <Compile Include="Strings\ConsolePasswordInput.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -78,6 +83,11 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>RunScript.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\SendMail.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SendMail.resx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +123,10 @@
     <EmbeddedResource Include="Strings\RunScript.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>RunScript.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\SendMail.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SendMail.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
