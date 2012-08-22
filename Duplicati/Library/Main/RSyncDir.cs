@@ -1364,11 +1364,12 @@ namespace Duplicati.Library.Main.RSync
                 m_lastPartialFile = WritePossiblePartial(m_lastPartialFile, contentfile, signaturefile, volumesize);
             }
 
-            if (m_lastPartialFile != null)
-                return false;
 
             while (m_unproccesed.Files.Count > 0)
             {
+                if (m_lastPartialFile != null)
+                    return false;
+
                 if (totalSize >= volumesize)
                     break;
 
@@ -1574,7 +1575,7 @@ namespace Duplicati.Library.Main.RSync
                 }
             }
 
-            if (m_unproccesed.Files.Count == 0)
+            if (m_unproccesed.Files.Count == 0 && m_lastPartialFile != null)
                 return FinalizeMultiPass(signaturefile, contentfile, volumesize);
             else
                 return false;
