@@ -1561,7 +1561,7 @@ namespace Duplicati.Library.Main.RSync
                 }
             }
 
-            if (m_unproccesed.Files.Count == 0 && m_lastPartialFile != null)
+            if (m_unproccesed.Files.Count == 0 && m_lastPartialFile == null)
                 return FinalizeMultiPass(signaturefile, contentfile, volumesize);
             else
                 return false;
