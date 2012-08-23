@@ -1303,6 +1303,7 @@ namespace Duplicati.Library.Main.RSync
             contentfile.CreateFile(UTC_TIME_MARKER, DateTime.Now).Dispose();
             signaturefile.CreateFile(UTC_TIME_MARKER, DateTime.Now).Dispose();
 
+            //In the first volume we insert some lists with data on updated and deleted folders
             if (m_isfirstmultipass)
             {
                 //We write these files to the very first volume
@@ -1352,6 +1353,8 @@ namespace Duplicati.Library.Main.RSync
             //Last update was a looong time ago
             DateTime nextProgressEvent = DateTime.Now.AddYears(-1);
 
+            //If the previous volume had a file that was too large to fit in the volume,
+            // we resume that file here
             if (m_lastPartialFile != null)
             {
                 if (ProgressEvent != null)
@@ -1364,12 +1367,14 @@ namespace Duplicati.Library.Main.RSync
                 m_lastPartialFile = WritePossiblePartial(m_lastPartialFile, contentfile, signaturefile, volumesize);
             }
 
-
+            //This is the main file processing loop, that takes a file at a time
             while (m_unproccesed.Files.Count > 0)
             {
+                //If we have a file that is not complete, we do not start a new file
                 if (m_lastPartialFile != null)
                     return false;
 
+                //If we have filled a volume, stop now
                 if (totalSize >= volumesize)
                     break;
 
@@ -1575,6 +1580,7 @@ namespace Duplicati.Library.Main.RSync
                 }
             }
 
+            //Return true if there are no more data, false otherwise
             if (m_unproccesed.Files.Count == 0 && m_lastPartialFile == null)
                 return FinalizeMultiPass(signaturefile, contentfile, volumesize);
             else
