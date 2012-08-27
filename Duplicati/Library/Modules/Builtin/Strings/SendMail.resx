@@ -172,7 +172,7 @@ Mail Sender &lt;sender@example.com&gt;</value>
     <value>Email sender</value>
   </data>
   <data name="OptionSendlevelLong" xml:space="preserve">
-    <value>If this option is set to {0} a message will be sent after each backup. A setting of {1} will only send messages if the backup produced a warning. A setting of {2} will only send messages if the backup failed.</value>
+    <value>You can specify one of "{0}", "{1}", "{2}". You can supply multiple options with a comma seperator, e.g. "{0},{1}". The special value "{3}" is a shorthand for "{0},{1},{2}" and will cause all backup operations to send an email.</value>
   </data>
   <data name="OptionSendlevelShort" xml:space="preserve">
     <value>The messages to send</value>

@@ -396,6 +396,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, string.Format(Strings.Options.SymlinkpolicyLong, "store", "ignore", "follow"), "store", null, Enum.GetNames(typeof(SymlinkStrategy))),
                     new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, string.Format(Strings.Options.ExcludefilesattributesLong, string.Join(", ", Enum.GetNames(typeof(System.IO.FileAttributes))))),
+                    new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)),
                 });
             }
         }
@@ -541,15 +542,24 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("signature-cache-path") || string.IsNullOrEmpty(m_options["signature-cache-path"]))
+                string tmp;
+                m_options.TryGetValue("signature-cache-path", out tmp);
+                if (string.IsNullOrEmpty(tmp))
                     return null;
                 else
-                    return m_options["signature-cache-path"];
+                    return tmp;
             }
             set
             {
-                if (m_options.ContainsKey("signature-cache-path"))
-                    m_options.Remove("signature-cache-path");
+                if (string.IsNullOrEmpty(value))
+                {
+                    if (m_options.ContainsKey("signature-cache-path"))
+                        m_options.Remove("signature-cache-path");
+                }
+                else
+                {
+                    m_options["signature-cache-path"] = value; 
+                }
             }
         }
 
@@ -1257,6 +1267,25 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// Gets the display name of the backup
+        /// </summary>
+        public string BackupName
+        {
+            get
+            {
+                string tmp;
+                m_options.TryGetValue("backup-name", out tmp);
+                if (string.IsNullOrEmpty(tmp))
+                    return System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
+                else
+                    return tmp;
+            }
+            set
+            {
+                m_options["backup-name"] = value;
+            }
+        }
         /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 
         /// </summary>

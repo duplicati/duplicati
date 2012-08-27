@@ -185,6 +185,9 @@ namespace Duplicati.Library.Modules.Builtin
                 foreach(KeyValuePair<string, string> kv in options)
                     psi.EnvironmentVariables["DUPLICATI__" + kv.Key.Replace('-', '_')] = kv.Value;
 
+                if (!options.ContainsKey("backup-name"))
+                    psi.EnvironmentVariables["DUPLICATI__backup_name"] = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
+
                 psi.EnvironmentVariables["DUPLICATI__EVENTNAME"] = eventname;
                 psi.EnvironmentVariables["DUPLICATI__OPERATIONNAME"] = operationname;
                 psi.EnvironmentVariables["DUPLICATI__REMOTEURL"] = remoteurl;

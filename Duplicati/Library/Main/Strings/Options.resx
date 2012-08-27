@@ -537,4 +537,10 @@
   <data name="VssusemappingShort" xml:space="preserve">
     <value>Map snapshots to a drive (Windows only)</value>
   </data>
+  <data name="BackupnameLong" xml:space="preserve">
+    <value>A display name that is attached to this backup. Can be used to identify the backup when sending mail or running scripts.</value>
+  </data>
+  <data name="BackupnameShort" xml:space="preserve">
+    <value>Name of the backup</value>
+  </data>
 </root>

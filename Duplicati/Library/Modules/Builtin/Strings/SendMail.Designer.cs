@@ -193,7 +193,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to If this option is set to {0} a message will be sent after each backup. A setting of {1} will only send messages if the backup produced a warning. A setting of {2} will only send messages if the backup failed..
+        ///   Looks up a localized string similar to You can specify one of &quot;{0}&quot;, &quot;{1}&quot;, &quot;{2}&quot;. You can supply multiple options with a comma seperator, e.g. &quot;{0},{1}&quot;. The special value &quot;{3}&quot; is a shorthand for &quot;{0},{1},{2}&quot; and will cause all backup operations to send an email..
         /// </summary>
         internal static string OptionSendlevelLong {
             get {

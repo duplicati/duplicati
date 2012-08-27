@@ -63,11 +63,11 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The default subject
         /// </summary>
-        private const string DEFAULT_SUBJECT = "Duplicati %OPERATIONNAME% report";
+        private const string DEFAULT_SUBJECT = "Duplicati %OPERATIONNAME% report for %backup-name%";
         /// <summary>
         /// The default mail level
         /// </summary>
-        private const MailLevels DEFAULT_LEVEL = MailLevels.Success;
+        private const MailLevels DEFAULT_LEVEL = MailLevels.All;
         /// <summary>
         /// The default mail body
         /// </summary>
@@ -84,9 +84,10 @@ namespace Duplicati.Library.Modules.Builtin
         [Flags]
         private enum MailLevels
         {
-            Success,
-            Warning,
-            Error
+            Success = 0x1,
+            Warning = 0x2,
+            Error = 0x4,
+            All = Success | Warning | Error
         }
 
         #region Private variables
@@ -187,7 +188,7 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
                     new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.SendMail.OptionSendlevelShort, string.Format(Strings.SendMail.OptionSendlevelLong, MailLevels.Success, MailLevels.Warning, MailLevels.Error), MailLevels.Success.ToString(), Enum.GetNames(typeof(MailLevels))),
+                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.SendMail.OptionSendlevelShort, string.Format(Strings.SendMail.OptionSendlevelLong, MailLevels.Success, MailLevels.Warning, MailLevels.Error, MailLevels.All), DEFAULT_LEVEL.ToString()),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
                 });
             }
@@ -212,9 +213,22 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(OPTION_BODY, out m_body);
             m_options = commandlineOptions;
 
+            m_level = 0;
+
             string tmp;
             commandlineOptions.TryGetValue(OPTION_SENDLEVEL, out tmp);
-            if (!Enum.TryParse(tmp, true, out m_level))
+            if (!string.IsNullOrEmpty(tmp))
+                foreach(var s in tmp.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (string.IsNullOrEmpty(s))
+                        continue;
+
+                    MailLevels m;
+                    if (Enum.TryParse(s.Trim(), true, out m))
+                        m_level |= m;
+                }
+
+            if (m_level == 0)
                 m_level = DEFAULT_LEVEL;
 
             m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_SENDALL);
@@ -260,17 +274,18 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
             {
-                if (m_level != MailLevels.Success)
+                if (m_level != MailLevels.All)
                 {
-                    if (result != null && result.GetType().Name == "BackupStatistics")
-                    {
-                        //No warnings logged so we do not send mail
-                        if (result.ToString().IndexOf("NumberOfErrors") < 0)
-                            return;
-                    }
+                    MailLevels level;
+                    if (result is Exception)
+                        level = MailLevels.Error;
+                    else if (result != null && result.GetType().Name == "BackupStatistics" && result.ToString().IndexOf("NumberOfErrors") >= 0)
+                        level = MailLevels.Warning;
+                    else
+                        level = MailLevels.Success;
 
-                    //If we only send errors, and this is not an error, return
-                    if (m_level == MailLevels.Error && !(result is Exception))
+                    //Check if this level should send mail
+                    if ((m_level & level) == 0)
                         return;
                 }
             }
@@ -377,6 +392,8 @@ namespace Duplicati.Library.Modules.Builtin
             foreach (KeyValuePair<string, string> kv in m_options)
                 input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+            if (!m_options.ContainsKey("backup-name"))
+                input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
             input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
             return input;
