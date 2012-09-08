@@ -143,12 +143,20 @@ namespace Duplicati.Library.Backend
 
                     foreach (S3Object obj in listResponse.S3Objects)
                     {
-                        files.Add(new FileEntry(
-                            obj.Key,
-                            obj.Size,
-                            DateTime.Parse(obj.LastModified),
-                            DateTime.Parse(obj.LastModified)
-                        ));
+                        DateTime dt;
+                        if (DateTime.TryParse(obj.LastModified, out dt))
+                            files.Add(new FileEntry(
+                                obj.Key,
+                                obj.Size,
+                                dt,
+                                dt
+                            ));
+                        else
+                            files.Add(new FileEntry(
+                                obj.Key,
+                                obj.Size
+                            ));
+
                     }
 
                     //filename = files[files.Count - 1].Name;
