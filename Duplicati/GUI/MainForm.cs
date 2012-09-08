@@ -228,13 +228,24 @@ namespace Duplicati.GUI
                 return;
             }
 
-            Datamodel.ApplicationSettings.NotificationLevel level = m_settings.BallonNotificationLevel;
-
             string name = "";
 
             //Dirty read of the instance variable
             try { name = Program.WorkThread.CurrentTask.Schedule.Name; }
-            catch  {}
+            catch { }
+
+            Datamodel.ApplicationSettings.NotificationLevel level;
+            try { level = m_settings.BallonNotificationLevel; }
+            catch
+            {
+                m_settings = new Datamodel.ApplicationSettings(Program.DataConnection);
+                try { level = m_settings.BallonNotificationLevel; }
+                catch
+                {
+                    //TODO: Should find the cause for this, but at least we do not crash the process
+                    return;
+                }
+            }
 
 
             if (state == DuplicatiRunner.RunnerState.Started && (level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.StartAndStop || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Start || level == Duplicati.Datamodel.ApplicationSettings.NotificationLevel.Continous))
