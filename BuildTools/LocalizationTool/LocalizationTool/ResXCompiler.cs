@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Configuration;
 
 namespace LocalizationTool
 {
@@ -40,11 +41,10 @@ namespace LocalizationTool
 			return null;
 		}
 		
-        public static void CompileResxFiles(string folder, List<string> excludeFolders, string @namespace, string assemblyname, string versionAssembly, string keyfile, string culture, string productname)
+        public static void CompileResxFiles(string folder, List<string> excludeFolders, string @namespace, string assemblyname, string versionAssembly, string keyfile, string culture, string productname, string fxVer)
         {
 			string resgenexe;
 			string alexe;
-			
 			if (Duplicati.Library.Utility.Utility.IsClientLinux)
 			{
 				resgenexe = ExecuteAndRead("which", "resgen");
@@ -53,28 +53,49 @@ namespace LocalizationTool
 			else //Windows
 			{
                 //Order of these paths is also the search order
-                string[] known_sdk_paths =
+                string[] known_sdk_paths = null;
+                if (fxVer == "2.0")
                 {
-                    Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v4.0\\"),
-                    Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v4.0.30319\\"),                    
-                    Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.5\\"),
-                    Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.0\\"),
-                    Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\"),
+                    known_sdk_paths = new string[]
+                    {
+                        Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v2.0.50727\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft.NET\\SDK\\v2.0\\bin\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft.NET\\SDK\\v2.0\\bin\\"),
+                    };
+                }
+                else if (fxVer == "3.0")
+                {
+                    known_sdk_paths = new string[]
+                    {
+                        Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.0\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\"),
 
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v7.1\\Bin\\NETFX 4.0 Tools\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v7.0A\\bin\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft.NET\\SDK\\v2.0\\bin\\"),
-
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v7.1\\Bin\\NETFX 4.0 Tools\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v7.0A\\bin\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v6.0A\\bin\\"),
-                    Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft.NET\\SDK\\v2.0\\bin\\"),
-
-                };
-
+                    };
+                }
+                else if (fxVer == "3.5")
+                {
+                    known_sdk_paths = new string[]
+                    {                
+                        Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v3.5\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v7.0A\\bin\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v7.0A\\bin\\"),
+                    };
+                }
+                else
+                {
+                    known_sdk_paths = new string[]
+                    {
+                        Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v4.0\\"),
+                        Environment.ExpandEnvironmentVariables("%WINDIR%\\Microsoft.Net\\Framework\\v4.0.30319\\"),  
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\NETFX 4.0 Tools\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES%\\Microsoft SDKs\\Windows\\v7.1\\Bin\\NETFX 4.0 Tools\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v8.0A\\bin\\NETFX 4.0 Tools\\"),
+                        Environment.ExpandEnvironmentVariables("%PROGRAMFILES(X86)%\\Microsoft SDKs\\Windows\\v7.1\\Bin\\NETFX 4.0 Tools\\"),
+                    };
+                }
                 resgenexe = "resgen.exe";
                 alexe = "al.exe";
 

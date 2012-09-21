@@ -970,6 +970,9 @@ namespace LocalizationTool
                 string versionassembly = conf.Element("versionassembly").Value;
                 string outputfolder = conf.Element("outputfolder").Value;
                 string productname = conf.Element("productname").Value;
+                string fxVer = conf.Element("frameworkVersion") == null ? "4.0" : conf.Element("frameworkVersion").Value;
+
+                Console.WriteLine("Compiling for framework: " + fxVer);
 
                 foreach (XElement n in conf.Elements("assembly"))
                 {
@@ -987,7 +990,7 @@ namespace LocalizationTool
                         if (!System.IO.Directory.Exists(outfolder))
                             System.IO.Directory.CreateDirectory(outfolder);
 
-                        ResXCompiler.CompileResxFiles(System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, culture), folder), excludes, @namespace, System.IO.Path.Combine(outfolder, assemblyName + ".resources.dll"), System.IO.Path.GetFullPath(versionassembly), keyfile, culture, productname);
+                        ResXCompiler.CompileResxFiles(System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, culture), folder), excludes, @namespace, System.IO.Path.Combine(outfolder, assemblyName + ".resources.dll"), System.IO.Path.GetFullPath(versionassembly), keyfile, culture, productname, fxVer);
                     }
                 }
             }
