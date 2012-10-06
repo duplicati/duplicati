@@ -1028,6 +1028,8 @@ namespace Duplicati.Library.Main
                     return OptimizationStrategy.Off;
                 else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
                     return OptimizationStrategy.Required;
+                else if (string.Equals(strategy, "auto", StringComparison.InvariantCultureIgnoreCase))
+                    return OptimizationStrategy.Auto;
                 else
                     return OptimizationStrategy.Off;
             }
@@ -1068,6 +1070,8 @@ namespace Duplicati.Library.Main
                     return OptimizationStrategy.Off;
                 else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
                     return OptimizationStrategy.Required;
+                else if (string.Equals(strategy, "auto", StringComparison.InvariantCultureIgnoreCase))
+                    return OptimizationStrategy.Auto;
                 else
                     return OptimizationStrategy.Off;
             }
