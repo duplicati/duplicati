@@ -194,9 +194,29 @@ namespace Duplicati.GUI.HelperControls
                 //At this point the folders are named 0..n if there are multiple
                 if (m_sourcefolders.Count > 1)
                 {
-                    m_rootnodes = new TreeNode[treeView.Nodes.Count];
+                    m_rootnodes = new TreeNode[m_sourcefolders.Count];
                     foreach (TreeNode tn in treeView.Nodes)
-                        m_rootnodes[int.Parse(tn.Text)] = tn;
+                    {
+                        int ix;
+                        if (!int.TryParse(tn.Text, out ix))
+                            ix = -1;
+
+                        if (ix < 0 || ix >= m_rootnodes.Length)
+                        {
+                            //TODO: Translate
+                            MessageBox.Show(this, string.Format("A source folder with index {0} ({1}) was found, but the list of source folders have the following {2} entries: {3}{4}", ix, tn.Text, m_sourcefolders.Count, Environment.NewLine, string.Join(Environment.NewLine, m_sourcefolders.ToArray())), "Internal Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        else
+                            m_rootnodes[ix] = tn;
+                    }
+
+                    for (int i = 0; i < m_rootnodes.Length; i++)
+                        if (m_rootnodes[i] == null)
+                        {
+                            TreeNode tn = new TreeNode(i.ToString());
+                            treeView.Nodes.Add(tn);
+                            m_rootnodes[i] = tn;
+                        }
                 }
 
                 //This call updates the names of the nodes to fit their source/target
