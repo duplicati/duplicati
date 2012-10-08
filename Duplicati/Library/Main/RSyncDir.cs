@@ -1190,14 +1190,21 @@ namespace Duplicati.Library.Main.RSync
         /// <returns>A full path, based on the relative path</returns>
         private static string GetFullPathFromRelname(string[] sourcefolders, string relpath)
         {
-            if (sourcefolders.Length == 1)
-                return System.IO.Path.Combine(sourcefolders[0], relpath);
-            else
+            try
             {
-                int ix = relpath.IndexOf(System.IO.Path.DirectorySeparatorChar);
-                //In some versions, Duplicati incorrectly writes the folder name without a trailing slash
-                int pos = ix < 0 ? int.Parse(relpath) : int.Parse(relpath.Substring(0, ix));
-                return System.IO.Path.Combine(sourcefolders[Math.Min(sourcefolders.Length - 1, pos)], relpath.Substring(ix + 1));
+                if (sourcefolders.Length == 1)
+                    return System.IO.Path.Combine(sourcefolders[0], relpath);
+                else
+                {
+                    int ix = relpath.IndexOf(System.IO.Path.DirectorySeparatorChar);
+                    //In some versions, Duplicati incorrectly writes the folder name without a trailing slash
+                    int pos = ix < 0 ? int.Parse(relpath) : int.Parse(relpath.Substring(0, ix));
+                    return System.IO.Path.Combine(sourcefolders[Math.Min(sourcefolders.Length - 1, pos)], relpath.Substring(ix + 1));
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException(string.Format(Strings.RSyncDir.InvalidRelFilenameError, relpath, string.Join(Environment.NewLine, sourcefolders), ex.Message) , ex);
             }
         }
 
