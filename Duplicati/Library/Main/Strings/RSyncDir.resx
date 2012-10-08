@@ -213,4 +213,7 @@ Error message: {1}</value>
   <data name="SymlinkReadError" xml:space="preserve">
     <value>The symlink information for {0} could not be read: {1}</value>
   </data>
+  <data name="InvalidRelFilenameError" xml:space="preserve">
+    <value>Invalid filename detected: {0}, source folders: {1}, error message: {2}</value>
+  </data>
 </root>
