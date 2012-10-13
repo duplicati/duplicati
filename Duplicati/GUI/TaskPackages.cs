@@ -199,9 +199,9 @@ namespace Duplicati.GUI
                 options["encryption-module"] = this.Task.EncryptionModule;
 
             if (string.IsNullOrEmpty(this.Task.Encryptionkey))
-                options.Add("no-encryption", "");
+                options["no-encryption"] = "";
             else
-                options.Add("passphrase", this.Task.Encryptionkey);
+                options["passphrase"] = this.Task.Encryptionkey;
         }
 
         protected virtual void SetupTaskExtensions(Dictionary<string, string> options)
@@ -668,12 +668,14 @@ namespace Duplicati.GUI
         {
             string destination = base.GetConfiguration(options);
 
-            options.Add("force", "");
+            if (!options.ContainsKey("force"))
+                options.Add("force", "");
+
             if (!string.IsNullOrEmpty(When))
-                options.Add("restore-time", this.When);
+                options["restore-time"] = this.When;
 
             if (!string.IsNullOrEmpty(this.SourceFiles))
-                options.Add("file-to-restore", this.SourceFiles);
+                options["file-to-restore"] = this.SourceFiles;
 
             return destination;
         }
@@ -709,8 +711,9 @@ namespace Duplicati.GUI
         {
             string destination = base.GetConfiguration(options);
 
-            options.Add("delete-all-but-n-full", this.FullCount.ToString());
-            options.Add("force", "");
+            options["delete-all-but-n-full"] = this.FullCount.ToString();
+            if (!options.ContainsKey("force"))
+                options.Add("force", "");
             if (!options.ContainsKey("number-of-retries"))
                 options["number-of-retries"] = "2";
 
@@ -741,8 +744,9 @@ namespace Duplicati.GUI
         {
             string destination = base.GetConfiguration(options);
 
-            options.Add("delete-older-than", this.Older);
-            options.Add("force", "");
+            options["delete-older-than"] = this.Older;
+            if (!options.ContainsKey("force"))
+                options.Add("force", "");
             if (!options.ContainsKey("number-of-retries"))
                 options["number-of-retries"] = "2";
 
