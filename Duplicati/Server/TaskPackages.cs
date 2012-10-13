@@ -409,12 +409,10 @@ namespace Duplicati.Server
 
         public override string GetConfiguration(Dictionary<string, string> options)
         {
-            string destination = base.GetConfiguration(options);
-
             if (!string.IsNullOrEmpty(this.FullAfter))
                 options.Add("full-if-older-than", this.FullAfter);
 
-            return destination;
+            return base.GetConfiguration(options);
         }
     }
 
@@ -519,12 +517,10 @@ namespace Duplicati.Server
 
         public override string GetConfiguration(Dictionary<string, string> options)
         {
-            string destination = base.GetConfiguration(options);
-
             if (!string.IsNullOrEmpty(When))
                 options["restore-time"] = this.When;
 
-            return destination;
+            return base.GetConfiguration(options);
         }
 
         public override string LocalPath
@@ -568,12 +564,9 @@ namespace Duplicati.Server
 
         public override string GetConfiguration(Dictionary<string, string> options)
         {
-            string destination = base.GetConfiguration(options);
-
             if (!string.IsNullOrEmpty(When))
                 options["restore-time"] = this.When;
-
-            return destination;
+            return base.GetConfiguration(options);
         }
 
         public override string LocalPath
@@ -673,8 +666,6 @@ namespace Duplicati.Server
 
         public override string GetConfiguration(Dictionary<string, string> options)
         {
-            string destination = base.GetConfiguration(options);
-
             options.Add("force", "");
             if (!string.IsNullOrEmpty(When))
                 options.Add("restore-time", this.When);
@@ -682,7 +673,7 @@ namespace Duplicati.Server
             if (!string.IsNullOrEmpty(this.SourceFiles))
                 options.Add("file-to-restore", this.SourceFiles);
 
-            return destination;
+            return base.GetConfiguration(options);
         }
     }
 
@@ -714,14 +705,12 @@ namespace Duplicati.Server
 
         public override string GetConfiguration(Dictionary<string, string> options)
         {
-            string destination = base.GetConfiguration(options);
-
             options.Add("delete-all-but-n-full", this.FullCount.ToString());
             options.Add("force", "");
             if (!options.ContainsKey("number-of-retries"))
                 options["number-of-retries"] = "2";
 
-            return destination;
+            return base.GetConfiguration(options);
         }
     }
 
@@ -746,14 +735,12 @@ namespace Duplicati.Server
 
         public override string GetConfiguration(Dictionary<string, string> options)
         {
-            string destination = base.GetConfiguration(options);
-
             options.Add("delete-older-than", this.Older);
             options.Add("force", "");
             if (!options.ContainsKey("number-of-retries"))
                 options["number-of-retries"] = "2";
 
-            return destination;
+            return base.GetConfiguration(options);
         }
 
         public override string LocalPath
