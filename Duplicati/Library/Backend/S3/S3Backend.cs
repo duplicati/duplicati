@@ -43,13 +43,14 @@ namespace Duplicati.Library.Backend
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
         public static readonly KeyValuePair<string, string>[] KNOWN_S3_LOCATIONS = new KeyValuePair<string, string>[] {
             new KeyValuePair<string, string>("(default)", ""),
-            new KeyValuePair<string, string>("Europe (EU)", "EU"),
-            new KeyValuePair<string, string>("US East", "us-east-1"),
-            new KeyValuePair<string, string>("US West 1", "us-west-1"),
-            new KeyValuePair<string, string>("US West 2", "us-west-2"),
-            new KeyValuePair<string, string>("AP Southeast", "ap-southeast-1"),
-            new KeyValuePair<string, string>("AP Northeast", "ap-northeast-1"),
-            new KeyValuePair<string, string>("SA Sao Paulo", "sa-east-1"),
+            new KeyValuePair<string, string>("Europe (EU, Ireland)", "EU"),
+            new KeyValuePair<string, string>("US East (Northern Virginia)", "us-east-1"),
+            new KeyValuePair<string, string>("US West (Northen California)", "us-west-1"),
+            new KeyValuePair<string, string>("US West (Oregon)", "us-west-2"),
+            new KeyValuePair<string, string>("Asia Pacific (Singapore)", "ap-southeast-1"),
+            new KeyValuePair<string, string>("Asia Pacific (Sydney)", "ap-southeast-2"),
+            new KeyValuePair<string, string>("Asia Pacific (Tokyo)", "ap-northeast-1"),
+            new KeyValuePair<string, string>("South America (Sao Paulo)", "sa-east-1"),
         };
         private string m_bucket;
         private string m_prefix;
