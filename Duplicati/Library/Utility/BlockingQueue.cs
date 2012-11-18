@@ -32,7 +32,7 @@ namespace Duplicati.Library.Utility
 
         public BlockingQueueAsEnumerable(BlockingQueue<T> queue)
         {
-            m_enumerator = new BlockingQueueEnumerator<T>(queue);
+            m_enumerator = new BlockingQueueEnumerator(queue);
         }
 
         #region IEnumerable implementation
@@ -54,7 +54,7 @@ namespace Duplicati.Library.Utility
         }
         #endregion
 
-        private class BlockingQueueEnumerator<T> : IEnumerator<T>
+        private class BlockingQueueEnumerator : IEnumerator<T>
         {
             private BlockingQueue<T> m_queue;
             private bool m_first = true;

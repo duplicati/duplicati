@@ -1,21 +1,65 @@
+{
+// This helps in a debug setup
+var extdefined = false;
+try { extdefined = Ext !== undefined; } catch (e) {}
+if (!extdefined) { alert('ExtJS failed to load!\n If this is a debug build,\nplease download and extract:\n\nExtJS 4.1.1\n\ninto the folder:\nDuplicati/Server/webroot'); }
+delete extdefined;
+}
+
 Ext.application({
     requires: [
-    	'Ext.container.Viewport', 
-    	'Ext.layout.container.Border', 
-    	'BackupApp.Service', 
-    	'BackupApp.Utility', 
-    	'BackupApp.ListUtility',
-		'BackupApp.view.AboutWindow',
-		'BackupApp.view.LostConnectionWindow'
-    ],
+		'Ext.container.Viewport', 
+		'Ext.layout.container.Border', 
+		'Duplicati.Service', 
+		'Duplicati.Utility', 
+		'Duplicati.ListUtility',
+		'Duplicati.view.AboutWindow',
+		'Duplicati.view.LostConnectionWindow',
 
-    name: 'BackupApp',
-	appFolder: 'backup-app',
-	
+		// Override for handling nested Model 2 Form
+		'Duplicati.view.override.BackupConfig',
+		'Duplicati.model.override.BackupJob'
+    ],
+	name: 'Duplicati',
+	appFolder: 'Duplicati',
+
 	controllers: [
 		'Schedules',
 		'StatuswindowHeader',
-		'StatuswindowFooter'
+		'StatuswindowFooter',
+		'BackupConfig'
+	],
+
+	stores: [
+		'LabelStore',
+		'EncryptionMethodStore',
+		'AdditionalPathStore',
+		'MyComputerTreeStore',
+		'BackupJob',
+		'DefaultTimeRangesStore',
+		'NewBackupChainWhenStore',
+		'DeleteOldChainsWhenStore',
+		'DefaultSizeRangeStore'
+	],
+
+	views: [
+		'BackupConfig',
+		'wndAddLocation',
+		'wndAddFilter',
+		'wndCreateConnection'
+	],
+
+	models: [
+        'BackupJob',
+        'Schedule',
+    	'Task',
+        'TaskItems.BackupLocation',
+        'TaskItems.CompressionSettings',
+    	'TaskItems.EncryptionSettings',
+        'TaskItems.Overrides',
+    	'TaskItems.Extensions',
+        'TaskItems.BackendSettings',
+    	'ScheduleItems.Metadata'
 	],
 
 	//This object encapsulates all access to the web service
@@ -31,11 +75,11 @@ Ext.application({
     	this.addEvents('current-state-updated', 'count-down-pause-timer');
     	
 		//Make a service object
-		this.service = new BackupApp.Service();
+		this.service = new Duplicati.Service();
 		//Make the service globally accesible
-		BackupApp.service = this.service;
-    	BackupApp.instance = this;
-    	BackupApp.utility = this.utility;
+		Duplicati.service = this.service;
+    	Duplicati.instance = this;
+    	Duplicati.utility = this.utility;
     	
 		//Pretend the app can fire the update event, this helps with initialization in controllers
     	this.service.on({
@@ -64,23 +108,23 @@ Ext.application({
 	    	},
 	    	
 	    	'lost-connection': function() {
-	    		BackupApp.view.LostConnectionWindow.show();
+	    		Duplicati.view.LostConnectionWindow.show();
 	    	},
 
 	    	'reconnected': function() {
-	    		BackupApp.view.LostConnectionWindow.hide();
+	    		Duplicati.view.LostConnectionWindow.hide();
 	    	},
 	    	
 	    	'lost-connection-retry': function() {
-	    		BackupApp.view.LostConnectionWindow.setStatusAsRunning();
+	    		Duplicati.view.LostConnectionWindow.setStatusAsRunning();
 	    	},
 
 	    	'lost-connection-retry-delay': function(seconds) {
-	    		BackupApp.view.LostConnectionWindow.setStatusAsWaiting(seconds);
+	    		Duplicati.view.LostConnectionWindow.setStatusAsWaiting(seconds);
 	    	},
 
 			'count-down-pause-timer': function(e) { 
-    			BackupApp.instance.fireEvent('count-down-pause-timer', e); 
+    			Duplicati.instance.fireEvent('count-down-pause-timer', e); 
     		},	    	
 	    	scope: this
     	});
@@ -99,7 +143,10 @@ Ext.application({
             },{
             	region: 'south',
             	xtype: 'statuswindowfooter'
-            }]
+            }],
+
+		renderTo: Ext.getBody()
+	
         });
     }
 });

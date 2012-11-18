@@ -761,9 +761,9 @@ namespace Duplicati.Library.Utility
 		{
 			get 
 			{
-	            //TODO: This should probably be determined by filesystem rather than OS
-    	        //In case MS decides to support case sensitive filesystems (yeah right :))
-				return IsClientLinux;
+	            //TODO: This should probably be determined by filesystem rather than OS,
+                // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
+    	        return IsClientLinux && !IsClientOSX;
 			}
 		}
 

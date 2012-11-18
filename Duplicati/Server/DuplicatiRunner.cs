@@ -80,14 +80,14 @@ namespace Duplicati.Server
             if (task.Schedule != null)
                 options["backup-name"] = task.Schedule.Name;
 
-            string destination = task.GetConfiguration(options);
-
             string results = "";
             string parsedMessage = "";
             m_isAborted = false;
 
             try
             {
+                string destination = task.GetConfiguration(options);
+
                 //TODO: Its a bit dirty to set the options after creating the instance
                 using (Duplicati.Library.Main.Interface i = new Duplicati.Library.Main.Interface(destination, options))
                 {

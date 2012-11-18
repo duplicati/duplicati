@@ -24,7 +24,11 @@ namespace Duplicati.Server
         /// The single webserver instance
         /// </summary>
         private HttpServer.HttpServer m_server;
-             
+
+        /// <summary>
+        /// Sets up the webserver and starts it
+        /// </summary>
+        /// <param name="options">A set of options</param>
         public WebServer(IDictionary<string, string> options)
         {
             m_server = new HttpServer.HttpServer();
@@ -38,15 +42,22 @@ namespace Duplicati.Server
             tmpwebroot = System.IO.Path.Combine(tmpwebroot, "Server");
             if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
                 webroot = tmpwebroot;
-            else
-            {
+            else {
                 //If we are running the server standalone, we only need to exit "bin/Debug"
                 tmpwebroot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", ".."));
                 if (System.IO.Directory.Exists(System.IO.Path.Combine(tmpwebroot, "webroot")))
                     webroot = tmpwebroot;
             }
 
+            if (Library.Utility.Utility.IsClientOSX) 
+            {
+                string osxTmpWebRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(webroot, "..", "..", "..", "..", "..", "..", ".."));
+                osxTmpWebRoot = System.IO.Path.Combine(osxTmpWebRoot, "Server");
+                if (System.IO.Directory.Exists(System.IO.Path.Combine(osxTmpWebRoot, "webroot")))
+                    webroot = osxTmpWebRoot;
+            }
 #endif
+
             webroot = System.IO.Path.Combine(webroot, "webroot");
 
             if (options.ContainsKey(OPTION_WEBROOT))
@@ -156,19 +167,84 @@ namespace Duplicati.Server
             }
         }
 
+        private class Serializer : Server.Serialization.Serializer
+        {
+            private class DataModelConverter<T> : Newtonsoft.Json.Converters.CustomCreationConverter<T>
+                where T : System.Data.LightDatamodel.IDataClass, new()
+            {
+                private readonly System.Data.LightDatamodel.IDataFetcher m_parent;
+
+                public DataModelConverter(System.Data.LightDatamodel.IDataFetcher parent)
+                {
+                    m_parent = parent;
+                }
+
+                public override T Create(Type objectType)
+                {
+                    if (objectType != typeof(T))
+                        throw new InvalidOperationException(string.Format("Cannot instanciate type {0} from a type {1} converter", objectType, typeof(T)));
+
+                    T v = new T();
+                    m_parent.Add(v);
+                    return v;
+                }
+            }
+
+            private class StartObjectConverter<T> : Newtonsoft.Json.Converters.CustomCreationConverter<T>
+            {
+                private T m_obj;
+
+                public StartObjectConverter(T obj)
+                {
+                    m_obj = obj;
+                }
+
+                public override T Create(Type objectType)
+                {
+                    if (objectType != typeof(T))
+                        throw new InvalidOperationException(string.Format("Cannot instanciate type {0} from a type {1} converter", objectType, typeof(T)));
+
+                    return m_obj;
+                }
+            }
+
+
+            public static T Deserialize<T>(System.IO.TextReader sr, System.Data.LightDatamodel.IDataFetcher dataparent)
+                where T : System.Data.LightDatamodel.IDataClass, new()
+            {
+                Newtonsoft.Json.JsonSerializer jsonSerializer = Newtonsoft.Json.JsonSerializer.Create(m_jsonSettings);
+                jsonSerializer.Converters.Add(new DataModelConverter<T>(dataparent));
+                using (var jsonReader = new Newtonsoft.Json.JsonTextReader(sr))
+                {
+                    jsonReader.Culture = System.Globalization.CultureInfo.InvariantCulture;
+                    return jsonSerializer.Deserialize<T>(jsonReader);
+                }
+            }
+
+            public static T Deserialize<T>(System.IO.TextReader sr, T startobj)
+            {
+                Newtonsoft.Json.JsonSerializer jsonSerializer = Newtonsoft.Json.JsonSerializer.Create(m_jsonSettings);
+                jsonSerializer.Converters.Add(new StartObjectConverter<T>(startobj));
+                using (var jsonReader = new Newtonsoft.Json.JsonTextReader(sr))
+                {
+                    jsonReader.Culture = System.Globalization.CultureInfo.InvariantCulture;
+                    return jsonSerializer.Deserialize<T>(jsonReader);
+                }
+            }
+        }
+
         private class DynamicHandler : HttpModule
         {
             private delegate void ProcessSub(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter writer);
-            private Server.Serialization.Serializer m_serializer;
             private readonly Dictionary<string, ProcessSub> SUPPORTED_METHODS;
 
             public DynamicHandler()
             {
-                m_serializer = new Serializer();
                 SUPPORTED_METHODS = new Dictionary<string, ProcessSub>(System.StringComparer.InvariantCultureIgnoreCase);
              
                 //Make a list of all supported actions
                 SUPPORTED_METHODS.Add("supported-actions", ListSupportedActions);
+                SUPPORTED_METHODS.Add("system-info", ListSystemInfo);
                 SUPPORTED_METHODS.Add("list-schedules", ListSchedules);
                 SUPPORTED_METHODS.Add("get-current-state", GetCurrentState);
                 SUPPORTED_METHODS.Add("get-progress-state", GetProgressState);
@@ -184,6 +260,9 @@ namespace Duplicati.Server
                 SUPPORTED_METHODS.Add("get-backup-defaults", GetBackupDefaults);
                 SUPPORTED_METHODS.Add("get-folder-contents", GetFolderContents);
                 SUPPORTED_METHODS.Add("get-schedule-details", GetScheduleDetails);
+                SUPPORTED_METHODS.Add("add-schedule", AddSchedule);
+                SUPPORTED_METHODS.Add("update-schedule", UpdateSchedule);
+                SUPPORTED_METHODS.Add("delete-schedule", DeleteSchedule);
             }
 
             public override bool Process (HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
@@ -250,7 +329,32 @@ namespace Duplicati.Server
             
             private void OutputObject (BodyWriter b, object o)
             {
-                m_serializer.SerializeJson(b, o);
+                Serializer.SerializeJson(b, o);
+            }
+
+            private void ListSystemInfo(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                OutputObject(bw, new
+                {
+                    APIVersion = 1,
+                    ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                    ServerVersionName = License.VersionNumbers.Version,
+                    OSType = Library.Utility.Utility.IsClientLinux ? (Library.Utility.Utility.IsClientOSX ? "OSX" : "Linux") : "Windows",
+                    DirectorySeparator = System.IO.Path.DirectorySeparatorChar,
+                    PathSeparator = System.IO.Path.PathSeparator,
+                    CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,
+                    MonoVersion = Duplicati.Library.Utility.Utility.IsMono ? Duplicati.Library.Utility.Utility.MonoVersion.ToString() : null,
+                    MachineName = System.Environment.MachineName,
+                    NewLine = System.Environment.NewLine,
+                    CLRVersion = System.Environment.Version.ToString(),
+                    CLROSInfo = new
+                    {
+                        Platform = System.Environment.OSVersion.Platform.ToString(),
+                        ServicePack = System.Environment.OSVersion.ServicePack,
+                        Version = System.Environment.OSVersion.Version.ToString(),
+                        VersionString = System.Environment.OSVersion.VersionString
+                    }
+                });
             }
 
             private void ListSupportedActions(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
@@ -283,35 +387,69 @@ namespace Duplicati.Server
 
                 try
                 {
-                    path = Duplicati.Library.Utility.Utility.AppendDirSeparator(path);
+                    if (!path.EndsWith("/"))
+                        path += '/';
 
-                    List<string> res = new List<string>();
-                    if (!Library.Utility.Utility.IsClientLinux)
+                    IEnumerable<Serializable.TreeNode> res;
+
+                    if (!Library.Utility.Utility.IsClientLinux && path.Equals("/"))
                     {
-                        if (path.Equals("/"))
-                        {
-                            foreach (DriveInfo di in System.IO.DriveInfo.GetDrives())
-                                res.Add("/" + di.RootDirectory.FullName.Replace('\\', '/'));
-
-                        }
-                        else
-                        {
-                            string winpath = path.Substring(1).Replace('/', '\\');
-                            foreach (string s in System.IO.Directory.GetDirectories(winpath))
-                                res.Add("/" + Library.Utility.Utility.AppendDirSeparator(s).Replace('\\', '/'));
-                            if (!skipFiles)
-                                foreach (string s in System.IO.Directory.GetFiles(winpath))
-                                    res.Add("/" + s.Replace('\\', '/'));
-                        }
+                        res = 
+                            from di in System.IO.DriveInfo.GetDrives()
+                            where di.DriveType == DriveType.Fixed || di.DriveType == DriveType.Network || di.DriveType == DriveType.Removable
+                            select new Serializable.TreeNode()
+                            {
+                                id = "/" + di.RootDirectory.FullName.Replace('\\', '/'),
+                                text = di.RootDirectory.FullName.Replace('\\', ' ') + "(" + di.DriveType + ")",
+                                iconCls = "x-tree-icon-drive"
+                            };
                     }
                     else
                     {
-                        foreach (string s in System.IO.Directory.GetDirectories(path))
-                            res.Add(Library.Utility.Utility.AppendDirSeparator(s));
-                        if (!skipFiles)
-                            foreach (string s in System.IO.Directory.GetFiles(path))
-                                res.Add(s);
+                        //Helper function for finding out if a folder has sub elements
+                        Func<string, bool> hasSubElements = (p) => skipFiles ? Directory.EnumerateDirectories(p).Any() : Directory.EnumerateFileSystemEntries(p).Any();
+
+                        //Helper function for dealing with exceptions when accessing off-limits folders
+                        Func<string, bool> isEmptyFolder = (p) =>
+                        {
+                            try { return !hasSubElements(p); }
+                            catch { }
+                            return true;
+                        };
+
+                        //Helper function for dealing with exceptions when accessing off-limits folders
+                        Func<string, bool> canAccess = (p) =>
+                        {
+                            try { hasSubElements(p); return true; }
+                            catch { }
+                            return false;
+                        };
+
+                        res = 
+                            from s in System.IO.Directory.EnumerateFileSystemEntries(Library.Utility.Utility.IsClientLinux ? path : path.Substring(1).Replace('/', '\\'))
+                                  
+                            let attr = System.IO.File.GetAttributes(s)
+                            let isSymlink = (attr & FileAttributes.ReparsePoint) != 0
+                            let isFolder = (attr & FileAttributes.Directory) != 0
+                            let isFile = !isFolder
+                            let isHidden = (attr & FileAttributes.Hidden) != 0
+
+                            let accesible = isFile || canAccess(s)
+                            let isLeaf = isFile || !accesible || isEmptyFolder(s) 
+
+                            let rawid = isFolder ? Library.Utility.Utility.AppendDirSeparator(s) : s
+
+                            where !skipFiles || isFolder
+                                  
+                            select new Serializable.TreeNode()
+                            {
+                                id = Library.Utility.Utility.IsClientLinux ? rawid : "/" + rawid.Replace('\\', '/'),
+                                text = System.IO.Path.GetFileName(s),
+                                iconCls = isFolder ? (accesible ? "x-tree-icon-parent" : "x-tree-icon-locked") : "x-tree-icon-leaf",
+                                leaf = isLeaf
+                            };
                     }
+
 
                     OutputObject(bw, res);
                 }
@@ -451,11 +589,234 @@ namespace Duplicati.Server
                 else
                 {
                     Datamodel.Schedule sc = Program.DataConnection.GetObjectById<Datamodel.Schedule>(id);
-                    OutputObject(bw, new {
-                        Schedule = sc,
-                        Task = sc.Task
+                    OutputObject(bw, new
+                    {
+                        success = true,
+                        data = new
+                        {
+                            Schedule = sc,
+                            Task = sc.Task
+                        }
                     });
                 }
+            }
+
+            private void UpdateSchedule(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                string schedule_string = request.Form["schedule"].Value;
+                string task_string = request.Form["task"].Value;
+                if (string.IsNullOrWhiteSpace(schedule_string))
+                {
+                    ReportError(response, bw, "Missing Schedule object");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(task_string))
+                {
+                    ReportError(response, bw, "Missing Task object");
+                    return;
+                }
+                long id;
+                if (!long.TryParse(request.Form["id"].Value, out id))
+                {
+                    ReportError(response, bw, "Invalid or missing schedule id");
+                    return;
+                }
+
+                try
+                {
+                    var con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+                    var schedule = con.GetObjectById<Datamodel.Schedule>(id);
+                    if (schedule == null)
+                    {
+                        ReportError(response, bw, "Invalid or missing schedule id");
+                        return;
+                    }
+
+                    Serializer.Deserialize<Datamodel.Schedule>(new StringReader(schedule_string), schedule);
+                    var task = Serializer.Deserialize<Datamodel.Task>(new StringReader(task_string), schedule.Task);
+
+                    //TODO: Validate, duplicate names etc.
+
+                    con.CommitRecursive(schedule);
+                    OutputObject(bw, new { status = "OK" });
+                }
+                catch (Exception ex)
+                {
+                    ReportError(response, bw, string.Format("Unable to parse schedule or task object: {0}", ex.Message));
+                }
+            }
+
+            private void AddSchedule(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                string schedule_string = request.Form["schedule"].Value;
+                string task_string = request.Form["task"].Value;
+                if (string.IsNullOrWhiteSpace(schedule_string))
+                {
+                    ReportError(response, bw, "Missing Schedule object");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(task_string))
+                {
+                    ReportError(response, bw, "Missing Task object");
+                    return;
+                }
+
+                try
+                {
+                    var con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+                    var schedule = Serializer.Deserialize<Datamodel.Schedule>(new StringReader(schedule_string), con);
+                    var task = Serializer.Deserialize<Datamodel.Task>(new StringReader(task_string), con);
+                    schedule.Task = task;
+
+                    //TODO: Validate, duplicate names etc.
+
+                    con.CommitRecursive(schedule);
+                    OutputObject(bw, new { status = "OK" });
+                }
+                catch (Exception ex)
+                {
+                    ReportError(response, bw, string.Format("Unable to parse schedule or task object: {0}", ex.Message));
+                }
+            }
+
+            private void DeleteSchedule(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
+            {
+                HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+
+                long id;
+                if (!long.TryParse(input["id"].Value, out id))
+                {
+                    ReportError(response, bw, "Invalid or missing schedule id");
+                    return;
+                }
+
+
+                var con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+                var schedule =con.GetObjectById<Datamodel.Schedule>(id);
+                if (schedule == null)
+                {
+                    ReportError(response, bw, "Invalid or missing schedule id");
+                    return;
+                }
+
+                if (Program.WorkThread.Active)
+                {
+                    try
+                    {
+                        //TODO: It's not safe to access the values like this, 
+                        //because the runner thread might interfere
+                        if (Program.WorkThread.CurrentTask.Schedule.ID == schedule.ID)
+                        {
+                            bool force;
+                            if (!bool.TryParse(input["force"].Value, out force))
+                                force = false;
+                            
+                            if (!force)
+                            {
+                                OutputObject(bw, new { status = "failed", reason = "backup-in-progress" });
+                                return;
+                            }
+
+                            bool hasPaused = Program.LiveControl.State == LiveControls.LiveControlState.Paused;
+                            Program.LiveControl.Pause();
+                            if (Program.WorkThread.CurrentTask.Schedule.ID == schedule.ID)
+                                Program.Runner.Terminate();
+
+
+                            try
+                            {
+                                for (int i = 0; i < 10; i++)
+                                    if (Program.WorkThread.Active)
+                                    {
+                                        IDuplicityTask t = Program.WorkThread.CurrentTask;
+                                        if (t != null && t.Schedule.ID == schedule.ID)
+                                            System.Threading.Thread.Sleep(1000);
+                                        else
+                                            break;
+                                    }
+                                    else
+                                        break;
+                            }
+                            finally
+                            {
+                            }
+
+                            if (Program.WorkThread.Active)
+                            {
+                                IDuplicityTask t = Program.WorkThread.CurrentTask;
+                                if (t == null && t.Schedule.ID == schedule.ID)
+                                {
+                                    if (hasPaused)
+                                        Program.LiveControl.Resume();
+                                    OutputObject(bw, new { status = "failed", reason = "backup-unstoppable" });
+                                    return;
+                                }
+                            }
+
+                            if (hasPaused)
+                                Program.LiveControl.Resume();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        OutputObject(bw, new { status = "error", message = ex.Message });
+                        return;
+                    }
+                }
+
+                //TODO: Locking! Clients will request the list while the delete takes place
+
+                //Prior to deleting we need to make sure all relations are loaded
+                Queue<object> unvisited = new Queue<object>();
+                Dictionary<object, object> visited = new Dictionary<object, object>();
+
+                //Load the schedule in the transaction context
+                object entryItem = con.GetObjectById<Datamodel.Schedule>(id);
+                unvisited.Enqueue(entryItem);
+                visited[entryItem] = null;
+
+                //Traverse the object relations
+                while (unvisited.Count > 0)
+                {
+                    object x = unvisited.Dequeue();
+                    foreach (System.Reflection.PropertyInfo pi in x.GetType().GetProperties())
+                    {
+                        if (pi.PropertyType != typeof(string) && (typeof(System.Data.LightDatamodel.IDataClass).IsAssignableFrom(pi.PropertyType) || typeof(System.Collections.IEnumerable).IsAssignableFrom(pi.PropertyType)))
+                            try
+                            {
+                                object tmp = pi.GetValue(x, null);
+                                foreach (object i in tmp as System.Collections.IEnumerable ?? new object[] { tmp })
+                                    if (i as System.Data.LightDatamodel.IDataClass != null && !visited.ContainsKey(i))
+                                    {
+                                        visited[i] = null;
+                                        unvisited.Enqueue(i);
+                                    }
+                            }
+                            catch
+                            {
+                                //TODO: Perhaps log this?
+                            }
+                    }
+                }
+
+                //Remove all entries visited
+                foreach (System.Data.LightDatamodel.IDataClass o in visited.Keys)
+                    con.DeleteObject(o);
+
+                //TODO: The worker may schedule the task while we attempt to de-schedule it
+                foreach (IDuplicityTask t in Program.WorkThread.CurrentTasks)
+                    if (t != null && t is IncrementalBackupTask && ((IncrementalBackupTask)t).Schedule.ID == schedule.ID)
+                        Program.WorkThread.RemoveTask(t);
+
+                //Persist to database
+                con.CommitAllRecursive();
+
+                //We have fiddled with the schedules
+                Program.Scheduler.Reschedule();
+
+                OutputObject(bw, new { status = "OK" });
             }
 
             private void SendCommand(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)

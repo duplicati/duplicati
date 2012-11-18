@@ -28,7 +28,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
         {
             private ToolStripItem m_menu;
             private Action m_callback;
-            
+
             public ToolStripItem MenuItem { get { return m_menu; } }
             
             public MenuItemWrapper(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
@@ -102,7 +102,8 @@ namespace Duplicati.GUI.TrayIcon.Windows
             }
             #endregion
         }
-        
+
+        private Form m_handleProvider;
         private NotifyIcon m_trayIcon;
 
         public static WinFormsRunner Instance = null;
@@ -113,6 +114,21 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 throw new Exception("Multiple trayicon instances not allowed!");
 
             WinFormsRunner.Instance = this;
+
+            //We need this ugly hack to get a handle that we can call Invoke on,
+            // and sadly the TrayIcon does not expose one, and forcing the context menu
+            // to create one causes weird "lost clicks"
+            m_handleProvider = new Form()
+            {
+                FormBorderStyle = FormBorderStyle.None,
+                Width = 10,
+                Height = 10,
+                Top = 0,
+                Left = 0
+            };
+            m_handleProvider.Show();
+            m_handleProvider.Hide();
+
             m_trayIcon = new NotifyIcon();
             m_trayIcon.DoubleClick += new EventHandler(m_trayIcon_DoubleClick);
             m_trayIcon.Click += new EventHandler(m_trayIcon_Click);
@@ -134,7 +150,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
         protected override void RegisterStatusUpdateCallback ()
         {
             Program.Connection.StatusUpdated += delegate(IServerStatus status) {
-                m_trayIcon.ContextMenuStrip.Invoke(new Action<IServerStatus>(OnStatusUpdated), status);
+                m_handleProvider.Invoke(new Action<IServerStatus>(OnStatusUpdated), status);
             };
         }
         
@@ -191,6 +207,18 @@ namespace Duplicati.GUI.TrayIcon.Windows
 
         public override void Dispose ()
         {
+            if (m_handleProvider != null)
+            {
+                m_handleProvider.Dispose();
+                m_handleProvider = null;
+            }
+
+            if (m_trayIcon != null)
+            {
+                m_trayIcon.Visible = false;
+                m_trayIcon.Dispose();
+                m_trayIcon = null;
+            }
         }
         #endregion
 

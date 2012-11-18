@@ -26,7 +26,6 @@ namespace Duplicati.GUI.TrayIcon
         private volatile System.Threading.Thread m_pollThread;
         private System.Threading.AutoResetEvent m_waitLock;
 
-        private Serializer m_serializer;
         private readonly Dictionary<string, string> m_updateRequest;
 
         public IServerStatus Status { get { return m_status; } }
@@ -41,7 +40,6 @@ namespace Duplicati.GUI.TrayIcon
                 m_baseUri += "/";
             
             m_controlUri = new Uri(m_baseUri + CONTROL_SCRIPT);
-            m_serializer = new Serializer();
             m_updateRequest = new Dictionary<string, string>();
             m_updateRequest["action"] = "get-current-state";
             m_updateRequest["longpoll"] = "false";
@@ -183,7 +181,7 @@ namespace Duplicati.GUI.TrayIcon
                 else
                 {
                     using (var sr = new System.IO.StreamReader(s, ENCODING, true))
-                        return m_serializer.Deserialize<T>(sr);
+                        return Serializer.Deserialize<T>(sr);
                 }
 
         }

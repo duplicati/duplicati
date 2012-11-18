@@ -26,17 +26,37 @@ namespace Duplicati.Server.Serialization
 {
 	internal class JsonSerializer : DefaultContractResolver
 	{
-        private Dictionary<string, string> m_ignoreList = GetIgnoreList();
+        private static readonly Dictionary<string, string> m_ignoreList;
+        private static readonly Dictionary<string, string> m_renameList;
 
-        private static Dictionary<string, string> GetIgnoreList()
+        static JsonSerializer()
         {
-            Dictionary<string, string> lst = new Dictionary<string, string>();
-            lst.Add("Datamodel.ApplicationSettings!RawOptions", null);
+            m_ignoreList = new Dictionary<string, string>();
+            m_ignoreList.Add("Duplicati.Datamodel.ApplicationSettings!RawOptions", null);
+            m_ignoreList.Add("Duplicati.Datamodel.Task!Extensions", null);
+            m_ignoreList.Add("Duplicati.Datamodel.Task!SortedFilters", null);
+            m_ignoreList.Add("Duplicati.Datamodel.Task!EncodedFilter", null);
+            m_ignoreList.Add("Duplicati.Datamodel.Task!ExistsInDb", null);
+            m_ignoreList.Add("Duplicati.Datamodel.Schedule!ExistsInDb", null);
 
-            return lst;
+            m_renameList = new Dictionary<string, string>();
+            m_renameList.Add("Duplicati.Datamodel.Schedule!MetadataLookup", "Metadata");
+            m_renameList.Add("Duplicati.Datamodel.Task!BackendSettingsLookup", "BackendSettings");
+            m_renameList.Add("Duplicati.Datamodel.Task!TaskExtensionsLookup", "Extensions");
+            m_renameList.Add("Duplicati.Datamodel.Task!TaskOverridesLookup", "Overrides");
+            m_renameList.Add("Duplicati.Datamodel.Task!EncryptionSettingsLookup", "EncryptionSettings");
+            m_renameList.Add("Duplicati.Datamodel.Task!CompressionSettingsLookup", "CompressionSettings");
+            m_renameList.Add("Duplicati.Datamodel.Task!FilterXml", "Filter");
         }
 
         private static string MemberInfoAsKey(MemberInfo mi) { return mi.DeclaringType.FullName + "!" + mi.Name; }
+        private static string ExposedNamed(MemberInfo mi)
+        {
+            string newname;
+            if (!m_renameList.TryGetValue(MemberInfoAsKey(mi), out newname))
+                newname = mi.Name;
+            return newname;
+        }
 
         protected override List<MemberInfo> GetSerializableMembers(Type objectType)
         {
@@ -53,25 +73,31 @@ namespace Duplicati.Server.Serialization
             else if (typeof(System.Data.LightDatamodel.IDataClass).IsAssignableFrom(objectType))
             {
                 JsonObjectContract joc = new JsonObjectContract(objectType);
-                
+                joc.OverrideConstructor = objectType.GetConstructor(Type.EmptyTypes);
+
                 foreach(var pi in objectType.GetProperties( BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance ))
                 {
                     var customs = pi.GetCustomAttributes(false);
                     bool isRef = customs.Select(x => x.GetType()).Contains(typeof(System.Data.LightDatamodel.DataClassAttributes.Affects));
                     bool isParent = typeof(System.Data.LightDatamodel.IDataFetcher).IsAssignableFrom(pi.PropertyType);
                     isRef |= typeof(System.Data.LightDatamodel.IDataClass).IsAssignableFrom(pi.PropertyType);
-                    
-                    joc.Properties.Add(new JsonProperty() {
-                        PropertyName = pi.Name,
-                        PropertyType = pi.PropertyType,
-                        Ignored = isRef || isParent || m_ignoreList.ContainsKey(MemberInfoAsKey(pi)),
-                        UnderlyingName = pi.Name,
-                        Readable = pi.CanRead,
-                        Writable = pi.CanWrite,
-                        ValueProvider = CreateMemberValueProvider(pi)
-                    });
+                    bool ignored = isRef || isParent || m_ignoreList.ContainsKey(MemberInfoAsKey(pi));
+
+                    if (!ignored)
+                    {
+                        joc.Properties.Add(new JsonProperty()
+                        {
+                            PropertyName = ExposedNamed(pi),
+                            PropertyType = pi.PropertyType,
+                            Ignored = ignored,
+                            UnderlyingName = pi.Name,
+                            Readable = pi.CanRead,
+                            Writable = pi.CanWrite & pi.Name != "ID",
+                            ValueProvider = CreateMemberValueProvider(pi)
+                        });
+                    }
                 }
-                
+
                 return joc;
             }
             else

@@ -1,1 +1,15 @@
 /* Placeholder for customization */
+
+
+.x-grid-tree-node-expanded .x-tree-icon-drive,
+.x-tree-icon-drive {
+	width:16px;
+	background-image:url('/icons/drive.gif')
+}
+
+
+.x-grid-tree-node-expanded .x-tree-icon-locked,
+.x-tree-icon-locked {
+	width:16px;
+	background-image:url('/icons/folder_locked_red.gif')
+}

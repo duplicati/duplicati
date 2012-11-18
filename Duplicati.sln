@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati", "Duplicati\GUI\Duplicati.csproj", "{1470F75F-D364-4010-91D0-FD4DDA1C5159}"
@@ -60,6 +60,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.TrayIcon", "Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{17566860-3D98-4604-AA5B-47661F75609F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server.Serialization", "Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj", "{33FD1D24-C28F-4C71-933F-98F1586EA76C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.MacTrayIcon", "Duplicati\GUI\Duplicati.GUI.MacTrayIcon\Duplicati.GUI.MacTrayIcon.csproj", "{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -181,6 +183,18 @@ Global
 		{1BFAE226-8364-4086-825C-BB83F6F3EE4C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1BFAE226-8364-4086-825C-BB83F6F3EE4C}.Release|x86.ActiveCfg = Release|x86
 		{1BFAE226-8364-4086-825C-BB83F6F3EE4C}.Release|x86.Build.0 = Release|x86
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|x86.ActiveCfg = Debug|x86
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|X86.ActiveCfg = Debug|X86
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|x86.Build.0 = Debug|x86
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Debug|X86.Build.0 = Debug|X86
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|x86.ActiveCfg = Release|x86
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|X86.ActiveCfg = Release|X86
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|X86.Build.0 = Release|X86
+		{9E9675C7-1198-44CD-85E0-FD582E9EEAFF}.Release|x86.Build.0 = Release|x86
 		{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}.Debug|x86.ActiveCfg = Debug|x86
