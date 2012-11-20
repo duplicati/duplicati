@@ -1069,7 +1069,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A size string that limits the size of files being backed up.
+        ///   Looks up a localized string similar to Limit the size of files being backed up.
         /// </summary>
         internal static string SkipfileslargerthanShort {
             get {
@@ -1294,7 +1294,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A size string that limits the size of the volumes.
+        ///   Looks up a localized string similar to Limit the size of the volumes.
         /// </summary>
         internal static string VolsizeShort {
             get {

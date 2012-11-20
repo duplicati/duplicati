@@ -268,7 +268,7 @@
     <value>This option allows you to exclude files that are larger than the given value. Use this to prevent backups becoming extremely large.</value>
   </data>
   <data name="SkipfileslargerthanShort" xml:space="preserve">
-    <value>A size string that limits the size of files being backed up</value>
+    <value>Limit the size of files being backed up</value>
   </data>
   <data name="TempdirLong" xml:space="preserve">
     <value>Duplicati will use the system default temporary folder. This option can be used to supply an alternative folder for temporary storage.</value>
@@ -298,7 +298,7 @@
     <value>This option can change the default volume size. Changing the size can be usefull if the backend has a limit on the size of each individual file</value>
   </data>
   <data name="VolsizeShort" xml:space="preserve">
-    <value>A size string that limits the size of the volumes</value>
+    <value>Limit the size of the volumes</value>
   </data>
   <data name="DisableStreamingLong" xml:space="preserve">
     <value>Enabling this option will disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored.</value>
