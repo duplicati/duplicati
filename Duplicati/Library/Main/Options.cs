@@ -1202,7 +1202,7 @@ namespace Duplicati.Library.Main
             {
                 System.IO.FileAttributes res = (System.IO.FileAttributes)0;
                 string v;
-                if (!m_options.TryGetValue("", out v))
+                if (!m_options.TryGetValue("exclude-files-attributes", out v))
                     return res;
 
                 foreach(string s in v.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
