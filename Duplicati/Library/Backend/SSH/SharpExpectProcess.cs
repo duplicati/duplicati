@@ -524,11 +524,10 @@ namespace Duplicati.Library.SharpExpect
             {
                 sr = (System.IO.StreamReader)input;
                 char[] buf = new char[1024];
-                bool lastRun = false;
                 List<string> queue = sr == m_process.StandardError ? m_stdErr : m_stdOut;
 
-                //Keep reading until the process exits
-                while (true)
+                //Keep reading while the stream is not at and
+                while (!sr.EndOfStream)
                 {
                     int r = sr.Read(buf, 0, buf.Length);
                     if (r > 0)
@@ -539,20 +538,6 @@ namespace Duplicati.Library.SharpExpect
                             queue.Add(new string(buf, 0, r));
                             m_event.Set();
                         }
-                    }
-
-                    if (m_process.HasExited)
-                    {
-                        //After the process exists, try one last time
-                        //This protects against races with the reader and the process
-
-                        if (!lastRun)
-                        {
-                            System.Threading.Thread.Sleep(100);
-                            lastRun = true;
-                        }
-                        else
-                            break; //Exit while loop
                     }
                 }
             }
