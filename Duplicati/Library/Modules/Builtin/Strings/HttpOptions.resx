@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Description" xml:space="preserve">
     <value>This module exposes a number of properties that can be used to change the way http requests are issued</value>
@@ -126,8 +126,8 @@
   <data name="DescriptionAcceptAnyCertificateShort" xml:space="preserve">
     <value>Accept any server certificate</value>
   </data>
-  <data name="DescriptionAcceptHashLong" xml:space="preserve">
-    <value>If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces.</value>
+  <data name="DescriptionAcceptHashLong2" xml:space="preserve">
+    <value>If your server certificate is reported as invalid (eg. with self-signed certificates), you can supply the certificate hash to approve it anyway. The hash value must be entered in hex format without spaces. You can enter multiple hashes separated by commas.</value>
   </data>
   <data name="DescriptionAcceptHashShort" xml:space="preserve">
     <value>Optionally accept a known SSL certificate</value>

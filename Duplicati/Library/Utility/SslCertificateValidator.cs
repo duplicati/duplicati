@@ -44,10 +44,10 @@ namespace Duplicati.Library.Utility
             }
         }
 
-        public SslCertificateValidator(bool acceptAll, string validHash)
+        public SslCertificateValidator(bool acceptAll, string[] validHashes)
         {
             m_acceptAll = acceptAll;
-            m_validHash = validHash;
+            m_validHashes = validHashes;
             m_oldCallback = System.Net.ServicePointManager.ServerCertificateValidationCallback;
 
             System.Net.ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(ValidateServerCertficate);
@@ -55,7 +55,7 @@ namespace Duplicati.Library.Utility
         }
 
         private bool m_acceptAll = false;
-        private string m_validHash = null;
+        private string[] m_validHashes = null;
         private bool m_isAttached = false;
         private Exception m_uncastException = null;
         private RemoteCertificateValidationCallback m_oldCallback = null;
@@ -89,8 +89,12 @@ namespace Duplicati.Library.Utility
             try
             {
                 certHash = Utility.ByteArrayAsHexString(cert.GetCertHash());
-                if (certHash != null && !string.IsNullOrEmpty(m_validHash) && certHash.Equals(m_validHash, StringComparison.InvariantCultureIgnoreCase))
-                    return true;
+                if (certHash != null && m_validHashes != null) 
+                    foreach(var hash in m_validHashes)
+                    {
+                        if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.InvariantCultureIgnoreCase))
+                        return true;
+                    }
             }
             catch (Exception ex)
             {
