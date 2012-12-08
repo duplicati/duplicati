@@ -48,6 +48,7 @@
 	<Compile Include="incLocFiles.es-ES.wxs" />
 	<Compile Include="incLocFiles.it-IT.wxs" />
 	<Compile Include="incLocFiles.zh-CN.wxs" />
+	<Compile Include="incLocFiles.ru-RU.wxs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources" />
