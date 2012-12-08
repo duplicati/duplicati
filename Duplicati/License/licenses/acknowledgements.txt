@@ -18,6 +18,7 @@ Translations:
   French, fr-FR: Matthieu Weber
   German, de-DE: Ernst Mair, Mathias Block, DooM ElHado, Leo nowhere
   Italian, it-IT: Riccardo Stoppani
+  Russian, ru-RU: Philip Torchinsky, Semonix
   Spanish, es-ES: JosepV
 
 Duplicati.Scheduler:
