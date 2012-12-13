@@ -92,9 +92,26 @@ namespace Duplicati.Library.Compression
         private IWriter m_writer;
 
         /// <summary>
+        /// The name of the file being read
+        /// </summary>
+        private string m_filename;
+
+        /// <summary>
         /// Default constructor, used to read file extension and supported commands
         /// </summary>
         public FileArchiveZip() { }
+
+        public IArchive Archive
+        {
+            get
+            {
+                if (m_stream == null)
+                    m_stream = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+                if (m_archive == null)
+                    m_archive = ArchiveFactory.Open(m_stream);
+                return m_archive;
+            }
+        }
 
         /// <summary>
         /// Constructs a new zip instance.
@@ -108,11 +125,10 @@ namespace Duplicati.Library.Compression
             if (string.IsNullOrEmpty(filename) && filename.Trim().Length == 0)
                 throw new ArgumentException("filename");
 
-            if (!File.Exists(filename) || new FileInfo(filename).Length > 0)
+            if (File.Exists(filename) && new FileInfo(filename).Length > 0)
             {
                 m_isWriting = false;
-                m_stream = new System.IO.FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
-                m_archive = ArchiveFactory.Open(m_stream);
+                m_filename = filename;
             }
             else
             {
@@ -178,7 +194,7 @@ namespace Duplicati.Library.Compression
         public string[] ListFiles(string prefix)
         {
             List<string> results = new List<string>();
-            foreach (IArchiveEntry e in m_archive.Entries)
+            foreach (IArchiveEntry e in Archive.Entries)
             {
                 if (prefix == null)
                 {
@@ -223,7 +239,7 @@ namespace Duplicati.Library.Compression
                 throw new InvalidOperationException("Cannot read while writing");
 
             string path = file;
-            foreach(IArchiveEntry e in m_archive.Entries)
+            foreach(IArchiveEntry e in Archive.Entries)
             {
                 if (string.Equals(e.FilePath, path, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
                     return e;
@@ -234,7 +250,7 @@ namespace Duplicati.Library.Compression
             if (path != path2)
             {
                 path = path2;
-                foreach (IArchiveEntry e in m_archive.Entries)
+                foreach (IArchiveEntry e in Archive.Entries)
                 {
                     if (string.Equals(e.FilePath, path, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
                         return e;
@@ -280,7 +296,7 @@ namespace Duplicati.Library.Compression
         {
             get
             {
-                return m_archive == null ? m_stream.Length : m_archive.TotalSize;
+                return m_isWriting ? m_stream.Length : Archive.TotalSize;
             }
         }
 
