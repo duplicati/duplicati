@@ -150,7 +150,7 @@ namespace Duplicati.CommandLine
                         options["ftp-username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
 
                 if (source.Trim().ToLower() == "list")
-                    Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.List(target, options)));
+                    Console.WriteLine(string.Join(Environment.NewLine, Duplicati.Library.Main.Interface.List(target, options)));
                 else if (source.Trim().ToLower() == "list-current-files")
                 {
                     cargs.RemoveAt(0);
@@ -161,7 +161,7 @@ namespace Duplicati.CommandLine
                         return 200;
                     }
 
-                    Console.WriteLine(string.Join("\r\n", new List<string>(Duplicati.Library.Main.Interface.ListCurrentFiles(target, options)).ToArray()));
+                    Console.WriteLine(string.Join(Environment.NewLine, new List<string>(Duplicati.Library.Main.Interface.ListCurrentFiles(target, options)).ToArray()));
                 }
                 else if (source.Trim().ToLower() == "list-source-folders")
                 {
@@ -173,7 +173,7 @@ namespace Duplicati.CommandLine
                         return 200;
                     }
 
-                    Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.ListSourceFolders(target, options) ?? new string[0]));
+                    Console.WriteLine(string.Join(Environment.NewLine, Duplicati.Library.Main.Interface.ListSourceFolders(target, options) ?? new string[0]));
                 }
                 else if (source.Trim().ToLower() == "list-actual-signature-files")
                 {
