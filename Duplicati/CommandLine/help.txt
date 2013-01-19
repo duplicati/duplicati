@@ -13,7 +13,7 @@ See duplicati.commandline.exe help <topic> for more information.
 
   Examples: example
   
-  Commands: backup, restore, delete-all-but-n-full, delete-all-but-n, cleanup, delete-older-than, list, list-current-files, list-actual-signature-files, collection-status, create-folder, find-last-version, verify
+  Commands: backup, restore, delete-all-but-n-full, delete-all-but-n, cleanup, delete-older-than, list, list-current-files, list-source-folders, list-actual-signature-files, collection-status, create-folder, find-last-version, verify
   
   Debugging: debug, logging
   
@@ -212,6 +212,18 @@ Usage: list <target url>
 Usage: list-current-files <target url>
 
   Lists the (source) files that are contained in a backup. By default, the latest versions are listed. This action is useful to try out what files would be restored with a given set or options.
+
+Options:
+ --restore-time = <date>
+   By default, Duplicati will restore files from the most recent backup, use this option to restore older versions of a file. You may use relative times, like "-2M" for a backup from two months ago. Duplicati will pick the next older version of the value specified. If you specify "-2M", the restored version could be 2 months and 3 days old.
+
+
+# =============================================================================
+> duplicati.commandline.exe help list-source-folders
+
+Usage: list-source-folders <target url>
+
+  Lists the source folders that have been included in a backup. By default, the source folders of the latest backup are listed. This action is useful to check what source folders had been included in a backup at a given date or time.
 
 Options:
  --restore-time = <date>
