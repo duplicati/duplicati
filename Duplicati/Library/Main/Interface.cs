@@ -628,7 +628,7 @@ namespace Duplicati.Library.Main
                             using (new Logging.Timer("Initiating multipass"))
                                 dir.InitiateMultiPassDiff(full, m_options);
 
-                            string tempVolumeFolder = m_options.AsynchronousUpload ? m_options.AsynchronousUploadFolder : (m_options.TempDir ?? Utility.TempFolder.SystemTempPath);
+                            string tempVolumeFolder = m_options.AsynchronousUpload ? m_options.AsynchronousUploadFolder : m_options.TempDir;
 
                             bool done = false;
                             while (!done && totalsize < m_options.MaxSize)

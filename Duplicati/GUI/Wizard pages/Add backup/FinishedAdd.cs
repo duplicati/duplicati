@@ -232,7 +232,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 }
 
                 // Source and target
-                sb.Append(" BACKUP");
+                sb.Append(" backup");
                 sb.Append(" " + QuoteIfRequired(source));
                 sb.Append(" " + QuoteIfRequired(target));
 
@@ -259,6 +259,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
                 if (m_wrapper.MaxFullBackups > 0)
                 {
+                    sb.AppendLine();
                     sb.AppendLine();
                     sb.Append(QuoteIfRequired(Application.ExecutablePath.Substring(0, Application.ExecutablePath.Length - 4) + ".CommandLine.exe"));
                     sb.Append(" delete-all-but-n");
