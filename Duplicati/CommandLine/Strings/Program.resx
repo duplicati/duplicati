@@ -143,8 +143,14 @@ Type\tTime\t\t\tVolumes\tSize</value>
   <data name="DuplicatiOptionsHeader" xml:space="preserve">
     <value>Duplicati options:</value>
   </data>
+  <data name="FailedToParseParametersFileError" xml:space="preserve">
+    <value>Unable to read the parameters file "{0}", reason: {1}</value>
+  </data>
   <data name="FileEntryNotFound" xml:space="preserve">
     <value>&lt; not found &gt;</value>
+  </data>
+  <data name="FiltersCannotBeUsedWithFileError" xml:space="preserve">
+    <value>Filters cannot be specified on the commandline if filters are also present in the parameter file</value>
   </data>
   <data name="FindLastVersionEntry" xml:space="preserve">
     <value>{0}\t{1}</value>
@@ -178,6 +184,12 @@ Type\tTime\t\t\tVolumes\tSize</value>
   </data>
   <data name="NewOrModifiedFilesHeader" xml:space="preserve">
     <value>New/Modified files</value>
+  </data>
+  <data name="ParametersFileOptionLong" xml:space="preserve">
+    <value>This option can be used to store some or all of the options given to the commandline client. The file must be a plain text file, UTF-8 encoding is preferred. Each line in the file should be of the format --option=value. The special options --source and --target can be used to override the localpath and the remote destination uri, respectively. The options in this file take precedence over the options provided on the commandline. You cannot specify filters in both the file and on the commandline.</value>
+  </data>
+  <data name="ParametersFileOptionShort" xml:space="preserve">
+    <value>Path to a file with parameters</value>
   </data>
   <data name="ProgramUsageBackend" xml:space="preserve">
     <value>A &lt;backend&gt; is identified by an url like ftp://host/ or ssh://server/.
