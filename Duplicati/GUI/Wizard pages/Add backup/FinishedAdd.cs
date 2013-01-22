@@ -192,27 +192,56 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 sb.AppendLine("Command-line equivalent of this task:");
                 sb.AppendLine();
                 sb.Append(QuoteIfRequired(Application.ExecutablePath.Substring(0, Application.ExecutablePath.Length - 4) + ".CommandLine.exe"));
+                sb.Append(" backup");
                 
                 // Filters are handled differently
                 options.Remove("filter");
 
-                //Remove all default values
+                //Remove all default values, and mask passwords
                 foreach (Library.Interface.ICommandLineArgument arg in defaults)
                 {
                     string defvalue = arg.DefaultValue == null ? "" : arg.DefaultValue;
-
-                    if (options.ContainsKey(arg.Name) && (defvalue) == (options[arg.Name] == null ? "" : options[arg.Name]))
-                        options.Remove(arg.Name);
-
+                    List<string> names = new List<string>();
+                    names.Add(arg.Name);
                     if (arg.Aliases != null)
-                        foreach(string a in arg.Aliases)
-                            if (options.ContainsKey(a) && (arg.DefaultValue ?? "") == (options[a] == null ? "" : options[a]))
-                                options.Remove(a);
-                }
+                        names.AddRange(arg.Aliases);
 
-                //TODO: Should mask the connection password as well
-                if (options.ContainsKey("passphrase") && !string.IsNullOrEmpty(options["passphrase"]))
-                    options["passphrase"] = "**********";
+                    foreach(string a in names)
+                    {
+                        if (options.ContainsKey(a))
+                            switch(arg.Type)
+                            {
+                                case Library.Interface.CommandLineArgument.ArgumentType.Password:
+                                    if (!string.IsNullOrEmpty(options[a]))
+                                        options[a] = "**********";
+                                    break;
+
+                                case Library.Interface.CommandLineArgument.ArgumentType.Enumeration:
+                                case Library.Interface.CommandLineArgument.ArgumentType.Size:
+                                    if (string.Equals(defvalue, options[a] == null ? "" : options[a], StringComparison.InvariantCultureIgnoreCase))
+                                        options.Remove(a);
+                                    break;
+
+                                case Library.Interface.CommandLineArgument.ArgumentType.Path:
+                                    if (string.Equals(defvalue, options[a] == null ? "" : options[a], Library.Utility.Utility.ClientFilenameStringComparision))
+                                        options.Remove(a);
+                                    break;
+
+                                case Library.Interface.CommandLineArgument.ArgumentType.Boolean:
+                                    bool parsed = Library.Utility.Utility.ParseBoolOption(options, a);
+                                    bool defbool = Library.Utility.Utility.ParseBool(defvalue, false);
+                                    if (parsed == defbool)
+                                        options.Remove(a);
+
+                                    break;
+
+                                default:
+                                    if (string.Equals(defvalue, options[a] == null ? "" : options[a]))
+                                        options.Remove(a);
+                                    break;
+                            }
+                    }
+                }
 
                 foreach (KeyValuePair<string, string> i in options)
                 {
@@ -232,11 +261,10 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                 }
 
                 // Source and target
-                sb.Append(" backup");
                 sb.Append(" " + QuoteIfRequired(source));
                 sb.Append(" " + QuoteIfRequired(target));
 
-
+                // Cleanup commands do not need encryption passphrase
                 options.Remove("passphrase");
 
                 if (!string.IsNullOrEmpty(m_wrapper.BackupExpireInterval))
