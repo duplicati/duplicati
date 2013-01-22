@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{9C8264A5-7D70-4358-8655-AC29A70B4C12}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Duplicati_Test</RootNamespace>
+    <AssemblyName>Duplicati_Test</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="nunit.core, Version=2.4.8.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
+    <Reference Include="nunit.framework, Version=2.4.8.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
+    <Reference Include="System.Data" />
+    <Reference Include="LightDatamodel">
+      <HintPath>..\thirdparty\LightDataModel\LightDatamodel.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ProgramTest.cs" />
+    <Compile Include="BaseDuplicatiTest.cs" />
+    <Compile Include="FinishedRestoreSetupTest.cs" />
+    <Compile Include="WizardSettingsWrapperTest.cs" />
+    <Compile Include="UtilityTest.cs" />
+    <Compile Include="InterfaceTest.cs" />
+    <Compile Include="Utils.cs" />
+    <Compile Include="BaseBackupTest.cs" />
+    <Compile Include="BaseConfigurationTest.cs" />
+    <Compile Include="InheritableTestCase.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\Duplicati\GUI\Duplicati.csproj">
+      <Project>{1470F75F-D364-4010-91D0-FD4DDA1C5159}</Project>
+      <Name>Duplicati</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Duplicati\Server\Duplicati.Server.csproj">
+      <Project>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</Project>
+      <Name>Duplicati.Server</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Duplicati\GUI\Datamodel\Datamodel.csproj">
+      <Project>{B60D0993-B0C5-457A-90D9-DB6EEB33CE47}</Project>
+      <Name>Datamodel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Duplicati\Library\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Duplicati\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
+      <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
+      <Name>Duplicati.Library.Backend.File</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WizardForm\WizardForm.csproj">
+      <Project>{F2854848-BF78-4A6D-9A2A-2AE2AFB70DF1}</Project>
+      <Name>WizardForm</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Duplicati\Library\Main\Duplicati.Library.Main.csproj">
+      <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
+      <Name>Duplicati.Library.Main</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Duplicati.snk" />
+  </ItemGroup>
+</Project>

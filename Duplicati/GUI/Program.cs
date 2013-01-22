@@ -255,10 +255,6 @@ namespace Duplicati.GUI
 
                 try
                 {
-                    DatabasePath = System.IO.Path.Combine(Program.DATAFOLDER, "Duplicati.sqlite"); 
-                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
-                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
-
 #if DEBUG
                     //Default is to not use encryption for debugging
                     Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database") : false;
@@ -266,12 +262,8 @@ namespace Duplicati.GUI
                     //Default is to use encryption for release
                     Program.UseDatabaseEncryption = !Library.Utility.Utility.ParseBoolOption(commandlineOptions, "unencrypted-database");
 #endif
-                    con.ConnectionString = "Data Source=" + DatabasePath;
 
-                    //Attempt to open the database, handling any encryption present
-                    OpenDatabase(con);
-
-                    DatabaseUpgrader.UpgradeDatabase(con, DatabasePath);
+                    OpenSettingsDatabase(con, Program.DATAFOLDER);
                 }
                 catch (Exception ex)
                 {
@@ -395,6 +387,25 @@ namespace Duplicati.GUI
             using(Duplicati.Library.Logging.Log.CurrentLog as Duplicati.Library.Logging.StreamLog)
                 Duplicati.Library.Logging.Log.CurrentLog = null;
 #endif
+        }
+        
+        /// <summary>
+        /// Opens the application settings database, creating a new db if missing
+        /// </summary>
+        /// <param name="con">the db connection</param>
+        /// <param name="datafolder">the database folder path</param>
+        /// <param name="dbfile">the database file name within the data folder; defaults to "Duplicati.sqlite"</param>
+        internal static void OpenSettingsDatabase(System.Data.IDbConnection con, string datafolder, string dbfile = "Duplicati.sqlite") {
+            DatabasePath = System.IO.Path.Combine(datafolder, dbfile); 
+            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
+
+            con.ConnectionString = "Data Source=" + DatabasePath;
+
+            //Attempt to open the database, handling any encryption present
+            OpenDatabase(con);
+
+            DatabaseUpgrader.UpgradeDatabase(con, DatabasePath);
         }
 
         /// <summary>

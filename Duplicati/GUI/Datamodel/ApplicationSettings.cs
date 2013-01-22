@@ -95,6 +95,21 @@ namespace Duplicati.Datamodel
             get { return string.IsNullOrEmpty(m_appset[RECENT_DURATION]) ? "2W" : m_appset[RECENT_DURATION]; }
             set { m_appset[RECENT_DURATION] = value; }
         }
+        
+        /// <summary>
+        /// Returns the default Duplicati temp path
+        /// </summary>
+        public static string DefaultTempPath
+        {
+            get
+            {
+#if DEBUG
+                return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "TEMP");
+#else
+                return System.IO.Path.GetTempPath();
+#endif
+            }
+        }
 
         /// <summary>
         /// Gets or sets the path to store temporary files. May contain environment variables
@@ -105,11 +120,7 @@ namespace Duplicati.Datamodel
             {
                 if (string.IsNullOrEmpty(m_appset[TEMP_PATH]))
                 {
-#if DEBUG
-                    return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "TEMP");
-#else
-                    return System.IO.Path.GetTempPath();
-#endif
+                    return DefaultTempPath;
                 }
                 else
                     return m_appset[TEMP_PATH];
@@ -163,7 +174,21 @@ namespace Duplicati.Datamodel
             }
             set { m_appset[COMMON_PASSWORD] = value; }
         }
-
+  
+        /// <summary>
+        /// Returns the default Duplicati signature cache path
+        /// </summary>
+        public static string DefaultSignatureCachePath
+        {
+            get
+            {
+                if (Duplicati.Library.Utility.Utility.IsClientLinux)
+                    return System.IO.Path.Combine(Environment.ExpandEnvironmentVariables("%DUPLICATI_HOME%").TrimStart('"').TrimEnd('"'), "Signature Cache");
+                else
+                    return System.IO.Path.Combine(System.IO.Path.Combine(Environment.ExpandEnvironmentVariables(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)), "Duplicati"), "Signature Cache");                
+            }
+        }
+        
         /// <summary>
         /// Gets or sets the path to store signature cache files. May contain environment variables
         /// </summary>
@@ -173,10 +198,7 @@ namespace Duplicati.Datamodel
             {
                 if (string.IsNullOrEmpty(m_appset[SIGNATURE_CACHE_PATH]))
                 {
-                    if (Duplicati.Library.Utility.Utility.IsClientLinux)
-                        return System.IO.Path.Combine(Environment.ExpandEnvironmentVariables("%DUPLICATI_HOME%").TrimStart('"').TrimEnd('"'), "Signature Cache");
-                    else
-                        return System.IO.Path.Combine(System.IO.Path.Combine(Environment.ExpandEnvironmentVariables(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)), "Duplicati"), "Signature Cache");
+                    return DefaultSignatureCachePath;
                 }
                 else
                     return m_appset[SIGNATURE_CACHE_PATH];

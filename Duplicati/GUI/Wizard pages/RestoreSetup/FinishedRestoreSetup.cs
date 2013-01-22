@@ -176,16 +176,34 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
                 else
                     throw new Exception(Strings.FinishedRestoreSetup.SetupFileMissingError);
 
-
-                //Make sure we have a startup delay, so a restart won't accidently wipe something
-                Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);
-                if (string.IsNullOrEmpty(appset.StartupDelayDuration) || Duplicati.Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration) < TimeSpan.FromMinutes(5))
-                {
-                    appset.StartupDelayDuration = "5m";
-                    Program.DataConnection.CommitRecursive(Program.DataConnection.GetObjects<Datamodel.ApplicationSetting>());
-                }
+                NormalizeApplicationSettings();
 
                 Program.Scheduler.Reschedule();
+            }
+        }
+        
+        private void NormalizeApplicationSettings() {
+            //Make sure we have a startup delay, so a restart won't accidently wipe something
+            bool settingsModified = false;
+            Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);
+            if (string.IsNullOrEmpty(appset.StartupDelayDuration) || Duplicati.Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration) < TimeSpan.FromMinutes(5))
+            {
+                appset.StartupDelayDuration = "5m";
+                settingsModified = true;
+            }
+
+            if (!System.IO.Directory.Exists(appset.TempPath)) {
+                appset.TempPath = "";
+                settingsModified = true;
+            }
+            
+            if (!System.IO.Directory.Exists(appset.SignatureCachePath)) {
+                appset.SignatureCachePath = "";
+                settingsModified = true;
+            }
+
+            if (settingsModified) {
+                Program.DataConnection.CommitRecursive(Program.DataConnection.GetObjects<Datamodel.ApplicationSetting>());
             }
         }
     }

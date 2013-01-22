@@ -907,5 +907,17 @@ namespace Duplicati.Library.Utility
             try { return Uri.CheckHostName(hostname) != UriHostNameType.Unknown; }
             catch { return false; }
         }
+        
+        // <summary>
+        // Returns the entry assembly or reasonable approximation if no entry assembly is available.
+        // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
+        // http://social.msdn.microsoft.com/Forums/nb-NO/clr/thread/db44fe1a-3bb4-41d4-a0e0-f3021f30e56f
+        // so this layer of indirection is necessary
+        // </summary>
+        // <returns>entry assembly or reasonable approximation</returns>
+        public static System.Reflection.Assembly getEntryAssembly()
+        {
+            return System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
+        }
     }
 }

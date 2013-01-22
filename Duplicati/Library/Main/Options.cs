@@ -299,6 +299,17 @@ namespace Duplicati.Library.Main
                 };
             }
         }
+        
+        /// <summary>
+        /// A default backup name
+        /// </summary>
+        public static string DefaultBackupName
+        {
+            get
+            {
+                return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
+            }
+        }
 
         /// <summary>
         /// Gets all supported commands
@@ -396,7 +407,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, string.Format(Strings.Options.SymlinkpolicyLong, "store", "ignore", "follow"), "store", null, Enum.GetNames(typeof(SymlinkStrategy))),
                     new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, string.Format(Strings.Options.ExcludefilesattributesLong, string.Join(", ", Enum.GetNames(typeof(System.IO.FileAttributes))))),
-                    new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)),
+                    new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
                 });
             }
         }
@@ -1281,7 +1292,7 @@ namespace Duplicati.Library.Main
                 string tmp;
                 m_options.TryGetValue("backup-name", out tmp);
                 if (string.IsNullOrEmpty(tmp))
-                    return System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
+                    return DefaultBackupName;
                 else
                     return tmp;
             }
