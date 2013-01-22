@@ -117,10 +117,10 @@ namespace Duplicati.Library.Backend
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionFTPPasswordShort, Strings.SkyDrive.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionFTPPasswordShort, Strings.SkyDrive.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionFTPUsernameShort, Strings.SkyDrive.DescriptionFTPUsernameLong),
                     new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionPassportPasswordShort, Strings.SkyDrive.DescriptionPassportPasswordLong, null, new string[] {"ftp-password"}),
-                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.String, Strings.SkyDrive.DescriptionPassportUsernameShort, Strings.SkyDrive.DescriptionPassportUsernameLong, null, new string[] {"ftp-username"}),
+                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.SkyDrive.DescriptionPassportUsernameShort, Strings.SkyDrive.DescriptionPassportUsernameLong, null, new string[] {"ftp-username"}),
                 });
             }
         }

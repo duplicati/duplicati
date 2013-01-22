@@ -142,7 +142,7 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionFTPPasswordShort, Strings.SSHv2Backend.DescriptionFTPPasswordLong),
+                    new CommandLineArgument("ftp-password", CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionFTPPasswordShort, Strings.SSHv2Backend.DescriptionFTPPasswordLong),
                     new CommandLineArgument("ftp-username", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionFTPUsernameShort, Strings.SSHv2Backend.DescriptionFTPUsernameLong),
                     new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHv2Backend.DescriptionSshkeyfileShort, Strings.SSHv2Backend.DescriptionSshkeyfileLong),
                 });
