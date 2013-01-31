@@ -115,6 +115,9 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             Summary.Text = sb.ToString();
 
             args.TreatAsLast = true;
+
+            CommandLine.Text = "";
+            Tabs.SelectedTab = TabSummary;
         }
 
         public override string HelpText
@@ -138,5 +141,170 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
                     return Strings.FinishedAdd.PageTitleModify;
             }
         }
+
+        private string QuoteIfRequired(string input)
+        {
+            if (Library.Utility.Utility.IsClientLinux)
+            {
+                input = input.Replace("\\", "\\\\")
+                             .Replace("$", "\\$")
+                             .Replace("*", "\\*")
+                             .Replace("?", "\\?")
+                             .Replace("`", "\\`");
+            }
+
+            if (input.IndexOfAny(new char[] { ' ', '|', '&' }) >= 0)
+            {
+                if (!Library.Utility.Utility.IsClientLinux && input.EndsWith("\\"))
+                    input += "\\";
+                return '"' + input + '"';
+            }
+            return input;
+        }
+
+        private void Tabs_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // The CommandLine box is filled only on demand.
+
+            if (Tabs.SelectedTab == TabCommandLine && CommandLine.TextLength == 0)
+            {
+                // Getting all options for the task
+                System.Data.LightDatamodel.IDataFetcherWithRelations con = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection);
+                Schedule schedule = con.Add<Schedule>();
+                m_wrapper.UpdateSchedule(schedule);
+                Dictionary<string, string> options = new Dictionary<string, string>();
+                String target = new IncrementalBackupTask(schedule).GetConfiguration(options);
+
+                List<Library.Interface.ICommandLineArgument> defaults = SettingOverrides.GetModuleOptions(m_wrapper, null);
+                defaults.AddRange(new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
+
+                String source = schedule.Task.SourcePath;
+                if (source == "")
+                {
+                    // We need to extract the paths of the "easy" folders                    
+                    string[] sourceFolders = DynamicSetupHelper.GetSourceFolders(schedule.Task, new ApplicationSettings(schedule.Task.DataParent), new List<KeyValuePair<bool, string>>());
+                    source = String.Join(System.IO.Path.PathSeparator.ToString(), sourceFolders);
+                }
+                
+                // We have everything needed to build the Command line
+                System.Text.StringBuilder sb = new StringBuilder();
+                sb.AppendLine("Command-line equivalent of this task:");
+                sb.AppendLine();
+                sb.Append(QuoteIfRequired(Application.ExecutablePath.Substring(0, Application.ExecutablePath.Length - 4) + ".CommandLine.exe"));
+                sb.Append(" backup");
+                
+                // Filters are handled differently
+                options.Remove("filter");
+
+                //Remove all default values, and mask passwords
+                foreach (Library.Interface.ICommandLineArgument arg in defaults)
+                {
+                    string defvalue = arg.DefaultValue == null ? "" : arg.DefaultValue;
+                    List<string> names = new List<string>();
+                    names.Add(arg.Name);
+                    if (arg.Aliases != null)
+                        names.AddRange(arg.Aliases);
+
+                    foreach(string a in names)
+                    {
+                        if (options.ContainsKey(a))
+                            switch(arg.Type)
+                            {
+                                case Library.Interface.CommandLineArgument.ArgumentType.Password:
+                                    if (!string.IsNullOrEmpty(options[a]))
+                                        options[a] = "**********";
+                                    break;
+
+                                case Library.Interface.CommandLineArgument.ArgumentType.Enumeration:
+                                case Library.Interface.CommandLineArgument.ArgumentType.Size:
+                                    if (string.Equals(defvalue, options[a] == null ? "" : options[a], StringComparison.InvariantCultureIgnoreCase))
+                                        options.Remove(a);
+                                    break;
+
+                                case Library.Interface.CommandLineArgument.ArgumentType.Path:
+                                    if (string.Equals(defvalue, options[a] == null ? "" : options[a], Library.Utility.Utility.ClientFilenameStringComparision))
+                                        options.Remove(a);
+                                    break;
+
+                                case Library.Interface.CommandLineArgument.ArgumentType.Boolean:
+                                    bool parsed = Library.Utility.Utility.ParseBoolOption(options, a);
+                                    bool defbool = Library.Utility.Utility.ParseBool(defvalue, false);
+                                    if (parsed == defbool)
+                                        options.Remove(a);
+
+                                    break;
+
+                                default:
+                                    if (string.Equals(defvalue, options[a] == null ? "" : options[a]))
+                                        options.Remove(a);
+                                    break;
+                            }
+                    }
+                }
+
+                foreach (KeyValuePair<string, string> i in options)
+                {
+                    sb.Append(" --" + i.Key);
+                    if (!string.IsNullOrEmpty(i.Value))
+                        sb.Append("=" + QuoteIfRequired(i.Value));
+                }
+
+                // Filters
+                foreach (Datamodel.TaskFilter filter in schedule.Task.SortedFilters)
+                {
+                    sb.Append(" --");
+                    sb.Append(filter.Include ? "include" : "exclude");
+                    sb.Append(filter.GlobbingFilter.Length == 0 ? "-regexp" : "");
+                    sb.Append("=");
+                    sb.Append(QuoteIfRequired(filter.GlobbingFilter.Length > 0 ? filter.GlobbingFilter : filter.Filter));
+                }
+
+                // Source and target
+                sb.Append(" " + QuoteIfRequired(source));
+                sb.Append(" " + QuoteIfRequired(target));
+
+                // Cleanup commands do not need encryption passphrase
+                options.Remove("passphrase");
+
+                if (!string.IsNullOrEmpty(m_wrapper.BackupExpireInterval))
+                {
+                    sb.AppendLine();
+                    sb.AppendLine();
+                    sb.Append(QuoteIfRequired(Application.ExecutablePath.Substring(0, Application.ExecutablePath.Length - 4) + ".CommandLine.exe"));
+                    sb.Append(" delete-older-than ");
+                    sb.Append(QuoteIfRequired(m_wrapper.BackupExpireInterval));
+
+                    foreach (KeyValuePair<string, string> i in options)
+                    {
+                        sb.Append(" --" + i.Key);
+                        if (!string.IsNullOrEmpty(i.Value))
+                            sb.Append("=" + QuoteIfRequired(i.Value));
+                    }
+
+                    sb.Append(" " + QuoteIfRequired(target));
+                }
+
+                if (m_wrapper.MaxFullBackups > 0)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine();
+                    sb.Append(QuoteIfRequired(Application.ExecutablePath.Substring(0, Application.ExecutablePath.Length - 4) + ".CommandLine.exe"));
+                    sb.Append(" delete-all-but-n");
+                    sb.Append(" " + QuoteIfRequired(m_wrapper.MaxFullBackups.ToString()));
+
+                    foreach (KeyValuePair<string, string> i in options)
+                    {
+                        sb.Append(" --" + i.Key);
+                        if (!string.IsNullOrEmpty(i.Value))
+                            sb.Append("=" + QuoteIfRequired(i.Value));
+                    }
+                    
+                    sb.Append(" " + QuoteIfRequired(target));
+                }
+
+                CommandLine.Text = sb.ToString();
+            }
+        }
+
     }
 }

@@ -68,9 +68,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\thirdparty\alphavss\Bin\AlphaVSS.Common.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="UnixSupport">
       <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
     </Reference>

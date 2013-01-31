@@ -299,6 +299,17 @@ namespace Duplicati.Library.Main
                 };
             }
         }
+        
+        /// <summary>
+        /// A default backup name
+        /// </summary>
+        public static string DefaultBackupName
+        {
+            get
+            {
+                return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
+            }
+        }
 
         /// <summary>
         /// Gets all supported commands
@@ -329,7 +340,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-time-tolerance", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisabletimetoleranceShort, Strings.Options.DisabletimetoleranceLong, "false"),
 
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.String, Strings.Options.ForceShort, Strings.Options.ForceLong),
-                    new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong),
+                    new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, Strings.Options.TempdirShort, Strings.Options.TempdirLong, System.IO.Path.GetTempPath()),
                     new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"highest", "high", "abovenormal", "normal", "belownormal", "low", "lowest", "idle" }),
 
                     new CommandLineArgument("backup-prefix", CommandLineArgument.ArgumentType.String, Strings.Options.BackupprefixShort, Strings.Options.BackupprefixLong, "duplicati"),
@@ -343,7 +354,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("include-regexp", CommandLineArgument.ArgumentType.String, Strings.Options.IncluderegexpShort, Strings.Options.IncluderegexpLong),
                     new CommandLineArgument("exclude-regexp", CommandLineArgument.ArgumentType.String, Strings.Options.ExcluderegexpShort, Strings.Options.ExcluderegexpLong),
 
-                    new CommandLineArgument("passphrase", CommandLineArgument.ArgumentType.String, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),
+                    new CommandLineArgument("passphrase", CommandLineArgument.ArgumentType.Password, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),
                     new CommandLineArgument("gpg-encryption", CommandLineArgument.ArgumentType.Boolean, Strings.Options.GpgencryptionShort, Strings.Options.GpgencryptionLong, "false", null, null, Strings.Options.GpgencryptionDeprecated),
                     new CommandLineArgument("no-encryption", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoencryptionShort, Strings.Options.NoencryptionLong, "false"),
 
@@ -540,15 +551,24 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("signature-cache-path") || string.IsNullOrEmpty(m_options["signature-cache-path"]))
+                string tmp;
+                m_options.TryGetValue("signature-cache-path", out tmp);
+                if (string.IsNullOrEmpty(tmp))
                     return null;
                 else
-                    return m_options["signature-cache-path"];
+                    return tmp;
             }
             set
             {
-                if (m_options.ContainsKey("signature-cache-path"))
-                    m_options.Remove("signature-cache-path");
+                if (string.IsNullOrEmpty(value))
+                {
+                    if (m_options.ContainsKey("signature-cache-path"))
+                        m_options.Remove("signature-cache-path");
+                }
+                else
+                {
+                    m_options["signature-cache-path"] = value; 
+                }
             }
         }
 
@@ -628,7 +648,7 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("tempdir") || string.IsNullOrEmpty(m_options["tempdir"]))
-                    return null;
+                    return System.IO.Path.GetTempPath();
                 else
                     return m_options["tempdir"];
             }
@@ -1135,7 +1155,7 @@ namespace Duplicati.Library.Main
                     value = null;
 
                 if (string.IsNullOrEmpty(value))
-                    return this.TempDir ?? Utility.TempFolder.SystemTempPath;
+                    return this.TempDir;
                 else
                     return value;
             }
@@ -1269,6 +1289,20 @@ namespace Duplicati.Library.Main
             } 
         }
         
+        /// <summary>
+        /// Gets the total size in bytes that the backend supports, returns -1 if there is no upper limit
+        /// </summary>
+        public long QuotaSize
+        {
+            get
+            {
+                if (!m_options.ContainsKey("quota-size") || string.IsNullOrEmpty(m_options["quota-size"]))
+                    return -1;
+                else
+                    return Utility.Sizeparser.ParseSize(m_options["quota-size"], "mb");
+            }
+        }
+
         /// <summary>
         /// Gets a list of modules, the key indicates if they are loaded 
         /// </summary>

@@ -550,6 +550,38 @@ namespace Duplicati.Library.Utility
             return Convert.ToBase64String(System.Security.Cryptography.HashAlgorithm.Create(HashAlgorithm).ComputeHash(stream));
         }
 
+        /// <summary>
+        /// Reads a file, attempts to detect encoding
+        /// </summary>
+        /// <param name="filename">The path to the file to read</param>
+        /// <returns>The file contents</returns>
+        public static string ReadFileWithDefaultEncoding(string filename)
+        {
+            // Since StreamReader defaults to UTF8 and most text files will NOT be UTF8 without BOM,
+            // we need to detect the encoding (at least that it's not UTF8).
+            // So we read the first 4096 bytes and try to decode them as UTF8. 
+            byte[] buffer = new byte[4096];
+            using (System.IO.FileStream file = new System.IO.FileStream(filename, System.IO.FileMode.Open))
+                file.Read(buffer, 0, 4096);
+
+            Encoding enc = Encoding.UTF8;
+            try
+            {
+                // this will throw an error if not really UTF8
+                new UTF8Encoding(false, true).GetString(buffer); 
+            }
+            catch (Exception)
+            {
+                enc = Encoding.Default;
+            }
+
+            // This will load the text using the BOM, or the detected encoding if no BOM.
+            using (System.IO.StreamReader reader = new System.IO.StreamReader(filename, enc, true))
+            {
+                // Remove all \r from the file and split on \n, then pass directly to ExtractOptions
+                return reader.ReadToEnd();
+            }
+        }
 
         /// <summary>
         /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot;.
@@ -950,6 +982,18 @@ namespace Duplicati.Library.Utility
         {
             try { return Uri.CheckHostName(hostname) != UriHostNameType.Unknown; }
             catch { return false; }
+        }
+        
+        // <summary>
+        // Returns the entry assembly or reasonable approximation if no entry assembly is available.
+        // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
+        // http://social.msdn.microsoft.com/Forums/nb-NO/clr/thread/db44fe1a-3bb4-41d4-a0e0-f3021f30e56f
+        // so this layer of indirection is necessary
+        // </summary>
+        // <returns>entry assembly or reasonable approximation</returns>
+        public static System.Reflection.Assembly getEntryAssembly()
+        {
+            return System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
         }
     }
 }

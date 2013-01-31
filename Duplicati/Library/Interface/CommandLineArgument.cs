@@ -59,6 +59,10 @@ namespace Duplicati.Library.Interface
             /// </summary>
             Path,
             /// <summary>
+            /// Indicates that the argument is a password and should be masked
+            /// </summary>
+            Password,
+            /// <summary>
             /// The argument type is unknown
             /// </summary>
             Unknown

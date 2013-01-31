@@ -90,6 +90,24 @@ namespace Duplicati.CommandLine
                         Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
                         return;
                     }
+                
+                if ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")))
+                {
+                    string filename;
+                    if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
+                    {
+                        filename = options["parameters-file"];
+                        options.Remove("parameters-file");
+                    }
+                    else
+                    {
+                        filename = options["parameter-file"];
+                        options.Remove("parameter-file");
+                    }
+
+                    if (!ReadOptionsFromFile(filename, ref filter, cargs, options))
+                        return;
+                }
 
                 //After checking for internal options, we set the filter option
                 if (!string.IsNullOrEmpty(filter))
@@ -455,7 +473,104 @@ namespace Duplicati.CommandLine
         private static void PrintWrongNumberOfArguments(List<string> args, int expected)
         {
             Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2, args.Count, expected, args.Count == 0 ? "" : "\"" + string.Join("\", \"", args.ToArray()) + "\"");
+        }
 
+        public static IList<Library.Interface.ICommandLineArgument> SupportedCommands
+        {
+            get
+            {
+                return new List<Library.Interface.ICommandLineArgument>(new Library.Interface.ICommandLineArgument[] {
+                    new Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong, "", new string[] {"parameter-file"})
+                });
+            }
+        }
+
+        private static bool ReadOptionsFromFile(string filename, ref string filter, IList<string> cargs, Dictionary<string, string> options)
+        {
+            try
+            {
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(filename).Replace("\r", "").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries));
+
+                string newfilter = Duplicati.Library.Utility.FilenameFilter.EncodeAsFilter(Duplicati.Library.Utility.FilenameFilter.ParseCommandLine(fargs, true));
+
+                // If the user specifies parameters-file, all filters must be in the file.
+                // Allowing to specify some filters on the command line could result in wrong filter ordering
+                if (!string.IsNullOrEmpty(filter) && !string.IsNullOrEmpty(newfilter))
+                    throw new Exception(Strings.Program.FiltersCannotBeUsedWithFileError);
+
+                filter = newfilter;
+
+                Dictionary<string, string> opt = CommandLineParser.ExtractOptions(fargs);
+                String newsource = null, newtarget = null;
+                foreach (KeyValuePair<String, String> keyvalue in opt)
+                {
+                    switch (keyvalue.Key.ToLower())
+                    {
+                        // This replaces any previous value, file parameters take precedence;
+                        case "source":
+                            newsource = keyvalue.Value;
+                            break;
+                        case "target":
+                            newtarget = keyvalue.Value;
+                            break;
+                        default:
+                            options[keyvalue.Key] = keyvalue.Value;
+                            break;
+                    }
+                }
+
+                // When the action is to backup, allow the source and/or the target 
+                // to be specified in the parameters file as --source= and --target=. 
+                // Note: this block is faily complex due to the way parameters are handled by the rest of the
+                // procedure. It could likely be much simpler and versatile (allow --source and --target on 
+                // restore or other actions) with some refactoring of the parameters decision tree
+                if (!String.IsNullOrEmpty(newsource) || !String.IsNullOrEmpty(newtarget))
+                {
+                    int offset = cargs.Count > 0 && (cargs[0] == "backup" || cargs[0] == "restore") ? 1 : 0;
+                    bool isrestore = cargs.Count > 0 && cargs[0] == "restore"
+                                    || cargs.Count >= 2 && cargs[0].Contains("://");
+
+                    if (cargs.Count == 0 + offset)
+                    {
+                        // if either is empty loading will fail later, so we don't really care.
+                        if (!String.IsNullOrEmpty(newsource)) cargs.Add(newsource);
+                        if (!String.IsNullOrEmpty(newtarget)) cargs.Add(newtarget);
+                    }
+                    else
+                    {
+                        bool isurl = cargs[offset].Contains("://");
+                        bool isdir = !isurl && cargs[offset].IndexOfAny(new char[] { '/', '\\', ':' }) >= 0;
+                        if (offset > 0 || isdir || isurl)
+                        {
+                            if (cargs.Count == 1 + offset)
+                            {
+                                if (isrestore ^ isurl)
+                                {
+                                    if (!String.IsNullOrEmpty(newtarget)) cargs[offset] = newtarget;
+                                    if (!String.IsNullOrEmpty(newsource)) cargs.Insert(offset, newsource);
+                                }
+                                else
+                                {
+                                    if (!String.IsNullOrEmpty(newtarget)) cargs[offset] = newsource;
+                                    if (!String.IsNullOrEmpty(newsource)) cargs.Add(newtarget);
+                                }
+                            }
+                            else
+                            {
+                                if (!String.IsNullOrEmpty(newsource)) cargs[offset] = newsource;
+                                if (!String.IsNullOrEmpty(newtarget)) cargs[offset + 1] = newtarget;
+                            }
+                        }
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(Strings.Program.FailedToParseParametersFileError, filename, e.Message);
+                return false;
+            }
         }
 
         private static void PrintOldUsage(bool extended)

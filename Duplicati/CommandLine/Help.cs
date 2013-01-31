@@ -99,6 +99,11 @@ namespace Duplicati.CommandLine
                     foreach (Library.Interface.ICommandLineArgument arg in opts.SupportedCommands)
                         sorted.Add(arg.Name, arg);
 
+                    foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedCommands)
+
+                        sorted.Add(arg.Name, arg);
+
+
                     foreach (Library.Interface.ICommandLineArgument arg in sorted.Values)
                         lines.Add(PrintArgSimple(arg, arg.Name));
 
@@ -109,6 +114,12 @@ namespace Duplicati.CommandLine
                 {
                     List<string> lines = new List<string>();
                     foreach (Library.Interface.ICommandLineArgument arg in opts.SupportedCommands)
+                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
+
+
+
+                    foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedCommands)
+
                         Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
 
                     lines.Add("");
@@ -396,6 +407,8 @@ namespace Duplicati.CommandLine
                 Library.Main.Options opts = new Library.Main.Options(new Dictionary<string, string>());
                 List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>();
                 foundArgs.Add(new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
+                foundArgs.Add(Program.SupportedCommands);
+
                 foreach (Duplicati.Library.Interface.IBackend backend in Library.DynamicLoader.BackendLoader.Backends)
                     if (backend.SupportedCommands != null)
                         foundArgs.Add(backend.SupportedCommands);

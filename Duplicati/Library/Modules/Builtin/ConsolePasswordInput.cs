@@ -75,7 +75,7 @@ namespace Duplicati.Library.Modules.Builtin
                 if (k.Key == ConsoleKey.Escape)
                     throw new Library.Interface.CancelException("");
 
-                passphrase.Append(k.KeyChar);
+                if (k.KeyChar != '\0') passphrase.Append(k.KeyChar);
 
                 //Unix/Linux user know that there is no feedback, Win user gets scared :)
                 if (System.Environment.OSVersion.Platform != PlatformID.Unix)

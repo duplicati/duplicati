@@ -22,22 +22,23 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         #region Component Designer generated code
 
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
+        /// <summary>
+        /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FinishedAdd));
-            this.label1 = new System.Windows.Forms.Label();
             this.Summary = new System.Windows.Forms.TextBox();
             this.RunNow = new System.Windows.Forms.CheckBox();
+            this.Tabs = new System.Windows.Forms.TabControl();
+            this.TabSummary = new System.Windows.Forms.TabPage();
+            this.TabCommandLine = new System.Windows.Forms.TabPage();
+            this.CommandLine = new System.Windows.Forms.TextBox();
+            this.Tabs.SuspendLayout();
+            this.TabSummary.SuspendLayout();
+            this.TabCommandLine.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // label1
-            // 
-            resources.ApplyResources(this.label1, "label1");
-            this.label1.Name = "label1";
             // 
             // Summary
             // 
@@ -51,14 +52,45 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
             this.RunNow.Name = "RunNow";
             this.RunNow.UseVisualStyleBackColor = true;
             // 
+            // Tabs
+            // 
+            this.Tabs.Controls.Add(this.TabSummary);
+            this.Tabs.Controls.Add(this.TabCommandLine);
+            resources.ApplyResources(this.Tabs, "Tabs");
+            this.Tabs.Name = "Tabs";
+            this.Tabs.SelectedIndex = 0;
+            this.Tabs.SelectedIndexChanged += new System.EventHandler(this.Tabs_SelectedIndexChanged);
+            // 
+            // TabSummary
+            // 
+            this.TabSummary.Controls.Add(this.Summary);
+            resources.ApplyResources(this.TabSummary, "TabSummary");
+            this.TabSummary.Name = "TabSummary";
+            // 
+            // TabCommandLine
+            // 
+            this.TabCommandLine.Controls.Add(this.CommandLine);
+            resources.ApplyResources(this.TabCommandLine, "TabCommandLine");
+            this.TabCommandLine.Name = "TabCommandLine";
+            // 
+            // CommandLine
+            // 
+            resources.ApplyResources(this.CommandLine, "CommandLine");
+            this.CommandLine.Name = "CommandLine";
+            this.CommandLine.ReadOnly = true;
+            // 
             // FinishedAdd
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.Tabs);
             this.Controls.Add(this.RunNow);
-            this.Controls.Add(this.Summary);
-            this.Controls.Add(this.label1);
             this.Name = "FinishedAdd";
+            this.Tabs.ResumeLayout(false);
+            this.TabSummary.ResumeLayout(false);
+            this.TabSummary.PerformLayout();
+            this.TabCommandLine.ResumeLayout(false);
+            this.TabCommandLine.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -66,8 +98,11 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
         #endregion
 
-        private System.Windows.Forms.Label label1;
         public System.Windows.Forms.TextBox Summary;
         public System.Windows.Forms.CheckBox RunNow;
+        private System.Windows.Forms.TabControl Tabs;
+        private System.Windows.Forms.TabPage TabSummary;
+        private System.Windows.Forms.TabPage TabCommandLine;
+        public System.Windows.Forms.TextBox CommandLine;
     }
 }

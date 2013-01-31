@@ -50,3 +50,8 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyVersion("1.0.1.276")]
 [assembly: AssemblyFileVersion("1.0.1.276")]
+
+//
+// Make this assembly amenable to testing
+//
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Duplicati_Test,PublicKey=0024000004800000940000000602000000240000525341310004000001000100d1ce9cf2ab57d00de3083722ec78ca7b169236c1150350789f131a480c65ad27d3e59ec9c2cca53f84b4f0f6a7f4f59e6d08e8556ccaa54d24894d41813bdf61db969bfaa32c445995afc03e23a137c6328f7dabadeb17b8e5cc351f399334f3f6f2cb1b19f02af0e752116f4bdf808ad51f3340a1a0701a5455cb84a3a5eb9e")]
