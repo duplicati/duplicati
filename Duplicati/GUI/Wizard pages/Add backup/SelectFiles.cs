@@ -57,7 +57,7 @@ namespace Duplicati.GUI.Wizard_pages.Add_backup
 
             m_myPictures = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
             m_myMusic = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
-            m_desktop = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+            m_desktop = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
             m_appData = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
             m_myDocuments = Library.Utility.Utility.AppendDirSeparator(System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
 

@@ -114,8 +114,13 @@ namespace Duplicati.GUI.HelperControls
             // 
             // openFileDialog
             // 
+            this.openFileDialog.AddExtension = false;
+            this.openFileDialog.CheckFileExists = false;
+            this.openFileDialog.CheckPathExists = false;
+            this.openFileDialog.DereferenceLinks = false;
             resources.ApplyResources(this.openFileDialog, "openFileDialog");
             this.openFileDialog.SupportMultiDottedExtensions = true;
+            this.openFileDialog.ValidateNames = false;
             // 
             // HelpLink
             // 
