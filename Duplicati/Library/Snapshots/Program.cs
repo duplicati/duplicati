@@ -1,0 +1,172 @@
+#region Disclaimer / License
+// Copyright (C) 2011, Kenneth Skovhede
+// http://www.hexad.dk, opensource@hexad.dk
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+#endregion
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Duplicati.Library.Snapshots
+{
+    static class Program
+    {
+        private static Dictionary<string, string> ExtractOptions(List<string> args)
+        {
+            Dictionary<string, string> options = new Dictionary<string, string>();
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].StartsWith("--"))
+                {
+                    string key = null;
+                    string value = null;
+                    if (args[i].IndexOf("=") > 0)
+                    {
+                        key = args[i].Substring(0, args[i].IndexOf("="));
+                        value = args[i].Substring(args[i].IndexOf("=") + 1);
+                    }
+                    else
+                        key = args[i];
+
+                    //Skip the leading --
+                    key = key.Substring(2).ToLower();
+                    if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("\"") && value.EndsWith("\""))
+                        value = value.Substring(1, value.Length - 2);
+
+                    //Last argument overwrites the current
+                    options[key] = value;
+
+                    args.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            return options;
+        }
+
+        public static void Main(string[] _args)
+        {
+            try
+            {
+                List<string> args = new List<string>(_args);
+                Dictionary<string, string> options = ExtractOptions(args);
+                
+                if (args.Count == 0)
+                    args = new List<string> { System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) };
+
+                if (args.Count != 1)
+                {
+                    Console.WriteLine(@"Usage:
+Duplicati.Library.Snapshots.exe [test-folder]
+
+Where <test-folder> is the folder where files will be locked/created etc");
+                    return;
+                }
+
+                if (Library.Utility.Utility.ParseBoolOption(options, "usn-test"))
+                {
+                    using (USNHelper usn = new USNHelper(args[0]))
+                    {
+                        Console.WriteLine("Current USN JournalID: " + usn.JournalID);
+                        Console.WriteLine("Current USN no: " + usn.USN);
+
+                        if (options.ContainsKey("last-usn"))
+                        {
+                            Console.WriteLine("Changed entries ...");
+                            foreach (string s in usn.GetChangedFileSystemEntries(args[0], long.Parse(options["last-usn"])))
+                                Console.WriteLine(s + ", " + usn.GetChangeFlags(s));
+
+                            Console.WriteLine();
+                            Console.WriteLine("Renamed entries ...");
+                            foreach (string s in usn.GetRenamedFileSystemEntries(args[0], long.Parse(options["last-usn"])))
+                                Console.WriteLine(s);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Files ...");
+                            foreach (string s in usn.Files)
+                                Console.WriteLine(s);
+
+                            Console.WriteLine();
+                            Console.WriteLine("Folders ...");
+
+                            foreach (string s in usn.Folders)
+                                Console.WriteLine(s);
+                        }
+                    }
+                }
+                else
+                {
+                    if (!System.IO.Directory.Exists(args[0]))
+                        System.IO.Directory.CreateDirectory(args[0]);
+
+                    string filename = System.IO.Path.Combine(args[0], "testfile.bin");
+
+                    Console.WriteLine(string.Format("Creating file {0}", filename));
+
+                    using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                    {
+                        Console.WriteLine(string.Format("Attempting to read locked file {0}", filename));
+
+                        try
+                        {
+                            using (System.IO.FileStream fs2 = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                            { }
+
+                            Console.WriteLine(string.Format("Could open locked file {0}, cannot test", filename));
+                            Console.WriteLine("* Test failed");
+                            return;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(string.Format("The file {0} was correctly locked, message: {1}", filename, ex.Message));
+                        }
+
+                        Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
+                        Console.WriteLine("If this fails, try to run as " + (Utility.Utility.IsClientLinux ? "root" : "Administrator"));
+                        using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new string[] { args[0] }, options))
+                        {
+                            Console.WriteLine("Attempting to read locked file via snapshot");
+                            try
+                            {
+                                using (System.IO.Stream s = snapshot.OpenRead(filename))
+                                { }
+
+                                Console.WriteLine(string.Format("Could open locked file {0}, through snapshot", filename));
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(string.Format("The file {0} was locked even through snapshot, message: {1}", filename, ex.ToString()));
+                                Console.WriteLine("* Test failed");
+                                return;
+                            }
+                        }
+                    }
+
+                    Console.WriteLine("* Test passed");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(string.Format("The snapshot tester failed: {0}", ex.ToString()));
+                Console.WriteLine("* Test failed");
+            }
+
+        }
+    }
+}

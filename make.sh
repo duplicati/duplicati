@@ -1,0 +1,2 @@
+cd Installer/Makefile
+make $@

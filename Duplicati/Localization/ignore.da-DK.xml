@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <ignore>OK</ignore>
+	<ignore>Pause</ignore>
+	<ignore>Start</ignore>
+    <ignore>Stop</ignore>
+	<ignore>Log</ignore>
+	<ignore>Log data</ignore>
+	<ignore>Status</ignore>
+	<ignore>Destination</ignore>
+	<ignore>Pause backup</ignore>
+	<ignore>Stop backup</ignore>
+	<ignore>Duplicati status</ignore>
+	<ignore>s</ignore>
+	<ignore>Filter</ignore>
+	<ignore>gb</ignore>
+	<ignore>gb/s</ignore>
+	<ignore>mb</ignore>
+	<ignore>mb/s</ignore>
+	<ignore>kb</ignore>
+	<ignore>kb/s</ignore>
+	<ignore>...</ignore>
+	<ignore>(...)</ignore>
+	<ignore>Normal</ignore>
+	<ignore>backup</ignore>
+	<ignore>--{0}: {1}</ignore>
+	<ignore>Backup: {0}</ignore>
+	<ignore>Interval</ignore>
+	<ignore>Server</ignore>
+	<ignore>Get start</ignore>
+	<ignore>Put start</ignore>
+	<ignore>List start</ignore>
+	<ignore>AWS Access ID</ignore>
+	<ignore>AWS Secret Key</ignore>
+	<ignore>CloudFiles API Key</ignore>
+	<ignore>{0:N} GB</ignore>
+	<ignore>{0:N} KB</ignore>
+	<ignore>{0:N} MB</ignore>
+	<ignore>CloudFiles</ignore>
+	<ignore>{0}\t{1}</ignore>
+	<ignore>argument</ignore>
+	<ignore>Dialog</ignore>
+	<ignore>{0}</ignore>
+</root>

@@ -1,0 +1,19 @@
+For a release build, do this:
+
+1. Update the SVN to the correct revision and note the revision number
+2. Run the UpdateVersionNumber.exe and set the revision number
+3. Rebuild the solution in Release mode
+4. Run "VS Express build.bat"
+5. Go to folder bin\Release
+6. Rename "Duplicati.msi" to "Duplicati 1.0 r???.msi"
+7. Rename "Duplicati.zip" to "Duplicati 1.0 r???.zip"
+8. Verify that the "Run application now" works in the MSI
+
+If the zip file is missing, you need to install 7zip.
+If the msi file is missing, you need to install the .Net SDK 2.0.
+If you get errors during run, you may need to download "paraffin.exe" (v3.13):
+http://www.wintellect.com/cs/blogs/jrobbins/archive/2007/10/21/wix-a-better-tallow-paraffin.aspx
+http://www.wintellect.com/CS/files/folders/8198/download.aspx
+
+You also need to install Wix (Tested with 3.0): 
+http://wix.sourceforge.net/

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <ignore> Inc\t{0}\t{1}\t{2}</ignore>
+    <ignore>(...)</ignore>
+    <ignore>--{0}: {1}</ignore>
+    <ignore>...</ignore>
+    <ignore>1 Minute</ignore>
+    <ignore>AWS Access ID</ignore>
+    <ignore>Argument</ignore>
+    <ignore>CloudFiles (Rackspace)</ignore>
+    <ignore>CloudFiles AuthUrl</ignore>
+    <ignore>Dialog</ignore>
+    <ignore>Duplicati Setup, Version {0}</ignore>
+    <ignore>Duplicati {0} - Status</ignore>
+    <ignore>Filter</ignore>
+    <ignore>Gb</ignore>
+    <ignore>Gb/s</ignore>
+    <ignore>Homepage</ignore>
+    <ignore>MB</ignore>
+    <ignore>MB/s</ignore>
+    <ignore>Name</ignore>
+    <ignore>Normal</ignore>
+    <ignore>OK</ignore>
+    <ignore>Pause</ignore>
+    <ignore>Port (optional)</ignore>
+    <ignore>Server</ignore>
+    <ignore>Status</ignore>
+    <ignore>Stop</ignore>
+    <ignore>bytes</ignore>
+    <ignore>bytes/s</ignore>
+    <ignore>kb</ignore>
+    <ignore>kb/s</ignore>
+    <ignore>s</ignore>
+    <ignore>{0:N} GB</ignore>
+    <ignore>{0:N} MB</ignore>
+    <ignore>{0:N} kB</ignore>
+    <ignore>{0}</ignore>
+    <ignore>{0} bytes</ignore>
+    <ignore>{0}\t{1}</ignore>
+</root>

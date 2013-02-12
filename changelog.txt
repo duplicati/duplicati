@@ -1,0 +1,173 @@
+Duplicati 1.2 major changes from 1.0
+
+ * Improved volume size handling
+ * Interactive pause/stop control
+ * Improved SSH support
+ * Language support (French, German, Danish and Portugese)
+ * Support for backing up multiple folders
+ * Uses AES crypt compatible encryption
+ * Significant speed improvements
+ * Portable mode
+ * Support for snapshots via VSS and LVM
+ * Backup of open files
+ * Support for TahoeLAFS
+ 
+ Comprehensive list of changes from 1.0
+ * A performance optimization that reduces memory usage and improves speed
+ * Removed code to prevent activation of the previous AES encryption scheme, see issue #347
+ * Fixed a problem with the performance optimization for files larger than 2gb, see issue #362
+ * Improved reliability for FTP, see issue #302
+ * Change the default folder for the signature cache, see issue #356
+ * Checks the length of the path for restored files on windows
+ * Fixed a problem with partial restore from the UI
+ * Added balloon notifications and error indicators
+ * Support for file verification after uploads, issue #375
+ * Protection on automatic cleanup, issue #375
+ * Verification of file size and backup chain validation, issue #375 + issue #359 + issue #360
+ * Option to allow remote verification of backup data, issue #353
+ * Option to allow disabling the http header Expect: 100-Continue, issue #378
+ * Fixed a problem with r720 that disabled SSL for some setups, issue #383
+ * Fixed a problem with the verification files in r726
+ * German translation, issue #363
+ * Added English as language in the options, issue #395
+ * Fixed a bug with folder renames that change letter casing, see issue #399
+ * Support for CloudFiles UK Account, issue #404
+ * Fixed a problem with FTP and TahoeLAFS, issue #406
+ * Fixed a problem with displayed date format, issue #408
+ * Support for [http://tahoe-lafs.org Tahoe-LAFS], see issue #206
+ * Preliminary support for SSH keyfiles, see issue #153
+ * Changed the text to indicate that the sub-page contains volumesize
+ * Added the options "alternate-destination-marker" and "alternate-target-paths" to the file backend
+ * Added the option "sorted-filelist"
+ * Now updates the display each second when performing a backup
+ * Danish language pack
+ * Resizable status window
+ * Fixed a bug with the SSH backend which required keyfiles, see issue #323
+ * Fixed an issue with long backup names under Linux, see issue #298
+ * Clicking the trayicon now toggles visibility, see issue #299
+ * Fixed an issue with the S3 default option module, see issue #304
+ * Fixed a time alias problem, see issue #219
+ * Added support for USN to enumerate and discover changed files, see issue #32
+ * Added support for backing up open files without VSS/LVM, see issue #247
+ * Fixed an issue with USN resulting in empty backups, see issue #306
+ * There is once again a 32bit and 64bit version of the MSI. The only difference is that the 32bit version will install in the "Program Files (x86)" on a 64bit system, but still runs 64 bit. See issue #125
+ * There is now a French translation included, see issue #288
+ * There is now a Portuguese translation included, see issue #85
+ * Fixed some logic with the backends, see issue #102
+ * Added a "find-last-version" action to the commandline version, see issue #264
+ * Fixed a problem where files were not correctly closed, see issue #295
+ * Fixed a bug with multi-folder restores
+ * Fixed a restore issue with volumes created before multi-source support
+ * Fixed a bug in the UI with selecting targets for multi-source folder
+ * Fixed "Run backup now", see issue 275
+ * Fixed problems with deleting a backup, see issue #227
+ * Added a --vss-exclude-writers option, see issue #260
+ * The "Back" button could crash the UI, see issue #280
+ * Improved support for restoring multi-source backups
+ * Fixed an unwanted error message, see issue #284
+ * Fixed a problem with incremental backups being too large, see issue #283
+ * Added a "collection-status" command to the commandline version, see issue #235
+ * Added support for finding signature cache files from earlier versions
+ * Removed the unwanted warnings from the log, see issue #233
+ * Added logfile options to GUI and commandline, for extra logging
+ * Improved plugin compatibility, see issue #174
+ * Added extra commandline options to the GUI, see issue #91
+ * Fixed a problem with hiding the AWS secret key, see issue #134
+ * Added a password request module, see issue #221
+ * Added an option to exclude empty folders from backup, see issue #263
+ * Fixed a bug with S3 where folders with more than 1000 entries causes strange behavior
+ * Fixed a problem with asynchronous uploads where a file could be "forgotten"
+ * Fixed problems with the time separator, see issue #210
+ * Removed filename generation page due to issue #210
+ * Fixed upgrading database after restore, see issue #149
+ * Fixed a problem where the database was not encrypted
+ * Updated the restore procedure to show filenames while restoring, see issue #159
+ * Fixed incorrect tab order, see issue #269
+ * Duplicati now "inherits" the previously used encryption
+ * Removed the encryption module selection part of the restore dialog
+ * Modified the restore wizard to allow for selecting advanced options
+ * When shutting down the machine, Duplicati now writes a log message, see issue #185
+ * Fixed a GUI crash under Linux, see issue #272
+ * Fixed a bug with locked files under VSS, see issue #258
+ * Fixed an "index out of bounds" error introduced by issue #245
+ * Fixed a critical S3 bug where backups with more than 1000 files could cause content file deletion
+ * Added a --debug-output option to allow for more detailed error messages
+ * Fixed a bug with the commandline and --file-to-restore, see issue #262
+ * Added license information in the about box
+ * Improved security by encrypting the database and protecting password fields, see issue #134
+ * Correctly restores modification timestamps, see issue #229
+ * UI bug with unmanaged SSH, see issue #256
+ * Portable support, see issue #128
+ * No longer stores signature cache in Temp folder, see issue #165
+ * Deleting a backup could crash Duplicati, see issue #249
+ * Some text was not displayed in the advanced window, see issue #257
+ * When terminating, Duplicati will now record a running backup as aborted, see issue #185
+ * GnuPG and pscp are now bundled for windows, see issue #47
+ * Better handling of defect signature files, see issue #21
+ * Filters now work with the commandline, see issue #258
+ * Revoked OSX support, and the GTK Tray menu, as that broke everything else, see issue #224
+ * Updated display for failed uploads to be less ambiguous, see issue #248
+ * Fixed a bug with leftover manifests, see issue #252
+ * Fixes some issues with asynchronous uploads, see issue #110 and issue #90 
+ * Rewrote the SharpRSync (rdiff) implementation, and it is now up to 8 times faster, see issue #245 
+ * Added support for disk snapshots, using VSS or LVM, see issue #18
+ * Options to select allowed days of the week, see issue #111
+ * Added option to hide the donate button introduced in r433
+ * Improved filter editor usage, see issue #172, and issue #218
+ * Fixed multiline text boxes under mono, see issue #205
+ * Fixed some spelling errors, see issue #242
+ * Now aborts the backup if a source folder is missing, rather than pretend the whole folder was deleted, see issue #100
+ * Fixed a minor scroll issue with multiple backups.
+ * Fixed a a bug with AES encryption not being automatically backwards compatible.
+ * Plugable modules and settings, see issue #118, issue #151, issue #199 and issue #207.
+ * Now uses AESCrypt compatible encryption, see issue #148.
+ * Support for S3 Reduced Redundancy Storage, see issue #212.
+ * Multiple fixes for S3, see issue #214 and issue #215.
+ * Autoselect the time separator on windows, see issue #182.
+ * Added backend options to advanced grid, see issue #82.
+ * Fixed issues with S3 and spaces in folderpath, see issue #127.
+ * Fixed problem with installing to custom location, see issue #139.
+ * Fixed changing location of "My Documents", see issue #201.
+ * Does not generate too large files, see issue #5.
+ * Better handling of partially uploaded manifests, see issue #58.
+ * Supports multiple folders in a single backup, see issue #48.
+ * Fixed an issue with the WEBDAV backend, see issue #192.
+ * Fixed an issue with uploading large files to CloudFiles, see issue #202.
+ * Fixed an issue where editing a backup would cause all files to be excluded, see issue #137.
+ * Fixed an issue with Apache and WEBDAV, see issue #192
+ * Fixed an issue with non-standard ports on SSH, see issue #179
+ * Fixed a bug with FTP after introducing SSL, r369
+ * Fixed a bug with FTP where an error 450 or 451 would occur, see issue #166 and issue #167.
+ * Added additional fixes for unmanaged SSH, issue #126
+ * The filter editor now reports why a file is included/excluded, issue #89
+ * Support for SSL with WEBDAV backend, issue #121
+ * Support for SSL with FTP backend, issue #170
+ * Fixed an issue with a missing error description, issue #171
+ * Fixed a bug with cancelling a restore operation
+ * Fixed a bug with partial restoring
+ * Added a helpfull message if using an incorrectly setup IIS with WebDAV, issue #122
+ * Fixed an issue with filename prefixes from the UI, issue #155
+ * Added security block to prevent accidental deletion of the last backup, issue #104
+ * Added a managed SSH backend, issue #129
+ * Added code to detect non-existing folders in WebDAV, SSH and FTP backends
+ * Fixed problems with timezone changes, issue #143
+ * Improved the progress bar and status messages when restoring files
+ * Easier way to restore files from a backup, issue #140
+ * Fixed a bug with the commandline decrypter
+ * First release to include CloudFiles as a backend, issue #43. 
+ * Fixes for "DragDrop registration failed" errors, issue #132 and issue #145
+ * Improved backend interface to allow custom UI for providers, issue #77
+ * Fixes for the S3 backend under Linux, issue #101
+ * Added option to pause/resume/stop backups and throttle running backups, issue #10 and issue #69
+ * Fixed delete of running backup, issue #67
+ * Fixed a timeout issue with the SSH backend on Windows clients, see issue #59.
+ * Simplfied builds, there is now only one build, avalible as zip and MSI. Both packages should work on all OS and architectures. Untested with 64bit windows.
+ * Added shortcuts to start backups and others from commandline, see issue #91.
+ * Fixed a number of issues with the WEBDAV backend
+ * Added a backend test application (see issue #80)
+ * Fixed a timing issue with the SSH backend (see issue #59)
+ * Added a FTP_USERNAME (and --ftp-username) option (see issue #86 and issue #87) 
+ * Added a language selector in the settings dialog (see issue #85)
+ * Added filename options to fix an issue with filenames on complete restore (see issue #78)
+ * Added option to debug SSH connections (see issue #59) 
+ * Support for localization (see issue #71) 

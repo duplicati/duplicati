@@ -1,0 +1,546 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AsynchronousuploadLong" xml:space="preserve">
+    <value>By supplying this option, Duplicati will transmit files, while building volumes. This can shorten the time it takes to perform a backup, but requires more diskspace.</value>
+  </data>
+  <data name="AsynchronousuploadShort" xml:space="preserve">
+    <value>Transmit files on a separate thread</value>
+  </data>
+  <data name="AutocleanupLong" xml:space="preserve">
+    <value>If a backup is interrupted there will likely be partial files present on the backend. Using this flag, Duplicati will automatically remove such files when encountered.</value>
+  </data>
+  <data name="AutocleanupShort" xml:space="preserve">
+    <value>A flag indicating that Duplicati should remove unused files</value>
+  </data>
+  <data name="BackupprefixLong" xml:space="preserve">
+    <value>Any string used to prefix the filenames generated by Duplicati.</value>
+  </data>
+  <data name="BackupprefixShort" xml:space="preserve">
+    <value>Backup volume filename prefix</value>
+  </data>
+  <data name="DisablefiletimecheckLong" xml:space="preserve">
+    <value>The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won't work correctly unless this flag is set.</value>
+  </data>
+  <data name="DisablefiletimecheckShort" xml:space="preserve">
+    <value>Disable checks based on file time</value>
+  </data>
+  <data name="ExcludeLong" xml:space="preserve">
+    <value>Exclude files that match this filter. The filter is a "file-globbing" filter, much like commandline options. You can use "*.txt" to exclude all text files.</value>
+  </data>
+  <data name="ExcluderegexpLong" xml:space="preserve">
+    <value>Exclude files that match this filter. The filter is a regular expression filter. You can use "(.*)\.txt" to exclude all text files.</value>
+  </data>
+  <data name="ExcluderegexpShort" xml:space="preserve">
+    <value>Exclude files regular expression</value>
+  </data>
+  <data name="ExcludeShort" xml:space="preserve">
+    <value>Exclude files</value>
+  </data>
+  <data name="FiletorestoreLong" xml:space="preserve">
+    <value>By default, duplicati will restore all files in the backup. Use this option to restore only a subset of the files</value>
+  </data>
+  <data name="FiletorestoreShort" xml:space="preserve">
+    <value>A list of files to restore</value>
+  </data>
+  <data name="ForceLong" xml:space="preserve">
+    <value>When deleting old files, Duplicati will only write out what files are supposed to be deleted. Specify the "force" option to actually remove them.</value>
+  </data>
+  <data name="ForceShort" xml:space="preserve">
+    <value>Force the removal of files</value>
+  </data>
+  <data name="FullifolderthanLong" xml:space="preserve">
+    <value>If the last full backup is older than the duration supplied here, Duplicati will make a full backup, otherwise an incremental</value>
+  </data>
+  <data name="FullifolderthanShort" xml:space="preserve">
+    <value>The max duration between full backups</value>
+  </data>
+  <data name="FullLong" xml:space="preserve">
+    <value>When this flag is specified, Duplicati will make a full backup of all files, and ignore any incremental data.</value>
+  </data>
+  <data name="FullShort" xml:space="preserve">
+    <value>A flag used to force full backups</value>
+  </data>
+  <data name="GpgencryptionLong" xml:space="preserve">
+    <value>By default, Duplicati will use the AES encryption algorithm to encrypt the backup volumes, setting this flag makes Duplicati use the GNU Privacy Guard instead. GnuPG must be installed on the machine for this to work.</value>
+  </data>
+  <data name="GpgencryptionShort" xml:space="preserve">
+    <value>Use GnuPG for encryption</value>
+  </data>
+  <data name="IncludeLong" xml:space="preserve">
+    <value>Include files that match this filter. The filter is a "file-globbing" filter, much like commandline options. You can use "*.txt" to include all text files.</value>
+  </data>
+  <data name="IncluderegexpLong" xml:space="preserve">
+    <value>Include files that match this filter. The filter is a regular expression filter. You can use "(.*)\.txt" to include all text files.</value>
+  </data>
+  <data name="IncluderegexpShort" xml:space="preserve">
+    <value>Include files regular expression</value>
+  </data>
+  <data name="IncludeShort" xml:space="preserve">
+    <value>Include files</value>
+  </data>
+  <data name="AllowsleepShort" xml:space="preserve">
+    <value>Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows only)</value>
+  </data>
+  <data name="MaxdownloadprsecondLong" xml:space="preserve">
+    <value>By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive.</value>
+  </data>
+  <data name="MaxdownloadprsecondShort" xml:space="preserve">
+    <value>Max number of bytes to download pr. second</value>
+  </data>
+  <data name="MaxuploadprsecondLong" xml:space="preserve">
+    <value>By setting this value you can limit how much bandwidth Duplicati consumes for uploads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive.</value>
+  </data>
+  <data name="MaxuploadprsecondShort" xml:space="preserve">
+    <value>Max number of bytes to upload pr. second</value>
+  </data>
+  <data name="NoencryptionLong" xml:space="preserve">
+    <value>If you store the backups on a local disk, and prefer that they are kept unencrypted, you can turn of encryption completely by using this switch.</value>
+  </data>
+  <data name="NoencryptionShort" xml:space="preserve">
+    <value>Disable encryption</value>
+  </data>
+  <data name="NumberofretriesLong" xml:space="preserve">
+    <value>If an upload or download fails, Duplicati will retry a number of times before failing. Use this to handle unstable network connections better.</value>
+  </data>
+  <data name="NumberofretriesShort" xml:space="preserve">
+    <value>Number of times to retry a failed transmission</value>
+  </data>
+  <data name="PassphraseLong" xml:space="preserve">
+    <value>Supply a passphrase that Duplicati will use to encrypt the backup volumes, making them unreadable without the passphrase. This variable can also be supplied through the environment variable PASSPHRASE.</value>
+  </data>
+  <data name="PassphraseShort" xml:space="preserve">
+    <value>Passphrase used to encrypt backups</value>
+  </data>
+  <data name="RestoretimeLong" xml:space="preserve">
+    <value>By default, Duplicati will restore files from the most recent backup, use this option to select another item. You may use relative times, like "-2M" for a backup from two months ago.</value>
+  </data>
+  <data name="RestoretimeShort" xml:space="preserve">
+    <value>The time to restore files</value>
+  </data>
+  <data name="RetrydelayLong" xml:space="preserve">
+    <value>After a failed transmission, Duplicati will wait a short period before attempting again. This is usefull if the network drops out occasionally during transmissions.</value>
+  </data>
+  <data name="RetrydelayShort" xml:space="preserve">
+    <value>Time to wait between retries</value>
+  </data>
+  <data name="ShortfilenamesLong" xml:space="preserve">
+    <value>If the filesystem does not support the long filenames that Duplicati uses, this switch will change the time to be a much more compact, but hard to read format. It will also make the default prefix "dpl".</value>
+  </data>
+  <data name="ShortfilenamesShort" xml:space="preserve">
+    <value>Use short filenames</value>
+  </data>
+  <data name="SignaturecachepathLong" xml:space="preserve">
+    <value>If this path is supplied, Duplicati will store all signature files here, so re-downloads can be avoided.</value>
+  </data>
+  <data name="SignaturecachepathShort" xml:space="preserve">
+    <value>A path to temporary storage</value>
+  </data>
+  <data name="SignaturecontrolfilesLong" xml:space="preserve">
+    <value>Supply a list of files separated with semicolons, that will be added to each backup. The Duplicati GUI program uses this to store the setup database with each backup.</value>
+  </data>
+  <data name="SignaturecontrolfilesShort" xml:space="preserve">
+    <value>A list of control files to embed in the backups</value>
+  </data>
+  <data name="SkipfilehashchecksLong" xml:space="preserve">
+    <value>If the hash for the volume does not match, Duplicati will refuse to use the backup. Supply this flag to allow Duplicati to proceed anyway.</value>
+  </data>
+  <data name="SkipfilehashchecksShort" xml:space="preserve">
+    <value>Set this flag to skip hash checks</value>
+  </data>
+  <data name="SkipfileslargerthanLong" xml:space="preserve">
+    <value>This option allows you to exclude files that are larger than the given value. Use this to prevent backups becoming extremely large.</value>
+  </data>
+  <data name="SkipfileslargerthanShort" xml:space="preserve">
+    <value>Limit the size of files being backed up</value>
+  </data>
+  <data name="TempdirLong" xml:space="preserve">
+    <value>Duplicati will use the system default temporary folder. This option can be used to supply an alternative folder for temporary storage.</value>
+  </data>
+  <data name="TempdirShort" xml:space="preserve">
+    <value>Temporary storage folder</value>
+  </data>
+  <data name="ThreadpriorityLong" xml:space="preserve">
+    <value>Selects another thread priority for the process. Use this to set Duplicati to be more or less CPU intensive.</value>
+  </data>
+  <data name="ThreadpriorityShort" xml:space="preserve">
+    <value>Thread priority</value>
+  </data>
+  <data name="TimeseparatorLong" xml:space="preserve">
+    <value>Per default, Duplicati will use the colon ":" character to separate the time fields in the filename. However, on some filesystem, notably windows, this character is not allowed. Use this option to use another character.</value>
+  </data>
+  <data name="TimeseparatorShort" xml:space="preserve">
+    <value>Backup volume filename timeseparator</value>
+  </data>
+  <data name="TotalsizeLong" xml:space="preserve">
+    <value>This option can place an upper limit on the total size of each backup. Note that if this flag is specified the backup may not contain all files, even for a full backup.</value>
+  </data>
+  <data name="TotalsizeShort" xml:space="preserve">
+    <value>The number of bytes generated by each backup run</value>
+  </data>
+  <data name="VolsizeLong" xml:space="preserve">
+    <value>This option can change the default volume size. Changing the size can be usefull if the backend has a limit on the size of each individual file</value>
+  </data>
+  <data name="VolsizeShort" xml:space="preserve">
+    <value>Limit the size of the volumes</value>
+  </data>
+  <data name="DisableStreamingLong" xml:space="preserve">
+    <value>Enabling this option will disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored.</value>
+  </data>
+  <data name="DisableStreamingShort" xml:space="preserve">
+    <value>Disables use of the streaming transfer method</value>
+  </data>
+  <data name="AllowfullremoveLong" xml:space="preserve">
+    <value>As a precaution, the last full backup will never be removed, even if using the "delete-all-but-n-full 0" command. Set this option to allow removing the last backup.</value>
+  </data>
+  <data name="AllowfullremoveShort" xml:space="preserve">
+    <value>Allow removal of the all backups</value>
+  </data>
+  <data name="DontreadmanifestsLong" xml:space="preserve">
+    <value>This option will make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery.</value>
+  </data>
+  <data name="DontreadmanifestsShort" xml:space="preserve">
+    <value>An option that prevents verifying the manifests</value>
+  </data>
+  <data name="AllowsourcefolderchangeLong" xml:space="preserve">
+    <value>This option can be used to disable the check for the same source folders. It is used in unittests, and is NOT intended for everyday use. Do not use this option unless you know what you are doing.</value>
+  </data>
+  <data name="AllowsourcefolderchangeShort" xml:space="preserve">
+    <value>Skip verifying the source folders</value>
+  </data>
+  <data name="FullifsourcefolderchangedLong" xml:space="preserve">
+    <value>It is not allowed to change the sourcefolder or the number of source folders. If this option is enabled, the backup will become a full backup if the source folders have changed, which will then start a new chain of backups with the new folder set. If --allow-sourcefolder-change is also set, a full backup is only issued if the number of of source folders have changed</value>
+  </data>
+  <data name="FullifsourcefolderchangedShort" xml:space="preserve">
+    <value>Run a full backup if the sourcefolder has changed</value>
+  </data>
+  <data name="CompressionmoduleLong" xml:space="preserve">
+    <value>Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module.</value>
+  </data>
+  <data name="CompressionmoduleShort" xml:space="preserve">
+    <value>Select what module to use for compression</value>
+  </data>
+  <data name="EncryptionmoduleLong" xml:space="preserve">
+    <value>Duplicati supports plugable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module.</value>
+  </data>
+  <data name="EncryptionmoduleShort" xml:space="preserve">
+    <value>Select what module to use for encryption</value>
+  </data>
+  <data name="GpgencryptionDeprecated" xml:space="preserve">
+    <value>Use --encryption-module=gpg instead</value>
+  </data>
+  <data name="DisablemoduleLong" xml:space="preserve">
+    <value>Supply one or more module names, separated by commas to unload them</value>
+  </data>
+  <data name="DisablemoduleShort" xml:space="preserve">
+    <value>Disabled one or more modules</value>
+  </data>
+  <data name="EnablemoduleLong" xml:space="preserve">
+    <value>Supply one or more module names, separated by commas to load them</value>
+  </data>
+  <data name="EnablemoduleShort" xml:space="preserve">
+    <value>Enables one or more modules</value>
+  </data>
+  <data name="SnapshotpolicyLong" xml:space="preserve">
+    <value>This settings controls the usage of snapshots, which allows Duplicati to backup files that are locked by other programs. If this is set to "off", Duplicati will not attempt to create a disk snapshot. Setting this to "auto" makes Duplicati attempt to create a snapshot, and fail silently if that was not allowed or supported. A setting of "on" will also make Duplicati attempt to create a snapshot, but will produce a warning message in the log if it fails. Setting it to "required" will make Duplicati abort the backup if the snapshot creation fails. On windows this uses the Volume Shadow Copy Services (VSS) and requires administrative privileges. On linux this uses Logical Volume Management (LVM) and requires root privileges.</value>
+  </data>
+  <data name="SnapshotpolicyShort" xml:space="preserve">
+    <value>Controls the use of disk snapshots</value>
+  </data>
+  <data name="AsynchronousuploadfolderLong" xml:space="preserve">
+    <value>The pre-generated volumes will be placed into the temporary folder by default, this option can set a different folder for placing the temporary volumes, despite the name, this also works for synchronous runs</value>
+  </data>
+  <data name="AsynchronousuploadfolderShort" xml:space="preserve">
+    <value>The path where ready volumes are placed until uploaded</value>
+  </data>
+  <data name="AsynchronousuploadlimitLong" xml:space="preserve">
+    <value>When performing asynchronous uploads, Duplicati will create volumes that can be uploaded. To prevent Duplicati from generating too many volumes, this option limits the number of pending uploads. Set to zero to disable the limit</value>
+  </data>
+  <data name="AsynchronousuploadlimitShort" xml:space="preserve">
+    <value>The number of volumes to create ahead of time</value>
+  </data>
+  <data name="DebugoutputLong" xml:space="preserve">
+    <value>Activating this option will make some error messages more verbose, which may help you track down a particular issue</value>
+  </data>
+  <data name="DebugoutputShort" xml:space="preserve">
+    <value>Enables debugging output</value>
+  </data>
+  <data name="ExcludeemptyfoldersLong" xml:space="preserve">
+    <value>By setting this option to true, a folder which has no files that match the filter will be excluded from the backup</value>
+  </data>
+  <data name="ExcludeemptyfoldersShort" xml:space="preserve">
+    <value>Controls empty folder actions</value>
+  </data>
+  <data name="OldfilenamesDeprecated" xml:space="preserve">
+    <value>This option will be removed in the future but is included for the odd case where the new format breaks something</value>
+  </data>
+  <data name="OldfilenamesLong" xml:space="preserve">
+    <value>By setting this option the filenames generated by Duplicati will contain a time separator as well as a timezone component, which is not cross platform compatible</value>
+  </data>
+  <data name="OldfilenamesShort" xml:space="preserve">
+    <value>Uses the old filename format</value>
+  </data>
+  <data name="ShortfilenamesDeprecated" xml:space="preserve">
+    <value>Duplicati now uses a filename format that is portable across all operating systems, so this option should not be used and will be removed in the future</value>
+  </data>
+  <data name="TimeseparatorDeprecated" xml:space="preserve">
+    <value>Duplicati no longer uses a time separator for the filenames so this option is useless</value>
+  </data>
+  <data name="LogfileLong" xml:space="preserve">
+    <value>Specifies the name of a while into which internal log information is written</value>
+  </data>
+  <data name="LogfileShort" xml:space="preserve">
+    <value>Log internal information</value>
+  </data>
+  <data name="LoglevelLong" xml:space="preserve">
+    <value>Specifies the amount of log information to write into the file specified by --log-file</value>
+  </data>
+  <data name="LoglevelShort" xml:space="preserve">
+    <value>Log information level</value>
+  </data>
+  <data name="DisableautocreatefolderLong" xml:space="preserve">
+    <value>If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation.</value>
+  </data>
+  <data name="DisableautocreatefolderShort" xml:space="preserve">
+    <value>Disables automatic folder creation</value>
+  </data>
+  <data name="VssexcludewritersLong" xml:space="preserve">
+    <value>Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces.</value>
+  </data>
+  <data name="VssexcludewritersShort" xml:space="preserve">
+    <value>A semicolon separated list of guids of VSS writers to exclude (Windows only)</value>
+  </data>
+  <data name="UsnpolicyLong" xml:space="preserve">
+    <value>This settings controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to "off", Duplicati will not attempt to use USN. Setting this to "auto" makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of "on" will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to "required" will make Duplicati abort the backup if the USN usage fails. This feature is only supported on Windows and requires administrative privileges.</value>
+  </data>
+  <data name="UsnpolicyShort" xml:space="preserve">
+    <value>Controls the use of NTFS Update Sequence Numbers</value>
+  </data>
+  <data name="DisableusndiffcheckLong" xml:space="preserve">
+    <value>If USN is enabled the USN numbers are used to find all changed files since last backup. Use this option to disable the use of USN numbers, which will make Duplicati investigate all source files. This option is primarily intended for testing and should not be disabled in a production environment. If USN is not enabled, this option has no effect.</value>
+  </data>
+  <data name="DisableusndiffcheckShort" xml:space="preserve">
+    <value>Disables changelist by USN numbers</value>
+  </data>
+  <data name="OpenfilepolicyLong" xml:space="preserve">
+    <value>If Duplicati encounters a file that is opened by another program, it will attempt to read whatever contents that are in the file. Since the file may be written during the backup, this can cause the backup to contain a partially written file. Use this option to disable this, omitting locked files from the backup. This option has no effect if a snapshot is active.</value>
+  </data>
+  <data name="OpenfilepolicyShort" xml:space="preserve">
+    <value>Determines how to handle open files</value>
+  </data>
+  <data name="DisabletimetoleranceLong" xml:space="preserve">
+    <value>When deciding if a full backup should be made or an old backup should be deleted, Duplicati will adjust the times by a small fraction to ensure that minor time differences do not interfer with expected operation. If the backup is set to produce a full backup each day, and a full backup is made at, say 12:00:01, and the backup is executed again at 12:00:00, a full day has not passed and thus an incremental backup is performed. To avoid this, Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable the tolerance, and use strict time checking</value>
+  </data>
+  <data name="DisabletimetoleranceShort" xml:space="preserve">
+    <value>Deactivates tolerance when comparing times</value>
+  </data>
+  <data name="SortedfilelistLong" xml:space="preserve">
+    <value>The list of files to back up is normally processed in a random fashion to ensure that all files have an equal probability of being processed. Use this setting to process the files in alphabetical order instead</value>
+  </data>
+  <data name="SortedfilelistShort" xml:space="preserve">
+    <value>Sort the list of files</value>
+  </data>
+  <data name="CreateverificationfileLong" xml:space="preserve">
+    <value>If the backup is encrypted, the remote backend cannot verify the backup contents without the password. If this option is activated, Duplicati stores an unencrypted file on the backend. The file is never read by Duplicati, but allows the remote server to verify the backup integrity without requiring a password. The file contains no sensitive information, only a list of files that are expected to exist on the backend and their respective hashes. This option only has an effect when creating a backup and when verifying a backup set.</value>
+  </data>
+  <data name="CreateverificationfileShort" xml:space="preserve">
+    <value>Create verification file on server</value>
+  </data>
+  <data name="VerificationLevelLong" xml:space="preserve">
+    <value>Use this option to change the level of verifiation done by the verify command. The setting "manifest" will only verify the manifest chain. The settings "signature" will also download and verify all signature files. The setting "full", will download all files, including content files, and verify that they are unchanged.</value>
+  </data>
+  <data name="VerificationLevelShort" xml:space="preserve">
+    <value>Level of verification</value>
+  </data>
+  <data name="ListverifyuploadsLong" xml:space="preserve">
+    <value>Some protocols, like FTP, and some servers have problems detecting an interrupted transfer and will assume that the transfer completed, even if it did not. If this option is enabled Duplicati will list the contents of the backend after each upload and verify that the file exists and has the expected size.</value>
+  </data>
+  <data name="ListverifyuploadsShort" xml:space="preserve">
+    <value>Verify uploads by listing contents</value>
+  </data>
+  <data name="FullifmorethannincrementalsLong" xml:space="preserve">
+    <value>Use this option to limit the length of the backup chain to a certain number. The number supplied here indicates the maximum number of incrementals a chain can contain (not counting the root full backup)</value>
+  </data>
+  <data name="FullifmorethannincrementalsShort" xml:space="preserve">
+    <value>The max number of incrementals in a chain</value>
+  </data>
+  <data name="AsynchronousuploadDeprecated" xml:space="preserve">
+    <value>Asynchronous upload is now default, you can turn it off by using the flag --{0}</value>
+  </data>
+  <data name="SynchronousuploadLong" xml:space="preserve">
+    <value>Duplicati will upload files while scanning the disk and producing volumes, which usually makes the backup faster. Use this flag to turn the behavior off, so that Duplicati will wait for each volume to complete.</value>
+  </data>
+  <data name="SynchronousuploadShort" xml:space="preserve">
+    <value>Upload files synchronously</value>
+  </data>
+  <data name="NoconnectionreuseLong" xml:space="preserve">
+    <value>Duplicati will attempt to perform multiple operations on a single connection, as this avoids repeated login attempts, and thus speeds up the process. This option can be used to ensure that each operation is performed on a seperate connection</value>
+  </data>
+  <data name="NoconnectionreuseShort" xml:space="preserve">
+    <value>Do not re-use connections</value>
+  </data>
+  <data name="DebugretryerrorsLong" xml:space="preserve">
+    <value>When an error occurs, Duplicati will silently retry, and only report the number of retries. Enable this option to have the error messages displayed when a retry is performed.</value>
+  </data>
+  <data name="DebugretryerrorsShort" xml:space="preserve">
+    <value>Show error messages when a retry is performed</value>
+  </data>
+  <data name="UploadUnchangedBackupsLong" xml:space="preserve">
+    <value>If no files have changed, Duplicati will not upload a backup set. If the backup data is used to verify that a backup was executed, this option will make Duplicati upload a backupset even if it is empty</value>
+  </data>
+  <data name="UploadUnchangedBackupsShort" xml:space="preserve">
+    <value>Upload empty backup files</value>
+  </data>
+  <data name="BackendlogdatabaseShort" xml:space="preserve">
+    <value>Database log of remote operations</value>
+  </data>
+  <data name="BackendlogdatabaseLong" xml:space="preserve">
+    <value>Use this option to specify a path to a file that will store information about backend operations. This option can be used to track down errors by comparing the backend state with the expected backend state.</value>
+  </data>
+  <data name="QuotasizeLong" xml:space="preserve">
+    <value>This value can be used to set a known upper limit on the amount of space a backend has. If the backend reports the size itself, this value is ignored</value>
+  </data>
+  <data name="QuotasizeShort" xml:space="preserve">
+    <value>A reported maximum storage</value>
+  </data>
+  <data name="SymlinkpolicyShort" xml:space="preserve">
+    <value>Symlink handling</value>
+  </data>
+  <data name="SymlinkpolicyLong" xml:space="preserve">
+    <value>Using this option to handle symlinks different. The "{0}" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option "{1}" to ignore all symlinks and not store any information about them. Previous versions of Duplicati used the setting "{2}", which will cause symlinked files to be included and restore as normal files.</value>
+  </data>
+  <data name="ExcludefilesattributesShort" xml:space="preserve">
+    <value>Exclude files by attribute</value>
+  </data>
+  <data name="ExcludefilesattributesLong" xml:space="preserve">
+    <value>Use this option to exclude files with certain attributes. Use a comma separated list of attribute names to specify more that one. Possible values are: {0}</value>
+  </data>
+  <data name="VssusemappingLong" xml:space="preserve">
+    <value>Activate this option to map VSS snapshots to a drive (similar to SUBST, using Win32 DefineDosDevice). This will create temporary drives that are then used to access the contents of a snapshot. This workaround can speed up file access on Windows XP.</value>
+  </data>
+  <data name="VssusemappingShort" xml:space="preserve">
+    <value>Map snapshots to a drive (Windows only)</value>
+  </data>
+  <data name="BackupnameLong" xml:space="preserve">
+    <value>A display name that is attached to this backup. Can be used to identify the backup when sending mail or running scripts.</value>
+  </data>
+  <data name="BackupnameShort" xml:space="preserve">
+    <value>Name of the backup</value>
+  </data>
+</root>

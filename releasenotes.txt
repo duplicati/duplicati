@@ -1,0 +1,8 @@
+Breaking changes for 1.0 users:
+
+ * If you use the commandline version, this changes the SSH backend to use a built-in ssh agent. Apply the `--use-sftp-application` flag to use the sftp application as before. The GUI will automatically select the previous sftp application for existing backups, but default to the new ssh agent for new backups.
+ * Fixed bug with filename prefixes. If you have modified settings on the "filename options" wizard page, please check that the backup performs as expected.
+ * A bugfix for S3 and CloudFiles may cause trouble if your folder/container/bucket had special characters (eg spaces etc.).
+ * 1.2 uses a modified file format that cannot be read by 1.0. There should be no problems upgrading, but if there is please file a bug report. This also introduces a new method for handling the folder selection. Please verify that your backup performs as expected.
+ * If you upgrade to 1.2, create a backup, and then _downgrade_, Duplicati 1.0 may delete some of the backup volumes created by Duplicati 1.2
+ * An unfixed bug has been reported for USN, see issue #422. If you have manually enabled USN, consider disabling it or verify that your backups are complete.

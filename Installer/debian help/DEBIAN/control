@@ -1,0 +1,21 @@
+Source: duplicati
+Section: utils
+Priority: extra
+Maintainer: Kenneth Skovhede <opensource@hexad.dk>
+Homepage: http://www.duplicati.com
+Package: duplicati
+Installed-Size: 17965
+Architecture: all
+Version: 1.3.0.990
+Depends: mono-runtime (>= 2.6), libmono2.0-cil, libmono-winforms2.0-cil, expect, libsqlite3-0 (>= 3.6.12), make
+Description: Backup client for encrypted online backups
+ Duplicati is a free backup client that securely stores encrypted, incremental, 
+ compressed backups on cloud storage services and remote file servers. It 
+ supports targets like Amazon S3, Windows Live SkyDrive, Rackspace Cloud Files
+ or WebDAV, SSH, FTP (and many more). 
+ .
+ Duplicati has built-in AES-256 encryption and backups be can signed using GNU 
+ Privacy Guard. A built-in scheduler makes sure that backups are always 
+ up-to-date. Last but not least, Duplicati provides various options and tweaks 
+ like filters, deletion rules, transfer and bandwidth options to run backups 
+ for specific purposes.

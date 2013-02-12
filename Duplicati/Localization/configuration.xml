@@ -1,0 +1,62 @@
+﻿<root>
+	<configuration name="Duplicati">
+		<assembly name="Duplicati" folder="GUI" namespace="Duplicati.GUI">
+			<exclude>Datamodel</exclude>
+		</assembly>
+		<assembly name="Duplicati.Datamodel" folder="GUI\Datamodel" />
+		<assembly name="Duplicati.CommandLine" folder="CommandLine">
+			<exclude>Decrypter</exclude>
+		</assembly>
+
+		<assembly name="Duplicati.CommandLine.Decrypter" folder="CommandLine\Decrypter" />
+
+		<assembly name="Duplicati.Library.Utility" folder="Library\Utility" />
+		<assembly name="Duplicati.Library.Main" folder="Library\Main" />
+		<assembly name="Duplicati.Library.Encryption" folder="Library\Encryption" />
+		<assembly name="Duplicati.Library.SharpExpect" folder="Library\SharpExpect" />
+		<assembly name="Duplicati.Library.Compression" folder="Library\Compression" />
+		<assembly name="Duplicati.Library.Encryption" folder="Library\Encryption" />
+		<assembly name="Duplicati.Library.SharpRSync" folder="Library\SharpRSync" />
+		<assembly name="Duplicati.Library.Shapshots" folder="Library\Snapshots" />
+
+		<assembly name="Duplicati.Library.Interface" folder="Library\Interface" />
+		<assembly name="Duplicati.Library.DynamicLoader" folder="Library\DynamicLoader" />
+
+		<assembly name="Duplicati.Library.Modules.Builtin" folder="Library\Modules\Builtin" />
+		
+		<assembly name="Duplicati.Library.Backend.FTP" folder="Library\Backend\FTP" namespace="Duplicati.Library.Backend" />
+		<assembly name="Duplicati.Library.Backend.File" folder="Library\Backend\File" namespace="Duplicati.Library.Backend" />
+		<assembly name="Duplicati.Library.Backend.S3" folder="Library\Backend\S3" namespace="Duplicati.Library.Backend" />
+		<assembly name="Duplicati.Library.Backend.WEBDAV" folder="Library\Backend\WEBDAV" namespace="Duplicati.Library.Backend" />
+		<assembly name="Duplicati.Library.Backend.CloudFiles" folder="Library\Backend\CloudFiles" namespace="Duplicati.Library.Backend" />
+		<assembly name="Duplicati.Library.Backend.SSHv2" folder="Library\Backend\SSHv2" namespace="Duplicati.Library.Backend" />
+		
+		<assembly name="Duplicati.Winforms.Controls" folder="Winforms\Controls" namespace="Duplicati.Winforms.Controls" />
+		
+		<keyfile>..\GUI\Duplicati.snk</keyfile>
+		<versionassembly>..\GUI\bin\Release\Duplicati.exe</versionassembly>
+		<sourcefolder>..</sourcefolder>
+		<outputfolder>compiled</outputfolder>
+		<productname>Duplicati</productname>
+	</configuration>
+
+	<!-- We need these without a keyfile, because they depend on unsigned dll's -->
+	<configuration name="SSH">
+		<assembly name="Duplicati.Library.Backend.TahoeLAFS" folder="Library\Backend\TahoeLAFS" namespace="Duplicati.Library.Backend" />		
+		
+		<versionassembly>..\GUI\bin\Release\Duplicati.exe</versionassembly>
+		<sourcefolder>..</sourcefolder>
+		<outputfolder>compiled</outputfolder>
+		<productname>Duplicati</productname>
+	</configuration>
+	
+	<configuration name="WizardForm">
+		<assembly name="System.Windows.Forms.Wizard" folder="WizardForm" />
+		
+		<keyfile>..\..\WizardForm\WizardForm.snk</keyfile>
+		<versionassembly>..\GUI\bin\Release\System.Windows.Forms.Wizard.dll</versionassembly>
+		<sourcefolder>..\..</sourcefolder>
+		<outputfolder>compiled</outputfolder>
+		<productname>WizardForm</productname>
+	</configuration>
+</root>

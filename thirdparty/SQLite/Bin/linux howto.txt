@@ -1,0 +1,3 @@
+To run under linux with an older sqlite, do this:
+Copy the file "sqlite-3.6.12.so" into the Duplicati install dir, and rename it to "libsqlite3.so.0".
+Then set the LD_LIBRARY_PATH to the Duplicati install dir.

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <ignore>OK</ignore>
+    <ignore>...</ignore>
+	<ignore>(...)</ignore>
+    <ignore> Inc\t{0}\t{1}\t{2}</ignore>
+    <ignore>--{0}: {1}</ignore>
+    <ignore>1 minute</ignore>
+    <ignore>15 minutes</ignore>
+    <ignore>30 minutes</ignore>
+    <ignore>5 minutes</ignore>
+    <ignore>Action</ignore>
+    <ignore>CloudFiles</ignore>
+    <ignore>Destination</ignore>
+    <ignore>Normal</ignore>
+    <ignore>Options...</ignore>
+    <ignore>Pause</ignore>
+    <ignore>Simple &lt;&lt;&lt;</ignore>
+    <ignore>Source</ignore>
+    <ignore>Stop</ignore>
+    <ignore>argument</ignore>
+    <ignore>s</ignore>
+    <ignore>{0}</ignore>
+    <ignore>{0}\t{1}</ignore>
+</root>

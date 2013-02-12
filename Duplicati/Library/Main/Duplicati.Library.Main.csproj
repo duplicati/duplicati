@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Duplicati.Library.Main</RootNamespace>
+    <AssemblyName>Duplicati.Library.Main</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\thirdparty\Json.NET\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BackendWrapper.cs" />
+    <Compile Include="BackupEntry.cs" />
+    <Compile Include="Backupmetadata.cs" />
+    <Compile Include="CommunicationStatistics.cs" />
+    <Compile Include="CompressionWrapper.cs" />
+    <Compile Include="FilenameStrategy.cs" />
+    <Compile Include="ForestHash\Database\AsyncDownloader.cs" />
+    <Compile Include="ForestHash\Database\ILocalFileEntry.cs" />
+    <Compile Include="ForestHash\Database\IRemoteVolume.cs" />
+    <Compile Include="ForestHash\Database\LocalBackupDatabase.cs" />
+    <Compile Include="ForestHash\Database\LocalBlocklistUpdateDatabase.cs" />
+    <Compile Include="ForestHash\Database\LocalDatabase.cs" />
+    <Compile Include="ForestHash\Database\LocalRestoreDatabase.cs" />
+    <Compile Include="ForestHash\Database\RemoteVolume.cs" />
+    <Compile Include="ForestHash\Database\RemoteVolumeEntry.cs" />
+    <Compile Include="ForestHash\Enums.cs" />
+    <Compile Include="ForestHash\Operation\BackupHandler.cs" />
+    <Compile Include="ForestHash\Database\ExtensionMethods.cs" />
+    <Compile Include="ForestHash\FhBackend.cs" />
+    <Compile Include="ForestHash\FhOptions.cs" />
+    <Compile Include="ForestHash\HashlistCollector.cs" />
+    <Compile Include="ForestHash\Operation\CleanupHandler.cs" />
+    <Compile Include="ForestHash\Operation\DeleteAllButNHandler.cs" />
+    <Compile Include="ForestHash\Operation\DeleteOlderThanHandler.cs" />
+    <Compile Include="ForestHash\Operation\FindLastFileVersionHandler.cs" />
+    <Compile Include="ForestHash\Operation\ListFilesHandler.cs" />
+    <Compile Include="ForestHash\Operation\ListSourceFoldersHandler.cs" />
+    <Compile Include="ForestHash\Operation\RecreateDatabaseHandler.cs" />
+    <Compile Include="ForestHash\Database\RestoreIterators.cs" />
+    <Compile Include="ForestHash\Operation\RestoreControlFilesHandler.cs" />
+    <Compile Include="ForestHash\Operation\RestoreHandler.cs" />
+    <Compile Include="ForestHash\Blockprocessor.cs" />
+    <Compile Include="ForestHash\ForestHash.cs" />
+    <Compile Include="ForestHash\Volumes\BlocklistEnumerable.cs" />
+    <Compile Include="ForestHash\Volumes\BlockVolumeReader.cs" />
+    <Compile Include="ForestHash\Volumes\BlockVolumeWriter.cs" />
+    <Compile Include="ForestHash\Volumes\FilesetVolumeReader.cs" />
+    <Compile Include="ForestHash\Volumes\FilesetVolumeWriter.cs" />
+    <Compile Include="ForestHash\Volumes\IFileEntry.cs" />
+    <Compile Include="ForestHash\Volumes\InvalidManifestException.cs" />
+    <Compile Include="ForestHash\Volumes\IParsedVolume.cs" />
+    <Compile Include="ForestHash\Volumes\ShadowVolumeReader.cs" />
+    <Compile Include="ForestHash\Volumes\ShadowVolumeWriter.cs" />
+    <Compile Include="ForestHash\Volumes\VolumeBase.cs" />
+    <Compile Include="ForestHash\Volumes\VolumeReaderBase.cs" />
+    <Compile Include="ForestHash\Volumes\VolumeWriterBase.cs" />
+    <Compile Include="Interface.cs" />
+    <Compile Include="LiveControl\ExecutionStoppedException.cs" />
+    <Compile Include="LiveControl\ILiveControl.cs" />
+    <Compile Include="LiveControl\LiveControl.cs" />
+    <Compile Include="Manifestfile.cs" />
+    <Compile Include="Options.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RestoreStatistics.cs" />
+    <Compile Include="RSyncDir.cs" />
+    <Compile Include="BackupStatistics.cs" />
+    <Compile Include="Strings\BackendWrapper.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>BackendWrapper.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\ExecutionStoppedException.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ExecutionStoppedException.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\FhOptions.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FhOptions.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\FilenameStrategy.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FilenameStrategy.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Foresthash.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Foresthash.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Interface.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Interface.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Manifestfile.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Manifestfile.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\Options.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Options.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Strings\RSyncDir.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RSyncDir.resx</DependentUpon>
+    </Compile>
+    <Compile Include="VerificationFile.cs" />
+    <Compile Include="StateVerification\StateDatabase.cs" />
+    <Compile Include="StateVerification\LogEntryClasses.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">
+      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
+      <Name>Duplicati.Library.Compression</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
+      <Name>Duplicati.Library.DynamicLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj">
+      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
+      <Name>Duplicati.Library.Encryption</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpRSync\Duplicati.Library.SharpRSync.csproj">
+      <Project>{47FE73E1-0832-44F7-96B9-2580273206C3}</Project>
+      <Name>Duplicati.Library.SharpRSync</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Snapshots\Duplicati.Library.Snapshots.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</Project>
+      <Name>Duplicati.Library.Snapshots</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Duplicati.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Strings\BackendWrapper.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>BackendWrapper.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\ExecutionStoppedException.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ExecutionStoppedException.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\FhOptions.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FhOptions.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\FilenameStrategy.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FilenameStrategy.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Foresthash.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Foresthash.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Interface.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Interface.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Manifestfile.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Manifestfile.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\Options.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Options.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strings\RSyncDir.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>RSyncDir.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="ForestHash\Database\Database schema\Schema.sql" />
+  </ItemGroup>
+  <ItemGroup />
+</Project>

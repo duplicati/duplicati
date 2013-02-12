@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<settings>
+  <FullBackupInterval>1M</FullBackupInterval>
+  <MaxFullBackups>4</MaxFullBackups>
+  <BackupExpireInterval></BackupExpireInterval>
+  <RepeatInterval>1D</RepeatInterval>
+  <VolumeSize>10mb</VolumeSize>
+  <BackupTimeOffset>13h</BackupTimeOffset>
+  <EncodedFilters>e:.*\\Thumbs.db</EncodedFilters>
+  <IncludeSetup>true</IncludeSetup>
+  <AsyncTransfer>true</AsyncTransfer>
+  <DisableAESFallbackEncryption>true</DisableAESFallbackEncryption>
+</settings>

@@ -1,0 +1,217 @@
+.footer-panel .x-panel-body
+{
+	background-color: #ccffcc;
+}
+
+.header-panel .x-panel-body
+{
+	background-color: #ccffcc;
+}
+
+.main-button .x-btn-arrow, .add-new-backup-button .x-btn-center, .pause-backup-button .x-btn-center
+{
+ 	height: 40px;
+}
+
+.main-button .x-btn-inner, .add-new-backup-button .x-btn-inner, .pause-backup-button .x-btn-inner
+{
+	font-size: 2em;
+ 	height: 20px;
+ 	padding-left: 36px;
+}
+
+.main-button .x-btn-icon, .add-new-backup-button .x-btn-icon, .pause-backup-button .x-btn-icon
+{
+	width: 32px;
+	height: 32px;
+	top: 4px;
+}
+
+.main-button .x-btn-icon 
+{
+	background-image: url(../icons/main-logo.png);
+}
+
+.add-new-backup-button .x-btn-icon
+{
+	background-image: url(../icons/add-backup.png);
+}
+
+.pause-backup-button .backups-paused
+{
+	background-image: url(../icons/status-play.png);
+}
+
+.pause-backup-button .backups-running
+{
+	background-image: url(../icons/status-pause.png);
+}
+
+.throttle-label
+{
+	font-size: 2em;
+	padding-left: 20px;
+}
+
+.low-storage-space
+{
+	color: red;
+}
+
+.important-information
+{
+	font-weight: bold;
+}
+
+.info-icon
+{
+	padding: 8px;
+	margin-right: 4px;
+	margin-top: 40px;
+	background-repeat: no-repeat;
+	background-position-y: 4px;
+	display: inline;
+	float: right;
+}
+
+.schedule-activity-text
+{
+	margin-top: 40px;
+	margin-right: 20px;
+	display: inline;
+	float: right;
+}
+
+.schedule-waiting
+{
+	background: url(../icons/schedule-waiting.png)
+	
+}
+
+.schedule-active
+{
+	background: url(../icons/schedule-active.png)
+	
+}
+
+.schedule-in-queue
+{
+	background: url(../icons/schedule-in-queue.png)
+	
+}
+
+.backup-schedule-tags
+{
+	padding-top: 2px;
+}
+
+.marker-time-ago
+{
+	display: none;
+}
+
+.backup-schedule-detail-source-size, 
+.backup-schedule-detail-backup-size,
+.backup-schedule-detail-free-size, 
+.backup-schedule-detail-change-count, 
+.backup-schedule-detail-last-backup,
+.backup-schedule-tags
+{
+	display: block;
+	padding-left: 15px;
+	padding-right: 15px;
+	text-align: left;
+}
+
+.backup-schedule-details-inner
+{
+	padding-left: 15px;
+	padding-right: 15px;
+	text-align: left;
+}
+
+.backup-schedule-name
+{
+	display: block;
+	border: 1px lightgrey solid;
+	margin-left: 20px;
+	margin-right: 20px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	margin-top: 10px;
+    background-color: #aaeeaa;
+
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    -khtml-border-radius: 6px;
+    border-radius: 6px;
+}
+
+.backup-schedule-drop-arrow
+{
+	background-image: url(../extjs-4.1.0/resources/themes/images/default/button/arrow.gif);
+	background-repeat: no-repeat;
+	width: 16px;
+	height: 10px;
+	background-position-x: 6px;
+	display: inline-block;
+}
+
+.backup-schedule-name-inner
+{
+	display: block;
+	font-weight: bold;
+	font-size: 1.5em;
+	overflow: hidden;
+	white-space: wrap;
+	margin-left: 8px;
+	margin-right: 8px;
+	padding-top: 2px;
+	padding-bottom: 4px;
+	cursor: pointer;
+}
+
+.backup-schedule-details
+{
+	display: block;
+	border: 1px lightgrey solid;
+	padding-top: 10px;
+	padding-bottom: 8px;
+	padding-left: 4px;
+	padding-right: 4px;
+	overflow: auto;
+	white-space: normal;
+	margin-bottom: 10px;
+	background-color: #ccffcc;
+	margin-top: -2px;
+	font-size: 1.2em;
+
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    -khtml-border-radius: 6px;
+    border-radius: 6px;
+}
+
+#status-window-header-pause-duration-menu
+{
+	color: #222;
+	font-size: 11px;
+}
+
+#status-window-header-pause-duration-menu div
+{
+	padding-left: 32px;
+	border: 0px none;
+	background-color: transparent;
+}
+
+#status-window-header-pause-duration-picker
+{
+	margin-left: 6px;
+	margin-right: 6px;
+}
+#status-window-header-pause-duration-picker div
+{
+	padding-left: 0px;
+}
+

@@ -1,0 +1,411 @@
+# This file is the help for the Duplicati Command Line Client. It shows what 
+# commands the CLI understands and what the outputs are. Sometimes we used
+# placeholders for options. In that case descriptions are taken directly from
+# the modules. Sometimes we described options here. The reason for that is, 
+# that we found the new description much better but did not want to create a 
+# need for translation as many options are described in the UI as well and 
+# they are translated there.
+# =============================================================================
+> duplicati.commandline.exe
+> duplicati.commandline.exe help
+
+See duplicati.commandline.exe help <topic> for more information.
+
+  Examples: example
+  
+  Commands: backup, restore, delete-all-but-n-full, delete-all-but-n, cleanup, delete-older-than, list, list-current-files, list-source-folders, list-actual-signature-files, collection-status, create-folder, find-last-version, verify
+  
+  Debugging: debug, logging
+  
+  Targets: %BACKENDS%
+  
+  Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
+  
+  Formats: date, time, size, encryption, compression
+  
+  Advanced options: advanced, returncodes, filter, <option> (e.g. --auto-cleanup)
+
+http://www.duplicati.com/              Version: %VERSION%
+
+
+
+# =============================================================================
+> duplicati.commandline.exe help example
+> duplicati.commandline.exe help examples
+
+Make an encrypted backup
+========================
+  The following command will make an encrypted backup and store it on an FTP server. The first backup will be full followed by 10 incremental backups before another full backup is made. As no passphrase is specified, the user will be prompted for a password. The upload speed is throttled to 500kB/s.
+  
+  %MONO%"%APP_PATH%" backup 
+    "%EXAMPLE_SOURCE_PATH%" "ftp://ftp.example.com/target"
+    --ftp-username=username
+    --ftp-password=password
+    --full-if-more-than-n-incrementals=10
+    --auto-cleanup
+    --max-upload-pr-second=500kB
+
+
+Delete old backups
+==================
+  The following command will delete old backups. If no passphrase is specified, the user will be prompted for a passphrase. The option --force is required to delete the files; without that option no files will be deleted. Duplicati does not delete backup files that are required to restore files from a valid newer backup (a full backup is always required to restore files from an incremental backup).
+  
+  %MONO%"%APP_PATH%" delete-older-than 10D 
+    "ftp://ftp.example.com/target"
+    --ftp-username=username
+    --ftp-password=password
+    --force
+
+
+Restore a specific file
+=======================
+  The following command will restore "%EXAMPLE_SOURCE_FILE%" from the backup in the latest version to the local folder "%EXAMPLE_RESTORE_PATH%".
+  
+  %MONO%"%APP_PATH%" restore 
+    "ftp://ftp.example.com/target" "%EXAMPLE_RESTORE_PATH%"
+    --ftp-username=username
+    --ftp-password=password
+    --file-to-restore="%EXAMPLE_SOURCE_FILE%"
+    
+
+# =============================================================================
+> duplicati.commandline.exe help backup
+  
+Usage: backup <source folder> <target url> <options>
+
+  This will perform full or incremental backups. It reads all files from <source folder> and stores the backups in <target url>. If no rule for full backups is specified, Duplicati will create one full backup and incremental backups afterwards. Multiple source folders have to be separated by the operating system's delimiter (semicolon ";" on Windows, colon ":" on Linux).
+
+Options:
+  --auto-cleanup
+    Removes all files that do not belong to the backup (e.g. partial files caused by interrupted uploads).
+  --backup-prefix = <string>
+    Replaces the default "duplicati" with <string> in the file names of the backup files. It is required to specify different prefixes if multiple backups are stored in the same target folder.
+  --full
+    Make a full backup. If nothing is specified, an initial full backup is made with incremental backups afterwards.
+  --full-if-older-than = <date> 
+    Make a new full backup after the specified relative date or time.
+  --full-if-more-than-n-incrementals = <number>
+    Make a full backup after n incremental backups.
+  --max-upload-pr-second = <size>
+    Limits the upload speed to the specified value. <size> is interpreted as bandwidth/s.
+  --no-encryption
+    The backup is NOT encrypted with a passphrase. Unencrypted files are stored.
+  --passphrase = <passphrase>
+    The passphrase that is used to encrypt the backup. If nothing is specified here, the environment variable PASSPHRASE will be used or the user will be prompted to type in the passphrase. 
+  --volsize = <size>
+    The maximum size of files being written to the target. Default size is 10MB.
+
+# =============================================================================
+> duplicati.commandline.exe help restore
+
+Usage: restore <source url> <target folder>
+  
+  This will restore one or more files from the backup in <source url> to the local folder <target folder>.
+
+Options:
+  --file-to-restore = <list of files>
+    List of files to be restored separated by a semicolon ";" on Windows or colon ":" on Linux.
+  --restore-time = <date>
+    Restore from a specific or relative date or time. If nothing is specified, the latest version is restored.
+
+
+# =============================================================================
+> duplicati.commandline.exe help delete-all-but-n-full
+  
+Usage: delete-all-but-n-full <number> <source url>
+  
+  This will keep the <number> latests full backups and delete older ones.
+
+Options: 
+%OPTION:force%
+%OPTION:allow-full-removal%
+
+
+# =============================================================================
+> duplicati.commandline.exe help delete-all-but-n
+
+Usage: delete-all-but-n <number> <target url>
+  
+  This will keep the <number> latest backups no matter if they are full or incremental. Older backups will be deleted. No backups are deleted that are required to restore files from a valid newer backup.
+  
+Options:
+%OPTION:force%
+%OPTION:allow-full-removal%
+
+
+# =============================================================================
+> duplicati.commandline.exe help delete-older-than
+
+Usage: delete-older-than <date> <target url>
+  
+  This will delete all backups from the target that older than the specified absolute or relative date and time.
+
+Options:
+%OPTION:force%
+%OPTION:allow-full-removal%
+  
+# =============================================================================
+> duplicati.commandline.exe help debug
+> duplicati.commandline.exe help logging
+
+Duplicati provides information for debugging and logging purposes. By default, all debugging and logging is turned off.
+
+  --debug-output
+    Error messages are more verbose.
+  --debug-retry-errors
+    If something needs to be retried (e.g. upload failed) this will cause an entry in the log file.
+  --log-file = <path>
+    The path to the log file e.g. "D:\duplicati\log.txt".
+  --log-level = Profiling | Information | Warning | Error 
+    Specifies the log level.
+  --backend-log-database = <path>
+    Duplicati can log all actions related to storing, deleting files on the backend. <path> specifies where this log is written e.g. "D:\duplicati\backend.xml".
+
+    
+# =============================================================================
+> duplicati.commandline.exe help encryption
+> duplicati.commandline.exe help compression
+
+Duplicati offers various options for the used compression and encryption modules.
+
+  --encryption-module = %ENCRYPTIONMODULES%
+    The encryption module that is used to encrypt backups. Default is %DEFAULTENCRYPTIONMODULE%.
+  --compression-module = %COMPRESSIONMODULES%
+    The compression module that is used. Default is %DEFAULTCOMPRESSIONMODULE%.
+  --enable-module = %GENERICMODULES%
+    Enable a built-in generic module that is not enabled by default
+  --disable-module = %GENERICMODULES%
+    Disable a built-in generic module that is enabled by default
+%OPTION:passphrase%
+%OPTION:no-encryption%
+
+# =============================================================================
+> duplicati.commandline.exe help gpg
+
+Duplicati is shipped with an interface to GNU Privary Guard. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch.
+
+Options:
+%MODULEOPTIONS%
+
+
+# =============================================================================
+> duplicati.commandline.exe help cleanup
+
+Usage: cleanup <target url>
+
+  Removes all files that do not belong to the backup (e.g. partial files caused by interrupted uploads). This can also be performed when the actions backup, restore are run with the option --auto-cleanup.
+
+Options: 
+%OPTION:force%
+
+# =============================================================================
+> duplicati.commandline.exe help list
+
+Usage: list <target url>
+
+  Lists all files stored on the remote server. These are manifest files, signature files, content files and other files that do not to any backup created by duplicati. This command can be used to see the contents of the remote folder.
+
+
+# =============================================================================
+> duplicati.commandline.exe help list-current-files
+
+Usage: list-current-files <target url>
+
+  Lists the (source) files that are contained in a backup. By default, the latest versions are listed. This action is useful to try out what files would be restored with a given set or options.
+
+Options:
+ --restore-time = <date>
+   By default, Duplicati will restore files from the most recent backup, use this option to restore older versions of a file. You may use relative times, like "-2M" for a backup from two months ago. Duplicati will pick the next older version of the value specified. If you specify "-2M", the restored version could be 2 months and 3 days old.
+
+
+# =============================================================================
+> duplicati.commandline.exe help list-source-folders
+
+Usage: list-source-folders <target url>
+
+  Lists the source folders that have been included in a backup. By default, the source folders of the latest backup are listed. This action is useful to check what source folders had been included in a backup at a given date or time.
+
+Options:
+ --restore-time = <date>
+   By default, Duplicati will restore files from the most recent backup, use this option to restore older versions of a file. You may use relative times, like "-2M" for a backup from two months ago. Duplicati will pick the next older version of the value specified. If you specify "-2M", the restored version could be 2 months and 3 days old.
+
+
+# =============================================================================
+> duplicati.commandline.exe help list-actual-signature-files
+
+Usage: list-actual-signature-files <target url>
+  
+  Lists the files found in a single backup set with a status: (added, modified, deleted). This is the same as a "change set".
+
+Options:
+ --restore-time = <date>
+   By default, Duplicati will restore files from the most recent backup, use this option to select another item. You may use relative times, like "-2M" for a backup from two months ago.
+
+
+# =============================================================================
+> duplicati.commandline.exe help file
+
+Duplicati can use the local file system to store backups. The following target URL formats can be used:
+  file://hostname/folder
+  file://\\server\folder (UNC path)
+  file://c:\folder (Windows)
+  file:///usr/pub/files (Linux)
+
+Options:
+%MODULEOPTIONS%
+
+
+# =============================================================================
+> duplicati.commandline.exe help tahoe
+> duplicati.commandline.exe help tahoelafs
+
+Duplicati can use the TahoeLAFS to store backups. The following target URL format is used:
+  tahoe://hostname:port/uri/$DIRCAP
+
+Options:
+%MODULEOPTIONS%
+
+# =============================================================================
+> duplicati.commandline.exe help ftp
+
+Duplicati can use FTP servers to store backups. The following target URL formats can be used:
+  ftp://hostname/folder
+  
+Options:
+%MODULEOPTIONS%
+
+
+# =============================================================================
+> duplicati.commandline.exe help ssh
+
+Duplicati can use SSH servers to store backups. The following target URL formats can be used:
+  ssh://hostname/folder
+ 
+Options:
+%MODULEOPTIONS%
+
+
+# =============================================================================
+> duplicati.commandline.exe help webdav
+
+Duplicati can use WebDAV servers to store backups. The following target URL formats can be used:
+  webdav://hostname/folder"
+  
+Options:
+%MODULEOPTIONS%
+
+
+# =============================================================================
+> duplicati.commandline.exe help s3
+
+Duplicati can use S3-compatible servers to store backups. The following target URL format is used:
+  s3://bucketname/prefix
+
+Options:
+%MODULEOPTIONS%
+
+
+# =============================================================================
+> duplicati.commandline.exe help skydrive
+
+Duplicati can use Windows Live Skydrive to store backups. The following target URL format is used:
+  skydrive://folder/subfolder
+Please note that there is no official API and accessing SkyDrive through this backend may violate the ToS and may stop to work if Microsoft decides to change the API.
+
+Options:
+%MODULEOPTIONS%
+
+# =============================================================================
+> duplicati.commandline.exe help date
+> duplicati.commandline.exe help time
+
+Duplicati supports absolute and relative dates and times:
+
+  now --> The current time
+  
+  1234567890 --> A timestamp, seconds since 1970.
+  
+  "2009-03-26T08:30:00+01:00" --> An absolute date and time. You can also use the local date and time format of your system like e.g. "01-14-2000" or "01 jan. 2004".
+  
+  Y, M, D, W, h, m, s --> Relative date and time: year, month, day, week, hour, minute, second. Example: 2M10D5h is now + 2 months + 10 days + 5 hours.
+
+# =============================================================================
+> duplicati.commandline.exe help size
+
+Whenever a size is required, you can use any of the following suffixes:
+
+  B - Bytes
+  kB - Kilobytes
+  MB - Megabytes
+  GB - Gigabytes
+  
+For speed limits, use the same format. If you enter 1MB this will be 1MB/sec.
+
+# =============================================================================
+> duplicati.commandline.exe help filter
+> duplicati.commandline.exe help filters
+
+Duplicati can apply globbing and regex filter rules to backup and restore specific files only. It can also exclude files that meet specific conditions. It is recommended to check the website for more information how Duplicati processes filter rules. For more information, please visit http://code.google.com/p/duplicati/wiki/FilterUsage
+
+%OPTION:include%
+%OPTION:exclude%
+%OPTION:include-regexp%
+%OPTION:exclude-regexp%
+%OPTION:skip-files-larger-than%
+
+
+# =============================================================================
+> duplicati.commandline.exe help collection-status
+Usage: collection-status <target url>
+
+Collection status will list all backup chains found on the target, along with the combined size of each volume.
+
+# =============================================================================
+> duplicati.commandline.exe help create-folder
+Usage: create-folder <target url>
+
+  This command can be used to create the folder on the remote backend.
+
+# =============================================================================
+> duplicati.commandline.exe help find-last-version
+Usage: find-last-version <target url> --file-to-restore=%EXAMPLE_SOURCE_FILE%
+
+  This command finds the last backup set that contains a specified file. This can be used to locate the last backup of a file that has been deleted.
+
+# =============================================================================
+> duplicati.commandline.exe help verify
+Usage: verify <target url> --verification-level=manifest
+
+  Duplicati will check the integrity of a remote backup. Therefore, it will download backup files and check their integrity locally. Default behaviour is, that only the manifest files required to restore the latest version of the backup are checked. Using the below listed options, it is possible to also check signature and content files. It is also possible to check older versions of a backup. Please note that this command might download a lot of data!
+
+Options:
+  --verification-level = Manifest | Signature | Full
+    Defines what files are downloaded and checked.
+      Manifest --> manifest files
+      Signature --> manifest + signature files
+      Full --> manifest + signature + content files
+  --restore-time = <date>
+    Select another version of the backup that is older than the specified absolute or relative date.
+
+# =============================================================================
+> duplicati.commandline.exe help advanced
+> duplicati.commandline.exe help option
+> duplicati.commandline.exe help options
+
+Duplicati offers more options than listed in the other topics. Those additional options should only be used with care. For normal operation none of them should ever be required. Here is a complete list of options supported by Duplicati:
+
+%MAINOPTIONS%
+
+# =============================================================================
+> duplicati.commandline.exe help returncodes
+> duplicati.commandline.exe help exitcodes
+> duplicati.commandline.exe help statuscodes
+
+Duplicati reports the following return/exit codes:
+  0 - Success
+  1 - Successful backup, but no files were changed
+  2 - Successful backup, with warnings
+  50 - Backup uploaded some files, but did not finish
+  100 - An error occurred
+  200 - Invalid commandline arguments found
+

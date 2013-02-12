@@ -1,0 +1,115 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{13918151-D576-4466-8E2C-FC86A10DC2E1}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>FreshKeeper</RootNamespace>
+    <AssemblyName>FreshKeeper</AssemblyName>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkSubset>
+    </TargetFrameworkSubset>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Duplicati\Library\Core\Strings\Timeparser.Designer.cs">
+      <Link>Strings\Timeparser.Designer.cs</Link>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Timeparser.resx</DependentUpon>
+    </Compile>
+    <Compile Include="..\Duplicati\Library\Core\Timeparser.cs">
+      <Link>Timeparser.cs</Link>
+    </Compile>
+    <Compile Include="ClientFileEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ClientFileEditor.Designer.cs">
+      <DependentUpon>ClientFileEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Config.cs" />
+    <Compile Include="FreshKeeper.cs" />
+    <Compile Include="LastCheck.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ShowUpdateDetails.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ShowUpdateDetails.Designer.cs">
+      <DependentUpon>ShowUpdateDetails.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Update.cs" />
+    <Compile Include="UpdateAdministration.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UpdateAdministration.Designer.cs">
+      <DependentUpon>UpdateAdministration.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UpdateList.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\Duplicati\Library\Core\Strings\Timeparser.resx">
+      <Link>Strings\Timeparser.resx</Link>
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Timeparser.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>Duplicati.Library.Core.Strings</CustomToolNamespace>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ClientFileEditor.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ClientFileEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ShowUpdateDetails.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ShowUpdateDetails.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UpdateAdministration.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>UpdateAdministration.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

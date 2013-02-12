@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <ignore>{0}\t{1}</ignore>
+	<ignore>Password</ignore>
+	<ignore>OK</ignore>
+	<ignore>...</ignore>
+	<ignore>s</ignore>
+	<ignore>(...)</ignore>
+	<ignore>bytes</ignore>
+	<ignore>bytes/s</ignore>
+	<ignore>gb</ignore>
+	<ignore>gb/s</ignore>
+	<ignore>kb</ignore>
+	<ignore>kb/s</ignore>
+	<ignore>mb</ignore>
+	<ignore>mb/s</ignore>
+	<ignore>Stop</ignore>
+	<ignore>backup</ignore>
+	<ignore>{0}</ignore>
+	<ignore>--{0}:{1}</ignore>
+	<ignore>Backup: {0}</ignore>
+	<ignore>CloudFiles (Rackspace)</ignore>
+	<ignore>Server</ignore>
+	<ignore>keyfile</ignore>
+	<ignore>{0} bytes</ignore>
+	<ignore>{0:N} GB</ignore>
+	<ignore>{0:N} KB</ignore>
+	<ignore>{0:N} MB</ignore>
+</root>

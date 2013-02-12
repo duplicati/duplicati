@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="SchedulerDataSet" targetNamespace="http://tempuri.org/SchedulerDataSet.xsd" xmlns:mstns="http://tempuri.org/SchedulerDataSet.xsd" xmlns="http://tempuri.org/SchedulerDataSet.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:appinfo source="urn:schemas-microsoft-com:xml-msdatasource">
+      <DataSource DefaultConnectionIndex="0" FunctionsComponentName="QueriesTableAdapter" Modifier="AutoLayout, AnsiClass, Class, Public" SchemaSerializationMode="IncludeSchema" xmlns="urn:schemas-microsoft-com:xml-msdatasource">
+        <Connections />
+        <Tables />
+        <Sources />
+      </DataSource>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:element name="SchedulerDataSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:EnableTableAdapterManager="true" msprop:Generator_DataSetName="SchedulerDataSet" msprop:Generator_UserDSName="SchedulerDataSet">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Jobs" msprop:Generator_UserTableName="Jobs" msprop:Generator_RowEvArgName="JobsRowChangeEvent" msprop:Generator_TableVarName="tableJobs" msprop:Generator_TablePropName="Jobs" msprop:Generator_RowDeletingName="JobsRowDeleting" msprop:Generator_RowChangingName="JobsRowChanging" msprop:Generator_RowDeletedName="JobsRowDeleted" msprop:Generator_RowEvHandlerName="JobsRowChangeEventHandler" msprop:Generator_RowChangedName="JobsRowChanged" msprop:Generator_TableClassName="JobsDataTable" msprop:Generator_RowClassName="JobsRow">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Name" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInTable="NameColumn" msprop:Generator_UserColumnName="Name" default="&quot;&quot;">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="40" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="Source" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Source" msprop:Generator_ColumnVarNameInTable="columnSource" msprop:Generator_ColumnPropNameInTable="SourceColumn" msprop:Generator_UserColumnName="Source" type="xs:string" minOccurs="0" />
+              <xs:element name="Destination" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Destination" msprop:Generator_ColumnVarNameInTable="columnDestination" msprop:Generator_ColumnPropNameInTable="DestinationColumn" msprop:Generator_UserColumnName="Destination" type="xs:string" minOccurs="0" />
+              <xs:element name="FullOnly" msprop:Generator_ColumnVarNameInTable="columnFullOnly" msprop:Generator_ColumnPropNameInRow="FullOnly" msprop:Generator_ColumnPropNameInTable="FullOnlyColumn" msprop:Generator_UserColumnName="FullOnly" type="xs:boolean" minOccurs="0" />
+              <xs:element name="FullRepeatDays" msprop:Generator_ColumnVarNameInTable="columnFullRepeatDays" msprop:Generator_ColumnPropNameInRow="FullRepeatDays" msprop:Generator_ColumnPropNameInTable="FullRepeatDaysColumn" msprop:Generator_UserColumnName="FullRepeatDays" type="xs:int" minOccurs="0" />
+              <xs:element name="LocalChecksum" msprop:nullValue="_throw" msprop:Generator_ColumnPropNameInRow="LocalChecksum" msprop:Generator_ColumnVarNameInTable="columnLocalChecksum" msprop:Generator_ColumnPropNameInTable="LocalChecksumColumn" msprop:Generator_UserColumnName="LocalChecksum" type="xs:base64Binary" minOccurs="0" />
+              <xs:element name="LocalCheckMod" msprop:Generator_ColumnVarNameInTable="columnLocalCheckMod" msprop:Generator_ColumnPropNameInRow="LocalCheckMod" msprop:Generator_ColumnPropNameInTable="LocalCheckModColumn" msprop:Generator_UserColumnName="LocalCheckMod" type="xs:string" minOccurs="0" />
+              <xs:element name="Filter" msprop:Generator_ColumnVarNameInTable="columnFilter" msprop:Generator_ColumnPropNameInRow="Filter" msprop:Generator_ColumnPropNameInTable="FilterColumn" msprop:Generator_UserColumnName="Filter" type="xs:string" minOccurs="0" />
+              <xs:element name="MaxFulls" msprop:Generator_ColumnVarNameInTable="columnMaxFulls" msprop:Generator_ColumnPropNameInRow="MaxFulls" msprop:Generator_ColumnPropNameInTable="MaxFullsColumn" msprop:Generator_UserColumnName="MaxFulls" type="xs:int" minOccurs="0" />
+              <xs:element name="MaxAgeDays" msprop:Generator_ColumnVarNameInTable="columnMaxAgeDays" msprop:Generator_ColumnPropNameInRow="MaxAgeDays" msprop:Generator_ColumnPropNameInTable="MaxAgeDaysColumn" msprop:Generator_UserColumnName="MaxAgeDays" type="xs:int" minOccurs="0" />
+              <xs:element name="FullAfterN" msprop:Generator_ColumnVarNameInTable="columnFullAfterN" msprop:Generator_ColumnPropNameInRow="FullAfterN" msprop:Generator_ColumnPropNameInTable="FullAfterNColumn" msprop:Generator_UserColumnName="FullAfterN" type="xs:int" minOccurs="0" />
+              <xs:element name="AutoCleanup" msprop:Generator_ColumnVarNameInTable="columnAutoCleanup" msprop:Generator_ColumnPropNameInRow="AutoCleanup" msprop:Generator_ColumnPropNameInTable="AutoCleanupColumn" msprop:Generator_UserColumnName="AutoCleanup" type="xs:boolean" minOccurs="0" />
+              <xs:element name="MapDrives" msprop:Generator_ColumnVarNameInTable="columnMapDrives" msprop:Generator_ColumnPropNameInRow="MapDrives" msprop:Generator_ColumnPropNameInTable="MapDrivesColumn" msprop:Generator_UserColumnName="MapDrives" type="xs:boolean" minOccurs="0" />
+              <xs:element name="CheckSrc" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="CheckSrc" msprop:Generator_ColumnVarNameInTable="columnCheckSrc" msprop:Generator_ColumnPropNameInTable="CheckSrcColumn" msprop:Generator_UserColumnName="CheckSrc" type="xs:string" default="" minOccurs="0" />
+              <xs:element name="TriggerXML" msprop:Generator_ColumnVarNameInTable="columnTriggerXML" msprop:Generator_ColumnPropNameInRow="TriggerXML" msprop:Generator_ColumnPropNameInTable="TriggerXMLColumn" msprop:Generator_UserColumnName="TriggerXML" type="xs:string" minOccurs="0" />
+              <xs:element name="LastMod" msprop:Generator_ColumnVarNameInTable="columnLastMod" msprop:Generator_ColumnPropNameInRow="LastMod" msprop:Generator_ColumnPropNameInTable="LastModColumn" msprop:Generator_UserColumnName="LastMod" type="xs:dateTime" minOccurs="0" />
+              <xs:element name="Details" msprop:Generator_ColumnVarNameInTable="columnDetails" msprop:Generator_ColumnPropNameInRow="Details" msprop:nullValue="_null" msprop:Generator_ColumnPropNameInTable="DetailsColumn" msprop:Generator_UserColumnName="Details" type="xs:string" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Options" msprop:Generator_UserTableName="Options" msprop:Generator_RowEvArgName="OptionsRowChangeEvent" msprop:Generator_TableVarName="tableOptions" msprop:Generator_TablePropName="Options" msprop:Generator_RowDeletingName="OptionsRowDeleting" msprop:Generator_RowChangingName="OptionsRowChanging" msprop:Generator_RowDeletedName="OptionsRowDeleted" msprop:Generator_RowEvHandlerName="OptionsRowChangeEventHandler" msprop:Generator_RowChangedName="OptionsRowChanged" msprop:Generator_TableClassName="OptionsDataTable" msprop:Generator_RowClassName="OptionsRow">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Name" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInTable="NameColumn" msprop:Generator_UserColumnName="Name" type="xs:string" />
+              <xs:element name="Parameter" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Parameter" msprop:Generator_ColumnVarNameInTable="columnParameter" msprop:Generator_ColumnPropNameInTable="ParameterColumn" msprop:Generator_UserColumnName="Parameter" type="xs:string" minOccurs="0" />
+              <xs:element name="Value" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Value" msprop:Generator_ColumnVarNameInTable="columnValue" msprop:Generator_ColumnPropNameInTable="ValueColumn" msprop:Generator_UserColumnName="Value" type="xs:string" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="DriveMaps" msprop:Generator_UserTableName="DriveMaps" msprop:Generator_RowEvArgName="DriveMapsRowChangeEvent" msprop:Generator_TableVarName="tableDriveMaps" msprop:Generator_TablePropName="DriveMaps" msprop:Generator_RowDeletingName="DriveMapsRowDeleting" msprop:Generator_RowChangingName="DriveMapsRowChanging" msprop:Generator_RowDeletedName="DriveMapsRowDeleted" msprop:Generator_RowEvHandlerName="DriveMapsRowChangeEventHandler" msprop:Generator_RowChangedName="DriveMapsRowChanged" msprop:Generator_TableClassName="DriveMapsDataTable" msprop:Generator_RowClassName="DriveMapsRow">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnPropNameInTable="NameColumn" msprop:Generator_UserColumnName="Name" type="xs:string" minOccurs="0" />
+              <xs:element name="DriveLetter" msprop:Generator_ColumnVarNameInTable="columnDriveLetter" msprop:Generator_ColumnPropNameInRow="DriveLetter" msprop:Generator_ColumnPropNameInTable="DriveLetterColumn" msprop:Generator_UserColumnName="DriveLetter" type="xs:string" minOccurs="0" />
+              <xs:element name="UNC" msprop:Generator_ColumnVarNameInTable="columnUNC" msprop:Generator_ColumnPropNameInRow="UNC" msprop:Generator_ColumnPropNameInTable="UNCColumn" msprop:Generator_UserColumnName="UNC" type="xs:string" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Settings" msprop:Generator_UserTableName="Settings" msprop:Generator_RowEvArgName="SettingsRowChangeEvent" msprop:Generator_TableVarName="tableSettings" msprop:Generator_TablePropName="Settings" msprop:Generator_RowDeletingName="SettingsRowDeleting" msprop:Generator_RowChangingName="SettingsRowChanging" msprop:Generator_RowDeletedName="SettingsRowDeleted" msprop:Generator_RowEvHandlerName="SettingsRowChangeEventHandler" msprop:Generator_RowChangedName="SettingsRowChanged" msprop:Generator_TableClassName="SettingsDataTable" msprop:Generator_RowClassName="SettingsRow">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="LogFileAgeDays" msprop:Generator_ColumnVarNameInTable="columnLogFileAgeDays" msprop:Generator_ColumnPropNameInRow="LogFileAgeDays" msprop:Generator_ColumnPropNameInTable="LogFileAgeDaysColumn" msprop:Generator_UserColumnName="LogFileAgeDays" type="xs:int" minOccurs="0" />
+              <xs:element name="Checksum" msprop:nullValue="_throw" msprop:Generator_ColumnPropNameInRow="Checksum" msprop:Generator_ColumnVarNameInTable="columnChecksum" msprop:Generator_ColumnPropNameInTable="ChecksumColumn" msprop:Generator_UserColumnName="Checksum" type="xs:base64Binary" minOccurs="0" />
+              <xs:element name="CheckMod" msprop:Generator_ColumnVarNameInTable="columnCheckMod" msprop:Generator_ColumnPropNameInRow="CheckMod" msprop:Generator_ColumnPropNameInTable="CheckModColumn" msprop:Generator_UserColumnName="CheckMod" type="xs:string" minOccurs="0" />
+              <xs:element name="ShowBubbles" msprop:Generator_ColumnVarNameInTable="columnShowBubbles" msprop:Generator_ColumnPropNameInRow="ShowBubbles" msprop:Generator_ColumnPropNameInTable="ShowBubblesColumn" msprop:Generator_UserColumnName="ShowBubbles" type="xs:boolean" default="true" minOccurs="0" />
+              <xs:element name="CheckSrc" msprop:Generator_ColumnVarNameInTable="columnCheckSrc" msprop:Generator_ColumnPropNameInRow="CheckSrc" msprop:Generator_ColumnPropNameInTable="CheckSrcColumn" msprop:Generator_UserColumnName="CheckSrc" type="xs:boolean" minOccurs="0" />
+              <xs:element name="DisabledMonitors" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="DisabledMonitors" msprop:Generator_ColumnVarNameInTable="columnDisabledMonitors" msprop:Generator_ColumnPropNameInTable="DisabledMonitorsColumn" msprop:Generator_UserColumnName="DisabledMonitors" type="xs:string" default="" minOccurs="0" />
+              <xs:element name="LastMod" msprop:Generator_ColumnVarNameInTable="columnLastMod" msprop:Generator_ColumnPropNameInRow="LastMod" msprop:Generator_ColumnPropNameInTable="LastModColumn" msprop:Generator_UserColumnName="LastMod" type="xs:dateTime" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="GuiOptions" msprop:Generator_UserTableName="GuiOptions" msprop:Generator_RowEvArgName="GuiOptionsRowChangeEvent" msprop:Generator_TableVarName="tableGuiOptions" msprop:Generator_TablePropName="GuiOptions" msprop:Generator_RowDeletingName="GuiOptionsRowDeleting" msprop:Generator_RowChangingName="GuiOptionsRowChanging" msprop:Generator_RowDeletedName="GuiOptionsRowDeleted" msprop:Generator_RowEvHandlerName="GuiOptionsRowChangeEventHandler" msprop:Generator_RowChangedName="GuiOptionsRowChanged" msprop:Generator_TableClassName="GuiOptionsDataTable" msprop:Generator_RowClassName="GuiOptionsRow">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Name" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Name" msprop:Generator_ColumnVarNameInTable="columnName" msprop:Generator_ColumnPropNameInTable="NameColumn" msprop:Generator_UserColumnName="Name" type="xs:string" />
+              <xs:element name="Parameter" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Parameter" msprop:Generator_ColumnVarNameInTable="columnParameter" msprop:Generator_ColumnPropNameInTable="ParameterColumn" msprop:Generator_UserColumnName="Parameter" type="xs:string" minOccurs="0" />
+              <xs:element name="Value" msprop:nullValue="_empty" msprop:Generator_ColumnPropNameInRow="Value" msprop:Generator_ColumnVarNameInTable="columnValue" msprop:Generator_ColumnPropNameInTable="ValueColumn" msprop:Generator_UserColumnName="Value" type="xs:string" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+    <xs:unique name="Constraint1" msdata:PrimaryKey="true">
+      <xs:selector xpath=".//mstns:Jobs" />
+      <xs:field xpath="mstns:Name" />
+    </xs:unique>
+  </xs:element>
+  <xs:annotation>
+    <xs:appinfo>
+      <msdata:Relationship name="Jobs_Options" msdata:parent="Jobs" msdata:child="Options" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="Options" msprop:Generator_ChildPropName="GetOptionsRows" msprop:Generator_ParentPropName="JobsRow" msprop:Generator_UserRelationName="Jobs_Options" msprop:Generator_RelationVarName="relationJobs_Options" msprop:Generator_UserParentTable="Jobs" />
+      <msdata:Relationship name="Jobs_DriveMaps" msdata:parent="Jobs" msdata:child="DriveMaps" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="DriveMaps" msprop:Generator_ChildPropName="GetDriveMapsRows" msprop:Generator_ParentPropName="JobsRow" msprop:Generator_UserRelationName="Jobs_DriveMaps" msprop:Generator_RelationVarName="relationJobs_DriveMaps" msprop:Generator_UserParentTable="Jobs" />
+      <msdata:Relationship name="Jobs_GuiOptions" msdata:parent="Jobs" msdata:child="GuiOptions" msdata:parentkey="Name" msdata:childkey="Name" msprop:Generator_UserChildTable="GuiOptions" msprop:Generator_ChildPropName="GetGuiOptionsRows" msprop:Generator_ParentPropName="JobsRow" msprop:Generator_UserRelationName="Jobs_GuiOptions" msprop:Generator_RelationVarName="relationJobs_GuiOptions" msprop:Generator_UserParentTable="Jobs" />
+    </xs:appinfo>
+  </xs:annotation>
+</xs:schema>

@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AnotherInstanceDetected" xml:space="preserve">
+    <value>Another instance is running, and was notified</value>
+    <comment>A message displayed in the console when activating Duplicati and it is already running</comment>
+  </data>
+  <data name="DatabaseOpenError" xml:space="preserve">
+    <value>Failed to create, open or upgrade the database.
+Error message: {0}</value>
+    <comment>An error message displayed when opening the database fails</comment>
+  </data>
+  <data name="FullCommandDescription" xml:space="preserve">
+    <value>Forces the --run-backup command to perform a full backup</value>
+  </data>
+  <data name="HelpCommandDescription" xml:space="preserve">
+    <value>Displays this help</value>
+  </data>
+  <data name="HelpDisplayDialog" xml:space="preserve">
+    <value>Supported commandline arguments:
+
+{0}</value>
+  </data>
+  <data name="HelpDisplayFormat" xml:space="preserve">
+    <value>--{0}: {1}</value>
+  </data>
+  <data name="LanguageSelectionError" xml:space="preserve">
+    <value>Failed to set the user interface language: {0}</value>
+    <comment>An error message displayed if the language cannot be selected</comment>
+  </data>
+  <data name="LogfileCommandDescription" xml:space="preserve">
+    <value>Outputs log information to the file given</value>
+  </data>
+  <data name="LoglevelCommandDescription" xml:space="preserve">
+    <value>Determines the amount of information written in the log file</value>
+  </data>
+  <data name="PauseCommandDescription" xml:space="preserve">
+    <value>Pauses Duplicati, supply a time eg. 5m to limit pause to 5 minutes</value>
+  </data>
+  <data name="PortablemodeCommandDescription" xml:space="preserve">
+    <value>Activates portable mode where the database is placed below the program executable</value>
+  </data>
+  <data name="ResumeCommandDescription" xml:space="preserve">
+    <value>Resumes operation of Duplicati, if paused</value>
+  </data>
+  <data name="RunbackupCommandDescription" xml:space="preserve">
+    <value>Runs the backup with the name supplied. If no backup name is supplied, the available backups are displayed</value>
+  </data>
+  <data name="SeriousError" xml:space="preserve">
+    <value>A serious error occured in Duplicati: {0}</value>
+    <comment>Duplicati crashes</comment>
+  </data>
+  <data name="ShowstausCommandDescription" xml:space="preserve">
+    <value>Displays the status window</value>
+  </data>
+  <data name="StartupFailure" xml:space="preserve">
+    <value>Unable to start up, perhaps another process is already running?
+Error message: {0}</value>
+    <comment>An error message displayed when Duplicati startup fails</comment>
+  </data>
+  <data name="UnencrypteddatabaseCommandDescription" xml:space="preserve">
+    <value>Disables database encryption</value>
+  </data>
+  <data name="ShowwizardCommandDescription" xml:space="preserve">
+    <value>Displays the wizard window</value>
+  </data>
+  <data name="WrongSQLiteVersion" xml:space="preserve">
+    <value>Unsupported version of SQLite detected ({0}), must be {1} or higher</value>
+    <comment>An error message displayed when the wrong version of SQLite is detected</comment>
+  </data>
+  <data name="TraylessCommandDescription" xml:space="preserve">
+    <value>Runs Duplicati without showing the tray icon, closing the main window closes Duplicati</value>
+  </data>
+  <data name="RunbackupGroupCommandDescription" xml:space="preserve">
+    <value>Runs all backups in the group with the name supplied. If no group name is supplied, the available backups are displayed. If the group name is not found, an error message is displayed.</value>
+  </data>
+</root>

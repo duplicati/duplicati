@@ -1,0 +1,642 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <metadata name="folderBrowserDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="appdataSize.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="appdataSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="appdataSize.Location" type="System.Drawing.Point, System.Drawing">
+    <value>392, 48</value>
+  </data>
+  <data name="appdataSize.Size" type="System.Drawing.Size, System.Drawing">
+    <value>22, 13</value>
+  </data>
+  <data name="appdataSize.TabIndex" type="System.Int32, mscorlib">
+    <value>11</value>
+  </data>
+  <data name="appdataSize.Text" xml:space="preserve">
+    <value>(...)</value>
+  </data>
+  <data name="&gt;&gt;appdataSize.Name" xml:space="preserve">
+    <value>appdataSize</value>
+  </data>
+  <data name="&gt;&gt;appdataSize.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;appdataSize.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;appdataSize.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="desktopSize.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="desktopSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="desktopSize.Location" type="System.Drawing.Point, System.Drawing">
+    <value>392, 24</value>
+  </data>
+  <data name="desktopSize.Size" type="System.Drawing.Size, System.Drawing">
+    <value>22, 13</value>
+  </data>
+  <data name="desktopSize.TabIndex" type="System.Int32, mscorlib">
+    <value>10</value>
+  </data>
+  <data name="desktopSize.Text" xml:space="preserve">
+    <value>(...)</value>
+  </data>
+  <data name="&gt;&gt;desktopSize.Name" xml:space="preserve">
+    <value>desktopSize</value>
+  </data>
+  <data name="&gt;&gt;desktopSize.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;desktopSize.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;desktopSize.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="myMusicSize.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="myMusicSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="myMusicSize.Location" type="System.Drawing.Point, System.Drawing">
+    <value>160, 72</value>
+  </data>
+  <data name="myMusicSize.Size" type="System.Drawing.Size, System.Drawing">
+    <value>22, 13</value>
+  </data>
+  <data name="myMusicSize.TabIndex" type="System.Int32, mscorlib">
+    <value>8</value>
+  </data>
+  <data name="myMusicSize.Text" xml:space="preserve">
+    <value>(...)</value>
+  </data>
+  <data name="&gt;&gt;myMusicSize.Name" xml:space="preserve">
+    <value>myMusicSize</value>
+  </data>
+  <data name="&gt;&gt;myMusicSize.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;myMusicSize.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;myMusicSize.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="myPicturesSize.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="myPicturesSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="myPicturesSize.Location" type="System.Drawing.Point, System.Drawing">
+    <value>160, 48</value>
+  </data>
+  <data name="myPicturesSize.Size" type="System.Drawing.Size, System.Drawing">
+    <value>22, 13</value>
+  </data>
+  <data name="myPicturesSize.TabIndex" type="System.Int32, mscorlib">
+    <value>7</value>
+  </data>
+  <data name="myPicturesSize.Text" xml:space="preserve">
+    <value>(...)</value>
+  </data>
+  <data name="&gt;&gt;myPicturesSize.Name" xml:space="preserve">
+    <value>myPicturesSize</value>
+  </data>
+  <data name="&gt;&gt;myPicturesSize.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;myPicturesSize.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;myPicturesSize.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="myDocumentsSize.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="myDocumentsSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="myDocumentsSize.Location" type="System.Drawing.Point, System.Drawing">
+    <value>160, 24</value>
+  </data>
+  <data name="myDocumentsSize.Size" type="System.Drawing.Size, System.Drawing">
+    <value>22, 13</value>
+  </data>
+  <data name="myDocumentsSize.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="myDocumentsSize.Text" xml:space="preserve">
+    <value>(...)</value>
+  </data>
+  <data name="&gt;&gt;myDocumentsSize.Name" xml:space="preserve">
+    <value>myDocumentsSize</value>
+  </data>
+  <data name="&gt;&gt;myDocumentsSize.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;myDocumentsSize.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;myDocumentsSize.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="IncludeDocuments.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="IncludeDocuments.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="IncludeDocuments.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 24</value>
+  </data>
+  <data name="IncludeDocuments.Size" type="System.Drawing.Size, System.Drawing">
+    <value>116, 17</value>
+  </data>
+  <data name="IncludeDocuments.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="IncludeDocuments.Text" xml:space="preserve">
+    <value>Include documents</value>
+  </data>
+  <data name="&gt;&gt;IncludeDocuments.Name" xml:space="preserve">
+    <value>IncludeDocuments</value>
+  </data>
+  <data name="&gt;&gt;IncludeDocuments.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IncludeDocuments.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;IncludeDocuments.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="IncludeSettings.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="IncludeSettings.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="IncludeSettings.Location" type="System.Drawing.Point, System.Drawing">
+    <value>224, 48</value>
+  </data>
+  <data name="IncludeSettings.Size" type="System.Drawing.Size, System.Drawing">
+    <value>154, 17</value>
+  </data>
+  <data name="IncludeSettings.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="IncludeSettings.Text" xml:space="preserve">
+    <value>Include application settings</value>
+  </data>
+  <data name="&gt;&gt;IncludeSettings.Name" xml:space="preserve">
+    <value>IncludeSettings</value>
+  </data>
+  <data name="&gt;&gt;IncludeSettings.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IncludeSettings.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;IncludeSettings.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="IncludeDesktop.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="IncludeDesktop.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="IncludeDesktop.Location" type="System.Drawing.Point, System.Drawing">
+    <value>224, 24</value>
+  </data>
+  <data name="IncludeDesktop.Size" type="System.Drawing.Size, System.Drawing">
+    <value>156, 17</value>
+  </data>
+  <data name="IncludeDesktop.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="IncludeDesktop.Text" xml:space="preserve">
+    <value>Include files on the desktop</value>
+  </data>
+  <data name="&gt;&gt;IncludeDesktop.Name" xml:space="preserve">
+    <value>IncludeDesktop</value>
+  </data>
+  <data name="&gt;&gt;IncludeDesktop.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IncludeDesktop.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;IncludeDesktop.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="IncludeMusic.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="IncludeMusic.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="IncludeMusic.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 72</value>
+  </data>
+  <data name="IncludeMusic.Size" type="System.Drawing.Size, System.Drawing">
+    <value>107, 17</value>
+  </data>
+  <data name="IncludeMusic.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="IncludeMusic.Text" xml:space="preserve">
+    <value>Include my music</value>
+  </data>
+  <data name="&gt;&gt;IncludeMusic.Name" xml:space="preserve">
+    <value>IncludeMusic</value>
+  </data>
+  <data name="&gt;&gt;IncludeMusic.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IncludeMusic.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;IncludeMusic.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="IncludeImages.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="IncludeImages.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="IncludeImages.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 48</value>
+  </data>
+  <data name="IncludeImages.Size" type="System.Drawing.Size, System.Drawing">
+    <value>113, 17</value>
+  </data>
+  <data name="IncludeImages.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="IncludeImages.Text" xml:space="preserve">
+    <value>Include my images</value>
+  </data>
+  <data name="&gt;&gt;IncludeImages.Name" xml:space="preserve">
+    <value>IncludeImages</value>
+  </data>
+  <data name="&gt;&gt;IncludeImages.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;IncludeImages.Parent" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;IncludeImages.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="DocumentGroup.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="DocumentGroup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>448, 96</value>
+  </data>
+  <data name="DocumentGroup.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;DocumentGroup.Name" xml:space="preserve">
+    <value>DocumentGroup</value>
+  </data>
+  <data name="&gt;&gt;DocumentGroup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DocumentGroup.Parent" xml:space="preserve">
+    <value>LayoutControlPanel</value>
+  </data>
+  <data name="&gt;&gt;DocumentGroup.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="DocumentsRadio.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="DocumentsRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="DocumentsRadio.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 0</value>
+  </data>
+  <data name="DocumentsRadio.Size" type="System.Drawing.Size, System.Drawing">
+    <value>94, 17</value>
+  </data>
+  <data name="DocumentsRadio.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="DocumentsRadio.Text" xml:space="preserve">
+    <value>My documents</value>
+  </data>
+  <data name="&gt;&gt;DocumentsRadio.Name" xml:space="preserve">
+    <value>DocumentsRadio</value>
+  </data>
+  <data name="&gt;&gt;DocumentsRadio.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DocumentsRadio.Parent" xml:space="preserve">
+    <value>LayoutControlPanel</value>
+  </data>
+  <data name="&gt;&gt;DocumentsRadio.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="InnerControlContainer.AutoScroll" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="InnerControlContainer.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="InnerControlContainer.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 21</value>
+  </data>
+  <data name="InnerControlContainer.Size" type="System.Drawing.Size, System.Drawing">
+    <value>432, 59</value>
+  </data>
+  <data name="InnerControlContainer.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;InnerControlContainer.Name" xml:space="preserve">
+    <value>InnerControlContainer</value>
+  </data>
+  <data name="&gt;&gt;InnerControlContainer.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;InnerControlContainer.Parent" xml:space="preserve">
+    <value>FolderGroup</value>
+  </data>
+  <data name="&gt;&gt;InnerControlContainer.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="FolderGroup.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 96</value>
+  </data>
+  <data name="FolderGroup.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>8, 8, 8, 8</value>
+  </data>
+  <data name="FolderGroup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>448, 88</value>
+  </data>
+  <data name="FolderGroup.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;FolderGroup.Name" xml:space="preserve">
+    <value>FolderGroup</value>
+  </data>
+  <data name="&gt;&gt;FolderGroup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FolderGroup.Parent" xml:space="preserve">
+    <value>LayoutControlPanel</value>
+  </data>
+  <data name="&gt;&gt;FolderGroup.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="FolderRadio.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="FolderRadio.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="FolderRadio.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 96</value>
+  </data>
+  <data name="FolderRadio.Size" type="System.Drawing.Size, System.Drawing">
+    <value>104, 17</value>
+  </data>
+  <data name="FolderRadio.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="FolderRadio.Text" xml:space="preserve">
+    <value>Custom folder list</value>
+  </data>
+  <data name="&gt;&gt;FolderRadio.Name" xml:space="preserve">
+    <value>FolderRadio</value>
+  </data>
+  <data name="&gt;&gt;FolderRadio.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FolderRadio.Parent" xml:space="preserve">
+    <value>LayoutControlPanel</value>
+  </data>
+  <data name="&gt;&gt;FolderRadio.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="totalSize.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="totalSize.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 8.25pt, style=Bold</value>
+  </data>
+  <data name="totalSize.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="totalSize.Location" type="System.Drawing.Point, System.Drawing">
+    <value>32, 200</value>
+  </data>
+  <data name="totalSize.Size" type="System.Drawing.Size, System.Drawing">
+    <value>96, 13</value>
+  </data>
+  <data name="totalSize.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="totalSize.Text" xml:space="preserve">
+    <value>Calculating size</value>
+  </data>
+  <data name="&gt;&gt;totalSize.Name" xml:space="preserve">
+    <value>totalSize</value>
+  </data>
+  <data name="&gt;&gt;totalSize.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;totalSize.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;totalSize.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="FolderTooltip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>168, 17</value>
+  </metadata>
+  <data name="LayoutControlPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 8</value>
+  </data>
+  <data name="LayoutControlPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>448, 184</value>
+  </data>
+  <data name="LayoutControlPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;LayoutControlPanel.Name" xml:space="preserve">
+    <value>LayoutControlPanel</value>
+  </data>
+  <data name="&gt;&gt;LayoutControlPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LayoutControlPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;LayoutControlPanel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>6, 13</value>
+  </data>
+  <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
+    <value>506, 242</value>
+  </data>
+  <data name="&gt;&gt;folderBrowserDialog.Name" xml:space="preserve">
+    <value>folderBrowserDialog</value>
+  </data>
+  <data name="&gt;&gt;folderBrowserDialog.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FolderBrowserDialog, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;FolderTooltip.Name" xml:space="preserve">
+    <value>FolderTooltip</value>
+  </data>
+  <data name="&gt;&gt;FolderTooltip.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>SelectFiles</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Wizard.WizardControl, System.Windows.Forms.Wizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ae51c3db610c5381</value>
+  </data>
+</root>

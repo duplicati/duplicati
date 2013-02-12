@@ -1,0 +1,71 @@
+<html>
+<body>
+
+<form action="control.cgi" method="post">
+	<input type="text" name="action" value="add-schedule" />
+<br/>
+<textarea name="schedule" cols=50 rows=12>{
+    "NextScheduledTime": "\/Date(1343991600000+0200)\/",
+    "AllowedWeekdays": null,
+    "ID": 1,
+    "Name": "Created from FORM",
+    "Path": "",
+    "When": "\/Date(1338289200000+0200)\/",
+    "Repeat": "1D",
+    "Weekdays": ""
+  }</textarea>
+<br/>
+
+<textarea name="task"  cols=50 rows=20>{
+    "ID": 1,
+    "Service": "file",
+    "Encryptionkey": "",
+    "SourcePath": "C:\\boot\\",
+    "ScheduleID": 1,
+    "KeepFull": 4,
+    "KeepTime": "",
+    "FullAfter": "1M",
+    "IncludeSetup": false,
+    "EncryptionModule": "aes",
+    "CompressionModule": "",
+    "BackendSettings": {
+      "UI: Checked empty": "true",
+      "Destination": "C:\\testbackup_forms\\backup1_create_by_form",
+      "Username": "",
+      "Password": ""
+    },
+    "Extensions": {
+      "Upload Bandwidth": "",
+      "Download Bandwidth": "",
+      "Max Upload Size": "",
+      "Volume Size": "25MB",
+      "Thread Priority": "",
+      "Async Transfer": "True",
+      "Ignore Timestamps": "False",
+      "File Size Limit": "",
+      "Disable AES fallback encryption": "True",
+      "Select Files - Version": "2",
+      "Select Files - Use Simple Mode": "False",
+      "Select Files - Include Documents": "True",
+      "Select Files - Include Desktop": "True",
+      "Select Files - Include Music": "False",
+      "Select Files - Include Images": "True",
+      "Select Files - Include AppData": "False",
+      "Select When - Warned No Schedule": "False",
+      "Select When - Warned Too Many Incrementals": "False",
+      "Select When - Warned No Incrementals": "False",
+      "Password Settings - Warned No Password": "True",
+      "Cleanup Settings - Warned No Cleanup": "False"
+    },
+    "Overrides": {},
+    "EncryptionSettings": {},
+    "CompressionSettings": {},
+
+    "Filter": ""
+  }</textarea>
+  <br/>
+
+	<input type="submit" value="Submit!" />
+</form>
+</body>
+</html>
