@@ -92,6 +92,16 @@ namespace Duplicati.Library.Compression
         private IWriter m_writer;
 
         /// <summary>
+        /// Instance of the CompresisonInfo class, used to hack in compression hints
+        /// </summary>
+        private CompressionInfo m_compressionInfo;
+
+        /// <summary>
+        /// The compression level applied when the hint does not indicate incompressible
+        /// </summary>
+        private SharpCompress.Compressor.Deflate.CompressionLevel m_defaultCompressionLevel; 
+
+        /// <summary>
         /// The name of the file being read
         /// </summary>
         private string m_filename;
@@ -132,25 +142,27 @@ namespace Duplicati.Library.Compression
             }
             else
             {
-                CompressionInfo cfi = new CompressionInfo();
-                cfi.Type = DEFAULT_COMPRESSION_METHOD;
-                cfi.DeflateCompressionLevel = DEFAULT_COMPRESSION_LEVEL;
+                m_compressionInfo = new CompressionInfo();
+                m_compressionInfo.Type = DEFAULT_COMPRESSION_METHOD;
+                m_compressionInfo.DeflateCompressionLevel = DEFAULT_COMPRESSION_LEVEL;
 
                 string cpmethod;
                 CompressionType tmptype;
                 if (options.TryGetValue(COMPRESSION_METHOD_OPTION, out cpmethod) && Enum.TryParse<SharpCompress.Common.CompressionType>(cpmethod, true, out tmptype))
-                    cfi.Type = tmptype;
+                    m_compressionInfo.Type = tmptype;
 
                 string cplvl;
                 int tmplvl;
                 if (options.TryGetValue(COMPRESSION_LEVEL_OPTION, out cplvl) && int.TryParse(cplvl, out tmplvl))
-                    cfi.DeflateCompressionLevel = (SharpCompress.Compressor.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
+                    m_compressionInfo.DeflateCompressionLevel = (SharpCompress.Compressor.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
                 else if (options.TryGetValue(COMPRESSION_LEVEL_OPTION_ALIAS, out cplvl) && int.TryParse(cplvl, out tmplvl))
-                    cfi.DeflateCompressionLevel = (SharpCompress.Compressor.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
+                    m_compressionInfo.DeflateCompressionLevel = (SharpCompress.Compressor.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
+
+                m_defaultCompressionLevel = m_compressionInfo.DeflateCompressionLevel;
 
                 m_isWriting = true;
                 m_stream = new System.IO.FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read);
-                m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, cfi);
+                m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, m_compressionInfo);
 
                 //Size of endheader, taken from SharpCompress ZipWriter
                 m_flushBufferSize = 8 + 2 + 2 + 4 + 4 + 2 + 0;
@@ -264,14 +276,16 @@ namespace Duplicati.Library.Compression
         /// Creates a file in the archive and returns a writeable stream
         /// </summary>
         /// <param name="file">The name of the file to create</param>
+        /// <param name="hint">A hint to the compressor as to how compressible the file data is</param>
         /// <param name="lastWrite">The time the file was last written</param>
         /// <returns>A writeable stream for the file contents</returns>
-        public virtual Stream CreateFile(string file, DateTime lastWrite)
+        public virtual Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite)
         {
             if (!m_isWriting)
                 throw new InvalidOperationException("Cannot write while reading");
 
             m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
+            m_compressionInfo.DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressor.Deflate.CompressionLevel.None : m_defaultCompressionLevel;
             return ((ZipWriter)m_writer).WriteToStream(file, lastWrite, null);
 
         }

@@ -617,7 +617,7 @@ namespace Duplicati.Library.Main
 
                         bool completedWithoutChanges = true;
 
-                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(manifest.SourceDirs, bs, backend.Metadata, m_options.Filter, patches))
+                        using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(manifest.SourceDirs, bs, backend.Metadata, m_options.Filter, m_options.CompressionHints, patches))
                         {
                             CheckLiveControl();
 
@@ -651,7 +651,7 @@ namespace Duplicati.Library.Main
                                         //Add signature files to archive
                                         foreach (string s in controlfiles)
                                             if (!string.IsNullOrEmpty(s))
-                                                using (System.IO.Stream cs = signaturearchive.CreateFile(System.IO.Path.Combine(RSync.RSyncDir.CONTROL_ROOT, System.IO.Path.GetFileName(s)), DateTime.Now))
+                                                using (System.IO.Stream cs = signaturearchive.CreateFile(System.IO.Path.Combine(RSync.RSyncDir.CONTROL_ROOT, System.IO.Path.GetFileName(s)), m_options.GetCompressionHintFromFilename(s), DateTime.Now))
                                                 using (System.IO.FileStream fs = System.IO.File.OpenRead(s))
                                                     Utility.Utility.CopyStream(fs, cs);
 
@@ -1962,7 +1962,7 @@ namespace Duplicati.Library.Main
 
                     List<KeyValuePair<ManifestEntry, CompressionWrapper>> patches = FindPatches(backend, entries, basefolder, false, rs);
 
-                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { basefolder }, rs, backend.Metadata, filter, patches))
+                    using (RSync.RSyncDir dir = new Duplicati.Library.Main.RSync.RSyncDir(new string[] { basefolder }, rs, backend.Metadata, filter, null, patches))
                         res = dir.UnmatchedFiles();
                 }
 
