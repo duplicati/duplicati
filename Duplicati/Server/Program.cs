@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -127,6 +127,9 @@ namespace Duplicati.Server
                 );
             }
 
+            //If this executable is invoked directly, write to console, otherwise throw exceptions
+            bool writeConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
+
             //If we are on windows we encrypt the database by default
             //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
             //Linux users can use an encrypted home folder, or install a SQLite library with encryption support
@@ -165,12 +168,20 @@ namespace Duplicati.Server
             //If the commandline issues --help, just stop here
             if (commandlineOptions.ContainsKey("help"))
             {
-                Console.WriteLine(Strings.Program.HelpDisplayDialog);
+                if (writeConsole)
+                {
+                    Console.WriteLine(Strings.Program.HelpDisplayDialog);
 
-                foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
-                    Console.WriteLine(Strings.Program.HelpDisplayFormat, arg.Name, arg.LongDescription);
+                    foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
+                        Console.WriteLine(Strings.Program.HelpDisplayFormat, arg.Name, arg.LongDescription);
 
-                return;
+                    return;
+                }
+                else
+                {
+                    throw new Exception("Server invoked with --help");
+                }
+
             }
 
 #if DEBUG
@@ -227,22 +238,44 @@ namespace Duplicati.Server
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(Strings.Program.StartupFailure, ex.ToString());
-                    return;
+                    if (writeConsole)
+                    {
+                        Console.WriteLine(Strings.Program.StartupFailure, ex.ToString());
+                        return;
+                    }
+                    else
+                    {
+                        throw new Exception(Strings.Program.StartupFailure, ex);
+                    }
                 }
 
                 if (!instance.IsFirstInstance)
                 {
-                    Console.WriteLine(Strings.Program.AnotherInstanceDetected);
-                    return;
+                    if (writeConsole)
+                    {
+                        Console.WriteLine(Strings.Program.AnotherInstanceDetected);
+                        return;
+                    }
+                    else
+                    {
+                        throw new Exception(Strings.Program.AnotherInstanceDetected);
+                    }
                 }
+
 
                 Version sqliteVersion = new Version((string)Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
                 if (sqliteVersion < new Version(3, 6, 3))
                 {
-                    //The official Mono SQLite provider is also broken with less than 3.6.3
-                    Console.WriteLine(Strings.Program.WrongSQLiteVersion, sqliteVersion, "3.6.3");
-                    return;
+                    if (writeConsole)
+                    {
+                        //The official Mono SQLite provider is also broken with less than 3.6.3
+                        Console.WriteLine(Strings.Program.WrongSQLiteVersion, sqliteVersion, "3.6.3");
+                        return;
+                    }
+                    else
+                    {
+                        throw new Exception(string.Format(Strings.Program.WrongSQLiteVersion, sqliteVersion, "3.6.3"));
+                    }
                 }
 
                 //Create the connection instance
@@ -273,8 +306,15 @@ namespace Duplicati.Server
                     if (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                         ex = ex.InnerException;
 
-                    Console.WriteLine(Strings.Program.DatabaseOpenError, ex.Message);
-                    return;
+                    if (writeConsole)
+                    {
+                        Console.WriteLine(Strings.Program.DatabaseOpenError, ex.Message);
+                        return;
+                    }
+                    else
+                    {
+                        throw new Exception(string.Format(Strings.Program.DatabaseOpenError, ex.Message), ex);
+                    }
                 }
 
                 DataConnection = new DataFetcherWithRelations(new SQLiteDataProvider(con));
@@ -303,31 +343,36 @@ namespace Duplicati.Server
                 Program.WebServer = new Server.WebServer(commandlineOptions);
 
                 DataConnection.AfterDataConnection += new DataConnectionEventHandler(DataConnection_AfterDataConnection);
-    
+
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine(string.Format(Strings.Program.SeriousError, ex.ToString()));
-                Console.WriteLine(Strings.Program.SeriousError, ex.ToString());
+                if (writeConsole)
+                    Console.WriteLine(Strings.Program.SeriousError, ex.ToString());
+                else
+                    throw new Exception(string.Format(Strings.Program.SeriousError, ex.ToString()), ex);
             }
+            finally
+            {
+                StatusEventNotifyer.SignalNewEvent();
+                ProgressEventNotifyer.SignalNewEvent();
 
-            StatusEventNotifyer.SignalNewEvent();
-            ProgressEventNotifyer.SignalNewEvent();
-
-            if (Scheduler != null)
-                Scheduler.Terminate(true);
-            if (WorkThread != null)
-                WorkThread.Terminate(true);
-            if (instance != null)
-                instance.Dispose();
+                if (Scheduler != null)
+                    Scheduler.Terminate(true);
+                if (WorkThread != null)
+                    WorkThread.Terminate(true);
+                if (instance != null)
+                    instance.Dispose();
 
 #if DEBUG
-            //Flush the file
-            using (Duplicati.Library.Logging.Log.CurrentLog as Duplicati.Library.Logging.StreamLog)
-                Duplicati.Library.Logging.Log.CurrentLog = null;
+                //Flush the file
+                using (Duplicati.Library.Logging.Log.CurrentLog as Duplicati.Library.Logging.StreamLog)
+                    Duplicati.Library.Logging.Log.CurrentLog = null;
 #endif
+            }
         }
 
         private static void Runner_ProgressEvent(Serialization.DuplicatiOperation operation, Serialization.RunnerState state, string message, string submessage, int progress, int subprogress)

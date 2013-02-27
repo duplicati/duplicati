@@ -55,6 +55,14 @@ namespace Duplicati.Library.Encryption
         /// The commandline option that supplies a signature key to test the GPG with (--sign-key)
         /// </summary>
         private const string COMMANDLINE_OPTIONS_SIGNATURE_KEY = "sign-key";
+        /// <summary>
+        /// The commandline option that changes the default encryption command (--gpg-encryption-command)
+        /// </summary>
+        private const string COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND = "gpg-encryption-command";
+        /// <summary>
+        /// The commandline option that changes the default encryption command (--gpg-decryption-command)
+        /// </summary>
+        private const string COMMANDLINE_OPTIONS_DECRYPTION_COMMAND = "gpg-decryption-command";
         #endregion
 
         /// <summary>
@@ -63,9 +71,9 @@ namespace Duplicati.Library.Encryption
         private const string GPG_COMMANDLINE_STANDARD_OPTIONS = "--batch --passphrase-fd 0";
 
         /// <summary>
-        /// The options that are supplied as default when encrypting (--symmetric --local-user)
+        /// The options that are supplied as default when encrypting (default is empty)
         /// </summary>
-        private const string GPG_ENCRYPTION_DEFAULT_OPTIONS = "--batch --symmetric --local-user";
+        private const string GPG_ENCRYPTION_DEFAULT_OPTIONS = "";
 
         /// <summary>
         /// The options that are supplied as default when encrypting (default is empty)
@@ -78,9 +86,9 @@ namespace Duplicati.Library.Encryption
         private const string GPG_ARMOR_OPTION = "--armor";
 
         /// <summary>
-        /// The command used to signal encryption (--encrypt)
+        /// The command used to signal encryption (--symmetric)
         /// </summary>
-        private const string GPG_ENCRYPTION_COMMAND = "--encrypt";
+        private const string GPG_ENCRYPTION_COMMAND = "--symmetric";
         
         /// <summary>
         /// The command used to signal decryption (--decrypt)
@@ -169,8 +177,16 @@ namespace Duplicati.Library.Encryption
                 m_decryption_args += " " + GPG_DECRYPTION_DEFAULT_OPTIONS;
 
             //These are commands and thus inserted last
-            m_encryption_args += " " + GPG_ENCRYPTION_COMMAND;
-            m_decryption_args += " " + GPG_DECRYPTION_COMMAND;
+
+            if (options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND))
+                m_encryption_args += " " + options[COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND];
+            else
+                m_encryption_args += " " + GPG_ENCRYPTION_COMMAND;
+
+            if (options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_COMMAND))
+                m_decryption_args += " " + options[COMMANDLINE_OPTIONS_DECRYPTION_COMMAND];
+            else
+                m_decryption_args += " " + GPG_DECRYPTION_COMMAND;
 
             if (options.ContainsKey(COMMANDLINE_OPTIONS_PATH))
                 m_programpath = Environment.ExpandEnvironmentVariables(options[COMMANDLINE_OPTIONS_PATH]);
@@ -201,6 +217,8 @@ namespace Duplicati.Library.Encryption
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(COMMANDLINE_OPTIONS_DISABLE_ARMOR, CommandLineArgument.ArgumentType.Boolean, Strings.GPGEncryption.GpgencryptiondisablearmorShort, Strings.GPGEncryption.GpgencryptiondisablearmorLong, "true", null, null, string.Format(Strings.GPGEncryption.Gpgencryptiondisablearmordeprecated, COMMANDLINE_OPTIONS_ENABLE_ARMOR)),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENABLE_ARMOR, CommandLineArgument.ArgumentType.Boolean, Strings.GPGEncryption.GpgencryptionenablearmorShort, Strings.GPGEncryption.GpgencryptionenablearmorLong, "false"),
+                    new CommandLineArgument(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionencryptioncommandShort, string.Format(Strings.GPGEncryption.GpgencryptionencryptioncommandLong, GPG_ENCRYPTION_COMMAND, "--encrypt"), GPG_ENCRYPTION_COMMAND),
+                    new CommandLineArgument(COMMANDLINE_OPTIONS_DECRYPTION_COMMAND , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptiondecryptioncommandShort, Strings.GPGEncryption.GpgencryptiondecryptioncommandLong, GPG_DECRYPTION_COMMAND),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionencryptionswitchesShort, Strings.GPGEncryption.GpgencryptionencryptionswitchesLong, GPG_ENCRYPTION_DEFAULT_OPTIONS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptiondecryptionswitchesShort, Strings.GPGEncryption.GpgencryptiondecryptionswitchesLong, GPG_DECRYPTION_DEFAULT_OPTIONS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_PATH, CommandLineArgument.ArgumentType.Path, Strings.GPGEncryption.GpgprogrampathShort, Strings.GPGEncryption.GpgprogrampathLong),

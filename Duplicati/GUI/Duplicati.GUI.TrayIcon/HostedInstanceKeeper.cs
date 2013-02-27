@@ -25,6 +25,9 @@ namespace Duplicati.GUI.TrayIcon
                 else
                     throw new Exception("Hosted server startup timed out");
             }
+
+            if (m_runnerException != null)
+                throw m_runnerException;
         }
 
         private void ThreadRunner(object a)
@@ -34,6 +37,7 @@ namespace Duplicati.GUI.TrayIcon
                 Duplicati.Server.Program.Main((string[])a);
             } catch (Exception ex) {
                 m_runnerException = ex;
+                Duplicati.Server.Program.ServerStartedEvent.Set();
             }
             
         }
