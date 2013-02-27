@@ -60,7 +60,7 @@ namespace Duplicati.Library.Utility
             //This enables upgrading through several versions
             //ea, from 1 to 8, by stepping 2->3->4->5->6->7->8
             SortedDictionary<int, string> upgrades = new SortedDictionary<int, string>();
-            string prefix = typeof(DatabaseUpgrader).Namespace + "." + FOLDER_NAME + ".";
+            string prefix = eltype.Namespace + "." + FOLDER_NAME + ".";
             foreach (string s in asm.GetManifestResourceNames())
             {
                 //The resource name will be "Duplicati.GUI.Database_schema.1.Sample upgrade.sql"
@@ -71,7 +71,14 @@ namespace Duplicati.Library.Utility
                     {
                         string version = s.Substring(prefix.Length, s.IndexOf(".", prefix.Length + 1) - prefix.Length);
                         int fileversion = int.Parse(version);
-                        upgrades[fileversion] += new System.IO.StreamReader(asm.GetManifestResourceStream(s)).ReadToEnd();
+
+                        string prev;
+
+                        if (!upgrades.TryGetValue(fileversion, out prev))
+
+                            prev = "";
+
+                        upgrades[fileversion] = prev + new System.IO.StreamReader(asm.GetManifestResourceStream(s)).ReadToEnd();
                     }
                     catch
                     {
