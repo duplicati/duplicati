@@ -101,9 +101,10 @@ namespace Duplicati.Library.Compression
         /// Creates a new empty file
         /// </summary>
         /// <param name="file">The name of the file to create</param>
+        /// <param name="hint">A hint to the compressor as to how compressible the file data is</param>
         /// <param name="lastWrite">The time the file was last written</param>
         /// <returns>The stream used to access the file</returns>
-        public System.IO.Stream CreateFile(string file, DateTime lastWrite)
+        public System.IO.Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite)
         {
             string path = System.IO.Path.Combine(m_folder, file);
             System.IO.Stream res = System.IO.File.Create(path);

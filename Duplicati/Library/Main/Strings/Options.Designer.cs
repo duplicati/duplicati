@@ -241,6 +241,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This property can be used to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}..
+        /// </summary>
+        internal static string CompressionextensionfileLong {
+            get {
+                return ResourceManager.GetString("CompressionextensionfileLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Manage non-compressible file extensions.
+        /// </summary>
+        internal static string CompressionextensionfileShort {
+            get {
+                return ResourceManager.GetString("CompressionextensionfileShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module..
         /// </summary>
         internal static string CompressionmoduleLong {

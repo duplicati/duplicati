@@ -543,4 +543,10 @@
   <data name="BackupnameShort" xml:space="preserve">
     <value>Name of the backup</value>
   </data>
+  <data name="CompressionextensionfileLong" xml:space="preserve">
+    <value>This property can be used to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}.</value>
+  </data>
+  <data name="CompressionextensionfileShort" xml:space="preserve">
+    <value>Manage non-compressible file extensions</value>
+  </data>
 </root>

@@ -177,7 +177,7 @@ namespace Duplicati.Library.Main
         /// <param name="data">The data to write</param>
         private void WriteAllText(string file, string data)
         {
-            using (StreamWriter sw = new StreamWriter(CreateFile(file, DateTime.Now), Encoding.UTF8))
+            using (StreamWriter sw = new StreamWriter(CreateFile(file, CompressionHint.Default, DateTime.Now), Encoding.UTF8))
                 sw.Write(data);
         }
 
@@ -189,7 +189,7 @@ namespace Duplicati.Library.Main
         public void WriteAllLines(string file, string[] data)
         {
             bool first = true;
-            using (StreamWriter sw = new StreamWriter(CreateFile(file, DateTime.Now), Encoding.UTF8))
+            using (StreamWriter sw = new StreamWriter(CreateFile(file, CompressionHint.Default, DateTime.Now), Encoding.UTF8))
                 foreach (string s in data)
                 {
                     if (first)
@@ -207,9 +207,9 @@ namespace Duplicati.Library.Main
         /// <param name="file">The file to create</param>
         /// <param name="lastWrite">The time the file was last written</param>
         /// <returns>A stream with the data to write into the file</returns>
-        public System.IO.Stream CreateFile(string file, DateTime lastWrite)
+        public System.IO.Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite)
         {
-            return m_compressor.CreateFile(ToArchivePath(file), m_useUtcTimes ? lastWrite.ToUniversalTime() : lastWrite);
+            return m_compressor.CreateFile(ToArchivePath(file), hint, m_useUtcTimes ? lastWrite.ToUniversalTime() : lastWrite);
         }
 
         /// <summary>

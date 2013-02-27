@@ -24,6 +24,29 @@ using System.Text;
 namespace Duplicati.Library.Interface
 {
     /// <summary>
+    /// A value that is given to the compressor as a hint
+    /// to how compressible the file is
+    /// </summary>
+    public enum CompressionHint
+    {
+        /// <summary>
+        /// Indicates that the compression module should decide
+        /// </summary>
+        Default,
+
+        /// <summary>
+        /// Indicates that the file is compressible
+        /// </summary>
+        Compressible,
+
+        /// <summary>
+        /// Indicates that the files is incompressible
+        /// </summary>
+        Noncompressible
+
+    }
+
+    /// <summary>
     /// An interface for accessing files in an archive, such as a folder or compressed file.
     /// All modules that implements compression must implement this interface.
     /// The classes that implements this interface MUST also 
@@ -61,9 +84,10 @@ namespace Duplicati.Library.Interface
         /// Creates a file in the archive
         /// </summary>
         /// <param name="file">The file to create</param>
+        /// <param name="hint">A hint to the compressor as to how compressible the file data is</param>
         /// <param name="lastWrite">The time the file was last written</param>
         /// <returns>A stream with the data to write into the file</returns>
-        System.IO.Stream CreateFile(string file, DateTime lastWrite);
+        System.IO.Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite);
 
         /// <summary>
         /// Returns a value indicating if the specified file exists

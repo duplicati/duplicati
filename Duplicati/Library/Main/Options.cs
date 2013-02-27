@@ -95,6 +95,8 @@ namespace Duplicati.Library.Main
             Ignore
         }
 
+        private static readonly string DEFAULT_COMPRESSED_EXTENSION_FILE = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "default_compressed_extensions.txt");
+
         /// <summary>
         /// Lock that protects the options collection
         /// </summary>
@@ -103,6 +105,11 @@ namespace Duplicati.Library.Main
         protected Dictionary<string, string> m_options;
 
         protected List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
+
+        /// <summary>
+        /// Lookup table for compression hints
+        /// </summary>
+        private Dictionary<string, CompressionHint> m_compressionHints;
 
         public Options(Dictionary<string, string> options)
         {
@@ -173,7 +180,8 @@ namespace Duplicati.Library.Main
                     "open-file-policy",
                     "exclude-empty-folders",
                     "symlink-policy",
-                    "exclude-files-attributes"
+                    "exclude-files-attributes",
+                    "compression-extension-file"
                 };
             }
         }
@@ -408,6 +416,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, string.Format(Strings.Options.SymlinkpolicyLong, "store", "ignore", "follow"), "store", null, Enum.GetNames(typeof(SymlinkStrategy))),
                     new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, string.Format(Strings.Options.ExcludefilesattributesLong, string.Join(", ", Enum.GetNames(typeof(System.IO.FileAttributes))))),
                     new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
+                    new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, string.Format(Strings.Options.CompressionextensionfileLong, DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE)
                 });
 
                 lst.AddRange(ForestHash.FhOptions.Commands);
@@ -1304,6 +1313,51 @@ namespace Duplicati.Library.Main
             {
                 m_options["backup-name"] = value;
             }
+        }
+
+        /// <summary>
+        /// Gets a lookup table with compression hints, the key is the file extension with the leading period
+        /// </summary>
+        public IDictionary<string, CompressionHint> CompressionHints
+        {
+            get
+            {
+                if (m_compressionHints == null)
+                {
+                    //Don't try again, if the file does not exist
+                    m_compressionHints = new Dictionary<string, CompressionHint>(Utility.Utility.ClientFilenameStringComparer);
+
+                    string file;
+                    if (!m_options.TryGetValue("compression-extension-file", out file))
+                        file = DEFAULT_COMPRESSED_EXTENSION_FILE;
+
+                    if (!string.IsNullOrEmpty(file) && System.IO.File.Exists(file))
+                        foreach (var _line in Utility.Utility.ReadFileWithDefaultEncoding(file).Split('\n'))
+                        {
+                            var line = _line.Trim();
+                            var lix = line.IndexOf(' ');
+                            if (lix > 0)
+                                line = line.Substring(0, lix);
+                            if (line.Length >= 2 && line[0] == '.')
+                                m_compressionHints[line] = CompressionHint.Noncompressible;
+                        }
+                }
+
+                return m_compressionHints;
+            }
+        }
+
+        /// <summary>
+        /// Gets a compression hint from a filename
+        /// </summary>
+        /// <param name="filename">The filename to get the hint for</param>
+        /// <returns>The compression hint</returns>
+        public CompressionHint GetCompressionHintFromFilename(string filename)
+        {
+            CompressionHint h;
+            if (!CompressionHints.TryGetValue(System.IO.Path.GetExtension(filename), out h))
+                return CompressionHint.Default;
+            return h;
         }
 
         /// <summary>

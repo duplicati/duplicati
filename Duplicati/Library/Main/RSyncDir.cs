@@ -193,7 +193,7 @@ namespace Duplicati.Library.Main.RSync
                         m_signatureStream.Position = 0;
                     }
 
-                    using (System.IO.Stream s3 = signatureArchive.CreateFile(this.m_signaturePath, m_lastWrite))
+                    using (System.IO.Stream s3 = signatureArchive.CreateFile(this.m_signaturePath, Library.Interface.CompressionHint.Default, m_lastWrite))
                         Utility.Utility.CopyStream(m_signatureStream, s3, true);
                 }
 
@@ -650,6 +650,8 @@ namespace Duplicati.Library.Main.RSync
         /// </summary>
         private bool m_sortedfilelist;
 
+        private IDictionary<string, Library.Interface.CompressionHint> m_compressionHints;
+
         #endregion
 
         /// <summary>
@@ -659,9 +661,11 @@ namespace Duplicati.Library.Main.RSync
         /// <param name="stat">The status report object</param>
         /// <param name="filter">An optional filter that controls what files to include</param>
         /// <param name="patches">A list of signature archives to read, MUST be sorted in the creation order, oldest first</param>
-        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Backupmetadata metadata, Utility.FilenameFilter filter, List<KeyValuePair<ManifestEntry, CompressionWrapper>> patches)
+        public RSyncDir(string[] sourcefolder, CommunicationStatistics stat, Backupmetadata metadata, Utility.FilenameFilter filter, IDictionary<string, Library.Interface.CompressionHint> compressionHints, List<KeyValuePair<ManifestEntry, CompressionWrapper>> patches)
             : this(sourcefolder, stat, metadata, filter)
         {
+            m_compressionHints = compressionHints;
+
             string[] prefixes = new string[] {
                 Utility.Utility.AppendDirSeparator(COMBINED_SIGNATURE_ROOT),
                 Utility.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT),
@@ -1261,7 +1265,7 @@ namespace Duplicati.Library.Main.RSync
 
                     //We only write the USN if all files were processed
                     if (m_currentUSN != null)
-                        using (System.IO.Stream s = signaturefile.CreateFile(USN_VALUES, DateTime.Now))
+                        using (System.IO.Stream s = signaturefile.CreateFile(USN_VALUES, Library.Interface.CompressionHint.Default, DateTime.Now))
                             m_currentUSN.Save(s);
 
                     //Only write this if all files were processed
@@ -1307,8 +1311,8 @@ namespace Duplicati.Library.Main.RSync
             long totalSize = 0;
 
             //Insert the marker file
-            contentfile.CreateFile(UTC_TIME_MARKER, DateTime.Now).Dispose();
-            signaturefile.CreateFile(UTC_TIME_MARKER, DateTime.Now).Dispose();
+            contentfile.CreateFile(UTC_TIME_MARKER, Library.Interface.CompressionHint.Default, DateTime.Now).Dispose();
+            signaturefile.CreateFile(UTC_TIME_MARKER, Library.Interface.CompressionHint.Default, DateTime.Now).Dispose();
 
             //In the first volume we insert some lists with data on updated and deleted folders
             if (m_isfirstmultipass)
@@ -1784,7 +1788,11 @@ namespace Duplicati.Library.Main.RSync
         {
             //append chuncks of 1kb, checking on the total size after each write
             byte[] tmp = new byte[1024];
-            using (System.IO.Stream s3 = contentfile.CreateFile(entry.relativeName, entry.LastWriteTime))
+            Library.Interface.CompressionHint hint;
+            if (m_compressionHints == null || !m_compressionHints.TryGetValue(System.IO.Path.GetExtension(entry.fullname), out hint))
+                hint = Library.Interface.CompressionHint.Default;
+
+            using (System.IO.Stream s3 = contentfile.CreateFile(entry.relativeName, hint, entry.LastWriteTime))
             {
                 int a;
                 while ((a = entry.Stream.Read(tmp, 0, tmp.Length)) != 0)
