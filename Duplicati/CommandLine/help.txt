@@ -138,7 +138,7 @@ Options:
 
 Usage: delete-older-than <date> <target url>
   
-  This will delete all backups from the target that older than the specified absolute or relative date and time.
+  This will delete all backups from the target that are older than the specified absolute or relative date and time.
 
 Options:
 %OPTION:force%
