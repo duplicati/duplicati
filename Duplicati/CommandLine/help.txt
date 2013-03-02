@@ -203,7 +203,7 @@ Options:
 
 Usage: list <target url>
 
-  Lists all files stored on the remote server. These are manifest files, signature files, content files and other files that do not to any backup created by duplicati. This command can be used to see the contents of the remote folder.
+  Lists all files stored on the remote server. These are manifest files, signature files, content files and other files that do not belong to any backup created by duplicati. This command can be used to see the contents of the remote folder.
 
 
 # =============================================================================
