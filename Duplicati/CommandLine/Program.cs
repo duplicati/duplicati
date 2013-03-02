@@ -137,6 +137,7 @@ namespace Duplicati.CommandLine
 
                 string source = cargs[0];
                 string target = cargs[1];
+                bool operationSpecified = false;
 
                 if (source.Trim().ToLower() == "restore" && cargs.Count == 3)
                 {
@@ -144,12 +145,14 @@ namespace Duplicati.CommandLine
                     target = cargs[2];
                     options["restore"] = null;
                     cargs.RemoveAt(0);
+                    operationSpecified = true;
                 }
                 else if (source.Trim().ToLower() == "backup" && cargs.Count == 3)
                 {
                     source = target;
                     target = cargs[2];
                     cargs.RemoveAt(0);
+                    operationSpecified = true;
                 }
 
                 if (!options.ContainsKey("passphrase"))
@@ -439,7 +442,14 @@ namespace Duplicati.CommandLine
                         PrintWrongNumberOfArguments(cargs, 2);
                         return;
                     } 
-                    
+
+                    //Assume file:// if no url fragment is found, but only if "backup" is specified
+                    if (!target.Contains("://") && !operationSpecified)
+                    {
+                        Console.WriteLine(Strings.Program.MissingURISchemeError, "file://", target);
+                        return 200;
+                    }
+
                     Console.WriteLine(Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options));
                 }
             }

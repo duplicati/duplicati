@@ -216,6 +216,15 @@ namespace Duplicati.CommandLine.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The source or target parameter must be a URL, try using &quot;{0}{1}&quot;.
+        /// </summary>
+        internal static string MissingURISchemeError {
+            get {
+                return ResourceManager.GetString("MissingURISchemeError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Modified files.
         /// </summary>
         internal static string ModifiedFilesHeader {

@@ -170,6 +170,9 @@ Type\tTime\t\t\tVolumes\tSize</value>
   <data name="InternalOptionUsedError" xml:space="preserve">
     <value>The option --{0} was supplied, but it is reserved for internal use and may not be set on the commandline</value>
   </data>
+  <data name="MissingURISchemeError" xml:space="preserve">
+    <value>The source or target parameter must be a URL, try using "{0}{1}"</value>
+  </data>
   <data name="ModifiedFilesHeader" xml:space="preserve">
     <value>Modified files</value>
   </data>
