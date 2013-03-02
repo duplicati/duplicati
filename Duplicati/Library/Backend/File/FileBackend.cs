@@ -42,38 +42,50 @@ namespace Duplicati.Library.Backend
 
         public File(string url, Dictionary<string, string> options)
         {
-            m_path = url.Substring("file://".Length);
-
-            if (m_path.IndexOf("@") > 0)
+            if (url.StartsWith("file://", StringComparison.InvariantCultureIgnoreCase))
             {
-                m_username = m_path.Substring(0, m_path.IndexOf("@"));
-                //Bugfix: cannot access paths with @ in the path
-                if (m_username.Contains("/") || m_username.Contains("\\") || m_username.Contains(System.IO.Path.DirectorySeparatorChar.ToString()))
+                m_path = url.Substring("file://".Length);
+                if (m_path.IndexOf("@") > 0)
                 {
-                    m_username = null;
+                    m_username = m_path.Substring(0, m_path.IndexOf("@"));
+                    //Bugfix: cannot access paths with @ in the path
+                    if (m_username.Contains("/") || m_username.Contains("\\") || m_username.Contains(System.IO.Path.DirectorySeparatorChar.ToString()))
+                    {
+                        m_username = null;
+                        if (options.ContainsKey("ftp-username"))
+                            m_username = options["ftp-username"];
+                        if (options.ContainsKey("ftp-password"))
+                            m_password = options["ftp-password"];
+                    }
+                    else
+                    {
+                        m_path = m_path.Substring(m_path.IndexOf("@") + 1);
+
+                        if (m_username.IndexOf(":") > 0)
+                        {
+                            m_password = m_username.Substring(0, m_username.IndexOf(":"));
+                            m_username = m_username.Substring(m_username.IndexOf(":") + 1);
+                        }
+                        else
+                        {
+                            if (options.ContainsKey("ftp-password"))
+                                m_password = options["ftp-password"];
+                        }
+                    }
+                }
+                else
+                {
                     if (options.ContainsKey("ftp-username"))
                         m_username = options["ftp-username"];
                     if (options.ContainsKey("ftp-password"))
                         m_password = options["ftp-password"];
                 }
-                else
-                {
-                    m_path = m_path.Substring(m_path.IndexOf("@") + 1);
-
-                    if (m_username.IndexOf(":") > 0)
-                    {
-                        m_password = m_username.Substring(0, m_username.IndexOf(":"));
-                        m_username = m_username.Substring(m_username.IndexOf(":") + 1);
-                    }
-                    else
-                    {
-                        if (options.ContainsKey("ftp-password"))
-                            m_password = options["ftp-password"];
-                    }
-                }
             }
             else
             {
+                m_path = url;
+
+                //Non-url format paths cannot contain extra arguments
                 if (options.ContainsKey("ftp-username"))
                     m_username = options["ftp-username"];
                 if (options.ContainsKey("ftp-password"))
