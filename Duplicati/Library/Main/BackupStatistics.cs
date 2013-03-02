@@ -41,6 +41,7 @@ namespace Duplicati.Library.Main
         private long m_tooLargeFiles;
         private long m_filesWithError;
         private bool m_full = false;
+        private bool m_partialBackup = false;
         private string m_typeReason = null;
 
         public BackupStatistics(DuplicatiOperationMode operationMode)
@@ -150,6 +151,12 @@ namespace Duplicati.Library.Main
             set { m_filesWithError = value; }
         }
 
+        public bool PartialBackup
+        {
+            get { return m_partialBackup; }
+            set { m_partialBackup = true; }
+        }
+
         public void SetTypeReason(string reason)
         {
             m_typeReason = reason;
@@ -178,6 +185,8 @@ namespace Duplicati.Library.Main
             sb.Append("Unprocessed     : " + this.UnprocessedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("TooLargeFiles   : " + this.FilesTooLarge.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("FilesWithError  : " + this.FilesWithError.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            if (m_partialBackup)
+                sb.Append("PartialBackup   : true" + "\r\n");
             
             sb.Append(base.ToString());
             return sb.ToString();

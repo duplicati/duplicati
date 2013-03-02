@@ -23,7 +23,7 @@ See duplicati.commandline.exe help <topic> for more information.
   
   Formats: date, time, size, encryption, compression
   
-  Advanced options: advanced, filter, <option> (e.g. --auto-cleanup)
+  Advanced options: advanced, returncodes, filter, <option> (e.g. --auto-cleanup)
 
 http://www.duplicati.com/              Version: %VERSION%
 
@@ -395,3 +395,17 @@ Options:
 Duplicati offers more options than listed in the other topics. Those additional options should only be used with care. For normal operation none of them should ever be required. Here is a complete list of options supported by Duplicati:
 
 %MAINOPTIONS%
+
+# =============================================================================
+> duplicati.commandline.exe help returncodes
+> duplicati.commandline.exe help exitcodes
+> duplicati.commandline.exe help statuscodes
+
+Duplicati reports the following return/exit codes:
+  0 - Success
+  1 - Successful backup, but no files were changed
+  2 - Successful backup, with warnings
+  50 - Backup uploaded some files, but did not finish
+  100 - An error occurred
+  200 - Invalid commandline arguments found
+

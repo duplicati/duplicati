@@ -27,7 +27,7 @@ namespace Duplicati.CommandLine
     {
         private static readonly string[] COMMANDS_AS_ARGUMENTS = new string[] { "delete-all-but-n-full", "delete-all-but-n", "delete-older-than" };
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             try
             {
@@ -67,7 +67,7 @@ namespace Duplicati.CommandLine
 
                     cargs.RemoveAt(0);
                     UnitTest.RunTest(cargs.ToArray(), options);
-                    return;
+                    return 0;
                 }
 #endif
 
@@ -88,7 +88,7 @@ namespace Duplicati.CommandLine
                     if (options.ContainsKey(internaloption))
                     {
                         Console.WriteLine(Strings.Program.InternalOptionUsedError, internaloption);
-                        return;
+                        return 200;
                     }
                 
                 if ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")))
@@ -119,7 +119,7 @@ namespace Duplicati.CommandLine
                     {
                         case "purge-signature-cache":
                             Library.Main.Interface.PurgeSignatureCache(options);
-                            return;
+                            return 0;
                     }
                 }
 
@@ -131,7 +131,7 @@ namespace Duplicati.CommandLine
                         Help.PrintUsage(cargs[1], options);
                     
 
-                    return;
+                    return 0;
                 }
 
 
@@ -176,7 +176,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     Console.WriteLine(string.Join("\r\n", new List<string>(Duplicati.Library.Main.Interface.ListCurrentFiles(target, options)).ToArray()));
@@ -188,7 +188,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     Console.WriteLine(string.Join("\r\n", Duplicati.Library.Main.Interface.ListSourceFolders(target, options) ?? new string[0]));
@@ -200,7 +200,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     List<KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string>> files = Duplicati.Library.Main.Interface.ListActualSignatureFiles(cargs[0], options);
@@ -266,7 +266,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     List<Duplicati.Library.Main.ManifestEntry> entries = Duplicati.Library.Main.Interface.ParseFileList(cargs[0], options);
@@ -299,7 +299,7 @@ namespace Duplicati.CommandLine
                     if (!int.TryParse(target, out n) || n < 0)
                     {
                         Console.WriteLine(string.Format(Strings.Program.IntegerParseError, target));
-                        return;
+                        return 200;
                     }
 
                     options["delete-all-but-n-full"] = n.ToString();
@@ -310,7 +310,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     if (source.Trim().ToLower() == "delete-all-but-n")
@@ -327,7 +327,7 @@ namespace Duplicati.CommandLine
                     catch (Exception ex)
                     {
                         Console.WriteLine(string.Format(Strings.Program.TimeParseError, target, ex.Message));
-                        return;
+                        return 200;
                     }
 
                     options["delete-older-than"] = target;
@@ -338,7 +338,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     Console.WriteLine(Duplicati.Library.Main.Interface.DeleteOlderThan(cargs[0], options));
@@ -350,7 +350,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     Console.WriteLine(Duplicati.Library.Main.Interface.Cleanup(cargs[0], options));
@@ -362,7 +362,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     Duplicati.Library.Main.Interface.CreateFolder(cargs[0], options);
@@ -375,7 +375,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     List<KeyValuePair<string, DateTime>> results = Duplicati.Library.Main.Interface.FindLastFileVersion(cargs[0], options);
@@ -390,7 +390,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 1)
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
-                        return;
+                        return 200;
                     }
 
                     List<KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception>> results = Duplicati.Library.Main.Interface.VerifyBackup(cargs[0], options);
@@ -430,7 +430,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 2)
                     {
                         PrintWrongNumberOfArguments(cargs, 2);
-                        return;
+                        return 200;
                     }
 
                     Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target.Split(System.IO.Path.PathSeparator), options));
@@ -440,8 +440,8 @@ namespace Duplicati.CommandLine
                     if (cargs.Count != 2)
                     {
                         PrintWrongNumberOfArguments(cargs, 2);
-                        return;
-                    } 
+                        return 200;
+                    }
 
                     //Assume file:// if no url fragment is found, but only if "backup" is specified
                     if (!target.Contains("://") && !operationSpecified)
@@ -450,8 +450,30 @@ namespace Duplicati.CommandLine
                         return 200;
                     }
 
-                    Console.WriteLine(Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options));
+                    string result = Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options);
+                    Console.WriteLine(result);
+
+                    Dictionary<string, string> tmp = ParseDuplicatiOutput(result);
+                    
+                    //Interrupted = 50
+                    if (tmp.ContainsKey("PartialBackup"))
+                        return 50;
+
+                    //Completed with warnings = 2
+                    if (tmp.ContainsKey("NumberOfWarnings"))
+                        return 2;
+
+                    //Success, but no upload = 1
+                    if (tmp.ContainsKey("BytesUploaded"))
+                    {
+                        long s;
+                        if (long.TryParse(tmp["BytesUploaded"], out s) && s == 0)
+                            return 1;
+                    }
                 }
+
+                //Normal operation = 0
+                return 0;
             }
             catch (Exception ex)
             {
@@ -477,7 +499,20 @@ namespace Duplicati.CommandLine
                         Console.Error.WriteLine(Strings.Program.UnhandledInnerException, ex.ToString());
                     }
                 }
+
+                //Error = 100
+                return 100;
             }
+        }
+
+        public static Dictionary<string, string> ParseDuplicatiOutput(string output)
+        {
+            System.Text.RegularExpressions.Regex re = new System.Text.RegularExpressions.Regex("(?<key>[^\\:]+)\\:(?<value>[^\\n]*)", System.Text.RegularExpressions.RegexOptions.Singleline);
+            Dictionary<string, string> res = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+            foreach (System.Text.RegularExpressions.Match m in re.Matches(output))
+                res[m.Groups["key"].Value.Trim()] = m.Groups["value"].Value.Trim();
+
+            return res;
         }
 
         private static void PrintWrongNumberOfArguments(List<string> args, int expected)

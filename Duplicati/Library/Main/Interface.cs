@@ -805,6 +805,7 @@ namespace Duplicati.Library.Main
 
                     Logging.Log.WriteMessage(string.Format(Strings.Interface.PartialUploadMessage, backend.ManifestUploads, ex.Message), Logging.LogMessageType.Warning);
                     bs.LogError(string.Format(Strings.Interface.PartialUploadMessage, backend.ManifestUploads, ex.Message), ex);
+                    bs.PartialBackup = true;
                 }
                 finally
                 {
