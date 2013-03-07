@@ -106,7 +106,7 @@ namespace Duplicati.CommandLine
                     }
 
                     if (!ReadOptionsFromFile(filename, ref filter, cargs, options))
-                        return;
+                        return 200;
                 }
 
                 //After checking for internal options, we set the filter option
