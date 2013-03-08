@@ -600,11 +600,6 @@ namespace Duplicati.Library.Main.RSync
         private PathCollector m_unproccesed;
 
         /// <summary>
-        /// A list of patch files for removal
-        /// </summary>
-        private List<CompressionWrapper> m_patches;
-
-        /// <summary>
         /// A leftover file that is partially written, used when creating backups
         /// </summary>
         private PartialFileEntry m_lastPartialFile = null;
@@ -671,10 +666,6 @@ namespace Duplicati.Library.Main.RSync
                 Utility.Utility.AppendDirSeparator(CONTENT_SIGNATURE_ROOT),
                 Utility.Utility.AppendDirSeparator(DELTA_SIGNATURE_ROOT)
             };
-
-            m_patches = new List<CompressionWrapper>();
-            foreach (KeyValuePair<ManifestEntry, CompressionWrapper> patch in patches)
-                m_patches.Add(patch.Value);
 
             foreach (KeyValuePair<ManifestEntry, CompressionWrapper> patch in patches)
             {
@@ -2400,14 +2391,6 @@ namespace Duplicati.Library.Main.RSync
                 try { m_lastPartialFile.Dispose(); }
                 catch { }
                 m_lastPartialFile = null;
-            }
-
-            if (m_patches != null)
-            {
-                foreach (CompressionWrapper arc in m_patches)
-                    try { arc.Dispose(); }
-                    catch { }
-                m_patches = null;
             }
 
             if (m_partialDeltas != null)
