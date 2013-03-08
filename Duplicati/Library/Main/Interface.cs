@@ -2066,6 +2066,9 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
                 m_hasSetLogging = true;
+                var path = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(m_options.Logfile));
+                if (!System.IO.Directory.Exists(path))
+                    System.IO.Directory.CreateDirectory(path);
                 Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
             }
 
