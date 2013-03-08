@@ -656,6 +656,11 @@ namespace Duplicati.Library.Main
         public bool Force { get { return GetBool("force"); } }
 
         /// <summary>
+        /// Gets a value indicating whether a temporary folder has been specified
+        /// </summary>
+        public bool HasTempDir { get { return m_options.ContainsKey("tempdir") && !string.IsNullOrEmpty(m_options["tempdir"]); } }
+
+        /// <summary>
         /// Gets the folder where temporary files are stored
         /// </summary>
         public string TempDir
