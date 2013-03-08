@@ -138,7 +138,7 @@ Options:
 
 Usage: delete-older-than <date> <target url>
   
-  This will delete all backups from the target that older than the specified absolute or relative date and time.
+  This will delete all backups from the target that are older than the specified absolute or relative date and time.
 
 Options:
 %OPTION:force%
@@ -203,7 +203,7 @@ Options:
 
 Usage: list <target url>
 
-  Lists all files stored on the remote server. These are manifest files, signature files, content files and other files that do not to any backup created by duplicati. This command can be used to see the contents of the remote folder.
+  Lists all files stored on the remote server. These are manifest files, signature files, content files and other files that do not belong to any backup created by duplicati. This command can be used to see the contents of the remote folder.
 
 
 # =============================================================================
