@@ -2075,7 +2075,7 @@ namespace Duplicati.Library.Main
                 stats.VerboseRetryErrors = m_options.VerboseRetryErrors;
             }
 
-            if (!string.IsNullOrEmpty(m_options.TempDir))
+            if (m_options.HasTempDir)
                 Utility.TempFolder.SystemTempPath = m_options.TempDir;
 
             if (!string.IsNullOrEmpty(m_options.ThreadPriority))
