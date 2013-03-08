@@ -52,6 +52,20 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("Asia Pacific (Tokyo)", "ap-northeast-1"),
             new KeyValuePair<string, string>("South America (Sao Paulo)", "sa-east-1"),
         };
+
+        public static readonly KeyValuePair<string, string>[] DEFAULT_S3_LOCATION_BASED_HOSTS = new KeyValuePair<string, string>[] {
+            new KeyValuePair<string, string>("EU", "s3-eu-west-1.amazonaws.com"),
+            new KeyValuePair<string, string>("eu-west-1", "s3-eu-west-1.amazonaws.com"),
+            new KeyValuePair<string, string>("us-east-1", "s3.amazonaws.com"),
+            new KeyValuePair<string, string>("us-west-1", "s3-us-west-1.amazonaws.com"),
+            new KeyValuePair<string, string>("us-west-2", "s3-us-west-2.amazonaws.com"),
+            new KeyValuePair<string, string>("ap-southeast-1", "s3-ap-southeast-1.amazonaws.com"),
+            new KeyValuePair<string, string>("ap-southeast-2", "s3-ap-southeast-2.amazonaws.com"),
+            new KeyValuePair<string, string>("ap-northeast-1", "s3-ap-northeast-1.amazonaws.com"),
+            new KeyValuePair<string, string>("sa-east-1", "s3-sa-east-1.amazonaws.com"),
+
+        };
+
         private string m_bucket;
         private string m_prefix;
 
@@ -92,11 +106,6 @@ namespace Duplicati.Library.Backend
             if (options.ContainsKey("aws_secret_access_key"))
                 awsKey = options["aws_secret_access_key"];
 
-            string s3host;
-            options.TryGetValue(SERVER_NAME, out s3host);
-            if (string.IsNullOrEmpty(s3host))
-                s3host = DEFAULT_S3_HOST;
-
             bool euBuckets = Utility.Utility.ParseBoolOption(options, EU_BUCKETS_OPTION);
             bool useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
             bool useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
@@ -109,6 +118,22 @@ namespace Duplicati.Library.Backend
 
             if (euBuckets)
                 locationConstraint = S3_EU_REGION_NAME;
+
+            string s3host;
+            options.TryGetValue(SERVER_NAME, out s3host);
+            if (string.IsNullOrEmpty(s3host)) 
+            {
+                s3host = DEFAULT_S3_HOST;
+
+                //Change in S3, now requires that you use location specific endpoint
+                if (!string.IsNullOrEmpty(locationConstraint))
+                    foreach(KeyValuePair<string, string> kvp in DEFAULT_S3_LOCATION_BASED_HOSTS)
+                        if (kvp.Key.Equals(locationConstraint, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            s3host = kvp.Value;
+                            break;
+                        }
+            }
 
             //Fallback to previous formats
             if (host.Contains(DEFAULT_S3_HOST))
