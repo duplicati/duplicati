@@ -9,13 +9,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
     {
         private string m_backendurl;
         private FhOptions m_options;
-        private RestoreStatistics m_rs;
+        private RestoreStatistics m_stat;
 
-        public CleanupHandler(string backend, FhOptions options, RestoreStatistics rs)
+        public CleanupHandler(string backend, FhOptions options, RestoreStatistics stat)
         {
             m_backendurl = backend;
             m_options = options;
-            m_rs = rs;
+            m_stat = stat;
         }
 
         public void Run()

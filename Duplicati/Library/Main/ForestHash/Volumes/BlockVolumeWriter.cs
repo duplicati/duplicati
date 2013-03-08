@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.ForestHash.Volumes
 {
@@ -20,14 +21,13 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         {
         }
 
-        public void AddBlock(string hash, byte[] data, int size)
+        public void AddBlock(string hash, byte[] data, int size, CompressionHint hint)
         {
             m_blocks++;
             m_sourcesize += size;
 
             //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
-            // to prevent clashes with filename paths where forward slash has special meaning
-            using (var s = m_compression.CreateFile(hash.Replace('+', '-').Replace('/', '_'), DateTime.UtcNow))
+            using (var s = m_compression.CreateFile(Utility.Utility.Base64PlainToBase64Url(hash), hint, DateTime.UtcNow))
                 s.Write(data, 0, size);
         }
     }

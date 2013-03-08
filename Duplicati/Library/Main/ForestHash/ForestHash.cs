@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.ForestHash
 
             foreach (var s in remotelist)
             {
-                if (s.Name.StartsWith(options.BackupPrefix))
+                if (s.Name.StartsWith(prefix))
                     lookup[s.Name] = s;
             }
 
@@ -183,11 +183,11 @@ namespace Duplicati.Library.Main.ForestHash
 
 
 
-        internal static IEnumerable<Volumes.IParsedVolume> ParseFileList(string target, Dictionary<string, string> options)
+        internal static IEnumerable<Volumes.IParsedVolume> ParseFileList(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
             var opts = new FhOptions(options);
             using (var db = new Localdatabase(opts.Fhdbpath, "ParseFileList"))
-            using (var b = new FhBackend(target, opts, db))
+            using (var b = new FhBackend(target, opts, db, stat))
                 return
                     from n in b.List()
                     let np = Volumes.VolumeBase.ParseFilename(n)

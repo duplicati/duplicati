@@ -29,15 +29,15 @@ in a single operation, grouped by an
 operationID
 */
 
-/*TODO: There should be a operation/fileset map
-so we can reduce the storage used for repeated 
-entries of unchanged files */
+CREATE TABLE "OperationFileset" (
+	"OperationID" INTEGER NOT NULL,
+	"FilesetID" INTEGER NOT NULL,
+	"Scantime" DATETIME NOT NULL
+);
 
 CREATE TABLE "Fileset" (
 	"ID" INTEGER PRIMARY KEY,
-	"OperationID" INTEGER NOT NULL,
 	"Path" TEXT NOT NULL,
-	"Scantime" DATETIME NOT NULL,
 	"BlocksetID" INTEGER NOT NULL,
 	"MetadataID" INTEGER NOT NULL
 );
@@ -47,7 +47,7 @@ The blocklist hashes are hashes of
 fragments of the blocklists
 */
 CREATE TABLE "BlocklistHash" (
-	"BlocksetID" INTEGER PRIMARY KEY,
+	"BlocksetID" INTEGER NOT NULL,
 	"Index" INTEGER NOT NULL,
 	"Hash" TEXT NOT NULL
 );

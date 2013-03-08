@@ -101,7 +101,6 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 // This prevents repeated downloads, except for cases where the blocklists refer blocks
                 // that have been previously handled. A local blockvolume cache can reduce this issue
                 using (var database = new LocalRestoredatabase(tmpdb ?? m_options.Fhdbpath, m_options.Fhblocksize))
-                using (var backend = new FhBackend(m_backendurl, m_options, database))
                 {
                     var hasher = System.Security.Cryptography.SHA256.Create();
                     if (!hasher.CanReuseTransform)
@@ -156,7 +155,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                     // TODO: When UpdateMisisngBlocksTable is implemented, the localpatcher can be activated
                     // and this will reduce the need for multiple downloads of the same volume
-                    using (var rdb = new RecreateDatabaseHandler(m_backendurl, m_options, m_destination))
+                    using (var rdb = new RecreateDatabaseHandler(m_backendurl, m_options, m_destination, m_stat))
                         rdb.Run(tmpdb, filelistfilter, filenamefilter, /*localpatcher*/ null);
                 }
 
@@ -166,12 +165,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         }
 
 
-        public void Run(string dbpath = null)
+        public void Run(string dbpath)
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
             using (var database = new LocalRestoredatabase(dbpath ?? m_options.Fhdbpath, m_options.Fhblocksize))
-            using (var backend = new FhBackend(m_backendurl, m_options, database))
+            using (var backend = new FhBackend(m_backendurl, m_options, database, m_stat))
             {
                 var hasher = System.Security.Cryptography.SHA256.Create();
                 if (!hasher.CanReuseTransform)
@@ -203,6 +202,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         foreach (var restorelist in database.GetFilesWithMissingBlocks(blocks))
                         {
                             var targetpath = restorelist.Path;
+                            //TODO: Try/Catch
                             using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                                 foreach (var targetblock in restorelist.Blocks)
                                 {
@@ -347,6 +347,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
         public void Dispose()
         {
+            m_stat.EndTime = DateTime.Now;
         }
     }
 }

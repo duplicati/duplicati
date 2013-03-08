@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
+using System.Linq;
 
 namespace Duplicati.CommandLine
 {
@@ -89,6 +90,11 @@ namespace Duplicati.CommandLine
             Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
 
             string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
+
+            //Filter empty entries, commonly occuring with copy/paste and newlines
+            folders = (from x in folders 
+                      where !string.IsNullOrWhiteSpace(x)
+                      select x).ToArray();
 
             try
             {
@@ -202,7 +208,7 @@ namespace Duplicati.CommandLine
                 if (options.ContainsKey("fh-dbpath"))
                 {
                     entries = new List<DateTime>();
-                    foreach (var el in Duplicati.Library.Main.Interface.ParseFhFileList(target, options))
+                    foreach (var el in Duplicati.Library.Main.Interface.ParseFhFileList(target, options, null))
                         if (el.FileType == Library.Main.ForestHash.RemoteVolumeType.Files)
                             entries.Add(el.Time.ToLocalTime());
 
@@ -318,32 +324,35 @@ namespace Duplicati.CommandLine
 
                             if (partialFolders.ContainsKey(""))
                                 partialFolders.Remove("");
+                            if (partialFolders.ContainsKey(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                partialFolders.Remove(System.IO.Path.DirectorySeparatorChar.ToString());
 
                             Dictionary<string, string> tops = new Dictionary<string,string>(options);
-                            List<string> filterlist = new List<string>();
-                            filterlist.AddRange(partialFolders.Keys);
-                            filterlist.AddRange(testfiles);
+                            List<string> filterlist;
 
                             if (options.ContainsKey("fh-dbpath"))
                             {
                                 //We need a minor tweak here because the two models
                                 // use releative vs. absolute paths
-                                List<string> t = new List<string>();
-                                foreach(var s in filterlist)
-                                    t.Add(System.IO.Path.Combine(folders[i], s));
+                                filterlist = (from n in partialFolders.Keys
+                                              where !string.IsNullOrWhiteSpace(n) && n != System.IO.Path.DirectorySeparatorChar.ToString()
+                                              select Utility.AppendDirSeparator(System.IO.Path.Combine(folders[i], n)))
+                                              .Union(testfiles) //Add files with full path
+                                              .Union(new string[] { Utility.AppendDirSeparator(folders[i]) }) //Ensure root folder is included
+                                              .Distinct().ToList();
 
-                                filterlist = t;
-                                if (!filterlist.Contains(Utility.AppendDirSeparator(folders[i])))
-                                    filterlist.Add(Utility.AppendDirSeparator(folders[i]));
-
-                                t = new List<string>();
-                                foreach (var s in testfiles)
-                                    t.Add(s.Substring(Utility.AppendDirSeparator(folders[i]).Length));
-                                testfiles = t;
+                                testfiles = (from n in testfiles select n.Substring(Utility.AppendDirSeparator(folders[i]).Length)).ToList();
                             }
+                            else
+                            {
+                                filterlist = new List<string>(); 
+                                filterlist.AddRange(partialFolders.Keys);
+                                filterlist.AddRange(testfiles);
+                            }
+
                             tops["file-to-restore"] = String.Join(System.IO.Path.PathSeparator.ToString(), filterlist.ToArray());
                             
-                            using (new Timer("Partial restore of " + folders[i]))
+                            /*using (new Timer("Partial restore of " + folders[i]))
                                 Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, new string[] { ptf }, tops), LogMessageType.Information);
 
                             Console.WriteLine("Verifying partial restore of: " + folders[i]);
@@ -385,7 +394,7 @@ namespace Duplicati.CommandLine
                                             Console.WriteLine("Partial restore file differs: " + s);
                                         }
                                     }
-                                }
+                                }*/
                         }
 
                         using (new Timer("Restore of " + folders[i]))

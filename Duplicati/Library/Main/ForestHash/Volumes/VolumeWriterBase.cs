@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 
         protected void AddManifestfile()
         {
-            using (var sr = new StreamWriter(m_compression.CreateFile(MANIFEST_FILENAME, DateTime.UtcNow), ENCODING))
+            using (var sr = new StreamWriter(m_compression.CreateFile(MANIFEST_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
                 sr.Write(ManifestData.GetManifestInstance(m_blocksize));
         }
 

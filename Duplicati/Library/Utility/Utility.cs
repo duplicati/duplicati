@@ -973,5 +973,50 @@ namespace Duplicati.Library.Utility
         {
             return System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
         }
+
+
+        /// <summary>
+        /// Converts a Base64 encoded string to &quot;base64 for url&quot;
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The base64 encoded string</param>
+        /// <returns>The base64 for url encoded string</returns>
+        public static string Base64PlainToBase64Url(string data)
+        {
+            return data.Replace('+', '-').Replace('/', '_');
+        }
+
+        /// <summary>
+        /// Converts a &quot;base64 for url&quot; encoded string to a Base64 encoded string.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The base64 for url encoded string</param>
+        /// <returns>The base64 encoded string</returns>
+        public static string Base64UrlToBase64Plain(string data)
+        {
+            return data.Replace('-', '+').Replace('_', '/');
+        }
+
+        /// <summary>
+        /// Encodes a byte array into a &quot;base64 for url&quot; encoded string.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The data to encode</param>
+        /// <returns>The base64 for url encoded string</returns>
+        public static string Base64UrlEncode(byte[] data)
+        {
+            return Base64PlainToBase64Url(Convert.ToBase64String(data));
+        }
+
+        /// <summary>
+        /// Decodes a &quot;base64 for url&quot; encoded string into the raw byte array.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The data to decode</param>
+        /// <returns>The raw data</returns>
+        public static byte[] Base64UrlDecode(string data)
+        {
+            return Convert.FromBase64String(Base64UrlToBase64Plain(data));
+        }
     }
 }

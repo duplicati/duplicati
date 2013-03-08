@@ -24,6 +24,18 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         public DateTime OperationTimestamp { get; private set; }
 
+        internal System.Data.IDbConnection Connection { get { return m_connection; } }
+
+        protected static System.Data.IDbConnection CreateConnection(string path)
+        {
+            var c = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType);
+            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+
+            Utility.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(Localdatabase));
+            
+            return c;
+        }
 
         /// <summary>
         /// Creates a new database instance and starts a new operation
@@ -31,25 +43,25 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// <param name="path">The path to the database</param>
         /// <param name="operation">The name of the operation</param>
         public Localdatabase(string path, string operation)
+            : this(CreateConnection(path), operation)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new database instance and starts a new operation
+        /// </summary>
+        /// <param name="path">The path to the database</param>
+        /// <param name="operation">The name of the operation</param>
+        public Localdatabase(System.Data.IDbConnection connection, string operation)
         {
             this.OperationTimestamp = DateTime.UtcNow;
-            m_connection = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType);
+            m_connection = connection;
 
-            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
-
-            Utility.DatabaseUpgrader.UpgradeDatabase(m_connection, path, typeof(Localdatabase));
+            if (m_connection.State != System.Data.ConnectionState.Open)
+                m_connection.Open();
 
             using (var cmd = m_connection.CreateCommand())
-            {
-                cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?)";
-                cmd.AddParameter(operation);
-                cmd.AddParameter(OperationTimestamp);
-
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = "SELECT last_insert_rowid()";
-                m_operationid = Convert.ToInt64(cmd.ExecuteScalar());
-            }
+                m_operationid = Convert.ToInt64(cmd.ExecuteScalar( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", operation, OperationTimestamp));
 
             m_updateremotevolumeCommand = m_connection.CreateCommand();
             m_selectremotevolumesCommand = m_connection.CreateCommand();
@@ -79,10 +91,11 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_removeremotevolumeCommand.AddParameter();
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
         {
             lock (m_lock)
             {
+                m_updateremotevolumeCommand.Transaction = transaction;
                 m_updateremotevolumeCommand.SetParameterValue(1, state.ToString());
                 m_updateremotevolumeCommand.SetParameterValue(2, hash);
                 m_updateremotevolumeCommand.SetParameterValue(3, size);
@@ -177,12 +190,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
                     var deletecmd = m_connection.CreateCommand();
                     deletecmd.Transaction = tr;
 
-                    var updatedfiles = deletecmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
-                    var updatedmetadata = deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
-                    var deletedblocksets = deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
-                    var deletedblocksetentries = deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
+                    deletecmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
+                    deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
+                    deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
+                    deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
 
-                    var deletedblocks = deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""File"" = ?", name);
+                    deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""File"" = ?", name);
 
                     ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
                     m_removeremotevolumeCommand.Transaction = tr;
@@ -214,6 +227,54 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
                 return Convert.ToInt64(r);
             }
+        }
+
+        public System.Data.IDbTransaction BeginTransaction()
+        {
+            return m_connection.BeginTransaction();
+        }
+
+        protected class TemporaryTransactionWrapper : IDisposable
+        {
+            private System.Data.IDbTransaction m_parent;
+            private bool m_isTemporary;
+
+            public TemporaryTransactionWrapper(System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
+            {
+                if (transaction != null)
+                {
+                    m_parent = transaction;
+                    m_isTemporary = false;
+                }
+                else
+                {
+                    m_parent = connection.BeginTransaction();
+                    m_isTemporary = true;
+                }
+            }
+
+            public System.Data.IDbConnection Connection { get { return m_parent.Connection; } }
+            public System.Data.IsolationLevel IsolationLevel { get { return m_parent.IsolationLevel; } }
+
+            public void Commit() 
+            { 
+                if (m_isTemporary) 
+                    m_parent.Commit(); 
+            }
+
+            public void Rollback()
+            {
+                if (m_isTemporary)
+                    m_parent.Rollback(); 
+            }
+
+            public void Dispose() 
+            {
+                if (m_isTemporary)
+                    m_parent.Dispose();
+            }
+
+            public System.Data.IDbTransaction Parent { get { return m_parent; } }
         }
 
         private class LocalFileEntryEnumerable : IEnumerable<ILocalFileEntry>

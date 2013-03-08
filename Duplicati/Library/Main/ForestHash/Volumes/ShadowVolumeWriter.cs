@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using Newtonsoft.Json;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.ForestHash.Volumes
 {
@@ -33,7 +34,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
                 throw new InvalidOperationException("Previous volume not finished, call FinishVolume before starting a new volume");
 
             m_volumes++;
-            m_streamwriter = new StreamWriter(m_compression.CreateFile(SHADOW_VOLUME_FOLDER + filename, DateTime.UtcNow));
+            m_streamwriter = new StreamWriter(m_compression.CreateFile(SHADOW_VOLUME_FOLDER + filename, CompressionHint.Compressible, DateTime.UtcNow));
             m_writer = new JsonTextWriter(m_streamwriter);
             m_writer.WriteStartObject();
             m_writer.WritePropertyName("blocks");
@@ -70,8 +71,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         {
             m_blocklists++;
             //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
-            // to prevent clashes with filename paths where forward slash has special meaning
-            using (var s = m_compression.CreateFile(SHADOW_BLOCKLIST_FOLDER + (hash).Replace('+', '-').Replace('/', '_'), DateTime.UtcNow))
+            using (var s = m_compression.CreateFile(SHADOW_BLOCKLIST_FOLDER + Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
                 s.Write(data, 0, size);
         }
 

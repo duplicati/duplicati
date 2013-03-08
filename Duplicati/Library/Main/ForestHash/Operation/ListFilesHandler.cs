@@ -9,13 +9,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
     {
         private string m_backendurl;
         private FhOptions m_options;
-        private RestoreStatistics m_rs;
+        private RestoreStatistics m_stat;
 
-        public ListFilesHandler(string backend, FhOptions options, RestoreStatistics rs)
+        public ListFilesHandler(string backend, FhOptions options, RestoreStatistics stat)
         {
             m_backendurl = backend;
             m_options = options;
-            m_rs = rs;
+            m_stat = stat;
         }
 
         public List<string> Run()
@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             // Otherwise, grab info from remote location
             using (var tmpdb = new Utility.TempFile())
             using (var db = new Database.Localdatabase(tmpdb, "ListFiles"))
-            using (var backend = new FhBackend(m_backendurl, m_options, db))
+            using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
             {
                 var filter = RestoreHandler.FilterFilelist(m_options.RestoreTime);
                 var fileset = filter(from n in backend.List()

@@ -25,8 +25,6 @@ namespace Duplicati.Library.Main
 {
     internal class RestoreStatistics : CommunicationStatistics
     {
-        private DateTime m_beginTime;
-        private DateTime m_endTime;
         private long m_filesRestored;
         private long m_sizeOfRestoredFiles;
         private long m_foldersRestored;
@@ -37,24 +35,6 @@ namespace Duplicati.Library.Main
         public RestoreStatistics(DuplicatiOperationMode operationMode)
             : base(operationMode)
         {
-            m_beginTime = m_endTime = DateTime.Now;
-        }
-
-        public DateTime BeginTime
-        {
-            get { return m_beginTime; }
-            set { m_beginTime = value; }
-        }
-
-        public DateTime EndTime
-        {
-            get { return m_endTime; }
-            set { m_endTime = value; }
-        }
-
-        public TimeSpan Duration
-        {
-            get { return m_endTime - m_beginTime; }
         }
 
         public long FilesRestored
@@ -96,16 +76,13 @@ namespace Duplicati.Library.Main
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("BeginTime       : " + this.BeginTime.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            sb.AppendLine("EndTime         : " + this.EndTime.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            sb.AppendLine("Duration        : " + this.Duration.ToString());
+            sb.Append(base.ToString());
             sb.AppendLine("Files restored  : " + this.FilesRestored.ToString(System.Globalization.CultureInfo.InvariantCulture));
             sb.AppendLine("Files patched   : " + this.FilesPatched.ToString(System.Globalization.CultureInfo.InvariantCulture));
             sb.AppendLine("Files deleted   : " + this.FilesDeleted.ToString(System.Globalization.CultureInfo.InvariantCulture));
             sb.AppendLine("Restored size   : " + this.SizeOfRestoredFiles.ToString(System.Globalization.CultureInfo.InvariantCulture));
             sb.AppendLine("Folders created : " + this.FoldersRestored.ToString(System.Globalization.CultureInfo.InvariantCulture));
             sb.AppendLine("Folders deleted : " + this.FoldersDeleted.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            sb.Append(base.ToString());
             return sb.ToString();
         }
     }

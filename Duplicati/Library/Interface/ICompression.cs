@@ -71,7 +71,7 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="prefix">An optional prefix for limiting the files returned</param>
         /// <returns>All files in the archive, matching the prefix, if any</returns>
-        IEnumerable<KeyValuePair<string, long>> GetFilesWithSize(string prefix);
+        IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix);
                 
         /// <summary>
         /// Returns a stream with data from the given file

@@ -9,6 +9,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
     public partial class LocalBlocklistUpdateDatabase : LocalRestoredatabase
     {
         protected string m_tempblockvolumetable;
+        protected string m_temphashtable;
 
         public LocalBlocklistUpdateDatabase(string path, long blocksize)
             : base("Rebuild", path, blocksize)
@@ -18,25 +19,19 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public void FindMissingBlocklistHashes()
         {
             m_tempblockvolumetable = "MissingBlocks-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            m_temphashtable = "Hashlist-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             using (var cmd = m_connection.CreateCommand())
             {
-                //cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Block"".""File"" AS ""File"", ""BlocklistHash"".""Hash"" AS ""Hash"", 0 AS ""Restored"" FROM ""Block"", ""BlocklistHash""  WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""BlocklistHash"".""Hash"" NOT IN ( SELECT DISTINCT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Blockset"" WHERE ""BlocklistHash"".""Hash"" = ""Blockset"".""Fullhash"" AND ""Blockset"".""Length"" <= {1} AND ""BlocklistHash"".""Index"" = 0 ) ", m_tempblockvolumetable, m_blocksize);
-                cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Block"".""File"" AS ""File"", ""BlocklistHash"".""Hash"" AS ""Hash"", 0 AS ""Restored"" FROM ""Block"", ""BlocklistHash""  WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" ", m_tempblockvolumetable);
-                cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Block"".""File"" AS ""File"", ""BlocklistHash"".""Hash"" AS ""Hash"", 0 AS ""Restored"" FROM ""Block"", ""BlocklistHash""  WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" ", m_tempblockvolumetable));
+                cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT DISTINCT ""Blockset"".""ID"", 0, ""Block"".""ID"" FROM ""Blockset"", ""Block"" WHERE ""Blockset"".""Fullhash"" = ""Block"".""Hash"" AND ""Blockset"".""Length"" < {0} AND ""Blockset"".""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"") ", m_blocksize));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Hash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)", m_temphashtable));
 
-                cmd.CommandText = string.Format(@"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT DISTINCT ""Blockset"".""ID"", 0, ""Block"".""ID"" FROM ""Blockset"", ""Block"" WHERE ""Blockset"".""Fullhash"" = ""Block"".""Hash"" AND ""Blockset"".""Length"" < {0} AND ""Blockset"".""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"") ", m_blocksize);
-                cmd.ExecuteNonQuery();
             }
         }
 
         public IEnumerable<string> GetBlockLists(string volumename)
         {
             return new BlocklistsEnumerable(m_connection, m_tempblockvolumetable, volumename);
-        }
-
-        public System.Data.IDbTransaction BeginTransaction()
-        {
-            return m_connection.BeginTransaction();
         }
 
         public void UpdateBlocklist(string hash, IEnumerable<string> hashes, long hashsize, System.Data.IDbTransaction transaction)
@@ -51,7 +46,23 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 if (c != 1)
                     throw new Exception(string.Format("Blocklist not found {0}", hash));
 
-                cmd.CommandText = @"SELECT ""Index"", ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" = ?";
+                cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}""", m_temphashtable));
+                cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Hash"", ""Index"") VALUES (?, ?)", m_temphashtable);
+                long ix = 0;
+                foreach (var h in hashes)
+                {
+                    c = cmd.ExecuteNonQuery(null, h, ix);
+                    if (c != 1)
+                        throw new Exception(string.Format("Insert row error {0}", h));
+                    ix++;
+                }
+
+                cmd.CommandText = string.Format(@"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT ""A"".""BlocksetID"", (""A"".""Index"" * ?) + ""B"".""Index"", ""C"".""ID"" FROM ""BlocklistHash"" A, ""{0}"" B, ""Block"" C WHERE ""A"".""Hash"" = ? AND ""C"".""Hash"" = ""B"".""Hash"" ", m_temphashtable);
+                c = cmd.ExecuteNonQuery(null, (m_blocksize / hashsize), hash);
+                if (c == 0 || c % ix != 0)
+                    throw new Exception(string.Format("Wrong number of inserts, got {0} records from {1} hashes!", c, ix));
+
+                /*cmd.CommandText = @"SELECT ""Index"", ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" = ?";
                 long index;
                 long id;
                 using (var rd = cmd.ExecuteReader())
@@ -59,8 +70,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
                     if (!rd.Read())
                         throw new Exception(string.Format("No blocklisthashes for entry \"{0}\"", hash));
 
+
                     index = Convert.ToInt64(rd.GetValue(0));
                     id = Convert.ToInt64(rd.GetValue(1));
+
+                    if (rd.Read())
+                        throw new Exception("Multiple matches!");
                 }
 
                 var ix = index * (m_blocksize / hashsize);
@@ -77,7 +92,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                         throw new Exception(string.Format("Block not found {0}", h));
 
                     ix++;
-                }
+                }*/
             }
         }
 
@@ -128,6 +143,14 @@ namespace Duplicati.Library.Main.ForestHash.Database
                         cmd.ExecuteNonQuery();
                     }
                     finally { m_tempblockvolumetable = null; }
+
+                if (m_temphashtable != null)
+                    try
+                    {
+                        cmd.CommandText = string.Format(@"DROP TABLE ""{0}""", m_temphashtable);
+                        cmd.ExecuteNonQuery();
+                    }
+                    finally { m_temphashtable = null; }
             }
         }
     }

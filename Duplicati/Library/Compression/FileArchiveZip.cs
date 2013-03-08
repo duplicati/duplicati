@@ -230,7 +230,7 @@ namespace Duplicati.Library.Compression
         /// </summary>
         /// <param name="prefix">The prefix to match</param>
         /// <returns>A list of files matching the prefix</returns>
-        public IEnumerable<KeyValuePair<string, long>> GetFilesWithSize(string prefix)
+        public IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix)
         {
             List<KeyValuePair<string, long>> results = new List<KeyValuePair<string, long>>();
             foreach (IArchiveEntry e in Archive.Entries)

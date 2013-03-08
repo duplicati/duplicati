@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using Newtonsoft.Json;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.ForestHash.Volumes
 {
@@ -19,22 +20,22 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         public FilesetVolumeWriter(FhOptions options, DateTime timestamp)
             : base(options, timestamp)
         {
-            m_streamwriter = new StreamWriter(m_compression.CreateFile(FILELIST, DateTime.UtcNow));
+            m_streamwriter = new StreamWriter(m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow));
             m_writer = new JsonTextWriter(m_streamwriter);
             m_writer.WriteStartArray();
         }
 
-        public void AddFile(string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IList<string> blocklisthashes)
+        public void AddFile(string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IEnumerable<string> blocklisthashes)
         {
             AddFileEntry(FilelistEntryType.File, name, filehash, size, scantime, metahash, metasize, blocklisthashes);
         }
 
-        public void AddAlternateStream(string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IList<string> blocklisthashes)
+        public void AddAlternateStream(string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IEnumerable<string> blocklisthashes)
         {
             AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, scantime, metahash, metasize, blocklisthashes);
         }
 
-        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IList<string> blocklisthashes)
+        private void AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime scantime, string metahash, long metasize, IEnumerable<string> blocklisthashes)
         {
             m_filecount++;
             m_writer.WriteStartObject();
@@ -56,13 +57,19 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
                 m_writer.WriteValue(metasize);
             }
 
-            if (blocklisthashes != null && blocklisthashes.Count > 0)
+            if (blocklisthashes != null)
             {
-                m_writer.WritePropertyName("blocklists");
-                m_writer.WriteStartArray();
-                foreach (var s in blocklisthashes)
-                    m_writer.WriteValue(s);
-                m_writer.WriteEndArray();
+                //Slightly akward, but we avoid writing if there are no entries 
+                var en = blocklisthashes.GetEnumerator();
+                if (en.MoveNext())
+                {
+                    m_writer.WritePropertyName("blocklists");
+                    m_writer.WriteStartArray();
+                    m_writer.WriteValue(en.Current);
+                    while(en.MoveNext())
+                        m_writer.WriteValue(en.Current);
+                    m_writer.WriteEndArray();
+                }
             }
 
             m_writer.WriteEndObject();
@@ -104,10 +111,10 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
             base.Close();
         }
 
-        public void AddControlFile(string localfile, string filename = null)
+        public void AddControlFile(string localfile, CompressionHint hint, string filename = null)
         {
             filename = filename ?? System.IO.Path.GetFileName(localfile);
-            using (var t = m_compression.CreateFile(CONTROL_FILES_FOLDER + filename, DateTime.UtcNow))
+            using (var t = m_compression.CreateFile(CONTROL_FILES_FOLDER + filename, hint, DateTime.UtcNow))
             using (var s = System.IO.File.OpenRead(localfile))
                 Utility.Utility.CopyStream(s, t);
         }

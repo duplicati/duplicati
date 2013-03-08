@@ -44,18 +44,21 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 if (filenameFilter == null && (p == null || p.Length == 0))
                 {
                     // Simple case, restore everything
-                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""Path"", ""BlocksetID"", ""MetadataID"" FROM ""Fileset"" WHERE ""OperationID"" = ? ", m_tempfiletable);
+                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""Fileset"", ""OperationFileset"" WHERE ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" AND ""OperationFileset"".""OperationID"" = ? ", m_tempfiletable);
                     cmd.AddParameter(operationID);
                     cmd.ExecuteNonQuery();
                 }
                 else if (p != null && p.Length > 0)
                 {
-                    var filelisttablename = "Filelist-" + guid;
-
                     // Restore files in list
-                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""Path"", ""BlocksetID"", ""MetadataID"" FROM ""Fileset"" WHERE ""OperationID"" = ? AND ""Path"" = ? ", m_tempfiletable);
+                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""Fileset"", ""OperationFileset"" WHERE ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" AND ""OperationID"" = ? AND ""Path"" = ? ", m_tempfiletable);
                     cmd.AddParameter(operationID);
                     cmd.AddParameter();
+
+                    //TODO: Actually faster to just create a temp table with files, 
+                    // and then using a select to create the temporary table
+                    // but there should be some way to report if filenames
+                    // are not found
 
                     foreach (var s in p)
                     {
@@ -68,7 +71,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 else
                 {
                     // Restore but filter elements based on regexp
-                    cmd.CommandText = string.Format(@"SELECT ""Path"", ""BlocksetID"", ""MetadataID"" FROM ""Fileset"" WHERE ""OperationID"" = ?");
+                    cmd.CommandText = string.Format(@"SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""Fileset"", ""OperationFileset"" WHERE ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" AND ""OperationID"" = ?");
                     cmd.AddParameter(operationID);
 
                     object[] values = new object[3];
@@ -218,7 +221,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         public IEnumerable<IExistingFile> GetExistingFilesWithBlocks()
         {
-            return new ExistingFileEnumerable(m_connection, m_tempfiletable, m_blocksize);
+            return new ExistingFileEnumerable(m_connection, m_tempfiletable);
         }
 
         public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks()

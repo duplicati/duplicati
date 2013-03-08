@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             ((System.Data.IDataParameter)self.Parameters[index]).Value = value;
         }
 
-        public static long ExecuteNonQuery(this System.Data.IDbCommand self, string cmd, params object[] values)
+        public static int ExecuteNonQuery(this System.Data.IDbCommand self, string cmd, params object[] values)
         {
             if (cmd != null)
                 self.CommandText = cmd;
@@ -58,18 +58,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
 
             return self.ExecuteScalar();
-        }
-
-        public static long GetLastRowID(this System.Data.IDbConnection self, System.Data.IDbTransaction tr = null)
-        {
-            using (var c = self.CreateCommand())
-            {
-                if (tr != null)
-                    c.Transaction = tr;
-                c.CommandText = "SELECT last_insert_rowid()";
-                return Convert.ToInt64(c.ExecuteScalar());
-            }
-
         }
 
         public static void DumpSQL(this System.Data.IDbConnection self, string sql, params object[] parameters)

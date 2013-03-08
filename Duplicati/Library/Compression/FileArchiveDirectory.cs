@@ -76,7 +76,7 @@ namespace Duplicati.Library.Compression
         /// </summary>
         /// <param name="prefix">An optional prefix that is used to filter the list</param>
         /// <returns>A filtered list of filenames</returns>
-        public IEnumerable<KeyValuePair<string, long>> GetFilesWithSize(string prefix)
+        public IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix)
         {
             if (prefix == null) prefix = "";
             List<KeyValuePair<string, long>> res = new List<KeyValuePair<string,long>>();

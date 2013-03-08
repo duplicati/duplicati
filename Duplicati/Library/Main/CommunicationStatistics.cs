@@ -26,6 +26,8 @@ namespace Duplicati.Library.Main
     public class CommunicationStatistics
     {
         private object m_lock = new object();
+        private DateTime m_beginTime;
+        private DateTime m_endTime;
         private bool m_verboseErrors = false;
         private long m_numberOfBytesUploaded;
         private long m_numberOfRemoteCalls;
@@ -47,6 +49,7 @@ namespace Duplicati.Library.Main
         public CommunicationStatistics(DuplicatiOperationMode operationMode)
         {
             m_operationMode = operationMode;
+            m_beginTime = m_endTime = DateTime.Now;
         }
 
         public DuplicatiOperationMode OperationMode { get { return m_operationMode; } }
@@ -96,6 +99,23 @@ namespace Duplicati.Library.Main
                 m_numberOfRemoteCalls += value;
         }
 
+        public DateTime BeginTime
+        {
+            get { return m_beginTime; }
+            set { m_beginTime = value; }
+        }
+
+        public DateTime EndTime
+        {
+            get { return m_endTime; }
+            set { m_endTime = value; }
+        }
+
+        public TimeSpan Duration
+        {
+            get { return m_endTime - m_beginTime; }
+        }
+
         public void LogError(string errorMessage, Exception ex)
         {
             lock (m_lock)
@@ -134,12 +154,15 @@ namespace Duplicati.Library.Main
         {
             //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
-            sb.Append("Executable      : " + Utility.Utility.getEntryAssembly().FullName + "\r\n");
-            sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
             sb.Append("OperationName   : " + this.OperationMode.ToString() + "\r\n");
+            sb.Append("BeginTime       : " + this.BeginTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("EndTime         : " + this.EndTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("Duration        : " + this.Duration.ToString() + "\r\n");
             sb.Append("BytesUploaded   : " + this.NumberOfBytesUploaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("BytesDownloaded : " + this.NumberOfBytesDownloaded.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("RemoteCalls     : " + this.NumberOfRemoteCalls.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("Executable      : " + Utility.Utility.getEntryAssembly().FullName + "\r\n");
+            sb.Append("Library         : " + System.Reflection.Assembly.GetExecutingAssembly().FullName + "\r\n");
 
             if (m_numberOfErrors > 0)
             {

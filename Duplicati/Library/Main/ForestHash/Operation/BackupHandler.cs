@@ -5,6 +5,7 @@ using System.Text;
 using System.IO;
 using Duplicati.Library.Main.ForestHash.Database;
 using Duplicati.Library.Main.ForestHash.Volumes;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.ForestHash.Operation
 {
@@ -20,13 +21,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         private readonly System.Security.Cryptography.HashAlgorithm m_filehasher;
 
         private LocalBackupDatabase m_database;
+        private System.Data.IDbTransaction m_transaction;
         private BlockVolumeWriter m_blockvolume;
-        private FilesetVolumeWriter m_filesetvolume;
         private ShadowVolumeWriter m_shadowvolume;
 
         private Snapshots.ISnapshotService m_snapshot;
-        private long m_changedfiles;
-        private long m_changedfolders;
+        private long m_otherchanges;
 
         private string[] m_sources;
 
@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             m_options = options;
             m_stat = stat;
             m_database = new LocalBackupDatabase(m_options.Fhdbpath);
-            m_backend = new FhBackend(backendurl, options, m_database);
+            m_backend = new FhBackend(backendurl, options, m_database, m_stat);
 
             m_sources = sources;
             m_blockbuffer = new byte[m_options.Fhblocksize];
@@ -77,19 +77,26 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             ForestHash.VerifyRemoteList(m_backend, m_options, m_database);
 
             m_blockvolume = new BlockVolumeWriter(m_options);
-            m_filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp);
             m_shadowvolume = new ShadowVolumeWriter(m_options);
 
             m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-            m_database.RegisterRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
             m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary);
             m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
 
-            List<string> hashes = new List<string>(10000);
-            using (m_snapshot = GetSnapshot(m_sources, m_options, m_stat))
-                m_snapshot.EnumerateFilesAndFolders(this.HandleFilesystemEntry);
+            using (m_transaction = m_database.BeginTransaction()) 
+            {
+                using (m_snapshot = GetSnapshot(m_sources, m_options, m_stat))
+                    m_snapshot.EnumerateFilesAndFolders(this.HandleFilesystemEntry);
 
-            if (m_changedfiles > 0 || m_changedfolders > 0)
+                m_transaction.Commit();
+            }
+
+            m_transaction = null;
+
+            m_database.VerifyConsistency();
+            m_database.UpdateChangeStatistics(m_stat);
+
+            if (m_stat.AddedFiles > 0 || m_stat.ModifiedFiles > 0 || m_otherchanges > 0)
             {
                 if (m_blockvolume.SourceSize > 0)
                 {
@@ -102,13 +109,22 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     m_shadowvolume.FinishVolume(null, 0);
                 }
 
-                m_backend.Put(m_filesetvolume);
+                using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
+                {
+                    m_database.RegisterRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
+
+                    if (!string.IsNullOrEmpty(m_options.SignatureControlFiles))
+                        foreach (var p in m_options.SignatureControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                            filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
+                    m_database.WriteFileset(filesetvolume);
+                    m_backend.Put(filesetvolume);
+                }
             }
             else
             {
                 m_database.LogMessage("info", "removing temp files, as no data needs to be uploaded", null);
                 m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename);
-                m_database.RemoveRemoteVolume(m_filesetvolume.RemoteFilename);
                 m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename);
                 m_shadowvolume.FinishVolume(null, 0);
             }
@@ -122,6 +138,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             {
                 if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
                     return false;
+
                 if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                 {
                     Dictionary<string, string> metadata = null; //snapshot.GetMetadata(path);
@@ -136,9 +153,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
 
                     var metahash = ForestHash.WrapMetadata(metadata);
-                    m_filesetvolume.AddSymlink(path, metahash.Hash, metahash.Size);
+                    //m_filesetvolume.AddSymlink(path, metahash.Hash, metahash.Size);
                     if (AddSymlinkToOutput(path, DateTime.UtcNow, metahash))
-                        m_changedfolders++;
+                        m_otherchanges++;
                     
                     //Do not recurse symlinks
                     return false;
@@ -157,20 +174,16 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
                 var metahash = ForestHash.WrapMetadata(metadata);
 
-                m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
+                //m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
                 if (AddFolderToOutput(path, DateTime.UtcNow, metahash))
-                    m_changedfolders++;
+                    m_otherchanges++;
                 return true;
             }
 
-            string oldHash;
-            string oldMetahash;
             DateTime oldScanned;
-            long oldId;
-            long oldSize;
-            long oldMetasize;
-            IList<string> oldBlocklistHashes;
-            bool fileExists = m_database.GetFileEntry(path, out oldId, out oldSize, out oldScanned, out oldHash, out oldMetahash, out oldMetasize, out oldBlocklistHashes);
+            var oldId = m_database.GetFileEntry(path, out oldScanned);
+            m_stat.ExaminedFiles++;
+
             bool changed = false;
 
             //Skip symlinks if required
@@ -180,8 +193,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             try
             {
                 DateTime lastModified = m_snapshot.GetLastWriteTime(path);
-                if (!fileExists || m_options.DisableFiletimeCheck || lastModified > oldScanned)
+                if (oldId < 0 || m_options.DisableFiletimeCheck || lastModified > oldScanned)
                 {
+                    m_stat.OpenedFiles++;
+
                     long filesize = 0;
                     DateTime scantime = DateTime.UtcNow;
 
@@ -196,6 +211,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                     var metahashandsize = ForestHash.WrapMetadata(metadata);
                     var blocklisthashes = new List<string>();
+                    var hint = m_options.GetCompressionHintFromFilename(path);
+                    var oldHash = oldId < 0 ? null : m_database.GetFileHash(oldId);
+
                     using (var hashcollector = new HashlistCollector())
                     {
                         using (var fs = new Blockprocessor(m_snapshot.OpenRead(path), m_blockbuffer))
@@ -215,7 +233,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                 {
                                     var blkey = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
                                     blocklisthashes.Add(blkey);
-                                    AddBlockToOutput(blkey, m_blocklistbuffer, blocklistoffset);
+                                    AddBlockToOutput(blkey, m_blocklistbuffer, blocklistoffset, hint);
                                     blocklistoffset = 0;
                                 }
 
@@ -223,7 +241,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                 blocklistoffset += blockkey.Length;
 
                                 var key = Convert.ToBase64String(blockkey);
-                                AddBlockToOutput(key, m_blockbuffer, size);
+                                AddBlockToOutput(key, m_blockbuffer, size, hint);
                                 hashcollector.Add(key);
                                 filesize += size;
 
@@ -235,17 +253,27 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                             {
                                 var blkeyfinal = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
                                 blocklisthashes.Add(blkeyfinal);
-                                AddBlockToOutput(blkeyfinal, m_blocklistbuffer, blocklistoffset);
+                                AddBlockToOutput(blkeyfinal, m_blocklistbuffer, blocklistoffset, CompressionHint.Noncompressible);
                             }
                         }
 
-
+                        m_stat.SizeOfExaminedFiles += filesize;
                         m_filehasher.TransformFinalBlock(m_blockbuffer, 0, 0);
 
                         var filekey = Convert.ToBase64String(m_filehasher.Hash);
                         if (oldHash != filekey)
                         {
-                            m_changedfiles++;
+                            if (oldId < 0)
+                            {
+                                m_stat.AddedFiles++;
+                                m_stat.SizeOfAddedFiles += filesize;
+                            }
+                            else
+                            {
+                                m_stat.ModifiedFiles++;
+                                m_stat.SizeOfModifiedFiles += filesize;
+                            }
+
                             AddFileToOutput(path, filesize, scantime, metahashandsize, hashcollector, filekey, blocklisthashes);
                             changed = true;
                         }
@@ -253,12 +281,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 }
 
                 if (!changed)
-                    AddUnmodifiedFile(path, oldId, oldSize, oldScanned, oldHash, oldMetahash, oldMetasize, oldBlocklistHashes);
+                    AddUnmodifiedFile(oldId, oldScanned);
 
             }
             catch (Exception ex)
             {
                 m_stat.LogWarning(string.Format("Failed to process path: {0}", path), ex);
+                m_stat.FilesWithError++;
             }
 
             if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
@@ -277,11 +306,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         /// </summary>
         /// <param name="key">The block hash</param>
         /// <param name="data">The data matching the hash</param>
-        private bool AddBlockToOutput(string key, byte[] data, int len)
+        private bool AddBlockToOutput(string key, byte[] data, int len, CompressionHint hint)
         {
-            if (m_database.AddBlock(key, len, m_blockvolume.RemoteFilename))
+            if (m_database.AddBlock(key, len, m_blockvolume.RemoteFilename, m_transaction))
             {
-                m_blockvolume.AddBlock(key, data, len);
+                m_blockvolume.AddBlock(key, data, len, hint);
                 m_shadowvolume.AddBlock(key, len);
                 if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Fhblocksize)
                 {
@@ -298,10 +327,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             return false;
         }
 
-        private void AddUnmodifiedFile(string path, long oldId, long size, DateTime scantime, string oldHash, string oldMetahash, long oldMetasize, IList<string> blocklisthashes)
+        private void AddUnmodifiedFile(long oldId, DateTime scantime)
         {
-            m_database.AddUnmodifiedFile(oldId, scantime);
-            m_filesetvolume.AddFile(path, oldHash, size, scantime, oldMetahash, oldMetasize, blocklisthashes);
+            m_database.AddUnmodifiedFile(oldId, scantime, m_transaction);
         }
 
 
@@ -320,10 +348,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             bool r = false;
 
             //TODO: If meta.Size > blocksize...
-            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size);
-            r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid);
+            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size, CompressionHint.Default);
+            r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
-            m_database.AddDirectoryEntry(filename, metadataid, scantime);
+            m_database.AddDirectoryEntry(filename, metadataid, scantime, m_transaction);
             return r;
         }
 
@@ -342,10 +370,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             bool r = false;
 
             //TODO: If meta.Size > blocksize...
-            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size);
-            r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid);
+            r |= AddBlockToOutput(meta.Hash, meta.Blob, (int)meta.Size, CompressionHint.Default);
+            r |= m_database.AddMetadataset(meta.Hash, meta.Size, out metadataid, m_transaction);
 
-            m_database.AddSymlinkEntry(filename, metadataid, scantime);
+            m_database.AddSymlinkEntry(filename, metadataid, scantime, m_transaction);
             return r;
         }
 
@@ -364,13 +392,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             long blocksetid;
 
             //TODO: If metadata.Size > blocksize...
-            AddBlockToOutput(metadata.Hash, metadata.Blob, (int)metadata.Size);
-            m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid);
+            AddBlockToOutput(metadata.Hash, metadata.Blob, (int)metadata.Size, CompressionHint.Default);
+            m_database.AddMetadataset(metadata.Hash, metadata.Size, out metadataid, m_transaction);
 
-            m_database.AddBlockset(filehash, size, m_blockbuffer.Length, hashlist.Hashes, blocklisthashes, out blocksetid);
+            m_database.AddBlockset(filehash, size, m_blockbuffer.Length, hashlist.Hashes, blocklisthashes, out blocksetid, m_transaction);
 
-            m_filesetvolume.AddFile(filename, filehash, size, scantime, metadata.Hash, metadata.Size, blocklisthashes);
-            m_database.AddFile(filename, scantime, blocksetid, metadataid);
+            //m_filesetvolume.AddFile(filename, filehash, size, scantime, metadata.Hash, metadata.Size, blocklisthashes);
+            m_database.AddFile(filename, scantime, blocksetid, metadataid, m_transaction);
         }
 
         public void Dispose()
@@ -387,18 +415,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 finally { m_blockvolume = null; }
             }
 
-            if (m_filesetvolume != null)
-            {
-                try { m_filesetvolume.Dispose(); }
-                finally { m_filesetvolume = null; }
-            }
-
             if (m_shadowvolume != null)
             {
                 try { m_shadowvolume.Dispose(); }
                 finally { m_shadowvolume = null; }
             }
 
+            m_stat.EndTime = DateTime.Now;
         }
     }
 }

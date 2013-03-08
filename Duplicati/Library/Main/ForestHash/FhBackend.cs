@@ -78,6 +78,8 @@ namespace Duplicati.Library.Main.ForestHash
                     var sourcefile = this.LocalFilename + "." + encryption.FilenameExtension;
                     encryption.Encrypt(this.LocalFilename, sourcefile);
                     this.LocalFilename = sourcefile;
+                    this.Hash = null;
+                    this.Size = 0;
                     this.Encrypted = true;
                 }
             }
@@ -109,12 +111,14 @@ namespace Duplicati.Library.Main.ForestHash
         private Library.Interface.IEncryption m_encryption;
         private Library.Interface.IBackend m_backend;
         private string m_backendurl;
+        private CommunicationStatistics m_stats;
 
-        public FhBackend(string backendurl, Options options, Localdatabase database)
+        public FhBackend(string backendurl, Options options, Localdatabase database, CommunicationStatistics stats)
         {
             m_options = options;
             m_database = database;
             m_backendurl = backendurl;
+            m_stats = stats;
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
 
@@ -163,13 +167,11 @@ namespace Duplicati.Library.Main.ForestHash
                                     DoList(item);
                                     break;
                                 case OperationType.Delete:
-                                    throw new MissingMethodException("DELETE");
-                                    //DoDelete(item);
-                                    //break;
+                                    DoDelete(item);
+                                    break;
                                 case OperationType.CreateFolder:
-                                    throw new MissingMethodException("CREATEFOLDER");
-                                    //DoCreateFolder(item);
-                                    //break;
+                                    DoCreateFolder(item);
+                                    break;
                                 case OperationType.Terminate:
                                     m_queue.SetCompleted();
                                     break;
@@ -182,6 +184,7 @@ namespace Duplicati.Library.Main.ForestHash
                         {
                             retries++;
                             lastException = ex;
+                            m_stats.LogRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
                             m_database.LogMessage("warning", string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
 
                             try { m_backend.Dispose(); }
@@ -224,6 +227,7 @@ namespace Duplicati.Library.Main.ForestHash
                 item.Shadow = null;
             }            
 
+            m_stats.AddNumberOfRemoteCalls(1);
             m_database.LogRemoteOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
 
             if (m_backend is Library.Interface.IStreamingBackend)
@@ -236,6 +240,7 @@ namespace Duplicati.Library.Main.ForestHash
             else
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
 
+            m_stats.AddBytesUploaded(item.Size);
         }
 
         private void DoGet(FileEntryItem item)
@@ -243,6 +248,7 @@ namespace Duplicati.Library.Main.ForestHash
             Utility.TempFile tmpfile = null;
             try
             {
+                m_stats.AddNumberOfRemoteCalls(1);
                 tmpfile = new Utility.TempFile();
                 if (m_backend is Library.Interface.IStreamingBackend)
                 {
@@ -253,6 +259,9 @@ namespace Duplicati.Library.Main.ForestHash
                 }
                 else
                     m_backend.Get(item.RemoteFilename, tmpfile);
+                
+                m_stats.AddBytesDownloaded(new System.IO.FileInfo(tmpfile).Length);
+                m_database.LogRemoteOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateSha256Hash(tmpfile) }));
 
                 if (!m_options.SkipFileHashChecks)
                 {
@@ -328,6 +337,46 @@ namespace Duplicati.Library.Main.ForestHash
             sb.Append("]");
             m_database.LogRemoteOperation("list", "", sb.ToString());
             item.Result = r;
+        }
+
+        private void DoDelete (FileEntryItem item)
+        {
+            m_stats.AddNumberOfRemoteCalls(1);
+
+            string result = null;
+            try
+            {
+                m_backend.Delete(item.RemoteFilename);
+            } 
+            catch (Exception ex)
+            {
+                result = ex.ToString();
+                throw;
+            }
+            finally
+            {
+                m_database.LogRemoteOperation("delete", item.RemoteFilename, result);
+            }
+            
+            m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+        }
+        
+        private void DoCreateFolder (FileEntryItem item)
+        {
+            string result = null;
+            try
+            {
+                (m_backend as Library.Interface.IBackend_v2).CreateFolder();
+            } 
+            catch (Exception ex)
+            {
+                result = ex.ToString();
+                throw;
+            }
+            finally
+            {
+                m_database.LogRemoteOperation("createfolder", item.RemoteFilename, result);
+            }
         }
 
         public void Put(VolumeWriterBase item, ShadowVolumeWriter shadow = null)
@@ -412,6 +461,27 @@ namespace Duplicati.Library.Main.ForestHash
 
             var item = new FileEntryItem(OperationType.Terminate, null);
             if (m_queue.Enqueue(item))
+                item.WaitForComplete();
+
+            if (m_lastException != null)
+                throw m_lastException;
+        }
+
+        public void CreateFolder(string remotename)
+        {
+            var item = new FileEntryItem(OperationType.CreateFolder, remotename);
+            if (m_queue.Enqueue(item))
+                item.WaitForComplete();
+            
+            if (m_lastException != null)
+                throw m_lastException;
+        }
+
+        public void Delete(string remotename, bool synchronous = false)
+        {
+            m_database.UpdateRemoteVolume(remotename, RemoteVolumeState.Deleting, -1, null);
+            var item = new FileEntryItem(OperationType.Delete, remotename);
+            if (m_queue.Enqueue(item) && synchronous)
                 item.WaitForComplete();
 
             if (m_lastException != null)

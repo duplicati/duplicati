@@ -3056,9 +3056,10 @@ namespace Duplicati.Library.Main
 
         #endregion
 
-        public static IEnumerable<ForestHash.Volumes.IParsedVolume> ParseFhFileList(string target, Dictionary<string, string> options)
+        public static IEnumerable<ForestHash.Volumes.IParsedVolume> ParseFhFileList(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
-            return ForestHash.ForestHash.ParseFileList(target, options);
+            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.List);
+            return ForestHash.ForestHash.ParseFileList(target, options, stat);
         }
 
         public static string CompactBlocks(string target, Dictionary<string, string> options)

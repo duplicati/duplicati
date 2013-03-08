@@ -25,8 +25,6 @@ namespace Duplicati.Library.Main
 {
     internal class BackupStatistics : CommunicationStatistics
     {
-        private DateTime m_beginTime;
-        private DateTime m_endTime;
         private long m_deletedFiles;
         private long m_deletedFolders;
         private long m_modifiedFiles;
@@ -40,6 +38,11 @@ namespace Duplicati.Library.Main
         private long m_addedFolders;
         private long m_tooLargeFiles;
         private long m_filesWithError;
+        private long m_modifiedFolders;
+        private long m_modifiedSymlinks;
+        private long m_addedSymlinks;
+        private long m_deletedSymlinks;
+
         private bool m_full = false;
         private bool m_partialBackup = false;
         private string m_typeReason = null;
@@ -47,30 +50,12 @@ namespace Duplicati.Library.Main
         public BackupStatistics(DuplicatiOperationMode operationMode)
             : base(operationMode)
         {
-            m_beginTime = m_endTime = DateTime.Now;
         }
 
         public bool Full
         {
             get { return m_full; }
             set { m_full = value; }
-        }
-
-        public DateTime BeginTime
-        {
-            get { return m_beginTime; }
-            set { m_beginTime = value; }
-        }
-
-        public DateTime EndTime
-        {
-            get { return m_endTime; }
-            set { m_endTime = value; }
-        }
-
-        public TimeSpan Duration
-        {
-            get { return m_endTime - m_beginTime; }
         }
 
         public long DeletedFiles
@@ -139,6 +124,31 @@ namespace Duplicati.Library.Main
             set { m_addedFolders = value; }
         }
 
+        public long ModifiedFolders
+        {
+            get { return m_modifiedFolders; }
+            set { m_modifiedFolders = value; }
+        }
+
+        public long AddedSymlinks
+        {
+            get { return m_addedSymlinks; }
+            set { m_addedSymlinks = value; }
+        }
+        
+        public long ModifiedSymlinks
+        {
+            get { return m_modifiedSymlinks; }
+            set { m_modifiedSymlinks = value; }
+        }
+        
+        public long DeletedSymlinks
+        {
+            get { return m_deletedSymlinks; }
+            set { m_deletedSymlinks = value; }
+        }
+
+
         public long FilesTooLarge
         {
             get { return m_tooLargeFiles; }
@@ -166,17 +176,20 @@ namespace Duplicati.Library.Main
         {
             //TODO: Figure out how to translate this without breaking the output parser
             StringBuilder sb = new StringBuilder();
+            sb.Append(base.ToString());
             sb.Append("BackupType      : " + (this.Full ? "Full" : "Incremental") + "\r\n");
+
             if (this.m_typeReason != null)
                 sb.Append("TypeReason      : " + this.m_typeReason + "\r\n");
-            sb.Append("BeginTime       : " + this.BeginTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-            sb.Append("EndTime         : " + this.EndTime.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-            sb.Append("Duration        : " + this.Duration.ToString() + "\r\n");
             sb.Append("DeletedFiles    : " + this.DeletedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("DeletedFolders  : " + this.DeletedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("DeletedSymlinks : " + this.DeletedSymlinks.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("ModifiedFiles   : " + this.ModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("ModifiedFolders : " + this.ModifiedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("ModifiedSymlinks: " + this.ModifiedSymlinks.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("AddedFiles      : " + this.AddedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("AddedFolders    : " + this.AddedFolders.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
+            sb.Append("AddedSymlinks   : " + this.AddedSymlinks.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("ExaminedFiles   : " + this.ExaminedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("OpenedFiles     : " + this.OpenedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
             sb.Append("SizeOfModified  : " + this.SizeOfModifiedFiles.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
@@ -188,7 +201,6 @@ namespace Duplicati.Library.Main
             if (m_partialBackup)
                 sb.Append("PartialBackup   : true" + "\r\n");
             
-            sb.Append(base.ToString());
             return sb.ToString();
         }
     }

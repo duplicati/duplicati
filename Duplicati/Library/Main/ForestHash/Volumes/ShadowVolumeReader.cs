@@ -369,7 +369,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 
                 public void Reset()
                 {
-                    m_files = m_compression.GetFilesWithSize(SHADOW_BLOCKLIST_FOLDER).ToArray();
+                    m_files = m_compression.ListFilesWithSize(SHADOW_BLOCKLIST_FOLDER).ToArray();
                     m_index = -1;
                     m_current = null;
                 }

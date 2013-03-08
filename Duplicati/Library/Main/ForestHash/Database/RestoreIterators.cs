@@ -175,16 +175,14 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 private System.Data.IDbCommand m_command;
                 private System.Data.IDataReader m_reader;
                 private System.Data.IDbConnection m_connection;
-                private long m_blocksize;
                 private string m_tablename;
                 private ExistingFile m_file;
                 private string m_current;
 
-                public ExistingFileEnumerator(System.Data.IDbConnection con, string tablename, long blocksize)
+                public ExistingFileEnumerator(System.Data.IDbConnection con, string tablename)
                 {
                     m_connection = con;
                     m_tablename = tablename;
-                    m_blocksize = blocksize;
                     this.Reset();
                 }
 
@@ -240,18 +238,16 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             private System.Data.IDbConnection m_connection;
             private string m_tablename;
-            private long m_blocksize;
 
-            public ExistingFileEnumerable(System.Data.IDbConnection connection, string tablename, long blocksize)
+            public ExistingFileEnumerable(System.Data.IDbConnection connection, string tablename)
             {
                 m_connection = connection;
                 m_tablename = tablename;
-                m_blocksize = blocksize;
             }
 
             public IEnumerator<IExistingFile> GetEnumerator()
             {
-                return new ExistingFileEnumerator(m_connection, m_tablename, m_blocksize);
+                return new ExistingFileEnumerator(m_connection, m_tablename);
             }
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -716,7 +712,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
                             private VolumePatch m_patch;
                             private PatchBlock m_block;
                             private string m_currentfile;
-                            private string m_currentkey;
                             private bool m_first;
 
                             public PatchBlockEnumerator(System.Data.IDataReader reader, VolumePatch patch)
@@ -724,7 +719,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                 m_reader = reader;
                                 m_patch = patch;
                                 m_currentfile = patch.Path;
-                                m_currentkey = null;
                                 this.Reset();
                             }
 
@@ -753,14 +747,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                     m_patch.HasMoreData = m_reader.Read();
 
                                 var more = m_patch.HasMoreData && m_currentfile == m_patch.Path;
-                                m_currentkey = more ? m_block.Key : null;
                                 return more;
                             }
 
                             public void Reset()
                             {
                                 m_block = new PatchBlock(m_reader);
-                                m_currentkey = null;
                                 m_first = true;
                             }
                         }
