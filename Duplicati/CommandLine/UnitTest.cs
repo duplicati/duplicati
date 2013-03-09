@@ -175,13 +175,10 @@ namespace Duplicati.CommandLine
                 }
 
                 log.Backupset = "Backup " + folders[0];
-                Console.WriteLine("Backing up the full copy: " + folders[0]);
-                using (new Timer("Full backup of " + folders[0]))
-                {
-                    options["full"] = "";
-                    Log.WriteMessage(Duplicati.Library.Main.Interface.Backup(folders[0].Split(System.IO.Path.PathSeparator), target, options), LogMessageType.Information);
-                    options.Remove("full");
-                }
+
+                options["full"] = "";
+                RunBackup(folders[0], target, options);
+                options.Remove("full");
 
                 for (int i = 1; i < folders.Length; i++)
                 {
@@ -189,9 +186,9 @@ namespace Duplicati.CommandLine
                     //If the backups are too close, we can't pick the right one :(
                     System.Threading.Thread.Sleep(1000 * 5);
                     log.Backupset = "Backup " + folders[i];
-                    Console.WriteLine("Backing up the incremental copy: " + folders[i]);
-                    using (new Timer("Incremental backup of " + folders[i]))
-                        Log.WriteMessage(Duplicati.Library.Main.Interface.Backup(folders[i].Split(System.IO.Path.PathSeparator), target, options), LogMessageType.Information);
+
+                    //Call function to simplify profiling
+                    RunBackup(folders[i], target, options);
                 }
 
                 Duplicati.Library.Main.Options opts = new Duplicati.Library.Main.Options(options);
@@ -247,8 +244,6 @@ namespace Duplicati.CommandLine
                     foreach (Duplicati.Library.Main.ManifestEntry mf in mfs[0].Incrementals)
                         entries.Add(mf.Time);
                 }
-
-
 
                 for (int i = 0; i < entries.Count; i++)
                 {
@@ -351,62 +346,21 @@ namespace Duplicati.CommandLine
                             }
 
                             tops["file-to-restore"] = String.Join(System.IO.Path.PathSeparator.ToString(), filterlist.ToArray());
-                            
-                            /*using (new Timer("Partial restore of " + folders[i]))
-                                Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, new string[] { ptf }, tops), LogMessageType.Information);
 
+                            //Call function to simplify profiling
+                            RunPartialRestore(folders[i], target, ptf, tops);
+
+                            //Call function to simplify profiling
                             Console.WriteLine("Verifying partial restore of: " + folders[i]);
-                            using (new Timer("Verification of partial restore from " + folders[i]))
-                                foreach (string s in testfiles)
-                                {
-                                    string restoredname; 
-                                    string sourcename;
-
-                                    if (actualfolders.Length == 1) 
-                                    {
-                                        sourcename = System.IO.Path.Combine(actualfolders[0], s);
-                                        restoredname = System.IO.Path.Combine(ptf, s);;
-                                    }
-                                    else
-                                    {
-                                        int six = s.IndexOf(System.IO.Path.DirectorySeparatorChar);
-                                        sourcename = System.IO.Path.Combine(actualfolders[int.Parse(s.Substring(0, six))], s.Substring(six + 1));
-                                        restoredname = System.IO.Path.Combine(System.IO.Path.Combine(ptf, System.IO.Path.GetFileName(folders[0].Split(System.IO.Path.PathSeparator)[int.Parse(s.Substring(0, six))])), s.Substring(six + 1));
-                                    }
-
-                                    if (!System.IO.File.Exists(restoredname))
-                                    {
-                                        Log.WriteMessage("Partial restore missing file: " + restoredname, LogMessageType.Error);
-                                        Console.WriteLine("Partial restore missing file: " + restoredname);
-                                    }
-                                    else
-                                    {
-                                        if (!System.IO.File.Exists(sourcename))
-                                        {
-                                            Log.WriteMessage("Partial restore missing file: " + sourcename, LogMessageType.Error);
-                                            Console.WriteLine("Partial restore missing file: " + sourcename);
-                                            throw new Exception("Unittest is broken");
-                                        }
-
-                                        if (!CompareFiles(sourcename, restoredname, s))
-                                        {
-                                            Log.WriteMessage("Partial restore file differs: " + s, LogMessageType.Error);
-                                            Console.WriteLine("Partial restore file differs: " + s);
-                                        }
-                                    }
-                                }*/
+                            VerifyPartialRestore(folders[i], testfiles, actualfolders, ptf, folders[0]);
                         }
 
-                        using (new Timer("Restore of " + folders[i]))
-                            Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, restorefoldernames, options), LogMessageType.Information);
+                        //Call function to simplify profiling
+                        RunRestore(folders[i], target, restorefoldernames, options);
 
+                        //Call function to simplify profiling
                         Console.WriteLine("Verifying the copy: " + folders[i]);
-
-                        using (new Timer("Verification of " + folders[i]))
-                        {
-                            for (int j = 0; j < actualfolders.Length; j++)
-                                VerifyDir(actualfolders[j], restorefoldernames[j]);
-                        }
+                        VerifyFullRestore(folders[i], actualfolders, restorefoldernames);
                     }
                 }
 
@@ -414,6 +368,77 @@ namespace Duplicati.CommandLine
 
             (Log.CurrentLog as StreamLog).Dispose();
             Log.CurrentLog = null;
+        }
+
+        private static void VerifyPartialRestore(string source, IEnumerable<string> testfiles, string[] actualfolders, string tempfolder, string rootfolder)
+        {
+            using (new Timer("Verification of partial restore from " + source))
+                foreach (string s in testfiles)
+                {
+                    string restoredname;
+                    string sourcename;
+
+                    if (actualfolders.Length == 1)
+                    {
+                        sourcename = System.IO.Path.Combine(actualfolders[0], s);
+                        restoredname = System.IO.Path.Combine(tempfolder, s);
+                    }
+                    else
+                    {
+                        int six = s.IndexOf(System.IO.Path.DirectorySeparatorChar);
+                        sourcename = System.IO.Path.Combine(actualfolders[int.Parse(s.Substring(0, six))], s.Substring(six + 1));
+                        restoredname = System.IO.Path.Combine(System.IO.Path.Combine(tempfolder, System.IO.Path.GetFileName(rootfolder.Split(System.IO.Path.PathSeparator)[int.Parse(s.Substring(0, six))])), s.Substring(six + 1));
+                    }
+
+                    if (!System.IO.File.Exists(restoredname))
+                    {
+                        Log.WriteMessage("Partial restore missing file: " + restoredname, LogMessageType.Error);
+                        Console.WriteLine("Partial restore missing file: " + restoredname);
+                    }
+                    else
+                    {
+                        if (!System.IO.File.Exists(sourcename))
+                        {
+                            Log.WriteMessage("Partial restore missing file: " + sourcename, LogMessageType.Error);
+                            Console.WriteLine("Partial restore missing file: " + sourcename);
+                            throw new Exception("Unittest is broken");
+                        }
+
+                        if (!CompareFiles(sourcename, restoredname, s))
+                        {
+                            Log.WriteMessage("Partial restore file differs: " + s, LogMessageType.Error);
+                            Console.WriteLine("Partial restore file differs: " + s);
+                        }
+                    }
+                }
+        }
+
+        private static void VerifyFullRestore(string source, string[] actualfolders, string[] restorefoldernames)
+        {
+            using (new Timer("Verification of " + source))
+            {
+                for (int j = 0; j < actualfolders.Length; j++)
+                    VerifyDir(actualfolders[j], restorefoldernames[j]);
+            }
+        }
+
+        private static void RunBackup(string source, string target, Dictionary<string, string> options)
+        {
+            Console.WriteLine("Backing up the " + (Library.Utility.Utility.ParseBoolOption(options, "full") ? "full" : "incremental") + "  copy: " + source);
+            using (new Timer((Library.Utility.Utility.ParseBoolOption(options, "full") ? "Full" : "Incremental") + " backup of " + source))
+                Log.WriteMessage(Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options), LogMessageType.Information);
+        }
+
+        private static void RunRestore(string source, string target, string[] restorefoldernames, Dictionary<string, string> options)
+        {
+            using (new Timer("Restore of " + source))
+                Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, restorefoldernames, options), LogMessageType.Information);
+        }
+
+        private static void RunPartialRestore(string source, string target, string tempfolder, Dictionary<string, string> tops)
+        {
+            using (new Timer("Partial restore of " + source))
+                Log.WriteMessage(Duplicati.Library.Main.Interface.Restore(target, new string[] { tempfolder }, tops), LogMessageType.Information);
         }
 
         /// <summary>
