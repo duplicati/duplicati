@@ -129,4 +129,10 @@
   <data name="FhdbpathShort" xml:space="preserve">
     <value>Path to the local state database</value>
   </data>
+  <data name="FhnometadataLong" xml:space="preserve">
+    <value>Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time.</value>
+  </data>
+  <data name="FhnometadataShort" xml:space="preserve">
+    <value>Disable storing file metadata</value>
+  </data>
 </root>

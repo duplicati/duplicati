@@ -28,6 +28,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         private Snapshots.ISnapshotService m_snapshot;
         private long m_otherchanges;
 
+        private readonly ForestHash.IMetahash EMPTY_METADATA = ForestHash.WrapMetadata(new Dictionary<string, string>());
+
         private string[] m_sources;
 
         public BackupHandler(string backendurl, FhOptions options, BackupStatistics stat, string[] sources)
@@ -141,19 +143,28 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                 if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                 {
-                    Dictionary<string, string> metadata = null; //snapshot.GetMetadata(path);
-                    if (metadata == null)
-                        metadata = new Dictionary<string, string>();
+                    Dictionary<string, string> metadata;
 
-                    if (!metadata.ContainsKey("CoreAttributes"))
-                        metadata["CoreAttributes"] = attributes.ToString();
-                    if (!metadata.ContainsKey("CoreLastWritetime"))
-                        metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
+                    if (!m_options.FhNoMetadata)
+                    {
+                        metadata = null; //snapshot.GetMetadata(path);
+                        if (metadata == null)
+                            metadata = new Dictionary<string, string>();
+
+                        if (!metadata.ContainsKey("CoreAttributes"))
+                            metadata["CoreAttributes"] = attributes.ToString();
+                        if (!metadata.ContainsKey("CoreLastWritetime"))
+                            metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
+                    }
+                    else
+                    {
+                        metadata = new Dictionary<string, string>();
+                    }
+
                     if (!metadata.ContainsKey("CoreSymlinkTarget"))
                         metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
 
                     var metahash = ForestHash.WrapMetadata(metadata);
-                    //m_filesetvolume.AddSymlink(path, metahash.Hash, metahash.Size);
                     if (AddSymlinkToOutput(path, DateTime.UtcNow, metahash))
                         m_otherchanges++;
                     
@@ -164,15 +175,24 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
             if ((attributes & FileAttributes.Directory) == FileAttributes.Directory)
             {
-                Dictionary<string, string> metadata = null; //snapshot.GetMetadata(path);
-                if (metadata == null)
-                    metadata = new Dictionary<string, string>();
+                ForestHash.IMetahash metahash;
 
-                if (!metadata.ContainsKey("CoreAttributes"))
-                    metadata["CoreAttributes"] = attributes.ToString();
-                if (!metadata.ContainsKey("CoreLastWritetime"))
-                    metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
-                var metahash = ForestHash.WrapMetadata(metadata);
+                if (m_options.FhNoMetadata)
+                {
+                    metahash = EMPTY_METADATA;
+                }
+                else
+                {
+                    Dictionary<string, string> metadata = null; //snapshot.GetMetadata(path);
+                    if (metadata == null)
+                        metadata = new Dictionary<string, string>();
+
+                    if (!metadata.ContainsKey("CoreAttributes"))
+                        metadata["CoreAttributes"] = attributes.ToString();
+                    if (!metadata.ContainsKey("CoreLastWritetime"))
+                        metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
+                    metahash = ForestHash.WrapMetadata(metadata);
+                }
 
                 //m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
                 if (AddFolderToOutput(path, DateTime.UtcNow, metahash))
@@ -200,16 +220,25 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     long filesize = 0;
                     DateTime scantime = DateTime.UtcNow;
 
-                    Dictionary<string, string> metadata = null; //snapshot.GetMetadata(file);
-                    if (metadata == null)
-                        metadata = new Dictionary<string, string>();
+                    ForestHash.IMetahash metahashandsize;
+                    if (m_options.FhNoMetadata)
+                    {
+                        metahashandsize = EMPTY_METADATA;
+                    }
+                    else
+                    {
+                        Dictionary<string, string> metadata = null; //snapshot.GetMetadata(file);
+                        if (metadata == null)
+                            metadata = new Dictionary<string, string>();
 
-                    if (!metadata.ContainsKey("CoreAttributes"))
-                        metadata["CoreAttributes"] = attributes.ToString();
-                    if (!metadata.ContainsKey("CoreLastWritetime"))
-                        metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(lastModified);
+                        if (!metadata.ContainsKey("CoreAttributes"))
+                            metadata["CoreAttributes"] = attributes.ToString();
+                        if (!metadata.ContainsKey("CoreLastWritetime"))
+                            metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(lastModified);
 
-                    var metahashandsize = ForestHash.WrapMetadata(metadata);
+                        metahashandsize = ForestHash.WrapMetadata(metadata);
+                    }
+
                     var blocklisthashes = new List<string>();
                     var hint = m_options.GetCompressionHintFromFilename(path);
                     var oldHash = oldId < 0 ? null : m_database.GetFileHash(oldId);

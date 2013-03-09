@@ -12,6 +12,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private readonly System.Data.IDbCommand m_findblocksetCommand;
         private readonly System.Data.IDbCommand m_findfilesetCommand;
         private readonly System.Data.IDbCommand m_findmetadatasetCommand;
+        private readonly System.Data.IDbCommand m_findmetadatasetProbeCommand;
 
         private readonly System.Data.IDbCommand m_insertblockCommand;
 
@@ -23,7 +24,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         private readonly System.Data.IDbCommand m_insertmetadatasetCommand;
 
-        //private readonly System.Data.IDbCommand m_selectfileCommand;
         private readonly System.Data.IDbCommand m_selectfileSimpleCommand;
         private readonly System.Data.IDbCommand m_selectfileHashCommand;
         private readonly System.Data.IDbCommand m_selectblocklistHashesCommand;
@@ -65,6 +65,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertfileOperationCommand = m_connection.CreateCommand();
             m_selectfileSimpleCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
+            m_findmetadatasetProbeCommand = m_connection.CreateCommand();
 
             m_findblockCommand.CommandText = @"SELECT ""File"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
@@ -72,7 +73,10 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_findblocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = ? AND ""Length"" = ?";
             m_findblocksetCommand.AddParameters(2);
 
-            m_findmetadatasetCommand.CommandText = @"SELECT ""ID"" FROM ""Metadataset"" WHERE ""BlocksetID"" = (SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ?)";
+            m_findmetadatasetProbeCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Hash"" = ? AND ""Size"" = ? LIMIT 1";
+            m_findmetadatasetProbeCommand.AddParameters(2);
+
+            m_findmetadatasetCommand.CommandText = @"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""C"".""Hash"" = ? AND ""C"".""Size"" = ? LIMIT 1";
             m_findmetadatasetCommand.AddParameters(2);
 
             m_findfilesetCommand.CommandText = @"SELECT ""ID"" FROM ""Fileset"" WHERE ""BlocksetID"" = ? AND ""MetadatasetID"" = ?";
@@ -105,9 +109,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"" INNER JOIN ""Fileset"" ON ""Blockset"".""ID"" = ""Fileset"".""BlocksetID"" WHERE ""Fileset"".""ID"" = ?  ";
             m_selectfileHashCommand.AddParameters(1);
-
-            //m_selectfileCommand.CommandText = @"SELECT ""A"".""ID"", ""D"".""Scantime"", ""B"".""Length"", ""B"".""FullHash"", ""E"".""FullHash"", ""E"".""Length"", ""B"".""ID"" FROM ""Fileset"" A, ""Blockset"" B, ""Metadataset"" C, ""OperationFileset"" D, ""Blockset"" E, ""Operation"" F WHERE ""A"".""ID"" = ""D"".""FilesetID"" AND ""A"".""Path"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"" AND ""F"".""ID"" = ""D"".""OperationID"" ORDER BY ""F"".""Timestamp"" DESC ";
-            //m_selectfileCommand.AddParameters(1);
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
             m_selectblocklistHashesCommand.AddParameters(1);
@@ -238,11 +239,16 @@ namespace Duplicati.Library.Main.ForestHash.Database
             if (size > 0)
             {
                 m_findmetadatasetCommand.Transaction = transaction;
-                object r = m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
+                //Highly unlikely that we find matching metadata, due to the timestamp
+                var r = m_findmetadatasetProbeCommand.ExecuteScalar(null, hash, size);
                 if (r != null && r != DBNull.Value)
                 {
-                    metadataid = Convert.ToInt64(r);
-                    return false;
+                    m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
+                    if (r != null && r != DBNull.Value)
+                    {
+                        metadataid = Convert.ToInt64(r);
+                        return false;
+                    }
                 }
 
                 long blocksetid;
@@ -295,62 +301,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertfileOperationCommand.ExecuteNonQuery();
 
         }
-
-        /// <summary>
-        /// Gets a file entry from the database
-        /// </summary>
-        /// <param name="path">The path to the file</param>
-        /// <param name="fileid">The id of the file, or -1</param>
-        /// <param name="filesize">The size of the file, or -1</param>
-        /// <param name="lastScanned">The time the file was last scanned, or the current time</param>
-        /// <param name="hash">The hash of the file</param>
-        /// <param name="metahash">The hash of the metadata</param>
-        /// <returns>True if the entry was found, false otherwise</returns>
-        /*public bool GetFileEntry(string path, out long fileid, out long filesize, out DateTime lastScanned, out string hash, out string metahash, out long metasize, out IList<string> blockHashes)
-        {
-            ((System.Data.IDataParameter)m_selectfileCommand.Parameters[0]).Value = path;
-            using (var rd = m_selectfileCommand.ExecuteReader())
-                if (rd.Read())
-                {
-                    fileid = Convert.ToInt64(rd.GetValue(0));
-                    lastScanned = Convert.ToDateTime(rd.GetValue(1));
-                    filesize = Convert.ToInt64(rd.GetValue(2));
-                    object h = rd.GetValue(3);
-                    hash = (h == null || h == DBNull.Value) ? null : h.ToString();
-                    h = rd.GetValue(4);
-                    metahash = (h == null || h == DBNull.Value) ? null : h.ToString();
-                    metasize = Convert.ToInt64(rd.GetValue(5));
-
-                    m_selectblocklistHashesCommand.SetParameterValue(0, rd.GetValue(6));
-                    using (var bhrd = m_selectblocklistHashesCommand.ExecuteReader())
-                    {
-                        blockHashes = new List<string>();
-                        while (bhrd.Read())
-                        {
-                            var blh = bhrd.GetValue(0);
-                            if (blh != null && blh != DBNull.Value)
-                                blockHashes.Add(blh.ToString());
-                        }
-
-                        if (blockHashes.Count == 0)
-                            blockHashes = null;
-                    }
-
-                    return true;
-                }
-                else
-                {
-                    fileid = -1;
-                    lastScanned = DateTime.UtcNow;
-                    filesize = -1;
-                    hash = null;
-                    metahash = null;
-                    metasize = -1;
-                    blockHashes = null;
-                    return false;
-                }
-
-        }*/
 
         public void AddUnmodifiedFile(long fileid, DateTime scantime, System.Data.IDbTransaction transaction = null)
         {

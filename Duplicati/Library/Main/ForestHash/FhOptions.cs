@@ -29,6 +29,7 @@ namespace Duplicati.Library.Main.ForestHash
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("fh-dbpath", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdbpathShort, Strings.FhOptions.FhdbpathLong),
                     new CommandLineArgument("fh-blocksize", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblocksizeShort, Strings.FhOptions.FhblocksizeLong, DEFAULT_FH_BLOCKSIZE),
+                    new CommandLineArgument("fh-nometadata", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnometadataShort, Strings.FhOptions.FhnometadataLong, "false"),
 #if DEBUG
                     new CommandLineArgument("fh-no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
                     new CommandLineArgument("fh-no-local-db", CommandLineArgument.ArgumentType.Boolean, "Prevents using local database for restore", "", "false"),
@@ -67,6 +68,14 @@ namespace Duplicati.Library.Main.ForestHash
                 
                 return (int)t;
             }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if metadata for files and folders should be ignored
+        /// </summary>
+        public bool FhNoMetadata
+        {
+            get { return Utility.Utility.ParseBoolOption(m_options, "fh-nometadata"); }
         }
 
 #if DEBUG

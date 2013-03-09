@@ -95,5 +95,23 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("FhdbpathShort", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time..
+        /// </summary>
+        internal static string FhnometadataLong {
+            get {
+                return ResourceManager.GetString("FhnometadataLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disable storing file metadata.
+        /// </summary>
+        internal static string FhnometadataShort {
+            get {
+                return ResourceManager.GetString("FhnometadataShort", resourceCulture);
+            }
+        }
     }
 }
