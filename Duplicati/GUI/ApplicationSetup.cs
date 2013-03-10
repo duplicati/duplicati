@@ -134,6 +134,10 @@ namespace Duplicati.GUI
         {
             if (m_isUpdating || m_settings == null)
                 return;
+
+            try { Library.Utility.Timeparser.ParseTimeSpan(RecentDuration.Value); }
+            catch { return; }
+
             m_settings.RecentBackupDuration = RecentDuration.Value;
         }
 
@@ -476,6 +480,9 @@ namespace Duplicati.GUI
         {
             if (m_isUpdating || m_settings == null)
                 return;
+
+            try { Library.Utility.Timeparser.ParseTimeSpan(StartupDelayDuration.Value); }
+            catch { }
 
             m_settings.StartupDelayDuration = StartupDelayDuration.Value;
         }
