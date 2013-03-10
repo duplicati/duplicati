@@ -168,12 +168,19 @@ namespace Duplicati.Server
         {
             m_state = LiveControlState.Running;
             m_waitTimer = new System.Threading.Timer(m_waitTimer_Tick, this, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+
             if (!string.IsNullOrEmpty(settings.StartupDelayDuration) && settings.StartupDelayDuration != "0")
             {
-                long milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds;
-                m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
-                m_waitTimer.Change(milliseconds, System.Threading.Timeout.Infinite);
-                m_state = LiveControlState.Paused;
+                long milliseconds = 0;
+                try { milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds; }
+                catch {}
+
+                if (milliseconds > 0)
+                {
+                    m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
+                    m_waitTimer.Change(milliseconds, System.Threading.Timeout.Infinite);
+                    m_state = LiveControlState.Paused;
+                }
             }
 
             m_priority = settings.ThreadPriorityOverride;
@@ -345,7 +352,8 @@ namespace Duplicati.Server
                     
                     Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);
                     if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
-                        delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks);
+                        try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
+                        catch { }
 
                     if (delayTicks > 0)
                     {
