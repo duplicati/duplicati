@@ -60,6 +60,21 @@ namespace Duplicati.Library.Main.ForestHash.Database
             return self.ExecuteScalar();
         }
 
+        public static System.Data.IDataReader ExecuteReader(this System.Data.IDbCommand self, string cmd, params object[] values)
+        {
+            if (cmd != null)
+                self.CommandText = cmd;
+
+            if (values != null && values.Length > 0)
+            {
+                self.Parameters.Clear();
+                foreach (var n in values)
+                    self.AddParameter(n);
+            }
+
+            return self.ExecuteReader();
+        }
+
         public static void DumpSQL(this System.Data.IDbConnection self, string sql, params object[] parameters)
         {
             using (var c = self.CreateCommand())
