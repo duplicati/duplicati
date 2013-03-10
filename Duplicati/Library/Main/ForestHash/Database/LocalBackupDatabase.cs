@@ -43,6 +43,8 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private long m_falseBlockPositives = 0;
         private long m_falseFilePositives = 0;
 
+        private long m_missingBlockHashes;
+
         public LocalBackupDatabase(string path)
             : this(CreateConnection(path))
         {
@@ -136,7 +138,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_fileHashLookup = new HashPrefixLookup(FILE_HASH_LOOKUP_SIZE);
 
             using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"" FROM ""Block"""))
+            using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""State"" IN (?,?,?,?) ", RemoteVolumeState.Temporary, RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified))
                 while (rd.Read())
                     m_blockHashLookup.AddHash(Convert.FromBase64String(rd.GetValue(0).ToString()));
 
@@ -144,6 +146,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
             using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""FullHash"" FROM ""BlockSet"""))
                 while (rd.Read())
                     m_fileHashLookup.AddHash(Convert.FromBase64String(rd.GetValue(0).ToString()));
+
+            using (var cmd = m_connection.CreateCommand())
+                m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary, RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified));
 
         }
 
@@ -162,7 +167,14 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 m_findblockCommand.Transaction = transaction;
                 r = m_findblockCommand.ExecuteScalar(null, key, size);
                 if (r == null || r == DBNull.Value)
+                {
                     m_falseBlockPositives++;
+                }
+                else
+                {
+                    if (m_missingBlockHashes == 0)
+                        return false;
+                }
             }
 
             if (r == null || r == DBNull.Value)
@@ -177,6 +189,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
             else
             {
+                //If the block is found and the volume is broken somehow.
                 m_findremotevolumestateCommand.Transaction = transaction;
                 r = m_findremotevolumestateCommand.ExecuteScalar(null, r);
                 if (r != null && (r.ToString() == RemoteVolumeState.Temporary.ToString() || r.ToString() == RemoteVolumeState.Uploading.ToString() || r.ToString() == RemoteVolumeState.Uploaded.ToString() || r.ToString() == RemoteVolumeState.Verified.ToString()))
@@ -569,6 +582,17 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 m_stat.ModifiedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT * FROM ( (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS A, (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""BlocsetID"" != ? AND ""A"".""MetadataID"" != ""B"".""MetadataID"" )", m_operationid, lastOperationId, SYMLINK_BLOCKSET_ID));
                 m_stat.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT * FROM ( (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS A, (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""BlocsetID"" != ""B"".""BlocksetID"" OR ""A"".""MetadataID"" != ""B"".""MetadataID"") )", m_operationid, lastOperationId));
                  * */
+            }
+
+            if (m_falseBlockPositives > 200 || m_falseFilePositives > 20)
+            {
+                m_stat.LogWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_falseBlockPositives, m_falseFilePositives), null);
+
+                if (m_blockHashLookup.TableUsageRatio > 0.5)
+                    m_stat.LogWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashLookup.TableUsageRatio * 100), null);
+
+                if (m_fileHashLookup.TableUsageRatio > 0.5)
+                    m_stat.LogWarning(string.Format("File hash lookup table is too small, usage is: {0}%", m_fileHashLookup.TableUsageRatio * 100), null);
             }
         }
 
