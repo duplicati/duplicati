@@ -138,7 +138,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_fileHashLookup = new HashPrefixLookup(FILE_HASH_LOOKUP_SIZE);
 
             using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""State"" IN (?,?,?,?) ", RemoteVolumeState.Temporary, RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified))
+            using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""RemoteVolume"".""State"" IN (?,?,?,?) ", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()))
                 while (rd.Read())
                     m_blockHashLookup.AddHash(Convert.FromBase64String(rd.GetValue(0).ToString()));
 
@@ -148,7 +148,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                     m_fileHashLookup.AddHash(Convert.FromBase64String(rd.GetValue(0).ToString()));
 
             using (var cmd = m_connection.CreateCommand())
-                m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary, RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified));
+                m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""RemoteVolume"".""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()));
 
         }
 
@@ -387,8 +387,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         public long GetFileEntry(string path, out DateTime oldScanned)
         {
-            m_selectfileSimpleCommand.SetParameterValue(0, path);
-            using(var rd = m_selectfileSimpleCommand.ExecuteReader())
+            using(var rd = m_selectfileSimpleCommand.ExecuteReader(null, path))
                 if (rd.Read())
                 {
                     oldScanned =  Convert.ToDateTime(rd.GetValue(1));
