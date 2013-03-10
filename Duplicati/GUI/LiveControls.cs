@@ -168,11 +168,17 @@ namespace Duplicati.GUI
             m_waitTimer.Tick += new EventHandler(m_waitTimer_Tick);
             if (!string.IsNullOrEmpty(settings.StartupDelayDuration) && settings.StartupDelayDuration != "0")
             {
-                TimeSpan ts = Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration);
-                m_waitTimer.Interval = (int)ts.TotalMilliseconds;
-                m_waitTimer.Enabled = true;
-                m_waitTimeExpiration = DateTime.Now + ts;
-                m_state = LiveControlState.Paused;
+                long milliseconds = 0;
+                try { milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds; }
+                catch { }
+
+                if (milliseconds > 0)
+                {
+                    m_waitTimer.Interval = (int)milliseconds;
+                    m_waitTimer.Enabled = true;
+                    m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
+                    m_state = LiveControlState.Paused;
+                }
             }
 
             m_priority = settings.ThreadPriorityOverride;
