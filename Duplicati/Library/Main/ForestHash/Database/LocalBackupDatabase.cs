@@ -8,6 +8,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
 {
     public class LocalBackupDatabase : Localdatabase
     {
+        private const ulong BLOCK_HASH_LOOKUP_SIZE = 64 * 1024 * 1024;
+        private const ulong FILE_HASH_LOOKUP_SIZE = 16 * 1024 * 1024;
+
         private readonly System.Data.IDbCommand m_findblockCommand;
         private readonly System.Data.IDbCommand m_findblocksetCommand;
         private readonly System.Data.IDbCommand m_findfilesetCommand;
@@ -33,6 +36,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         private readonly System.Data.IDbCommand m_createremotevolumeCommand;
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
+
+        private HashPrefixLookup m_blockHashLookup;
+        private HashPrefixLookup m_fileHashLookup;
+
+        private long m_falseBlockPositives = 0;
+        private long m_falseFilePositives = 0;
 
         public LocalBackupDatabase(string path)
             : this(CreateConnection(path))
@@ -122,6 +131,20 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?)";
             m_createremotevolumeCommand.AddParameter(m_operationid);
             m_createremotevolumeCommand.AddParameters(3);
+
+            m_blockHashLookup = new HashPrefixLookup(BLOCK_HASH_LOOKUP_SIZE);
+            m_fileHashLookup = new HashPrefixLookup(FILE_HASH_LOOKUP_SIZE);
+
+            using (var cmd = m_connection.CreateCommand())
+            using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"" FROM ""Block"""))
+                while (rd.Read())
+                    m_blockHashLookup.AddHash(Convert.FromBase64String(rd.GetValue(0).ToString()));
+
+            using (var cmd = m_connection.CreateCommand())
+            using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""FullHash"" FROM ""BlockSet"""))
+                while (rd.Read())
+                    m_fileHashLookup.AddHash(Convert.FromBase64String(rd.GetValue(0).ToString()));
+
         }
 
         /// <summary>
@@ -132,9 +155,16 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// <returns>True if the block should be added to the current output</returns>
         public bool AddBlock(string key, long size, string archivename, System.Data.IDbTransaction transaction = null)
         {
-            //TODO: Should have some of this in local memory for fast lookup, the DB is a bit slow
-            m_findblockCommand.Transaction = transaction;
-            var r = m_findblockCommand.ExecuteScalar(null, key, size);
+            object r = null;
+            var hashdata = Convert.FromBase64String(key);
+            if (m_blockHashLookup.HashExists(hashdata))
+            {
+                m_findblockCommand.Transaction = transaction;
+                r = m_findblockCommand.ExecuteScalar(null, key, size);
+                if (r == null || r == DBNull.Value)
+                    m_falseBlockPositives++;
+            }
+
             if (r == null || r == DBNull.Value)
             {
                 m_insertblockCommand.Transaction = transaction;
@@ -142,6 +172,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 m_insertblockCommand.SetParameterValue(1, archivename);
                 m_insertblockCommand.SetParameterValue(2, size);
                 m_insertblockCommand.ExecuteNonQuery();
+                m_blockHashLookup.AddHash(hashdata);
                 return true;
             }
             else
@@ -175,9 +206,18 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// <returns>True if the blockset was created, false otherwise</returns>
         public bool AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, out long blocksetid, System.Data.IDbTransaction transaction = null)
         {
-            m_findblocksetCommand.Transaction = transaction;
-            object r = m_findblocksetCommand.ExecuteScalar(null, filehash, size);
-            if (r != null)
+            object r = null;
+            var hashdata = Convert.FromBase64String(filehash);
+
+            if (m_fileHashLookup.HashExists(hashdata))
+            {
+                m_findblocksetCommand.Transaction = transaction;
+                r = m_findblocksetCommand.ExecuteScalar(null, filehash, size);
+                if (r == null || r == DBNull.Value)
+                    m_falseFilePositives++;
+            }
+
+            if (r != null && r != DBNull.Value)
             {
                 blocksetid = Convert.ToInt64(r);
                 //TODO: Make a sweep to see if the blocks match the record?
@@ -188,6 +228,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             {
                 m_insertblocksetCommand.Transaction = tr.Parent;
                 blocksetid = Convert.ToInt64(m_insertblocksetCommand.ExecuteScalar(null, size, filehash));
+                m_fileHashLookup.AddHash(hashdata);
 
                 long ix = 0;
                 if (blocklistHashes != null)
