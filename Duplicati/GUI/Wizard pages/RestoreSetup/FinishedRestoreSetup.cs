@@ -185,7 +185,13 @@ namespace Duplicati.GUI.Wizard_pages.RestoreSetup
             //Make sure we have a startup delay, so a restart won't accidently wipe something
             bool settingsModified = false;
             Datamodel.ApplicationSettings appset = new Datamodel.ApplicationSettings(Program.DataConnection);
-            if (string.IsNullOrEmpty(appset.StartupDelayDuration) || Duplicati.Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration) < TimeSpan.FromMinutes(5))
+            TimeSpan startDelay = new TimeSpan(0);
+            if (!string.IsNullOrEmpty(appset.StartupDelayDuration))
+                try { startDelay = Duplicati.Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration); }
+                catch { }
+
+
+            if (startDelay < TimeSpan.FromMinutes(5))
             {
                 appset.StartupDelayDuration = "5m";
                 settingsModified = true;
