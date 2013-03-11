@@ -60,7 +60,13 @@ namespace WixProjBuilder
                     "Windows Installer XML v3.4",
                     "Windows Installer XML v3.5",
                     "Windows Installer XML v3.6",
-                    "Windows Installer XML v3.7"
+                    "Windows Installer XML v3.7",
+                    "Windows Installer XML v3.8",
+                    "Windows Installer XML v3.9",
+                    "WiX Toolset v3.6",
+                    "WiX Toolset v3.7",
+                    "WiX Toolset v3.8",
+                    "WiX Toolset v3.9",
                 };
 
                 foreach(var p in known_wix_names)
