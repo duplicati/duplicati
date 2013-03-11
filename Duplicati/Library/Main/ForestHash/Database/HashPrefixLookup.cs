@@ -29,27 +29,23 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// </summary>
         /// <param name="memorylimit">The maximum number of bytes to allocate for storage table</param>
         /// <param name="data">Data to prepoulate the table with</param>
-        public HashPrefixLookup(ulong memorylimit = MAX_MEMORY, IEnumerable<byte[]> data = null)
+        public HashPrefixLookup(ulong memorylimit = MAX_MEMORY)
         {
             m_bits = Math.Max(1024, memorylimit * 8);
 
             //Allocate as a large boolean/bit array
             m_lookup = new ulong[m_bits / 64];
-
-            if (data != null)
-                foreach (var d in data)
-                    AddHash(d);
         }
 
         /// <summary>
         /// Adds a hash to the table
         /// </summary>
         /// <param name="data">The bytes representing the hash</param>
-        public void AddHash(byte[] data)
+        public void AddHash(ulong data)
         {
             //Textbox hashing, the value modulo number of entries
             // works because the input is high quality random data
-            var bit = BitConverter.ToUInt64(data, 0) % m_bits;
+            var bit = data % m_bits;
             m_lookup[bit >> 6] |= 1uL << (ushort)(bit & 0x3f);
         }
 
@@ -59,11 +55,11 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// </summary>
         /// <param name="data">The bytes representing the hash</param>
         /// <returns>True if the hash was found, false otherwise</returns>
-        public bool HashExists(byte[] data)
+        public bool HashExists(ulong data)
         {
             //Textbox hashing, the value modulo number of entries
             // works because the input is high quality random data
-            var bit = BitConverter.ToUInt64(data, 0) % m_bits;
+            var bit = data % m_bits;
             return (m_lookup[bit >> 6] & (1uL << (ushort)(bit & 0x3f))) != 0;
         }
 
@@ -94,6 +90,103 @@ namespace Duplicati.Library.Main.ForestHash.Database
             {
                 return (this.BitsUsed / (double)m_bits);
             }
+        }
+
+        /// <summary>
+        /// Hex digit ASCII lookup table
+        /// </summary>
+        private static readonly byte[] HEXTB = new byte[128];
+
+        /// <summary>
+        /// Base64 digit ASCII lookup table
+        /// </summary>
+        private static readonly byte[] BAS64TB = new byte[128];
+
+        /// <summary>
+        /// Initializes the lookup
+        /// </summary>
+        static HashPrefixLookup()
+        {
+            for(byte i = 0; i < 10; i++)
+                HEXTB['0' + i] = i;
+
+            for (byte i = 0; i < 6; i++)
+            {
+                //Case insensitive support
+                HEXTB['A' + i] = (byte)(i + 10);
+                HEXTB['a' + i] = (byte)(i + 10);
+            }
+
+            for (byte i = 0; i < 26; i++)
+                BAS64TB['A' + i] = i;
+            for (byte i = 0; i < 26; i++)
+                BAS64TB['a' + i] = (byte)(i + 26);
+            for (byte i = 0; i < 10; i++)
+                BAS64TB['0' + i] = (byte)(i + 52);
+
+            BAS64TB['+'] = 62;
+            BAS64TB['/'] = 63;
+            
+            //Base64 URL support
+            BAS64TB['-'] = 62;
+            BAS64TB['_'] = 63;
+        }
+
+        /// <summary>
+        /// Debug help function to compare values
+        /// </summary>
+        /// <param name="value">The value to convert</param>
+        /// <returns>The converted value</returns>
+        public static ulong ConvertEndianness(ulong value)
+        {
+            return
+                ((value << 56) & 0xff00000000000000uL) |
+                ((value << 40) & 0x00ff000000000000uL) |
+                ((value << 24) & 0x0000ff0000000000uL) |
+                ((value << 8)  & 0x000000ff00000000uL) |
+                ((value >> 8)  & 0x00000000ff000000uL) |
+                ((value >> 24) & 0x0000000000ff0000uL) |
+                ((value >> 40) & 0x000000000000ff00uL) |
+                ((value >> 56) & 0x00000000000000ffuL);
+        }
+
+        //Faster internal hex decoder, assumes valid hex string of at least 16 chars and no extended chars
+        public static ulong DecodeHexHash(string hash)
+        {
+            return
+                (ulong)HEXTB[hash[0]] << 60 |
+                (ulong)HEXTB[hash[1]] << 56 |
+                (ulong)HEXTB[hash[2]] << 52 |
+                (ulong)HEXTB[hash[3]] << 48 |
+                (ulong)HEXTB[hash[4]] << 44 |
+                (ulong)HEXTB[hash[5]] << 40 |
+                (ulong)HEXTB[hash[6]] << 36 |
+                (ulong)HEXTB[hash[7]] << 32 |
+                (ulong)HEXTB[hash[8]] << 28 |
+                (ulong)HEXTB[hash[9]] << 24 |
+                (ulong)HEXTB[hash[10]] << 20 |
+                (ulong)HEXTB[hash[11]] << 16 |
+                (ulong)HEXTB[hash[12]] << 12 |
+                (ulong)HEXTB[hash[13]] << 8 |
+                (ulong)HEXTB[hash[14]] << 4 |
+                (ulong)HEXTB[hash[15]] << 0;
+        }
+
+        //Faster internal base64 decoder, assumes valid hex string of at least 11 chars and no extended chars
+        public static ulong DecodeBase64Hash(string hash)
+        {
+            return
+                (ulong)BAS64TB[hash[0]] << 58 |
+                (ulong)BAS64TB[hash[1]] << 52 |
+                (ulong)BAS64TB[hash[2]] << 46 |
+                (ulong)BAS64TB[hash[3]] << 40 |
+                (ulong)BAS64TB[hash[4]] << 34 |
+                (ulong)BAS64TB[hash[5]] << 28 |
+                (ulong)BAS64TB[hash[6]] << 22 |
+                (ulong)BAS64TB[hash[7]] << 16 |
+                (ulong)BAS64TB[hash[8]] << 10 |
+                (ulong)BAS64TB[hash[9]] << 4 |
+                (((ulong)BAS64TB[hash[10]] >> 2) & 0x0f);
         }
     }
 }

@@ -70,6 +70,8 @@
     <Compile Include="CompressionWrapper.cs" />
     <Compile Include="FilenameStrategy.cs" />
     <Compile Include="ForestHash\Database\AsyncDownloader.cs" />
+    <Compile Include="ForestHash\Database\HashLookup.cs" />
+    <Compile Include="ForestHash\Database\HashLookupWithData.cs" />
     <Compile Include="ForestHash\Database\HashPrefixLookup.cs" />
     <Compile Include="ForestHash\Database\ILocalFileEntry.cs" />
     <Compile Include="ForestHash\Database\IRemoteVolume.cs" />

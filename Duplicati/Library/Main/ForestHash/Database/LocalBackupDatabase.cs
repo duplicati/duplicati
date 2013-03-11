@@ -8,8 +8,18 @@ namespace Duplicati.Library.Main.ForestHash.Database
 {
     public class LocalBackupDatabase : Localdatabase
     {
+        /// <summary>
+        /// The amount of memory allocated to store block hashes in memory (will allocate twice this memory)
+        /// </summary>
         private const ulong BLOCK_HASH_LOOKUP_SIZE = 64 * 1024 * 1024;
+        /// <summary>
+        /// The amount of memory allocated to store file in memory (will allocate twice this memory)
+        /// </summary>
         private const ulong FILE_HASH_LOOKUP_SIZE = 16 * 1024 * 1024;
+        /// <summary>
+        /// An approximate size of a hash-string in memory (44 chars * 2 for unicode + 8 bytes for pointer = 104)
+        /// </summary>
+        private const uint HASH_GUESS_SIZE = 128;
 
         private readonly System.Data.IDbCommand m_findblockCommand;
         private readonly System.Data.IDbCommand m_findblocksetCommand;
@@ -37,13 +47,18 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private readonly System.Data.IDbCommand m_createremotevolumeCommand;
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
 
-        private HashPrefixLookup m_blockHashLookup;
-        private HashPrefixLookup m_fileHashLookup;
+        private HashPrefixLookup m_blockHashPrefixLookup;
+        private HashPrefixLookup m_fileHashPrefixLookup;
+        private HashLookup<string> m_blockHashFullLookup;
+        private HashLookupWithData<string, long> m_fileHashFullLookup;
 
         private long m_falseBlockPositives = 0;
         private long m_falseFilePositives = 0;
+        private long m_falseBlockNegatives = 0;
+        private long m_falseFileNegatives = 0;
 
         private long m_missingBlockHashes;
+        private string m_scantimelookupTablename;
 
         public LocalBackupDatabase(string path)
             : this(CreateConnection(path))
@@ -62,7 +77,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertblockCommand = m_connection.CreateCommand();
             m_insertfileCommand = m_connection.CreateCommand();
             m_insertblocksetCommand = m_connection.CreateCommand();
-            //m_selectfileCommand = m_connection.CreateCommand();
             m_insertmetadatasetCommand = m_connection.CreateCommand();
             m_findblocksetCommand = m_connection.CreateCommand();
             m_findmetadatasetCommand = m_connection.CreateCommand();
@@ -115,7 +129,13 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertmetadatasetCommand.CommandText = @"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (?); SELECT last_insert_rowid();";
             m_insertmetadatasetCommand.AddParameter();
 
-            m_selectfileSimpleCommand.CommandText = @"SELECT ""OperationFileset"".""FilesetID"", ""OperationFileset"".""Scantime"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""Fileset"".""Path"" = ? ORDER BY ""OperationFileset"".""Scantime"" DESC";
+            //Need a temporary table with path/scantime lookups
+            m_scantimelookupTablename = "ScanTime-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            using (var cmd = m_connection.CreateCommand())
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""OperationFileset"".""FilesetID"" AS ""FilesetID"", MAX(""OperationFileset"".""Scantime"") AS ""Scantime"", ""Fileset"".""Path"" AS ""Path"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" GROUP BY ""FilesetID"", ""Path"" ", m_scantimelookupTablename));
+
+            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FilesetID"", ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
+            //m_selectfileSimpleCommand.CommandText = @"SELECT ""OperationFileset"".""FilesetID"", ""OperationFileset"".""Scantime"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""Fileset"".""Path"" = ? ORDER BY ""OperationFileset"".""Scantime"" DESC";
             m_selectfileSimpleCommand.AddParameters(1);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"" INNER JOIN ""Fileset"" ON ""Blockset"".""ID"" = ""Fileset"".""BlocksetID"" WHERE ""Fileset"".""ID"" = ?  ";
@@ -134,18 +154,32 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_createremotevolumeCommand.AddParameter(m_operationid);
             m_createremotevolumeCommand.AddParameters(3);
 
-            m_blockHashLookup = new HashPrefixLookup(BLOCK_HASH_LOOKUP_SIZE);
-            m_fileHashLookup = new HashPrefixLookup(FILE_HASH_LOOKUP_SIZE);
+            m_blockHashPrefixLookup = new HashPrefixLookup(BLOCK_HASH_LOOKUP_SIZE);
+            m_fileHashPrefixLookup = new HashPrefixLookup(FILE_HASH_LOOKUP_SIZE);
+
+            m_blockHashFullLookup = new HashLookup<string>(HASH_GUESS_SIZE, BLOCK_HASH_LOOKUP_SIZE);
+            m_fileHashFullLookup = new HashLookupWithData<string, long>(HASH_GUESS_SIZE, FILE_HASH_LOOKUP_SIZE);
 
             using (var cmd = m_connection.CreateCommand())
             using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""RemoteVolume"".""State"" IN (?,?,?,?) ", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()))
                 while (rd.Read())
-                    m_blockHashLookup.AddHash(Convert.FromBase64String(rd.GetValue(0).ToString()));
+                {
+                    var str = rd.GetValue(0).ToString();
+                    var key = HashPrefixLookup.DecodeBase64Hash(str);
+                    m_blockHashPrefixLookup.AddHash(key);
+                    m_blockHashFullLookup.AddHash(key, str);
+                }
 
             using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""FullHash"" FROM ""BlockSet"""))
+            using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""FullHash"", ""ID"" FROM ""BlockSet"""))
                 while (rd.Read())
-                    m_fileHashLookup.AddHash(Convert.FromBase64String(rd.GetValue(0).ToString()));
+                {
+                    var str = rd.GetValue(0).ToString();
+                    var id = Convert.ToInt64(rd.GetValue(1));
+                    var key = HashPrefixLookup.DecodeBase64Hash(str);
+                    m_fileHashPrefixLookup.AddHash(key);
+                    m_fileHashFullLookup.AddHash(key, str, id);
+                }
 
             using (var cmd = m_connection.CreateCommand())
                 m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""RemoteVolume"".""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()));
@@ -161,9 +195,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public bool AddBlock(string key, long size, string archivename, System.Data.IDbTransaction transaction = null)
         {
             object r = null;
-            var hashdata = Convert.FromBase64String(key);
-            if (m_blockHashLookup.HashExists(hashdata))
+            var hashdata = HashPrefixLookup.DecodeBase64Hash(key);
+            if (m_blockHashPrefixLookup.HashExists(hashdata))
             {
+                if (m_missingBlockHashes == 0 && m_blockHashFullLookup.HashExists(hashdata, key))
+                    return false;
+
                 m_findblockCommand.Transaction = transaction;
                 r = m_findblockCommand.ExecuteScalar(null, key, size);
                 if (r == null || r == DBNull.Value)
@@ -172,8 +209,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 }
                 else
                 {
+                    m_falseBlockNegatives++;
                     if (m_missingBlockHashes == 0)
+                    {
+                        m_blockHashFullLookup.AddHash(hashdata, key);
                         return false;
+                    }
                 }
             }
 
@@ -184,11 +225,15 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 m_insertblockCommand.SetParameterValue(1, archivename);
                 m_insertblockCommand.SetParameterValue(2, size);
                 m_insertblockCommand.ExecuteNonQuery();
-                m_blockHashLookup.AddHash(hashdata);
+                m_blockHashPrefixLookup.AddHash(hashdata);
+                m_blockHashFullLookup.AddHash(hashdata, key);
                 return true;
             }
             else
             {
+                //We add/update it now
+                m_blockHashFullLookup.AddHash(hashdata, key);
+
                 //If the block is found and the volume is broken somehow.
                 m_findremotevolumestateCommand.Transaction = transaction;
                 r = m_findremotevolumestateCommand.ExecuteScalar(null, r);
@@ -220,20 +265,24 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public bool AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, out long blocksetid, System.Data.IDbTransaction transaction = null)
         {
             object r = null;
-            var hashdata = Convert.FromBase64String(filehash);
-
-            if (m_fileHashLookup.HashExists(hashdata))
+            var hashdata = HashPrefixLookup.DecodeBase64Hash(filehash);
+            if (m_fileHashPrefixLookup.HashExists(hashdata))
             {
+                if (m_fileHashFullLookup.HashExists(hashdata, filehash, out blocksetid))
+                    return false;
+
                 m_findblocksetCommand.Transaction = transaction;
                 r = m_findblocksetCommand.ExecuteScalar(null, filehash, size);
                 if (r == null || r == DBNull.Value)
                     m_falseFilePositives++;
+                else
+                    m_falseFileNegatives++;
             }
 
             if (r != null && r != DBNull.Value)
             {
                 blocksetid = Convert.ToInt64(r);
-                //TODO: Make a sweep to see if the blocks match the record?
+                m_fileHashFullLookup.AddHash(hashdata, filehash, blocksetid);
                 return false;
             }
 
@@ -241,7 +290,8 @@ namespace Duplicati.Library.Main.ForestHash.Database
             {
                 m_insertblocksetCommand.Transaction = tr.Parent;
                 blocksetid = Convert.ToInt64(m_insertblocksetCommand.ExecuteScalar(null, size, filehash));
-                m_fileHashLookup.AddHash(hashdata);
+                m_fileHashPrefixLookup.AddHash(hashdata);
+                m_fileHashFullLookup.AddHash(hashdata, filehash, blocksetid);
 
                 long ix = 0;
                 if (blocklistHashes != null)
@@ -555,6 +605,22 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
         }
 
+        public override void Dispose ()
+        {
+            if (m_scantimelookupTablename != null)
+                try 
+                { 
+                    using(var cmd = m_connection.CreateCommand())
+                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_scantimelookupTablename));
+                }
+                finally
+                {
+                    m_scantimelookupTablename = null;
+                }
+
+            base.Dispose();
+        }
+
         internal void UpdateChangeStatistics (BackupStatistics m_stat)
         {
             using (var cmd = m_connection.CreateCommand()) 
@@ -576,22 +642,26 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 m_stat.ModifiedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" = ? AND ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, m_operationid));
                 m_stat.ModifiedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" = ? AND ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, SYMLINK_BLOCKSET_ID, m_operationid));
                 m_stat.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" != ? AND ""Fileset"".""BlocksetID"" != ? AND ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, m_operationid));
-
-                /*m_stat.ModifiedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT * FROM ( (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS A, (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""BlocsetID"" != ? AND ""A"".""MetadataID"" != ""B"".""MetadataID"" )", m_operationid, lastOperationId, FOLDER_BLOCKSET_ID));
-                m_stat.ModifiedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT * FROM ( (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS A, (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""BlocsetID"" != ? AND ""A"".""MetadataID"" != ""B"".""MetadataID"" )", m_operationid, lastOperationId, SYMLINK_BLOCKSET_ID));
-                m_stat.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT * FROM ( (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS A, (SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""Fileset"".""ID"" WHERE ""OperationID"" = ?) AS B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""BlocsetID"" != ""B"".""BlocksetID"" OR ""A"".""MetadataID"" != ""B"".""MetadataID"") )", m_operationid, lastOperationId));
-                 * */
             }
 
             if (m_falseBlockPositives > 200 || m_falseFilePositives > 20)
             {
                 m_stat.LogWarning(string.Format("Lookup tables gave false positives, this may indicate too small tables. Block: {0}, File: {0}", m_falseBlockPositives, m_falseFilePositives), null);
 
-                if (m_blockHashLookup.TableUsageRatio > 0.5)
-                    m_stat.LogWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashLookup.TableUsageRatio * 100), null);
+                if (m_blockHashPrefixLookup.TableUsageRatio > 0.5)
+                    m_stat.LogWarning(string.Format("Block hash lookup table is too small, usage is: {0}%", m_blockHashPrefixLookup.TableUsageRatio * 100), null);
 
-                if (m_fileHashLookup.TableUsageRatio > 0.5)
-                    m_stat.LogWarning(string.Format("File hash lookup table is too small, usage is: {0}%", m_fileHashLookup.TableUsageRatio * 100), null);
+                if (m_fileHashPrefixLookup.TableUsageRatio > 0.5)
+                    m_stat.LogWarning(string.Format("File hash lookup table is too small, usage is: {0}%", m_fileHashPrefixLookup.TableUsageRatio * 100), null);
+            }
+
+            // Good for profiling, but takes some time to calculate these stats
+            if (Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
+            {
+                Logging.Log.WriteMessage(string.Format("Prefix BlockHash Lookup entries {0}, usage: {1}, falsePositives: {2}", m_blockHashPrefixLookup.BitsUsed, m_blockHashPrefixLookup.TableUsageRatio, m_falseBlockPositives), Logging.LogMessageType.Profiling);
+                Logging.Log.WriteMessage(string.Format("Prefix BlockHash Lookup entries {0}, usage: {1}, falsePositives: {2}", m_fileHashPrefixLookup.BitsUsed, m_fileHashPrefixLookup.TableUsageRatio, m_falseFilePositives), Logging.LogMessageType.Profiling);
+                Logging.Log.WriteMessage(string.Format("Full BlockHash Lookup entries {0}, usage: {1}, falseNegatives: {2}", m_blockHashFullLookup.Entries, m_blockHashFullLookup.TableUsageRatio, m_falseBlockNegatives), Logging.LogMessageType.Profiling);
+                Logging.Log.WriteMessage(string.Format("Full FileHash Lookup entries {0}, usage: {1}, falseNegatives: {2}", m_fileHashFullLookup.Entries, m_fileHashFullLookup.TableUsageRatio, m_falseFileNegatives), Logging.LogMessageType.Profiling);
             }
         }
 
