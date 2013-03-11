@@ -9,14 +9,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
     public class LocalBackupDatabase : Localdatabase
     {
         /// <summary>
-        /// The amount of memory allocated to store block hashes in memory (will allocate twice this memory)
-        /// </summary>
-        private const ulong BLOCK_HASH_LOOKUP_SIZE = 64 * 1024 * 1024;
-        /// <summary>
-        /// The amount of memory allocated to store file in memory (will allocate twice this memory)
-        /// </summary>
-        private const ulong FILE_HASH_LOOKUP_SIZE = 16 * 1024 * 1024;
-        /// <summary>
         /// An approximate size of a hash-string in memory (44 chars * 2 for unicode + 8 bytes for pointer = 104)
         /// </summary>
         private const uint HASH_GUESS_SIZE = 128;
@@ -60,17 +52,17 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private long m_missingBlockHashes;
         private string m_scantimelookupTablename;
 
-        public LocalBackupDatabase(string path)
-            : this(CreateConnection(path))
+        public LocalBackupDatabase(string path, FhOptions options)
+            : this(CreateConnection(path), options)
         {
         }
 
-        public LocalBackupDatabase(LocalRestoredatabase connection)
-            : this(connection.Connection)
+        public LocalBackupDatabase(LocalRestoredatabase connection, FhOptions options)
+            : this(connection.Connection, options)
         {
         }
 
-        public LocalBackupDatabase(System.Data.IDbConnection connection)
+        public LocalBackupDatabase(System.Data.IDbConnection connection, FhOptions options)
             : base(connection, "Backup")
         {
             m_findblockCommand = m_connection.CreateCommand();
@@ -135,7 +127,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""OperationFileset"".""FilesetID"" AS ""FilesetID"", MAX(""OperationFileset"".""Scantime"") AS ""Scantime"", ""Fileset"".""Path"" AS ""Path"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" GROUP BY ""FilesetID"", ""Path"" ", m_scantimelookupTablename));
 
             m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FilesetID"", ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
-            //m_selectfileSimpleCommand.CommandText = @"SELECT ""OperationFileset"".""FilesetID"", ""OperationFileset"".""Scantime"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""Fileset"".""Path"" = ? ORDER BY ""OperationFileset"".""Scantime"" DESC";
             m_selectfileSimpleCommand.AddParameters(1);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"" INNER JOIN ""Fileset"" ON ""Blockset"".""ID"" = ""Fileset"".""BlocksetID"" WHERE ""Fileset"".""ID"" = ?  ";
@@ -154,11 +145,11 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_createremotevolumeCommand.AddParameter(m_operationid);
             m_createremotevolumeCommand.AddParameters(3);
 
-            m_blockHashPrefixLookup = new HashPrefixLookup(BLOCK_HASH_LOOKUP_SIZE);
-            m_fileHashPrefixLookup = new HashPrefixLookup(FILE_HASH_LOOKUP_SIZE);
+            m_blockHashPrefixLookup = new HashPrefixLookup((ulong)options.FhBlockHashSize / 2);
+            m_fileHashPrefixLookup = new HashPrefixLookup((ulong)options.FhFileHashSize / 2);
 
-            m_blockHashFullLookup = new HashLookup<string>(HASH_GUESS_SIZE, BLOCK_HASH_LOOKUP_SIZE);
-            m_fileHashFullLookup = new HashLookupWithData<string, long>(HASH_GUESS_SIZE, FILE_HASH_LOOKUP_SIZE);
+            m_blockHashFullLookup = new HashLookup<string>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashSize / 2);
+            m_fileHashFullLookup = new HashLookupWithData<string, long>(HASH_GUESS_SIZE, (ulong)options.FhFileHashSize / 2);
 
             using (var cmd = m_connection.CreateCommand())
             using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""RemoteVolume"".""State"" IN (?,?,?,?) ", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()))

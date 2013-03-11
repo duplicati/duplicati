@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 if (filelistfilter != null)
                     filelists = filelistfilter(filelists);
 
-                using (var backupdb = new LocalBackupDatabase(restoredb))
+                using (var backupdb = new LocalBackupDatabase(restoredb, m_options))
                 {
                     foreach (var fl in remotefiles)
                         backupdb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);

@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="FhblockhashlookupsizeLong" xml:space="preserve">
+    <value>A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log.</value>
+  </data>
+  <data name="FhblockhashlookupsizeShort" xml:space="preserve">
+    <value>Memory used by the block hash</value>
+  </data>
   <data name="FhblocksizeLong" xml:space="preserve">
     <value>The blocksize determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created.</value>
   </data>
@@ -128,6 +134,12 @@
   </data>
   <data name="FhdbpathShort" xml:space="preserve">
     <value>Path to the local state database</value>
+  </data>
+  <data name="FhfilehashlookupsizeLong" xml:space="preserve">
+    <value>A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log.</value>
+  </data>
+  <data name="FhfilehashlookupsizeShort" xml:space="preserve">
+    <value>Memory used by the file hash</value>
   </data>
   <data name="FhnometadataLong" xml:space="preserve">
     <value>Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time.</value>

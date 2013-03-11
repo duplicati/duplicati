@@ -61,6 +61,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
+        /// </summary>
+        internal static string FhblockhashlookupsizeLong {
+            get {
+                return ResourceManager.GetString("FhblockhashlookupsizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Memory used by the block hash.
+        /// </summary>
+        internal static string FhblockhashlookupsizeShort {
+            get {
+                return ResourceManager.GetString("FhblockhashlookupsizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The blocksize determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created..
         /// </summary>
         internal static string FhblocksizeLong {
@@ -93,6 +111,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string FhdbpathShort {
             get {
                 return ResourceManager.GetString("FhdbpathShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
+        /// </summary>
+        internal static string FhfilehashlookupsizeLong {
+            get {
+                return ResourceManager.GetString("FhfilehashlookupsizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Memory used by the file hash.
+        /// </summary>
+        internal static string FhfilehashlookupsizeShort {
+            get {
+                return ResourceManager.GetString("FhfilehashlookupsizeShort", resourceCulture);
             }
         }
         

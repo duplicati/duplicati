@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         {
             m_options = options;
             m_stat = stat;
-            m_database = new LocalBackupDatabase(m_options.Fhdbpath);
+            m_database = new LocalBackupDatabase(m_options.Fhdbpath, m_options);
             m_backend = new FhBackend(backendurl, options, m_database, m_stat);
 
             m_sources = sources;

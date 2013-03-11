@@ -8,6 +8,9 @@ namespace Duplicati.Library.Main.ForestHash
 {
     public class FhOptions : Options
     {
+        private const string DEFAULT_BLOCK_HASH_LOOKUP_SIZE = "64mb";
+        private const string DEFAULT_FILE_HASH_LOOKUP_SIZE = "32mb";
+
         /// <summary>
         /// The default block size for Foresthash
         /// </summary>
@@ -30,6 +33,8 @@ namespace Duplicati.Library.Main.ForestHash
                     new CommandLineArgument("fh-dbpath", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdbpathShort, Strings.FhOptions.FhdbpathLong),
                     new CommandLineArgument("fh-blocksize", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblocksizeShort, Strings.FhOptions.FhblocksizeLong, DEFAULT_FH_BLOCKSIZE),
                     new CommandLineArgument("fh-nometadata", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnometadataShort, Strings.FhOptions.FhnometadataLong, "false"),
+                    new CommandLineArgument("fh-blockhash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblockhashlookupsizeShort, Strings.FhOptions.FhblockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
+                    new CommandLineArgument("fh-filehash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilehashlookupsizeShort, Strings.FhOptions.FhfilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
 #if DEBUG
                     new CommandLineArgument("fh-no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
                     new CommandLineArgument("fh-no-local-db", CommandLineArgument.ArgumentType.Boolean, "Prevents using local database for restore", "", "false"),
@@ -78,6 +83,37 @@ namespace Duplicati.Library.Main.ForestHash
             get { return Utility.Utility.ParseBoolOption(m_options, "fh-nometadata"); }
         }
 
+        /// <summary>
+        /// Gets the block hash size
+        /// </summary>
+        public long FhBlockHashSize
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("fh-blockhash-lookup-size", out v);
+                if (string.IsNullOrEmpty(v))
+                    v = DEFAULT_BLOCK_HASH_LOOKUP_SIZE;
+
+                return Utility.Sizeparser.ParseSize(v, "mb");
+            }
+        }
+
+        /// <summary>
+        /// Gets the file hash size
+        /// </summary>
+        public long FhFileHashSize
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("fh-filehash-lookup-size", out v);
+                if (string.IsNullOrEmpty(v))
+                    v = DEFAULT_FILE_HASH_LOOKUP_SIZE;
+
+                return Utility.Sizeparser.ParseSize(v, "mb");
+            }
+        }
 #if DEBUG
         public bool NoLocalBlocks
         {
