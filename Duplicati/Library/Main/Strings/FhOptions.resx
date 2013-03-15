@@ -141,6 +141,12 @@
   <data name="FhfilehashlookupsizeShort" xml:space="preserve">
     <value>Memory used by the file hash</value>
   </data>
+  <data name="FhfilepathlookupsizeLong" xml:space="preserve">
+    <value>This option can be used to speed up backup operations by keeping scantimes and other path related data in memory</value>
+  </data>
+  <data name="FhfilepathlookupsizeShort" xml:space="preserve">
+    <value>Memory used to keep paths cached</value>
+  </data>
   <data name="FhnometadataLong" xml:space="preserve">
     <value>Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time.</value>
   </data>

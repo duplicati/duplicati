@@ -35,6 +35,7 @@ namespace Duplicati.Library.Main.ForestHash
                     new CommandLineArgument("fh-nometadata", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnometadataShort, Strings.FhOptions.FhnometadataLong, "false"),
                     new CommandLineArgument("fh-blockhash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblockhashlookupsizeShort, Strings.FhOptions.FhblockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("fh-filehash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilehashlookupsizeShort, Strings.FhOptions.FhfilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
+                    new CommandLineArgument("fh-filepath-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilepathlookupsizeShort, Strings.FhOptions.FhfilepathlookupsizeLong, "0"),
 #if DEBUG
                     new CommandLineArgument("fh-no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
                     new CommandLineArgument("fh-no-local-db", CommandLineArgument.ArgumentType.Boolean, "Prevents using local database for restore", "", "false"),
@@ -114,6 +115,23 @@ namespace Duplicati.Library.Main.ForestHash
                 return Utility.Sizeparser.ParseSize(v, "mb");
             }
         }
+
+        /// <summary>
+        /// Gets the file hash size
+        /// </summary>
+        public long FhFilePathSize
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("fh-filepath-lookup-size", out v);
+                if (string.IsNullOrEmpty(v))
+                    return 0;
+
+                return Utility.Sizeparser.ParseSize(v, "mb");
+            }
+        }
+
 #if DEBUG
         public bool NoLocalBlocks
         {

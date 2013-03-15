@@ -133,6 +133,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option can be used to speed up backup operations by keeping scantimes and other path related data in memory.
+        /// </summary>
+        internal static string FhfilepathlookupsizeLong {
+            get {
+                return ResourceManager.GetString("FhfilepathlookupsizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Memory used to keep paths cached.
+        /// </summary>
+        internal static string FhfilepathlookupsizeShort {
+            get {
+                return ResourceManager.GetString("FhfilepathlookupsizeShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time..
         /// </summary>
         internal static string FhnometadataLong {
