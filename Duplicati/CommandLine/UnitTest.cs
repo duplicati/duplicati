@@ -94,7 +94,19 @@ namespace Duplicati.CommandLine
             //Filter empty entries, commonly occuring with copy/paste and newlines
             folders = (from x in folders 
                       where !string.IsNullOrWhiteSpace(x)
-                      select x).ToArray();
+                      select Environment.ExpandEnvironmentVariables(x)).ToArray();
+
+            //Expand the tilde to home folder on Linux/OSX
+            if (Utility.IsClientLinux)
+                folders = (from x in folders
+                            select x.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.Personal))).ToArray();
+
+            foreach(var f in folders)
+                foreach(var n in f.Split(new char[] {System.IO.Path.PathSeparator}, StringSplitOptions.RemoveEmptyEntries))
+                    if (!System.IO.Directory.Exists(n))
+                        throw new Exception(string.Format("Missing source folder: {0}", n));
+
+            var usingFH = options.ContainsKey("fh-dbpath");
 
             try
             {
@@ -137,21 +149,7 @@ namespace Duplicati.CommandLine
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
-                //The code below tests for a race condition in the ssh backend.
-                /*string[] list = null;
-                string[] prevList = null;
-
-                for (int i = 0; i < 1000; i++)
-                {
-                    Console.WriteLine(string.Format("Listing, test {0}", i));
-                    list = Duplicati.Library.Main.Interface.List(target, options);
-                    if (i != 0 && list.Length != prevList.Length)
-                        Console.WriteLine(string.Format("Count mismatch {0} vs {1}", list.Length, prevList.Length));
-
-                    prevList = list;
-                }*/
-
-                if (options.ContainsKey("fh-dbpath"))
+                if (usingFH)
                 {
                     options["fh-dbpath"] = System.IO.Path.Combine(tempdir, "fh-unittest.sqlite");
                     if (System.IO.File.Exists(options["fh-dbpath"]))
@@ -175,21 +173,39 @@ namespace Duplicati.CommandLine
                 }
 
                 log.Backupset = "Backup " + folders[0];
+                string fhtempsource = null;
 
-                options["full"] = "";
-                RunBackup(folders[0], target, options);
-                options.Remove("full");
-
-                for (int i = 1; i < folders.Length; i++)
+                using(var fhsourcefolder = usingFH ? new Library.Utility.TempFolder() : null)
                 {
-                    //options["passphrase"] = "bad password";
-                    //If the backups are too close, we can't pick the right one :(
-                    System.Threading.Thread.Sleep(1000 * 5);
-                    log.Backupset = "Backup " + folders[i];
-
-                    //Call function to simplify profiling
-                    RunBackup(folders[i], target, options);
+                    if (usingFH)
+                        fhtempsource = fhsourcefolder;
+                    
+                    if (usingFH)
+                        CopyDirectoryRecursive(folders[0], fhsourcefolder);
+                    
+                    options["full"] = "";                        
+                    RunBackup(usingFH ? (string)fhsourcefolder : folders[0], target, options, folders[0]);
+                    options.Remove("full");
+    
+                    for (int i = 1; i < folders.Length; i++)
+                    {
+                        //options["passphrase"] = "bad password";
+                        //If the backups are too close, we can't pick the right one :(
+                        System.Threading.Thread.Sleep(1000 * 5);
+                        log.Backupset = "Backup " + folders[i];
+    
+                        if (usingFH)
+                        {
+                            System.IO.Directory.Delete(fhsourcefolder, true);
+                            CopyDirectoryRecursive(folders[i], fhsourcefolder);
+                        }
+                        
+                        //Call function to simplify profiling
+                        RunBackup(usingFH ? (string)fhsourcefolder : folders[i], target, options, folders[i]);
+                    }
                 }
+
+                return;
 
                 Duplicati.Library.Main.Options opts = new Duplicati.Library.Main.Options(options);
                 using (Duplicati.Library.Interface.IBackend bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
@@ -202,7 +218,7 @@ namespace Duplicati.CommandLine
                         }
 
                 IList<DateTime> entries;
-                if (options.ContainsKey("fh-dbpath"))
+                if (usingFH)
                 {
                     entries = new List<DateTime>();
                     foreach (var el in Duplicati.Library.Main.Interface.ParseFhFileList(target, options, null))
@@ -302,12 +318,12 @@ namespace Duplicati.CommandLine
                             {
                                 string f = testfiles[j];
 
-                                if (options.ContainsKey("fh-dbpath"))
+                                if (usingFH)
                                 {
-                                    if (!f.StartsWith(folders[i], Utility.ClientFilenameStringComparision))
+                                    if (!f.StartsWith(fhtempsource, Utility.ClientFilenameStringComparision))
                                         throw new Exception(string.Format("Unexpected file found: {0}, path is not a subfolder for {1}", f, folders[i]));
 
-                                    f = f.Substring(Utility.AppendDirSeparator(folders[i]).Length);
+                                    f = f.Substring(Utility.AppendDirSeparator(fhtempsource).Length);
                                 }
 
                                 do
@@ -325,18 +341,22 @@ namespace Duplicati.CommandLine
                             Dictionary<string, string> tops = new Dictionary<string,string>(options);
                             List<string> filterlist;
 
-                            if (options.ContainsKey("fh-dbpath"))
+                            if (usingFH)
                             {
+                                var tfe = Utility.AppendDirSeparator(fhtempsource);
+                                
                                 //We need a minor tweak here because the two models
                                 // use releative vs. absolute paths
                                 filterlist = (from n in partialFolders.Keys
                                               where !string.IsNullOrWhiteSpace(n) && n != System.IO.Path.DirectorySeparatorChar.ToString()
-                                              select Utility.AppendDirSeparator(System.IO.Path.Combine(folders[i], n)))
+                                              select Utility.AppendDirSeparator(System.IO.Path.Combine(tfe, n)))
                                               .Union(testfiles) //Add files with full path
-                                              .Union(new string[] { Utility.AppendDirSeparator(folders[i]) }) //Ensure root folder is included
-                                              .Distinct().ToList();
+                                              .Union(new string[] { tfe }) //Ensure root folder is included
+                                              .Distinct()
+                                              .ToList();
 
-                                testfiles = (from n in testfiles select n.Substring(Utility.AppendDirSeparator(folders[i]).Length)).ToList();
+                                testfiles = (from n in testfiles select n.Substring(tfe.Length)).ToList();
+                                
                             }
                             else
                             {
@@ -422,10 +442,10 @@ namespace Duplicati.CommandLine
             }
         }
 
-        private static void RunBackup(string source, string target, Dictionary<string, string> options)
+        private static void RunBackup(string source, string target, Dictionary<string, string> options, string sourcename)
         {
-            Console.WriteLine("Backing up the " + (Library.Utility.Utility.ParseBoolOption(options, "full") ? "full" : "incremental") + "  copy: " + source);
-            using (new Timer((Library.Utility.Utility.ParseBoolOption(options, "full") ? "Full" : "Incremental") + " backup of " + source))
+            Console.WriteLine("Backing up the " + (Library.Utility.Utility.ParseBoolOption(options, "full") ? "full" : "incremental") + "  copy: " + sourcename);
+            using (new Timer((Library.Utility.Utility.ParseBoolOption(options, "full") ? "Full" : "Incremental") + " backup of " + sourcename))
                 Log.WriteMessage(Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options), LogMessageType.Information);
         }
 
@@ -552,6 +572,23 @@ namespace Duplicati.CommandLine
 
             return true;
         }
+        
+        /// <summary>
+        /// Recursively copy a directory to another location.
+        /// </summary>
+        /// <param name="source">Source directory path</param>
+        /// <param name="dest">Destination directory path</param>
+        private static void CopyDirectoryRecursive(string source, string dest)
+        {
+            if (!System.IO.Directory.Exists(dest))
+                System.IO.Directory.CreateDirectory(dest);
+            
+            foreach (var file in System.IO.Directory.GetFiles(source))
+                System.IO.File.Copy(file, System.IO.Path.Combine(dest, System.IO.Path.GetFileName(file)), false);
+            
+            foreach (var folder in System.IO.Directory.GetDirectories(source))
+                CopyDirectoryRecursive(folder, System.IO.Path.Combine(dest, System.IO.Path.GetFileName(folder)));
+        }        
     }
 }
 
