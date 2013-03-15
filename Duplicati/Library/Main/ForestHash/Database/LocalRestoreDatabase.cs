@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_blocksize = blocksize;
         }
 
-        public void PrepareRestoreFilelist(DateTime restoretime, string[] p, Utility.FilenameFilter filenameFilter)
+        public void PrepareRestoreFilelist(DateTime restoretime, string[] p, Utility.FilenameFilter filenameFilter, CommunicationStatistics stat)
         {
             var guid = Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -50,22 +50,44 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 }
                 else if (p != null && p.Length > 0)
                 {
-                    // Restore files in list
-                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""Fileset"", ""OperationFileset"" WHERE ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" AND ""OperationID"" = ? AND ""Path"" = ? ", m_tempfiletable);
-                    cmd.AddParameter(operationID);
-                    cmd.AddParameter();
-
-                    //TODO: Actually faster to just create a temp table with files, 
-                    // and then using a select to create the temporary table
-                    // but there should be some way to report if filenames
-                    // are not found
-
-                    foreach (var s in p)
+                    using(var tr = m_connection.BeginTransaction())
                     {
-                        cmd.SetParameterValue(1, s);
+                        var m_filenamestable = "Filenames-" + guid;
+                        cmd.Transaction = tr;
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", m_filenamestable);
+                        cmd.AddParameter();
+                        
+                        foreach (var s in p)
+                        {
+                            cmd.SetParameterValue(0, s);
+                            cmd.ExecuteNonQuery();
+                        }
+                        
+                        //TODO: Handle case-insensitive filename lookup
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""Fileset"", ""OperationFileset"" WHERE ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" AND ""OperationID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
+                        cmd.SetParameterValue(0, operationID);
                         var c = cmd.ExecuteNonQuery();
-                        if (c != 1)
-                            throw new Exception("Failed to insert file into temp table");
+                        
+                        cmd.Parameters.Clear();
+                        
+                        if (c != p.Length)
+                        {
+                            var sb = new StringBuilder();
+                            sb.AppendLine();
+                            
+                            using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""Path"" FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{1}"")", m_filenamestable, m_tempfiletable)))
+                                while(rd.Read())
+                                    sb.AppendLine(rd.GetValue(0).ToString());
+
+                            DateTime actualrestoretime = Convert.ToDateTime(cmd.ExecuteScalar(@"SELECT ""Timestamp"" FROM ""Operation"" WHERE ""ID"" = ?", operationID));
+                            stat.LogWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
+                            cmd.Parameters.Clear();
+                        }
+                        
+                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_filenamestable));
+                        
+                        tr.Commit();
                     }
                 }
                 else
