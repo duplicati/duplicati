@@ -61,38 +61,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 c = cmd.ExecuteNonQuery(null, (m_blocksize / hashsize), hash);
                 if (c == 0 || c % ix != 0)
                     throw new Exception(string.Format("Wrong number of inserts, got {0} records from {1} hashes!", c, ix));
-
-                /*cmd.CommandText = @"SELECT ""Index"", ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" = ?";
-                long index;
-                long id;
-                using (var rd = cmd.ExecuteReader())
-                {
-                    if (!rd.Read())
-                        throw new Exception(string.Format("No blocklisthashes for entry \"{0}\"", hash));
-
-
-                    index = Convert.ToInt64(rd.GetValue(0));
-                    id = Convert.ToInt64(rd.GetValue(1));
-
-                    if (rd.Read())
-                        throw new Exception("Multiple matches!");
-                }
-
-                var ix = index * (m_blocksize / hashsize);
-                cmd.CommandText = @"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT ?, ?, ""ID"" FROM ""Block"" WHERE ""Hash"" = ?";
-                cmd.SetParameterValue(0, id);
-                cmd.AddParameters(2);
-
-                foreach (var h in hashes)
-                {
-                    cmd.SetParameterValue(1, ix);
-                    cmd.SetParameterValue(2, h);
-                    c = cmd.ExecuteNonQuery();
-                    if (c != 1)
-                        throw new Exception(string.Format("Block not found {0}", h));
-
-                    ix++;
-                }*/
             }
         }
 

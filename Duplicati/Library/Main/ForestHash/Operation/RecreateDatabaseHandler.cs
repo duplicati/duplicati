@@ -11,8 +11,6 @@ namespace Duplicati.Library.Main.ForestHash.Operation
     {
         private string m_backendurl;
         private FhOptions m_options;
-        private byte[] m_blockbuffer;
-        private string m_destination;
         private CommunicationStatistics m_stat;
 
         public delegate IEnumerable<IParsedVolume> FilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
@@ -24,10 +22,6 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             m_options = options;
             m_backendurl = backendurl;
             m_stat = stat;
-
-            m_destination = destination;
-            m_blockbuffer = new byte[m_options.Fhblocksize];
-
         }
 
         public void Run(string path, FilterFilelistDelegate filelistfilter = null, FilenameFilterDelegate filenamefilter = null, BlockVolumePostProcessor blockprocessor = null)
