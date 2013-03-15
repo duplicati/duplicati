@@ -205,8 +205,6 @@ namespace Duplicati.CommandLine
                     }
                 }
 
-                return;
-
                 Duplicati.Library.Main.Options opts = new Duplicati.Library.Main.Options(options);
                 using (Duplicati.Library.Interface.IBackend bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
                     foreach (Duplicati.Library.Interface.IFileEntry fe in bk.List())
