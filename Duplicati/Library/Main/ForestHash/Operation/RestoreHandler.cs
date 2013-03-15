@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                             if (first)
                             {
                                 //Figure out what files are to be patched, and what blocks are needed
-                                PrepareBlockAndFileList(database, m_options, m_destination);
+                                PrepareBlockAndFileList(database, m_options, m_destination, m_stat);
 
                                 // Don't run this again
                                 first = false;
@@ -124,33 +124,19 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                 //UpdateMissingBlocksTable(key);
                             }
 
-                            CreateDirectoryStructure(database);
+                            CreateDirectoryStructure(database, m_stat);
 
                             //If we are patching an existing target folder, do not touch stuff that is already updated
-                            ScanForExistingTargetBlocks(database, m_blockbuffer, hasher);
+                            ScanForExistingTargetBlocks(database, m_blockbuffer, hasher, m_stat);
 
 #if DEBUG
                             if (!m_options.NoLocalBlocks)
 #endif
                             // If other local files already have the blocks we want, we use them instead of downloading
-                            ScanForExistingSourceBlocks(database, m_blockbuffer, hasher);
-
-
-                            // Patch with blocks as required
-                            foreach (var restorelist in database.GetFilesWithMissingBlocks(rd))
-                            {
-                                var targetpath = restorelist.Path;
-                                using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                    foreach (var targetblock in restorelist.Blocks)
-                                    {
-                                        file.Position = targetblock.Offset;
-                                        var size = rd.ReadBlock(targetblock.Key, m_blockbuffer);
-                                        file.Write(m_blockbuffer, 0, size);
-
-                                    }
-
-                                ApplyMetadata(targetpath, database);
-                            }
+                            ScanForExistingSourceBlocks(database, m_blockbuffer, hasher, m_stat);
+                            
+                            //Update files with data
+                            PatchWithBlocklist(database, rd, m_stat, m_blockbuffer);
                         };
 
                     // TODO: When UpdateMisisngBlocksTable is implemented, the localpatcher can be activated
@@ -161,6 +147,40 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                 Run(tmpdb);
                 return;
+            }
+        }
+        
+        private static void PatchWithBlocklist (LocalRestoredatabase database, BlockVolumeReader blocks, CommunicationStatistics stat, byte[] blockbuffer)
+        {
+            foreach (var restorelist in database.GetFilesWithMissingBlocks(blocks))
+            {
+                var targetpath = restorelist.Path;
+                try 
+                {
+                    using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                        foreach (var targetblock in restorelist.Blocks)
+                    {
+                        file.Position = targetblock.Offset;
+                        var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
+                        if (targetblock.Size == size)
+                            file.Write(blockbuffer, 0, size);
+                    }
+                } 
+                catch (Exception ex)
+                {
+                    stat.LogWarning(string.Format("Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message), ex);
+                    database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                }
+                
+                try
+                {
+                    ApplyMetadata(targetpath, database);
+                }
+                catch (Exception ex)
+                {
+                    stat.LogWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                    database.LogMessage("Warning", string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                }
             }
         }
 
@@ -179,56 +199,45 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 ForestHash.VerifyRemoteList(backend, m_options, database);
 
                 //Figure out what files are to be patched, and what blocks are needed
-                PrepareBlockAndFileList(database, m_options, m_destination);
+                PrepareBlockAndFileList(database, m_options, m_destination, m_stat);
 
                 //Make the entire output setup
-                CreateDirectoryStructure(database);
+                CreateDirectoryStructure(database, m_stat);
 
                 //If we are patching an existing target folder, do not touch stuff that is already updated
-                ScanForExistingTargetBlocks(database, m_blockbuffer, hasher);
+                ScanForExistingTargetBlocks(database, m_blockbuffer, hasher, m_stat);
 
+
+                //TODO: It is possible to combine the existing block scanning with the local block scanning
 #if DEBUG
                 if (!m_options.NoLocalBlocks)
 #endif
                 // If other local files already have the blocks we want, we use them instead of downloading
-                ScanForExistingSourceBlocks(database, m_blockbuffer, hasher);
+                ScanForExistingSourceBlocks(database, m_blockbuffer, hasher, m_stat);
 
                 // Fill BLOCKS with remote sources
                 var volumes = database.GetMissingVolumes();
 
                 foreach (var blockvolume in new AsyncDownloader(volumes, backend))
                     using (var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Key.Name), blockvolume.Value, m_options))
-                    {
-                        foreach (var restorelist in database.GetFilesWithMissingBlocks(blocks))
-                        {
-                            var targetpath = restorelist.Path;
-                            //TODO: Try/Catch
-                            using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                foreach (var targetblock in restorelist.Blocks)
-                                {
-                                    file.Position = targetblock.Offset;
-                                    var size = blocks.ReadBlock(targetblock.Key, m_blockbuffer);
-                                    if (targetblock.Size == size)
-                                        file.Write(m_blockbuffer, 0, size);
-                                }
-
-                            ApplyMetadata(targetpath, database);
-                        }
-                    }
+                        PatchWithBlocklist(database, blocks, m_stat, m_blockbuffer);
 
                 // After all blocks in the files are restored, verify the file hash
                 foreach (var file in database.GetFilesToRestore())
                 {
-                    string key;
-                    //TODO: Try/Catch
-                    using (var fs = System.IO.File.OpenRead(file.Path))
-                        key = Convert.ToBase64String(hasher.ComputeHash(fs));
-
-                    //TODO: How do we handle this case? Warning in log?
-                    if (key != file.Hash)
+                    try
                     {
-                        //throw new Exception(string.Format("Failed to restore file: {0}", file.Path));
-                        Console.WriteLine(string.Format("Failed to restore file: {0}", file.Path));
+                        string key;
+                        using (var fs = System.IO.File.OpenRead(file.Path))
+                            key = Convert.ToBase64String(hasher.ComputeHash(fs));
+
+                        if (key != file.Hash)
+                            throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
+                    } 
+                    catch (Exception ex)
+                    {
+                        m_stat.LogWarning(string.Format("Failed to restore file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
+                        database.LogMessage("Warning", string.Format("Failed to restore file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
                     }
                 }
 
@@ -242,7 +251,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             //TODO: Implement writing metadata
         }
 
-        private static void ScanForExistingSourceBlocks(LocalRestoredatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher)
+        private static void ScanForExistingSourceBlocks(LocalRestoredatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
         {
             // Fill BLOCKS with data from known local source files
             using (var blockmarker = database.CreateBlockMarker())
@@ -250,44 +259,59 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 foreach (var restorelist in database.GetFilesAndSourceBlocks())
                 {
                     var targetpath = restorelist.TargetPath;
-                    //TODO: Try/Catch
-                    using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                    using (var block = new Blockprocessor(file, blockbuffer))
-                        foreach (var targetblock in restorelist.Blocks)
-                        {
-                            file.Position = targetblock.Offset;
-                            foreach (var source in targetblock.Blocksources)
+                    
+                    try
+                    {
+                        using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                        using (var block = new Blockprocessor(file, blockbuffer))
+                            foreach (var targetblock in restorelist.Blocks)
                             {
-                                //TODO: Try/Catch
-                                if (System.IO.File.Exists(source.Path))
-                                    using (var sourcefile = System.IO.File.Open(source.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+                                file.Position = targetblock.Offset;
+                                foreach (var source in targetblock.Blocksources)
+                                {
+                                    try
                                     {
-                                        sourcefile.Position = source.Offset;
-                                        var size = sourcefile.Read(blockbuffer, 0, blockbuffer.Length);
-                                        if (size == targetblock.Size)
-                                        {
-                                            var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
-                                            if (key == targetblock.Hash)
+                                        if (System.IO.File.Exists(source.Path))
+                                            using (var sourcefile = System.IO.File.Open(source.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
                                             {
-                                                file.Write(blockbuffer, 0, size);
-                                                blockmarker.SetBlockRestored(targetpath, targetblock.Index, key, targetblock.Size);
-                                                break;
+                                                sourcefile.Position = source.Offset;
+                                                var size = sourcefile.Read(blockbuffer, 0, blockbuffer.Length);
+                                                if (size == targetblock.Size)
+                                                {
+                                                    var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+                                                    if (key == targetblock.Hash)
+                                                    {
+                                                        file.Write(blockbuffer, 0, size);
+                                                        blockmarker.SetBlockRestored(targetpath, targetblock.Index, key, targetblock.Size);
+                                                        break;
+                                                    }
+                                                }
                                             }
-                                        }
                                     }
+                                    catch (Exception ex)
+                                    {
+                                        stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message), ex);
+                                        database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message), ex);
+                                    }
+                                }
                             }
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
+                        database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
+                    }
                 }
 
                 blockmarker.Commit();
             }
         }
 
-        private static void PrepareBlockAndFileList(LocalRestoredatabase database, FhOptions options, string destination)
+        private static void PrepareBlockAndFileList(LocalRestoredatabase database, FhOptions options, string destination, CommunicationStatistics stat)
         {
             // Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
             // Delete all entries from the temp table that are excluded by the filter(s)
-            database.PrepareRestoreFilelist(options.RestoreTime, (options.FileToRestore ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries), options.HasFilter ? options.Filter : null);
+            database.PrepareRestoreFilelist(options.RestoreTime, (options.FileToRestore ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries), options.HasFilter ? options.Filter : null, stat);
 
             // Find the largest common prefix
             string largest_prefix = database.GetLargestPrefix();
@@ -299,18 +323,34 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             database.FindMissingBlocks();
         }
 
-        private static void CreateDirectoryStructure(LocalRestoredatabase database)
+        private static void CreateDirectoryStructure(LocalRestoredatabase database, CommunicationStatistics stat)
         {
             foreach (var folder in database.GetTargetFolders())
             {
-                if (!System.IO.Directory.Exists(folder))
-                    System.IO.Directory.CreateDirectory(folder);
+                try
+                {
+                    if (!System.IO.Directory.Exists(folder))
+                        System.IO.Directory.CreateDirectory(folder);
+                }
+                catch (Exception ex)
+                {
+                    stat.LogWarning(string.Format("Failed to create folder: \"{0}\", message: {1}", folder, ex.Message), ex);
+                    database.LogMessage("Warning", string.Format("Failed to create folder: \"{0}\", message: {1}", folder, ex.Message), ex);
+                }
 
-                ApplyMetadata(folder, database);
+                try
+                {
+                    ApplyMetadata(folder, database);
+                }
+                catch (Exception ex)
+                {
+                    stat.LogWarning(string.Format("Failed to set folder metadata: \"{0}\", message: {1}", folder, ex.Message), ex);
+                    database.LogMessage("Warning", string.Format("Failed to set folder metadata: \"{0}\", message: {1}", folder, ex.Message), ex);
+                }
             }
         }
 
-        private static void ScanForExistingTargetBlocks(LocalRestoredatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher)
+        private static void ScanForExistingTargetBlocks(LocalRestoredatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
         {
             // Scan existing files for existing BLOCKS
             using (var blockmarker = database.CreateBlockMarker())
@@ -320,24 +360,31 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     var targetpath = restorelist.TargetPath;
                     if (System.IO.File.Exists(targetpath))
                     {
-                        //TODO: Try/Catch
-                        using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                        using (var block = new Blockprocessor(file, blockbuffer))
-                            foreach (var targetblock in restorelist.Blocks)
-                            {
-                                var size = block.Readblock();
-                                if (size <= 0)
-                                    break;
-
-                                if (size == targetblock.Size)
+                        try
+                        {
+                            using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                            using (var block = new Blockprocessor(file, blockbuffer))
+                                foreach (var targetblock in restorelist.Blocks)
                                 {
-                                    var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
-                                    if (key == targetblock.Hash)
+                                    var size = block.Readblock();
+                                    if (size <= 0)
+                                        break;
+    
+                                    if (size == targetblock.Size)
                                     {
-                                        blockmarker.SetBlockRestored(targetpath, targetblock.Index, key, size);
+                                        var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+                                        if (key == targetblock.Hash)
+                                        {
+                                            blockmarker.SetBlockRestored(targetpath, targetblock.Index, key, size);
+                                        }
                                     }
                                 }
-                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            stat.LogWarning(string.Format("Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                            database.LogMessage("Warning", string.Format("Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                        }
                     }
                 }
 
