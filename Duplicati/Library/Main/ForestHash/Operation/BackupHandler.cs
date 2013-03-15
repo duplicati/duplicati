@@ -87,8 +87,25 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
             using (m_transaction = m_database.BeginTransaction()) 
             {
-                using (m_snapshot = GetSnapshot(m_sources, m_options, m_stat))
-                    m_snapshot.EnumerateFilesAndFolders(this.HandleFilesystemEntry);
+                if (m_options.FhChangedFilelist != null && m_options.FhChangedFilelist.Length >= 1)
+                {
+                    foreach (var p in m_options.FhChangedFilelist)
+                    {
+                        FileAttributes fa = new FileAttributes();
+                        try { fa = m_snapshot.GetAttributes(p); }
+                        catch (Exception ex) { m_stat.LogWarning(string.Format("Failed to read attributes: {0}, message: {1}", p, ex.Message), ex); }
+
+                        try { this.HandleFilesystemEntry(null, p, fa); }
+                        catch (Exception ex) { m_stat.LogWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex); }
+                    }
+
+                    m_database.AppendFilesFromPreviousSet(m_transaction, m_options.FhDeletedFilelist);
+                }
+                else
+                {
+                    using (m_snapshot = GetSnapshot(m_sources, m_options, m_stat))
+                        m_snapshot.EnumerateFilesAndFolders(this.HandleFilesystemEntry);
+                }
 
                 m_transaction.Commit();
             }

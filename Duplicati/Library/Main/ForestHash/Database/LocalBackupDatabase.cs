@@ -849,5 +849,36 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
         }
 
+
+        public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted)
+        {
+            using(var cmd = m_connection.CreateCommand())
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            {
+                long lastOperationId = -1;
+
+                var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Operation"" WHERE ""Timestamp"" < ? AND ""Description"" = ? ORDER BY ""Timestamp"" DESC ", OperationTimestamp, "Backup");
+                if (lastIdObj != null && lastIdObj != DBNull.Value)
+                    lastOperationId = Convert.ToInt64(lastIdObj);
+
+                cmd.Transaction = tr.Parent;
+                cmd.ExecuteNonQuery(@"INSERT INTO ""OperationFileset"" (""OperationID"", ""FilesetID"", ""Scantime"") SELECT ? AS ""OperationID"", ""FilesetID"", ""Scantime"" FROM ""OperationFile"" WHERE ""OperationID"" = ? AND ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""OperationFileset"" WHERE ""OperationID"" = ?) ", m_operationid, lastOperationId, m_operationid);
+
+                if (deleted != null)
+                {
+                    cmd.CommandText = @"DELETE FROM ""OperationFileset"" WHERE ""OperationID"" = ? AND ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""Path"" = ?) ";
+                    cmd.AddParameter(m_operationid);
+                    cmd.AddParameter();
+
+                    foreach (string s in deleted)
+                    {
+                        cmd.SetParameterValue(1, s);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                tr.Commit();
+            }
+        }
     }
 }

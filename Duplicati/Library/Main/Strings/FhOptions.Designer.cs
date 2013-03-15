@@ -97,6 +97,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option can be used to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes..
+        /// </summary>
+        internal static string FhchangedfilesetLong {
+            get {
+                return ResourceManager.GetString("FhchangedfilesetLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to List of files to examine for changes.
+        /// </summary>
+        internal static string FhchangedfilesetShort {
+            get {
+                return ResourceManager.GetString("FhchangedfilesetShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Path to the file containing the local cache of the remote file database.
         /// </summary>
         internal static string FhdbpathLong {
@@ -111,6 +129,24 @@ namespace Duplicati.Library.Main.Strings {
         internal static string FhdbpathShort {
             get {
                 return ResourceManager.GetString("FhdbpathShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This option can be used to supply a list of deleted files. This option will be ignored unless the option {0} is also set..
+        /// </summary>
+        internal static string FhdeletedfilesetLong {
+            get {
+                return ResourceManager.GetString("FhdeletedfilesetLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to List of deleted files.
+        /// </summary>
+        internal static string FhdeletedfilesetShort {
+            get {
+                return ResourceManager.GetString("FhdeletedfilesetShort", resourceCulture);
             }
         }
         

@@ -36,6 +36,9 @@ namespace Duplicati.Library.Main.ForestHash
                     new CommandLineArgument("fh-blockhash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblockhashlookupsizeShort, Strings.FhOptions.FhblockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("fh-filehash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilehashlookupsizeShort, Strings.FhOptions.FhfilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("fh-filepath-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilepathlookupsizeShort, Strings.FhOptions.FhfilepathlookupsizeLong, "0"),
+                    new CommandLineArgument("fh-changed-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhchangedfilesetShort, Strings.FhOptions.FhchangedfilesetLong),
+                    new CommandLineArgument("fh-deleted-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdeletedfilesetShort, string.Format(Strings.FhOptions.FhdeletedfilesetLong, "fh-changed-fileset")),
+
 #if DEBUG
                     new CommandLineArgument("fh-no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
                     new CommandLineArgument("fh-no-local-db", CommandLineArgument.ArgumentType.Boolean, "Prevents using local database for restore", "", "false"),
@@ -132,6 +135,37 @@ namespace Duplicati.Library.Main.ForestHash
             }
         }
 
+        /// <summary>
+        /// List of files to check for changes
+        /// </summary>
+        public string[] FhChangedFilelist
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("fh-changed-fileset", out v);
+                if (string.IsNullOrEmpty(v))
+                    return null;
+
+                return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            }
+        }
+
+        /// <summary>
+        /// List of files to mark as deleted
+        /// </summary>
+        public string[] FhDeletedFilelist
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("fh-deleted-fileset", out v);
+                if (string.IsNullOrEmpty(v))
+                    return null;
+
+                return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            }
+        }
 #if DEBUG
         public bool NoLocalBlocks
         {

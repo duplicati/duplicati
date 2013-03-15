@@ -129,11 +129,23 @@
   <data name="FhblocksizeShort" xml:space="preserve">
     <value>Blocksize used in hashing</value>
   </data>
+  <data name="FhchangedfilesetLong" xml:space="preserve">
+    <value>This option can be used to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes.</value>
+  </data>
+  <data name="FhchangedfilesetShort" xml:space="preserve">
+    <value>List of files to examine for changes</value>
+  </data>
   <data name="FhdbpathLong" xml:space="preserve">
     <value>Path to the file containing the local cache of the remote file database</value>
   </data>
   <data name="FhdbpathShort" xml:space="preserve">
     <value>Path to the local state database</value>
+  </data>
+  <data name="FhdeletedfilesetLong" xml:space="preserve">
+    <value>This option can be used to supply a list of deleted files. This option will be ignored unless the option {0} is also set.</value>
+  </data>
+  <data name="FhdeletedfilesetShort" xml:space="preserve">
+    <value>List of deleted files</value>
   </data>
   <data name="FhfilehashlookupsizeLong" xml:space="preserve">
     <value>A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log.</value>
