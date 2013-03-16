@@ -145,7 +145,36 @@ namespace Duplicati.CommandLine
 
             //We need all sets, even if they are unchanged
             options["upload-unchanged-backups"] = "true";
-
+            
+            bool skipfullrestore = false;
+            bool skippartialrestore = false;
+            bool skipverify = false;
+            
+            if (Utility.ParseBoolOption(options, "unittest-backuponly"))
+            {
+                skipfullrestore = true;
+                skippartialrestore = true;
+                options.Remove("unittest-backuponly");
+            }
+            
+            if (Utility.ParseBoolOption(options, "unittest-skip-partial-restore"))
+            {
+                skippartialrestore = true;
+                options.Remove("unittest-skip-partial-restore");
+            }
+            
+            if (Utility.ParseBoolOption(options, "unittest-skip-full-restore"))
+            {
+                skipfullrestore = true;
+                options.Remove("unittest-skip-full-restore");
+            }
+            
+            if (Utility.ParseBoolOption(options, "unittest-skip-verify"))
+            {
+                skipverify = true;
+                options.Remove("unittest-skip-verify");
+            }
+            
             using(new Timer("Total unittest"))
             using(TempFolder tf = new TempFolder())
             {
@@ -174,17 +203,19 @@ namespace Duplicati.CommandLine
 
                 log.Backupset = "Backup " + folders[0];
                 string fhtempsource = null;
+                
+                bool usingFHWithRestore = usingFH && (!skipfullrestore || !skippartialrestore);
 
-                using(var fhsourcefolder = usingFH ? new Library.Utility.TempFolder() : null)
+                using(var fhsourcefolder = usingFHWithRestore ? new Library.Utility.TempFolder() : null)
                 {
-                    if (usingFH)
+                    if (usingFHWithRestore)
                         fhtempsource = fhsourcefolder;
                     
-                    if (usingFH)
+                    if (usingFHWithRestore)
                         CopyDirectoryRecursive(folders[0], fhsourcefolder);
-                    
+
                     options["full"] = "";                        
-                    RunBackup(usingFH ? (string)fhsourcefolder : folders[0], target, options, folders[0]);
+                    RunBackup(usingFHWithRestore ? (string)fhsourcefolder : folders[0], target, options, folders[0]);
                     options.Remove("full");
     
                     for (int i = 1; i < folders.Length; i++)
@@ -194,14 +225,14 @@ namespace Duplicati.CommandLine
                         System.Threading.Thread.Sleep(1000 * 5);
                         log.Backupset = "Backup " + folders[i];
     
-                        if (usingFH)
+                        if (usingFHWithRestore)
                         {
                             System.IO.Directory.Delete(fhsourcefolder, true);
                             CopyDirectoryRecursive(folders[i], fhsourcefolder);
                         }
                         
                         //Call function to simplify profiling
-                        RunBackup(usingFH ? (string)fhsourcefolder : folders[i], target, options, folders[i]);
+                        RunBackup(usingFHWithRestore ? (string)fhsourcefolder : folders[i], target, options, folders[i]);
                     }
                 }
 
@@ -259,129 +290,143 @@ namespace Duplicati.CommandLine
                         entries.Add(mf.Time);
                 }
 
-                for (int i = 0; i < entries.Count; i++)
+                if (!skipfullrestore || !skippartialrestore)
                 {
-                    using (TempFolder ttf = new TempFolder())
+                    for (int i = 0; i < entries.Count; i++)
                     {
-                        log.Backupset = "Restore " + folders[i];
-                        Console.WriteLine("Restoring the copy: " + folders[i]);
-
-                        options["restore-time"] = entries[i].ToString();
-
-                        string[] actualfolders = folders[i].Split(System.IO.Path.PathSeparator);
-                        string[] restorefoldernames;
-                        if (actualfolders.Length == 1)
-                            restorefoldernames = new string[] { ttf };
-                        else
+                        using (TempFolder ttf = new TempFolder())
                         {
-                            restorefoldernames = new string[actualfolders.Length];
-                            for (int j = 0; j < actualfolders.Length; j++)
-                                restorefoldernames[j] = System.IO.Path.Combine(ttf, System.IO.Path.GetFileName(actualfolders[j]));
-                        }
-
-                        Console.WriteLine("Partial restore of: " + folders[i]);
-                        using (TempFolder ptf = new TempFolder())
-                        {
-                            List<string> testfiles = new List<string>();
-                            using (new Timer("Extract list of files from" + folders[i]))
-                            {
-                                IList<string> sourcefiles = Duplicati.Library.Main.Interface.ListCurrentFiles(target, options);
-
-                                //Remove all folders from list
-                                for (int j = 0; j < sourcefiles.Count; j++)
-                                    if (sourcefiles[j].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                                    {
-                                        sourcefiles.RemoveAt(j);
-                                        j--;
-                                    }
-
-
-                                int testfilecount = 15;
-                                Random r = new Random();
-                                while (testfilecount-- > 0 && sourcefiles.Count > 0)
-                                {
-                                    int rn = r.Next(0, sourcefiles.Count);
-                                    testfiles.Add(sourcefiles[rn]);
-                                    sourcefiles.RemoveAt(rn);
-                                }
-
-                            }
-
-
-                            //Add all folders to avoid warnings in restore log
-                            int c = testfiles.Count;
-                            Dictionary<string, string> partialFolders = new Dictionary<string, string>(Utility.ClientFilenameStringComparer);
-
-                            for (int j = 0; j < c; j++)
-                            {
-                                string f = testfiles[j];
-
-                                if (usingFH)
-                                {
-                                    if (!f.StartsWith(fhtempsource, Utility.ClientFilenameStringComparision))
-                                        throw new Exception(string.Format("Unexpected file found: {0}, path is not a subfolder for {1}", f, folders[i]));
-
-                                    f = f.Substring(Utility.AppendDirSeparator(fhtempsource).Length);
-                                }
-
-                                do
-                                {
-                                    f = System.IO.Path.GetDirectoryName(f);
-                                    partialFolders[Utility.AppendDirSeparator(f)] = null;
-                                } while (f.IndexOf(System.IO.Path.DirectorySeparatorChar) > 0);
-                            }
-
-                            if (partialFolders.ContainsKey(""))
-                                partialFolders.Remove("");
-                            if (partialFolders.ContainsKey(System.IO.Path.DirectorySeparatorChar.ToString()))
-                                partialFolders.Remove(System.IO.Path.DirectorySeparatorChar.ToString());
-
-                            Dictionary<string, string> tops = new Dictionary<string,string>(options);
-                            List<string> filterlist;
-
-                            if (usingFH)
-                            {
-                                var tfe = Utility.AppendDirSeparator(fhtempsource);
-                                
-                                //We need a minor tweak here because the two models
-                                // use releative vs. absolute paths
-                                filterlist = (from n in partialFolders.Keys
-                                              where !string.IsNullOrWhiteSpace(n) && n != System.IO.Path.DirectorySeparatorChar.ToString()
-                                              select Utility.AppendDirSeparator(System.IO.Path.Combine(tfe, n)))
-                                              .Union(testfiles) //Add files with full path
-                                              .Union(new string[] { tfe }) //Ensure root folder is included
-                                              .Distinct()
-                                              .ToList();
-
-                                testfiles = (from n in testfiles select n.Substring(tfe.Length)).ToList();
-                                
-                            }
+                            log.Backupset = "Restore " + folders[i];
+                            Console.WriteLine("Restoring the copy: " + folders[i]);
+    
+                            options["restore-time"] = entries[i].ToString();
+    
+                            string[] actualfolders = folders[i].Split(System.IO.Path.PathSeparator);
+                            string[] restorefoldernames;
+                            if (actualfolders.Length == 1)
+                                restorefoldernames = new string[] { ttf };
                             else
                             {
-                                filterlist = new List<string>(); 
-                                filterlist.AddRange(partialFolders.Keys);
-                                filterlist.AddRange(testfiles);
+                                restorefoldernames = new string[actualfolders.Length];
+                                for (int j = 0; j < actualfolders.Length; j++)
+                                    restorefoldernames[j] = System.IO.Path.Combine(ttf, System.IO.Path.GetFileName(actualfolders[j]));
                             }
-
-                            tops["file-to-restore"] = String.Join(System.IO.Path.PathSeparator.ToString(), filterlist.ToArray());
-
-                            //Call function to simplify profiling
-                            RunPartialRestore(folders[i], target, ptf, tops);
-
-                            //Call function to simplify profiling
-                            Console.WriteLine("Verifying partial restore of: " + folders[i]);
-                            VerifyPartialRestore(folders[i], testfiles, actualfolders, ptf, folders[0]);
+    
+                            if (!skippartialrestore)
+                            {
+                                Console.WriteLine("Partial restore of: " + folders[i]);
+                                using (TempFolder ptf = new TempFolder())
+                                {
+                                    List<string> testfiles = new List<string>();
+                                    using (new Timer("Extract list of files from" + folders[i]))
+                                    {
+                                        IList<string> sourcefiles = Duplicati.Library.Main.Interface.ListCurrentFiles(target, options);
+        
+                                        //Remove all folders from list
+                                        for (int j = 0; j < sourcefiles.Count; j++)
+                                            if (sourcefiles[j].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                            {
+                                                sourcefiles.RemoveAt(j);
+                                                j--;
+                                            }
+        
+        
+                                        int testfilecount = 15;
+                                        Random r = new Random();
+                                        while (testfilecount-- > 0 && sourcefiles.Count > 0)
+                                        {
+                                            int rn = r.Next(0, sourcefiles.Count);
+                                            testfiles.Add(sourcefiles[rn]);
+                                            sourcefiles.RemoveAt(rn);
+                                        }
+        
+                                    }
+        
+        
+                                    //Add all folders to avoid warnings in restore log
+                                    int c = testfiles.Count;
+                                    Dictionary<string, string> partialFolders = new Dictionary<string, string>(Utility.ClientFilenameStringComparer);
+        
+                                    for (int j = 0; j < c; j++)
+                                    {
+                                        string f = testfiles[j];
+        
+                                        if (usingFH)
+                                        {
+                                            if (!f.StartsWith(fhtempsource, Utility.ClientFilenameStringComparision))
+                                                throw new Exception(string.Format("Unexpected file found: {0}, path is not a subfolder for {1}", f, folders[i]));
+        
+                                            f = f.Substring(Utility.AppendDirSeparator(fhtempsource).Length);
+                                        }
+        
+                                        do
+                                        {
+                                            f = System.IO.Path.GetDirectoryName(f);
+                                            partialFolders[Utility.AppendDirSeparator(f)] = null;
+                                        } while (f.IndexOf(System.IO.Path.DirectorySeparatorChar) > 0);
+                                    }
+        
+                                    if (partialFolders.ContainsKey(""))
+                                        partialFolders.Remove("");
+                                    if (partialFolders.ContainsKey(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                        partialFolders.Remove(System.IO.Path.DirectorySeparatorChar.ToString());
+        
+                                    Dictionary<string, string> tops = new Dictionary<string,string>(options);
+                                    List<string> filterlist;
+        
+                                    if (usingFH)
+                                    {
+                                        var tfe = Utility.AppendDirSeparator(fhtempsource);
+                                        
+                                        //We need a minor tweak here because the two models
+                                        // use releative vs. absolute paths
+                                        filterlist = (from n in partialFolders.Keys
+                                                      where !string.IsNullOrWhiteSpace(n) && n != System.IO.Path.DirectorySeparatorChar.ToString()
+                                                      select Utility.AppendDirSeparator(System.IO.Path.Combine(tfe, n)))
+                                                      .Union(testfiles) //Add files with full path
+                                                      .Union(new string[] { tfe }) //Ensure root folder is included
+                                                      .Distinct()
+                                                      .ToList();
+        
+                                        testfiles = (from n in testfiles select n.Substring(tfe.Length)).ToList();
+                                        
+                                    }
+                                    else
+                                    {
+                                        filterlist = new List<string>(); 
+                                        filterlist.AddRange(partialFolders.Keys);
+                                        filterlist.AddRange(testfiles);
+                                    }
+        
+                                    tops["file-to-restore"] = String.Join(System.IO.Path.PathSeparator.ToString(), filterlist.ToArray());
+        
+                                    //Call function to simplify profiling
+                                    RunPartialRestore(folders[i], target, ptf, tops);
+        
+                                    if (!skipverify)
+                                    {
+                                        //Call function to simplify profiling
+                                        Console.WriteLine("Verifying partial restore of: " + folders[i]);
+                                        VerifyPartialRestore(folders[i], testfiles, actualfolders, ptf, folders[0]);
+                                    }
+                                }
+                            }
+    
+                            if (!skipfullrestore)
+                            {
+                                //Call function to simplify profiling
+                                RunRestore(folders[i], target, restorefoldernames, options);
+        
+                                if (!skipverify)
+                                {
+                                    //Call function to simplify profiling
+                                    Console.WriteLine("Verifying the copy: " + folders[i]);
+                                    VerifyFullRestore(folders[i], actualfolders, restorefoldernames);
+                                }
+                            }
                         }
-
-                        //Call function to simplify profiling
-                        RunRestore(folders[i], target, restorefoldernames, options);
-
-                        //Call function to simplify profiling
-                        Console.WriteLine("Verifying the copy: " + folders[i]);
-                        VerifyFullRestore(folders[i], actualfolders, restorefoldernames);
                     }
-                }
-
+                }   
             }
 
             (Log.CurrentLog as StreamLog).Dispose();
