@@ -9,6 +9,7 @@ namespace Duplicati.Library.Main.ForestHash
     public class FhOptions : Options
     {
         private const string DEFAULT_BLOCK_HASH_LOOKUP_SIZE = "64mb";
+        private const string DEFAULT_METADATA_HASH_LOOKUP_SIZE = "64mb";
         private const string DEFAULT_FILE_HASH_LOOKUP_SIZE = "32mb";
 
         /// <summary>
@@ -35,6 +36,7 @@ namespace Duplicati.Library.Main.ForestHash
                     new CommandLineArgument("fh-nometadata", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnometadataShort, Strings.FhOptions.FhnometadataLong, "false"),
                     new CommandLineArgument("fh-blockhash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblockhashlookupsizeShort, Strings.FhOptions.FhblockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("fh-filehash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilehashlookupsizeShort, Strings.FhOptions.FhfilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
+                    new CommandLineArgument("fh-metadatahash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhmetadatahashlookupsizeShort, Strings.FhOptions.FhmetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("fh-filepath-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilepathlookupsizeShort, Strings.FhOptions.FhfilepathlookupsizeLong, "0"),
                     new CommandLineArgument("fh-changed-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhchangedfilesetShort, Strings.FhOptions.FhchangedfilesetLong),
                     new CommandLineArgument("fh-deleted-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdeletedfilesetShort, string.Format(Strings.FhOptions.FhdeletedfilesetLong, "fh-changed-fileset")),
@@ -119,6 +121,22 @@ namespace Duplicati.Library.Main.ForestHash
             }
         }
 
+        /// <summary>
+        /// Gets the block hash size
+        /// </summary>
+        public long FhMetadataHashSize
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("fh-metadatahash-lookup-size", out v);
+                if (string.IsNullOrEmpty(v))
+                    v = DEFAULT_METADATA_HASH_LOOKUP_SIZE;
+                
+                return Utility.Sizeparser.ParseSize(v, "mb");
+            }
+        }
+        
         /// <summary>
         /// Gets the file hash size
         /// </summary>

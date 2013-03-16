@@ -203,5 +203,23 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("FhnometadataShort", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log..
+        /// </summary>
+        internal static string FhmetadatahashlookupsizeLong {
+            get {
+                return ResourceManager.GetString("FhmetadatahashlookupsizeLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Memory used by the metadata hash.
+        /// </summary>
+        internal static string FhmetadatahashlookupsizeShort {
+            get {
+                return ResourceManager.GetString("FhmetadatahashlookupsizeShort", resourceCulture);
+            }
+        }
     }
 }

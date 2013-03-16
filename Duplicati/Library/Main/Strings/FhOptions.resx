@@ -165,4 +165,10 @@
   <data name="FhnometadataShort" xml:space="preserve">
     <value>Disable storing file metadata</value>
   </data>
+  <data name="FhmetadatahashlookupsizeLong" xml:space="preserve">
+    <value>A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log.</value>
+  </data>
+  <data name="FhmetadatahashlookupsizeShort" xml:space="preserve">
+    <value>Memory used by the metadata hash</value>
+  </data>
 </root>
