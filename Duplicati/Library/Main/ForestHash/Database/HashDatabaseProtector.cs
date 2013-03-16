@@ -254,7 +254,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public HashLookup(uint elementsize, ulong memorylimit = DEFAULT_MEMORY)
         {
             //Allocate as a large boolean/bit array
-            m_lookup = new T[Math.Max(32, Math.Max(1024, memorylimit * 8) / elementsize)];
+            m_lookup = new T[Math.Max(32, Math.Max(1024, memorylimit) / elementsize)];
             m_modulo = (ulong)m_lookup.Length;
         }
         
@@ -346,7 +346,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public HashLookupWithData(uint elementsize, ulong memorylimit = DEFAULT_MEMORY)
         {
             //Allocate as a large boolean/bit array
-            m_lookup = new KeyValuePair<TKey, TValue>[Math.Max(32, Math.Max(1024, memorylimit * 8) / elementsize)];
+            m_lookup = new KeyValuePair<TKey, TValue>[Math.Max(32, Math.Max(1024, memorylimit) / elementsize)];
             m_modulo = (ulong)m_lookup.Length;
         }
         
