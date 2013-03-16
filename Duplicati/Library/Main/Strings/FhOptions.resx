@@ -142,7 +142,7 @@
     <value>Path to the local state database</value>
   </data>
   <data name="FhdeletedfilesetLong" xml:space="preserve">
-    <value>This option can be used to supply a list of deleted files. This option will be ignored unless the option {0} is also set.</value>
+    <value>This option can be used to supply a list of deleted files. This option will be ignored unless the option --{0} is also set.</value>
   </data>
   <data name="FhdeletedfilesetShort" xml:space="preserve">
     <value>List of deleted files</value>
