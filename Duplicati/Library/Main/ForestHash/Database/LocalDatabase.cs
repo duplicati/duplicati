@@ -15,6 +15,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private readonly System.Data.IDbCommand m_selectremotevolumesCommand;
         private readonly System.Data.IDbCommand m_selectremotevolumeCommand;
         private readonly System.Data.IDbCommand m_removeremotevolumeCommand;
+		private readonly System.Data.IDbCommand m_selectremotevolumeIdCommand;
 
         private readonly System.Data.IDbCommand m_insertlogCommand;
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
@@ -69,6 +70,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertlogCommand = m_connection.CreateCommand();
             m_insertremotelogCommand = m_connection.CreateCommand();
             m_removeremotevolumeCommand = m_connection.CreateCommand();
+			m_selectremotevolumeIdCommand = m_connection.CreateCommand();
 
             m_insertlogCommand.CommandText = @"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)";
             m_insertlogCommand.AddParameter(m_operationid);
@@ -89,9 +91,11 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ?";
             m_removeremotevolumeCommand.AddParameter();
-        }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
+			m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
+		}
+		
+		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
         {
             lock (m_lock)
             {
@@ -103,6 +107,15 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 m_updateremotevolumeCommand.ExecuteNonQuery();
             }
         }
+        
+        public long GetRemoteVolumeID(string file)
+		{
+			var o = m_selectremotevolumeIdCommand.ExecuteScalar(null, file);
+			if (o == null || o == DBNull.Value)
+				return -1;
+			else
+				return Convert.ToInt64(o);
+		}
 
         public bool GetRemoteVolume(string file, out string hash, out long size, out RemoteVolumeType type, out RemoteVolumeState state)
         {
@@ -190,12 +203,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
                     var deletecmd = m_connection.CreateCommand();
                     deletecmd.Transaction = tr;
 
-                    deletecmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
-                    deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
-                    deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
-                    deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""File"" = ?))", name);
-
-                    deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""File"" = ?", name);
+					deletecmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+					deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+					deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+					deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+					
+					deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
 
                     ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
                     m_removeremotevolumeCommand.Transaction = tr;

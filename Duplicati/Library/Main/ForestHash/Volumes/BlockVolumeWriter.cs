@@ -13,6 +13,8 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 
         public long Blocks { get { return m_blocks; } }
         public long SourceSize { get { return m_sourcesize; } }
+        
+        public long VolumeID { get; set; }
 
         public override RemoteVolumeType FileType { get { return RemoteVolumeType.Blocks; } }
 

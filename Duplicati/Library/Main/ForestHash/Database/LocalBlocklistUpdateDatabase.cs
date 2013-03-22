@@ -22,16 +22,16 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_temphashtable = "Hashlist-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Block"".""File"" AS ""File"", ""BlocklistHash"".""Hash"" AS ""Hash"", 0 AS ""Restored"" FROM ""Block"", ""BlocklistHash""  WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" ", m_tempblockvolumetable));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Block"".""VolumeID"" AS ""VolumeID"", ""BlocklistHash"".""Hash"" AS ""Hash"", 0 AS ""Restored"" FROM ""Block"", ""BlocklistHash""  WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" ", m_tempblockvolumetable));
                 cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT DISTINCT ""Blockset"".""ID"", 0, ""Block"".""ID"" FROM ""Blockset"", ""Block"" WHERE ""Blockset"".""Fullhash"" = ""Block"".""Hash"" AND ""Blockset"".""Length"" < {0} AND ""Blockset"".""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"") ", m_blocksize));
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Hash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)", m_temphashtable));
 
             }
         }
 
-        public IEnumerable<string> GetBlockLists(string volumename)
+        public IEnumerable<string> GetBlockLists(long volumeid)
         {
-            return new BlocklistsEnumerable(m_connection, m_tempblockvolumetable, volumename);
+            return new BlocklistsEnumerable(m_connection, m_tempblockvolumetable, volumeid);
         }
 
         public void UpdateBlocklist(string hash, IEnumerable<string> hashes, long hashsize, System.Data.IDbTransaction transaction)
@@ -69,7 +69,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 List<IRemoteVolume> result = new List<IRemoteVolume>();
-                cmd.CommandText = string.Format(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"" WHERE ""Name"" IN (SELECT DISTINCT ""File"" FROM ""{0}"")", m_tempblockvolumetable);
+                cmd.CommandText = string.Format(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT DISTINCT ""VolumeID"" FROM ""{0}"")", m_tempblockvolumetable);
                 using (var rd = cmd.ExecuteReader())
                 {
                     object[] r = new object[3];

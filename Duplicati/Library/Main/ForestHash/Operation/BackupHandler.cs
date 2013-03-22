@@ -81,8 +81,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             m_blockvolume = new BlockVolumeWriter(m_options);
             m_shadowvolume = new ShadowVolumeWriter(m_options);
 
-            m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+            m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
             m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary);
+            
             m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
 
             using (m_transaction = m_database.BeginTransaction()) 
@@ -354,7 +355,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         /// <param name="data">The data matching the hash</param>
         private bool AddBlockToOutput(string key, byte[] data, int len, CompressionHint hint)
         {
-            if (m_database.AddBlock(key, len, m_blockvolume.RemoteFilename, m_transaction))
+            if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
                 m_blockvolume.AddBlock(key, data, len, hint);
                 m_shadowvolume.AddBlock(key, len);
@@ -364,7 +365,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                     m_blockvolume = new BlockVolumeWriter(m_options);
                     m_shadowvolume = new ShadowVolumeWriter(m_options);
-                    m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
+
+					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+					m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary);
+					
+					m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
                 }
 
                 return true;

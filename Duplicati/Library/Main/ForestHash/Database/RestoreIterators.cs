@@ -887,7 +887,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
                         c.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Hash"", ""Size"") VALUES (?,?)", m_tmptable);
                         c.AddParameters(2);
-
                         foreach (var s in m_curvolume.Blocks)
                         {
                             c.SetParameterValue(0, s.Key);
@@ -1116,16 +1115,16 @@ namespace Duplicati.Library.Main.ForestHash.Database
             {
                 private System.Data.IDbConnection m_connection;
                 private string m_temptable;
-                private string m_volume;
+                private long m_volumeid;
                 private System.Data.IDataReader m_reader;
                 private System.Data.IDbCommand m_command;
                 private string m_current;
 
-                public BlocklistEnumerator(System.Data.IDbConnection connection, string temptable, string volume)
+                public BlocklistEnumerator(System.Data.IDbConnection connection, string temptable, long volumeid)
                 {
                     m_connection = connection;
                     m_temptable = temptable;
-                    m_volume = volume;
+                    m_volumeid = volumeid;
                     this.Reset();
                 }
 
@@ -1166,23 +1165,23 @@ namespace Duplicati.Library.Main.ForestHash.Database
                     this.Dispose();
                     m_current = null;
                     m_command = m_connection.CreateCommand();
-                    m_command.CommandText = string.Format(@"SELECT ""Hash"" FROM ""{0}"" WHERE ""File"" = ""{1}"" AND ""Restored"" = 0 ", m_temptable, m_volume);
+                    m_command.CommandText = string.Format(@"SELECT ""Hash"" FROM ""{0}"" WHERE ""VolumeID"" = ""{1}"" AND ""Restored"" = 0 ", m_temptable, m_volumeid);
                     m_reader = m_command.ExecuteReader();
                 }
             }
 
             private System.Data.IDbConnection m_connection;
             private string m_temptable;
-            private string m_volume;
+            private long m_volumeid;
 
-            public BlocklistsEnumerable(System.Data.IDbConnection connection, string temptable, string volume)
+            public BlocklistsEnumerable(System.Data.IDbConnection connection, string temptable, long volumeid)
             {
                 m_connection = connection;
                 m_temptable = temptable;
-                m_volume = volume;
+                m_volumeid = volumeid;
             }
 
-            public IEnumerator<string> GetEnumerator() { return new BlocklistEnumerator(m_connection, m_temptable, m_volume); }
+            public IEnumerator<string> GetEnumerator() { return new BlocklistEnumerator(m_connection, m_temptable, m_volumeid); }
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
         }
     }

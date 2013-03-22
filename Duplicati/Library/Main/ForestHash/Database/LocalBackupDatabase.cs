@@ -44,8 +44,8 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         private readonly System.Data.IDbCommand m_createremotevolumeCommand;
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
-
-        private HashDatabaseProtector<string> m_blockHashLookup;
+		
+		private HashDatabaseProtector<string> m_blockHashLookup;
         private HashDatabaseProtector<string, long> m_fileHashLookup;
         private HashDatabaseProtector<string, long> m_metadataLookup;
         private HashDatabaseProtector<string, KeyValuePair<long, DateTime>> m_fileScantimeLookup;
@@ -85,8 +85,8 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_selectfileSimpleCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_findmetadatasetProbeCommand = m_connection.CreateCommand();
-
-            m_findblockCommand.CommandText = @"SELECT ""File"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
+				
+			m_findblockCommand.CommandText = @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
 
             m_findblocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = ? AND ""Length"" = ?";
@@ -101,7 +101,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_findfilesetCommand.CommandText = @"SELECT ""ID"" FROM ""Fileset"" WHERE ""BlocksetID"" = ? AND ""MetadatasetID"" = ? AND ""Path"" = ?";
             m_findfilesetCommand.AddParameters(3);
 
-            m_insertblockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""File"", ""Size"") VALUES (?, ?, ?)";
+            m_insertblockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (?, ?, ?)";
             m_insertblockCommand.AddParameters(3);
 
             m_insertfileOperationCommand.CommandText = @"INSERT INTO ""OperationFileset"" (""OperationID"", ""FilesetID"", ""Scantime"") VALUES (?, ?, ?)";
@@ -140,14 +140,14 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_findremotevolumestateCommand.CommandText = @"SELECT ""State"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
             m_findremotevolumestateCommand.AddParameters(1);
 
-            m_updateblockCommand.CommandText = @"UPDATE ""Block"" SET ""File"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? ";
+            m_updateblockCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? ";
             m_updateblockCommand.AddParameters(3);
 
-            m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?)";
-            m_createremotevolumeCommand.AddParameter(m_operationid);
+			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();";
+			m_createremotevolumeCommand.AddParameter(m_operationid);
             m_createremotevolumeCommand.AddParameters(3);
-
-            if (options.FhBlockHashSize > 0)
+            
+			if (options.FhBlockHashSize > 0)
                 m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashSize);            
             if (options.FhFileHashSize > 0)
                 m_fileHashLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhFileHashSize);
@@ -164,7 +164,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 if (m_blockHashLookup != null)
-                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""RemoteVolume"".""State"" IN (?,?,?,?) ", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()))
+                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Hash"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Block"".""VolumeID"" AND ""RemoteVolume"".""State"" IN (?,?,?,?) ", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()))
                         while (rd.Read())
                         {
                             var str = rd.GetValue(0).ToString();
@@ -213,7 +213,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                             m_filesetLookup.Add((ulong)blocksetid ^ (ulong)metadataid ^ (ulong)path.GetHashCode(), new Tuple<string, long, long>(path, blocksetid, metadataid), filesetid);
                         }
                                                         
-                m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ""Block"".""File"" AND ""RemoteVolume"".""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()));
+                m_missingBlockHashes = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT (*) FROM (SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"" FROM ""Block"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Block"".""VolumeID"" AND ""RemoteVolume"".""State"" NOT IN (?,?,?,?))", RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()));
             }
 
         }
@@ -224,7 +224,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// <param name="key">The block key</param>
         /// <param name="archivename">The name of the archive that holds the data</param>
         /// <returns>True if the block should be added to the current output</returns>
-        public bool AddBlock (string key, long size, string archivename, System.Data.IDbTransaction transaction = null)
+        public bool AddBlock (string key, long size, long volumeid, System.Data.IDbTransaction transaction = null)
         {
             object r = null;
             ulong hashdata = 0;
@@ -266,7 +266,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             {
                 m_insertblockCommand.Transaction = transaction;
                 m_insertblockCommand.SetParameterValue(0, key);
-                m_insertblockCommand.SetParameterValue(1, archivename);
+                m_insertblockCommand.SetParameterValue(1, volumeid);
                 m_insertblockCommand.SetParameterValue(2, size);
                 m_insertblockCommand.ExecuteNonQuery();
                 if (m_blockHashLookup != null)
@@ -289,7 +289,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 else
                 {
                     m_updateblockCommand.Transaction = transaction;
-                    m_updateblockCommand.ExecuteNonQuery(null, archivename, key, size);
+                    m_updateblockCommand.ExecuteNonQuery(null, volumeid, key, size);
                     return true;
                 }
 
@@ -562,17 +562,23 @@ namespace Duplicati.Library.Main.ForestHash.Database
             AddFile(path, scantime, FOLDER_BLOCKSET_ID, metadataID, transaction);
         }
 
-        public void RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state)
-        {
+		public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
+		{
             lock (m_lock)
             {
-                m_createremotevolumeCommand.SetParameterValue(1, name);
-                m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
-                m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
-                m_createremotevolumeCommand.ExecuteNonQuery();
+            	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            	{
+	                m_createremotevolumeCommand.SetParameterValue(1, name);
+	                m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
+	                m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
+	                m_createremotevolumeCommand.Transaction = tr.Parent;
+	                var r = Convert.ToInt64(m_createremotevolumeCommand.ExecuteScalar());
+	                tr.Commit();
+	                return r;
+                }
             }
         }
-
+        
         public void AddSymlinkEntry(string path, long metadataID, DateTime scantime, System.Data.IDbTransaction transaction = null)
         {
             AddFile(path, scantime, SYMLINK_BLOCKSET_ID, metadataID, transaction);

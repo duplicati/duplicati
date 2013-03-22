@@ -15,8 +15,9 @@ The remote volumes table keeps track
 of the state of all known volumes
 */
 CREATE TABLE "Remotevolume" (
+	"ID" INTEGER PRIMARY KEY,
 	"OperationID" INTEGER NOT NULL,
-	"Name" TEXT PRIMARY KEY,
+	"Name" TEXT NOT NULL,
 	"Type" TEXT NOT NULL,
 	"Size" INTEGER NULL,
 	"Hash" TEXT NULL,
@@ -84,12 +85,16 @@ CREATE TABLE "BlocksetEntry" (
 The individual block hashes,
 mapped to the containing file
 */
+
 CREATE TABLE "Block" (
 	"ID" INTEGER PRIMARY KEY,
     "Hash" TEXT NOT NULL,
 	"Size" INTEGER NOT NULL,
-	"File" TEXT NOT NULL
+	"VolumeID" INTEGER NOT NULL
 );
+
+);
+
 
 /*
 A metadata set

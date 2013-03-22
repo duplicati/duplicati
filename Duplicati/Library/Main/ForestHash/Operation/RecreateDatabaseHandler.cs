@@ -83,9 +83,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                                 foreach (var a in svr.Volumes)
                                 {
+									var volumeID = restoredb.GetRemoteVolumeID(a.Filename);
                                     //Add all block/volume mappings
                                     foreach (var b in a.Blocks)
-                                        backupdb.AddBlock(b.Key, b.Value, a.Filename, tr);
+                                        backupdb.AddBlock(b.Key, b.Value, volumeID, tr);
 
                                     backupdb.UpdateRemoteVolume(a.Filename, RemoteVolumeState.Verified, a.Length, a.Hash, tr);
                                 }
@@ -143,7 +144,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), sf.Value, m_options))
                     using (var tr = restoredb.BeginTransaction())
                     {
-                        foreach (var blocklisthash in restoredb.GetBlockLists(sf.Key.Name))
+                    	var volumeid = restoredb.GetRemoteVolumeID(sf.Key.Name);
+                        foreach (var blocklisthash in restoredb.GetBlockLists(volumeid))
                             restoredb.UpdateBlocklist(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), hashsize, tr);
 
                         tr.Commit();
