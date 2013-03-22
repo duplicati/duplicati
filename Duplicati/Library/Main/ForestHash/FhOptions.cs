@@ -11,11 +11,12 @@ namespace Duplicati.Library.Main.ForestHash
         private const string DEFAULT_BLOCK_HASH_LOOKUP_SIZE = "64mb";
         private const string DEFAULT_METADATA_HASH_LOOKUP_SIZE = "64mb";
         private const string DEFAULT_FILE_HASH_LOOKUP_SIZE = "32mb";
-
+		private const string DEFAULT_FILENAME_LOOKUP_SIZE = "64mb";
+		
         /// <summary>
         /// The default block size for Foresthash
         /// </summary>
-        private const string DEFAULT_FH_BLOCKSIZE = "10kb";
+        private const string DEFAULT_FH_BLOCKSIZE = "100kb";
 
         public FhOptions(Dictionary<string, string> options)
             : base(options)
@@ -37,7 +38,7 @@ namespace Duplicati.Library.Main.ForestHash
                     new CommandLineArgument("fh-blockhash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblockhashlookupsizeShort, Strings.FhOptions.FhblockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("fh-filehash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilehashlookupsizeShort, Strings.FhOptions.FhfilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
                     new CommandLineArgument("fh-metadatahash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhmetadatahashlookupsizeShort, Strings.FhOptions.FhmetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
-                    new CommandLineArgument("fh-filepath-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilepathlookupsizeShort, Strings.FhOptions.FhfilepathlookupsizeLong, "0"),
+					new CommandLineArgument("fh-filepath-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilepathlookupsizeShort, Strings.FhOptions.FhfilepathlookupsizeLong, DEFAULT_FILENAME_LOOKUP_SIZE),
                     new CommandLineArgument("fh-changed-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhchangedfilesetShort, Strings.FhOptions.FhchangedfilesetLong),
                     new CommandLineArgument("fh-deleted-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdeletedfilesetShort, string.Format(Strings.FhOptions.FhdeletedfilesetLong, "fh-changed-fileset")),
 
@@ -147,7 +148,7 @@ namespace Duplicati.Library.Main.ForestHash
                 string v;
                 m_options.TryGetValue("fh-filepath-lookup-size", out v);
                 if (string.IsNullOrEmpty(v))
-                    return 0;
+					v = DEFAULT_FILENAME_LOOKUP_SIZE;
 
                 return Utility.Sizeparser.ParseSize(v, "mb");
             }
