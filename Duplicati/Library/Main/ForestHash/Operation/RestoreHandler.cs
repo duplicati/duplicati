@@ -196,7 +196,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 if (!hasher.CanReuseTransform)
                     throw new Exception(Strings.Foresthash.InvalidCryptoSystem);
 
-                ForestHash.VerifyRemoteList(backend, m_options, database);
+				if (!m_options.FhNoBackendverification)
+                	ForestHash.VerifyRemoteList(backend, m_options, database);
 
                 //Figure out what files are to be patched, and what blocks are needed
                 PrepareBlockAndFileList(database, m_options, m_destination, m_stat);

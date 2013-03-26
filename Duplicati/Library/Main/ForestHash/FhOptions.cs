@@ -42,6 +42,8 @@ namespace Duplicati.Library.Main.ForestHash
                     new CommandLineArgument("fh-changed-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhchangedfilesetShort, Strings.FhOptions.FhchangedfilesetLong),
                     new CommandLineArgument("fh-deleted-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdeletedfilesetShort, string.Format(Strings.FhOptions.FhdeletedfilesetLong, "fh-changed-fileset")),
 
+                    new CommandLineArgument("fh-no-shadowfiles", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnoshadowfilesShort, Strings.FhOptions.FhnoshadowfilesLong, "false"),
+                    new CommandLineArgument("fh-no-backendverification", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnobackendverificationShort, Strings.FhOptions.FhnobackendverificationLong, "false"),
 #if DEBUG
                     new CommandLineArgument("fh-no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
                     new CommandLineArgument("fh-no-local-db", CommandLineArgument.ArgumentType.Boolean, "Prevents using local database for restore", "", "false"),
@@ -185,6 +187,23 @@ namespace Duplicati.Library.Main.ForestHash
                 return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
             }
         }
+        
+        /// <summary>
+        /// Gets a flag indicating if shadow files should be omitted
+        /// </summary>
+        public bool FhNoShadowfiles
+        {
+            get { return Utility.Utility.ParseBoolOption(m_options, "fh-no-shadowfiles"); }
+        }
+        
+        /// <summary>
+        /// Gets a flag indicating if the check for files on the remote storage should be omitted
+        /// </summary>
+        public bool FhNoBackendverification
+        {
+            get { return Utility.Utility.ParseBoolOption(m_options, "fh-no-backendverification"); }
+        }
+        
 #if DEBUG
         public bool NoLocalBlocks
         {

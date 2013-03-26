@@ -221,5 +221,41 @@ namespace Duplicati.Library.Main.Strings {
                 return ResourceManager.GetString("FhmetadatahashlookupsizeShort", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable..
+        /// </summary>
+        internal static string FhnobackendverificationLong {
+            get {
+                return ResourceManager.GetString("FhnobackendverificationLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not query backend at startup.
+        /// </summary>
+        internal static string FhnobackendverificationShort {
+            get {
+                return ResourceManager.GetString("FhnobackendverificationShort", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to If this flag is set, no shadow files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded..
+        /// </summary>
+        internal static string FhnoshadowfilesLong {
+            get {
+                return ResourceManager.GetString("FhnoshadowfilesLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not upload shadow files.
+        /// </summary>
+        internal static string FhnoshadowfilesShort {
+            get {
+                return ResourceManager.GetString("FhnoshadowfilesShort", resourceCulture);
+            }
+        }
     }
 }

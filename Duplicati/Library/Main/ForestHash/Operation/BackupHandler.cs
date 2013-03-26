@@ -76,16 +76,19 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
         public void Run()
         {
-            ForestHash.VerifyRemoteList(m_backend, m_options, m_database);
+        	if (!m_options.FhNoBackendverification)
+            	ForestHash.VerifyRemoteList(m_backend, m_options, m_database);
 
             m_blockvolume = new BlockVolumeWriter(m_options);
-            m_shadowvolume = new ShadowVolumeWriter(m_options);
-
             m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-            m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary);
             
-            m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
-
+            if (!m_options.FhNoShadowfiles)
+            {
+	            m_shadowvolume = new ShadowVolumeWriter(m_options);
+	            m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary);
+	            m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
+            }
+    
             using (m_transaction = m_database.BeginTransaction()) 
             {
                 if (m_options.FhChangedFilelist != null && m_options.FhChangedFilelist.Length >= 1)
@@ -125,8 +128,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 else
                 {
                     m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename);
-                    m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename);
-                    m_shadowvolume.FinishVolume(null, 0);
+                    if (m_shadowvolume != null)
+                    {
+	                    m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename);
+	                    m_shadowvolume.FinishVolume(null, 0);
+                    }
                 }
 
                 using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
@@ -145,8 +151,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             {
                 m_database.LogMessage("info", "removing temp files, as no data needs to be uploaded", null);
                 m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename);
-                m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename);
-                m_shadowvolume.FinishVolume(null, 0);
+                if (m_shadowvolume != null)
+                {
+	                m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename);
+	                m_shadowvolume.FinishVolume(null, 0);
+                }
             }
 
             m_backend.WaitForComplete();
@@ -358,18 +367,22 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             if (m_database.AddBlock(key, len, m_blockvolume.VolumeID, m_transaction))
             {
                 m_blockvolume.AddBlock(key, data, len, hint);
-                m_shadowvolume.AddBlock(key, len);
+                if (m_shadowvolume != null)
+                	m_shadowvolume.AddBlock(key, len);
+                	
                 if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Fhblocksize)
                 {
                     m_backend.Put(m_blockvolume, m_shadowvolume);
 
                     m_blockvolume = new BlockVolumeWriter(m_options);
-                    m_shadowvolume = new ShadowVolumeWriter(m_options);
-
 					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-					m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary);
 					
-					m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
+					if (!m_options.FhNoShadowfiles)
+					{
+	                    m_shadowvolume = new ShadowVolumeWriter(m_options);
+						m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary);
+						m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
+					}
                 }
 
                 return true;
