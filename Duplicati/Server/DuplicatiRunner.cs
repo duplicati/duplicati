@@ -75,6 +75,9 @@ namespace Duplicati.Server
 
             //Set the log level to be that of the GUI
             options["log-level"] = Duplicati.Library.Logging.Log.LogLevel.ToString();
+            
+            //Disable console output so it is logged
+            options["quiet-console"] = "true";
 
             //Set the name of the backup
             if (task.Schedule != null)

@@ -22,7 +22,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         public void Run()
         {
             using (var tmpdb = new Utility.TempFile())
-            using (var db = new Database.Localdatabase(System.IO.File.Exists(m_options.Fhdbpath) ? m_options.Fhdbpath : (string)tmpdb, "RestoreControlFiles"))
+            using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Fhdbpath) ? m_options.Fhdbpath : (string)tmpdb, "RestoreControlFiles"))
             using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
             {
                 var files = from file in backend.List()

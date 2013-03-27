@@ -549,4 +549,10 @@
   <data name="CompressionextensionfileShort" xml:space="preserve">
     <value>Manage non-compressible file extensions</value>
   </data>
+  <data name="QuietconsoleLong" xml:space="preserve">
+    <value>If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log.</value>
+  </data>
+  <data name="QuietconsoleShort" xml:space="preserve">
+    <value>Disable console output</value>
+  </data>
 </root>

@@ -6,7 +6,7 @@ using Duplicati.Library.Main.ForestHash.Volumes;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
-    public partial class LocalRestoredatabase : Localdatabase
+    public partial class LocalRestoredatabase : LocalDatabase
     {
         protected string m_tempfiletable;
         protected string m_tempblocktable;

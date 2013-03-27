@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
-    public class Localdatabase : IDisposable
+    public class LocalDatabase : IDisposable
     {
         protected readonly System.Data.IDbConnection m_connection;
         protected readonly long m_operationid = -1;
@@ -16,6 +16,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private readonly System.Data.IDbCommand m_selectremotevolumeCommand;
         private readonly System.Data.IDbCommand m_removeremotevolumeCommand;
 		private readonly System.Data.IDbCommand m_selectremotevolumeIdCommand;
+        private readonly System.Data.IDbCommand m_createremotevolumeCommand;
 
         private readonly System.Data.IDbCommand m_insertlogCommand;
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
@@ -33,7 +34,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
 
-            Utility.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(Localdatabase));
+            Utility.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
             
             return c;
         }
@@ -43,7 +44,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// </summary>
         /// <param name="path">The path to the database</param>
         /// <param name="operation">The name of the operation</param>
-        public Localdatabase(string path, string operation)
+        public LocalDatabase(string path, string operation)
             : this(CreateConnection(path), operation)
         {
         }
@@ -53,7 +54,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// </summary>
         /// <param name="path">The path to the database</param>
         /// <param name="operation">The name of the operation</param>
-        public Localdatabase(System.Data.IDbConnection connection, string operation)
+        public LocalDatabase(System.Data.IDbConnection connection, string operation)
         {
             this.OperationTimestamp = DateTime.UtcNow;
             m_connection = connection;
@@ -71,6 +72,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertremotelogCommand = m_connection.CreateCommand();
             m_removeremotevolumeCommand = m_connection.CreateCommand();
 			m_selectremotevolumeIdCommand = m_connection.CreateCommand();
+			m_createremotevolumeCommand = m_connection.CreateCommand();
 
             m_insertlogCommand.CommandText = @"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)";
             m_insertlogCommand.AddParameter(m_operationid);
@@ -93,6 +95,10 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_removeremotevolumeCommand.AddParameter();
 
 			m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
+
+			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();";
+			m_createremotevolumeCommand.AddParameter(m_operationid);
+            m_createremotevolumeCommand.AddParameters(3);
 		}
 		
 		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
@@ -172,6 +178,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 m_insertremotelogCommand.SetParameterValue(2, operation);
                 m_insertremotelogCommand.SetParameterValue(3, path);
                 m_insertremotelogCommand.SetParameterValue(4, data);
+                //TODO: It seems that SQLite with Mono has some issues with cross-thread db-access.
                 m_insertremotelogCommand.ExecuteNonQuery();
             }
         }
@@ -194,14 +201,14 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
         }
 
-        public void RemoveRemoteVolume(string name)
+        public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
         {
             lock (m_lock)
             {
-                using (var tr = m_connection.BeginTransaction())
+                using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                 {
                     var deletecmd = m_connection.CreateCommand();
-                    deletecmd.Transaction = tr;
+                    deletecmd.Transaction = tr.Parent;
 
 					deletecmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
 					deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
@@ -209,9 +216,10 @@ namespace Duplicati.Library.Main.ForestHash.Database
 					deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
 					
 					deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
+					deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
 
                     ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
-                    m_removeremotevolumeCommand.Transaction = tr;
+                    m_removeremotevolumeCommand.Transaction = tr.Parent;
                     m_removeremotevolumeCommand.ExecuteNonQuery();
 
                     tr.Commit();
@@ -219,6 +227,23 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
         }
 
+		public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
+		{
+            lock (m_lock)
+            {
+            	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            	{
+	                m_createremotevolumeCommand.SetParameterValue(1, name);
+	                m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
+	                m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
+	                m_createremotevolumeCommand.Transaction = tr.Parent;
+	                var r = Convert.ToInt64(m_createremotevolumeCommand.ExecuteScalar());
+	                tr.Commit();
+	                return r;
+                }
+            }
+        }
+        
         public long GetFilesetID(DateTime restoretime)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)

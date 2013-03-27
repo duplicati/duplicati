@@ -416,7 +416,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, string.Format(Strings.Options.SymlinkpolicyLong, "store", "ignore", "follow"), "store", null, Enum.GetNames(typeof(SymlinkStrategy))),
                     new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, string.Format(Strings.Options.ExcludefilesattributesLong, string.Join(", ", Enum.GetNames(typeof(System.IO.FileAttributes))))),
                     new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
-                    new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, string.Format(Strings.Options.CompressionextensionfileLong, DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE)
+                    new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, string.Format(Strings.Options.CompressionextensionfileLong, DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
+
+                    new CommandLineArgument("quiet-console", CommandLineArgument.ArgumentType.Boolean, Strings.Options.QuietconsoleShort, Strings.Options.QuietconsoleLong, "false")
                 });
 
                 lst.AddRange(ForestHash.FhOptions.Commands);
@@ -780,7 +782,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the timelimit for removal
         /// </summary>
-        public DateTime RemoveOlderThan
+        public DateTime DeleteOlderThan
         {
             get
             {
@@ -1270,6 +1272,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if connections cannot be re-used
         /// </summary>
         public bool NoConnectionReuse { get { return GetBool("no-connection-reuse"); } }
+
+        /// <summary>
+        /// A value indicating if console output is redirected to the log file
+        /// </summary>
+        public bool QuietConsole { get { return GetBool("quiet-console"); } }
 
         /// <summary>
         /// The path to a log database file, or null

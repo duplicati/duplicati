@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.ForestHash
         /// <param name="backend">The backend instance to use</param>
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
-        public static void VerifyRemoteList(FhBackend backend, Options options, Localdatabase database)
+        public static void VerifyRemoteList(FhBackend backend, Options options, LocalDatabase database)
         {
             var remotelist = backend.List();
             var lookup = new Dictionary<string, Library.Interface.IFileEntry>();
@@ -89,6 +89,8 @@ namespace Duplicati.Library.Main.ForestHash
 
             if (missing.Count > 0)
                 throw new Exception(string.Format("Found {0} files that are missing from the remote storage, please run cleanup", missing.Count));
+                
+            //TODO: Re-create any filelists that are missing?
         }
 
         /// <summary>
@@ -132,10 +134,15 @@ namespace Duplicati.Library.Main.ForestHash
             /// </summary>
             private readonly Dictionary<string, string> m_values;
 
-            public Metahash(Dictionary<string, string> values)
+            public Metahash(Dictionary<string, string> values, FhOptions options)
             {
                 m_values = values;
-                var sha = System.Security.Cryptography.SHA256.Create();
+                var hasher = System.Security.Cryptography.HashAlgorithm.Create(options.FhBlockHashAlgorithm);
+				if (hasher == null)
+					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, options.FhBlockHashAlgorithm));
+				if (!hasher.CanReuseTransform)
+					throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, options.FhBlockHashAlgorithm));
+					
                 using (var ms = new System.IO.MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))
                 {
@@ -145,7 +152,7 @@ namespace Duplicati.Library.Main.ForestHash
                     m_blob = ms.ToArray();
 
                     ms.Position = 0;
-                    m_hash = Convert.ToBase64String(sha.ComputeHash(ms));
+                    m_hash = Convert.ToBase64String(hasher.ComputeHash(ms));
                 }
             }
 
@@ -175,18 +182,22 @@ namespace Duplicati.Library.Main.ForestHash
         /// </summary>
         /// <param name="values">The metadata values to wrap</param>
         /// <returns>A IMetahash instance</returns>
-        public static IMetahash WrapMetadata(Dictionary<string, string> values)
+        public static IMetahash WrapMetadata(Dictionary<string, string> values, FhOptions options)
         {
-            return new Metahash(values);
+            return new Metahash(values, options);
         }
 
-
+		internal static void VerifyParameters(LocalDatabase db, FhOptions options)
+		{
+			//TODO: Fix this, check block-size and hash algorithm
+			throw new Exception("TODO");
+		}
 
 
         internal static IEnumerable<Volumes.IParsedVolume> ParseFileList(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
             var opts = new FhOptions(options);
-            using (var db = new Localdatabase(opts.Fhdbpath, "ParseFileList"))
+            using (var db = new LocalDatabase(opts.Fhdbpath, "ParseFileList"))
             using (var b = new FhBackend(target, opts, db, stat))
                 return
                     from n in b.List()
@@ -195,9 +206,22 @@ namespace Duplicati.Library.Main.ForestHash
                     select np;
         }
 
-        internal static string CompactBlocks(string target, Dictionary<string, string> options)
+        internal static string CompactBlocks(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
-            throw new NotImplementedException();
+            using(var h = new Operation.CompactHandler(target, new FhOptions(options), stat))
+            	return h.Run();
+        }
+
+        internal static string RecreateDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
+        {
+        	var opts = new FhOptions(options);
+        	if (System.IO.File.Exists(opts.Fhdbpath))
+        		throw new Exception("The database already exists!");
+        		
+            using(var h = new Operation.RecreateDatabaseHandler(target, opts, stat))
+            	h.Run(opts.Fhdbpath);
+            	
+            return "Recreate Completed";
         }
     }
 }

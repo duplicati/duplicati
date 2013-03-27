@@ -1621,7 +1621,7 @@ namespace Duplicati.Library.Main
 
             var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
 
-            using (var handler = new ForestHash.Operation.DeleteAllButNHandler(m_backend, fhopts, rs))
+            using (var handler = new ForestHash.Operation.DeleteHandler(m_backend, fhopts, rs))
                 handler.Run();
 
             return rs.ToString();
@@ -1769,7 +1769,7 @@ namespace Duplicati.Library.Main
 
             var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
 
-            using (var handler = new ForestHash.Operation.DeleteOlderThanHandler(m_backend, fhopts, rs))
+            using (var handler = new ForestHash.Operation.DeleteHandler(m_backend, fhopts, rs))
                 handler.Run();
 
             return rs.ToString();
@@ -1784,7 +1784,7 @@ namespace Duplicati.Library.Main
             CommunicationStatistics stats = new CommunicationStatistics(DuplicatiOperationMode.DeleteOlderThan);
             SetupCommonOptions(stats);
 
-            DateTime expires = m_options.RemoveOlderThan;
+            DateTime expires = m_options.DeleteOlderThan;
             BackendWrapper backend = null;
 
             try
@@ -2230,6 +2230,7 @@ namespace Duplicati.Library.Main
             {
                 stats.VerboseErrors = m_options.DebugOutput;
                 stats.VerboseRetryErrors = m_options.VerboseRetryErrors;
+                stats.QuietConsole = m_options.QuietConsole;
             }
 
             if (m_options.HasTempDir)
@@ -3059,12 +3060,31 @@ namespace Duplicati.Library.Main
         public static IEnumerable<ForestHash.Volumes.IParsedVolume> ParseFhFileList(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
             stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.List);
-            return ForestHash.ForestHash.ParseFileList(target, options, stat);
+            using(var i = new Interface(target, options))
+            {
+            	i.SetupCommonOptions(stat);
+	            return ForestHash.ForestHash.ParseFileList(target, options, stat);
+			}
         }
 
-        public static string CompactBlocks(string target, Dictionary<string, string> options)
+        public static string CompactBlocks(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
-            return ForestHash.ForestHash.CompactBlocks(target, options);
+            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.CleanUp);
+            using(var i = new Interface(target, options))
+            {
+            	i.SetupCommonOptions(stat);
+            	return ForestHash.ForestHash.CompactBlocks(target, options, stat);
+            }
+        }
+        
+        public static string RecreateDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
+        {
+            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.CleanUp);
+            using(var i = new Interface(target, options))
+            {
+            	i.SetupCommonOptions(stat);
+	            return ForestHash.ForestHash.RecreateDatabase(target, options, stat);
+            }
         }
     }
 }

@@ -17,16 +17,26 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         public delegate IEnumerable<IFileEntry> FilenameFilterDelegate(IEnumerable<IFileEntry> filenamelist);
         public delegate void BlockVolumePostProcessor(string volumename, BlockVolumeReader reader);
 
-        public RecreateDatabaseHandler(string backendurl, FhOptions options, string destination, CommunicationStatistics stat)
+        public RecreateDatabaseHandler(string backendurl, FhOptions options, CommunicationStatistics stat)
         {
             m_options = options;
             m_backendurl = backendurl;
             m_stat = stat;
         }
 
+		/// <summary>
+		/// Run the recreate procedure
+		/// </summary>
+		/// <param name="path">Path to the database that will be created</param>
+		/// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
+		/// <param name="filenamefilter">Filters the files in a filelist to prevent downloading unwanted data</param>
+		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
         public void Run(string path, FilterFilelistDelegate filelistfilter = null, FilenameFilterDelegate filenamefilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
-            var hashsize = System.Security.Cryptography.SHA256.Create().HashSize / 8;
+        	var hashalg = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
+			if (hashalg == null)
+				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhBlockHashAlgorithm));
+            var hashsize = hashalg.HashSize / 8;
 
             //We build a local database in steps.
             using (var restoredb = new LocalBlocklistUpdateDatabase(path, m_options.Fhblocksize))

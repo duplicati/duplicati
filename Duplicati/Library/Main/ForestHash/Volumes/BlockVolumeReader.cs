@@ -19,10 +19,10 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         {
         }
 
-        public int ReadBlock(string hash, byte[] m_blockbuffer)
+        public int ReadBlock(string hash, byte[] blockbuffer)
         {
             using (var fs = m_compression.OpenRead(Utility.Utility.Base64PlainToBase64Url(hash)))
-                return Utility.Utility.ForceStreamRead(fs, m_blockbuffer, m_blockbuffer.Length);
+                return Utility.Utility.ForceStreamRead(fs, blockbuffer, blockbuffer.Length);
         }
 
         public IEnumerable<string> ReadBlocklist(string hash, long hashsize)
@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
                 return
                     from n in m_compression.ListFilesWithSize(null)
                     let valid = m_base64_urlsafe_detector.Match(n.Key)
-                    where valid.Success && valid.Length == n.Key.Length
+                    where valid.Success && valid.Length == n.Key.Length && n.Key.Length % 4 == 0 && n.Key != MANIFEST_FILENAME
                     select new KeyValuePair<string, long>(Utility.Utility.Base64UrlToBase64Plain(n.Key), n.Value);
             }
         }

@@ -61,6 +61,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BackendWrapper.cs" />
@@ -85,8 +86,6 @@
     <Compile Include="ForestHash\FhOptions.cs" />
     <Compile Include="ForestHash\HashlistCollector.cs" />
     <Compile Include="ForestHash\Operation\CleanupHandler.cs" />
-    <Compile Include="ForestHash\Operation\DeleteAllButNHandler.cs" />
-    <Compile Include="ForestHash\Operation\DeleteOlderThanHandler.cs" />
     <Compile Include="ForestHash\Operation\FindLastFileVersionHandler.cs" />
     <Compile Include="ForestHash\Operation\ListFilesHandler.cs" />
     <Compile Include="ForestHash\Operation\ListSourceFoldersHandler.cs" />
@@ -168,6 +167,9 @@
     <Compile Include="StateVerification\StateDatabase.cs" />
     <Compile Include="StateVerification\LogEntryClasses.cs" />
     <Compile Include="ForestHash\Database\HashDatabaseProtector.cs" />
+    <Compile Include="ForestHash\Database\LocalDeleteDatabase.cs" />
+    <Compile Include="ForestHash\Operation\CompactHandler.cs" />
+    <Compile Include="ForestHash\Operation\DeleteHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">

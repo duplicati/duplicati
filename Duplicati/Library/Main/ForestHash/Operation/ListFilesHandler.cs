@@ -25,7 +25,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 #endif
             //Use a speedy local query
             if (System.IO.File.Exists(m_options.Fhdbpath))
-                using (var db = new Database.Localdatabase(m_options.Fhdbpath, "ListFiles"))
+                using (var db = new Database.LocalDatabase(m_options.Fhdbpath, "ListFiles"))
                 {
                     var filesetid = db.GetFilesetID(m_options.RestoreTime);
                     return 
@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Utility.TempFile())
-            using (var db = new Database.Localdatabase(tmpdb, "ListFiles"))
+            using (var db = new Database.LocalDatabase(tmpdb, "ListFiles"))
             using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
             {
                 var filter = RestoreHandler.FilterFilelist(m_options.RestoreTime);

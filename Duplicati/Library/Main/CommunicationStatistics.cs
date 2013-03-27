@@ -41,11 +41,12 @@ namespace Duplicati.Library.Main
         private StringBuilder m_warningMessages = new StringBuilder();
 
         private bool m_verboseRetryErrors = false;
+        private bool m_quietConsole = false;
         private long m_lastRetryOperationNo = -1;
         private long m_numberOfRetriedOperations;
         private long m_numberOfRetries;
         private StringBuilder m_retryMessages = new StringBuilder();
-
+        
         public CommunicationStatistics(DuplicatiOperationMode operationMode)
         {
             m_operationMode = operationMode;
@@ -53,6 +54,12 @@ namespace Duplicati.Library.Main
         }
 
         public DuplicatiOperationMode OperationMode { get { return m_operationMode; } }
+
+        public bool QuietConsole
+        {
+            get { return m_quietConsole; }
+            set { m_quietConsole = value; }
+        }
 
         public bool VerboseErrors
         {
@@ -121,11 +128,18 @@ namespace Duplicati.Library.Main
             lock (m_lock)
             {
                 m_numberOfErrors++;
-                m_errorMessages.AppendLine(errorMessage);
+                if (m_quietConsole)
+                	m_errorMessages.AppendLine(errorMessage);
+                else
+                	ConsoleWriteErrorLine(errorMessage);
+                
                 if (m_verboseErrors)
                     while (ex != null)
                     {
-                        m_errorMessages.AppendLine(ex.ToString());
+		                if (m_quietConsole)
+                        	m_errorMessages.AppendLine(ex.ToString());
+                        else
+		                	ConsoleWriteErrorLine(ex.ToString());
                         ex = ex.InnerException;
                     }
             }
@@ -140,11 +154,18 @@ namespace Duplicati.Library.Main
 
             if (m_verboseErrors || m_verboseRetryErrors)
             {
-                m_retryMessages.AppendLine(errorMessage);
+                if (m_quietConsole)
+	                m_retryMessages.AppendLine(errorMessage);
+                else
+                	ConsoleWriteErrorLine(errorMessage);
+
                 if (m_verboseErrors) 
                     while (ex != null)
                     {
-                        m_retryMessages.AppendLine(ex.ToString());
+		                if (m_quietConsole)
+	                        m_retryMessages.AppendLine(ex.ToString());
+		                else
+		                	ConsoleWriteErrorLine(ex.ToString());
                         ex = ex.InnerException;
                     }
             }
@@ -200,14 +221,41 @@ namespace Duplicati.Library.Main
             lock (m_lock)
             {
                 m_numberOfWarnings++;
-                m_warningMessages.AppendLine(warningMessage);
+                if (m_quietConsole)
+                	m_warningMessages.AppendLine(warningMessage);
+                else
+                	ConsoleWriteErrorLine(warningMessage);
+
                 if (m_verboseErrors)
                     while (ex != null)
                     {
-                        m_warningMessages.AppendLine(ex.ToString());
+		                if (m_quietConsole)
+	                        m_warningMessages.AppendLine(ex.ToString());
+		                else
+		                	ConsoleWriteErrorLine(ex.ToString());
                         ex = ex.InnerException;
                     }
             }
         }
-    }
+        
+        public void LogMessage(string message, params object[] args)
+        {
+            lock (m_lock)
+            {
+                if (m_quietConsole)
+                	Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Information);
+                else
+                	Console.WriteLine(message, args);
+            }
+        }
+        
+        private System.IO.TextWriter m_stderr;
+        
+        private void ConsoleWriteErrorLine(string message)
+        {
+        	if (m_stderr == null)
+        		m_stderr = new System.IO.StreamWriter(Console.OpenStandardError());
+        	m_stderr.WriteLine(message);
+        }
+	}
 }

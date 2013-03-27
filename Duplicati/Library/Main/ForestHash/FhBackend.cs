@@ -11,6 +11,8 @@ namespace Duplicati.Library.Main.ForestHash
 {
     public class FhBackend : IDisposable
     {
+    	public const string VOLUME_HASH = "SHA256";
+    
         private enum OperationType
         {
             Get,
@@ -84,17 +86,17 @@ namespace Duplicati.Library.Main.ForestHash
                 }
             }
 
-            public static string CalculateSha256Hash(string filename)
+            public static string CalculateFileHash(string filename)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                    return Convert.ToBase64String(System.Security.Cryptography.SHA256.Create().ComputeHash(fs));
+                    return Convert.ToBase64String(System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH).ComputeHash(fs));
             }
 
-            public bool UpdateHashAndSize()
+            public bool UpdateHashAndSize(FhOptions options)
             {
                 if (Hash == null || Size < 0)
                 {
-                    Hash = CalculateSha256Hash(this.LocalFilename);
+                    Hash = CalculateFileHash(this.LocalFilename);
                     Size = new System.IO.FileInfo(this.LocalFilename).Length;
                     return true;
                 }
@@ -105,15 +107,15 @@ namespace Duplicati.Library.Main.ForestHash
 
         private BlockingQueue<FileEntryItem> m_queue;
         private System.Threading.Thread m_thread;
-        private Options m_options;
-        private Localdatabase m_database;
+        private FhOptions m_options;
+        private LocalDatabase m_database;
         private volatile Exception m_lastException;
         private Library.Interface.IEncryption m_encryption;
         private Library.Interface.IBackend m_backend;
         private string m_backendurl;
         private CommunicationStatistics m_stats;
 
-        public FhBackend(string backendurl, Options options, Localdatabase database, CommunicationStatistics stats)
+        public FhBackend(string backendurl, FhOptions options, LocalDatabase database, CommunicationStatistics stats)
         {
             m_options = options;
             m_database = database;
@@ -217,7 +219,7 @@ namespace Duplicati.Library.Main.ForestHash
         private void DoPut(FileEntryItem item)
         {
             item.Encrypt(m_encryption);
-            if (item.UpdateHashAndSize())
+            if (item.UpdateHashAndSize(m_options))
                 m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
             if (item.Shadow != null)
@@ -261,7 +263,7 @@ namespace Duplicati.Library.Main.ForestHash
                     m_backend.Get(item.RemoteFilename, tmpfile);
                 
                 m_stats.AddBytesDownloaded(new System.IO.FileInfo(tmpfile).Length);
-                m_database.LogRemoteOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateSha256Hash(tmpfile) }));
+                m_database.LogRemoteOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateFileHash(tmpfile) }));
 
                 if (!m_options.SkipFileHashChecks)
                 {
@@ -274,7 +276,7 @@ namespace Duplicati.Library.Main.ForestHash
 
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
-                        var nh = FileEntryItem.CalculateSha256Hash(tmpfile);
+                        var nh = FileEntryItem.CalculateFileHash(tmpfile);
                         if (nh != item.Hash)
                             throw new BackendWrapper.HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, tmpfile, item.Hash, nh));
                     }

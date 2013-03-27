@@ -377,6 +377,42 @@ namespace Duplicati.CommandLine
                     Duplicati.Library.Main.Interface.CreateFolder(cargs[0], options);
                     Console.WriteLine(string.Format(Strings.Program.FolderCreatedMessage, cargs[0]));
                 }
+                else if (source.Trim().ToLower() == "compact")
+                {
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        PrintWrongNumberOfArguments(cargs, 1);
+                        return 200;
+                    }
+
+					if (!options.ContainsKey("fh-dbpath"))
+					{
+						PrintRequiresFhDb(source);
+						return 200;
+					}	
+					
+                    Console.WriteLine(Duplicati.Library.Main.Interface.CompactBlocks(cargs[0], options, null));
+                }
+                else if (source.Trim().ToLower() == "recreate-database")
+                {
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        PrintWrongNumberOfArguments(cargs, 1);
+                        return 200;
+                    }
+
+					if (!options.ContainsKey("fh-dbpath"))
+					{
+						PrintRequiresFhDb(source);
+						return 200;
+					}	
+					
+                    Console.WriteLine(Duplicati.Library.Main.Interface.RecreateDatabase(cargs[0], options, null));
+                }                
                 else if (source.Trim().ToLower() == "find-last-version")
                 {
                     cargs.RemoveAt(0);
@@ -527,6 +563,11 @@ namespace Duplicati.CommandLine
         private static void PrintWrongNumberOfArguments(List<string> args, int expected)
         {
             Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2, args.Count, expected, args.Count == 0 ? "" : "\"" + string.Join("\", \"", args.ToArray()) + "\"");
+        }
+
+        private static void PrintRequiresFhDb(string command)
+        {
+            Console.WriteLine(string.Format("The command \"{0}\" requires that the option --{1} is set", command, "fh-dbpath"));
         }
 
         public static IList<Library.Interface.ICommandLineArgument> SupportedCommands

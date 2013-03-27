@@ -9,9 +9,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
     {
         private string m_backendurl;
         private FhOptions m_options;
-        private RestoreStatistics m_stat;
+        private CommunicationStatistics m_stat;
 
-        public CleanupHandler(string backend, FhOptions options, RestoreStatistics stat)
+        public CleanupHandler(string backend, FhOptions options, CommunicationStatistics stat)
         {
             m_backendurl = backend;
             m_options = options;

@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
-    public class LocalBackupDatabase : Localdatabase
+    public class LocalBackupDatabase : LocalDatabase
     {
         /// <summary>
         /// An approximate size of a hash-string in memory (44 chars * 2 for unicode + 8 bytes for pointer = 104)
@@ -42,7 +42,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private readonly System.Data.IDbCommand m_findremotevolumestateCommand;
         private readonly System.Data.IDbCommand m_updateblockCommand;
 
-        private readonly System.Data.IDbCommand m_createremotevolumeCommand;
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
 		
 		private HashDatabaseProtector<string> m_blockHashLookup;
@@ -78,7 +77,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertblocksetentryCommand = m_connection.CreateCommand();
             m_findremotevolumestateCommand = m_connection.CreateCommand();
             m_updateblockCommand = m_connection.CreateCommand();
-            m_createremotevolumeCommand = m_connection.CreateCommand();
             m_insertblocklistHashesCommand = m_connection.CreateCommand();
             m_selectblocklistHashesCommand = m_connection.CreateCommand();
             m_insertfileOperationCommand = m_connection.CreateCommand();
@@ -142,10 +140,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             m_updateblockCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? ";
             m_updateblockCommand.AddParameters(3);
-
-			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();";
-			m_createremotevolumeCommand.AddParameter(m_operationid);
-            m_createremotevolumeCommand.AddParameters(3);
             
 			if (options.FhBlockHashSize > 0)
                 m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashSize);            
@@ -560,23 +554,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public void AddDirectoryEntry(string path, long metadataID, DateTime scantime, System.Data.IDbTransaction transaction = null)
         {
             AddFile(path, scantime, FOLDER_BLOCKSET_ID, metadataID, transaction);
-        }
-
-		public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
-		{
-            lock (m_lock)
-            {
-            	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            	{
-	                m_createremotevolumeCommand.SetParameterValue(1, name);
-	                m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
-	                m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
-	                m_createremotevolumeCommand.Transaction = tr.Parent;
-	                var r = Convert.ToInt64(m_createremotevolumeCommand.ExecuteScalar());
-	                tr.Commit();
-	                return r;
-                }
-            }
         }
         
         public void AddSymlinkEntry(string path, long metadataID, DateTime scantime, System.Data.IDbTransaction transaction = null)

@@ -93,6 +93,16 @@ CREATE TABLE "Block" (
 	"VolumeID" INTEGER NOT NULL
 );
 
+/*
+The deleted block hashes,
+mapped to the containing file,
+used for wasted space computations
+*/
+CREATE TABLE "DeletedBlock" (
+	"ID" INTEGER PRIMARY KEY,
+    "Hash" TEXT NOT NULL,
+	"Size" INTEGER NOT NULL,
+	"VolumeID" INTEGER NOT NULL
 );
 
 

@@ -28,12 +28,14 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         private Snapshots.ISnapshotService m_snapshot;
         private long m_otherchanges;
 
-        private readonly ForestHash.IMetahash EMPTY_METADATA = ForestHash.WrapMetadata(new Dictionary<string, string>());
+        private readonly ForestHash.IMetahash EMPTY_METADATA;
 
         private string[] m_sources;
 
         public BackupHandler(string backendurl, FhOptions options, BackupStatistics stat, string[] sources)
         {
+        	EMPTY_METADATA = ForestHash.WrapMetadata(new Dictionary<string, string>(), options);
+        	
             m_options = options;
             m_stat = stat;
             m_database = new LocalBackupDatabase(m_options.Fhdbpath, m_options);
@@ -43,11 +45,18 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             m_blockbuffer = new byte[m_options.Fhblocksize];
             m_blocklistbuffer = new byte[m_options.Fhblocksize];
 
-            m_blockhasher = System.Security.Cryptography.SHA256.Create();
-            m_filehasher = System.Security.Cryptography.SHA256.Create();
+            m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
+            m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhFileHashAlgorithm);
 
-            if (!m_blockhasher.CanReuseTransform || !m_filehasher.CanReuseTransform)
-                throw new Exception(Strings.Foresthash.InvalidCryptoSystem);
+			if (m_blockhasher == null)
+				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhBlockHashAlgorithm));
+			if (m_filehasher == null)
+				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhFileHashAlgorithm));
+
+            if (!m_blockhasher.CanReuseTransform)
+                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FhBlockHashAlgorithm));
+            if (!m_filehasher.CanReuseTransform)
+                throw new Exception(string.Format(Strings.Foresthash.InvalidCryptoSystem, m_options.FhFileHashAlgorithm));
         }
 
         private static Snapshots.ISnapshotService GetSnapshot(string[] sourcefolders, Options options, CommunicationStatistics stat)
@@ -110,7 +119,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     using (m_snapshot = GetSnapshot(m_sources, m_options, m_stat))
                         m_snapshot.EnumerateFilesAndFolders(this.HandleFilesystemEntry);
                 }
-
+				
+				//Actually we cannot commit because the FhBackend is using the db?
                 m_transaction.Commit();
             }
 
@@ -191,7 +201,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     if (!metadata.ContainsKey("CoreSymlinkTarget"))
                         metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
 
-                    var metahash = ForestHash.WrapMetadata(metadata);
+                    var metahash = ForestHash.WrapMetadata(metadata, m_options);
                     if (AddSymlinkToOutput(path, DateTime.UtcNow, metahash))
                         m_otherchanges++;
                     
@@ -218,7 +228,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         metadata["CoreAttributes"] = attributes.ToString();
                     if (!metadata.ContainsKey("CoreLastWritetime"))
                         metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(m_snapshot.GetLastWriteTime(path));
-                    metahash = ForestHash.WrapMetadata(metadata);
+                    metahash = ForestHash.WrapMetadata(metadata, m_options);
                 }
 
                 //m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
@@ -263,7 +273,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         if (!metadata.ContainsKey("CoreLastWritetime"))
                             metadata["CoreLastWritetime"] = Utility.Utility.SerializeDateTime(lastModified);
 
-                        metahashandsize = ForestHash.WrapMetadata(metadata);
+                        metahashandsize = ForestHash.WrapMetadata(metadata, m_options);
                     }
 
                     var blocklisthashes = new List<string>();
@@ -373,6 +383,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 if (m_blockvolume.Filesize > m_options.VolumeSize - m_options.Fhblocksize)
                 {
                     m_backend.Put(m_blockvolume, m_shadowvolume);
+                    //TODO: Commit transaction?
 
                     m_blockvolume = new BlockVolumeWriter(m_options);
 					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
