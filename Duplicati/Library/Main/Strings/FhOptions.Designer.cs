@@ -231,9 +231,9 @@ namespace Duplicati.Library.Main.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Do not upload shadow files.
         /// </summary>
-        internal static string FhnoshadowfilesLong {
+        internal static string FhnoshadowfilesShort {
             get {
-                return ResourceManager.GetString("FhnoshadowfilesLong", resourceCulture);
+                return ResourceManager.GetString("FhnoshadowfilesShort", resourceCulture);
             }
         }        
         /// <summary>

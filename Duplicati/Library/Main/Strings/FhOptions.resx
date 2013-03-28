@@ -180,7 +180,7 @@
   <data name="FhnoshadowfilesLong" xml:space="preserve">
     <value>If this flag is set, no shadow files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded.</value>
   </data>
-  <data name="FhnoshadowfilesLong" xml:space="preserve">
+  <data name="FhnoshadowfilesShort" xml:space="preserve">
     <value>Do not upload shadow files</value>
   </data>
   <data name="FhmaxwastesizeLong" xml:space="preserve">
