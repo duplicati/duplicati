@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
-    public partial class LocalBlocklistUpdateDatabase : LocalRestoredatabase
+    public partial class LocalBlocklistUpdateDatabase : LocalRestoreDatabase
     {
         protected string m_tempblockvolumetable;
         protected string m_temphashtable;

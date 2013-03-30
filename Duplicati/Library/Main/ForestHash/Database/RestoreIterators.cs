@@ -6,7 +6,7 @@ using Duplicati.Library.Main.ForestHash.Volumes;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
-    public partial class LocalRestoredatabase
+    public partial class LocalRestoreDatabase
     {
         private class ExistingFileEnumerable : IEnumerable<IExistingFile>
         {

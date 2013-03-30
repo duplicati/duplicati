@@ -77,6 +77,19 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
             }
         }
 
+		public static string GenerateFilename(RemoteVolumeType filetype, string prefix, string guid, DateTime timestamp, string compressionmodule, string encryptionmodule)
+		{
+			string volumename;
+            if (filetype == RemoteVolumeType.Files)
+                volumename = prefix + "-" + (filetype.ToString().ToLowerInvariant()) + "-" + Utility.Utility.SerializeDateTime(timestamp) + "." + compressionmodule;
+            else
+                volumename = prefix + "-" + (filetype.ToString().ToLowerInvariant()) + "-" + guid + "." + compressionmodule;
+
+            if (!string.IsNullOrEmpty(encryptionmodule))
+                volumename += "." + encryptionmodule;
+                
+            return volumename;
+		}
 
         public static IParsedVolume ParseFilename(Library.Interface.IFileEntry file)
         {

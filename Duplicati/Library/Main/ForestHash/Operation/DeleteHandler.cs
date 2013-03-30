@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 				using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
 				{
 					if (!m_options.FhNoBackendverification)
-						ForestHash.VerifyRemoteList(backend, m_options, db); 
+						ForestHash.VerifyRemoteList(backend, m_options, db, m_stat); 
 					
 					IEnumerable<string> n = new string[0];
 					if (m_options.HasDeleteOlderThan)

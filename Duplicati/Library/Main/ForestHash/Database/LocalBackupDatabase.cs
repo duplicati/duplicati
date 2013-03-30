@@ -58,7 +58,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         {
         }
 
-        public LocalBackupDatabase(LocalRestoredatabase connection, FhOptions options)
+        public LocalBackupDatabase(LocalRestoreDatabase connection, FhOptions options)
             : this(connection.Connection, options)
         {
         }
@@ -700,7 +700,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
         }
 
-        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume)
+        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, long? operationId = null)
         {
             using (var cmd = m_connection.CreateCommand())
             {
@@ -708,7 +708,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""B"".""Path"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Scantime"" FROM ""OperationFileset"" A, ""Fileset"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""A"".""OperationID"" = ? ";
                 cmd.AddParameter(FOLDER_BLOCKSET_ID);
                 cmd.AddParameter(SYMLINK_BLOCKSET_ID);
-                cmd.AddParameter(m_operationid);
+                cmd.AddParameter(operationId == null ? m_operationid : operationId.Value);
 
                 using (var rd = cmd.ExecuteReader())
                 while(rd.Read())

@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 				using(var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
 				{
 					if (!hasVerifiedBackend && !m_options.FhNoBackendverification)
-						ForestHash.VerifyRemoteList(backend, m_options, db);
+						ForestHash.VerifyRemoteList(backend, m_options, db, m_stat);
 		
 					BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
 					newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);

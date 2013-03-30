@@ -37,7 +37,41 @@ namespace Duplicati.Library.Main.ForestHash
         /// <param name="backend">The backend instance to use</param>
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
-        public static void VerifyRemoteList(FhBackend backend, Options options, LocalDatabase database)
+        public static void VerifyRemoteList(FhBackend backend, Options options, LocalDatabase database, CommunicationStatistics stat)
+		{
+			var tp = RemoteListAnalysis(backend, options, database);
+			var extra = tp.Item1;
+			var missing = tp.Item2;
+			long extraCount = 0;
+			long missingCount = 0;
+			
+			foreach(var n in extra)
+			{
+				stat.LogWarning(string.Format("Extra unknown file: {0}", n.Name), null);
+				extraCount++;
+			}
+
+			foreach(var n in missing)
+			{
+				stat.LogWarning(string.Format("Missing file: {0}", n.Name), null);
+				missingCount++;
+			}
+
+            if (extraCount > 0)
+                throw new Exception(string.Format("Found {0} remote files that are not recorded in local storage, please run cleanup", extraCount));
+
+            if (missingCount > 0)
+                throw new Exception(string.Format("Found {0} files that are missing from the remote storage, please run cleanup", missingCount));
+		}
+		
+        /// <summary>
+        /// Helper method that verifies uploaded volumes and updates their state in the database.
+        /// Throws an error if there are issues with the remote storage
+        /// </summary>
+        /// <param name="backend">The backend instance to use</param>
+        /// <param name="options">The options used</param>
+        /// <param name="database">The database to compare with</param>
+        public static Tuple<IEnumerable<IFileEntry>, IEnumerable<RemoteVolumeEntry>> RemoteListAnalysis(FhBackend backend, Options options, LocalDatabase database)
         {
             var remotelist = backend.List();
             var lookup = new Dictionary<string, Library.Interface.IFileEntry>();
@@ -49,11 +83,11 @@ namespace Duplicati.Library.Main.ForestHash
 
             foreach (var s in remotelist)
             {
-                if (s.Name.StartsWith(prefix))
+                if (s.Name.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase) && s.Name.EndsWith(suffix, StringComparison.InvariantCultureIgnoreCase))
                     lookup[s.Name] = s;
             }
 
-            var missing = new List<KeyValuePair<RemoteVolumeEntry, Library.Interface.IFileEntry>>();
+            var missing = new List<KeyValuePair<RemoteVolumeEntry, IFileEntry>>();
             var locallist = database.GetRemoteVolumes();
             foreach (var i in locallist)
             {
@@ -83,14 +117,8 @@ namespace Duplicati.Library.Main.ForestHash
                     lookup.Remove(i.Name);
                 }
             }
-
-            if (lookup.Count > 0)
-                throw new Exception(string.Format("Found {0} remote files that are not recorded in local storage, please run cleanup", lookup.Count));
-
-            if (missing.Count > 0)
-                throw new Exception(string.Format("Found {0} files that are missing from the remote storage, please run cleanup", missing.Count));
-                
-            //TODO: Re-create any filelists that are missing?
+            
+            return new Tuple<IEnumerable<IFileEntry>, IEnumerable<RemoteVolumeEntry>> (lookup.Values, from n in missing select n.Key);
         }
 
         /// <summary>

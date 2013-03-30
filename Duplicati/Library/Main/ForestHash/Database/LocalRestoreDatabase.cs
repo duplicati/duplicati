@@ -6,18 +6,18 @@ using Duplicati.Library.Main.ForestHash.Volumes;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
-    public partial class LocalRestoredatabase : LocalDatabase
+    public partial class LocalRestoreDatabase : LocalDatabase
     {
         protected string m_tempfiletable;
         protected string m_tempblocktable;
         protected long m_blocksize;
 
-        public LocalRestoredatabase(string path, long blocksize)
+        public LocalRestoreDatabase(string path, long blocksize)
             : this("Restore", path, blocksize)
         {
         }
 
-        protected LocalRestoredatabase(string operation, string path, long blocksize)
+        protected LocalRestoreDatabase(string operation, string path, long blocksize)
             : base(path, operation)
         {
             //TODO: Should read this from DB?

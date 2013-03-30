@@ -16,6 +16,11 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         public string RemoteFilename { get { return m_volumename; } }
 
         public abstract RemoteVolumeType FileType { get; }
+        
+        public void SetRemoteFilename(string name)
+        {
+        	m_volumename = name;
+        }
 
         public VolumeWriterBase(FhOptions options)
             : this(options, DateTime.UtcNow)
@@ -25,17 +30,10 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         public VolumeWriterBase(FhOptions options, DateTime timestamp)
             : base(options)
         {
-            if (this.FileType == RemoteVolumeType.Files)
-                m_volumename = options.BackupPrefix + "-" + (this.FileType.ToString().ToLowerInvariant()) + "-" + Utility.Utility.SerializeDateTime(timestamp) + "." + options.CompressionModule;
-            else
-                m_volumename = options.BackupPrefix + "-" + (this.FileType.ToString().ToLowerInvariant()) + "-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray()) + "." + options.CompressionModule;
-
             var tempfolder = options.AsynchronousUpload ? options.AsynchronousUploadFolder : (options.TempDir ?? Utility.TempFolder.SystemTempPath);
-            m_localfile = new Utility.TempFile(System.IO.Path.Combine(tempfolder, m_volumename));
+            m_localfile = new Utility.TempFile();
 
-            if (!options.NoEncryption)
-                m_volumename += "." + options.EncryptionModule;
-
+			m_volumename = GenerateFilename(this.FileType, options.BackupPrefix, Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray()), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
             AddManifestfile();
         }
