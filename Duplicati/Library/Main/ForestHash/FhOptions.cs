@@ -93,7 +93,7 @@ namespace Duplicati.Library.Main.ForestHash
         }
 
         /// <summary>
-        /// Gets the current block size
+        /// Gets the size of file-blocks
         /// </summary>
         public int Fhblocksize
         {
@@ -120,9 +120,9 @@ namespace Duplicati.Library.Main.ForestHash
         }
 
         /// <summary>
-        /// Gets the block hash size
+        /// Gets the block hash lookup size
         /// </summary>
-        public long FhBlockHashSize
+        public long FhBlockHashLookupSize
         {
             get
             {
@@ -138,7 +138,7 @@ namespace Duplicati.Library.Main.ForestHash
         /// <summary>
         /// Gets the file hash size
         /// </summary>
-        public long FhFileHashSize
+        public long FhFileHashLookupSize
         {
             get
             {

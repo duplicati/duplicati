@@ -141,10 +141,10 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_updateblockCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? ";
             m_updateblockCommand.AddParameters(3);
             
-			if (options.FhBlockHashSize > 0)
-                m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashSize);            
-            if (options.FhFileHashSize > 0)
-                m_fileHashLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhFileHashSize);
+			if (options.FhBlockHashLookupSize > 0)
+                m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashLookupSize);            
+            if (options.FhFileHashLookupSize > 0)
+                m_fileHashLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhFileHashLookupSize);
             if (options.FhMetadataHashSize > 0)
                 m_metadataLookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhMetadataHashSize);
 

@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							w.SetRemoteFilename(n.Name);
 							var volumeid = db.GetRemoteVolumeID(n.Name);
 
-							foreach(var block in db.GetSourceFilesWithBlocks(volumeid, m_options.FhBlockHashSize))
+							foreach(var block in db.GetSourceFilesWithBlocks(volumeid, m_options.Fhblocksize))
 							{
 								var hash = block.Hash;
 								var size = (int)block.Size;
