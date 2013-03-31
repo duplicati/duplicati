@@ -146,4 +146,12 @@ CREATE TABLE "Version" (
     "Version" INTEGER NOT NULL
 );
 
+/*
+Settings, such as hash and blocksize
+*/
+CREATE TABLE "Configuration" (
+	"Key" TEXT PRIMARY KEY NOT NULL,
+	"Value" TEXT NOT NULL
+);
+
 INSERT INTO "Version" ("Version") VALUES (0);
