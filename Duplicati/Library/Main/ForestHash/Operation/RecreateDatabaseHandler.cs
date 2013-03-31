@@ -33,6 +33,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
         public void Run(string path, FilterFilelistDelegate filelistfilter = null, FilenameFilterDelegate filenamefilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
+        	if (System.IO.File.Exists(path))
+        		throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
+        		
         	var hashalg = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
 			if (hashalg == null)
 				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhBlockHashAlgorithm));

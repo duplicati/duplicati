@@ -260,10 +260,7 @@ namespace Duplicati.Library.Main.ForestHash
 
         internal static string RecreateDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
         {
-        	var opts = new FhOptions(options);
-        	if (System.IO.File.Exists(opts.Fhdbpath))
-        		throw new Exception("The database already exists!");
-        		
+        	var opts = new FhOptions(options);        		
             using(var h = new Operation.RecreateDatabaseHandler(target, opts, stat))
             	h.Run(opts.Fhdbpath);
             	
