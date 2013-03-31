@@ -165,9 +165,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 								
 								if (!recovered)
 								{
-									//TODO: What is logical?
-									//Accept, but mark certain filelists broken?
-									//Should at least report what filesets to delete for repair to succeed
+									m_stat.LogMessage("Repair cannot acquire block with hash {0} and size {1}, which is required by the following filesets: ", hash, size);
+									foreach(var f in db.GetFilesetsUsingBlock(hash, size))
+										m_stat.LogMessage(f.Name);
+
+									m_stat.LogMessage("This may be fixed by deleting the filesets and running cleanup again");
 									
 									throw new Exception(string.Format("Block {0} is required for recreating the file \"{1}\". Repair not possible!!!", hash, n.Name));
 								}

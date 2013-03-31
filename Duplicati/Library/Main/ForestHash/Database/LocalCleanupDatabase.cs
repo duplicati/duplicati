@@ -156,14 +156,27 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				}
 		}
 
-
 		public IEnumerable<IRemoteVolume> GetBlockFromRemote(string hash, long size)
 		{
 			using(var cmd = m_connection.CreateCommand())
-			using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Block"".""Name"", ""Block"".""Hash"", ""Block"".""Size"" FROM ""RemoteVolume"", ""Block"" WHERE ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID"" ", hash, size))
+			using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""Block"" WHERE ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID"" ", hash, size))
 				while (rd.Read())
 					yield return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), Convert.ToInt64(rd.GetValue(2)));
 		}
+
+		public IEnumerable<IRemoteVolume> GetFilesetsUsingBlock(string hash, int size)
+		{
+			var blocks = @"SELECT DISTINCT ""Fileset"".""ID"" AS ID FROM ""Block"", ""Blockset"", ""BlocksetEntry"", ""Fileset"" WHERE ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Fileset"".""BlocksetID"" = ""Blockset"".""ID"" ";
+			var blocklists = @"SELECT DISTINCT ""Fileset"".""ID"" AS ID FROM ""Block"", ""Blockset"", ""BlocklistHash"", ""Fileset"" WHERE ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? AND ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""BlocklistHash"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Fileset"".""BlocksetID"" = ""Blockset"".""ID"" ";
+		
+			var cmdtxt = @"SELECT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""OperationFileset"" WHERE ""RemoteVolume"".""OperationID"" = ""OperationFileset"".""OperationID"" AND ""RemoteVolume"".""Type"" = ? AND ""OperationFileset"".""FilesetID"" IN  (SELECT DISTINCT ""ID"" FROM ( " + blocks + " UNION " + blocklists + " ))";
+		
+			using(var cmd = m_connection.CreateCommand())
+			using(var rd = cmd.ExecuteReader(cmdtxt, RemoteVolumeType.Files.ToString(),  hash, size, hash, size))
+				while (rd.Read())
+					yield return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), Convert.ToInt64(rd.GetValue(2)));
+		}
+
 	}
 }
 

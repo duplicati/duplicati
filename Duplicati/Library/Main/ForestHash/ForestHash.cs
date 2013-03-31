@@ -269,5 +269,16 @@ namespace Duplicati.Library.Main.ForestHash
             	
             return "Recreate Completed";
         }
+
+		public static string DeleteFilesets(string target, string filesets, Dictionary<string, string> options, CommunicationStatistics stat)
+		{
+        	var opts = new FhOptions(options);
+            using(var h = new Operation.DeleteHandler(target, opts, stat))
+            {
+            	h.Filesets = filesets;
+            	return h.Run();
+            }
+		}
+
     }
 }

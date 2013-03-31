@@ -3086,5 +3086,15 @@ namespace Duplicati.Library.Main
 	            return ForestHash.ForestHash.RecreateDatabase(target, options, stat);
             }
         }
+
+        public static string DeleteFilesets(string target, string filesets, Dictionary<string, string> options, CommunicationStatistics stat)
+        {
+            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.DeleteAllButN);
+            using(var i = new Interface(target, options))
+            {
+            	i.SetupCommonOptions(stat);
+	            return ForestHash.ForestHash.DeleteFilesets(target, filesets, options, stat);
+            }
+        }
     }
 }

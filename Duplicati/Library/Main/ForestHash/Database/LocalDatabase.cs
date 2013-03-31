@@ -314,124 +314,100 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             public System.Data.IDbTransaction Parent { get { return m_parent; } }
         }
-
-        private class LocalFileEntryEnumerable : IEnumerable<ILocalFileEntry>
+        
+        private class LocalFileEntry : ILocalFileEntry
         {
-            private class LocalFileEntryEnumerator : IEnumerator<ILocalFileEntry>
+            private System.Data.IDataReader m_reader;
+            public LocalFileEntry(System.Data.IDataReader reader)
             {
-                private class LocalFileEntry : ILocalFileEntry
+                m_reader = reader;
+            }
+
+            public string Path
+            {
+                get 
                 {
-                    private System.Data.IDataReader m_reader;
-                    public LocalFileEntry(System.Data.IDataReader reader)
-                    {
-                        m_reader = reader;
-                    }
-
-                    public string Path
-                    {
-                        get 
-                        {
-                            var c = m_reader.GetValue(0);
-                            if (c == null || c == DBNull.Value)
-                                return null;
-                            return c.ToString();
-                        }
-                    }
-
-                    public long Length
-                    {
-                        get
-                        {
-                            var c = m_reader.GetValue(1);
-                            if (c == null || c == DBNull.Value)
-                                return -1;
-                            return Convert.ToInt64(c);
-                        }
-                    }
-
-                    public string Hash
-                    {
-                        get
-                        {
-                            var c = m_reader.GetValue(2);
-                            if (c == null || c == DBNull.Value)
-                                return null;
-                            return c.ToString();
-                        }
-                    }
-
-                    public string Metahash
-                    {
-                        get
-                        {
-                            var c = m_reader.GetValue(3);
-                            if (c == null || c == DBNull.Value)
-                                return null;
-                            return c.ToString();
-                        }
-                    }
-                }
-
-                private System.Data.IDbConnection m_connection;
-                private System.Data.IDbCommand m_command;
-                private System.Data.IDataReader m_reader;
-                private long m_filesetid;
-                private LocalFileEntry m_current;
-
-                public LocalFileEntryEnumerator(System.Data.IDbConnection connection, long filesetid)
-                {
-                    m_connection = connection;
-                    m_filesetid = filesetid;
-                    this.Reset();
-                }
-
-                public ILocalFileEntry Current { get { return m_current; } }
-                object System.Collections.IEnumerator.Current { get { return this.Current; } }
-
-                public void Dispose() 
-                { 
-                    if (m_reader != null)
-                        try { m_reader.Dispose(); }
-                        finally { m_reader = null; }
-
-                    if (m_command != null)
-                        try { m_command.Dispose(); }
-                        finally { m_command = null; }
-                }
-
-                public bool MoveNext()
-                {
-                    return m_reader.Read();
-                }
-
-                public void Reset()
-                {
-                    this.Dispose();
-                    m_command = m_connection.CreateCommand();
-                    m_command.CommandText = @"SELECT ""A"".""Path"", ""B"".""Length"", ""B"".""FullHash"", ""D"".""FullHash"" FROM ""Fileset"" A, ""Blockset"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND ""A"".""OperationID"" = ? ";
-                    m_command.AddParameter(m_filesetid);
-                    m_reader = m_command.ExecuteReader();
-                    m_current = new LocalFileEntry(m_reader);
-
+                    var c = m_reader.GetValue(0);
+                    if (c == null || c == DBNull.Value)
+                        return null;
+                    return c.ToString();
                 }
             }
 
-            private System.Data.IDbConnection m_connection;
-            private long m_filesetid;
-            public LocalFileEntryEnumerable(System.Data.IDbConnection connection, long filesetid)
+            public long Length
             {
-                m_connection = connection;
-                m_filesetid = filesetid;
+                get
+                {
+                    var c = m_reader.GetValue(1);
+                    if (c == null || c == DBNull.Value)
+                        return -1;
+                    return Convert.ToInt64(c);
+                }
             }
 
-            public IEnumerator<ILocalFileEntry> GetEnumerator() { return new LocalFileEntryEnumerator(m_connection, m_filesetid); }
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
+            public string Hash
+            {
+                get
+                {
+                    var c = m_reader.GetValue(2);
+                    if (c == null || c == DBNull.Value)
+                        return null;
+                    return c.ToString();
+                }
+            }
+
+            public string Metahash
+            {
+                get
+                {
+                    var c = m_reader.GetValue(3);
+                    if (c == null || c == DBNull.Value)
+                        return null;
+                    return c.ToString();
+                }
+            }
         }
-
+        
         public IEnumerable<ILocalFileEntry> GetFiles(long filesetid)
         {
-            return new LocalFileEntryEnumerable(m_connection, filesetid);
+            using(var cmd = m_connection.CreateCommand())
+            using(var rd = cmd.ExecuteReader(@"SELECT ""A"".""Path"", ""B"".""Length"", ""B"".""FullHash"", ""D"".""FullHash"" FROM ""Fileset"" A, ""Blockset"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND ""A"".""OperationID"" = ? ", filesetid))
+            while(rd.Read())
+            	yield return new LocalFileEntry(rd);
         }
+
+		private IEnumerable<KeyValuePair<string, string>> GetDbOptionList()
+		{
+            using(var cmd = m_connection.CreateCommand())
+            using(var rd = cmd.ExecuteReader(@"SELECT ""Key"", ""Value"" FROM ""Configuration"" "))
+            while(rd.Read())
+            	yield return new KeyValuePair<string, string>(rd.GetValue(0).ToString(), rd.GetValue(1).ToString());
+		}
+		
+		public IDictionary<string, string> GetDbOptions()
+		{
+			return GetDbOptionList().ToDictionary(x => x.Key, x => x.Value);	
+		}
+		
+		public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
+		{
+			using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using(var cmd = m_connection.CreateCommand())
+			{
+				cmd.Transaction = tr.Parent;
+				cmd.ExecuteNonQuery(@"DELETE FROM ""Configuration"" ");
+				foreach(var kp in options)
+					cmd.ExecuteNonQuery(@"INSERT INTO ""Configuration"" (""Key"", ""Value"") VALUES (?, ?) ", kp.Key, kp.Value);
+				
+				tr.Commit();
+			}
+		}
+
+		public long GetBlocksLargerThan(long fhblocksize)
+		{
+            using(var cmd = m_connection.CreateCommand())
+            	return Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > ?", fhblocksize));
+		}
 
         public virtual void Dispose()
         {

@@ -98,6 +98,58 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				
 			return result;
 		}
+		
+		/// <summary>
+		/// Deletes the specified filesets from the database and remote storage.
+		/// </summary>
+		/// <param name="dates">The filesets to remove</param>
+		/// <param name="allowRemovingLast">If set to <c>true</c> allow removing last backup, otherwise at least one backup is kept</param>
+		public IEnumerable<string> DeleteFilesets(string filesets, bool allowRemovingLast, CommunicationStatistics stat, FhOptions options, System.Data.IDbTransaction transaction)
+		{
+			IEnumerable<string> result;
+			using(var cmd = m_connection.CreateCommand())
+			{
+				cmd.Transaction = transaction;
+				long keepOperationId = -1;
+				if (!allowRemovingLast)
+				{
+					var r = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Operation"" WHERE ""Description"" = ? ORDER BY ""Timestamp"" DESC LIMIT 1", "Backup");
+					if (r != null && r != DBNull.Value)
+						keepOperationId = Convert.ToInt64(keepOperationId);
+				}
+
+				var tmptablename = "DeletedOperations-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+				cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER NOT NULL)", tmptablename));
+				
+				foreach(var d in filesets.Split(new char[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+				{
+					var c = cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (ID) VALUES (SELECT ""OperationID"" FROM ""RemoteVolume"" WHERE ""Name"" = ? AND ""Type"" = ?)", tmptablename), d, RemoteVolumeType.Files.ToString());
+					if (c != 1)
+						throw new Exception(string.Format("Failed to mark fileset {0}, query gave {1} volume(s)", d, c));
+				}
+				
+				var tmp2 = tmptablename + "-2";
+				cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" AS SELECT DISTINCT ""ID"" FROM ""{1}"" ", tmp2, tmptablename));
+				cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", tmptablename));
+
+				tmptablename = tmp2;
+				
+				if (keepOperationId >= 0)
+				{
+					var c0 = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""{0}"" "));
+					var c1 = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""Type"" = ? ", RemoteVolumeType.Files.ToString()));
+					if (c1 - c0 <= 0)
+						cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""ID"" = ?", tmptablename), keepOperationId);
+				}
+				
+				result = DropFromIDTable(cmd, tmptablename, stat);
+				
+				cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", tmptablename));
+			}
+				
+			return result;
+		}
+		
 		/// <summary>
 		/// Drops all entries related to operations listed in the table.
 		/// </summary>
@@ -107,21 +159,21 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		private static IEnumerable<string> DropFromIDTable(System.Data.IDbCommand cmd, string tmptablename, CommunicationStatistics stat)
 		{
 			//First we remove/rename the unwanted entries
-			var c = cmd.ExecuteNonQuery(string.Format(@"UPDATE ""Operation"" SET ""Description"" = ? WHERE ""ID"" IN (SELECT ""ID"" FROM ""{0}"") ", tmptablename), "DeletedBackup");
-			c = cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""OperationFileset"" WHERE ""OperationID"" IN (SELECT ""ID"" FROM ""{0}"") ", tmptablename));
+			cmd.ExecuteNonQuery(string.Format(@"UPDATE ""Operation"" SET ""Description"" = ? WHERE ""ID"" IN (SELECT ""ID"" FROM ""{0}"") ", tmptablename), "DeletedBackup");
+			cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""OperationFileset"" WHERE ""OperationID"" IN (SELECT ""ID"" FROM ""{0}"") ", tmptablename));
 			
 			//Then we delete anything that is no longer being referenced
-			c = cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FilesetID"" FROM ""OperationFileset"") ");
-			c = cmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""MetadataID"" FROM ""Fileset"") ");
-			c = cmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlocksetID"" FROM ""Fileset"" UNION SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") ");
-			c = cmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");
+			cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FilesetID"" FROM ""OperationFileset"") ");
+			cmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""MetadataID"" FROM ""Fileset"") ");
+			cmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlocksetID"" FROM ""Fileset"" UNION SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") ");
+			cmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");
 			
 			//We save the block info for the remote files, before we delete it
-			c = cmd.ExecuteNonQuery(@"INSERT INTO ""DeletedBlock"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""Block"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");
-			c = cmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");		
+			cmd.ExecuteNonQuery(@"INSERT INTO ""DeletedBlock"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""Block"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");
+			cmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");		
 			
 			//Find all remote filesets that are no longer required, and mark them as delete
-			c = cmd.ExecuteNonQuery(string.Format(@"UPDATE ""RemoteVolume"" SET ""State"" = ? WHERE ""Type"" = ? AND ""State"" IN (?, ?) AND ""OperationID"" IN (SELECT ""ID"" FROM ""{0}"") ", tmptablename), RemoteVolumeState.Deleting.ToString(), RemoteVolumeType.Files.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
+			cmd.ExecuteNonQuery(string.Format(@"UPDATE ""RemoteVolume"" SET ""State"" = ? WHERE ""Type"" = ? AND ""State"" IN (?, ?) AND ""OperationID"" IN (SELECT ""ID"" FROM ""{0}"") ", tmptablename), RemoteVolumeState.Deleting.ToString(), RemoteVolumeType.Files.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
 
 			var res = new List<string>();
 			using (var rd = cmd.ExecuteReader(@"SELECT ""Name"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" = ? ", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString()))
@@ -282,9 +334,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				m_command = con.CreateCommand();
 				m_command.Transaction = transaction;
 				
-				if (options.FhBlockHashSize > 0)
+				if (options.FhBlockHashLookupSize > 0)
 				{
-					m_lookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashSize);
+					m_lookup = new HashDatabaseProtector<string, long>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashLookupSize);
 					using(var reader = m_command.ExecuteReader(@"SELECT ""Hash"", ""Size"" FROM ""Block"" "))
 					while (reader.Read())
 					{

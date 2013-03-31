@@ -25,7 +25,7 @@ namespace Duplicati.CommandLine
 {
     class Program
     {
-        private static readonly string[] COMMANDS_AS_ARGUMENTS = new string[] { "delete-all-but-n-full", "delete-all-but-n", "delete-older-than" };
+        private static readonly string[] COMMANDS_AS_ARGUMENTS = new string[] { "delete-all-but-n-full", "delete-all-but-n", "delete-older-than", "delete-filesets" };
 
         static int Main(string[] args)
         {
@@ -351,6 +351,27 @@ namespace Duplicati.CommandLine
                     }
 
                     Console.WriteLine(Duplicati.Library.Main.Interface.DeleteOlderThan(cargs[0], options));
+                }
+                else if (source.Trim().ToLower() == "delete-filesets")
+                {
+                    options["delete-older-than"] = target;
+
+                    cargs.RemoveAt(0);
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        PrintWrongNumberOfArguments(cargs, 1);
+                        return 200;
+                    }
+
+					if (!options.ContainsKey("fh-dbpath"))
+					{
+						PrintRequiresFhDb(source);
+						return 200;
+					}	
+
+                    Console.WriteLine(Duplicati.Library.Main.Interface.DeleteFilesets(cargs[0], target, options));
                 }
                 else if (source.Trim().ToLower() == "cleanup")
                 {

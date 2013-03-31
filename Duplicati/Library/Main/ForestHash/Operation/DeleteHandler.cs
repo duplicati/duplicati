@@ -24,7 +24,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 {
 	internal class DeleteHandler : CompactHandler
 	{
-		public DeleteHandler(string backend, FhOptions options, RestoreStatistics stat)
+		internal string Filesets { get; set; }
+
+		public DeleteHandler(string backend, FhOptions options, CommunicationStatistics stat)
 	        : base(backend, options, stat)
         {
         }
@@ -50,6 +52,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 						n = n.Union(db.DeleteOlderThan(m_options.DeleteOlderThan, m_options.AllowFullRemoval, m_stat, m_options, tr));
 					if (m_options.HasDeleteAllButN)
 						n = n.Union(db.DeleteAllButN(m_options.DeleteAllButNFull, m_options.AllowFullRemoval, m_stat, m_options, tr));
+					if (!string.IsNullOrEmpty(this.Filesets))
+						n = n.Union(db.DeleteFilesets(this.Filesets, m_options.AllowFullRemoval, m_stat, m_options, tr));
 					
 					var count = 0L;
 					foreach(var f in n.Distinct())
