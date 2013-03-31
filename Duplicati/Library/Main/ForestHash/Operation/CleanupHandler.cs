@@ -29,6 +29,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         	using(var tr = db.BeginTransaction())
 			using(var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
         	{
+	        	ForestHash.VerifyParameters(db, m_options);
+
 	            var tp = ForestHash.RemoteListAnalysis(backend, m_options, db);
 				var extra = tp.Item1.ToList();
 				var missing = tp.Item2.ToList();

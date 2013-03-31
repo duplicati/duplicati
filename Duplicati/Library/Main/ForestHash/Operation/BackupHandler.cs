@@ -85,6 +85,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
         public void Run()
         {
+        	ForestHash.VerifyParameters(m_database, m_options);
         	if (!m_options.FhNoBackendverification)
             	ForestHash.VerifyRemoteList(m_backend, m_options, m_database, m_stat);
 

@@ -200,6 +200,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             using (var database = new LocalRestoreDatabase(dbpath ?? m_options.Fhdbpath, m_options.Fhblocksize))
             using (var backend = new FhBackend(m_backendurl, m_options, database, m_stat))
             {
+	        	ForestHash.VerifyParameters(database, m_options);
+	        	
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
 				if (blockhasher == null)
 					throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhBlockHashAlgorithm));

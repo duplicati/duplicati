@@ -45,6 +45,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			using(var db = new LocalDeleteDatabase(m_options.Fhdbpath))
 			using(var tr = db.BeginTransaction())
 			{
+	        	ForestHash.VerifyParameters(db, m_options);
+	        	
 				var r = DoCompact(db, false, tr);
 				if (m_options.Force && !m_options.FhDryrun)
 					tr.Commit();

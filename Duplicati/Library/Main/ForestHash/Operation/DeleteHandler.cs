@@ -37,6 +37,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			using (var db = new Database.LocalDeleteDatabase(m_options.Fhdbpath))
 			using(var tr = db.BeginTransaction())
 			{
+	        	ForestHash.VerifyParameters(db, m_options);
+	        	
 				string msg;
 				using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
 				{
