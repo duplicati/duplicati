@@ -88,7 +88,6 @@
     <Compile Include="ForestHash\Operation\CleanupHandler.cs" />
     <Compile Include="ForestHash\Operation\FindLastFileVersionHandler.cs" />
     <Compile Include="ForestHash\Operation\ListFilesHandler.cs" />
-    <Compile Include="ForestHash\Operation\ListSourceFoldersHandler.cs" />
     <Compile Include="ForestHash\Operation\RecreateDatabaseHandler.cs" />
     <Compile Include="ForestHash\Operation\RestoreControlFilesHandler.cs" />
     <Compile Include="ForestHash\Operation\RestoreHandler.cs" />
