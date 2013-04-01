@@ -194,6 +194,12 @@ namespace Duplicati.CommandLine
                         return 200;
                     }
 
+                    if (options.ContainsKey("fh-dbpath"))
+                    {
+                    	PrintNotSupportedWithFhdb("list-source-folders");
+                    	return 200;
+                    }
+
                     Console.WriteLine(string.Join(Environment.NewLine, Duplicati.Library.Main.Interface.ListSourceFolders(target, options) ?? new string[0]));
                 }
                 else if (source.Trim().ToLower() == "list-actual-signature-files")
@@ -204,6 +210,12 @@ namespace Duplicati.CommandLine
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
                         return 200;
+                    }
+
+                    if (options.ContainsKey("fh-dbpath"))
+                    {
+                    	PrintNotSupportedWithFhdb("list-actual-signature-files");
+                    	return 200;
                     }
 
                     List<KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string>> files = Duplicati.Library.Main.Interface.ListActualSignatureFiles(cargs[0], options);
@@ -276,6 +288,12 @@ namespace Duplicati.CommandLine
                     {
                         PrintWrongNumberOfArguments(cargs, 1);
                         return 200;
+                    }
+                    
+                    if (options.ContainsKey("fh-dbpath"))
+                    {
+                    	PrintNotSupportedWithFhdb("collection-status");
+                    	return 200;
                     }
 
                     List<Duplicati.Library.Main.ManifestEntry> entries = Duplicati.Library.Main.Interface.ParseFileList(cargs[0], options);
@@ -590,6 +608,11 @@ namespace Duplicati.CommandLine
         {
             Console.WriteLine(string.Format("The command \"{0}\" requires that the option --{1} is set", command, "fh-dbpath"));
         }
+
+		private static void PrintNotSupportedWithFhdb(string command)
+		{
+            Console.WriteLine(string.Format("The command \"{0}\" is not supported when the option --{1} is set", command, "fh-dbpath"));
+		}
 
         public static IList<Library.Interface.ICommandLineArgument> SupportedCommands
         {
