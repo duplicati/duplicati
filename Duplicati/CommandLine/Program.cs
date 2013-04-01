@@ -372,8 +372,6 @@ namespace Duplicati.CommandLine
                 }
                 else if (source.Trim().ToLower() == "delete-filesets")
                 {
-                    options["delete-older-than"] = target;
-
                     cargs.RemoveAt(0);
                     cargs.RemoveAt(0);
 
@@ -389,7 +387,7 @@ namespace Duplicati.CommandLine
 						return 200;
 					}	
 
-                    Console.WriteLine(Duplicati.Library.Main.Interface.DeleteFilesets(cargs[0], target, options));
+                    Console.WriteLine(Duplicati.Library.Main.Interface.DeleteFilesets(cargs[0], target, options, null));
                 }
                 else if (source.Trim().ToLower() == "cleanup")
                 {
