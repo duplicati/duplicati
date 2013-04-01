@@ -15,6 +15,8 @@ See duplicati.commandline.exe help <topic> for more information.
   
   Commands: backup, restore, delete-all-but-n-full, delete-all-but-n, cleanup, delete-older-than, list, list-current-files, list-source-folders, list-actual-signature-files, collection-status, create-folder, find-last-version, verify
   
+  ForestHash Commands: cleanup, compact, delete-filesets
+  
   Debugging: debug, logging
   
   Targets: %BACKENDS%
@@ -194,6 +196,10 @@ Options:
 Usage: cleanup <target url>
 
   Removes all files that do not belong to the backup (e.g. partial files caused by interrupted uploads). This can also be performed when the actions backup, restore are run with the option --auto-cleanup.
+    
+  If the option --fh-dbpath is specified, this option will attempt to repair the backend and recreate missing files. The option --fh-dry-run will ensure that the proposed changes are written to console, instead of actually performed.
+  
+  No files will be deleted unless the --force option is supplied.
 
 Options: 
 %OPTION:force%
@@ -409,3 +415,22 @@ Duplicati reports the following return/exit codes:
   100 - An error occurred
   200 - Invalid commandline arguments found
 
+# =============================================================================
+> duplicati.commandline.exe help compact
+Usage: compact <target url>
+
+  Duplicati will attempt to reclaim remote space that is no longer required. Duplicati will re-build volume files, using fragments of the existing volumes. No data will be deleted unless the --force option is supplied.
+
+%OPTION:force%
+%OPTION:fh-dry-run%
+%OPTION:fh-max-wastesize%
+%OPTION:fh-volume-size-tolerance%
+
+
+> duplicati.commandline.exe help delete-filesets
+Usage: delete-filesets <filesetname> <target url>
+
+  This will delete the specified filesets. This command is intended to delete filesets reported as problematic by the cleanup command. No data will be deleted unless the --force option is supplied.
+
+%OPTION:force%
+%OPTION:fh-dry-run%
