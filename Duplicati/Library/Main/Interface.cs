@@ -2122,24 +2122,11 @@ namespace Duplicati.Library.Main
             m_result = res;
             return res;
         }
-
-        public string[] ListSourceFoldersv2()
-        {
-            var rs = new RestoreStatistics(DuplicatiOperationMode.ListSourceFolders);
-            SetupCommonOptions(rs);
-
-            var fhopts = new ForestHash.FhOptions(m_options.RawOptions);
-
-            using (var handler = new ForestHash.Operation.ListSourceFoldersHandler(m_backend, fhopts, rs))
-                return handler.Run();
-
-            
-        }
-
+        
         public string[] ListSourceFolders()
         {
             if (!string.IsNullOrEmpty(new ForestHash.FhOptions(m_options.RawOptions).Fhdbpath))
-                return ListSourceFoldersv2();
+                throw new Exception("list-source-folders not supported with --fh-dbpath");;
 
             RestoreStatistics rs = new RestoreStatistics(DuplicatiOperationMode.ListSourceFolders);
             SetupCommonOptions(rs);
