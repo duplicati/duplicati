@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                          select n.Path).ToList();
                 }
 
-			m_stat.LogWarning("No local database, accessing remote store");
+			m_stat.LogWarning("No local database, accessing remote store", null);
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Utility.TempFile())
