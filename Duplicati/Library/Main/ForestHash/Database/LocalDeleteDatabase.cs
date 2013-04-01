@@ -33,7 +33,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private System.Data.IDbCommand m_moveBlockToNewVolumeCommand;
 
 		public LocalDeleteDatabase(string path)
-			: base(path, "Delete")
+			: this(CreateConnection(path))
+		{
+		}
+		
+		public LocalDeleteDatabase(System.Data.IDbConnection connection)
+			: base(connection, "Delete")
 		{
 			m_moveBlockToNewVolumeCommand = m_connection.CreateCommand();
 			

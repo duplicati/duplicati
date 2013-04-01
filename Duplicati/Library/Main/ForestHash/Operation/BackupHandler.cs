@@ -124,10 +124,14 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	            m_database.VerifyConsistency();
 	            m_database.UpdateChangeStatistics(m_stat);
 	
+				var lastVolumeSize = -1L;
+				
 	            if (m_stat.AddedFiles > 0 || m_stat.ModifiedFiles > 0 || m_otherchanges > 0)
 	            {
-	                if (m_blockvolume.SourceSize > 0)
+ 	                if (m_blockvolume.SourceSize > 0)
 	                {
+	 					lastVolumeSize = m_blockvolume.SourceSize;
+	 					
 	                	if (m_options.FhDryrun)
 	                	{
 	                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
@@ -174,6 +178,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	            }
 	
 	            m_backend.WaitForComplete();
+	            
+	            if (lastVolumeSize < m_options.VolumeSize - m_options.FhVolsizeTolerance && !m_options.FhNoAutoCompact)
+	            	using(var ch = new CompactHandler(m_backend.BackendUrl, m_options, m_stat))
+            		using(var db = new LocalDeleteDatabase(m_database.Connection))
+	            		ch.DoCompact(db, true, m_transaction);
 	            
 				if (m_options.FhDryrun)
 					m_transaction.Rollback();

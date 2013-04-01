@@ -114,6 +114,8 @@ namespace Duplicati.Library.Main.ForestHash
         private Library.Interface.IBackend m_backend;
         private string m_backendurl;
         private CommunicationStatistics m_stats;
+        
+        public string BackendUrl { get { return m_backendurl; } }
 
         public FhBackend(string backendurl, FhOptions options, LocalDatabase database, CommunicationStatistics stats)
         {

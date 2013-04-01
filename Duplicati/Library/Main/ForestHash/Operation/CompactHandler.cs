@@ -57,7 +57,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			}
 		}
 		
-		protected string DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, System.Data.IDbTransaction transaction)
+		internal string DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, System.Data.IDbTransaction transaction)
 		{
 			var report = db.GetCompactReport(m_options.VolumeSize, m_options.FhMaxWasteSize, m_options.FhVolsizeTolerance, transaction);
 			report.ReportCompactData(m_stat);
