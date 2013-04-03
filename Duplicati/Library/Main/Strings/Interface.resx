@@ -309,9 +309,6 @@
   <data name="DisablingSignatureCacheForVerification" xml:space="preserve">
     <value>The signature cache is disabled when performing verification</value>
   </data>
-  <data name="ManifestAndFileCountMismatchError" xml:space="preserve">
-    <value>The manifest file {0} indicates that there should be {1} volumes, but the file list indicates {2}</value>
-  </data>
   <data name="ManifestsMustBeRead" xml:space="preserve">
     <value>Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
   </data>
@@ -362,5 +359,17 @@
   </data>
   <data name="StartingOperationMessage" xml:space="preserve">
     <value>The operation {0} has started</value>
+  </data>
+  <data name="CompressionModuleNotFoundError" xml:space="preserve">
+    <value>The specified compression module was not found: {0}. Avaliable compression modules: {1}</value>
+  </data>
+  <data name="EncryptionModuleNotFoundError" xml:space="preserve">
+    <value>The specified encryption module was not found: {0}. Avaliable encryption modules: {1}</value>
+  </data>
+  <data name="InvalidManifestFileCount" xml:space="preserve">
+    <value>The manifest file {0} is invalid, as it specifies that there should be {1} signature volumes and {2} content volumes.</value>
+  </data>
+  <data name="MissingFilesDetected" xml:space="preserve">
+    <value>The manifest file {0} specifies that there should be {1} volume pairs, but the following files were not found: {2}</value>
   </data>
 </root>
