@@ -833,6 +833,9 @@ namespace Duplicati.Library.Main
                             }
                         }
                     }
+                    
+                    List<ManifestEntry> newsets = GetBackupSets();
+                    VerifyManifestChain(backend, newsets[newsets.Count - 1]);
                 }
                 catch(Exception ex)
                 {
@@ -985,6 +988,32 @@ namespace Duplicati.Library.Main
                 entry = previous;
             }
         }
+        
+        private Exception CreateMissingFileException(Manifestfile parsed, ManifestEntry entry, string errorMessage)
+        {
+            if (parsed.SignatureHashes.Count != parsed.ContentHashes.Count)
+                return new Exception(string.Format(Strings.Interface.InvalidManifestFileCount, entry.Filename, parsed.SignatureHashes.Count, parsed.ContentHashes.Count));
+            
+            Dictionary<string, string> lookup = new Dictionary<string, string>();
+            foreach(Manifestfile.HashEntry he in parsed.ContentHashes)
+                lookup[he.Name] = "";
+            foreach(Manifestfile.HashEntry he in parsed.SignatureHashes)
+                lookup[he.Name] = "";
+            
+            StringBuilder sb = new StringBuilder();
+            foreach(KeyValuePair<SignatureEntry, ContentEntry> kvp in entry.Volumes)
+            {
+                if (!lookup.ContainsKey(kvp.Key.Filename))
+                    sb.AppendLine(kvp.Key.Filename);
+                if (!lookup.ContainsKey(kvp.Value.Filename))
+                    sb.AppendLine(kvp.Value.Filename);
+            }
+        
+            return new Exception(
+                string.Format(Strings.Interface.MissingFilesDetected, entry.Filename, parsed.ContentHashes.Count, sb.ToString())
+                + errorMessage
+                );
+        }
 
         /// <summary>
         /// Verifies the backup chain for producing a new backup on top.
@@ -1014,10 +1043,7 @@ namespace Duplicati.Library.Main
                     }
                     else
                     {
-                        throw new Exception(
-                            string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, parsed.SignatureHashes.Count, entry.Volumes.Count)
-                            + errorMessage
-                            );
+                        throw CreateMissingFileException(parsed, entry, errorMessage);
                     }
                 }
 
@@ -2313,7 +2339,7 @@ namespace Duplicati.Library.Main
                             VerifyBackupChainWithFiles(backend, me);
 
                             if (mf.SignatureHashes.Count != me.Volumes.Count)
-                                results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchError, mf.SelfFilename, mf.SignatureHashes.Count, me.Volumes.Count))));
+                                results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, CreateMissingFileException(mf, me, "")));
                             else
                                 results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, null));
                         }
