@@ -73,16 +73,23 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 using (var backupdb = new LocalBackupDatabase(restoredb, m_options))
                 {
                     foreach (var fl in remotefiles)
-                        backupdb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);
-
-                    var shadowfiles =
-                        from n in remotefiles
-                        where n.FileType == RemoteVolumeType.Shadow
-                        select new RemoteVolume(n.File) as IRemoteVolume;
+                    {
+                        var id = backupdb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);
+                        
+                        //For filelists, we associate them with a backup operation.
+                        // This enables the delete-older-than and similar operations to work with the restored database
+                        if (fl.FileType == RemoteVolumeType.Files)
+                        	restoredb.CreateBackupOperation(id, fl.Time);
+                    }
 
                     //We grab all shadow files, and update the block table
                     using (var tr = restoredb.BeginTransaction())
                     {
+						var shadowfiles = 
+							from n in remotefiles
+							where n.FileType == RemoteVolumeType.Shadow
+							select new RemoteVolume(n.File) as IRemoteVolume;
+							
                         foreach (var sf in new AsyncDownloader(shadowfiles.ToList(), backend))
                         {
                             if (sf.Key.Hash != null && sf.Key.Size > 0)

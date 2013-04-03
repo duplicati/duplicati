@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.IO;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
@@ -87,6 +87,24 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 return result;
             }
         }
+
+		/// <summary>
+		/// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
+		/// </summary>
+		/// <param name="volumeid">The ID of the fileset volume to update</param>
+		/// <param name="timestamp">The timestamp of the operation to create</param>
+		/// <param name="transaction">An optional external transaction</param>
+		public void CreateBackupOperation(long volumeid, DateTime timestamp, System.Data.IDbTransaction transaction = null)
+		{
+            using (var cmd = m_connection.CreateCommand())
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            {
+            	cmd.Transaction = tr.Parent;
+				var operationid = cmd.ExecuteNonQuery(@"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid()", "Backup", timestamp);
+				cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""OperationID"" = ? WHERE ""ID"" = ?", operationid, volumeid);
+				tr.Commit();
+			}
+		}
 
         public void VerifyDatabaseIntegrity()
         {

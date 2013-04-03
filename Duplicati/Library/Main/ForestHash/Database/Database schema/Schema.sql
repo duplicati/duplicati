@@ -25,18 +25,24 @@ CREATE TABLE "Remotevolume" (
 );
 
 /*
-The fileset is a list of files contained
-in a single operation, grouped by an 
-operationID
+The OperationFileset contains an
+entry for each file scanned for
+a single operation. The scantime
+is the time the file was last 
+scanned
 */
-
 CREATE TABLE "OperationFileset" (
 	"OperationID" INTEGER NOT NULL,
-	"FilesetID" INTEGER NOT NULL,
+	"FileEntryID" INTEGER NOT NULL,
 	"Scantime" DATETIME NOT NULL
 );
 
-CREATE TABLE "Fileset" (
+/*
+The FileEntry contains an ID
+for each path and each version
+of the data and metadata
+*/
+CREATE TABLE "FileEntry" (
 	"ID" INTEGER PRIMARY KEY,
 	"Path" TEXT NOT NULL,
 	"BlocksetID" INTEGER NOT NULL,
@@ -45,14 +51,15 @@ CREATE TABLE "Fileset" (
 
 /*
 The blocklist hashes are hashes of
-fragments of the blocklists
+fragments of the blocklists.
+They are grouped by the BlocksetID
+and ordered by the index
 */
 CREATE TABLE "BlocklistHash" (
 	"BlocksetID" INTEGER NOT NULL,
 	"Index" INTEGER NOT NULL,
 	"Hash" TEXT NOT NULL
 );
-
 
 /*
 The blockset is a list of blocks
@@ -73,7 +80,9 @@ CREATE TABLE "Blockset" (
 
 /*
 The elements of a blocklist,
-the hash is the block hash
+the hash is the block hash,
+they are grouped by the BlocksetID
+and ordered by the index
 */
 CREATE TABLE "BlocksetEntry" (
 	"BlocksetID" INTEGER NOT NULL,
@@ -107,7 +116,8 @@ CREATE TABLE "DeletedBlock" (
 
 
 /*
-A metadata set
+A metadata set, essentially a placeholder
+to easily extend metadatasets with new properties
 */
 CREATE TABLE "Metadataset" (
 	"ID" INTEGER PRIMARY KEY,
@@ -115,7 +125,9 @@ CREATE TABLE "Metadataset" (
 );
 
 /*
-Operations performed on the backend
+Operations performed on the backend,
+intended to be used when constructing
+an error report or when debugging
 */
 CREATE TABLE "RemoteOperation" (
 	"ID" INTEGER PRIMARY KEY,
@@ -127,7 +139,9 @@ CREATE TABLE "RemoteOperation" (
 );
 
 /*
-Logged events
+Logged events, intended to be used when 
+constructing an error report or when 
+debugging
 */
 CREATE TABLE "LogData" (
 	"ID" INTEGER PRIMARY KEY,
@@ -147,7 +161,8 @@ CREATE TABLE "Version" (
 );
 
 /*
-Settings, such as hash and blocksize
+Settings, such as hash and blocksize,
+used for verification
 */
 CREATE TABLE "Configuration" (
 	"Key" TEXT PRIMARY KEY NOT NULL,

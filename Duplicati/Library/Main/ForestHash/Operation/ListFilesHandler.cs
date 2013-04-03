@@ -27,9 +27,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             if (System.IO.File.Exists(m_options.Fhdbpath))
                 using (var db = new Database.LocalDatabase(m_options.Fhdbpath, "ListFiles"))
                 {
-                    var filesetid = db.GetFilesetID(m_options.RestoreTime);
+                    var operationId = db.GetFilesetOperationID(m_options.RestoreTime);
                     return 
-                        (from n in db.GetFiles(filesetid) 
+                        (from n in db.GetFiles(operationId) 
                          select n.Path).ToList();
                 }
 

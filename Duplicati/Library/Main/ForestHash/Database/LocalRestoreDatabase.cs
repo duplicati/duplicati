@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             using (var cmd = m_connection.CreateCommand())
             {
-                long operationID = GetFilesetID(restoretime);
+                long operationID = GetFilesetOperationID(restoretime);
 
                 cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable);
                 cmd.ExecuteNonQuery();
@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 if (filenameFilter == null && (p == null || p.Length == 0))
                 {
                     // Simple case, restore everything
-                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""Fileset"", ""OperationFileset"" WHERE ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" AND ""OperationFileset"".""OperationID"" = ? ", m_tempfiletable);
+                    cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""FileEntry"".""Path"", ""FileEntry"".""BlocksetID"", ""FileEntry"".""MetadataID"" FROM ""FileEntry"", ""OperationFileset"" WHERE ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" AND ""OperationFileset"".""OperationID"" = ? ", m_tempfiletable);
                     cmd.AddParameter(operationID);
                     cmd.ExecuteNonQuery();
                 }
@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                         }
                         
                         //TODO: Handle case-insensitive filename lookup
-                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""Fileset"", ""OperationFileset"" WHERE ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" AND ""OperationID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"") SELECT ""FileEntry"".""Path"", ""FileEntry"".""BlocksetID"", ""FileEntry"".""MetadataID"" FROM ""FileEntry"", ""OperationFileset"" WHERE ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" AND ""OperationID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
                         cmd.SetParameterValue(0, operationID);
                         var c = cmd.ExecuteNonQuery();
                         
@@ -93,7 +93,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 else
                 {
                     // Restore but filter elements based on regexp
-                    cmd.CommandText = string.Format(@"SELECT ""Fileset"".""Path"", ""Fileset"".""BlocksetID"", ""Fileset"".""MetadataID"" FROM ""Fileset"", ""OperationFileset"" WHERE ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" AND ""OperationID"" = ?");
+                    cmd.CommandText = string.Format(@"SELECT ""FileEntry"".""Path"", ""FileEntry"".""BlocksetID"", ""FileEntry"".""MetadataID"" FROM ""FileEntry"", ""OperationFileset"" WHERE ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" AND ""OperationID"" = ?");
                     cmd.AddParameter(operationID);
 
                     object[] values = new object[3];

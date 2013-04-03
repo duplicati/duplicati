@@ -210,7 +210,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                     var deletecmd = m_connection.CreateCommand();
                     deletecmd.Transaction = tr.Parent;
 
-					deletecmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+					deletecmd.ExecuteNonQuery(@"UPDATE ""FileEntry"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
 					deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
 					deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
 					deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
@@ -244,7 +244,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
         }
         
-        public long GetFilesetID(DateTime restoretime)
+        public long GetFilesetOperationID(DateTime restoretime)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Invalid DateTime given, must be either local or UTC");
@@ -368,10 +368,10 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
         }
         
-        public IEnumerable<ILocalFileEntry> GetFiles(long filesetid)
+        public IEnumerable<ILocalFileEntry> GetFiles(long operationID)
         {
             using(var cmd = m_connection.CreateCommand())
-            using(var rd = cmd.ExecuteReader(@"SELECT ""A"".""Path"", ""B"".""Length"", ""B"".""FullHash"", ""D"".""FullHash"" FROM ""Fileset"" A, ""Blockset"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND ""A"".""OperationID"" = ? ", filesetid))
+            using(var rd = cmd.ExecuteReader(@"SELECT ""A"".""Path"", ""B"".""Length"", ""B"".""FullHash"", ""D"".""FullHash"" FROM ""FileEntry"" A, ""Blockset"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND ""A"".""OperationID"" = ? ", operationID))
             while(rd.Read())
             	yield return new LocalFileEntry(rd);
         }
@@ -421,7 +421,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 						cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", filetable), s);
 	
 					string first = null;
-					using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""Path"", ""RemoteVolume"".""Name"", ""Operation"".""Timestamp"" FROM ""{0}"", ""RemoteVolume"", ""Fileset"", ""OperationFileset"" WHERE ""OperationFileset"".""FilesetID"" = ""Fileset"".""ID"" AND ""OperationFileset"".""OperationID"" = ""RemoteVolume"".""OperationID"" AND ""Fileset"".""Path"" = ""{0}"".""Path"" AND ""RemoteVolume"".""Type"" = ? ORDER BY ""Operation"".""Timestamp"" DESC ", filetable), RemoteVolumeType.Files))
+					using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""Path"", ""RemoteVolume"".""Name"", ""Operation"".""Timestamp"" FROM ""{0}"", ""RemoteVolume"", ""FileEntry"", ""OperationFileset"" WHERE ""OperationFileset"".""FileEntryID"" = ""FileEntry"".""ID"" AND ""OperationFileset"".""OperationID"" = ""RemoteVolume"".""OperationID"" AND ""FileEntry"".""Path"" = ""{0}"".""Path"" AND ""RemoteVolume"".""Type"" = ? ORDER BY ""Operation"".""Timestamp"" DESC ", filetable), RemoteVolumeType.Files))
 						while(rd.Read())
 						{
 							var cur = rd.GetValue(0).ToString();

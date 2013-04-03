@@ -72,6 +72,16 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			
 			return result;
 		}
+		
+		private long GetLastBackupOperationID(System.Data.IDbCommand cmd)
+		{
+			long id = -1;
+			var r = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Operation"" WHERE ""Description"" = ? ORDER BY ""Timestamp"" DESC LIMIT 1", "Backup");
+			if (r != null && r != DBNull.Value)
+				id = Convert.ToInt64(r);
+				
+			return id;
+		}
 
 		/// <summary>
 		/// Deletes all but n backups from the database and remote storage.
@@ -86,11 +96,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				cmd.Transaction = transaction;
 				long keepOperationId = -1;
 				if (!allowRemovingLast)
-				{
-					var r = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Operation"" WHERE ""Description"" = ? ORDER BY ""Timestamp"" DESC LIMIT 1", "Backup");
-					if (r != null && r != DBNull.Value)
-						keepOperationId = Convert.ToInt64(keepOperationId);
-				}
+					keepOperationId = GetLastBackupOperationID(cmd);
 				
 				//We create a table with the operationIDs that are about to be deleted
 				var tmptablename = "DeletedOperations-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -117,11 +123,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				cmd.Transaction = transaction;
 				long keepOperationId = -1;
 				if (!allowRemovingLast)
-				{
-					var r = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Operation"" WHERE ""Description"" = ? ORDER BY ""Timestamp"" DESC LIMIT 1", "Backup");
-					if (r != null && r != DBNull.Value)
-						keepOperationId = Convert.ToInt64(keepOperationId);
-				}
+					keepOperationId = GetLastBackupOperationID(cmd);
 
 				var tmptablename = "DeletedOperations-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 				cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER NOT NULL)", tmptablename));
@@ -168,9 +170,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""OperationFileset"" WHERE ""OperationID"" IN (SELECT ""ID"" FROM ""{0}"") ", tmptablename));
 			
 			//Then we delete anything that is no longer being referenced
-			cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FilesetID"" FROM ""OperationFileset"") ");
-			cmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""MetadataID"" FROM ""Fileset"") ");
-			cmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlocksetID"" FROM ""Fileset"" UNION SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") ");
+			cmd.ExecuteNonQuery(@"DELETE FROM ""FileEntry"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileEntryID"" FROM ""OperationFileset"") ");
+			cmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""MetadataID"" FROM ""FileEntry"") ");
+			cmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlocksetID"" FROM ""FileEntry"" UNION SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") ");
 			cmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");
 			
 			//We save the block info for the remote files, before we delete it

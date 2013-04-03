@@ -147,7 +147,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		public IEnumerable<IBlockWithSources> GetSourceFilesWithBlocks(long volumeid, long blocksize)
 		{
 			using(var cmd = m_connection.CreateCommand())
-			using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"", ""Fileset"".""Path"", ""BlocksetEntry"".""Index"" * {0} FROM  ""Block"", ""BlocksetEntry"", ""Fileset"" WHERE ""Fileset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""VolumeID"" = ? ", blocksize), volumeid))
+			using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"", ""FileEntry"".""Path"", ""BlocksetEntry"".""Index"" * {0} FROM  ""Block"", ""BlocksetEntry"", ""FileEntry"" WHERE ""FileEntry"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""VolumeID"" = ? ", blocksize), volumeid))
 				if (rd.Read())
 				{
 					var bs = new BlockWithSources(rd);
@@ -166,10 +166,10 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
 		public IEnumerable<IRemoteVolume> GetFilesetsUsingBlock(string hash, int size)
 		{
-			var blocks = @"SELECT DISTINCT ""Fileset"".""ID"" AS ID FROM ""Block"", ""Blockset"", ""BlocksetEntry"", ""Fileset"" WHERE ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Fileset"".""BlocksetID"" = ""Blockset"".""ID"" ";
-			var blocklists = @"SELECT DISTINCT ""Fileset"".""ID"" AS ID FROM ""Block"", ""Blockset"", ""BlocklistHash"", ""Fileset"" WHERE ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? AND ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""BlocklistHash"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Fileset"".""BlocksetID"" = ""Blockset"".""ID"" ";
+			var blocks = @"SELECT DISTINCT ""FileEntry"".""ID"" AS ID FROM ""Block"", ""Blockset"", ""BlocksetEntry"", ""FileEntry"" WHERE ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FileEntry"".""BlocksetID"" = ""Blockset"".""ID"" ";
+			var blocklists = @"SELECT DISTINCT ""FileEntry"".""ID"" AS ID FROM ""Block"", ""Blockset"", ""BlocklistHash"", ""FileEntry"" WHERE ""Block"".""Hash"" = ? AND ""Block"".""Size"" = ? AND ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""BlocklistHash"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FileEntry"".""BlocksetID"" = ""Blockset"".""ID"" ";
 		
-			var cmdtxt = @"SELECT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""OperationFileset"" WHERE ""RemoteVolume"".""OperationID"" = ""OperationFileset"".""OperationID"" AND ""RemoteVolume"".""Type"" = ? AND ""OperationFileset"".""FilesetID"" IN  (SELECT DISTINCT ""ID"" FROM ( " + blocks + " UNION " + blocklists + " ))";
+			var cmdtxt = @"SELECT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""OperationFileset"" WHERE ""RemoteVolume"".""OperationID"" = ""OperationFileset"".""OperationID"" AND ""RemoteVolume"".""Type"" = ? AND ""OperationFileset"".""FileEntryID"" IN  (SELECT DISTINCT ""ID"" FROM ( " + blocks + " UNION " + blocklists + " ))";
 		
 			using(var cmd = m_connection.CreateCommand())
 			using(var rd = cmd.ExecuteReader(cmdtxt, RemoteVolumeType.Files.ToString(),  hash, size, hash, size))

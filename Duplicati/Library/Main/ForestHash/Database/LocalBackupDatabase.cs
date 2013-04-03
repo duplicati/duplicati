@@ -96,17 +96,17 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_findmetadatasetCommand.CommandText = @"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""C"".""Hash"" = ? AND ""C"".""Size"" = ? LIMIT 1";
             m_findmetadatasetCommand.AddParameters(2);
 
-            m_findfilesetCommand.CommandText = @"SELECT ""ID"" FROM ""Fileset"" WHERE ""BlocksetID"" = ? AND ""MetadatasetID"" = ? AND ""Path"" = ?";
+            m_findfilesetCommand.CommandText = @"SELECT ""ID"" FROM ""FileEntry"" WHERE ""BlocksetID"" = ? AND ""MetadatasetID"" = ? AND ""Path"" = ?";
             m_findfilesetCommand.AddParameters(3);
 
             m_insertblockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (?, ?, ?)";
             m_insertblockCommand.AddParameters(3);
 
-            m_insertfileOperationCommand.CommandText = @"INSERT INTO ""OperationFileset"" (""OperationID"", ""FilesetID"", ""Scantime"") VALUES (?, ?, ?)";
+            m_insertfileOperationCommand.CommandText = @"INSERT INTO ""OperationFileset"" (""OperationID"", ""FileEntryID"", ""Scantime"") VALUES (?, ?, ?)";
             m_insertfileOperationCommand.AddParameter(m_operationid);
             m_insertfileOperationCommand.AddParameters(2);
 
-            m_insertfileCommand.CommandText = @"INSERT INTO ""Fileset"" (""Path"",""BlocksetID"", ""MetadataID"") VALUES (?, ? ,?); SELECT last_insert_rowid();";
+            m_insertfileCommand.CommandText = @"INSERT INTO ""FileEntry"" (""Path"",""BlocksetID"", ""MetadataID"") VALUES (?, ? ,?); SELECT last_insert_rowid();";
             m_insertfileCommand.AddParameters(3);
 
             m_insertblocksetCommand.CommandText = @"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (?, ?); SELECT last_insert_rowid();";
@@ -124,12 +124,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
             //Need a temporary table with path/scantime lookups
             m_scantimelookupTablename = "ScanTime-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             using (var cmd = m_connection.CreateCommand())
-                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""OperationFileset"".""FilesetID"" AS ""FilesetID"", MAX(""OperationFileset"".""Scantime"") AS ""Scantime"", ""Fileset"".""Path"" AS ""Path"" FROM ""OperationFileset"" INNER JOIN ""Fileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" GROUP BY ""FilesetID"", ""Path"" ", m_scantimelookupTablename));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""OperationFileset"".""FileEntryID"" AS ""FileEntryID"", MAX(""OperationFileset"".""Scantime"") AS ""Scantime"", ""FileEntry"".""Path"" AS ""Path"" FROM ""OperationFileset"" INNER JOIN ""FileEntry"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" GROUP BY ""OperationFileset"".""FileEntryID"", ""FileEntry"".""Path"" ", m_scantimelookupTablename));
 
-            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FilesetID"", ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
+            m_selectfileSimpleCommand.CommandText = string.Format(@"SELECT ""FileEntryID"", ""Scantime"" FROM ""{0}"" WHERE ""Path"" = ?", m_scantimelookupTablename);
             m_selectfileSimpleCommand.AddParameters(1);
 
-            m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"" INNER JOIN ""Fileset"" ON ""Blockset"".""ID"" = ""Fileset"".""BlocksetID"" WHERE ""Fileset"".""ID"" = ?  ";
+            m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"" INNER JOIN ""FileEntry"" ON ""Blockset"".""ID"" = ""FileEntry"".""BlocksetID"" WHERE ""FileEntry"".""ID"" = ?  ";
             m_selectfileHashCommand.AddParameters(1);
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                         }
 
                 if (m_fileScantimeLookup != null)
-                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FilesetID"", ""Scantime"", ""Path"" FROM ""{0}"" ", m_scantimelookupTablename)))
+                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileEntryID"", ""Scantime"", ""Path"" FROM ""{0}"" ", m_scantimelookupTablename)))
                         while (rd.Read())
                         {
                             var id = Convert.ToInt64(rd.GetValue(0));
@@ -197,7 +197,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                         }
 
                 if (m_filesetLookup != null)
-                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""Path"", ""BlocksetID"", ""MetadataID"", ""ID"" FROM ""Fileset"" ")))
+                    using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""Path"", ""BlocksetID"", ""MetadataID"", ""ID"" FROM ""FileEntry"" ")))
                         while (rd.Read())
                         {
                             var path = rd.GetValue(0).ToString();
@@ -704,8 +704,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                //cmd.CommandText = @"SELECT ""A"".""ID"", ""D"".""Scantime"", ""B"".""Length"", ""B"".""FullHash"", ""E"".""FullHash"", ""E"".""Length"", ""B"".""ID"" FROM ""Fileset"" A, ""Blockset"" B, ""Metadataset"" C, ""OperationFileset"" D, ""Blockset"" E, ""Operation"" F WHERE ""A"".""ID"" = ""D"".""FilesetID"" AND ""F"".""ID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"" AND ""F"".""ID"" = ""D"".""OperationID"" ORDER BY ""F"".""Timestamp"" DESC ";
-                cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""B"".""Path"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Scantime"" FROM ""OperationFileset"" A, ""Fileset"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""A"".""OperationID"" = ? ";
+                cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""B"".""Path"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Scantime"" FROM ""OperationFileset"" A, ""FileEntry"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""FileEntryID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""A"".""OperationID"" = ? ";
                 cmd.AddParameter(FOLDER_BLOCKSET_ID);
                 cmd.AddParameter(SYMLINK_BLOCKSET_ID);
                 cmd.AddParameter(operationId == null ? m_operationid : operationId.Value);
@@ -724,7 +723,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                         filesetvolume.AddSymlink(path, metahash, metalength);
                 }
 
-                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Scantime"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Scantime"" AS ""Scantime"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""Fileset"" A, ""Blockset"" B, ""Metadataset"" C, ""OperationFileset"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FilesetID"" AND ""D"".""OperationID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
+                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Scantime"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Scantime"" AS ""Scantime"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""FileEntry"" A, ""Blockset"" B, ""Metadataset"" C, ""OperationFileset"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileEntryID"" AND ""D"".""OperationID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
                 cmd.Parameters.Clear();
                 cmd.AddParameter(m_operationid);
 
@@ -795,28 +794,34 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             base.Dispose();
         }
+        
+        private long GetPreviousBackupOperationID(System.Data.IDbCommand cmd)
+        {
+            long lastOperationId = -1;
+
+            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Operation"" WHERE ""Timestamp"" < ? AND ""Description"" = ? ORDER BY ""Timestamp"" DESC ", OperationTimestamp, "Backup");
+            if (lastIdObj != null && lastIdObj != DBNull.Value)
+                lastOperationId = Convert.ToInt64(lastIdObj);
+                
+            return lastOperationId;
+        }
 
         internal void UpdateChangeStatistics (BackupStatistics m_stat)
         {
             using (var cmd = m_connection.CreateCommand()) 
             {
-                long lastOperationId = -1;
+				var lastOperationId = GetPreviousBackupOperationID(cmd);
+                m_stat.AddedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" = ? AND NOT ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", m_operationid, FOLDER_BLOCKSET_ID, lastOperationId));
+                m_stat.AddedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" = ? AND NOT ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", m_operationid, SYMLINK_BLOCKSET_ID, lastOperationId));
+                m_stat.AddedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" != ? AND ""FileEntry"".""BlocksetID"" != ? AND NOT ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", m_operationid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, lastOperationId));
 
-                var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Operation"" WHERE ""Timestamp"" < ? AND ""Description"" = ? ORDER BY ""Timestamp"" DESC ", OperationTimestamp, "Backup");
-                if (lastIdObj != null && lastIdObj != DBNull.Value)
-                    lastOperationId = Convert.ToInt64(lastIdObj);
+                m_stat.DeletedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" = ? AND NOT ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, m_operationid));
+                m_stat.DeletedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" = ? AND NOT ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, SYMLINK_BLOCKSET_ID, m_operationid));
+                m_stat.DeletedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" != ? AND ""FileEntry"".""BlocksetID"" != ? AND NOT ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, m_operationid));
 
-                m_stat.AddedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" = ? AND NOT ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", m_operationid, FOLDER_BLOCKSET_ID, lastOperationId));
-                m_stat.AddedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" = ? AND NOT ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", m_operationid, SYMLINK_BLOCKSET_ID, lastOperationId));
-                m_stat.AddedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" != ? AND ""Fileset"".""BlocksetID"" != ? AND NOT ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", m_operationid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, lastOperationId));
-
-                m_stat.DeletedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" = ? AND NOT ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, m_operationid));
-                m_stat.DeletedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" = ? AND NOT ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, SYMLINK_BLOCKSET_ID, m_operationid));
-                m_stat.DeletedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" != ? AND ""Fileset"".""BlocksetID"" != ? AND NOT ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, m_operationid));
-
-                m_stat.ModifiedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" = ? AND ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, m_operationid));
-                m_stat.ModifiedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" = ? AND ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, SYMLINK_BLOCKSET_ID, m_operationid));
-                m_stat.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""Fileset"".""BlocksetID"" != ? AND ""Fileset"".""BlocksetID"" != ? AND ""Fileset"".""Path"" IN (SELECT ""Path"" FROM ""Fileset"" INNER JOIN ""OperationFileset"" ON ""Fileset"".""ID"" = ""OperationFileset"".""FilesetID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, m_operationid));
+                m_stat.ModifiedFolders = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" = ? AND ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, m_operationid));
+                m_stat.ModifiedSymlinks = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" = ? AND ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, SYMLINK_BLOCKSET_ID, m_operationid));
+                m_stat.ModifiedFiles = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ? AND ""FileEntry"".""BlocksetID"" != ? AND ""FileEntry"".""BlocksetID"" != ? AND ""FileEntry"".""Path"" IN (SELECT ""Path"" FROM ""FileEntry"" INNER JOIN ""OperationFileset"" ON ""FileEntry"".""ID"" = ""OperationFileset"".""FileEntryID"" WHERE ""OperationFileset"".""OperationID"" = ?)", lastOperationId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, m_operationid));
             }
 
             if (m_blockHashLookup != null && m_fileHashLookup != null && (m_blockHashLookup.FalsePositives > 200 || m_fileHashLookup.FalsePositives > 20))
@@ -878,18 +883,14 @@ namespace Duplicati.Library.Main.ForestHash.Database
             using(var cmd = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                long lastOperationId = -1;
-
-                var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Operation"" WHERE ""Timestamp"" < ? AND ""Description"" = ? ORDER BY ""Timestamp"" DESC ", OperationTimestamp, "Backup");
-                if (lastIdObj != null && lastIdObj != DBNull.Value)
-                    lastOperationId = Convert.ToInt64(lastIdObj);
+                long lastOperationId = GetPreviousBackupOperationID(cmd);
 
                 cmd.Transaction = tr.Parent;
-                cmd.ExecuteNonQuery(@"INSERT INTO ""OperationFileset"" (""OperationID"", ""FilesetID"", ""Scantime"") SELECT ? AS ""OperationID"", ""FilesetID"", ""Scantime"" FROM ""OperationFile"" WHERE ""OperationID"" = ? AND ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""OperationFileset"" WHERE ""OperationID"" = ?) ", m_operationid, lastOperationId, m_operationid);
+                cmd.ExecuteNonQuery(@"INSERT INTO ""OperationFileset"" (""OperationID"", ""FileEntryID"", ""Scantime"") SELECT ? AS ""OperationID"", ""FileEntryID"", ""Scantime"" FROM ""OperationFile"" WHERE ""OperationID"" = ? AND ""FileEntryID"" NOT IN (SELECT ""FileEntryID"" FROM ""OperationFileset"" WHERE ""OperationID"" = ?) ", m_operationid, lastOperationId, m_operationid);
 
                 if (deleted != null)
                 {
-                    cmd.CommandText = @"DELETE FROM ""OperationFileset"" WHERE ""OperationID"" = ? AND ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""Path"" = ?) ";
+                    cmd.CommandText = @"DELETE FROM ""OperationFileset"" WHERE ""OperationID"" = ? AND ""FileEntryID"" IN (SELECT ""ID"" FROM ""FileEntry"" WHERE ""Path"" = ?) ";
                     cmd.AddParameter(m_operationid);
                     cmd.AddParameter();
 
