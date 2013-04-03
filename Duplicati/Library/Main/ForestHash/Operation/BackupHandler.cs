@@ -86,8 +86,28 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         public void Run()
         {
         	ForestHash.VerifyParameters(m_database, m_options);
+        	
         	if (!m_options.FhNoBackendverification)
-            	ForestHash.VerifyRemoteList(m_backend, m_options, m_database, m_stat);
+        	{
+            	try 
+            	{
+            		ForestHash.VerifyRemoteList(m_backend, m_options, m_database, m_stat);
+            	} 
+            	catch (Exception ex)
+            	{
+            		if (m_options.AutoCleanup)
+            		{
+            			m_stat.LogWarning("Backend verification failed, attempting automatic cleanup", ex);
+            			using(var ch = new CleanupHandler(m_backend.BackendUrl, m_options, m_stat))
+            				ch.Run();
+            			
+            			m_stat.LogMessage("Backend cleanup finished, retrying verification");
+            			ForestHash.VerifyRemoteList(m_backend, m_options, m_database, m_stat);
+            		}
+            		else
+            			throw;
+            	}
+            }
 
             m_blockvolume = new BlockVolumeWriter(m_options);
             m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
