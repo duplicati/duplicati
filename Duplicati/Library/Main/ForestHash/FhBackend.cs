@@ -26,6 +26,7 @@ namespace Duplicati.Library.Main.ForestHash
         public interface IDownloadWaitHandle
         {
             TempFile Wait();
+            TempFile Wait(out string hash, out long size);
         }
 
         private class FileEntryItem : IDownloadWaitHandle
@@ -70,6 +71,16 @@ namespace Duplicati.Library.Main.ForestHash
             TempFile IDownloadWaitHandle.Wait()
             {
                 this.WaitForComplete();
+                return (TempFile)this.Result;
+            }
+
+            TempFile IDownloadWaitHandle.Wait(out string hash, out long size)
+            {
+                this.WaitForComplete();
+                
+                hash = this.Hash;
+                size = this.Size;
+                
                 return (TempFile)this.Result;
             }
 
@@ -279,19 +290,23 @@ namespace Duplicati.Library.Main.ForestHash
 
                 if (!m_options.SkipFileHashChecks)
                 {
+                    var nl = new System.IO.FileInfo(tmpfile).Length;
                     if (item.Size >= 0)
                     {
-                        var nl = new System.IO.FileInfo(tmpfile).Length;
                         if (nl != item.Size)
                             throw new Exception(string.Format(Strings.BackendWrapper.DownloadedFileSizeError, item.RemoteFilename, nl, item.Size));
                     }
+                    else
+                    	item.Size = nl;
 
+                    var nh = FileEntryItem.CalculateFileHash(tmpfile);
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
-                        var nh = FileEntryItem.CalculateFileHash(tmpfile);
                         if (nh != item.Hash)
                             throw new BackendWrapper.HashMismathcException(string.Format(Strings.BackendWrapper.HashMismatchError, tmpfile, item.Hash, nh));
                     }
+                    else
+                    	item.Hash = nh;
                 }
 
                 // Decrypt before returning

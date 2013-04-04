@@ -17,6 +17,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             m_options = options;
             m_stat = stat;
             m_target = target;
+            m_backendurl = backendurl;
         }
 
         public void Run()

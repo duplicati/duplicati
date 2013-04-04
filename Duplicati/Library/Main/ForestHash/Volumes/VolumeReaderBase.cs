@@ -36,8 +36,8 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
                 if (s == null)
                     throw new InvalidManifestException("No manifest file found in volume");
 
-                using (var fs = new System.IO.StreamReader(s, ENCODING))
-                    ManifestData.VerifyManifest(fs.ReadToEnd(), m_blocksize);
+                using (var fs = new StreamReader(s, ENCODING))
+                    ManifestData.VerifyManifest(fs.ReadToEnd(), m_blocksize, options.FhBlockHashAlgorithm, options.FhFileHashAlgorithm);
             }
         }
 

@@ -13,12 +13,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
         protected long m_blocksize;
 
         public LocalRestoreDatabase(string path, long blocksize)
-            : this("Restore", path, blocksize)
+            : this(new LocalDatabase(path, "Restore"), blocksize)
         {
         }
 
-        protected LocalRestoreDatabase(string operation, string path, long blocksize)
-            : base(path, operation)
+        public LocalRestoreDatabase(LocalDatabase dbparent, long blocksize)
+            : base(dbparent)
         {
             //TODO: Should read this from DB?
             m_blocksize = blocksize;

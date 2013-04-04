@@ -77,7 +77,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 #endif
                 if (System.IO.File.Exists(m_options.Fhdbpath))
                 {
-                    Run(null);
+					using(var db = new LocalRestoreDatabase(m_options.Fhdbpath, m_options.Fhblocksize))
+        	            DoRun(db);
                     return;
                 }
 
@@ -100,7 +101,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 // Simultaneously with downloading blocklists, we patch as much as we can from the blockvolumes
                 // This prevents repeated downloads, except for cases where the blocklists refer blocks
                 // that have been previously handled. A local blockvolume cache can reduce this issue
-                using (var database = new LocalRestoreDatabase(tmpdb ?? m_options.Fhdbpath, m_options.Fhblocksize))
+                using (var database = new LocalRestoreDatabase(tmpdb, m_options.Fhblocksize))
                 {
                     var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
                     if (!blockhasher.CanReuseTransform)
@@ -141,12 +142,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                     // TODO: When UpdateMisisngBlocksTable is implemented, the localpatcher can be activated
                     // and this will reduce the need for multiple downloads of the same volume
-                    //TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
+                    // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
                     using (var rdb = new RecreateDatabaseHandler(m_backendurl, m_options, m_stat))
-                        rdb.Run(tmpdb, filelistfilter, filenamefilter, /*localpatcher*/ null);
+                        rdb.DoRun(database, filelistfilter, filenamefilter, /*localpatcher*/ null);
+
+	                DoRun(database);
                 }
 
-                Run(tmpdb);
                 return;
             }
         }
@@ -192,12 +194,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             }
         }
 
-
-        public void Run(string dbpath)
+        private void DoRun(LocalDatabase dbparent)
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
-            using (var database = new LocalRestoreDatabase(dbpath ?? m_options.Fhdbpath, m_options.Fhblocksize))
+            using (var database = new LocalRestoreDatabase(dbparent, m_options.Fhblocksize))
             using (var backend = new FhBackend(m_backendurl, m_options, database, m_stat))
             {
 	        	ForestHash.VerifyParameters(database, m_options);

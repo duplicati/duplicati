@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	            
 	            if (lastVolumeSize < m_options.VolumeSize - m_options.FhVolsizeTolerance && !m_options.FhNoAutoCompact)
 	            	using(var ch = new CompactHandler(m_backend.BackendUrl, m_options, m_stat))
-            		using(var db = new LocalDeleteDatabase(m_database.Connection))
+            		using(var db = new LocalDeleteDatabase(m_database))
 	            		ch.DoCompact(db, true, m_transaction);
 	            
 				if (m_options.FhDryrun)
@@ -528,7 +528,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             m_database.AddBlockset(filehash, size, m_blockbuffer.Length, hashlist.Hashes, blocklisthashes, out blocksetid, m_transaction);
 
             //m_filesetvolume.AddFile(filename, filehash, size, scantime, metadata.Hash, metadata.Size, blocklisthashes);
-            m_database.AddFile(filename, scantime, blocksetid, metadataid, m_transaction);
+            m_database.AddFile(filename, scantime, blocksetid, metadataid, m_transaction, -1);
         }
 
         public void Dispose()

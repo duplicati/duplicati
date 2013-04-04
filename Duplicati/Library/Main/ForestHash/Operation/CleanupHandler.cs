@@ -58,7 +58,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
 							w.SetRemoteFilename(n.Name);
 							
-							using(var b = new LocalBackupDatabase(db.Connection, m_options))
+							using(var b = new LocalBackupDatabase(db, m_options))
 								b.WriteFileset(w, operationId);
 
 							w.Close();

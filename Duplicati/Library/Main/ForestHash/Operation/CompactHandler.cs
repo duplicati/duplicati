@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			if (!System.IO.File.Exists(m_options.Fhdbpath))
 				throw new Exception(string.Format("Database file does not exist: {0}", m_options.Fhdbpath));
 			
-			using(var db = new LocalDeleteDatabase(m_options.Fhdbpath))
+			using(var db = new LocalDeleteDatabase(m_options.Fhdbpath, true))
 			using(var tr = db.BeginTransaction())
 			{
 	        	ForestHash.VerifyParameters(db, m_options);

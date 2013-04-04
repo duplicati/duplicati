@@ -35,16 +35,31 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         {
         	if (System.IO.File.Exists(path))
         		throw new Exception(string.Format("Cannot recreate database because file already exists: {0}", path));
-        		
+
+			using(var db = new LocalBlocklistUpdateDatabase(path, m_options.Fhblocksize))
+        		DoRun(db, filelistfilter, filenamefilter, blockprocessor);
+		}
+		
+		/// <summary>
+		/// Run the recreate procedure
+		/// </summary>
+		/// <param name="path">Path to the database that will be created</param>
+		/// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
+		/// <param name="filenamefilter">Filters the files in a filelist to prevent downloading unwanted data</param>
+		/// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
+        internal void DoRun(LocalDatabase dbparent, FilterFilelistDelegate filelistfilter = null, FilenameFilterDelegate filenamefilter = null, BlockVolumePostProcessor blockprocessor = null)
+        {
         	var hashalg = System.Security.Cryptography.HashAlgorithm.Create(m_options.FhBlockHashAlgorithm);
 			if (hashalg == null)
 				throw new Exception(string.Format(Strings.Foresthash.InvalidHashAlgorithm, m_options.FhBlockHashAlgorithm));
             var hashsize = hashalg.HashSize / 8;
 
             //We build a local database in steps.
-            using (var restoredb = new LocalBlocklistUpdateDatabase(path, m_options.Fhblocksize))
+            using (var restoredb = new LocalBlocklistUpdateDatabase(dbparent, m_options.Fhblocksize))
             using (var backend = new FhBackend(m_backendurl, m_options, restoredb, m_stat))
             {
+            	var volumeIds = new Dictionary<string, long>();
+
                 //First step is to examine the remote storage to see what
                 // kind of data we can find
                 var remotefiles =
@@ -68,20 +83,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     select n;
 
                 if (filelistfilter != null)
-                    filelists = filelistfilter(filelists);
+                    filelists = filelistfilter(filelists).ToArray();
 
                 using (var backupdb = new LocalBackupDatabase(restoredb, m_options))
                 {
                     foreach (var fl in remotefiles)
-                    {
-                        var id = backupdb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);
-                        
-                        //For filelists, we associate them with a backup operation.
-                        // This enables the delete-older-than and similar operations to work with the restored database
-                        if (fl.FileType == RemoteVolumeType.Files)
-                        	restoredb.CreateBackupOperation(id, fl.Time);
-                    }
-
+                        volumeIds[fl.File.Name] = backupdb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);
+                                       
                     //We grab all shadow files, and update the block table
                     using (var tr = restoredb.BeginTransaction())
                     {
@@ -89,7 +97,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							from n in remotefiles
 							where n.FileType == RemoteVolumeType.Shadow
 							select new RemoteVolume(n.File) as IRemoteVolume;
-							
+												
                         foreach (var sf in new AsyncDownloader(shadowfiles.ToList(), backend))
                         {
                             if (sf.Key.Hash != null && sf.Key.Size > 0)
@@ -97,6 +105,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                             using (var svr = new ShadowVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), sf.Value, m_options, hashsize))
                             {
+					        	ForestHash.VerifyParameters(restoredb, m_options);
+
                                 //If there are blocklists in the shadow file, update the blocklists
                                 foreach (var b in svr.BlockLists)
                                     restoredb.UpdateBlocklist(b.Hash, b.Blocklist, hashsize, tr);
@@ -126,9 +136,16 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     //Now record all blocksets and files needed
                     using (var tr = backupdb.BeginTransaction())
                     {
-                        foreach (var entry in filelists)
-                            using (var filelist = backend.Get(entry.File.Name, entry.File.Size, null))
-                            using (var filelistreader = new FilesetVolumeReader(RestoreHandler.GetCompressionModule(entry.File.Name), filelist, m_options))
+                    	var filelistWork = (from n in filelists select new RemoteVolume(n.File) as IRemoteVolume).ToList();
+                    	foreach (var entry in new AsyncDownloader(filelistWork, backend))
+                        {
+                            if (entry.Key.Hash != null && entry.Key.Size > 0)
+                                backupdb.UpdateRemoteVolume(entry.Key.Name, RemoteVolumeState.Verified, entry.Key.Size, entry.Key.Hash, tr);
+
+                        	var parsed = VolumeBase.ParseFilename(entry.Key.Name);
+		                    // Create timestamped operations based on the file timestamp
+                        	var operationid = backupdb.CreateBackupOperation(volumeIds[entry.Key.Name], parsed.Time, tr);
+                            using (var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, entry.Value, m_options))
                                 foreach (var fe in filenamefilter(filelistreader.Files))
                                 {
                                     if (fe.Type == FilelistEntryType.Folder)
@@ -136,7 +153,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                         long metaid = -1;
                                         if (fe.Metahash != null)
                                             backupdb.AddMetadataset(fe.Metahash, fe.Metasize, out metaid, tr);
-                                        backupdb.AddDirectoryEntry(fe.Path, metaid, fe.Time, tr);
+                                        backupdb.AddDirectoryEntry(fe.Path, metaid, fe.Time, tr, operationid);
 
                                     }
                                     else if (fe.Type == FilelistEntryType.File)
@@ -147,9 +164,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                             backupdb.AddMetadataset(fe.Metahash, fe.Metasize, out metaid, tr);
 
                                         backupdb.AddBlockset(fe.Hash, fe.Size, m_options.Fhblocksize, dummylist, fe.BlocklistHashes, out blocksetid, tr);
-                                        backupdb.AddFile(fe.Path, fe.Time, blocksetid, metaid, tr);
+                                        backupdb.AddFile(fe.Path, fe.Time, blocksetid, metaid, tr, operationid);
                                     }
                                 }
+                        }
                         tr.Commit();
                     }
                 }

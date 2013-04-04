@@ -54,17 +54,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private string m_scantimelookupTablename;
 
         public LocalBackupDatabase(string path, FhOptions options)
-            : this(CreateConnection(path), options)
+            : this(new LocalDatabase(path, "Backup"), options)
         {
         }
-
-        public LocalBackupDatabase(LocalRestoreDatabase connection, FhOptions options)
-            : this(connection.Connection, options)
-        {
-        }
-
-        public LocalBackupDatabase(System.Data.IDbConnection connection, FhOptions options)
-            : base(connection, "Backup")
+       	
+        public LocalBackupDatabase(LocalDatabase db, FhOptions options)
+        	: base(db)
         {
             m_findblockCommand = m_connection.CreateCommand();
             m_insertblockCommand = m_connection.CreateCommand();
@@ -103,8 +98,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_insertblockCommand.AddParameters(3);
 
             m_insertfileOperationCommand.CommandText = @"INSERT INTO ""OperationFileset"" (""OperationID"", ""FileEntryID"", ""Scantime"") VALUES (?, ?, ?)";
-            m_insertfileOperationCommand.AddParameter(m_operationid);
-            m_insertfileOperationCommand.AddParameters(2);
+            m_insertfileOperationCommand.AddParameters(3);
 
             m_insertfileCommand.CommandText = @"INSERT INTO ""FileEntry"" (""Path"",""BlocksetID"", ""MetadataID"") VALUES (?, ? ,?); SELECT last_insert_rowid();";
             m_insertfileCommand.AddParameters(3);
@@ -479,7 +473,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// <param name="scantime">The time the file was scanned</param>
         /// <param name="blocksetID">The ID of the hashkey for the file</param>
         /// <param name="metadataID">The ID for the metadata</param>
-        public void AddFile(string filename, DateTime scantime, long blocksetID, long metadataID, System.Data.IDbTransaction transaction = null)
+        /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
+        /// <param name="operationId">The operationId to use, or -1 to use the current operation</param>
+        public void AddFile(string filename, DateTime scantime, long blocksetID, long metadataID, System.Data.IDbTransaction transaction, long operationId)
         {
             long fileid;
             object fileidobj = null;
@@ -535,8 +531,8 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 }
             }
 
-
             m_insertfileOperationCommand.Transaction = transaction;
+            m_insertfileOperationCommand.SetParameterValue(0, operationId <= 0 ? m_operationid : operationId);
             m_insertfileOperationCommand.SetParameterValue(1, fileidobj);
             m_insertfileOperationCommand.SetParameterValue(2, scantime);
             m_insertfileOperationCommand.ExecuteNonQuery();
@@ -546,19 +542,20 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public void AddUnmodifiedFile(long fileid, DateTime scantime, System.Data.IDbTransaction transaction = null)
         {
             m_insertfileOperationCommand.Transaction = transaction;
+            m_insertfileOperationCommand.SetParameterValue(0, m_operationid);
             m_insertfileOperationCommand.SetParameterValue(1, fileid);
             m_insertfileOperationCommand.SetParameterValue(2, scantime);
             m_insertfileOperationCommand.ExecuteNonQuery();
         }
 
-        public void AddDirectoryEntry(string path, long metadataID, DateTime scantime, System.Data.IDbTransaction transaction = null)
+        public void AddDirectoryEntry(string path, long metadataID, DateTime scantime, System.Data.IDbTransaction transaction = null, long operationId = -1)
         {
-            AddFile(path, scantime, FOLDER_BLOCKSET_ID, metadataID, transaction);
+            AddFile(path, scantime, FOLDER_BLOCKSET_ID, metadataID, transaction, operationId);
         }
         
-        public void AddSymlinkEntry(string path, long metadataID, DateTime scantime, System.Data.IDbTransaction transaction = null)
+        public void AddSymlinkEntry(string path, long metadataID, DateTime scantime, System.Data.IDbTransaction transaction = null, long operationId = -1)
         {
-            AddFile(path, scantime, SYMLINK_BLOCKSET_ID, metadataID, transaction);
+            AddFile(path, scantime, SYMLINK_BLOCKSET_ID, metadataID, transaction, operationId);
         }
 
         public long GetFileEntry(string path, out DateTime oldScanned)
@@ -904,5 +901,25 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 tr.Commit();
             }
         }
+
+		/// <summary>
+		/// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
+		/// </summary>
+		/// <param name="volumeid">The ID of the fileset volume to update</param>
+		/// <param name="timestamp">The timestamp of the operation to create</param>
+		/// <param name="transaction">An optional external transaction</param>
+		public long CreateBackupOperation(long volumeid, DateTime timestamp, System.Data.IDbTransaction transaction = null)
+		{
+            using (var cmd = m_connection.CreateCommand())
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            {
+            	cmd.Transaction = tr.Parent;            	
+				var operationid = Convert.ToInt64(cmd.ExecuteScalar(@"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", "Backup", timestamp));
+				cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""OperationID"" = ? WHERE ""ID"" = ?", operationid, volumeid);
+				tr.Commit();
+				return operationid;
+			}
+		}
+		
     }
 }

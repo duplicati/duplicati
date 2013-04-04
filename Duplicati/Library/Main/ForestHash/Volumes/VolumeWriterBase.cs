@@ -30,7 +30,6 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         public VolumeWriterBase(FhOptions options, DateTime timestamp)
             : base(options)
         {
-            var tempfolder = options.AsynchronousUpload ? options.AsynchronousUploadFolder : (options.TempDir ?? Utility.TempFolder.SystemTempPath);
             m_localfile = new Utility.TempFile();
 
 			m_volumename = GenerateFilename(this.FileType, options.BackupPrefix, Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray()), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
@@ -41,7 +40,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         protected void AddManifestfile()
         {
             using (var sr = new StreamWriter(m_compression.CreateFile(MANIFEST_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
-                sr.Write(ManifestData.GetManifestInstance(m_blocksize));
+                sr.Write(ManifestData.GetManifestInstance(m_blocksize, m_blockhash, m_filehash));
         }
 
         public virtual void Dispose()

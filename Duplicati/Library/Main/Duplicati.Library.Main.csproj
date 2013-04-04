@@ -70,7 +70,6 @@
     <Compile Include="CommunicationStatistics.cs" />
     <Compile Include="CompressionWrapper.cs" />
     <Compile Include="FilenameStrategy.cs" />
-    <Compile Include="ForestHash\Database\AsyncDownloader.cs" />
     <Compile Include="ForestHash\Database\ILocalFileEntry.cs" />
     <Compile Include="ForestHash\Database\IRemoteVolume.cs" />
     <Compile Include="ForestHash\Database\LocalBackupDatabase.cs" />
@@ -170,6 +169,7 @@
     <Compile Include="ForestHash\Operation\DeleteHandler.cs" />
     <Compile Include="ForestHash\Database\RestoreIterators.cs" />
     <Compile Include="ForestHash\Database\LocalCleanupDatabase.cs" />
+    <Compile Include="ForestHash\AsyncDownloader.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">

@@ -11,16 +11,16 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         protected class ManifestData
         {
             private const string ENCODING = "utf8";
-            private const string PRIMARYHASH = "sha256";
             private const long VERSION = 1;
 
             public long Version;
             public string Created;
             public string Encoding;
             public long Blocksize;
-            public string PrimaryHash;
+            public string BlockHash;
+			public string FileHash;
 
-            public static string GetManifestInstance(long blocksize)
+            public static string GetManifestInstance(long blocksize, string blockhash, string filehash)
             {
                 return JsonConvert.SerializeObject(new ManifestData()
                 {
@@ -28,19 +28,24 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
                     Encoding = ENCODING,
                     Blocksize = blocksize,
                     Created = Utility.Utility.SerializeDateTime(DateTime.UtcNow),
-                    PrimaryHash = PRIMARYHASH,
+                    BlockHash = blockhash,
+                    FileHash = filehash
                 });
             }
 
-            public static void VerifyManifest(string manifest, long blocksize)
+            public static void VerifyManifest(string manifest, long blocksize, string blockhash, string filehash)
             {
                 var d = JsonConvert.DeserializeObject<ManifestData>(manifest);
                 if (d.Version > VERSION)
                     throw new InvalidManifestException("Version", d.Version.ToString(), VERSION.ToString());
                 if (d.Encoding != ENCODING)
                     throw new InvalidManifestException("Encoding", d.Encoding, ENCODING);
-                if (d.PrimaryHash != PRIMARYHASH)
-                    throw new InvalidManifestException("PrimaryHash", d.PrimaryHash, PRIMARYHASH);
+                if (d.Blocksize != blocksize)
+                    throw new InvalidManifestException("Blocksize", d.Blocksize.ToString(), blocksize.ToString());
+                if (d.BlockHash != blockhash)
+                    throw new InvalidManifestException("BlockHash", d.BlockHash, blockhash);
+                if (d.FileHash != filehash)
+                    throw new InvalidManifestException("FileHash", d.FileHash, filehash);
             }
         }
 
@@ -111,10 +116,14 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 
         public static readonly System.Text.Encoding ENCODING = System.Text.Encoding.UTF8;
         protected readonly long m_blocksize;
+        protected readonly string m_blockhash;
+        protected readonly string m_filehash;
 
         public VolumeBase(FhOptions options)
         {
             m_blocksize = options.Fhblocksize;
+            m_blockhash = options.FhBlockHashAlgorithm;
+            m_filehash = options.FhFileHashAlgorithm;
         }
     }
 }

@@ -54,7 +54,21 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// </summary>
         /// <param name="path">The path to the database</param>
         /// <param name="operation">The name of the operation</param>
+        public LocalDatabase(LocalDatabase db)
+        	: this(db.m_connection)
+		{
+			this.OperationTimestamp = db.OperationTimestamp;
+			this.m_connection = db.m_connection;
+			this.m_operationid = db.m_operationid;
+		}
+		
+        /// <summary>
+        /// Creates a new database instance and starts a new operation
+        /// </summary>
+        /// <param name="path">The path to the database</param>
+        /// <param name="operation">The name of the operation</param>
         public LocalDatabase(System.Data.IDbConnection connection, string operation)
+        	: this(connection)
         {
             this.OperationTimestamp = DateTime.UtcNow;
             m_connection = connection;
@@ -64,27 +78,27 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             using (var cmd = m_connection.CreateCommand())
                 m_operationid = Convert.ToInt64(cmd.ExecuteScalar( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", operation, OperationTimestamp));
-
-            m_updateremotevolumeCommand = m_connection.CreateCommand();
-            m_selectremotevolumesCommand = m_connection.CreateCommand();
-            m_selectremotevolumeCommand = m_connection.CreateCommand();
-            m_insertlogCommand = m_connection.CreateCommand();
-            m_insertremotelogCommand = m_connection.CreateCommand();
-            m_removeremotevolumeCommand = m_connection.CreateCommand();
-			m_selectremotevolumeIdCommand = m_connection.CreateCommand();
-			m_createremotevolumeCommand = m_connection.CreateCommand();
+		}
+		
+		private LocalDatabase(System.Data.IDbConnection connection)
+		{
+            m_updateremotevolumeCommand = connection.CreateCommand();
+            m_selectremotevolumesCommand = connection.CreateCommand();
+            m_selectremotevolumeCommand = connection.CreateCommand();
+            m_insertlogCommand = connection.CreateCommand();
+            m_insertremotelogCommand = connection.CreateCommand();
+            m_removeremotevolumeCommand = connection.CreateCommand();
+			m_selectremotevolumeIdCommand = connection.CreateCommand();
+			m_createremotevolumeCommand = connection.CreateCommand();
 
             m_insertlogCommand.CommandText = @"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)";
-            m_insertlogCommand.AddParameter(m_operationid);
-            m_insertlogCommand.AddParameters(4);
+            m_insertlogCommand.AddParameters(5);
 
             m_insertremotelogCommand.CommandText = @"INSERT INTO ""RemoteOperation"" (""OperationID"", ""Timestamp"", ""Operation"", ""Path"", ""Data"") VALUES (?, ?, ?, ?, ?)";
-            m_insertremotelogCommand.AddParameter(m_operationid);
-            m_insertremotelogCommand.AddParameters(4);
+            m_insertremotelogCommand.AddParameters(5);
 
             m_updateremotevolumeCommand.CommandText = @"UPDATE ""Remotevolume"" SET ""OperationID"" = ?, ""State"" = ?, ""Hash"" = ?, ""Size"" = ? WHERE ""Name"" = ?";
-            m_updateremotevolumeCommand.AddParameter(m_operationid);
-            m_updateremotevolumeCommand.AddParameters(4);
+            m_updateremotevolumeCommand.AddParameters(5);
 
             m_selectremotevolumesCommand.CommandText = @"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume""";
 
@@ -97,8 +111,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
 
 			m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();";
-			m_createremotevolumeCommand.AddParameter(m_operationid);
-            m_createremotevolumeCommand.AddParameters(3);
+            m_createremotevolumeCommand.AddParameters(4);		
 		}
 		
 		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
@@ -106,6 +119,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             lock (m_lock)
             {
                 m_updateremotevolumeCommand.Transaction = transaction;
+                m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
                 m_updateremotevolumeCommand.SetParameterValue(1, state.ToString());
                 m_updateremotevolumeCommand.SetParameterValue(2, hash);
                 m_updateremotevolumeCommand.SetParameterValue(3, size);
@@ -174,6 +188,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         {
             lock (m_lock)
             {
+                m_insertremotelogCommand.SetParameterValue(0, m_operationid);
                 m_insertremotelogCommand.SetParameterValue(1, DateTime.UtcNow);
                 m_insertremotelogCommand.SetParameterValue(2, operation);
                 m_insertremotelogCommand.SetParameterValue(3, path);
@@ -193,6 +208,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         {
             lock (m_lock)
             {
+                m_insertlogCommand.SetParameterValue(0, m_operationid);
                 m_insertlogCommand.SetParameterValue(1, DateTime.UtcNow);
                 m_insertlogCommand.SetParameterValue(2, type);
                 m_insertlogCommand.SetParameterValue(3, message);
@@ -233,6 +249,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             {
             	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             	{
+	                m_createremotevolumeCommand.SetParameterValue(0, m_operationid);
 	                m_createremotevolumeCommand.SetParameterValue(1, name);
 	                m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
 	                m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
