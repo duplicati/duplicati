@@ -833,9 +833,6 @@ namespace Duplicati.Library.Main
                             }
                         }
                     }
-                    
-                    List<ManifestEntry> newsets = GetBackupSets();
-                    VerifyManifestChain(backend, newsets[newsets.Count - 1]);
                 }
                 catch(Exception ex)
                 {
@@ -893,6 +890,13 @@ namespace Duplicati.Library.Main
                     OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, 100, -1, Strings.Interface.StatusCompleted, "");                    
                 }
             }
+
+            // Sanity check to ensure that errors are found as early as possible
+            List<ManifestEntry> newsets = GetBackupSets();
+            List<ManifestEntry> newentries = new List<ManifestEntry>();
+            newentries.Add(newsets[newsets.Count - 1]);
+            newentries.AddRange(newsets[newsets.Count - 1].Incrementals);
+            VerifyBackupChainWithFiles(backend, newentries[newentries.Count - 1]);
 
             bs.EndTime = DateTime.Now;
             m_result = bs;
@@ -994,23 +998,41 @@ namespace Duplicati.Library.Main
             if (parsed.SignatureHashes.Count != parsed.ContentHashes.Count)
                 return new Exception(string.Format(Strings.Interface.InvalidManifestFileCount, entry.Filename, parsed.SignatureHashes.Count, parsed.ContentHashes.Count));
             
-            Dictionary<string, string> lookup = new Dictionary<string, string>();
+            Dictionary<string, bool> lookup = new Dictionary<string, bool>();
             foreach(Manifestfile.HashEntry he in parsed.ContentHashes)
-                lookup[he.Name] = "";
+                lookup[he.Name] = false;
             foreach(Manifestfile.HashEntry he in parsed.SignatureHashes)
-                lookup[he.Name] = "";
+                lookup[he.Name] = false;
             
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sbextra = new StringBuilder();
             foreach(KeyValuePair<SignatureEntry, ContentEntry> kvp in entry.Volumes)
             {
-                if (!lookup.ContainsKey(kvp.Key.Filename))
-                    sb.AppendLine(kvp.Key.Filename);
-                if (!lookup.ContainsKey(kvp.Value.Filename))
-                    sb.AppendLine(kvp.Value.Filename);
+                if (lookup.ContainsKey(kvp.Key.Filename))
+                    lookup[kvp.Key.Filename] = true;
+                else
+                    sbextra.AppendLine(kvp.Key.Filename);
+                    
+                if (lookup.ContainsKey(kvp.Value.Filename))
+                    lookup[kvp.Value.Filename] = true;
+                else
+                    sbextra.AppendLine(kvp.Value.Filename);
+            }
+            
+            StringBuilder sbmissing = new StringBuilder();
+            sbmissing.AppendLine();
+            foreach(KeyValuePair<string, bool> he in lookup)
+                if (!he.Value)
+                    sbmissing.AppendLine(he.Key);
+                    
+            if (sbextra.Length > 0)
+            {
+                sbmissing.AppendLine();
+                sbmissing.AppendLine(Strings.Interface.ExtraFilesMessage);
+                sbmissing.Append(sbextra);
             }
         
             return new Exception(
-                string.Format(Strings.Interface.MissingFilesDetected, entry.Filename, parsed.ContentHashes.Count, sb.ToString())
+                string.Format(Strings.Interface.MissingFilesDetected, entry.Filename, parsed.ContentHashes.Count, sbmissing.ToString())
                 + errorMessage
                 );
         }

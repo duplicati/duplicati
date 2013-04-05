@@ -369,7 +369,10 @@
   <data name="InvalidManifestFileCount" xml:space="preserve">
     <value>The manifest file {0} is invalid, as it specifies that there should be {1} signature volumes and {2} content volumes.</value>
   </data>
+  <data name ="ExtraFilesMessage" xml:space="preserve">
+  	<value>Additionally these files were found but are not listed in the manifest:</value>
+  </data>
   <data name="MissingFilesDetected" xml:space="preserve">
-    <value>The manifest file {0} specifies that there should be {1} volume pairs, but the following files were not found: {2}</value>
+    <value>The manifest file {0} specifies that there should be {1} volume pairs, but the following pairs were not found: {2}</value>
   </data>
 </root>
