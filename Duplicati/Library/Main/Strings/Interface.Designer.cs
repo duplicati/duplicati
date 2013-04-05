@@ -169,6 +169,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Additionally these files were found but are not listed in the manifest:.
+        /// </summary>
+        internal static string ExtraFilesMessage {
+            get {
+                return ResourceManager.GetString("ExtraFilesMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to find control files in: {0}.
         /// </summary>
         internal static string FailedToFindControlFilesMessage {
@@ -331,7 +340,7 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The manifest file {0} specifies that there should be {1} volume pairs, but the following files were not found: {2}.
+        ///   Looks up a localized string similar to The manifest file {0} specifies that there should be {1} volume pairs, but the following pairs were not found: {2}.
         /// </summary>
         internal static string MissingFilesDetected {
             get {
