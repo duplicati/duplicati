@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	        	ForestHash.VerifyParameters(db, m_options);
 	        	
 				string msg;
-				using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
+				using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat, tr))
 				{
 					if (!m_options.FhNoBackendverification)
 						ForestHash.VerifyRemoteList(backend, m_options, db, m_stat); 
@@ -78,18 +78,18 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					{
 					
 						if (count == 0)
-							msg = "No remote filesets would be deleted";
+							m_stat.LogMessage("No remote filesets would be deleted");
 						else
-							msg = string.Format("{0} remote fileset(s) would be deleted", count);
+							m_stat.LogMessage(string.Format("{0} remote fileset(s) would be deleted", count));
 
 						if (count > 0 && !m_options.Force)
-							msg += Environment.NewLine + "Specify --force to actually delete files";
+							m_stat.LogMessage("Specify --force to actually delete files");
 					}
 					
-					if (m_options.FhNoAutoCompact)
-						return msg;
-					else
-						return msg + Environment.NewLine + base.DoCompact(db, true, tr);
+					if (!m_options.FhNoAutoCompact)
+						m_stat.LogMessage(base.DoCompact(db, true, tr));
+					
+					return "";
 				}
 			}
 			

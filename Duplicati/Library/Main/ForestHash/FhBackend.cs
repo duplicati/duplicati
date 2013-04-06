@@ -125,20 +125,28 @@ namespace Duplicati.Library.Main.ForestHash
         private Library.Interface.IBackend m_backend;
         private string m_backendurl;
         private CommunicationStatistics m_stats;
+        private System.Data.IDbTransaction m_transaction;
         
         public string BackendUrl { get { return m_backendurl; } }
 
-        public FhBackend(string backendurl, FhOptions options, LocalDatabase database, CommunicationStatistics stats)
+        public FhBackend(string backendurl, FhOptions options, LocalDatabase database, CommunicationStatistics stats, System.Data.IDbTransaction transaction)
         {
             m_options = options;
             m_database = database;
             m_backendurl = backendurl;
             m_stats = stats;
+            m_transaction = transaction;
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+            if (m_backend == null)
+            	throw new Exception(string.Format("Backend not supported: {0}", m_backendurl));
 
             if (!m_options.NoEncryption)
+            {
                 m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
+                if (m_encryption == null)
+                	throw new Exception(string.Format("Encryption method not supported: ", m_options.EncryptionModule));
+            }
 
             m_queue = new BlockingQueue<FileEntryItem>(options.AsynchronousUpload ? (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit) : 1);
             m_thread = new System.Threading.Thread(this.ThreadRun);
@@ -233,7 +241,7 @@ namespace Duplicati.Library.Main.ForestHash
         {
             item.Encrypt(m_encryption);
             if (item.UpdateHashAndSize(m_options))
-                m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
+                m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash, m_transaction);
 
             if (item.Shadow != null)
             {
@@ -395,7 +403,7 @@ namespace Duplicati.Library.Main.ForestHash
                 m_database.LogRemoteOperation("delete", item.RemoteFilename, result);
             }
             
-            m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+            m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null, m_transaction);
 
             if (!m_options.QuietConsole)
             	m_stats.LogMessage("Deleted file {0}", item.RemoteFilename);
@@ -432,7 +440,7 @@ namespace Duplicati.Library.Main.ForestHash
                 throw m_lastException;
             
             item.Close();
-            m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+            m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
             var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, shadow);
             req.LocalFilename = item.LocalFilename;
 
@@ -444,7 +452,7 @@ namespace Duplicati.Library.Main.ForestHash
 
             if (shadow != null)
             {
-                m_database.UpdateRemoteVolume(shadow.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                m_database.UpdateRemoteVolume(shadow.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
                 var req2 = new FileEntryItem(OperationType.Put, shadow.RemoteFilename);
                 req2.LocalFilename = shadow.LocalFilename;
 
@@ -526,7 +534,7 @@ namespace Duplicati.Library.Main.ForestHash
 
         public void Delete(string remotename, bool synchronous = false)
         {
-            m_database.UpdateRemoteVolume(remotename, RemoteVolumeState.Deleting, -1, null);
+            m_database.UpdateRemoteVolume(remotename, RemoteVolumeState.Deleting, -1, null, m_transaction);
             var item = new FileEntryItem(OperationType.Delete, remotename);
             if (m_queue.Enqueue(item) && synchronous)
                 item.WaitForComplete();
@@ -540,6 +548,8 @@ namespace Duplicati.Library.Main.ForestHash
             if (m_queue != null && !m_queue.Completed)
                 m_queue.SetCompleted();
 
+			//TODO: We cannot null this, because it will be recreated
+			//Should we wait for queue completion or abort immediately?
             if (m_backend != null)
             {
                 m_backend.Dispose();

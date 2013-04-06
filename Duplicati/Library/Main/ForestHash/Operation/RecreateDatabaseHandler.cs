@@ -56,7 +56,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
             //We build a local database in steps.
             using (var restoredb = new LocalBlocklistUpdateDatabase(dbparent, m_options.Fhblocksize))
-            using (var backend = new FhBackend(m_backendurl, m_options, restoredb, m_stat))
+            using (var backend = new FhBackend(m_backendurl, m_options, restoredb, m_stat, null))
             {
             	var volumeIds = new Dictionary<string, long>();
 
@@ -144,7 +144,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
                         	var parsed = VolumeBase.ParseFilename(entry.Key.Name);
 		                    // Create timestamped operations based on the file timestamp
-                        	var operationid = backupdb.CreateBackupOperation(volumeIds[entry.Key.Name], parsed.Time, tr);
+                        	backupdb.CreateFileset(volumeIds[entry.Key.Name], parsed.Time, tr);
                             using (var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, entry.Value, m_options))
                                 foreach (var fe in filenamefilter(filelistreader.Files))
                                 {
@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                         long metaid = -1;
                                         if (fe.Metahash != null)
                                             backupdb.AddMetadataset(fe.Metahash, fe.Metasize, out metaid, tr);
-                                        backupdb.AddDirectoryEntry(fe.Path, metaid, fe.Time, tr, operationid);
+                                        backupdb.AddDirectoryEntry(fe.Path, metaid, fe.Time, tr);
 
                                     }
                                     else if (fe.Type == FilelistEntryType.File)
@@ -164,7 +164,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                             backupdb.AddMetadataset(fe.Metahash, fe.Metasize, out metaid, tr);
 
                                         backupdb.AddBlockset(fe.Hash, fe.Size, m_options.Fhblocksize, dummylist, fe.BlocklistHashes, out blocksetid, tr);
-                                        backupdb.AddFile(fe.Path, fe.Time, blocksetid, metaid, tr, operationid);
+                                        backupdb.AddFile(fe.Path, fe.Time, blocksetid, metaid, tr);
                                     }
                                 }
                         }

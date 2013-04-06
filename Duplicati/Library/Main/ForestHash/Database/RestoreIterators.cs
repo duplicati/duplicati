@@ -621,7 +621,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 {
                     m_command = m_connection.CreateCommand();
 
-                    m_command.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""B"".""Hash"", (""B"".""Index"" * {2}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {2}), ""E"".""Size"" FROM ""{0}"" ""A"", ""{1}"" ""B"", ""FileEntry"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0 ", m_filetablename, m_blocktablename, m_blocksize);
+                    m_command.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""B"".""Hash"", (""B"".""Index"" * {2}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {2}), ""E"".""Size"" FROM ""{0}"" ""A"", ""{1}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0 ", m_filetablename, m_blocktablename, m_blocksize);
                     m_reader = m_command.ExecuteReader();
                     m_current = null;
                     m_localsource = new LocalBlockSource(m_reader);

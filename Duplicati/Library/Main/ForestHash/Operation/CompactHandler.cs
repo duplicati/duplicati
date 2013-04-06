@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			
 			if (report.ShouldCompact)
 			{
-				using(var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
+				using(var backend = new FhBackend(m_backendurl, m_options, db, m_stat, transaction))
 				{
 					if (!hasVerifiedBackend && !m_options.FhNoBackendverification)
 						ForestHash.VerifyRemoteList(backend, m_options, db, m_stat);

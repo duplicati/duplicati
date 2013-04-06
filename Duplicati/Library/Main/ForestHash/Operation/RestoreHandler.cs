@@ -199,7 +199,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
             using (var database = new LocalRestoreDatabase(dbparent, m_options.Fhblocksize))
-            using (var backend = new FhBackend(m_backendurl, m_options, database, m_stat))
+            using (var backend = new FhBackend(m_backendurl, m_options, database, m_stat, null))
             {
 	        	ForestHash.VerifyParameters(database, m_options);
 	        	

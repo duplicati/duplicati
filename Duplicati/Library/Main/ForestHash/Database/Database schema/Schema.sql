@@ -25,15 +25,26 @@ CREATE TABLE "Remotevolume" (
 );
 
 /*
+The fileset collects all files belonging to 
+a particular backup, and thus a remote Fileset
+*/
+CREATE TABLE "Fileset" (
+	"ID" INTEGER PRIMARY KEY,
+	"OperationID" INTEGER NOT NULL,
+	"VolumeID" INTEGER NOT NULL,
+	"Timestamp" DATETIME NOT NULL
+);
+
+/*
 The OperationFileset contains an
 entry for each file scanned for
 a single operation. The scantime
 is the time the file was last 
 scanned
 */
-CREATE TABLE "OperationFileset" (
-	"OperationID" INTEGER NOT NULL,
-	"FileEntryID" INTEGER NOT NULL,
+CREATE TABLE "FilesetEntry" (
+	"FilesetID" INTEGER NOT NULL,
+	"FileID" INTEGER NOT NULL,
 	"Scantime" DATETIME NOT NULL
 );
 
@@ -42,7 +53,7 @@ The FileEntry contains an ID
 for each path and each version
 of the data and metadata
 */
-CREATE TABLE "FileEntry" (
+CREATE TABLE "File" (
 	"ID" INTEGER PRIMARY KEY,
 	"Path" TEXT NOT NULL,
 	"BlocksetID" INTEGER NOT NULL,

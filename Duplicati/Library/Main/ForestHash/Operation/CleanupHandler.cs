@@ -27,7 +27,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
         	using(var db = new LocalCleanupDatabase(m_options.Fhdbpath))
         	using(var tr = db.BeginTransaction())
-			using(var backend = new FhBackend(m_backendurl, m_options, db, m_stat))
+			using(var backend = new FhBackend(m_backendurl, m_options, db, m_stat, tr))
         	{
 	        	ForestHash.VerifyParameters(db, m_options);
 
@@ -54,12 +54,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					{
 						if (n.Type == RemoteVolumeType.Files)
 						{
-							var operationId = db.GetOperationIdFromRemotename(n.Name);
+							var filesetId = db.GetFilesetIdFromRemotename(n.Name);
 							var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
 							w.SetRemoteFilename(n.Name);
 							
 							using(var b = new LocalBackupDatabase(db, m_options))
-								b.WriteFileset(w, operationId);
+								b.WriteFileset(w, tr, filesetId);
 
 							w.Close();
 							if (m_options.FhDryrun)

@@ -244,7 +244,7 @@ namespace Duplicati.Library.Main.ForestHash
         {
             var opts = new FhOptions(options);
             using (var db = new LocalDatabase(opts.Fhdbpath, "ParseFileList"))
-            using (var b = new FhBackend(target, opts, db, stat))
+            using (var b = new FhBackend(target, opts, db, stat, null))
                 return
                     from n in b.List()
                     let np = Volumes.VolumeBase.ParseFilename(n)
