@@ -32,7 +32,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		{
 			using(var cmd = m_connection.CreateCommand())
 			{
-				var r = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = ?", filelist);
+				var r = cmd.ExecuteScalar(@"SELECT ""Fileset"".""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = ?", filelist);
 				if (r == null || r == DBNull.Value)
 					throw new Exception(string.Format("No such remote file: {0}", filelist));
 					

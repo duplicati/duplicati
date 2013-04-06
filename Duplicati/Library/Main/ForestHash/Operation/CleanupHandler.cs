@@ -54,6 +54,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					{
 						if (n.Type == RemoteVolumeType.Files)
 						{
+							//TODO: There may not be a local fileset?
 							var filesetId = db.GetFilesetIdFromRemotename(n.Name);
 							var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
 							w.SetRemoteFilename(n.Name);

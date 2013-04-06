@@ -89,6 +89,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					if (!m_options.FhNoAutoCompact)
 						m_stat.LogMessage(base.DoCompact(db, true, tr));
 					
+					if (m_options.Force && !m_options.FhDryrun)
+						tr.Commit();
+					else
+						tr.Rollback();
+					
 					return "";
 				}
 			}

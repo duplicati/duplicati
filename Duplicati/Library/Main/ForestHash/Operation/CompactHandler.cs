@@ -81,8 +81,6 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 						newvolshadow.StartVolume(newvol.RemoteFilename);
 					}
 					
-					FhBackend.IDownloadWaitHandle handle = null;
-					
 					long blocksInVolume = 0;
 					long discardedBlocks = 0;
 					long discardedSize = 0;

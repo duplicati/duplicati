@@ -124,7 +124,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 m_updateremotevolumeCommand.SetParameterValue(2, hash);
                 m_updateremotevolumeCommand.SetParameterValue(3, size);
                 m_updateremotevolumeCommand.SetParameterValue(4, name);
-                m_updateremotevolumeCommand.ExecuteNonQuery();
+                var c = m_updateremotevolumeCommand.ExecuteNonQuery();
+                if (c != 1)
+                	throw new Exception("Unexpected number of remote volumes detected!");
             }
         }
         

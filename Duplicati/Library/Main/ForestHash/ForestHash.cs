@@ -47,12 +47,16 @@ namespace Duplicati.Library.Main.ForestHash
 			
 			foreach(var n in extra)
 			{
+				if (!options.QuietConsole)
+					stat.LogMessage(string.Format("Extra unknown file: {0}", n.Name));
 				stat.LogWarning(string.Format("Extra unknown file: {0}", n.Name), null);
 				extraCount++;
 			}
 
 			foreach(var n in missing)
 			{
+				if (!options.QuietConsole)
+					stat.LogMessage(string.Format("Missing file: {0}", n.Name));
 				stat.LogWarning(string.Format("Missing file: {0}", n.Name), null);
 				missingCount++;
 			}
@@ -91,6 +95,10 @@ namespace Duplicati.Library.Main.ForestHash
             var locallist = database.GetRemoteVolumes();
             foreach (var i in locallist)
             {
+            	//Ignore those that are deleted
+            	if (i.State == RemoteVolumeState.Deleted)
+            		continue;
+            		
                 if (i.State == RemoteVolumeState.Temporary)
                 {
                     database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null);
@@ -101,7 +109,7 @@ namespace Duplicati.Library.Main.ForestHash
                     Library.Interface.IFileEntry r;
                     if (!lookup.TryGetValue(i.Name, out r) || (r.Size != i.Size && r.Size >= 0 && i.Size >= 0))
                     {
-                        if (i.State == RemoteVolumeState.Uploading)
+                        if (i.State == RemoteVolumeState.Uploading || i.State == RemoteVolumeState.Deleting)
                         {
                             database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null);
                             database.RemoveRemoteVolume(i.Name);

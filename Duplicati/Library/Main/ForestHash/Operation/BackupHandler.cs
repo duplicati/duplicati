@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		                m_shadowvolume.FinishVolume(null, 0);
 	                }
 	            }
-				
+								
 	            m_backend.WaitForComplete();
 	            
 	            if (lastVolumeSize < m_options.VolumeSize - m_options.FhVolsizeTolerance && !m_options.FhNoAutoCompact)
@@ -215,7 +215,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 				if (m_options.FhDryrun)
 					m_transaction.Rollback();
 				else
+				{
                 	m_transaction.Commit();
+                	using(var backend = new FhBackend(m_backendurl, m_options, m_database, m_stat, null))
+						ForestHash.VerifyRemoteList(backend, m_options, m_database, m_stat);
+                }
 	            
 	    	}
         }
