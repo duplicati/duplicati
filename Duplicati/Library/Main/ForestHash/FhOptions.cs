@@ -54,10 +54,10 @@ namespace Duplicati.Library.Main.ForestHash
                     new CommandLineArgument("fh-dbpath", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdbpathShort, Strings.FhOptions.FhdbpathLong),
                     new CommandLineArgument("fh-blocksize", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblocksizeShort, Strings.FhOptions.FhblocksizeLong, DEFAULT_FH_BLOCKSIZE),
                     new CommandLineArgument("fh-no-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnometadataShort, Strings.FhOptions.FhnometadataLong, "false"),
-                    new CommandLineArgument("fh-blockhash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblockhashlookupsizeShort, Strings.FhOptions.FhblockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
-                    new CommandLineArgument("fh-filehash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilehashlookupsizeShort, Strings.FhOptions.FhfilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
-                    new CommandLineArgument("fh-metadatahash-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhmetadatahashlookupsizeShort, Strings.FhOptions.FhmetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
-					new CommandLineArgument("fh-filepath-lookup-size", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilepathlookupsizeShort, Strings.FhOptions.FhfilepathlookupsizeLong, DEFAULT_FILENAME_LOOKUP_SIZE),
+                    new CommandLineArgument("fh-blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhblockhashlookupsizeShort, Strings.FhOptions.FhblockhashlookupsizeLong, DEFAULT_BLOCK_HASH_LOOKUP_SIZE),
+                    new CommandLineArgument("fh-filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilehashlookupsizeShort, Strings.FhOptions.FhfilehashlookupsizeLong, DEFAULT_FILE_HASH_LOOKUP_SIZE),
+                    new CommandLineArgument("fh-metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhmetadatahashlookupsizeShort, Strings.FhOptions.FhmetadatahashlookupsizeLong, DEFAULT_METADATA_HASH_LOOKUP_SIZE),
+					new CommandLineArgument("fh-filepath-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhfilepathlookupsizeShort, Strings.FhOptions.FhfilepathlookupsizeLong, DEFAULT_FILENAME_LOOKUP_SIZE),
                     new CommandLineArgument("fh-changed-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhchangedfilesetShort, Strings.FhOptions.FhchangedfilesetLong),
                     new CommandLineArgument("fh-deleted-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdeletedfilesetShort, string.Format(Strings.FhOptions.FhdeletedfilesetLong, "fh-changed-fileset")),
 
@@ -122,12 +122,12 @@ namespace Duplicati.Library.Main.ForestHash
         /// <summary>
         /// Gets the block hash lookup size
         /// </summary>
-        public long FhBlockHashLookupSize
+        public long FhBlockHashLookupMemory
         {
             get
             {
                 string v;
-                m_options.TryGetValue("fh-blockhash-lookup-size", out v);
+                m_options.TryGetValue("fh-blockhash-lookup-memory", out v);
                 if (string.IsNullOrEmpty(v))
                     v = DEFAULT_BLOCK_HASH_LOOKUP_SIZE;
 
@@ -138,12 +138,12 @@ namespace Duplicati.Library.Main.ForestHash
         /// <summary>
         /// Gets the file hash size
         /// </summary>
-        public long FhFileHashLookupSize
+        public long FhFileHashLookupMemory
         {
             get
             {
                 string v;
-                m_options.TryGetValue("fh-filehash-lookup-size", out v);
+                m_options.TryGetValue("fh-filehash-lookup-memory", out v);
                 if (string.IsNullOrEmpty(v))
                     v = DEFAULT_FILE_HASH_LOOKUP_SIZE;
 
@@ -154,12 +154,12 @@ namespace Duplicati.Library.Main.ForestHash
         /// <summary>
         /// Gets the block hash size
         /// </summary>
-        public long FhMetadataHashSize
+        public long FhMetadataHashMemory
         {
             get
             {
                 string v;
-                m_options.TryGetValue("fh-metadatahash-lookup-size", out v);
+                m_options.TryGetValue("fh-metadatahash-lookup-memory", out v);
                 if (string.IsNullOrEmpty(v))
                     v = DEFAULT_METADATA_HASH_LOOKUP_SIZE;
                 
@@ -170,12 +170,12 @@ namespace Duplicati.Library.Main.ForestHash
         /// <summary>
         /// Gets the file hash size
         /// </summary>
-        public long FhFilePathSize
+        public long FhFilePathMemory
         {
             get
             {
                 string v;
-                m_options.TryGetValue("fh-filepath-lookup-size", out v);
+                m_options.TryGetValue("fh-filepath-lookup-memory", out v);
                 if (string.IsNullOrEmpty(v))
 					v = DEFAULT_FILENAME_LOOKUP_SIZE;
 
