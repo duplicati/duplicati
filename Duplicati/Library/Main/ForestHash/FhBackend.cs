@@ -404,6 +404,7 @@ namespace Duplicati.Library.Main.ForestHash
             }
             
             m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null, m_transaction);
+            m_database.RemoveRemoteVolume(item.RemoteFilename, m_transaction);
 
             if (!m_options.QuietConsole)
             	m_stats.LogMessage("Deleted file {0}", item.RemoteFilename);
