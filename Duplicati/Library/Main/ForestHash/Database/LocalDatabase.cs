@@ -224,8 +224,8 @@ namespace Duplicati.Library.Main.ForestHash.Database
             lock (m_lock)
             {
                 using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+                using (var deletecmd = m_connection.CreateCommand())
                 {
-                    var deletecmd = m_connection.CreateCommand();
                     deletecmd.Transaction = tr.Parent;
 
 					deletecmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
