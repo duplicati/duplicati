@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			report.ReportCompactData(m_stat);
 			string msg;
 			
-			if (report.ShouldCompact)
+			if (report.ShouldReclaim || report.ShouldCompact)
 			{
 				using(var backend = new FhBackend(m_backendurl, m_options, db, m_stat, transaction))
 				{
@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					var deletedVolumes = new List<KeyValuePair<string, long>>();
 					var downloader = new AsyncDownloader(downloadedVolumes, backend);
 					
-					if (downloadedVolumes.Count > 1)
+					if (report.ShouldCompact)
 					{
 						using(var q = db.CreateBlockQueryHelper(m_options, transaction))
 						{

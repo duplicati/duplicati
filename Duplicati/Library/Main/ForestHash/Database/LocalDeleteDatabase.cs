@@ -253,6 +253,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		{
 			IEnumerable<string> DeleteableVolumes { get; }
 			IEnumerable<string> CompactableVolumes { get; }
+			bool ShouldReclaim { get; }
 			bool ShouldCompact { get; }
 			void ReportCompactData(CommunicationStatistics stat); 
 		}
@@ -303,14 +304,22 @@ namespace Duplicati.Library.Main.ForestHash.Database
 					stat.LogMessage("Not compacting");
 			}
 			
+			public bool ShouldReclaim
+			{
+				get 
+				{
+					return m_deletablevolumes > 0;
+				}
+			}
+			
 			public bool ShouldCompact
 			{
 				get 
 				{
-					return m_deletablevolumes > 0 || (m_wastedspace > m_maxwastesize && m_wastevolumes.Count() >= 2) || m_smallspace > m_volsize;
+					return (m_wastedspace > m_maxwastesize && m_wastevolumes.Count() >= 2) || m_smallspace > m_volsize;
 				}
 			}
-			
+
 			public IEnumerable<string> DeleteableVolumes 
 			{ 
 				get { return from n in m_cleandelete select n.Name; } 
