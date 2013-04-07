@@ -434,3 +434,11 @@ Usage: delete-filesets <filesetname> <target url>
 
 %OPTION:force%
 %OPTION:fh-dry-run%
+
+# =============================================================================
+> duplicati.commandline.exe help fh
+> duplicati.commandline.exe help foresthash
+
+  ForestHash is the internal name for a block-based storage algorithm. The benefits of this algorithm is that it operates fully on block-level and does not rely on full/incremental type backups.
+
+%FHOPTIONS%
