@@ -108,120 +108,122 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					var deletedVolumes = new List<KeyValuePair<string, long>>();
 					var downloader = new AsyncDownloader(downloadedVolumes, backend);
 					
-					using(var q = db.CreateBlockQueryHelper(m_options, transaction))
+					if (downloadedVolumes.Count > 1)
 					{
-						foreach(var entry in downloader)
+						using(var q = db.CreateBlockQueryHelper(m_options, transaction))
 						{
-							var inst = VolumeBase.ParseFilename(entry.Key.Name);
-							using(var f = new BlockVolumeReader(inst.CompressionModule, entry.Value, m_options))
+							foreach(var entry in downloader)
 							{
-								foreach(var e in f.Blocks)
+								var inst = VolumeBase.ParseFilename(entry.Key.Name);
+								using(var f = new BlockVolumeReader(inst.CompressionModule, entry.Value, m_options))
 								{
-									if (q.UseBlock(e.Key, e.Value))
+									foreach(var e in f.Blocks)
 									{
-										//TODO: How do we get the compression hint? Reverse query for filename in db?
-										var s = f.ReadBlock(e.Key, buffer);
-										if (s != e.Value)
-											throw new Exception("Size mismatch problem, {0} vs {1}");
-											
-										newvol.AddBlock(e.Key, buffer, s, Duplicati.Library.Interface.CompressionHint.Compressible);
-										if (newvolshadow != null)
-											newvolshadow.AddBlock(e.Key, e.Value);
-											
-										db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
-										blocksInVolume++;
-										
-										if (newvol.Filesize > m_options.VolumeSize)
+										if (q.UseBlock(e.Key, e.Value))
 										{
-											uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, new System.IO.FileInfo(newvol.LocalFilename).Length));
+											//TODO: How do we get the compression hint? Reverse query for filename in db?
+											var s = f.ReadBlock(e.Key, buffer);
+											if (s != e.Value)
+												throw new Exception("Size mismatch problem, {0} vs {1}");
+												
+											newvol.AddBlock(e.Key, buffer, s, Duplicati.Library.Interface.CompressionHint.Compressible);
 											if (newvolshadow != null)
-												uploadedVolumes.Add(new KeyValuePair<string, long>(newvolshadow.RemoteFilename, new System.IO.FileInfo(newvolshadow.LocalFilename).Length));
-
-											if (m_options.Force && !m_options.FhDryrun)
-												backend.Put(newvol, newvolshadow);
-											else
-												m_stat.LogMessage("[Dryrun] - Would upload generated blockset of size {0}", Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length));
+												newvolshadow.AddBlock(e.Key, e.Value);
+												
+											db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
+											blocksInVolume++;
 											
-											
-											newvol = new BlockVolumeWriter(m_options);
-											newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
-			
-											if (!m_options.FhNoShadowfiles)
+											if (newvol.Filesize > m_options.VolumeSize)
 											{
-												newvolshadow = new ShadowVolumeWriter(m_options);
-												db.RegisterRemoteVolume(newvolshadow.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, transaction);
-												newvolshadow.StartVolume(newvol.RemoteFilename);
-											}
-											
-											blocksInVolume = 0;
-											
-											//After we upload this volume, we can delete all previous encountered volumes
-											foreach(var d in deleteableVolumes)
-											{
-												deletedVolumes.Add(new KeyValuePair<string, long>(d.Name, d.Size));
+												uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, new System.IO.FileInfo(newvol.LocalFilename).Length));
+												if (newvolshadow != null)
+													uploadedVolumes.Add(new KeyValuePair<string, long>(newvolshadow.RemoteFilename, new System.IO.FileInfo(newvolshadow.LocalFilename).Length));
+	
 												if (m_options.Force && !m_options.FhDryrun)
-													backend.Delete(d.Name);
+													backend.Put(newvol, newvolshadow);
 												else
-													m_stat.LogMessage("[Dryrun] - Would delete remote file: {0}, size: {1}", d.Name, Utility.Utility.FormatSizeString(d.Size));
+													m_stat.LogMessage("[Dryrun] - Would upload generated blockset of size {0}", Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length));
+												
+												
+												newvol = new BlockVolumeWriter(m_options);
+												newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
+				
+												if (!m_options.FhNoShadowfiles)
+												{
+													newvolshadow = new ShadowVolumeWriter(m_options);
+													db.RegisterRemoteVolume(newvolshadow.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, transaction);
+													newvolshadow.StartVolume(newvol.RemoteFilename);
+												}
+												
+												blocksInVolume = 0;
+												
+												//After we upload this volume, we can delete all previous encountered volumes
+												foreach(var d in deleteableVolumes)
+												{
+													deletedVolumes.Add(new KeyValuePair<string, long>(d.Name, d.Size));
+													if (m_options.Force && !m_options.FhDryrun)
+														backend.Delete(d.Name);
+													else
+														m_stat.LogMessage("[Dryrun] - Would delete remote file: {0}, size: {1}", d.Name, Utility.Utility.FormatSizeString(d.Size));
+												}
+												deleteableVolumes.Clear();
 											}
-											deleteableVolumes.Clear();
+										}
+										else
+										{
+											discardedBlocks++;
+											discardedSize += e.Value;
 										}
 									}
-									else
-									{
-										discardedBlocks++;
-										discardedSize += e.Value;
-									}
 								}
+	
+								deleteableVolumes.Add(entry.Key);
+								IRemoteVolume sh;
+								if (shadowLookup.TryGetValue(VolumeBase.ParseFilename(entry.Key.Name).Guid, out sh))
+									deleteableVolumes.Add(sh);			
 							}
-
-							deleteableVolumes.Add(entry.Key);
-							IRemoteVolume sh;
-							if (shadowLookup.TryGetValue(VolumeBase.ParseFilename(entry.Key.Name).Guid, out sh))
-								deleteableVolumes.Add(sh);			
-						}
-						
-						if (blocksInVolume > 0)
-						{
-							uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, new System.IO.FileInfo(newvol.LocalFilename).Length));
-							if (newvolshadow != null)
-								uploadedVolumes.Add(new KeyValuePair<string, long>(newvolshadow.RemoteFilename, new System.IO.FileInfo(newvolshadow.LocalFilename).Length));
-							if (m_options.Force && !m_options.FhDryrun)
-								backend.Put(newvol, newvolshadow);
+							
+							if (blocksInVolume > 0)
+							{
+								uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, new System.IO.FileInfo(newvol.LocalFilename).Length));
+								if (newvolshadow != null)
+									uploadedVolumes.Add(new KeyValuePair<string, long>(newvolshadow.RemoteFilename, new System.IO.FileInfo(newvolshadow.LocalFilename).Length));
+								if (m_options.Force && !m_options.FhDryrun)
+									backend.Put(newvol, newvolshadow);
+								else
+									m_stat.LogMessage("[Dryrun] - Would upload generated blockset of size {0}", Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length));
+							}
 							else
-								m_stat.LogMessage("[Dryrun] - Would upload generated blockset of size {0}", Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length));
+							{
+				                db.RemoveRemoteVolume(newvol.RemoteFilename, transaction);
+			                    if (newvolshadow != null)
+			                    {
+				                    db.RemoveRemoteVolume(newvolshadow.RemoteFilename, transaction);
+				                    newvolshadow.FinishVolume(null, 0);
+			                    }
+							}
 						}
-						else
-						{
-			                db.RemoveRemoteVolume(newvol.RemoteFilename, transaction);
-		                    if (newvolshadow != null)
-		                    {
-			                    db.RemoveRemoteVolume(newvolshadow.RemoteFilename, transaction);
-			                    newvolshadow.FinishVolume(null, 0);
-		                    }
-						}
-						
-						foreach(var f in deleteableVolumes)
-						{
-							deletedVolumes.Add(new KeyValuePair<string, long>(f.Name, f.Size));
-							if (m_options.Force && !m_options.FhDryrun)
-								backend.Delete(f.Name);
-							else
-								m_stat.LogMessage("[Dryrun] - Would delete remote file: {0}, size: {1}", f.Name, Utility.Utility.FormatSizeString(f.Size));
-						}
-						
-						var downloadSize = downloadedVolumes.Aggregate(0L, (a,x) => a + x.Size);
-						var deletedSize = downloadedVolumes.Aggregate(0L, (a,x) => a + x.Size);
-						var uploadSize = uploadedVolumes.Aggregate(0L, (a,x) => a + x.Value);
-						
-						if (m_options.Force && !m_options.FhDryrun)
-							msg = string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", downloadedVolumes.Count, Utility.Utility.FormatSizeString(downloadSize), deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize), uploadedVolumes.Count, Utility.Utility.FormatSizeString(uploadSize), deletedVolumes.Count - uploadedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize - uploadSize));
-						else
-							msg = string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which will reduce storage by {6} file(s) and {7}", downloadedVolumes.Count, Utility.Utility.FormatSizeString(downloadSize), deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize), uploadedVolumes.Count, Utility.Utility.FormatSizeString(uploadSize), deletedVolumes.Count - uploadedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize - uploadSize));
-						m_stat.LogMessage(msg);
-						
 					}
-		
+						
+					foreach(var f in deleteableVolumes)
+					{
+						deletedVolumes.Add(new KeyValuePair<string, long>(f.Name, f.Size));
+						if (m_options.Force && !m_options.FhDryrun)
+							backend.Delete(f.Name);
+						else
+							m_stat.LogMessage("[Dryrun] - Would delete remote file: {0}, size: {1}", f.Name, Utility.Utility.FormatSizeString(f.Size));
+					}
+					
+					var downloadSize = downloadedVolumes.Aggregate(0L, (a,x) => a + x.Size);
+					var deletedSize = downloadedVolumes.Aggregate(0L, (a,x) => a + x.Size);
+					var uploadSize = uploadedVolumes.Aggregate(0L, (a,x) => a + x.Value);
+					
+					if (m_options.Force && !m_options.FhDryrun)
+						msg = string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", downloadedVolumes.Count, Utility.Utility.FormatSizeString(downloadSize), deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize), uploadedVolumes.Count, Utility.Utility.FormatSizeString(uploadSize), deletedVolumes.Count - uploadedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize - uploadSize));
+					else
+						msg = string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which will reduce storage by {6} file(s) and {7}", downloadedVolumes.Count, Utility.Utility.FormatSizeString(downloadSize), deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize), uploadedVolumes.Count, Utility.Utility.FormatSizeString(uploadSize), deletedVolumes.Count - uploadedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize - uploadSize));
+					m_stat.LogMessage(msg);
+							
 					backend.WaitForComplete();
 				}
 			}
