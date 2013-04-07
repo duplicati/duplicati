@@ -117,9 +117,7 @@ namespace Duplicati.CommandLine
                         Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
 
 
-
                     foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedCommands)
-
                         Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
 
                     lines.Add("");
@@ -153,6 +151,15 @@ namespace Duplicati.CommandLine
                     tp = tp.Replace("%ALLOPTIONS%", string.Join(Environment.NewLine, lines.ToArray()));
                 }
 
+                if (tp.Contains("%FHOPTIONS%"))
+				{
+                    List<string> lines = new List<string>();
+                    foreach (Library.Interface.ICommandLineArgument arg in new Library.Main.ForestHash.FhOptions(new Dictionary<string, string>()).SupportedCommands)
+                        Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
+						
+                    tp = tp.Replace("%FHOPTIONS%", string.Join(Environment.NewLine, lines.ToArray()));
+				}
+				
                 if (tp.Contains("%MODULEOPTIONS%"))
                 {
                     //Figure out which module we are in
