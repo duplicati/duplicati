@@ -87,6 +87,11 @@ namespace Duplicati.Library.Compression
         private Stream m_stream;
         
         /// <summary>
+        /// Lookup table for faster access to entries based on their name.
+        /// </summary>
+        private Dictionary<string, IArchiveEntry> m_entryDict;
+        
+        /// <summary>
         /// The writer instance used when creating archives
         /// </summary>
         private IWriter m_writer;
@@ -250,26 +255,20 @@ namespace Duplicati.Library.Compression
             if (m_isWriting)
                 throw new InvalidOperationException("Cannot read while writing");
 
-            string path = file;
-            foreach(IArchiveEntry e in Archive.Entries)
-            {
-                if (string.Equals(e.FilePath, path, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                    return e;
-            }
+			if (m_entryDict == null)
+			{
+				m_entryDict = new Dictionary<string, IArchiveEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+	            foreach(IArchiveEntry en in Archive.Entries)
+	            	m_entryDict[en.FilePath] = en;
+			}
 
-            //Try with the windows format, old archives may have this format
-            string path2 = file.Replace('/', '\\');
-            if (path != path2)
-            {
-                path = path2;
-                foreach (IArchiveEntry e in Archive.Entries)
-                {
-                    if (string.Equals(e.FilePath, path, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        return e;
-                }
-            }
+			IArchiveEntry e;
+			if (m_entryDict.TryGetValue(file, out e))
+				return e;
+			if (m_entryDict.TryGetValue(file.Replace('/', '\\'), out e))
+				return e;
 
-            return null;
+			return null;
         }
 
         /// <summary>
