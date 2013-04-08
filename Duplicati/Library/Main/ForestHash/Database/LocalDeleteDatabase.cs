@@ -316,7 +316,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			{
 				get 
 				{
-					return (m_wastedspace > m_maxwastesize && m_wastevolumes.Count() >= 2) || m_smallspace > m_volsize;
+					return m_wastedspace > m_maxwastesize || m_smallspace > m_volsize;
 				}
 			}
 
