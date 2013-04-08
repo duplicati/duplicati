@@ -60,19 +60,43 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             {
             	var volumeIds = new Dictionary<string, long>();
 
+				var rawlist = backend.List();
+				
                 //First step is to examine the remote storage to see what
                 // kind of data we can find
                 var remotefiles =
-                    (from n in
-                            (from x in backend.List()
-                            select VolumeBase.ParseFilename(x))
-                        where
-                            n != null
-                                &&
-                            n.EncryptionModule == (m_options.NoEncryption ? null : m_options.EncryptionModule)
-                                &&
-                            n.Prefix == m_options.BackupPrefix
+	                    (from x in rawlist
+	                    let n = VolumeBase.ParseFilename(x)
+	                    where
+	                        n != null
+	                            &&
+	                        n.EncryptionModule == (m_options.NoEncryption ? null : m_options.EncryptionModule)
+	                            &&
+	                        n.Prefix == m_options.BackupPrefix
                         select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
+
+				if (remotefiles.Length == 0)
+				{
+					if (rawlist.Count == 0)
+						throw new Exception("No files were found at the remote location, perhaps the target url is incorrect?");
+					else
+					{
+						var tmp = 
+							(from x in rawlist
+	                    		let n = VolumeBase.ParseFilename(x)
+	                    	where
+	                        	n != null
+	                        select n.Prefix).ToArray();
+	                    
+	                    var types = tmp.Distinct().ToArray();
+	                    if (tmp.Length == 0)
+							throw new Exception(string.Format("Found {0} files at the remote storage, but none that could be parsed", rawlist.Count));
+						else if (types.Length == 1)
+							throw new Exception(string.Format("Found {0} parse-able files with the prefix {1}, did you forget to set the backup-prefix?", tmp.Length, types[0]));
+						else
+							throw new Exception(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup-prefix?", tmp.Length, rawlist.Count, string.Join(", ", types)));
+					}
+				}
 
                 //Then we select the filelist we should work with,
                 // and create the filelist table to fit
