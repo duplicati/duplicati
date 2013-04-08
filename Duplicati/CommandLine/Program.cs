@@ -747,6 +747,7 @@ namespace Duplicati.CommandLine
                 lines.Add("");
             }
 
+        	int windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth);
             foreach (string s in lines)
             {
                 if (string.IsNullOrEmpty(s))
@@ -766,7 +767,7 @@ namespace Duplicati.CommandLine
 
                 while (c.Length > 0)
                 {
-                    int len = Math.Min(Console.WindowWidth - 2, leadingSpaces.Length + c.Length);
+                    int len = Math.Min(windowWidth - 2, leadingSpaces.Length + c.Length);
                     len -= leadingSpaces.Length;
                     if (len < c.Length)
                     {
