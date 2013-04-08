@@ -128,7 +128,13 @@ namespace Duplicati.CommandLine
 
                 if (cargs.Count < 2 || cargs[0].Trim().Equals("help", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (cargs.Count < 2)
+                	if (cargs.Count == 1 && !cargs[0].Trim().Equals("help", StringComparison.InvariantCultureIgnoreCase) )
+                	{
+						PrintWrongNumberOfArguments(cargs, 2);              		
+                		return 200;	
+                	}
+                	
+                	if (cargs.Count < 2)
                         Help.PrintUsage("help", options);
                     else
                         Help.PrintUsage(cargs[1], options);
