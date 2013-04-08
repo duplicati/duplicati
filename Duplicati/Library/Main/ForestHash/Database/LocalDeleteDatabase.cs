@@ -111,7 +111,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				var tmptablename = "DeletedOperations-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 				cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT ""ID"" FROM ""Fileset"" WHERE ""ID"" NOT IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" > ? OR ""ID"" = ? ORDER BY ""Timestamp"")", tmptablename), limit.ToUniversalTime(), keepFilesetId);
 				
-				m_connection.DumpSQL(string.Format(@"SELECT * FROM ""{0}"" ", tmptablename));				
 				result = DropFromIDTable(cmd, tmptablename, stat);
 				
 				cmd.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", tmptablename));
