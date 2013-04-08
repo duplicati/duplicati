@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.ForestHash
                 if (i.State == RemoteVolumeState.Temporary)
                 {
                     database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null);
-                    database.RemoveRemoteVolume(i.Name);
+                    database.RemoveRemoteVolume(i.Name, null);
                 }
                 else
                 {
@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.ForestHash
                         if (i.State == RemoteVolumeState.Uploading || i.State == RemoteVolumeState.Deleting)
                         {
                             database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null);
-                            database.RemoveRemoteVolume(i.Name);
+                            database.RemoveRemoteVolume(i.Name, null);
                         }
                         else
                             missing.Add(new KeyValuePair<RemoteVolumeEntry, Library.Interface.IFileEntry>(i, r));

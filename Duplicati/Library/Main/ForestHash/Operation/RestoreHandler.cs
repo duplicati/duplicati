@@ -166,14 +166,16 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 {
 	                try 
 	                {
+	                	// TODO: Much faster if we iterate the volume and checks what blocks are used,
+	                	// because the compressors usually like sequential reading
 	                    using (var file = System.IO.File.Open(targetpath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
 	                        foreach (var targetblock in restorelist.Blocks)
-	                    {
-	                        file.Position = targetblock.Offset;
-	                        var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
-	                        if (targetblock.Size == size)
-	                            file.Write(blockbuffer, 0, size);
-	                    }
+		                    {
+		                        file.Position = targetblock.Offset;
+		                        var size = blocks.ReadBlock(targetblock.Key, blockbuffer);
+		                        if (targetblock.Size == size)
+		                            file.Write(blockbuffer, 0, size);
+		                    }
 	                } 
 	                catch (Exception ex)
 	                {
