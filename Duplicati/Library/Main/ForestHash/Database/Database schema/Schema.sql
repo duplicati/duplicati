@@ -25,6 +25,19 @@ CREATE TABLE "Remotevolume" (
 );
 
 /*
+The shadow-block table contains
+references that explains what block
+files a shadow file references.
+This is used to remove shadow volumes,
+when they no longer reference any
+block volumes	
+*/
+CREATE TABLE "ShadowBlockLink" (
+	"ShadowVolumeID" INTEGER NOT NULL,
+	"BlockVolumeID" INTEGER NOT NULL
+);
+
+/*
 The fileset collects all files belonging to 
 a particular backup, and thus a remote Fileset
 */

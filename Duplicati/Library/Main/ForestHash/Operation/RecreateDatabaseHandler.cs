@@ -143,6 +143,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                         backupdb.AddBlock(b.Key, b.Value, volumeID, tr);
 
                                     backupdb.UpdateRemoteVolume(a.Filename, RemoteVolumeState.Verified, a.Length, a.Hash, tr);
+                                    backupdb.AddShadowBlockLink(restoredb.GetRemoteVolumeID(sf.Key.Name), volumeID, tr);
                                 }
                             }
                         }

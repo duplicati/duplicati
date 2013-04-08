@@ -87,33 +87,34 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					byte[] buffer = new byte[m_options.Fhblocksize];
 					var remoteList = db.GetRemoteVolumes();
 					
-					var shadowLookup = remoteList.Where(x => x.Type == RemoteVolumeType.Shadow).ToDictionary(x => VolumeBase.ParseFilename(x.Name).Guid, x => (IRemoteVolume)x);
-					
-					var fullydeleted = (from v in remoteList
-												where report.DeleteableVolumes.Contains(v.Name)
-												select (IRemoteVolume)v).ToArray();
-
-					var deleteableVolumes = fullydeleted.ToList();
-					deleteableVolumes.AddRange(from v in fullydeleted 
-												let key = VolumeBase.ParseFilename(v.Name).Guid
-												where shadowLookup.ContainsKey(key) 
-												select shadowLookup[key]);
-
-					var downloadedVolumes = (from v in remoteList
-								   where report.CompactableVolumes.Contains(v.Name) 
-								   select (IRemoteVolume)v).ToList();
-
 					//These are for bookkeeping
 					var uploadedVolumes = new List<KeyValuePair<string, long>>();
 					var deletedVolumes = new List<KeyValuePair<string, long>>();
-					var downloader = new AsyncDownloader(downloadedVolumes, backend);
+					var downloadedVolumes = new List<KeyValuePair<string, long>>();
 					
+					//We start by deleting unused volumes to save space before uploading new stuff
+					var fullyDeleteable = (from v in remoteList
+							where report.DeleteableVolumes.Contains(v.Name)
+							select (IRemoteVolume)v).ToList();
+					deletedVolumes.AddRange(DoDelete(db, backend, fullyDeleteable, transaction));
+
+					// This list is used to pick up unused volumes,
+					// so they can be deleted once the upload of the
+					// required fragments is complete
+					var deleteableVolumes = new List<IRemoteVolume>();
+
 					if (report.ShouldCompact)
 					{
+						var volumesToDownload = (from v in remoteList
+									   where report.CompactableVolumes.Contains(v.Name) 
+									   select (IRemoteVolume)v).ToList();
+						var downloader = new AsyncDownloader(volumesToDownload, backend);
+						
 						using(var q = db.CreateBlockQueryHelper(m_options, transaction))
 						{
 							foreach(var entry in downloader)
 							{
+								downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Key.Name, entry.Key.Size));
 								var inst = VolumeBase.ParseFilename(entry.Key.Name);
 								using(var f = new BlockVolumeReader(inst.CompressionModule, entry.Value, m_options))
 								{
@@ -158,15 +159,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 												blocksInVolume = 0;
 												
 												//After we upload this volume, we can delete all previous encountered volumes
-												foreach(var d in deleteableVolumes)
-												{
-													deletedVolumes.Add(new KeyValuePair<string, long>(d.Name, d.Size));
-													if (m_options.Force && !m_options.FhDryrun)
-														backend.Delete(d.Name);
-													else
-														m_stat.LogMessage("[Dryrun] - Would delete remote file: {0}, size: {1}", d.Name, Utility.Utility.FormatSizeString(d.Size));
-												}
-												deleteableVolumes.Clear();
+												deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, transaction));
 											}
 										}
 										else
@@ -178,9 +171,6 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 								}
 	
 								deleteableVolumes.Add(entry.Key);
-								IRemoteVolume sh;
-								if (shadowLookup.TryGetValue(VolumeBase.ParseFilename(entry.Key.Name).Guid, out sh))
-									deleteableVolumes.Add(sh);			
 							}
 							
 							if (blocksInVolume > 0)
@@ -204,24 +194,27 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							}
 						}
 					}
-						
-					foreach(var f in deleteableVolumes)
-					{
-						deletedVolumes.Add(new KeyValuePair<string, long>(f.Name, f.Size));
-						if (m_options.Force && !m_options.FhDryrun)
-							backend.Delete(f.Name);
-						else
-							m_stat.LogMessage("[Dryrun] - Would delete remote file: {0}, size: {1}", f.Name, Utility.Utility.FormatSizeString(f.Size));
-					}
 					
-					var downloadSize = downloadedVolumes.Aggregate(0L, (a,x) => a + x.Size);
-					var deletedSize = downloadedVolumes.Aggregate(0L, (a,x) => a + x.Size);
+					deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, transaction));
+										
+					var downloadSize = downloadedVolumes.Aggregate(0L, (a,x) => a + x.Value);
+					var deletedSize = deletedVolumes.Aggregate(0L, (a,x) => a + x.Value);
 					var uploadSize = uploadedVolumes.Aggregate(0L, (a,x) => a + x.Value);
 					
 					if (m_options.Force && !m_options.FhDryrun)
-						msg = string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", downloadedVolumes.Count, Utility.Utility.FormatSizeString(downloadSize), deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize), uploadedVolumes.Count, Utility.Utility.FormatSizeString(uploadSize), deletedVolumes.Count - uploadedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize - uploadSize));
+					{
+						if (downloadedVolumes.Count == 0)
+							msg = string.Format("Deleted {0} files, which reduced storage by {1}", deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize));
+						else
+							msg = string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", downloadedVolumes.Count, Utility.Utility.FormatSizeString(downloadSize), deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize), uploadedVolumes.Count, Utility.Utility.FormatSizeString(uploadSize), deletedVolumes.Count - uploadedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize - uploadSize));
+					}
 					else
-						msg = string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which will reduce storage by {6} file(s) and {7}", downloadedVolumes.Count, Utility.Utility.FormatSizeString(downloadSize), deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize), uploadedVolumes.Count, Utility.Utility.FormatSizeString(uploadSize), deletedVolumes.Count - uploadedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize - uploadSize));
+					{
+						if (downloadedVolumes.Count == 0)
+							msg = string.Format("Would delete {0} files, which would reduce storage by {1}", deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize));
+						else
+							msg = string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", downloadedVolumes.Count, Utility.Utility.FormatSizeString(downloadSize), deletedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize), uploadedVolumes.Count, Utility.Utility.FormatSizeString(uploadSize), deletedVolumes.Count - uploadedVolumes.Count, Utility.Utility.FormatSizeString(deletedSize - uploadSize));
+					}
 					m_stat.LogMessage(msg);
 							
 					backend.WaitForComplete();
@@ -234,6 +227,21 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			
 			
 			return msg;
+		}
+		
+		private IEnumerable<KeyValuePair<string, long>> DoDelete(LocalDeleteDatabase db, FhBackend backend, List<IRemoteVolume> deleteableVolumes, System.Data.IDbTransaction transaction)
+		{
+			foreach(var f in db.GetDeletableVolumes(deleteableVolumes, transaction))
+			{
+				if (m_options.Force && !m_options.FhDryrun)
+					backend.Delete(f.Name);
+				else
+					m_stat.LogMessage("[Dryrun] - Would delete remote file: {0}, size: {1}", f.Name, Utility.Utility.FormatSizeString(f.Size));
+
+				yield return new KeyValuePair<string, long>(f.Name, f.Size);
+			}				
+			
+			deleteableVolumes.Clear();
 		}
 
 		#region IDisposable implementation

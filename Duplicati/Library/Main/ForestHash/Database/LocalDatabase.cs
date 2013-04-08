@@ -228,6 +228,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 {
                     deletecmd.Transaction = tr.Parent;
 
+					// If the volume is a block volume, this will update the crosslink table, otherwise nothing will happen
+					deletecmd.ExecuteNonQuery(@"DELETE FROM ""ShadowBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?) ", name);
+
 					deletecmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
 					deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
 					deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);

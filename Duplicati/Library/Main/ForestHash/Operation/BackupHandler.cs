@@ -125,7 +125,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	            if (!m_options.FhNoShadowfiles)
 	            {
 		            m_shadowvolume = new ShadowVolumeWriter(m_options);
-		            m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, m_transaction);
+		            m_shadowvolume.VolumeID = m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, m_transaction);
+		            m_database.AddShadowBlockLink(m_shadowvolume.VolumeID, m_blockvolume.VolumeID, m_transaction);
 		            m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
 	            }
 	                        	
@@ -197,10 +198,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	            else
 	            {
 	                m_database.LogMessage("info", "removing temp files, as no data needs to be uploaded", null);
-	                m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename);
+	                m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename, m_transaction);
 	                if (m_shadowvolume != null)
 	                {
-		                m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename);
+		                m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename, m_transaction);
 		                m_shadowvolume.FinishVolume(null, 0);
 	                }
 	            }
@@ -453,12 +454,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     //TODO: Commit transaction?
 
                     m_blockvolume = new BlockVolumeWriter(m_options);
-					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
 					
 					if (!m_options.FhNoShadowfiles)
 					{
 	                    m_shadowvolume = new ShadowVolumeWriter(m_options);
-						m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary);
+						m_shadowvolume.VolumeID = m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, m_transaction);
+						m_database.AddShadowBlockLink(m_shadowvolume.VolumeID, m_blockvolume.VolumeID, m_transaction);
 						m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
 					}
                 }
