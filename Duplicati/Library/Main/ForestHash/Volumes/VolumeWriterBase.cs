@@ -16,6 +16,8 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         public string RemoteFilename { get { return m_volumename; } }
 
         public abstract RemoteVolumeType FileType { get; }
+
+        public long VolumeID { get; set; }
         
         public void SetRemoteFilename(string name)
         {
