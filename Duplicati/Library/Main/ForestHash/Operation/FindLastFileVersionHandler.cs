@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             // Otherwise, grab info from remote location
             using (var tmpdb = new Utility.TempFile())
             using (var db = new LocalDatabase(tmpdb, "FindLastFileVersion"))
-            using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat, null))
+            using (var backend = new FhBackend(m_backendurl, m_options, m_stat, db))
             {
                 var filter = RestoreHandler.FilterFilelist(m_options.RestoreTime);
                 var volumes = filter(from n in backend.List()
@@ -72,6 +72,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	            	if (!res.Values.Contains(dtnull))
 	            		break;
 	            }
+	            
+	            backend.WaitForComplete(db, null);
             
 				return res.ToList();
             }

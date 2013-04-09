@@ -180,7 +180,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                catch (Exception ex)
 	                {
 	                    stat.LogWarning(string.Format("Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message), ex);
-	                    database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+	                    database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\", message: {1}", targetpath, ex.Message), ex, null);
 	                }
 	                
 	                try
@@ -190,7 +190,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                catch (Exception ex)
 	                {
 	                    stat.LogWarning(string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
-	                    database.LogMessage("Warning", string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+	                    database.LogMessage("Warning", string.Format("Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message), ex, null);
 	                }
                 }
             }
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
             using (var database = new LocalRestoreDatabase(dbparent, m_options.Fhblocksize))
-            using (var backend = new FhBackend(m_backendurl, m_options, database, m_stat, null))
+            using (var backend = new FhBackend(m_backendurl, m_options, m_stat, database))
             {
 	        	ForestHash.VerifyParameters(database, m_options);
 	        	
@@ -257,12 +257,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     catch (Exception ex)
                     {
                         m_stat.LogWarning(string.Format("Failed to restore file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
-                        database.LogMessage("Warning", string.Format("Failed to restore file: \"{0}\", message: {1}", file.Path, ex.Message), ex);
+                        database.LogMessage("Warning", string.Format("Failed to restore file: \"{0}\", message: {1}", file.Path, ex.Message), ex, null);
                     }
                 }
 
                 // Drop the temp tables
                 database.DropRestoreTable();
+                backend.WaitForComplete(database, null);
             }
         }
 
@@ -317,7 +318,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                     catch (Exception ex)
                                     {
                                         stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message), ex);
-                                        database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message), ex);
+                                        database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message), ex, null);
                                     }
                                 }
                             }
@@ -325,7 +326,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     catch (Exception ex)
                     {
                         stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
-                        database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
+                        database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex, null);
                     }
                     
                     if (patched && options.FhDryrun)
@@ -367,7 +368,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 catch (Exception ex)
                 {
                     stat.LogWarning(string.Format("Failed to create folder: \"{0}\", message: {1}", folder, ex.Message), ex);
-                    database.LogMessage("Warning", string.Format("Failed to create folder: \"{0}\", message: {1}", folder, ex.Message), ex);
+                    database.LogMessage("Warning", string.Format("Failed to create folder: \"{0}\", message: {1}", folder, ex.Message), ex, null);
                 }
 
                 try
@@ -378,7 +379,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 catch (Exception ex)
                 {
                     stat.LogWarning(string.Format("Failed to set folder metadata: \"{0}\", message: {1}", folder, ex.Message), ex);
-                    database.LogMessage("Warning", string.Format("Failed to set folder metadata: \"{0}\", message: {1}", folder, ex.Message), ex);
+                    database.LogMessage("Warning", string.Format("Failed to set folder metadata: \"{0}\", message: {1}", folder, ex.Message), ex, null);
                 }
             }
         }
@@ -416,7 +417,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         catch (Exception ex)
                         {
                             stat.LogWarning(string.Format("Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
-                            database.LogMessage("Warning", string.Format("Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message), ex);
+                            database.LogMessage("Warning", string.Format("Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message), ex, null);
                         }
                     }
                 }

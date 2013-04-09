@@ -115,27 +115,118 @@ namespace Duplicati.Library.Main.ForestHash
                 return false;
             }
         }
+        
+        private class DatabaseCollector
+        {
+	        private object m_dbqueuelock = new object();
+	        private LocalDatabase m_database;
+	        private System.Threading.Thread m_callerThread;
+	        private List<IDbEntry> m_dbqueue;
+	        private CommunicationStatistics m_stats;
+	        
+	        private interface IDbEntry { }
+	        private class DbLogMessage : IDbEntry
+	        {
+	        	public string Type;
+	        	public string Message;
+	        	public Exception Exception;
+	        }
+	        
+	        private class DbOperation : IDbEntry
+	        {
+	        	public string Action;
+	        	public string File;
+	        	public string Result;
+	        }
+	        
+	        private class DbUpdate : IDbEntry
+	        {
+	        	public string Remotename;
+	        	public RemoteVolumeState State;
+	        	public long Size;
+	        	public string Hash;
+	        }
+	        
+	        public DatabaseCollector(LocalDatabase database, CommunicationStatistics stats)
+	        {
+	        	m_database = database;
+	        	m_stats = stats;
+	        	m_dbqueue = new List<IDbEntry>();	
+	        	if (m_database != null)
+	        		m_callerThread = System.Threading.Thread.CurrentThread;
+	        }
+
+	        public void LogDbMessage(string type, string msg, Exception ex)
+	        {
+	        	lock(m_dbqueuelock)
+	    			m_dbqueue.Add(new DbLogMessage() { Type = type, Message = msg, Exception = ex });
+	        }
+	
+	        public void LogDbOperation(string action, string file, string result)
+	        {
+	        	lock(m_dbqueuelock)
+		    		m_dbqueue.Add(new DbOperation() { Action = action, File = file, Result = result });
+	        }
+	        
+	        public void LogDbUpdate(string remotename, RemoteVolumeState state, long size, string hash)
+	        {
+	        	lock(m_dbqueuelock)
+		    		m_dbqueue.Add(new DbUpdate() { Remotename = remotename, State = state, Size = size, Hash = hash });
+	        }
+
+	        public bool FlushDbMessages(bool checkThread = false)
+	        {
+	        	if (m_database != null && (checkThread == false || m_callerThread == System.Threading.Thread.CurrentThread))
+	        		return FlushDbMessages(m_database, null);
+	        	
+	        	return false;
+	        }
+	        
+	        public bool FlushDbMessages(LocalDatabase db, System.Data.IDbTransaction transaction)
+	        {
+	        	List<IDbEntry> entries;
+	        	lock(m_dbqueuelock)
+	        		if (m_dbqueue.Count == 0)
+	        			return false;
+	        		else
+	        		{
+	        			entries = m_dbqueue;
+	        			m_dbqueue = new List<IDbEntry>();
+	        		}
+	        	
+	        	//As we replace the list, we can now freely access the elements without locking
+	        	foreach(var e in entries)
+	        		if (e is DbLogMessage)
+	        			db.LogMessage(((DbLogMessage)e).Type, ((DbLogMessage)e).Message, ((DbLogMessage)e).Exception, transaction);
+	        		else if (e is DbOperation)
+	        			db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
+	        		else if (e is DbUpdate)
+	        			db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
+	        		else if (e != null)
+	        			m_stats.LogError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
+	        			
+	        	return true;
+	        }
+        }
 
         private BlockingQueue<FileEntryItem> m_queue;
-        private System.Threading.Thread m_thread;
         private FhOptions m_options;
-        private LocalDatabase m_database;
         private volatile Exception m_lastException;
         private Library.Interface.IEncryption m_encryption;
         private Library.Interface.IBackend m_backend;
         private string m_backendurl;
         private CommunicationStatistics m_stats;
-        private System.Data.IDbTransaction m_transaction;
-        
+        private System.Threading.Thread m_thread;
+		private DatabaseCollector m_db;
+                
         public string BackendUrl { get { return m_backendurl; } }
 
-        public FhBackend(string backendurl, FhOptions options, LocalDatabase database, CommunicationStatistics stats, System.Data.IDbTransaction transaction)
+        public FhBackend(string backendurl, FhOptions options, CommunicationStatistics stats, LocalDatabase database)
         {
             m_options = options;
-            m_database = database;
             m_backendurl = backendurl;
             m_stats = stats;
-            m_transaction = transaction;
+            m_db = new DatabaseCollector(database, stats);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
             if (m_backend == null)
@@ -150,7 +241,7 @@ namespace Duplicati.Library.Main.ForestHash
 
             m_queue = new BlockingQueue<FileEntryItem>(options.AsynchronousUpload ? (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit) : 1);
             m_thread = new System.Threading.Thread(this.ThreadRun);
-            m_thread.Name = "Async Uploader";
+            m_thread.Name = "Backend Async Worker";
             m_thread.IsBackground = true;
             m_thread.Start();
         }
@@ -208,10 +299,10 @@ namespace Duplicati.Library.Main.ForestHash
                             retries++;
                             lastException = ex;
                             m_stats.LogRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
-                            m_database.LogMessage("warning", string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
+                            m_db.LogDbMessage("warning", string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
 
                             try { m_backend.Dispose(); }
-                            catch(Exception dex) { m_database.LogMessage("warning", string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
+                            catch(Exception dex) { m_db.LogDbMessage("warning", string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
 
                             m_backend = null;
 
@@ -241,7 +332,7 @@ namespace Duplicati.Library.Main.ForestHash
         {
             item.Encrypt(m_encryption);
             if (item.UpdateHashAndSize(m_options))
-                m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash, m_transaction);
+            	m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
             if (item.Shadow != null)
             {
@@ -251,7 +342,7 @@ namespace Duplicati.Library.Main.ForestHash
             }            
 
             m_stats.AddNumberOfRemoteCalls(1);
-            m_database.LogRemoteOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
+            m_db.LogDbOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             if (!m_options.QuietConsole)
             	m_stats.LogMessage("Uploading file {0} with size {1}", item.RemoteFilename, Utility.Utility.FormatSizeString(item.Size));
 
@@ -292,7 +383,7 @@ namespace Duplicati.Library.Main.ForestHash
                     m_backend.Get(item.RemoteFilename, tmpfile);
                 
                 m_stats.AddBytesDownloaded(new System.IO.FileInfo(tmpfile).Length);
-                m_database.LogRemoteOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateFileHash(tmpfile) }));
+                m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = FileEntryItem.CalculateFileHash(tmpfile) }));
 	            if (!m_options.QuietConsole)
 	            	m_stats.LogMessage("Downloaded file {0} with size {1}", item.RemoteFilename, Utility.Utility.FormatSizeString(new System.IO.FileInfo(tmpfile).Length));
 
@@ -375,7 +466,7 @@ namespace Duplicati.Library.Main.ForestHash
 
             sb.AppendLine();
             sb.Append("]");
-            m_database.LogRemoteOperation("list", "", sb.ToString());
+            m_db.LogDbOperation("list", "", sb.ToString());
             item.Result = r;
 
             if (!m_options.QuietConsole)
@@ -400,11 +491,10 @@ namespace Duplicati.Library.Main.ForestHash
             }
             finally
             {
-                m_database.LogRemoteOperation("delete", item.RemoteFilename, result);
+                m_db.LogDbOperation("delete", item.RemoteFilename, result);
             }
             
-            m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null, m_transaction);
-            m_database.RemoveRemoteVolume(item.RemoteFilename, m_transaction);
+            m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
 
             if (!m_options.QuietConsole)
             	m_stats.LogMessage("Deleted file {0}", item.RemoteFilename);
@@ -428,7 +518,7 @@ namespace Duplicati.Library.Main.ForestHash
             }
             finally
             {
-                m_database.LogRemoteOperation("createfolder", item.RemoteFilename, result);
+                m_db.LogDbOperation("createfolder", item.RemoteFilename, result);
             }
             
             if (!m_options.QuietConsole)
@@ -441,7 +531,7 @@ namespace Duplicati.Library.Main.ForestHash
                 throw m_lastException;
             
             item.Close();
-            m_database.UpdateRemoteVolume(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+            m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
             var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, shadow);
             req.LocalFilename = item.LocalFilename;
 
@@ -453,7 +543,7 @@ namespace Duplicati.Library.Main.ForestHash
 
             if (shadow != null)
             {
-                m_database.UpdateRemoteVolume(shadow.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+                m_db.LogDbUpdate(shadow.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                 var req2 = new FileEntryItem(OperationType.Put, shadow.RemoteFilename);
                 req2.LocalFilename = shadow.LocalFilename;
 
@@ -510,14 +600,17 @@ namespace Duplicati.Library.Main.ForestHash
             return (IList<Library.Interface.IFileEntry>)req.Result;
         }
 
-        public void WaitForComplete()
+        public void WaitForComplete(LocalDatabase db, System.Data.IDbTransaction transation)
         {
+        	m_db.FlushDbMessages(db, transation);
             if (m_lastException != null)
                 throw m_lastException;
 
             var item = new FileEntryItem(OperationType.Terminate, null);
             if (m_queue.Enqueue(item))
                 item.WaitForComplete();
+
+        	m_db.FlushDbMessages(db, transation);
 
             if (m_lastException != null)
                 throw m_lastException;
@@ -535,13 +628,23 @@ namespace Duplicati.Library.Main.ForestHash
 
         public void Delete(string remotename, bool synchronous = false)
         {
-            m_database.UpdateRemoteVolume(remotename, RemoteVolumeState.Deleting, -1, null, m_transaction);
+            m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, -1, null);
             var item = new FileEntryItem(OperationType.Delete, remotename);
             if (m_queue.Enqueue(item) && synchronous)
                 item.WaitForComplete();
 
             if (m_lastException != null)
                 throw m_lastException;
+        }
+        
+        public bool FlushDbMessages(LocalDatabase database, System.Data.IDbTransaction transaction)
+        {
+        	return m_db.FlushDbMessages(database, transaction);
+        }
+        
+        public bool FlushDbMessages()
+        {
+        	return m_db.FlushDbMessages(false);
         }
 
         public void Dispose()
@@ -556,7 +659,7 @@ namespace Duplicati.Library.Main.ForestHash
                 m_backend.Dispose();
                 m_backend = null;
             }
-
+            
             if (m_thread != null)
             {
                 if (!m_thread.Join(TimeSpan.FromSeconds(10)))
@@ -567,6 +670,9 @@ namespace Duplicati.Library.Main.ForestHash
 
                 m_thread = null;
             }
+            
+        	try { m_db.FlushDbMessages(true); }
+        	catch (Exception ex) { m_stats.LogError(string.Format("Backend Shutdown error: {0}", ex.Message), ex); }
         }
     }
 }

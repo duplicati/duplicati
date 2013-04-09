@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			
 			if (report.ShouldReclaim || report.ShouldCompact)
 			{
-				using(var backend = new FhBackend(m_backendurl, m_options, db, m_stat, transaction))
+				using(var backend = new FhBackend(m_backendurl, m_options, m_stat, db))
 				{
 					if (!hasVerifiedBackend && !m_options.FhNoBackendverification)
 						ForestHash.VerifyRemoteList(backend, m_options, db, m_stat);
@@ -217,7 +217,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					}
 					m_stat.LogMessage(msg);
 							
-					backend.WaitForComplete();
+					backend.WaitForComplete(db, transaction);
 				}
 			}
 			else

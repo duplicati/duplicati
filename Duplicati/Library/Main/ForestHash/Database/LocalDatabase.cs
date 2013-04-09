@@ -9,7 +9,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
     {
         protected readonly System.Data.IDbConnection m_connection;
         protected readonly long m_operationid = -1;
-        protected object m_lock = new object();
 
         private readonly System.Data.IDbCommand m_updateremotevolumeCommand;
         private readonly System.Data.IDbCommand m_selectremotevolumesCommand;
@@ -116,18 +115,18 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		
 		public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
         {
-            lock (m_lock)
-            {
-                m_updateremotevolumeCommand.Transaction = transaction;
-                m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
-                m_updateremotevolumeCommand.SetParameterValue(1, state.ToString());
-                m_updateremotevolumeCommand.SetParameterValue(2, hash);
-                m_updateremotevolumeCommand.SetParameterValue(3, size);
-                m_updateremotevolumeCommand.SetParameterValue(4, name);
-                var c = m_updateremotevolumeCommand.ExecuteNonQuery();
-                if (c != 1)
-                	throw new Exception("Unexpected number of remote volumes detected!");
-            }
+            m_updateremotevolumeCommand.Transaction = transaction;
+            m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
+            m_updateremotevolumeCommand.SetParameterValue(1, state.ToString());
+            m_updateremotevolumeCommand.SetParameterValue(2, hash);
+            m_updateremotevolumeCommand.SetParameterValue(3, size);
+            m_updateremotevolumeCommand.SetParameterValue(4, name);
+            var c = m_updateremotevolumeCommand.ExecuteNonQuery();
+            if (c != 1)
+            	throw new Exception("Unexpected number of remote volumes detected!");
+            	
+           	if (state == RemoteVolumeState.Deleted)
+           		RemoveRemoteVolume(name, transaction);
         }
         
         public long GetRemoteVolumeID(string file)
@@ -186,18 +185,15 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// <param name="operation">The operation performed</param>
         /// <param name="path">The path involved</param>
         /// <param name="data">Any data relating to the operation</param>
-        public void LogRemoteOperation(string operation, string path, string data)
+        public void LogRemoteOperation(string operation, string path, string data, System.Data.IDbTransaction transaction)
         {
-            lock (m_lock)
-            {
-                m_insertremotelogCommand.SetParameterValue(0, m_operationid);
-                m_insertremotelogCommand.SetParameterValue(1, DateTime.UtcNow);
-                m_insertremotelogCommand.SetParameterValue(2, operation);
-                m_insertremotelogCommand.SetParameterValue(3, path);
-                m_insertremotelogCommand.SetParameterValue(4, data);
-                //TODO: It seems that SQLite with Mono has some issues with cross-thread db-access.
-                m_insertremotelogCommand.ExecuteNonQuery();
-            }
+        	m_insertremotelogCommand.Transaction = transaction;
+            m_insertremotelogCommand.SetParameterValue(0, m_operationid);
+            m_insertremotelogCommand.SetParameterValue(1, DateTime.UtcNow);
+            m_insertremotelogCommand.SetParameterValue(2, operation);
+            m_insertremotelogCommand.SetParameterValue(3, path);
+            m_insertremotelogCommand.SetParameterValue(4, data);
+            m_insertremotelogCommand.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -206,64 +202,56 @@ namespace Duplicati.Library.Main.ForestHash.Database
         /// <param name="type">The message type</param>
         /// <param name="message">The message</param>
         /// <param name="exception">An optional exception</param>
-        public void LogMessage(string type, string message, Exception exception)
+        public void LogMessage(string type, string message, Exception exception, System.Data.IDbTransaction transaction)
         {
-            lock (m_lock)
-            {
-                m_insertlogCommand.SetParameterValue(0, m_operationid);
-                m_insertlogCommand.SetParameterValue(1, DateTime.UtcNow);
-                m_insertlogCommand.SetParameterValue(2, type);
-                m_insertlogCommand.SetParameterValue(3, message);
-                m_insertlogCommand.SetParameterValue(4, exception == null ? null : exception.ToString());
-                m_insertlogCommand.ExecuteNonQuery();
-            }
+        	m_insertlogCommand.Transaction = transaction;
+            m_insertlogCommand.SetParameterValue(0, m_operationid);
+            m_insertlogCommand.SetParameterValue(1, DateTime.UtcNow);
+            m_insertlogCommand.SetParameterValue(2, type);
+            m_insertlogCommand.SetParameterValue(3, message);
+            m_insertlogCommand.SetParameterValue(4, exception == null ? null : exception.ToString());
+            m_insertlogCommand.ExecuteNonQuery();
         }
 
         public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
         {
-            lock (m_lock)
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using (var deletecmd = m_connection.CreateCommand())
             {
-                using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-                using (var deletecmd = m_connection.CreateCommand())
-                {
-                    deletecmd.Transaction = tr.Parent;
+                deletecmd.Transaction = tr.Parent;
 
-					// If the volume is a block volume, this will update the crosslink table, otherwise nothing will happen
-					deletecmd.ExecuteNonQuery(@"DELETE FROM ""ShadowBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?) ", name);
+				// If the volume is a block volume, this will update the crosslink table, otherwise nothing will happen
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""ShadowBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?) ", name);
 
-					deletecmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
-					deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
-					deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
-					deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
-					
-					deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
-					deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN (SELECT DISTINCT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
-					
+				deletecmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+				deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+				
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN (SELECT DISTINCT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
+				
 
-                    ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
-                    m_removeremotevolumeCommand.Transaction = tr.Parent;
-                    m_removeremotevolumeCommand.ExecuteNonQuery();
+                ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
+                m_removeremotevolumeCommand.Transaction = tr.Parent;
+                m_removeremotevolumeCommand.ExecuteNonQuery();
 
-                    tr.Commit();
-                }
+                tr.Commit();
             }
         }
 
 		public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
 		{
-            lock (m_lock)
-            {
-            	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            	{
-	                m_createremotevolumeCommand.SetParameterValue(0, m_operationid);
-	                m_createremotevolumeCommand.SetParameterValue(1, name);
-	                m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
-	                m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
-	                m_createremotevolumeCommand.Transaction = tr.Parent;
-	                var r = Convert.ToInt64(m_createremotevolumeCommand.ExecuteScalar());
-	                tr.Commit();
-	                return r;
-                }
+        	using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+        	{
+                m_createremotevolumeCommand.SetParameterValue(0, m_operationid);
+                m_createremotevolumeCommand.SetParameterValue(1, name);
+                m_createremotevolumeCommand.SetParameterValue(2, type.ToString());
+                m_createremotevolumeCommand.SetParameterValue(3, state.ToString());
+                m_createremotevolumeCommand.Transaction = tr.Parent;
+                var r = Convert.ToInt64(m_createremotevolumeCommand.ExecuteScalar());
+                tr.Commit();
+                return r;
             }
         }
         

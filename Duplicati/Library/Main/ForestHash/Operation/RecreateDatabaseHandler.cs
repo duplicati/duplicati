@@ -56,7 +56,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 
             //We build a local database in steps.
             using (var restoredb = new LocalBlocklistUpdateDatabase(dbparent, m_options.Fhblocksize))
-            using (var backend = new FhBackend(m_backendurl, m_options, restoredb, m_stat, null))
+            using (var backend = new FhBackend(m_backendurl, m_options, m_stat, restoredb))
             {
             	var volumeIds = new Dictionary<string, long>();
 
@@ -69,8 +69,6 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                    let n = VolumeBase.ParseFilename(x)
 	                    where
 	                        n != null
-	                            &&
-	                        n.EncryptionModule == (m_options.NoEncryption ? null : m_options.EncryptionModule)
 	                            &&
 	                        n.Prefix == m_options.BackupPrefix
                         select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
@@ -221,6 +219,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 //All done, we must verify that we have all blocklist fully intact
                 restoredb.VerifyDatabaseIntegrity();
 
+				backend.WaitForComplete(restoredb, null);
             }
         }
 

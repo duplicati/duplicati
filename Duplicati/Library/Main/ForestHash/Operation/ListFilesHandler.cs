@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             // Otherwise, grab info from remote location
             using (var tmpdb = new Utility.TempFile())
             using (var db = new Database.LocalDatabase(tmpdb, "ListFiles"))
-            using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat, null))
+            using (var backend = new FhBackend(m_backendurl, m_options, m_stat, db))
             {
                 var filter = RestoreHandler.FilterFilelist(m_options.RestoreTime);
                 var fileset = filter(from n in backend.List()
@@ -49,10 +49,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 if (fileset == null)
                     throw new Exception("No filesets found on remote target");
 
-                var filename = fileset.File.Name;
-                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(filename), backend.Get(filename, -1, null), m_options))
-                    return (from n in rd.Files
+                List<string> res;
+                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(fileset.File.Name), backend.Get(fileset.File.Name, fileset.File.Size, null), m_options))
+                    res = (from n in rd.Files
                             select n.Path).ToList();
+                            
+                backend.WaitForComplete(db, null);
+                return res;
             }
 
         }

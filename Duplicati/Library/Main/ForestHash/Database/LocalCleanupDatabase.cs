@@ -177,6 +177,13 @@ namespace Duplicati.Library.Main.ForestHash.Database
 					yield return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), Convert.ToInt64(rd.GetValue(2)));
 		}
 
+		public IEnumerable<IRemoteVolume> GetBlockVolumesFromShadowName(string name)
+		{
+			using(var cmd = m_connection.CreateCommand())
+			using(var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""ShadowBlockLink"" WHERE ""ShadowVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?))", name))
+				while (rd.Read())
+					yield return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), Convert.ToInt64(rd.GetValue(2)));
+		}
 	}
 }
 

@@ -40,20 +40,18 @@ namespace Duplicati.Library.Main.ForestHash
         public static void VerifyRemoteList(FhBackend backend, Options options, LocalDatabase database, CommunicationStatistics stat)
 		{
 			var tp = RemoteListAnalysis(backend, options, database);
-			var extra = tp.Item1;
-			var missing = tp.Item2;
 			long extraCount = 0;
 			long missingCount = 0;
 			
-			foreach(var n in extra)
+			foreach(var n in tp.ExtraVolumes)
 			{
 				if (!options.QuietConsole)
-					stat.LogMessage(string.Format("Extra unknown file: {0}", n.Name));
-				stat.LogWarning(string.Format("Extra unknown file: {0}", n.Name), null);
+					stat.LogMessage(string.Format("Extra unknown file: {0}", n.File.Name));
+				stat.LogWarning(string.Format("Extra unknown file: {0}", n.File.Name), null);
 				extraCount++;
 			}
 
-			foreach(var n in missing)
+			foreach(var n in tp.MissingVolumes)
 			{
 				if (!options.QuietConsole)
 					stat.LogMessage(string.Format("Missing file: {0}", n.Name));
@@ -65,9 +63,23 @@ namespace Duplicati.Library.Main.ForestHash
                 throw new Exception(string.Format("Found {0} remote files that are not recorded in local storage, please run cleanup", extraCount));
 
             if (missingCount > 0)
-                throw new Exception(string.Format("Found {0} files that are missing from the remote storage, please run cleanup", missingCount));
+            {
+            	if (!tp.BackupPrefixes.Contains(options.BackupPrefix) && tp.BackupPrefixes.Length > 0)
+                	throw new Exception(string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.BackupPrefix, string.Join(", ", tp.BackupPrefixes)));
+            	else
+                	throw new Exception(string.Format("Found {0} files that are missing from the remote storage, please run cleanup", missingCount));
+            }
 		}
 		
+		public struct RemoteAnalysisResult
+		{
+			public IEnumerable<Volumes.IParsedVolume> ParsedVolumes;
+			public IEnumerable<Volumes.IParsedVolume> ExtraVolumes;
+			public IEnumerable<RemoteVolumeEntry> MissingVolumes;
+			
+			public string[] BackupPrefixes { get { return ParsedVolumes.Select(x => x.Prefix).Distinct().ToArray(); } }
+		}
+
         /// <summary>
         /// Helper method that verifies uploaded volumes and updates their state in the database.
         /// Throws an error if there are issues with the remote storage
@@ -75,23 +87,17 @@ namespace Duplicati.Library.Main.ForestHash
         /// <param name="backend">The backend instance to use</param>
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
-        public static Tuple<IEnumerable<IFileEntry>, IEnumerable<RemoteVolumeEntry>> RemoteListAnalysis(FhBackend backend, Options options, LocalDatabase database)
+        public static RemoteAnalysisResult RemoteListAnalysis(FhBackend backend, Options options, LocalDatabase database)
         {
-            var remotelist = backend.List();
-            var lookup = new Dictionary<string, Library.Interface.IFileEntry>();
+            var rawlist = backend.List();
+            var lookup = new Dictionary<string, Volumes.IParsedVolume>();
 
-            var prefix = options.BackupPrefix + "-";
-            var suffix = "." + options.CompressionModule;
-            if (!options.NoEncryption)
-                suffix += "." + options.EncryptionModule;
-
+			var remotelist = from n in rawlist let p = Volumes.VolumeBase.ParseFilename(n) where p != null select p;
             foreach (var s in remotelist)
-            {
-                if (s.Name.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase) && s.Name.EndsWith(suffix, StringComparison.InvariantCultureIgnoreCase))
-                    lookup[s.Name] = s;
-            }
+            	if (s.Prefix == options.BackupPrefix)
+                	lookup[s.File.Name] = s;
 
-            var missing = new List<KeyValuePair<RemoteVolumeEntry, IFileEntry>>();
+            var missing = new List<RemoteVolumeEntry>();
             var locallist = database.GetRemoteVolumes();
             foreach (var i in locallist)
             {
@@ -101,21 +107,21 @@ namespace Duplicati.Library.Main.ForestHash
             		
                 if (i.State == RemoteVolumeState.Temporary)
                 {
-                    database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null);
+                    database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null, null);
                     database.RemoveRemoteVolume(i.Name, null);
                 }
                 else
                 {
-                    Library.Interface.IFileEntry r;
-                    if (!lookup.TryGetValue(i.Name, out r) || (r.Size != i.Size && r.Size >= 0 && i.Size >= 0))
+                    Volumes.IParsedVolume r;
+                    if (!lookup.TryGetValue(i.Name, out r) || (r.File.Size != i.Size && r.File.Size >= 0 && i.Size >= 0))
                     {
                         if (i.State == RemoteVolumeState.Uploading || i.State == RemoteVolumeState.Deleting)
                         {
-                            database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null);
+                            database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null, null);
                             database.RemoveRemoteVolume(i.Name, null);
                         }
                         else
-                            missing.Add(new KeyValuePair<RemoteVolumeEntry, Library.Interface.IFileEntry>(i, r));
+                            missing.Add(i);
                     }
                     else if (i.State != RemoteVolumeState.Verified)
                     {
@@ -126,7 +132,7 @@ namespace Duplicati.Library.Main.ForestHash
                 }
             }
             
-            return new Tuple<IEnumerable<IFileEntry>, IEnumerable<RemoteVolumeEntry>> (lookup.Values, from n in missing select n.Key);
+            return new RemoteAnalysisResult() { ParsedVolumes = remotelist, ExtraVolumes = lookup.Values, MissingVolumes = missing };
         }
 
         /// <summary>
@@ -252,12 +258,18 @@ namespace Duplicati.Library.Main.ForestHash
         {
             var opts = new FhOptions(options);
             using (var db = new LocalDatabase(opts.Fhdbpath, "ParseFileList"))
-            using (var b = new FhBackend(target, opts, db, stat, null))
-                return
+            using (var b = new FhBackend(target, opts, stat, db))
+            {
+                var res = 
                     from n in b.List()
                     let np = Volumes.VolumeBase.ParseFilename(n)
                     where np != null
                     select np;
+                    
+                b.WaitForComplete(db, null);
+                
+                return res;
+            }
         }
 
         internal static string CompactBlocks(string target, Dictionary<string, string> options, CommunicationStatistics stat)

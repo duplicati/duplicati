@@ -41,8 +41,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 			{
 	        	ForestHash.VerifyParameters(db, m_options);
 	        	
-				string msg;
-				using (var backend = new FhBackend(m_backendurl, m_options, db, m_stat, tr))
+				using (var backend = new FhBackend(m_backendurl, m_options, m_stat, db))
 				{
 					if (!m_options.FhNoBackendverification)
 						ForestHash.VerifyRemoteList(backend, m_options, db, m_stat); 
@@ -65,14 +64,14 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							m_stat.LogMessage("[Dryrun] - Would delete remote fileset: {0}", f);
 					}
 					
-					backend.WaitForComplete();
+					backend.WaitForComplete(db, tr);
 					
 					if (m_options.Force && !m_options.FhDryrun)
 					{
 						if (count == 0)
-							msg = "No remote filesets were deleted";
+							m_stat.LogMessage("No remote filesets were deleted");
 						else
-							msg = string.Format("Deleted {0} remote fileset(s)", count);
+							m_stat.LogMessage("Deleted {0} remote fileset(s)", count);
 					}
 					else
 					{
