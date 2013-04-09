@@ -1395,7 +1395,6 @@ namespace SharpAESCrypt
             }
             catch (Exception ex)
             {
-                //TODO: Hashværdien skal færdigøres før hash værdien hentes?
                 Console.WriteLine("FAILED: " + ex.Message);
                 return false;
             }
