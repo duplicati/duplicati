@@ -29,6 +29,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         protected static System.Data.IDbConnection CreateConnection(string path)
         {
+        	path = System.IO.Path.GetFullPath(path);
             var c = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType);
             if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
