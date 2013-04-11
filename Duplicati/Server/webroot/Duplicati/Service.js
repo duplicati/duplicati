@@ -18,9 +18,6 @@ Ext.define('Duplicati.Service', {
 	updateRequestRunning: false,
 	updateRequestFailureCount: 0,
 
-	//Bugfix for extjs
-	hasListeners: {},
-
 	//Cache for server responses
 	serverdata: {
 		'current-state': null,
@@ -32,6 +29,7 @@ Ext.define('Duplicati.Service', {
 	},
     
     constructor: function(config) {
+		this.mixins.observable.constructor.call(this, config);
     	this.addEvents('current-state-updated', 'count-down-pause-timer', 'lost-connection', 'reconnected', 'lost-connection-retry', 'lost-connection-retry-delay');
     	this.lostConnectionCountDownHelper = new Duplicati.CountDownHelper();
     	this.pauseCountDownHelper = new Duplicati.CountDownHelper();

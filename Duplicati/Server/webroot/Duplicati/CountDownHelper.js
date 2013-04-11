@@ -13,11 +13,9 @@ Ext.define('Duplicati.CountDownHelper', {
 
 	expireTime: null,
 	intervalId : null,
-
-	//Bugfix for extjs
-	hasListeners: {},
 	
 	constructor: function(config) {
+		this.mixins.observable.constructor.call(this, config);
     	this.addEvents('count-down-tick', 'count-down-complete');
     },
 
