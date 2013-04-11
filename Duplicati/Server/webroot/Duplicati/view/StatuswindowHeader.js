@@ -12,6 +12,7 @@ Ext.define('Duplicati.view.StatuswindowHeader' ,{
 		xtype: 'button',
 		cls: 'main-button',
 		text: 'Duplicati',
+		iconCls: 'unused-marker',
 		id: 'status-window-header-main-button',
 		margin: 10,
 		menu: [{
@@ -105,6 +106,7 @@ Ext.define('Duplicati.view.StatuswindowHeader' ,{
 		xtype: 'button',
 		cls: 'add-new-backup-button',
 		text: 'Add new backup',
+		iconCls: 'unused-marker',
 		margin: 10,
 		handler: function() { Ext.create('Duplicati.view.BackupConfig').show(); }
 	},{
