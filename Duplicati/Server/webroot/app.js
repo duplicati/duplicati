@@ -2,7 +2,7 @@
 // This helps in a debug setup
 var extdefined = false;
 try { extdefined = Ext !== undefined; } catch (e) {}
-if (!extdefined) { alert('ExtJS failed to load!\n If this is a debug build,\nplease download and extract:\n\nExtJS 4.1.1\n\ninto the folder:\nDuplicati/Server/webroot'); }
+if (!extdefined) { alert('ExtJS failed to load!\n If this is a debug build,\nplease download and extract:\n\nExtJS 4.2.0\n\ninto the folder:\nDuplicati/Server/webroot/extjs-4.2.0'); }
 delete extdefined;
 }
 
