@@ -25,6 +25,7 @@ Ext.define('Duplicati.Service', {
 		'installed-compression-modules': null,
 		'installed-encryption-modules': null,
 		'installed-generic-modules': null,
+		'backup-defaults': null,
 		'system-info': null
 	},
     
@@ -251,6 +252,7 @@ Ext.define('Duplicati.Service', {
 	
 	getInstalledGenericModules: function(callback) {
 		if (this.serverdata['installed-generic-modules'] == null) {
+			var self = this;
 			Ext.Ajax.request({
 				url: this.controlUrl,
 				params: { action: 'list-installed-generic-modules' },
@@ -266,6 +268,7 @@ Ext.define('Duplicati.Service', {
 
 	getInstalledEncryptionModules: function(callback) {
 		if (this.serverdata['installed-encryption-modules'] == null) {
+			var self = this;
 			Ext.Ajax.request({
 				url: this.controlUrl,
 				params: { action: 'list-installed-encryption-modules' },
@@ -279,6 +282,23 @@ Ext.define('Duplicati.Service', {
 		}
 	},
 	
+	getBackupDefaults: function(callback) {
+		if (this.serverdata['backup-defaults'] == null) {
+			var self = this;
+			Ext.Ajax.request({
+				url: this.controlUrl,
+				params: { action: 'get-backup-defaults' },
+				success: function(response) { 
+					self.serverdata['backup-defaults'] = eval('(' + response.responseText + ')');
+					callback(self.serverdata['backup-defaults']);
+				}, 
+				scope: this
+			});
+		} else {
+			callback(this.serverdata['backup-defaults']);
+		}
+	},
+
 	runBackup: function(id, full) {
 		var self = this;
 		
