@@ -142,6 +142,27 @@ Ext.define('Duplicati.Utility', {
 				return parseInt(freeQuota);
 			else
 				return null;
+		},
+				
+		createRecordFromData: function(classname, data) {
+			var entry = Ext.create(classname);
+			var model = Ext.ModelManager.getModel(classname);
+			var fields = model.getFields();
+			var associations = entry.associations;
+			
+			for(var i = 0; i < fields.length; i++) {
+				var key = fields[i].mapping || fields[i].name;
+				if (data[key] !== undefined)
+					entry.set(fields[i].name, data[key]);
+			}
+					
+			for(var i = 0; i < associations.length; i++) {
+				var a = associations.getAt(i);
+				if (data[a.associationKey])
+					entry[a.setterName](Duplicati.Utility.createRecordFromData(a.associatedName, data[a.associationKey]));
+			}
+
+			return entry;			
 		}
 	}
 });
