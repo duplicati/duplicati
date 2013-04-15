@@ -13,7 +13,6 @@ Ext.define('Duplicati.view.BackupConfig', {
         type: 'absolute'
     },
     bodyBorder: false,
-    //id: 'winBackupConfig',
     closable: false,
     collapsed: false,
     collapsible: false,
@@ -920,7 +919,7 @@ Ext.define('Duplicati.view.BackupConfig', {
     onChkRunRegularChange: function(field, newValue, oldValue, options) {
         Ext.Array.forEach(Ext.getCmp("fsSchedule").query("combobox,datefield,timefield,numberfield,checkboxgroup"), function(field) {
             field.setDisabled(!newValue);
-            if (!Ext.isIE6) {
+            if (!Ext.isIE6 && field.el != null) {
                 field.el.animate({opacity: !newValue ? .5 : 1});
             }
         });

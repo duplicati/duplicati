@@ -54,6 +54,8 @@ Ext.define('Duplicati.view.schedule.List' ,{
 			handler: function() {    			
     			Ext.create('Ext.window.Window', {
     				layout: 'fit',
+    				bodyBorder: false,
+    				title: 'Edit backup',
     				items: [
     					Ext.create('Duplicati.view.BackupConfig', {
 		    				scheduleId: Duplicati.ListUtility.currentScheduleId
