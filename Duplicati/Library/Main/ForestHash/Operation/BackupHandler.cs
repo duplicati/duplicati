@@ -606,18 +606,21 @@ namespace Duplicati.Library.Main.ForestHash.Operation
             if (m_backend != null)
             {
                 try { m_backend.Dispose(); }
+                catch (Exception ex) { m_stat.LogError("Failed disposing backend", ex); }
                 finally { m_backend = null; }
             }
 
             if (m_blockvolume != null)
             {
                 try { m_blockvolume.Dispose(); }
+                catch (Exception ex) { m_stat.LogError("Failed disposing block volume", ex); }
                 finally { m_blockvolume = null; }
             }
 
             if (m_shadowvolume != null)
             {
                 try { m_shadowvolume.Dispose(); }
+                catch (Exception ex) { m_stat.LogError("Failed disposing shadow volume", ex); }
                 finally { m_shadowvolume = null; }
             }
 
