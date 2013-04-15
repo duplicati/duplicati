@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 namespace Duplicati.Server.Serialization
-{
+{    
     public class Serializer
     {
         protected static readonly JsonSerializerSettings m_jsonSettings;
@@ -20,9 +20,8 @@ namespace Duplicati.Server.Serialization
             m_jsonSettings.Converters = new JsonConverter[] {
                 new SerializableStatusCreator(),
                 new ProgressEventDataCreator(),
-                new JobSettingsDataCreator(),
                 new BackendSettingsCreator(),
-                new FilterSetCreator()
+                new FilterSetCreator(),
             }.ToList();
         }
 
