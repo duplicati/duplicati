@@ -221,11 +221,11 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		private IEnumerable<VolumeUsage> GetWastedSpaceReport(System.Data.IDbTransaction transaction)
 		{
 			var tmptablename = "UsageReport-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-			var active = @"SELECT SUM(""Size"") AS ""ActiveSize"", 0 AS ""InactiveSize"", ""VolumeID"" AS ""VolumeID"" FROM ""Block"" GROUP BY ""VolumeID"" ";
-			var inactive = @"SELECT 0 AS ""ActiveSize"", SUM(""Size"") AS ""InactiveSize"", ""VolumeID"" AS ""VolumeID"" FROM ""DeletedBlock"" GROUP BY ""VolumeID"" ";
+			var active = @"SELECT SUM(""Block"".""Size"") AS ""ActiveSize"", 0 AS ""InactiveSize"", ""Block"".""VolumeID"" AS ""VolumeID"", MIN(""FilesetEntry"".""Scantime"") AS ""SortScantime"" FROM ""FilesetEntry"", ""File"", ""BlocksetEntry"", ""Block"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" GROUP BY ""Block"".""VolumeID"" ";
+			var inactive = @"SELECT 0 AS ""ActiveSize"", SUM(""Size"") AS ""InactiveSize"", ""VolumeID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""DeletedBlock"" GROUP BY ""VolumeID"" ";
 			
 			var combined = active + " UNION " + inactive;
-			var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
+			var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""SortScantime"") AS ""SortScantime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
 			var createtable = @"CREATE TEMPORARY TABLE """ + tmptablename + @""" AS " + collected;
 						
 			using (var cmd = m_connection.CreateCommand())
@@ -235,7 +235,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				{
 					cmd.ExecuteNonQuery(createtable);
 					var res = new List<VolumeUsage>();
-					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""Remotevolume"".""Name"", ""{0}"".""ActiveSize"", ""{0}"".""InactiveSize"" FROM ""Remotevolume"", ""{0}"" WHERE ""Remotevolume"".""ID"" = ""{0}"".""VolumeID"" ", tmptablename)))
+					using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""SortScantime"" ASC ", tmptablename)))
 						while (rd.Read())
 							res.Add(new VolumeUsage(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)) + Convert.ToInt64(rd.GetValue(2)), Convert.ToInt64(rd.GetValue(2))));
 							
