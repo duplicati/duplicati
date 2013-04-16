@@ -235,7 +235,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 var volumes = database.GetMissingVolumes();
 
                 foreach (var blockvolume in new AsyncDownloader(volumes, backend))
-                    using (var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Key.Name), blockvolume.Value, m_options))
+                	using (var tmpfile = blockvolume.Value)
+                    using (var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Key.Name), tmpfile, m_options))
                         PatchWithBlocklist(database, blocks, m_options, m_stat, m_blockbuffer);
 
                 // After all blocks in the files are restored, verify the file hash

@@ -690,8 +690,8 @@ namespace Duplicati.Library.Main
                             while (!done && totalsize < m_options.MaxSize)
                             {
                                 using (new Logging.Timer("Multipass " + (vol + 1).ToString()))
-                                using (Utility.TempFile signaturefile = new Duplicati.Library.Utility.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
-                                using (Utility.TempFile contentfile = new Duplicati.Library.Utility.TempFile(System.IO.Path.Combine(tempVolumeFolder, Guid.NewGuid().ToString())))
+                                using (Utility.TempFile signaturefile = Duplicati.Library.Utility.TempFile.CreateInFolder(System.IO.Path.Combine(tempVolumeFolder)))
+                                using (Utility.TempFile contentfile = Duplicati.Library.Utility.TempFile.CreateInFolder(System.IO.Path.Combine(tempVolumeFolder)))
                                 {
                                     OperationProgress(this, DuplicatiOperation.Backup, bs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusCreatingVolume, vol + 1), "");
 

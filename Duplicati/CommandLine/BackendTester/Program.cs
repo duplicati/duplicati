@@ -225,7 +225,7 @@ namespace Duplicati.CommandLine.BackendTester
                     if (!skipOverwriteTest)
                     {
                         Console.WriteLine("Uploading wrong files ...");
-                        using (Library.Utility.TempFile dummy = new Library.Utility.TempFile(CreateRandomFile(tf, files.Count, 1024, 2048, rnd)))
+                        using (Library.Utility.TempFile dummy = Library.Utility.TempFile.WrapExistingFile(CreateRandomFile(tf, files.Count, 1024, 2048, rnd)))
                         {
                             using (System.IO.FileStream fs = new System.IO.FileStream(dummy, System.IO.FileMode.Open, System.IO.FileAccess.Read))
                                 dummyFileHash = sha.ComputeHash(fs);

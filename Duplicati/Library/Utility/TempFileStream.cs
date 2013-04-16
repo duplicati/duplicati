@@ -38,7 +38,7 @@ namespace Duplicati.Library.Utility
         }
 
         public TempFileStream(string file)
-            : this(new TempFile(file))
+            : this(TempFile.WrapExistingFile(file))
         {
         }
 

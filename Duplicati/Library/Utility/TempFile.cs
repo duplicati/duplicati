@@ -30,13 +30,57 @@ namespace Duplicati.Library.Utility
     {
         private string m_path;
         private bool m_protect;
+        
+#if DEBUG
+		//In debug mode, we track the creation of temporary files, and encode the generating method into the name
+		private static object m_lock = new object();
+		private static Dictionary<string, System.Diagnostics.StackTrace> m_fileTrace = new Dictionary<string, System.Diagnostics.StackTrace>();
+		
+		public static System.Diagnostics.StackTrace GetStackTraceForTempFile(string filename)
+		{
+			lock(m_lock)
+				if (m_fileTrace.ContainsKey(filename))
+					return m_fileTrace[filename];
+				else
+					return null;
+		}
+        
+        private static string GenerateUniqueName()
+        {
+			var st = new System.Diagnostics.StackTrace();
+			foreach(var f in st.GetFrames())
+				if (f.GetMethod().DeclaringType.Assembly != typeof(TempFile).Assembly)
+				{
+					var n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.FullName, f.GetMethod().Name, DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmssK"), Guid.NewGuid().ToString().Substring(0, 8));
+					if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
+						n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.Name, f.GetMethod().Name, DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmssK"), Guid.NewGuid().ToString().Substring(0, 8));
+					if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) < 0)
+					{
+						lock(m_lock)
+							m_fileTrace.Add(n, st);
+						return n;
+					}
+				}
+				
+			var s = Guid.NewGuid().ToString();
+			lock(m_lock)
+				m_fileTrace.Add(s, st);
+			return s;			
+        }
 
+#else
+        private static string GenerateUniqueName()
+        {
+			return Guid.NewGuid().ToString();
+        }
+#endif
+        
         public TempFile()
-            : this(System.IO.Path.Combine(TempFolder.SystemTempPath, Guid.NewGuid().ToString()))
+            : this(System.IO.Path.Combine(TempFolder.SystemTempPath, GenerateUniqueName()))
         {
         }
 
-        public TempFile(string path)
+        private TempFile(string path)
         {
             m_path = path;
             m_protect = false;
@@ -63,6 +107,21 @@ namespace Duplicati.Library.Utility
         public static implicit operator TempFile(string path)
         {
             return new TempFile(path);
+        }
+        
+        public static TempFile WrapExistingFile(string path)
+        {
+        	return new TempFile(path);
+        }
+
+        public static TempFile CreateInFolder(string path)
+        {
+        	return new TempFile(System.IO.Path.Combine(path, GenerateUniqueName()));
+        }
+
+        public static TempFile CreateWritePrefix(string prefix)
+        {
+        	return new TempFile(System.IO.Path.Combine(TempFolder.SystemTempPath, prefix + GenerateUniqueName()));
         }
 
         #region IDisposable Members

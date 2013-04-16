@@ -169,8 +169,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 											try 
 											{
 												var p = VolumeBase.ParseFilename(vol.Name);
-												using(var file = backend.Get(vol.Name, vol.Size, vol.Hash))
-												using(var f = new BlockVolumeReader(p.CompressionModule, file, m_options))
+												using(var tmpfile = backend.Get(vol.Name, vol.Size, vol.Hash))
+												using(var f = new BlockVolumeReader(p.CompressionModule, tmpfile, m_options))
 													if (f.ReadBlock(hash, buffer) == size && Convert.ToBase64String(blockhasher.ComputeHash(buffer)) == hash)
 													{
 														w.AddBlock(hash, buffer, size, Duplicati.Library.Interface.CompressionHint.Default);

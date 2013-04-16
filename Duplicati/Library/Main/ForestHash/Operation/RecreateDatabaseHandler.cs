@@ -121,11 +121,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							select new RemoteVolume(n.File) as IRemoteVolume;
 												
                         foreach (var sf in new AsyncDownloader(shadowfiles.ToList(), backend))
+                        using (var tmpfile = sf.Value)
                         {
                             if (sf.Key.Hash != null && sf.Key.Size > 0)
                                 backupdb.UpdateRemoteVolume(sf.Key.Name, RemoteVolumeState.Verified, sf.Key.Size, sf.Key.Hash, tr);
-
-                            using (var svr = new ShadowVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), sf.Value, m_options, hashsize))
+							
+                            using (var svr = new ShadowVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), tmpfile, m_options, hashsize))
                             {
 					        	ForestHash.VerifyParameters(restoredb, m_options);
 
@@ -161,6 +162,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     {
                     	var filelistWork = (from n in filelists select new RemoteVolume(n.File) as IRemoteVolume).ToList();
                     	foreach (var entry in new AsyncDownloader(filelistWork, backend))
+                    	using (var tmpfile = entry.Value)
                         {
                             if (entry.Key.Hash != null && entry.Key.Size > 0)
                                 backupdb.UpdateRemoteVolume(entry.Key.Name, RemoteVolumeState.Verified, entry.Key.Size, entry.Key.Hash, tr);
@@ -168,7 +170,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         	var parsed = VolumeBase.ParseFilename(entry.Key.Name);
 		                    // Create timestamped operations based on the file timestamp
                         	backupdb.CreateFileset(volumeIds[entry.Key.Name], parsed.Time, tr);
-                            using (var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, entry.Value, m_options))
+                            using (var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
                                 foreach (var fe in filenamefilter(filelistreader.Files))
                                 {
                                     if (fe.Type == FilelistEntryType.Folder)
@@ -191,6 +193,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                     }
                                 }
                         }
+                        
                         tr.Commit();
                     }
                 }
@@ -202,7 +205,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 restoredb.FindMissingBlocklistHashes();
 
                 foreach (var sf in new AsyncDownloader(restoredb.GetMissingBlockListVolumes(), backend))
-                    using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), sf.Value, m_options))
+                	using (var tmpfile = sf.Value)
+                    using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), tmpfile, m_options))
                     using (var tr = restoredb.BeginTransaction())
                     {
                     	var volumeid = restoredb.GetRemoteVolumeID(sf.Key.Name);

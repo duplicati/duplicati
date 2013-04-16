@@ -796,7 +796,7 @@ namespace Duplicati.Library.Main
                 if (m_encryption == null)
                     m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
 
-                using (Utility.TempFile raw = new Duplicati.Library.Utility.TempFile(filename))
+                using (Utility.TempFile raw = Duplicati.Library.Utility.TempFile.WrapExistingFile(filename))
                 using (Utility.TempFile enc = new Duplicati.Library.Utility.TempFile())
                 {
                     m_encryption.Encrypt(raw, enc);
@@ -1316,7 +1316,7 @@ namespace Duplicati.Library.Main
                         if (!string.IsNullOrEmpty(remote.EncryptionMode))
                             tempfile = new Duplicati.Library.Utility.TempFile();
                         else
-                            tempfile = new Duplicati.Library.Utility.TempFile(filename);
+                            tempfile = Duplicati.Library.Utility.TempFile.WrapExistingFile(filename);
 
                         ResetBackend();
                         m_statistics.AddNumberOfRemoteCalls(1);
@@ -1380,7 +1380,7 @@ namespace Duplicati.Library.Main
                             tempfile.Dispose(); //Remove the encrypted file
 
                             //Wrap the new file as a temp file
-                            tempfile = new Duplicati.Library.Utility.TempFile(filename);
+                            tempfile = Duplicati.Library.Utility.TempFile.WrapExistingFile(filename);
                         }
 
 

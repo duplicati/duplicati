@@ -225,7 +225,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		                if (m_shadowvolume != null)
 		                {
 			                m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename, m_transaction);
-			                m_shadowvolume.FinishVolume(null, 0);
+			                m_shadowvolume.FinishVolume(null, -1);
 		                }
 		            }
 									
@@ -486,8 +486,16 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 	if (m_options.FhDryrun)
                 	{
                 		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
+                		m_blockvolume.Dispose();
+                		m_blockvolume = null;
+                		
                 		if (m_shadowvolume != null)
+                		{
+                			m_shadowvolume.FinishVolume(Utility.Utility.CalculateHash(m_shadowvolume.LocalFilename), new FileInfo(m_shadowvolume.LocalFilename).Length);
                 			m_stat.LogMessage("[Dryrun] Would upload shadow volume: {0}, size: {1}", m_shadowvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_shadowvolume.LocalFilename).Length));
+                			m_shadowvolume.Dispose();
+                			m_shadowvolume = null;
+                		}
                 	}
                 	else
                 	{
@@ -505,10 +513,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                	m_transaction = m_database.BeginTransaction();
 	                	
 	                    m_backend.Put(m_blockvolume, m_shadowvolume);
+	                    m_blockvolume = null;
+	                    m_shadowvolume = null;
 	                }
-	                    
                     
-					
                     m_blockvolume = new BlockVolumeWriter(m_options);
 					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
 					

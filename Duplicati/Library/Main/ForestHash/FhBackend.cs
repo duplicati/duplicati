@@ -84,12 +84,13 @@ namespace Duplicati.Library.Main.ForestHash
                 return (TempFile)this.Result;
             }
 
-            public void Encrypt(Library.Interface.IEncryption encryption)
+            public void Encrypt(Library.Interface.IEncryption encryption, CommunicationStatistics stat)
             {
                 if (encryption != null && !this.Encrypted)
                 {
                     var sourcefile = this.LocalFilename + "." + encryption.FilenameExtension;
                     encryption.Encrypt(this.LocalFilename, sourcefile);
+                    this.DeleteLocalFile(stat);
                     this.LocalFilename = sourcefile;
                     this.Hash = null;
                     this.Size = 0;
@@ -113,6 +114,18 @@ namespace Duplicati.Library.Main.ForestHash
                 }
 
                 return false;
+            }
+            
+            public void DeleteLocalFile(CommunicationStatistics stat)
+            {
+            	try 
+            	{ 
+            		System.IO.File.Delete(this.LocalFilename); 
+            	}
+            	catch (Exception ex) 
+            	{ 
+            		stat.LogError(string.Format("Failed to delete local file \"{0}\": {1}", this.LocalFilename, ex.Message), ex); 
+            	}
             }
         }
         
@@ -315,6 +328,10 @@ namespace Duplicati.Library.Main.ForestHash
                     if (lastException != null)
                     {
                         m_lastException = lastException;
+                        if (item.Operation == OperationType.Put)
+                        	item.DeleteLocalFile(m_stats);
+
+						//TODO: If there are temp files in the queue, we must delete them
                         m_queue.SetCompleted();
                     }
 
@@ -330,7 +347,7 @@ namespace Duplicati.Library.Main.ForestHash
 
         private void DoPut(FileEntryItem item)
         {
-            item.Encrypt(m_encryption);
+            item.Encrypt(m_encryption, m_stats);
             if (item.UpdateHashAndSize(m_options))
             	m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
@@ -359,6 +376,7 @@ namespace Duplicati.Library.Main.ForestHash
             if (!m_options.QuietConsole)
             	m_stats.LogMessage("Uploaded file {0} with size {1}", item.RemoteFilename, Utility.Utility.FormatSizeString(item.Size));
 
+			item.DeleteLocalFile(m_stats);
             m_stats.AddBytesUploaded(item.Size);
         }
 
@@ -411,12 +429,13 @@ namespace Duplicati.Library.Main.ForestHash
                 // Decrypt before returning
                 if (!m_options.NoEncryption)
                 {
-                    Utility.TempFile tmpfile2 = tmpfile;
-
                     try
                     {
-                        tmpfile = new Utility.TempFile();
-                        m_encryption.Decrypt(tmpfile2, tmpfile);
+                        using(var tmpfile2 = tmpfile)
+                        { 
+                        	tmpfile = new Utility.TempFile();
+                        	m_encryption.Decrypt(tmpfile2, tmpfile);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -425,11 +444,6 @@ namespace Duplicati.Library.Main.ForestHash
                             throw;
                         else
                             throw new System.Security.Cryptography.CryptographicException(ex.Message, ex);
-                    }
-                    finally
-                    {
-                        if (tmpfile2 != null)
-                            tmpfile2.Dispose();
                     }
                 }
 

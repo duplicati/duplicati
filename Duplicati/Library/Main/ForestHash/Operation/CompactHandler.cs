@@ -108,15 +108,15 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 						var volumesToDownload = (from v in remoteList
 									   where report.CompactableVolumes.Contains(v.Name) 
 									   select (IRemoteVolume)v).ToList();
-						var downloader = new AsyncDownloader(volumesToDownload, backend);
 						
 						using(var q = db.CreateBlockQueryHelper(m_options, transaction))
 						{
-							foreach(var entry in downloader)
+							foreach (var entry in new AsyncDownloader(volumesToDownload, backend))
+							using (var tmpfile = entry.Value)
 							{
 								downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Key.Name, entry.Key.Size));
 								var inst = VolumeBase.ParseFilename(entry.Key.Name);
-								using(var f = new BlockVolumeReader(inst.CompressionModule, entry.Value, m_options))
+								using(var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
 								{
 									foreach(var e in f.Blocks)
 									{

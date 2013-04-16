@@ -427,6 +427,24 @@ namespace Duplicati.CommandLine
                         }
                     }
                 }   
+                
+                foreach(string s in Utility.EnumerateFiles(tempdir))
+                {
+                	if (options.ContainsKey("fh-dbpath") && s == options["fh-dbpath"])
+                		continue;
+                	if (s.StartsWith(Utility.AppendDirSeparator(tf)))
+                		continue;
+                		
+                	Log.WriteMessage(string.Format("Found left-over temp file: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
+                	Console.WriteLine("Found left-over temp file: {0} -> {1}", s.Substring(tempdir.Length), TempFile.GetStackTraceForTempFile(System.IO.Path.GetFileName(s)));
+                }
+                
+                foreach(string s in Utility.EnumerateFolders(tempdir))
+                	if (!s.StartsWith(Utility.AppendDirSeparator(tf)) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tf) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tempdir))
+                	{
+                		Log.WriteMessage(string.Format("Found left-over temp folder: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
+                		Console.WriteLine("Found left-over temp folder: {0}", s.Substring(tempdir.Length));
+                	}
             }
 
             (Log.CurrentLog as StreamLog).Dispose();

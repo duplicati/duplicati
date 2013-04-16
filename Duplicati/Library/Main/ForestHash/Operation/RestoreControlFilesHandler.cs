@@ -46,7 +46,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                        if (!db.GetRemoteVolume(file.Name, out hash, out size, out type, out state))
 	                            size = file.Size;
 	
-	                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), backend.Get(file.Name, size, hash), m_options))
+							using (var tmpfile = backend.Get(file.Name, size, hash))
+	                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
 	                            foreach (var cf in tmp.ControlFiles)
 	                                using (var ts = System.IO.File.Create(System.IO.Path.Combine(m_target, cf.Key)))
 	                                    Utility.Utility.CopyStream(cf.Value, ts);

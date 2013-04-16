@@ -50,7 +50,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     throw new Exception("No filesets found on remote target");
 
                 List<string> res;
-                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(fileset.File.Name), backend.Get(fileset.File.Name, fileset.File.Size, null), m_options))
+                using (var tmpfile = backend.Get(fileset.File.Name, fileset.File.Size, null))
+                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(fileset.File.Name), tmpfile, m_options))
                     res = (from n in rd.Files
                             select n.Path).ToList();
                             
