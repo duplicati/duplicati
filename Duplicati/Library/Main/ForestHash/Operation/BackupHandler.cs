@@ -163,60 +163,60 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		            m_database.VerifyConsistency();
 		            m_database.UpdateChangeStatistics(m_stat);
 							
-		            if (m_stat.AddedFiles > 0 || m_stat.ModifiedFiles > 0 || m_otherchanges > 0)
-		            {
-	 	                if (m_blockvolume.SourceSize > 0)
-		                {
-		 					lastVolumeSize = m_blockvolume.SourceSize;
-		 					
-		                	if (m_options.FhDryrun)
-		                	{
-		                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
-		                		if (m_shadowvolume != null)
-		                			m_stat.LogMessage("[Dryrun] Would upload shadow volume: {0}, size: {1}", m_shadowvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_shadowvolume.LocalFilename).Length));
-		                	}
-		                	else
-		                	{
-		                		m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-		                		m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-		                		if (m_shadowvolume != null)
-		                			m_database.UpdateRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-		                		
-		                		m_transaction.Commit();
-		                		m_transaction = m_database.BeginTransaction();
-		                		
-		                    	m_backend.Put(m_blockvolume, m_shadowvolume);
-		                    }
-		                }
-		                else
-		                {
-		                    m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename, m_transaction);
-		                    if (m_shadowvolume != null)
-		                    {
-			                    m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename, m_transaction);
-			                    m_shadowvolume.FinishVolume(null, 0);
-		                    }
-		                }
-	
-						if (lastVolumeSize > 0)
-						{
-		                    if (!string.IsNullOrEmpty(m_options.SignatureControlFiles))
-		                        foreach (var p in m_options.SignatureControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-		                            m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
-		
-		                    m_database.WriteFileset(m_filesetvolume, m_transaction);
-		                	if (m_options.FhDryrun)
-		                		m_stat.LogMessage("[Dryrun] Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length));
-		                	else
-		                	{
-		                		m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-		                    	m_backend.Put(m_filesetvolume);
-		                    }
+ 	                if (m_blockvolume.SourceSize > 0)
+	                {
+	 					lastVolumeSize = m_blockvolume.SourceSize;
+	 					
+	                	if (m_options.FhDryrun)
+	                	{
+	                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
+	                		if (m_shadowvolume != null)
+	                		{
+	                			m_shadowvolume.FinishVolume(Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
+	                			m_stat.LogMessage("[Dryrun] Would upload shadow volume: {0}, size: {1}", m_shadowvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_shadowvolume.LocalFilename).Length));
+	                		}
 	                	}
 	                	else
 	                	{
-	                		m_database.RemoveRemoteVolume(m_filesetvolume.RemoteFilename, m_transaction);
-	                	}
+	                		m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+	                		if (m_shadowvolume != null)
+	                			m_database.UpdateRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+	                		
+	                		m_transaction.Commit();
+	                		m_transaction = m_database.BeginTransaction();
+	                		
+	                    	m_backend.Put(m_blockvolume, m_shadowvolume);
+	                    }
+	                }
+	                else
+	                {
+	                    m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename, m_transaction);
+	                    if (m_shadowvolume != null)
+	                    {
+		                    m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename, m_transaction);
+		                    m_shadowvolume.FinishVolume(null, 0);
+	                    }
+	                }
+		            
+		            //Changes in the filelist triggers a filelist upload
+		            if (
+		            	m_stat.AddedFiles + m_stat.ModifiedFiles + m_stat.DeletedFiles +
+		            	m_stat.AddedFolders + m_stat.ModifiedFolders + m_stat.DeletedFolders +
+		            	m_stat.AddedSymlinks + m_stat.ModifiedSymlinks + m_stat.DeletedSymlinks +
+		            	m_otherchanges > 0)
+		            {
+	                    if (!string.IsNullOrEmpty(m_options.SignatureControlFiles))
+	                        foreach (var p in m_options.SignatureControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+	                            m_filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+	
+	                    m_database.WriteFileset(m_filesetvolume, m_transaction);
+	                	if (m_options.FhDryrun)
+	                		m_stat.LogMessage("[Dryrun] Would upload fileset volume: {0}, size: {1}", m_filesetvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_filesetvolume.LocalFilename).Length));
+	                	else
+	                	{
+	                		m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+	                    	m_backend.Put(m_filesetvolume);
+	                    }
 		            }
 		            else
 		            {
