@@ -41,6 +41,9 @@ namespace Duplicati.CommandLine
         {
 			private string m_backupset;
 			
+			public static long WarningCount = 0;
+			public static long ErrorCount = 0;
+			
             public string Backupset 
 			{ 
 				get { return m_backupset; }
@@ -55,6 +58,10 @@ namespace Duplicati.CommandLine
 
             public override void WriteMessage(string message, LogMessageType type, Exception exception)
             {
+            	if (type == LogMessageType.Error)
+            		System.Threading.Interlocked.Increment(ref ErrorCount);
+            	else if (type == LogMessageType.Warning)
+            		System.Threading.Interlocked.Increment(ref WarningCount);
                 base.WriteMessage(this.Backupset + ", " + message, type, exception);
             }
         }
@@ -449,6 +456,13 @@ namespace Duplicati.CommandLine
 
             (Log.CurrentLog as StreamLog).Dispose();
             Log.CurrentLog = null;
+            
+            if (LogHelper.ErrorCount > 0)
+        		Console.WriteLine("Unittest completed, but with {0} errors, see logfile for details", LogHelper.ErrorCount);
+            else if (LogHelper.WarningCount > 0)
+        		Console.WriteLine("Unittest completed, but with {0} warnings, see logfile for details", LogHelper.WarningCount);
+        	else
+        		Console.WriteLine("Unittest completed successfully - Have some cake!");            	
         }
 
         private static void VerifyPartialRestore(string source, IEnumerable<string> testfiles, string[] actualfolders, string tempfolder, string rootfolder)
