@@ -94,6 +94,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         public void Run()
         {
         	ForestHash.VerifyParameters(m_database, m_options);
+            m_database.VerifyConsistency();
         	    
 			var lastVolumeSize = -1L;
 			m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
