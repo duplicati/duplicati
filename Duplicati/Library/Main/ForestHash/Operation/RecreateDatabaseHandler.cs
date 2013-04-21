@@ -220,10 +220,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                             blockprocessor(sf.Key.Name, rd);
                     }
 
-                //All done, we must verify that we have all blocklist fully intact
-                restoredb.VerifyDatabaseIntegrity();
-
 				backend.WaitForComplete(restoredb, null);
+
+                //All done, we must verify that we have all blocklist fully intact
+                // if this fails, the db will not be deleted, so it can be used,
+                // except to continue a backup
+                restoredb.VerifyConsistency(null);
+
             }
         }
 

@@ -93,17 +93,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
             }
         }
 
-        public void VerifyDatabaseIntegrity()
-        {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                cmd.CommandText = @"SELECT COUNT(*) FROM (SELECT SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"", ""BlocksetEntry"".""BlocksetID"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Blockset"".""ID"" = ""BlocksetEntry"".""BlocksetID"" GROUP BY ""BlocksetEntry"".""BlocksetID"") WHERE ""CalcLen"" != ""Length""";
-                var c = Convert.ToInt64(cmd.ExecuteScalar());
-                if (c != 0)
-                    throw new InvalidDataException("Inconsistency detected, not all blocklists were restored correctly");
-            }
-        }
-
         public override void Dispose()
         {
             base.Dispose();

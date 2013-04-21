@@ -94,7 +94,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         public void Run()
         {
         	ForestHash.VerifyParameters(m_database, m_options);
-            m_database.VerifyConsistency();
+            m_database.VerifyConsistency(null);
         	    
 			var lastVolumeSize = -1L;
 			m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
@@ -160,10 +160,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                    using (m_snapshot = GetSnapshot(m_sources, m_options, m_stat))
 	                        m_snapshot.EnumerateFilesAndFolders(this.HandleFilesystemEntry);
 	                }
-		
-		            m_database.VerifyConsistency();
-		            m_database.UpdateChangeStatistics(m_stat);
-							
+									
  	                if (m_blockvolume.SourceSize > 0)
 	                {
 	 					lastVolumeSize = m_blockvolume.SourceSize;
@@ -199,6 +196,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                    }
 	                }
 		            
+		            m_database.UpdateChangeStatistics(m_stat);
+		            m_database.VerifyConsistency(m_transaction);
+
 		            //Changes in the filelist triggers a filelist upload
 		            if (
 		            	m_stat.AddedFiles + m_stat.ModifiedFiles + m_stat.DeletedFiles +
@@ -231,7 +231,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		            }
 									
 		            m_backend.WaitForComplete(m_database, m_transaction);
-		            
+
 		            if (lastVolumeSize < m_options.VolumeSize - m_options.FhVolsizeTolerance && !m_options.FhNoAutoCompact && (m_options.Force || m_options.FhDryrun))
 		            	using(var ch = new CompactHandler(m_backend.BackendUrl, m_options, m_stat))
 	            		using(var db = new LocalDeleteDatabase(m_database))

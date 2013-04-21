@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace Duplicati.Library.Main.ForestHash.Database
 {
@@ -452,6 +453,33 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				}
 			}
 		}
+
+        public void VerifyConsistency(System.Data.IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+            	cmd.Transaction = transaction;
+                using(var rd = cmd.ExecuteReader(@"SELECT * FROM (SELECT SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"", ""Blockset"".""ID"", ""File"".""Path"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"", ""File"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Blockset"".""ID"" = ""BlocksetEntry"".""BlocksetID"" AND ""File"".""BlocksetID"" = ""Blockset"".""ID"" GROUP BY ""Blockset"".""ID"", ""File"".""ID"") WHERE ""CalcLen"" != ""Length"" "))
+                	if (rd.Read())
+                	{
+                		var sb = new StringBuilder();
+                		sb.AppendLine("Found inconsistency in the following files while validating database: ");
+                		var c = 0;
+                		do
+                		{
+                			if (c < 5)
+                				sb.AppendFormat("{0}, actual size {1}, dbsize {2}, blocksetid: {3}{4}", rd.GetValue(3), rd.GetValue(1), rd.GetValue(0), rd.GetValue(2), Environment.NewLine);
+                			c++;
+                		} while(rd.Read());
+                		
+                		c -= 5;
+                		if (c > 0)
+                			sb.AppendFormat("... and {0} more", c);
+                		
+	                    throw new InvalidDataException(sb.ToString());
+                	}
+            }
+        }
 
         public virtual void Dispose()
         {
