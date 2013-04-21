@@ -241,6 +241,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The restore process will stop if errors are detected to avoid restores with invalid data. Use this option to make Duplicati continue, even if some data is missing.
+        /// </summary>
+        internal static string BesteffortrestoreLong {
+            get {
+                return ResourceManager.GetString("BesteffortrestoreLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restore with errors.
+        /// </summary>
+        internal static string BesteffortrestoreShort {
+            get {
+                return ResourceManager.GetString("BesteffortrestoreShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This property can be used to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}..
         /// </summary>
         internal static string CompressionextensionfileLong {

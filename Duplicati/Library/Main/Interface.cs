@@ -1436,6 +1436,17 @@ namespace Duplicati.Library.Main
                                                  hasFiles = true;
                                                  rs.LogError(string.Format(Strings.Interface.FileHashFailure, hme.Message), hme);
                                              }
+                                             catch(Exception ex)
+                                             {
+                                                if (m_options.BestEffortRestore)
+                                                {
+                                                    //Assume that we need something here
+                                                    hasFiles = true;
+                                                    rs.LogWarning(string.Format(Strings.Interface.SignatureDownloadBestEffortError, signatureVol.Filename, ex.Message), ex);
+                                                }
+                                                else
+                                                    throw;
+                                             }
 
                                              if (!hasFiles)
                                                  using (CompressionWrapper patch = CompressionWrapper.GetModule(signatureVol.Compression, sigFile, m_options.RawOptions))
@@ -1459,16 +1470,26 @@ namespace Duplicati.Library.Main
                                          }
                                     }
 
-                                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
+                                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
 
-                                    using (new Logging.Timer("Get " + contentVol.Filename))
-                                        backend.Get(contentVol, manifest, patchzip, manifest.ContentHashes == null ? null : manifest.ContentHashes[contentVol.Volumenumber - 1]);
-
-                                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
-                                    
-                                    using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
-                                    using (CompressionWrapper patch = CompressionWrapper.GetModule(contentVol.Compression, patchzip, m_options.RawOptions))
-                                        sync.Patch(target, patch);
+                                    try
+                                    {
+                                        using (new Logging.Timer("Get " + contentVol.Filename))
+                                            backend.Get(contentVol, manifest, patchzip, manifest.ContentHashes == null ? null : manifest.ContentHashes[contentVol.Volumenumber - 1]);
+    
+                                        OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
+                                        
+                                        using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
+                                        using (CompressionWrapper patch = CompressionWrapper.GetModule(contentVol.Compression, patchzip, m_options.RawOptions))
+                                            sync.Patch(target, patch);
+                                    }
+                                    catch(Exception ex)
+                                    {
+                                        if (m_options.BestEffortRestore)
+                                            rs.LogWarning(string.Format(Strings.Interface.PatchProcessingBestEffortError, contentVol.Filename, ex.Message), ex);
+                                        else
+                                            throw;
+                                    }
                                 }
                                 patchno++;
                             }
