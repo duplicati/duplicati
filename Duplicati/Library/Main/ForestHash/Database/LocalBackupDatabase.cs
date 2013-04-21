@@ -342,6 +342,8 @@ namespace Duplicati.Library.Main.ForestHash.Database
             {
                 m_findblocksetCommand.Transaction = transaction;
                 r = m_findblocksetCommand.ExecuteScalar(null, filehash, size);
+                if (r != null && r != DBNull.Value)
+                	return false; //Found it
             }
                 
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
