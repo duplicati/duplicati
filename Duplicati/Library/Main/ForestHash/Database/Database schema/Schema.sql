@@ -5,7 +5,7 @@ for later debug inspection, and can be
 used to map log messages to an operation
 */
 CREATE TABLE "Operation" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"Description" TEXT NOT NULL,
 	"Timestamp" DATETIME NOT NULL
 );
@@ -15,7 +15,7 @@ The remote volumes table keeps track
 of the state of all known volumes
 */
 CREATE TABLE "Remotevolume" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"OperationID" INTEGER NOT NULL,
 	"Name" TEXT NOT NULL,
 	"Type" TEXT NOT NULL,
@@ -42,7 +42,7 @@ The fileset collects all files belonging to
 a particular backup, and thus a remote Fileset
 */
 CREATE TABLE "Fileset" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"OperationID" INTEGER NOT NULL,
 	"VolumeID" INTEGER NOT NULL,
 	"Timestamp" DATETIME NOT NULL
@@ -67,7 +67,7 @@ for each path and each version
 of the data and metadata
 */
 CREATE TABLE "File" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"Path" TEXT NOT NULL,
 	"BlocksetID" INTEGER NOT NULL,
 	"MetadataID" INTEGER NOT NULL
@@ -97,7 +97,7 @@ blob when reconstructed
 
 */
 CREATE TABLE "Blockset" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"Length" INTEGER NOT NULL,
 	"FullHash" TEXT NOT NULL
 );
@@ -120,7 +120,7 @@ mapped to the containing file
 */
 
 CREATE TABLE "Block" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
     "Hash" TEXT NOT NULL,
 	"Size" INTEGER NOT NULL,
 	"VolumeID" INTEGER NOT NULL
@@ -132,7 +132,7 @@ mapped to the containing file,
 used for wasted space computations
 */
 CREATE TABLE "DeletedBlock" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
     "Hash" TEXT NOT NULL,
 	"Size" INTEGER NOT NULL,
 	"VolumeID" INTEGER NOT NULL
@@ -144,7 +144,7 @@ A metadata set, essentially a placeholder
 to easily extend metadatasets with new properties
 */
 CREATE TABLE "Metadataset" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"BlocksetID" INTEGER NOT NULL
 );
 
@@ -154,7 +154,7 @@ intended to be used when constructing
 an error report or when debugging
 */
 CREATE TABLE "RemoteOperation" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"OperationID" INTEGER NOT NULL,
 	"Timestamp" DATETIME NOT NULL,
 	"Operation" TEXT NOT NULL,
@@ -168,7 +168,7 @@ constructing an error report or when
 debugging
 */
 CREATE TABLE "LogData" (
-	"ID" INTEGER PRIMARY KEY,
+	"ID" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"OperationID" INTEGER NOT NULL,
 	"Timestamp" DATETIME NOT NULL,
 	"Type" TEXT NOT NULL,
@@ -180,7 +180,7 @@ CREATE TABLE "LogData" (
 Internal version tracking
 */
 CREATE TABLE "Version" (
-    "ID" INTEGER PRIMARY KEY,
+    "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
     "Version" INTEGER NOT NULL
 );
 
