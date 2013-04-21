@@ -375,4 +375,10 @@
   <data name="MissingFilesDetected" xml:space="preserve">
     <value>The manifest file {0} specifies that there should be {1} volume pairs, but the following pairs were not found: {2}</value>
   </data>
+  <data name="SignatureDownloadBestEffortError" xml:space="preserve">
+    <value>Failed to download signature file {0}, error message: {1}</value>
+  </data>
+  <data name="PatchProcessingBestEffortError" xml:space="preserve">
+    <value>Failed to apply content file {0}, error message: {1}</value>
+  </data>
 </root>

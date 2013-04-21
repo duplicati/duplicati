@@ -295,7 +295,8 @@ namespace Duplicati.Library.Main
                     "skip-file-hash-checks",
                     "dont-read-manifests",
                     "file-to-restore",
-                    "restore-time"
+                    "restore-time",
+                    "best-effort-restore"
                 };
             }
         }
@@ -331,6 +332,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("signature-cache-path", CommandLineArgument.ArgumentType.Path, Strings.Options.SignaturecachepathShort, Strings.Options.SignaturecachepathLong),
                     new CommandLineArgument("skip-file-hash-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipfilehashchecksShort, Strings.Options.SkipfilehashchecksLong),
                     new CommandLineArgument("dont-read-manifests", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontreadmanifestsShort, Strings.Options.DontreadmanifestsLong),
+                    new CommandLineArgument("best-effort-restore", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BesteffortrestoreShort, Strings.Options.BesteffortrestoreLong),
                     new CommandLineArgument("file-to-restore", CommandLineArgument.ArgumentType.String, Strings.Options.FiletorestoreShort, Strings.Options.FiletorestoreLong),
                     new CommandLineArgument("restore-time", CommandLineArgument.ArgumentType.String, Strings.Options.RestoretimeShort, Strings.Options.RestoretimeLong, "now"),
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
@@ -581,6 +583,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if the manifest files are not read
         /// </summary>
         public bool DontReadManifests { get { return GetBool("dont-read-manifests"); } }
+
+        /// <summary>
+        /// A value indicating if the restore continues, even if errors occur
+        /// </summary>
+        public bool BestEffortRestore { get { return GetBool("best-effort-restore"); } }
 
         /// <summary>
         /// A value indicating if the source folder is allowed to change

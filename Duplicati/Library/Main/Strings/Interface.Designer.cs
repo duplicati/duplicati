@@ -412,6 +412,15 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to apply content file {0}, error message: {1}.
+        /// </summary>
+        internal static string PatchProcessingBestEffortError {
+            get {
+                return ResourceManager.GetString("PatchProcessingBestEffortError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The manifest file {0} indicates that the previous manifest file should be {1} but it was {2}.
         /// </summary>
         internal static string PreviousManifestFilenameMismatchError {
@@ -471,6 +480,15 @@ namespace Duplicati.Library.Main.Strings {
         internal static string SignatureCachePathMissingError {
             get {
                 return ResourceManager.GetString("SignatureCachePathMissingError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to download signature file {0}, error message: {1}.
+        /// </summary>
+        internal static string SignatureDownloadBestEffortError {
+            get {
+                return ResourceManager.GetString("SignatureDownloadBestEffortError", resourceCulture);
             }
         }
         

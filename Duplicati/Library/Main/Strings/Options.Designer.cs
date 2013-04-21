@@ -223,6 +223,25 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+
+       ///   Looks up a localized string similar to The restore process will stop if errors are detected to avoid restores with invalid data. Use this option to make Duplicati continue, even if some data is missing.
+        /// </summary>
+        internal static string BesteffortrestoreLong {
+            get {
+                return ResourceManager.GetString("BesteffortrestoreLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restore with errors.
+        /// </summary>
+        internal static string BesteffortrestoreShort {
+            get {
+                return ResourceManager.GetString("BesteffortrestoreShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicati supports plugable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module..
         /// </summary>
         internal static string CompressionmoduleLong {
