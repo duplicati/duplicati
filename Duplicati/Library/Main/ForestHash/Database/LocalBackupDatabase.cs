@@ -758,9 +758,25 @@ namespace Duplicati.Library.Main.ForestHash.Database
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                var c = Convert.ToInt64(cmd.ExecuteScalar(@"SELECT COUNT(*) FROM (SELECT SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"", ""BlocksetEntry"".""BlocksetID"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Blockset"".""ID"" = ""BlocksetEntry"".""BlocksetID"" GROUP BY ""BlocksetEntry"".""BlocksetID"") WHERE ""CalcLen"" != ""Length"""));
-                if (c != 0)
-                    throw new InvalidDataException("Inconsistency detected, not all blocklists were restored correctly");
+                using(var rd = cmd.ExecuteReader(@"SELECT * FROM (SELECT SUM(""Block"".""Size"") AS ""CalcLen"", ""Blockset"".""Length"" AS ""Length"", ""Blockset"".""ID"", ""File"".""Path"" FROM ""Block"", ""BlocksetEntry"", ""Blockset"", ""File"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Blockset"".""ID"" = ""BlocksetEntry"".""BlocksetID"" AND ""File"".""BlocksetID"" = ""Blockset"".""ID"" GROUP BY ""Blockset"".""ID"", ""File"".""ID"") WHERE ""CalcLen"" != ""Length"" "))
+                	if (rd.Read())
+                	{
+                		var sb = new StringBuilder();
+                		sb.AppendLine("Found inconsistency in the following files while validating database: ");
+                		var c = 0;
+                		do
+                		{
+                			if (c < 5)
+                				sb.AppendFormat("{0}, actual size {1}, dbsize {2}, blocksetid: {3}{4}", rd.GetValue(3), rd.GetValue(1), rd.GetValue(0), rd.GetValue(2), Environment.NewLine);
+                			c++;
+                		} while(rd.Read());
+                		
+                		c -= 5;
+                		if (c > 0)
+                			sb.AppendFormat("... and {0} more", c);
+                		
+	                    throw new InvalidDataException(sb.ToString());
+                	}
             }
         }
 
