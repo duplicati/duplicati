@@ -119,7 +119,11 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Verifies the hashes and backup chain
         /// </summary>
-        Verify
+        Verify,
+        /// <summary>
+        /// Creates a log of the database suitable for attaching to a bug report
+        /// </summary>
+        CreateLogDb
     }
 
     /// <summary>
@@ -3081,6 +3085,16 @@ namespace Duplicati.Library.Main
             {
             	i.SetupCommonOptions(stat);
 	            return ForestHash.ForestHash.DeleteFilesets(target, filesets, options, stat);
+            }
+        }
+
+        public static string CreateLogDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
+        {
+            stat = stat ?? new CommunicationStatistics(DuplicatiOperationMode.CreateLogDb);
+            using(var i = new Interface(target, options))
+            {
+            	i.SetupCommonOptions(stat);
+	            return ForestHash.ForestHash.CreateLogDatabase(target, options, stat);
             }
         }
     }

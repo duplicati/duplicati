@@ -170,6 +170,8 @@
     <Compile Include="ForestHash\Database\RestoreIterators.cs" />
     <Compile Include="ForestHash\Database\LocalCleanupDatabase.cs" />
     <Compile Include="ForestHash\AsyncDownloader.cs" />
+    <Compile Include="ForestHash\Database\LocalBugReportDatabase.cs" />
+    <Compile Include="ForestHash\Operation\CreateBugReportHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">

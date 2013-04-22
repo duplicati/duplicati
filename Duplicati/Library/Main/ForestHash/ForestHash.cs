@@ -297,5 +297,14 @@ namespace Duplicati.Library.Main.ForestHash
             }
 		}
 
+		public static string CreateLogDatabase(string target, Dictionary<string, string> options, CommunicationStatistics stat)
+		{
+        	var opts = new FhOptions(options);        		
+            using(var h = new Operation.CreateBugReportHandler(target, opts, stat))
+            	h.Run();
+            	
+            return "Create db Completed! Please verify that the database contains no sensitive information before sending!";
+		}
+
     }
 }

@@ -456,6 +456,24 @@ namespace Duplicati.CommandLine
 					
                     Console.WriteLine(Duplicati.Library.Main.Interface.RecreateDatabase(cargs[0], options, null));
                 }                
+                else if (source.Trim().ToLower() == "create-bugreport-database")
+                {
+                    cargs.RemoveAt(0);
+
+                    if (cargs.Count != 1)
+                    {
+                        PrintWrongNumberOfArguments(cargs, 1);
+                        return 200;
+                    }
+
+					if (!options.ContainsKey("fh-dbpath"))
+					{
+						PrintRequiresFhDb(source);
+						return 200;
+					}	
+					
+                    Console.WriteLine(Duplicati.Library.Main.Interface.CreateLogDatabase(cargs[0], options, null));
+                }                
                 else if (source.Trim().ToLower() == "find-last-version")
                 {
                     cargs.RemoveAt(0);
