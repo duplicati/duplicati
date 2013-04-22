@@ -15,7 +15,7 @@ See duplicati.commandline.exe help <topic> for more information.
   
   Commands: backup, restore, delete-all-but-n-full, delete-all-but-n, cleanup, delete-older-than, list, list-current-files, list-source-folders, list-actual-signature-files, collection-status, create-folder, find-last-version, verify
   
-  ForestHash Commands: cleanup, compact, delete-filesets
+  ForestHash Commands: cleanup, compact, delete-filesets, recreate-database, create-bugreport-database
   
   Debugging: debug, logging
   
