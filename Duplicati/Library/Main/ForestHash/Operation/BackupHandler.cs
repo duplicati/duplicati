@@ -257,7 +257,14 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	    	finally
 	    	{
 	    		if (m_transaction != null)
-	    			m_transaction.Rollback();
+	    			try 
+	    			{
+	    				m_transaction.Rollback();
+	    			}
+	    			catch (Exception ex)
+	    			{
+	    				m_stat.LogError(string.Format("Rollback error: {0}", ex.Message), ex);
+	    			}
 	    	} 
         }
 
