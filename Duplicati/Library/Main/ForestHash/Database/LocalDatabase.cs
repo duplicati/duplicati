@@ -131,8 +131,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
            		RemoveRemoteVolume(name, transaction);
         }
         
-        public long GetRemoteVolumeID(string file)
+        public long GetRemoteVolumeID(string file, System.Data.IDbTransaction transaction = null)
 		{
+			m_selectremotevolumeIdCommand.Transaction = transaction;
 			var o = m_selectremotevolumeIdCommand.ExecuteScalar(null, file);
 			if (o == null || o == DBNull.Value)
 				return -1;
@@ -217,21 +218,25 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
         {
+
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             using (var deletecmd = m_connection.CreateCommand())
             {
                 deletecmd.Transaction = tr.Parent;
-
+            	var volumeid = GetRemoteVolumeID(name, tr.Parent);
+                
 				// If the volume is a block volume, this will update the crosslink table, otherwise nothing will happen
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""ShadowBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?) ", name);
-
-				deletecmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
-				deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN (SELECT DISTINCT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ID FROM ""RemoteVolume"" WHERE ""Name"" = ?)))", name);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""ShadowBlockLink"" WHERE ""BlockVolumeID"" = ? ", volumeid);
 				
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN (SELECT DISTINCT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN (SELECT DISTINCT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?)", name);
+				var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?)";
+
+				deletecmd.ExecuteNonQuery(@"UPDATE ""File"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN " + subQuery, volumeid);
+				deletecmd.ExecuteNonQuery(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = -1 WHERE ""BlocksetID"" IN " + subQuery, volumeid);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN " + subQuery, volumeid);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN " + subQuery, volumeid);
+				
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" = ?", volumeid);
 				
 
                 ((System.Data.IDataParameter)m_removeremotevolumeCommand.Parameters[0]).Value = name;
