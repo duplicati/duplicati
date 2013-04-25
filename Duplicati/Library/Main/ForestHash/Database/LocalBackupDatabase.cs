@@ -797,13 +797,13 @@ namespace Duplicati.Library.Main.ForestHash.Database
         
         private long GetPreviousFilesetID(System.Data.IDbCommand cmd)
         {
-            long lastOperationId = -1;
+            long lastFilesetId = -1;
 
-            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? ORDER BY ""Timestamp"" DESC ", OperationTimestamp);
+            var lastIdObj = cmd.ExecuteScalar(@"SELECT ""ID"" FROM ""Fileset"" WHERE ""Timestamp"" < ? AND ""ID"" != ? ORDER BY ""Timestamp"" DESC ", OperationTimestamp, m_filesetId);
             if (lastIdObj != null && lastIdObj != DBNull.Value)
-                lastOperationId = Convert.ToInt64(lastIdObj);
+                lastFilesetId = Convert.ToInt64(lastIdObj);
                 
-            return lastOperationId;
+            return lastFilesetId;
         }
 
         internal void UpdateChangeStatistics (BackupStatistics m_stat)
