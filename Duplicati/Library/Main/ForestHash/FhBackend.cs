@@ -314,13 +314,32 @@ namespace Duplicati.Library.Main.ForestHash
                             m_stats.LogRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
                             m_db.LogDbMessage("warning", string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
 
-                            try { m_backend.Dispose(); }
-                            catch(Exception dex) { m_db.LogDbMessage("warning", string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
-
-                            m_backend = null;
-
-                            if (retries < m_options.NumberOfRetries && m_options.RetryDelay.Ticks != 0)
-                                System.Threading.Thread.Sleep(m_options.RetryDelay);
+							bool recovered = false;
+                            if (ex is Duplicati.Library.Interface.FolderMissingException && m_backend is Duplicati.Library.Interface.IBackend_v2 && m_options.AutocreateFolders)
+                            {
+	                            try 
+	                            { 
+	                            	// If we successfully create the folder, we can re-use the connection
+	                            	((Duplicati.Library.Interface.IBackend_v2)m_backend).CreateFolder(); 
+	                            	recovered = true;
+	                            }
+	                            catch(Exception dex) 
+	                            { 
+	                            	m_db.LogDbMessage("warning", string.Format("Failed to create folder: {0}", ex.Message), dex); 
+	                            }
+                            }
+                            
+                            if (!recovered)
+                            {
+	                            try { m_backend.Dispose(); }
+	                            catch(Exception dex) { m_db.LogDbMessage("warning", string.Format("Failed to dispose backend instance: {0}", ex.Message), dex); }
+	
+	                            m_backend = null;
+	                            
+	                            if (retries < m_options.NumberOfRetries && m_options.RetryDelay.Ticks != 0)
+	                                System.Threading.Thread.Sleep(m_options.RetryDelay);
+	                        }
+                            
                         }
 
                     } while (retries < m_options.NumberOfRetries);
