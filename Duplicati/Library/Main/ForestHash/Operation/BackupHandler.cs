@@ -28,7 +28,6 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         private FilesetVolumeWriter m_filesetvolume;
 
         private Snapshots.ISnapshotService m_snapshot;
-        private long m_otherchanges;
 
         private readonly ForestHash.IMetahash EMPTY_METADATA;
 
@@ -200,11 +199,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		            m_database.VerifyConsistency(m_transaction);
 
 		            //Changes in the filelist triggers a filelist upload
-		            if (
-		            	m_stat.AddedFiles + m_stat.ModifiedFiles + m_stat.DeletedFiles +
+		            if (m_options.UploadUnchangedBackups || 
+		            	(m_stat.AddedFiles + m_stat.ModifiedFiles + m_stat.DeletedFiles +
 		            	m_stat.AddedFolders + m_stat.ModifiedFolders + m_stat.DeletedFolders +
-		            	m_stat.AddedSymlinks + m_stat.ModifiedSymlinks + m_stat.DeletedSymlinks +
-		            	m_otherchanges > 0)
+		            	m_stat.AddedSymlinks + m_stat.ModifiedSymlinks + m_stat.DeletedSymlinks) > 0)
 		            {
 	                    if (!string.IsNullOrEmpty(m_options.SignatureControlFiles))
 	                        foreach (var p in m_options.SignatureControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
@@ -216,18 +214,17 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                	else
 	                	{
 	                		m_database.UpdateRemoteVolume(m_filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+
+	                		m_transaction.Commit();
+	                		m_transaction = m_database.BeginTransaction();
+
 	                    	m_backend.Put(m_filesetvolume);
 	                    }
 		            }
 		            else
 		            {
 		                m_database.LogMessage("info", "removing temp files, as no data needs to be uploaded", null, m_transaction);
-		                m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename, m_transaction);
-		                if (m_shadowvolume != null)
-		                {
-			                m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename, m_transaction);
-			                m_shadowvolume.FinishVolume(null, -1);
-		                }
+		                m_database.RemoveRemoteVolume(m_filesetvolume.RemoteFilename, m_transaction);
 		            }
 									
 		            m_backend.WaitForComplete(m_database, m_transaction);
@@ -305,8 +302,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                         metadata["CoreSymlinkTarget"] = m_snapshot.GetSymlinkTarget(path);
 
                     var metahash = ForestHash.WrapMetadata(metadata, m_options);
-                    if (AddSymlinkToOutput(path, DateTime.UtcNow, metahash))
-                        m_otherchanges++;
+                    AddSymlinkToOutput(path, DateTime.UtcNow, metahash);
                     
                     //Do not recurse symlinks
                     return false;
@@ -335,8 +331,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 }
 
                 //m_filesetvolume.AddDirectory(path, metahash.Hash, metahash.Size);
-                if (AddFolderToOutput(path, DateTime.UtcNow, metahash))
-                    m_otherchanges++;
+                AddFolderToOutput(path, DateTime.UtcNow, metahash);
                 return true;
             }
 
