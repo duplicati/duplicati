@@ -188,17 +188,23 @@ namespace Duplicati.Library.Main
             if (m_numberOfErrors > 0)
             {
                 sb.Append("NumberOfErrors  : " + m_numberOfErrors .ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-                sb.Append("****************\r\n");
-                sb.Append(m_errorMessages.ToString());
-                sb.Append("****************\r\n");
+                if (m_errorMessages.Length > 0)
+                {
+	                sb.Append("****************\r\n");
+	                sb.Append(m_errorMessages.ToString());
+	                sb.Append("****************\r\n");
+                }
             }
 
             if (m_numberOfWarnings > 0)
             {
                 sb.Append("NumberOfWarnings: " + m_numberOfWarnings.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\r\n");
-                sb.Append("****************\r\n");
-                sb.Append(m_warningMessages.ToString());
-                sb.Append("****************\r\n");
+                if (m_warningMessages.Length > 0)
+                {
+	                sb.Append("****************\r\n");
+	                sb.Append(m_warningMessages.ToString());
+	                sb.Append("****************\r\n");
+	            }
             }
 
             if (m_numberOfRetries > 0)
