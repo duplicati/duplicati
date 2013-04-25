@@ -113,9 +113,9 @@ namespace Duplicati.Library.Main.ForestHash
                 else
                 {
                     Volumes.IParsedVolume r;
-                    if (!lookup.TryGetValue(i.Name, out r) || (r.File.Size != i.Size && r.File.Size >= 0 && i.Size >= 0))
+                    if (!lookup.TryGetValue(i.Name, out r))
                     {
-                        if (i.State == RemoteVolumeState.Uploading || i.State == RemoteVolumeState.Deleting)
+                        if (i.State == RemoteVolumeState.Uploading || i.State == RemoteVolumeState.Deleting || (r.File.Size != i.Size && r.File.Size >= 0 && i.Size >= 0))
                         {
                             database.LogMessage("info", string.Format("removing file listed as {0}: {1}", i.State, i.Name), null, null);
                             database.RemoveRemoteVolume(i.Name, null);
