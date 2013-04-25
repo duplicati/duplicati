@@ -178,7 +178,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                         }
 
                 if (m_metadataLookup != null)
-                    using (var rd = cmd.ExecuteReader(@"SELECT ""A"".""ID"", ""C"".""Hash"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" "))
+                    using (var rd = cmd.ExecuteReader(@"SELECT ""Metadataset"".""ID"", ""Blockset"".""FullHash"" FROM ""Metadataset"", ""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" "))
                         while (rd.Read())
                         {
                             var metadataid = Convert.ToInt64(rd.GetValue(0));
@@ -427,7 +427,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                             if (r != null && r != DBNull.Value)
                             {
                                 m_findmetadatasetCommand.Transaction = transaction;
-                                m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
+                                r = m_findmetadatasetCommand.ExecuteScalar(null, hash, size);
                                 if (r != null && r != DBNull.Value)
                                 {
                                     m_metadataLookup.FalseNegatives++;
