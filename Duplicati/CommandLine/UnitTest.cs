@@ -216,10 +216,10 @@ namespace Duplicati.CommandLine
                 using(var fhsourcefolder = usingFHWithRestore ? new Library.Utility.TempFolder() : null)
                 {
                     if (usingFHWithRestore)
+                    {
                         fhtempsource = fhsourcefolder;
-                    
-                    if (usingFHWithRestore)
                         CopyDirectoryRecursive(folders[0], fhsourcefolder);
+                    }
 
                     options["full"] = "";                        
                     RunBackup(usingFHWithRestore ? (string)fhsourcefolder : folders[0], target, options, folders[0]);
