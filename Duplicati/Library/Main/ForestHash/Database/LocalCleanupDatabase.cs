@@ -40,19 +40,13 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			}
 		}
 
-		public interface IBlock
-		{
-			string Hash { get; }
-			long Size { get; }
-		}
-		
 		public interface IBlockSource
 		{
 			string File { get; }
 			long Offset { get; }
 		}
 		
-		public interface IBlockWithSources : IBlock
+		public interface IBlockWithSources :  LocalBackupDatabase.IBlock
 		{
 			IEnumerable<IBlockSource> Sources { get; }
 		}
@@ -64,19 +58,9 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			long Size { get; }
 		}
 
-		private class Block : IBlock
-		{
-			public string Hash { get; private set; }
-			public long Size { get; private set; }
-			
-			public Block(string hash, long size)
-			{
-				this.Hash = hash;
-				this.Size = size;
-			}
-		}
+
 		
-		private class BlockWithSources : Block, IBlockWithSources
+		private class BlockWithSources : LocalBackupDatabase.Block, IBlockWithSources
 		{
 			private class BlockSource : IBlockSource
 			{
@@ -136,14 +120,6 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			}
 		}
 		
-		public IEnumerable<IBlock> GetBlocks(long volumeid)
-		{
-			using(var cmd = m_connection.CreateCommand())
-			using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid))
-				while (rd.Read())
-					yield return new Block(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)));
-		}
-
 		public IEnumerable<IBlockWithSources> GetSourceFilesWithBlocks(long volumeid, long blocksize)
 		{
 			using(var cmd = m_connection.CreateCommand())

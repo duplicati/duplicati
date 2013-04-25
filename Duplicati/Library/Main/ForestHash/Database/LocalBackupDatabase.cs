@@ -925,7 +925,33 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				return m_filesetId;
 			}
 		}
+
+		public interface IBlock
+		{
+			string Hash { get; }
+			long Size { get; }
+		}
 		
+		internal class Block : IBlock
+		{
+			public string Hash { get; private set; }
+			public long Size { get; private set; }
+			
+			public Block(string hash, long size)
+			{
+				this.Hash = hash;
+				this.Size = size;
+			}
+		}		
+		
+		public IEnumerable<IBlock> GetBlocks(long volumeid)
+		{
+			using(var cmd = m_connection.CreateCommand())
+			using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid))
+				while (rd.Read())
+					yield return new Block(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)));
+		}
+				
 		public void AddShadowBlockLink(long shadowVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
 		{
 			m_insertShadowBlockLink.Transaction = transaction;

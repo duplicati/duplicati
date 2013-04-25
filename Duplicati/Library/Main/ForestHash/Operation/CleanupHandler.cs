@@ -105,8 +105,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 									w.StartVolume(blockvolume.Name);
 									var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
 									
-									foreach(var b in db.GetBlocks(volumeid))
-										w.AddBlock(b.Hash, b.Size);
+									using(var ldb = new LocalBackupDatabase(db, m_options))
+										foreach(var b in ldb.GetBlocks(volumeid))
+											w.AddBlock(b.Hash, b.Size);
 										
 									w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 								}
