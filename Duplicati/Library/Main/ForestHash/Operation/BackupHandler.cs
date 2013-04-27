@@ -187,10 +187,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                {
 	                    m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename, m_transaction);
 	                    if (m_shadowvolume != null)
-	                    {
 		                    m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename, m_transaction);
-		                    m_shadowvolume.FinishVolume(null, 0);
-	                    }
 	                }
 		            
 		            m_database.UpdateChangeStatistics(m_stat);
