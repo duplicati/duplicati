@@ -223,13 +223,9 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 //If we are patching an existing target folder, do not touch stuff that is already updated
                 ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, m_stat);
 
-
-                //TODO: It is possible to combine the existing block scanning with the local block scanning
-#if DEBUG
-                if (!m_options.NoLocalBlocks)
-#endif
                 // If other local files already have the blocks we want, we use them instead of downloading
-                ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_stat);
+				if (m_options.FhPatchWithLocalBlocks)
+                	ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_stat);
 
                 // Fill BLOCKS with remote sources
                 var volumes = database.GetMissingVolumes();

@@ -219,4 +219,10 @@
   <data name="FhvolumesizetoleranceShort" xml:space="preserve">
     <value>Volume size threshold</value>
   </data>
+  <data name="FhpatchwithlocalblocksLong" xml:space="preserve">
+    <value>Enable this option to look into other files on this machine to find existing blocks. This is a fairly slow operation but can limit the size of downloads.</value>
+  </data>
+  <data name="FhpatchwithlocalblocksShort" xml:space="preserve">
+    <value>Use local file data when restoring</value>
+  </data>
 </root>

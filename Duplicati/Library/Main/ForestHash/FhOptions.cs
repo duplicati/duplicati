@@ -71,6 +71,8 @@ namespace Duplicati.Library.Main.ForestHash
 
                     new CommandLineArgument("fh-no-auto-compact", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnoautocompactShort, Strings.FhOptions.FhnoautocompactLong, "false"),
                     new CommandLineArgument("fh-volume-size-tolerance", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhvolumesizetoleranceShort, Strings.FhOptions.FhvolumesizetoleranceLong),
+
+                    new CommandLineArgument("fh-patch-with-local-blocks", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhpatchwithlocalblocksShort, Strings.FhOptions.FhpatchwithlocalblocksLong),
 #if DEBUG
                     new CommandLineArgument("fh-no-local-blocks", CommandLineArgument.ArgumentType.Boolean, "Prevents using local blocks for restore", "", "false"),
                     new CommandLineArgument("fh-no-local-db", CommandLineArgument.ArgumentType.Boolean, "Prevents using local database for restore", "", "false"),
@@ -326,6 +328,14 @@ namespace Duplicati.Library.Main.ForestHash
 
                 return v;
             }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the current operation is intended to delete files older than a certain threshold
+        /// </summary>
+        public bool FhPatchWithLocalBlocks
+        {
+        	get { return m_options.ContainsKey("fh-patch-with-local-blocks"); }
         }
 
 #if DEBUG
