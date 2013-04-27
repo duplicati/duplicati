@@ -620,144 +620,11 @@ namespace Duplicati.Library.Main.ForestHash.Database
             return m_selectfileHashCommand.ExecuteScalar().ToString();
             
         }
-
-        private class BlocklistHashEnumerable : IEnumerable<string>
-        {
-            private class BlocklistHashEnumerator : IEnumerator<string>
-            {
-                private System.Data.IDataReader m_reader;
-                private BlocklistHashEnumerable m_parent;
-                private string m_path = null;
-                private bool m_first = true;
-                private string m_current = null;
-
-                public BlocklistHashEnumerator(BlocklistHashEnumerable parent, System.Data.IDataReader reader)
-                {
-                    m_reader = reader;
-                    m_parent = parent;
-                }
-
-                public string Current { get{ return m_current; } }
-
-                public void Dispose()
-                {
-                }
-
-                object System.Collections.IEnumerator.Current { get { return this.Current; } }
-
-                public bool MoveNext()
-                {
-                    m_first = false;
-
-                    if (m_path == null)
-                    {
-                        m_path = m_reader.GetValue(0).ToString();
-                        m_current = m_reader.GetValue(6).ToString();
-                        return true;
-                    }
-                    else
-                    {
-                        if (m_current == null)
-                            return false;
-
-                        if (!m_reader.Read())
-                        {
-                            m_current = null;
-                            m_parent.MoreData = false;
-                            return false;
-                        }
-
-                        var np = m_reader.GetValue(0).ToString();
-                        if (m_path != np)
-                        {
-                            m_current = null;
-                            return false;
-                        }
-
-                        m_current = m_reader.GetValue(6).ToString();
-                        return true;
-                    }
-                }
-
-                public void Reset()
-                {
-                    if (!m_first)
-                        throw new Exception("Iterator reset not supported");
-
-                    m_first = false;
-                }
-            }
-
-            private System.Data.IDataReader m_reader;
-
-            public BlocklistHashEnumerable(System.Data.IDataReader reader)
-            {
-                m_reader = reader;
-                this.MoreData = true;
-            }
-
-            public bool MoreData { get; protected set; }
-
-            public IEnumerator<string> GetEnumerator()
-            {
-                return new BlocklistHashEnumerator(this, m_reader);
-            }
-
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-            {
-                return this.GetEnumerator();
-            }
-        }
-
-        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, System.Data.IDbTransaction transaction, long filesetId = -1)
-        {
-            using (var cmd = m_connection.CreateCommand())
-            {
-            	cmd.Transaction = transaction;
-                cmd.CommandText = @"SELECT ""B"".""BlocksetID"", ""B"".""ID"", ""B"".""Path"", ""D"".""Length"", ""D"".""FullHash"", ""A"".""Scantime"" FROM ""FilesetEntry"" A, ""File"" B, ""Metadataset"" C, ""Blockset"" D WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND (""B"".""BlocksetID"" = ? OR ""B"".""BlocksetID"" = ?) AND ""A"".""FilesetID"" = ? ";
-                cmd.AddParameter(FOLDER_BLOCKSET_ID);
-                cmd.AddParameter(SYMLINK_BLOCKSET_ID);
-                cmd.AddParameter(filesetId < 0 ? m_filesetId : filesetId);
-
-                using (var rd = cmd.ExecuteReader())
-                while(rd.Read())
-                {
-                    var blocksetID = Convert.ToInt64(rd.GetValue(0));
-                    var path = rd.GetValue(2).ToString();
-                    var metalength = Convert.ToInt64(rd.GetValue(3));
-                    var metahash = rd.GetValue(4).ToString();
-
-                    if (blocksetID == FOLDER_BLOCKSET_ID)
-                        filesetvolume.AddDirectory(path, metahash, metalength);
-                    else if (blocksetID == SYMLINK_BLOCKSET_ID)
-                        filesetvolume.AddSymlink(path, metahash, metalength);
-                }
-
-                cmd.CommandText = @"SELECT ""F"".""Path"", ""F"".""Scantime"", ""F"".""Filelength"", ""F"".""Filehash"", ""F"".""Metahash"", ""F"".""Metalength"", ""G"".""Hash"" FROM (SELECT ""A"".""Path"" AS ""Path"", ""D"".""Scantime"" AS ""Scantime"", ""B"".""Length"" AS ""Filelength"", ""B"".""FullHash"" AS ""Filehash"", ""E"".""FullHash"" AS ""Metahash"", ""E"".""Length"" AS ""Metalength"", ""A"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""FilesetEntry"" D, ""Blockset"" E WHERE ""A"".""ID"" = ""D"".""FileID"" AND ""D"".""FilesetID"" = ? AND ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""E"".""ID"" = ""C"".""BlocksetID"") F LEFT OUTER JOIN ""BlocklistHash"" G ON ""G"".""BlocksetID"" = ""F"".""BlocksetID"" ORDER BY ""F"".""Path"", ""G"".""Index"" ";
-                cmd.Parameters.Clear();
-                cmd.AddParameter(filesetId < 0 ? m_filesetId : filesetId);
-
-                using (var rd = cmd.ExecuteReader())
-                if (rd.Read())
-                {
-                    var more = false;
-                    do
-                    {
-                        var path = rd.GetValue(0).ToString();
-                        var filehash = rd.GetValue(3).ToString();
-                        var size = Convert.ToInt64(rd.GetValue(2));
-                        var scantime = Convert.ToDateTime(rd.GetValue(1));
-                        var metahash = rd.GetValue(4).ToString();
-                        var metasize = Convert.ToInt64(rd.GetValue(5));
-                        var blrd = new BlocklistHashEnumerable(rd);
-
-                        filesetvolume.AddFile(path, filehash, size, scantime, metahash, metasize, blrd);
-                        more = blrd.MoreData;
-
-                    } while (more);
-                }
-            }
-        }
+        
+        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, System.Data.IDbTransaction transaction)
+		{
+			WriteFileset(filesetvolume, transaction, m_filesetId);
+		}        
 
         public override void Dispose ()
         {
@@ -925,33 +792,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				return m_filesetId;
 			}
 		}
-
-		public interface IBlock
-		{
-			string Hash { get; }
-			long Size { get; }
-		}
-		
-		internal class Block : IBlock
-		{
-			public string Hash { get; private set; }
-			public long Size { get; private set; }
-			
-			public Block(string hash, long size)
-			{
-				this.Hash = hash;
-				this.Size = size;
-			}
-		}		
-		
-		public IEnumerable<IBlock> GetBlocks(long volumeid)
-		{
-			using(var cmd = m_connection.CreateCommand())
-			using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid))
-				while (rd.Read())
-					yield return new Block(rd.GetValue(0).ToString(), Convert.ToInt64(rd.GetValue(1)));
-		}
-				
+						
 		public void AddShadowBlockLink(long shadowVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
 		{
 			m_insertShadowBlockLink.Transaction = transaction;

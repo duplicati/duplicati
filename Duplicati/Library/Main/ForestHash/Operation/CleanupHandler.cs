@@ -83,8 +83,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 								var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
 								w.SetRemoteFilename(n.Name);
 								
-								using(var b = new LocalBackupDatabase(db, m_options))
-									b.WriteFileset(w, null, filesetId);
+								db.WriteFileset(w, null, filesetId);
 	
 								w.Close();
 								if (m_options.FhDryrun)
@@ -105,9 +104,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 									w.StartVolume(blockvolume.Name);
 									var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
 									
-									using(var ldb = new LocalBackupDatabase(db, m_options))
-										foreach(var b in ldb.GetBlocks(volumeid))
-											w.AddBlock(b.Hash, b.Size);
+									foreach(var b in db.GetBlocks(volumeid))
+										w.AddBlock(b.Hash, b.Size);
 										
 									w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 								}
@@ -124,6 +122,14 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							}
 							else if (n.Type == RemoteVolumeType.Blocks)
 							{
+							
+								//TODO: Need to rewrite this to actually work,
+								// and use a patch-table so we know exactly what blocks
+								// are missing.
+								
+								//TODO: Once the above is done, figure out how to
+								// deal with incomplete block recreates
+							
 								var w = new BlockVolumeWriter(m_options);
 								w.SetRemoteFilename(n.Name);
 								var volumeid = db.GetRemoteVolumeID(n.Name);
