@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(2);
+                                        var v = m_reader.GetValue(3);
                                         if (v == null || v == DBNull.Value)
                                             return null;
                                         return v.ToString();
@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(3);
+                                        var v = m_reader.GetValue(4);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
                                         return Convert.ToInt64(v);
@@ -53,7 +53,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(4);
+                                        var v = m_reader.GetValue(5);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
                                         return Convert.ToInt64(v);
@@ -153,12 +153,25 @@ namespace Duplicati.Library.Main.ForestHash.Database
                             return v.ToString();
                         }
                     }
+                    
+                    public long TargetFileID
+                    {
+                        get
+                        {
+                            var v = m_reader.GetValue(1);
+                            if (v == null || v == DBNull.Value)
+                                return -1;
+
+                            return Convert.ToInt64(v);
+                        }
+                    }
+                    
 
                     public long Length
                     {
                         get
                         {
-                            var v = m_reader.GetValue(1);
+                            var v = m_reader.GetValue(2);
                             if (v == null || v == DBNull.Value)
                                 return -1;
 
@@ -228,7 +241,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 {
                     m_file = null;
                     m_command = m_connection.CreateCommand();
-                    m_command.CommandText = string.Format(@"SELECT ""{0}"".""TargetPath"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{0}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{0}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{0}"".""TargetPath"", ""BlocksetEntry"".""Index""", m_tablename);
+                    m_command.CommandText = string.Format(@"SELECT ""{0}"".""TargetPath"", ""{0}"".""ID"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{0}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{0}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{0}"".""TargetPath"", ""BlocksetEntry"".""Index""", m_tablename);
                     m_reader = m_command.ExecuteReader();
                     m_file = new ExistingFile(m_reader);
                     m_current = null;
@@ -285,7 +298,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                             {
                                                 get
                                                 {
-                                                    var v = m_reader.GetValue(5);
+                                                    var v = m_reader.GetValue(6);
                                                     if (v == null || v == DBNull.Value)
                                                         return null;
                                                     return v.ToString();
@@ -296,7 +309,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                             {
                                                 get
                                                 {
-                                                    var v = m_reader.GetValue(6);
+                                                    var v = m_reader.GetValue(7);
                                                     if (v == null || v == DBNull.Value)
                                                         return -1;
                                                     return Convert.ToInt64(v);
@@ -307,7 +320,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                             {
                                                 get
                                                 {
-                                                    var v = m_reader.GetValue(7);
+                                                    var v = m_reader.GetValue(8);
                                                     if (v == null || v == DBNull.Value)
                                                         return -1;
                                                     return Convert.ToInt64(v);
@@ -408,7 +421,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(1);
+                                        var v = m_reader.GetValue(2);
                                         if (v == null || v == DBNull.Value)
                                             return null;
                                         return v.ToString();
@@ -420,7 +433,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(2);
+                                        var v = m_reader.GetValue(3);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
                                         return Convert.ToInt64(v);
@@ -431,7 +444,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(3);
+                                        var v = m_reader.GetValue(4);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
                                         return Convert.ToInt64(v);
@@ -442,7 +455,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                                 {
                                     get
                                     {
-                                        var v = m_reader.GetValue(4);
+                                        var v = m_reader.GetValue(5);
                                         if (v == null || v == DBNull.Value)
                                             return -1;
                                         return Convert.ToInt64(v);
@@ -552,6 +565,18 @@ namespace Duplicati.Library.Main.ForestHash.Database
                         }
                     }
 
+                    public long TargetFileID
+                    {
+                        get
+                        {
+                            var v = m_reader.GetValue(1);
+                            if (v == null || v == DBNull.Value)
+                                return -1;
+
+                            return Convert.ToInt64(v);
+                        }
+                    }
+
                     public IEnumerable<IBlockDescriptor> Blocks
                     {
                         get { return new BlockDescriptorEnumerable(m_reader, this); }
@@ -621,7 +646,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 {
                     m_command = m_connection.CreateCommand();
 
-                    m_command.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""B"".""Hash"", (""B"".""Index"" * {2}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {2}), ""E"".""Size"" FROM ""{0}"" ""A"", ""{1}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0 ", m_filetablename, m_blocktablename, m_blocksize);
+                    m_command.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""A"".""ID"", ""B"".""Hash"", (""B"".""Index"" * {2}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {2}), ""E"".""Size"" FROM ""{0}"" ""A"", ""{1}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0 ", m_filetablename, m_blocktablename, m_blocksize);
                     m_reader = m_command.ExecuteReader();
                     m_current = null;
                     m_localsource = new LocalBlockSource(m_reader);

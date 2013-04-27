@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
                 cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL ) ", m_tempfiletable);
                 cmd.ExecuteNonQuery();
 
-                cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL)", m_tempblocktable);
+                cmd.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL)", m_tempblocktable);
                 cmd.ExecuteNonQuery();
 
                 if (filenameFilter == null && (p == null || p.Length == 0))
@@ -195,6 +195,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public interface IExistingFile
         {
             string TargetPath { get; }
+            long TargetFileID { get; }
             long Length { get; }
             IEnumerable<IExistingFileBlock> Blocks { get; }
         }
@@ -219,6 +220,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         public interface ILocalBlockSource
         {
             string TargetPath { get; }
+            long TargetFileID { get; }
             IEnumerable<IBlockDescriptor> Blocks { get; }
         }
 
@@ -309,35 +311,55 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
         public interface IBlockMarker : IDisposable
         {
-            void SetBlockRestored(string targetpath, long index, string hash, long blocksize);
+            void SetBlockRestored(long targetfileid, long index, string hash, long blocksize);
             void Commit();
+            System.Data.IDbTransaction Transaction { get; }
         }
 
         private class BlockMarker : IBlockMarker
         {
             private System.Data.IDbCommand m_command;
+            private string m_updateTable;
+            private string m_blocktablename;
+            
+            public System.Data.IDbTransaction Transaction { get { return m_command.Transaction; } }
 
             public BlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename)
             {
                 m_command = connection.CreateCommand();
                 m_command.Transaction = connection.BeginTransaction();
-                m_command.CommandText = string.Format(@"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""FileID"" = (SELECT ""ID"" FROM ""{1}"" WHERE ""TargetPath"" = ?) AND ""Index"" = ? AND ""Hash"" = ? AND ""Size"" = ? ", blocktablename, filetablename);
+                
+                m_blocktablename = blocktablename;
+                m_updateTable = "UpdatedBlocks-" + Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                
+                m_command.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)", m_updateTable));
+                m_command.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"") VALUES (?, ?, ?, ?) ", m_updateTable);
                 m_command.AddParameters(4);
             }
 
-            public void SetBlockRestored(string targetpath, long index, string hash, long size)
+            public void SetBlockRestored(long targetfileid, long index, string hash, long size)
             {
-                m_command.SetParameterValue(0, targetpath);
+                m_command.SetParameterValue(0, targetfileid);
                 m_command.SetParameterValue(1, index);
                 m_command.SetParameterValue(2, hash);
                 m_command.SetParameterValue(3, size);
                 var r = m_command.ExecuteNonQuery();
                 if (r != 1)
-                    throw new Exception("Unexpected update result");
+                    throw new Exception("Unexpected insert result");
             }
 
             public void Commit()
             {
+            	m_command.Parameters.Clear();
+            	var rc = m_command.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Restored"" = 1 WHERE ""ID"" IN (SELECT ""{0}"".""ID"" FROM ""{0}"", ""{1}"" WHERE ""{0}"".""FileID"" = ""{1}"".""FileID"" AND ""{0}"".""Index"" = ""{1}"".""Index"" AND ""{0}"".""Hash"" = ""{1}"".""Hash"" AND ""{0}"".""Size"" = ""{1}"".""Size"" )", m_blocktablename, m_updateTable));
+            	var nc = Convert.ToInt64(m_command.ExecuteScalar(string.Format(@"SELECT COUNT(*) FROM ""{0}"" ", m_updateTable)));
+            
+        		m_command.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_updateTable));
+        		m_updateTable = null;
+        		
+        		if (rc != nc)
+        			throw new Exception(string.Format("Inconsistency while marking blocks as updated. Updated blocks: {0}, Registered blocks: {1}", rc, nc));
+
                 var tr = m_command.Transaction;
                 m_command.Dispose();
                 m_command = null;
@@ -347,6 +369,17 @@ namespace Duplicati.Library.Main.ForestHash.Database
 
             public void Dispose()
             {
+	            if (m_updateTable != null)
+	            {
+	            	try 
+	            	{
+	            		m_command.Parameters.Clear();
+	            		m_command.ExecuteNonQuery(string.Format(@"DROP TABLE ""{0}"" ", m_updateTable));
+	            	}
+	            	catch { }
+	            	finally { m_updateTable = null; }
+	            }
+            
                 if (m_command != null)
                 {
                     var t = m_command;

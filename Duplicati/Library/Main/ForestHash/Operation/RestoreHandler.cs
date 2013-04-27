@@ -281,6 +281,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 foreach (var restorelist in database.GetFilesAndSourceBlocks())
                 {
                     var targetpath = restorelist.TargetPath;
+                    var targetfileid = restorelist.TargetFileID;
                     var patched = false;
                     try
                     {
@@ -310,7 +311,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					                            		else
 	                                                        file.Write(blockbuffer, 0, size);
 	                                                        
-                                                        blockmarker.SetBlockRestored(targetpath, targetblock.Index, key, targetblock.Size);
+                                                        blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size);
                                                         break;
                                                     }
                                                 }
@@ -393,6 +394,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 foreach (var restorelist in database.GetExistingFilesWithBlocks())
                 {
                     var targetpath = restorelist.TargetPath;
+                    var targetfileid = restorelist.TargetFileID;
                     if (System.IO.File.Exists(targetpath))
                     {
                         try
@@ -410,7 +412,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                         var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
                                         if (key == targetblock.Hash)
                                         {
-                                            blockmarker.SetBlockRestored(targetpath, targetblock.Index, key, size);
+                                            blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, size);
                                         }
                                     }
                                 }
