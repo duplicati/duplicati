@@ -360,10 +360,10 @@ namespace Duplicati.CommandLine
         
                                         if (usingFH)
                                         {
-                                            if (!f.StartsWith(fhtempsource, Utility.ClientFilenameStringComparision))
+                                            if (!f.StartsWith(usingFHWithRestore ? fhtempsource : folders[i], Utility.ClientFilenameStringComparision))
                                                 throw new Exception(string.Format("Unexpected file found: {0}, path is not a subfolder for {1}", f, folders[i]));
         
-                                            f = f.Substring(Utility.AppendDirSeparator(fhtempsource).Length);
+                                            f = f.Substring(Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]).Length);
                                         }
         
                                         do
@@ -383,7 +383,7 @@ namespace Duplicati.CommandLine
         
                                     if (usingFH)
                                     {
-                                        var tfe = Utility.AppendDirSeparator(fhtempsource);
+                                        var tfe = Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]);
                                         
                                         //We need a minor tweak here because the two models
                                         // use releative vs. absolute paths
