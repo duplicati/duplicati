@@ -404,5 +404,80 @@ namespace Duplicati.Library.Main.ForestHash.Database
         {
             return new FolderListEnumerable(m_connection, m_tempfiletable);
         }
+
+		public interface IFastSource
+		{
+			string TargetPath { get; }
+			long TargetFileID { get; }
+			string SourcePath { get; }
+			IEnumerable<IBlockEntry> Blocks { get; }
+		}
+		
+		public interface IBlockEntry
+		{
+			long Offset { get; }
+			long Size { get; }
+			long Index { get; }
+			string Hash { get; }
+		}
+
+		private class FastSource : IFastSource
+		{
+			private class BlockEntry : IBlockEntry
+			{
+				private System.Data.IDataReader m_rd;
+				private long m_blocksize;
+				public BlockEntry(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
+				public long Offset { get { return Convert.ToInt64(m_rd.GetValue(3)) * m_blocksize; } }
+				public long Index { get { return Convert.ToInt64(m_rd.GetValue(3)); } }
+				public long Size { get { return Convert.ToInt64(m_rd.GetValue(5)); } }
+				public string Hash { get { return m_rd.GetValue(4).ToString(); } }
+			}
+		
+			private System.Data.IDataReader m_rd;
+			private long m_blocksize;
+			public FastSource(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
+			public bool MoreData { get; private set; }
+			public string TargetPath { get { return m_rd.GetValue(0).ToString(); } }
+			public long TargetFileID { get { return Convert.ToInt64(m_rd.GetValue(2)); } }
+			public string SourcePath { get { return m_rd.GetValue(1).ToString(); } }
+			
+			public IEnumerable<IBlockEntry> Blocks
+			{
+				get
+				{
+					var tid = this.TargetFileID;
+					
+					do
+					{
+						yield return new BlockEntry(m_rd, m_blocksize);
+					} while((MoreData = m_rd.Read()) && tid == this.TargetFileID);
+					
+				}
+			}
+		}
+
+		public IEnumerable<IFastSource> GetFilesAndSourceBlocksFast()
+		{
+			var whereclause = string.Format(@" ""{0}"".""ID"" = ""{1}"".""FileID"" AND ""{1}"".""Restored"" = 0 AND ""{0}"".""TargetPath"" != ""{0}"".""Path"" ", m_tempfiletable, m_tempblocktable);		
+			var sourepaths = string.Format(@"SELECT DISTINCT ""{0}"".""Path"" FROM ""{0}"", ""{1}"" WHERE " + whereclause, m_tempfiletable, m_tempblocktable);
+			var latestBlocksetIds = @"SELECT ""File"".""Path"", ""File"".""BlocksetID"", MAX(""FilesetEntry"".""Scantime"") FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""File"".""Path"" IN (" + sourepaths + @") GROUP BY ""File"".""Path"" ";
+			var sources = string.Format(@"SELECT DISTINCT ""{0}"".""TargetPath"", ""{0}"".""Path"", ""{0}"".""ID"", ""{1}"".""Index"", ""{1}"".""Hash"", ""{1}"".""Size"" FROM ""{0}"", ""{1}"", ""File"", (" + latestBlocksetIds + @") S, ""Block"", ""BlocksetEntry"" WHERE ""BlocksetEntry"".""BlocksetID"" = ""S"".""BlocksetID"" AND ""BlocksetEntry"".""BlocksetID"" = ""File"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""{1}"".""Index"" = ""BlocksetEntry"".""Index"" AND ""{1}"".""Hash"" = ""Block"".""Hash"" AND ""{1}"".""Size"" = ""Block"".""Size"" AND ""S"".""Path"" = ""{0}"".""Path"" AND " + whereclause + @" ORDER BY ""{0}"".""ID"", ""{1}"".""Index"" ", m_tempfiletable, m_tempblocktable);
+			using(var cmd = m_connection.CreateCommand())
+			using(var rd = cmd.ExecuteReader(sources))
+			{
+				if (rd.Read())
+				{
+					var more = false;
+					do
+					{
+						var n = new FastSource(rd, m_blocksize);
+						yield return n;
+						more = n.MoreData;
+					} while (more);
+				}
+			}	
+		}
+
     }
 }

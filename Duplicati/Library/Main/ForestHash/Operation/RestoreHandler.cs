@@ -223,6 +223,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 //If we are patching an existing target folder, do not touch stuff that is already updated
                 ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, m_stat);
 
+#if DEBUG
+                if (!m_options.NoLocalBlocks)
+#endif
+				//Look for existing blocks in the original source files only
+				ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, m_stat);
+
                 // If other local files already have the blocks we want, we use them instead of downloading
 				if (m_options.FhPatchWithLocalBlocks)
                 	ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_stat);
@@ -268,6 +274,75 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         {
             //TODO: Implement writing metadata
         }
+
+        private static void ScanForExistingSourceBlocksFast(LocalRestoreDatabase database, FhOptions options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
+        {
+            // Fill BLOCKS with data from known local source files
+            using (var blockmarker = database.CreateBlockMarker())
+            {
+            	foreach(var entry in database.GetFilesAndSourceBlocksFast())
+            	{
+                    var targetpath = entry.TargetPath;
+                    var targetfileid = entry.TargetFileID;
+                    var sourcepath = entry.SourcePath;
+                    var patched = false;
+                    
+                	try
+                	{
+                		using(var targetstream = System.IO.File.Open(targetpath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
+                		{
+                			try
+                			{
+	                    		using(var sourcestream = System.IO.File.Open(sourcepath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+	                    		{
+	    			                foreach(var block in entry.Blocks)
+	    			                {
+		    			                if (sourcestream.Length > block.Offset)
+			                    		{
+			                    			sourcestream.Position = block.Offset;
+			                    			
+	                                        var size = sourcestream.Read(blockbuffer, 0, blockbuffer.Length);
+	                                        if (size == block.Size)
+	                                        {
+	                                            var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+	                                            if (key == block.Hash)
+	                                            {
+					                            	if (options.FhDryrun)
+					                            		patched = true;
+				                            		else
+				                            		{
+				                            			targetstream.Position = block.Offset;
+	                                                    targetstream.Write(blockbuffer, 0, size);
+	                                                }
+	                                                    
+	                                                blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size);
+	                                            }
+	                                        }	                    		
+										}
+									}
+								}
+                			}
+                			catch (Exception ex)
+                			{
+                                stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex);
+                                database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex, null);
+                			}
+                		}	
+                	}
+                    catch (Exception ex)
+                    {
+                        stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
+                        database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex, null);
+                    }
+                    
+                    if (patched && options.FhDryrun)
+                    	stat.LogMessage("[Dryrun] Would patch file with local data: {0}", targetpath);
+            	}
+            	
+            	blockmarker.Commit();
+            }
+        }
+
 
         private static void ScanForExistingSourceBlocks(LocalRestoreDatabase database, FhOptions options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, CommunicationStatistics stat)
         {
