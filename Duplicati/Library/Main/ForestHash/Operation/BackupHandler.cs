@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
         private BlockVolumeWriter m_blockvolume;
-        private ShadowVolumeWriter m_shadowvolume;
+        private IndexVolumeWriter m_indexvolume;
         private FilesetVolumeWriter m_filesetvolume;
 
         private Snapshots.ISnapshotService m_snapshot;
@@ -132,10 +132,10 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 		            m_blockvolume = new BlockVolumeWriter(m_options);
 		            m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
 		            
-		            if (!m_options.FhNoShadowfiles)
+		            if (!m_options.FhNoIndexfiles)
 		            {
-			            m_shadowvolume = new ShadowVolumeWriter(m_options);
-			            m_shadowvolume.VolumeID = m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, m_transaction);
+			            m_indexvolume = new IndexVolumeWriter(m_options);
+			            m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
 		            }
 		                        	
 	                if (m_options.FhChangedFilelist != null && m_options.FhChangedFilelist.Length >= 1)
@@ -165,29 +165,29 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                	if (m_options.FhDryrun)
 	                	{
 	                		m_stat.LogMessage("[Dryrun] Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
-	                		if (m_shadowvolume != null)
+	                		if (m_indexvolume != null)
 	                		{
-			            		UpdateShadowVolume();
-	                			m_shadowvolume.FinishVolume(Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
-	                			m_stat.LogMessage("[Dryrun] Would upload shadow volume: {0}, size: {1}", m_shadowvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_shadowvolume.LocalFilename).Length));
+			            		UpdateIndexVolume();
+	                			m_indexvolume.FinishVolume(Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
+	                			m_stat.LogMessage("[Dryrun] Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length));
 	                		}
 	                	}
 	                	else
 	                	{
 	                		m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-		            		UpdateShadowVolume();
+		            		UpdateIndexVolume();
 	                		
 	                		m_transaction.Commit();
 	                		m_transaction = m_database.BeginTransaction();
 	                		
-	                    	m_backend.Put(m_blockvolume, m_shadowvolume);
+	                    	m_backend.Put(m_blockvolume, m_indexvolume);
 	                    }
 	                }
 	                else
 	                {
 	                    m_database.RemoveRemoteVolume(m_blockvolume.RemoteFilename, m_transaction);
-	                    if (m_shadowvolume != null)
-		                    m_database.RemoveRemoteVolume(m_shadowvolume.RemoteFilename, m_transaction);
+	                    if (m_indexvolume != null)
+		                    m_database.RemoveRemoteVolume(m_indexvolume.RemoteFilename, m_transaction);
 	                }
 		            
 		            m_database.UpdateChangeStatistics(m_stat);
@@ -484,13 +484,13 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 		m_blockvolume.Dispose();
                 		m_blockvolume = null;
                 		
-                		if (m_shadowvolume != null)
+                		if (m_indexvolume != null)
                 		{
-		            		UpdateShadowVolume();
-                			m_shadowvolume.FinishVolume(Utility.Utility.CalculateHash(m_shadowvolume.LocalFilename), new FileInfo(m_shadowvolume.LocalFilename).Length);
-                			m_stat.LogMessage("[Dryrun] Would upload shadow volume: {0}, size: {1}", m_shadowvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_shadowvolume.LocalFilename).Length));
-                			m_shadowvolume.Dispose();
-                			m_shadowvolume = null;
+		            		UpdateIndexVolume();
+                			m_indexvolume.FinishVolume(Utility.Utility.CalculateHash(m_indexvolume.LocalFilename), new FileInfo(m_indexvolume.LocalFilename).Length);
+                			m_stat.LogMessage("[Dryrun] Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length));
+                			m_indexvolume.Dispose();
+                			m_indexvolume = null;
                 		}
                 	}
                 	else
@@ -498,7 +498,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                	//When uploading a new volume, we register the volumes and then flush the transaction
 	                	// this ensures that the local database and remote storage are as closely related as possible
                 		m_database.UpdateRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
-	            		UpdateShadowVolume();
+	            		UpdateIndexVolume();
 	                	
 	                	m_backend.FlushDbMessages(m_database, m_transaction);
         				m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
@@ -506,18 +506,18 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 	                	m_transaction.Commit();
 	                	m_transaction = m_database.BeginTransaction();
 	                	
-	                    m_backend.Put(m_blockvolume, m_shadowvolume);
+	                    m_backend.Put(m_blockvolume, m_indexvolume);
 	                    m_blockvolume = null;
-	                    m_shadowvolume = null;
+	                    m_indexvolume = null;
 	                }
                     
                     m_blockvolume = new BlockVolumeWriter(m_options);
 					m_blockvolume.VolumeID = m_database.RegisterRemoteVolume(m_blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, m_transaction);
 					
-					if (!m_options.FhNoShadowfiles)
+					if (!m_options.FhNoIndexfiles)
 					{
-	                    m_shadowvolume = new ShadowVolumeWriter(m_options);
-						m_shadowvolume.VolumeID = m_database.RegisterRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, m_transaction);
+	                    m_indexvolume = new IndexVolumeWriter(m_options);
+						m_indexvolume.VolumeID = m_database.RegisterRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, m_transaction);
 					}
                 }
 
@@ -602,17 +602,17 @@ namespace Duplicati.Library.Main.ForestHash.Operation
         }
 
 
-        private void UpdateShadowVolume()
+        private void UpdateIndexVolume()
         {
-        	if (m_shadowvolume != null)
+        	if (m_indexvolume != null)
         	{
-	            m_database.AddShadowBlockLink(m_shadowvolume.VolumeID, m_blockvolume.VolumeID, m_transaction);
-	            m_shadowvolume.StartVolume(m_blockvolume.RemoteFilename);
+	            m_database.AddIndexBlockLink(m_indexvolume.VolumeID, m_blockvolume.VolumeID, m_transaction);
+	            m_indexvolume.StartVolume(m_blockvolume.RemoteFilename);
 	            
 	            foreach(var b in m_database.GetBlocks(m_blockvolume.VolumeID))
-	            	m_shadowvolume.AddBlock(b.Hash, b.Size);
+	            	m_indexvolume.AddBlock(b.Hash, b.Size);
 
-    			m_database.UpdateRemoteVolume(m_shadowvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
+    			m_database.UpdateRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
         	}
         }
 
@@ -632,11 +632,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                 finally { m_blockvolume = null; }
             }
 
-            if (m_shadowvolume != null)
+            if (m_indexvolume != null)
             {
-                try { m_shadowvolume.Dispose(); }
-                catch (Exception ex) { m_stat.LogError("Failed disposing shadow volume", ex); }
-                finally { m_shadowvolume = null; }
+                try { m_indexvolume.Dispose(); }
+                catch (Exception ex) { m_stat.LogError("Failed disposing index volume", ex); }
+                finally { m_indexvolume = null; }
             }
 
             m_stat.EndTime = DateTime.Now;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
         private readonly System.Data.IDbCommand m_updateblockCommand;
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
-        private readonly System.Data.IDbCommand m_insertShadowBlockLink;
+        private readonly System.Data.IDbCommand m_insertIndexBlockLink;
 		
 		private HashDatabaseProtector<string> m_blockHashLookup;
         private HashDatabaseProtector<string, long> m_fileHashLookup;
@@ -81,7 +81,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_selectfileSimpleCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_findmetadatasetProbeCommand = m_connection.CreateCommand();
-            m_insertShadowBlockLink = m_connection.CreateCommand();
+            m_insertIndexBlockLink = m_connection.CreateCommand();
 				
 			m_findblockCommand.CommandText = @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
@@ -139,8 +139,8 @@ namespace Duplicati.Library.Main.ForestHash.Database
             m_updateblockCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? ";
             m_updateblockCommand.AddParameters(3);
             
-            m_insertShadowBlockLink.CommandText = @"INSERT INTO ""ShadowBlockLink"" (""ShadowVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
-            m_insertShadowBlockLink.AddParameters(2);
+            m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
+            m_insertIndexBlockLink.AddParameters(2);
             
 			if (options.FhBlockHashLookupMemory > 0)
                 m_blockHashLookup = new HashDatabaseProtector<string>(HASH_GUESS_SIZE, (ulong)options.FhBlockHashLookupMemory);            
@@ -793,12 +793,12 @@ namespace Duplicati.Library.Main.ForestHash.Database
 			}
 		}
 						
-		public void AddShadowBlockLink(long shadowVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
+		public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
 		{
-			m_insertShadowBlockLink.Transaction = transaction;
-			m_insertShadowBlockLink.SetParameterValue(0, shadowVolumeID);
-			m_insertShadowBlockLink.SetParameterValue(1, blockVolumeID);
-			m_insertShadowBlockLink.ExecuteNonQuery();
+			m_insertIndexBlockLink.Transaction = transaction;
+			m_insertIndexBlockLink.SetParameterValue(0, indexVolumeID);
+			m_insertIndexBlockLink.SetParameterValue(1, blockVolumeID);
+			m_insertIndexBlockLink.ExecuteNonQuery();
 		}
 		
     }

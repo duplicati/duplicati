@@ -226,7 +226,7 @@ namespace Duplicati.Library.Main.ForestHash.Database
             	var volumeid = GetRemoteVolumeID(name, tr.Parent);
                 
 				// If the volume is a block volume, this will update the crosslink table, otherwise nothing will happen
-				deletecmd.ExecuteNonQuery(@"DELETE FROM ""ShadowBlockLink"" WHERE ""BlockVolumeID"" = ? ", volumeid);
+				deletecmd.ExecuteNonQuery(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" = ? ", volumeid);
 				
 				var subQuery = @"(SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?)";
 

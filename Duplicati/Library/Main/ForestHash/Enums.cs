@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.ForestHash
         /// <summary>
         /// Contains redundant lookup information
         /// </summary>
-        Shadow
+        Index
     }
 
     public enum FilelistEntryType

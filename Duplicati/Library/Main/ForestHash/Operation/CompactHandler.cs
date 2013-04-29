@@ -73,12 +73,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 					BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
 					newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
 	
-					ShadowVolumeWriter newvolshadow = null;
-					if (!m_options.FhNoShadowfiles)
+					IndexVolumeWriter newvolindex = null;
+					if (!m_options.FhNoIndexfiles)
 					{
-						newvolshadow = new ShadowVolumeWriter(m_options);
-						db.RegisterRemoteVolume(newvolshadow.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, transaction);
-						newvolshadow.StartVolume(newvol.RemoteFilename);
+						newvolindex = new IndexVolumeWriter(m_options);
+						db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+						newvolindex.StartVolume(newvol.RemoteFilename);
 					}
 					
 					long blocksInVolume = 0;
@@ -128,8 +128,8 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 												throw new Exception("Size mismatch problem, {0} vs {1}");
 												
 											newvol.AddBlock(e.Key, buffer, s, Duplicati.Library.Interface.CompressionHint.Compressible);
-											if (newvolshadow != null)
-												newvolshadow.AddBlock(e.Key, e.Value);
+											if (newvolindex != null)
+												newvolindex.AddBlock(e.Key, e.Value);
 												
 											db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
 											blocksInVolume++;
@@ -137,11 +137,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 											if (newvol.Filesize > m_options.VolumeSize)
 											{
 												uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, new System.IO.FileInfo(newvol.LocalFilename).Length));
-												if (newvolshadow != null)
-													uploadedVolumes.Add(new KeyValuePair<string, long>(newvolshadow.RemoteFilename, new System.IO.FileInfo(newvolshadow.LocalFilename).Length));
+												if (newvolindex != null)
+													uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, new System.IO.FileInfo(newvolindex.LocalFilename).Length));
 	
 												if (m_options.Force && !m_options.FhDryrun)
-													backend.Put(newvol, newvolshadow);
+													backend.Put(newvol, newvolindex);
 												else
 													m_stat.LogMessage("[Dryrun] - Would upload generated blockset of size {0}", Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length));
 												
@@ -149,11 +149,11 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 												newvol = new BlockVolumeWriter(m_options);
 												newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
 				
-												if (!m_options.FhNoShadowfiles)
+												if (!m_options.FhNoIndexfiles)
 												{
-													newvolshadow = new ShadowVolumeWriter(m_options);
-													db.RegisterRemoteVolume(newvolshadow.RemoteFilename, RemoteVolumeType.Shadow, RemoteVolumeState.Temporary, transaction);
-													newvolshadow.StartVolume(newvol.RemoteFilename);
+													newvolindex = new IndexVolumeWriter(m_options);
+													db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+													newvolindex.StartVolume(newvol.RemoteFilename);
 												}
 												
 												blocksInVolume = 0;
@@ -176,20 +176,20 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 							if (blocksInVolume > 0)
 							{
 								uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, new System.IO.FileInfo(newvol.LocalFilename).Length));
-								if (newvolshadow != null)
-									uploadedVolumes.Add(new KeyValuePair<string, long>(newvolshadow.RemoteFilename, new System.IO.FileInfo(newvolshadow.LocalFilename).Length));
+								if (newvolindex != null)
+									uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, new System.IO.FileInfo(newvolindex.LocalFilename).Length));
 								if (m_options.Force && !m_options.FhDryrun)
-									backend.Put(newvol, newvolshadow);
+									backend.Put(newvol, newvolindex);
 								else
 									m_stat.LogMessage("[Dryrun] - Would upload generated blockset of size {0}", Utility.Utility.FormatSizeString(new System.IO.FileInfo(newvol.LocalFilename).Length));
 							}
 							else
 							{
 				                db.RemoveRemoteVolume(newvol.RemoteFilename, transaction);
-			                    if (newvolshadow != null)
+			                    if (newvolindex != null)
 			                    {
-				                    db.RemoveRemoteVolume(newvolshadow.RemoteFilename, transaction);
-				                    newvolshadow.FinishVolume(null, 0);
+				                    db.RemoveRemoteVolume(newvolindex.RemoteFilename, transaction);
+				                    newvolindex.FinishVolume(null, 0);
 			                    }
 							}
 						}

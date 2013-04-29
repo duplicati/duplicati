@@ -62,7 +62,7 @@ namespace Duplicati.Library.Main.ForestHash
                     new CommandLineArgument("fh-deleted-fileset", CommandLineArgument.ArgumentType.Path, Strings.FhOptions.FhdeletedfilesetShort, string.Format(Strings.FhOptions.FhdeletedfilesetLong, "fh-changed-fileset")),
 
                     new CommandLineArgument("fh-max-wastesize", CommandLineArgument.ArgumentType.Size, Strings.FhOptions.FhmaxwastesizeShort, Strings.FhOptions.FhmaxwastesizeLong),
-                    new CommandLineArgument("fh-no-shadowfiles", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnoshadowfilesShort, Strings.FhOptions.FhnoshadowfilesLong, "false"),
+                    new CommandLineArgument("fh-no-indexfiles", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnoindexfilesShort, Strings.FhOptions.FhnoindexfilesLong, "false"),
                     new CommandLineArgument("fh-no-backendverification", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhnobackendverificationShort, Strings.FhOptions.FhnobackendverificationLong, "false"),
                     new CommandLineArgument("fh-dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.FhOptions.FhdryrunShort, Strings.FhOptions.FhdryrunLong, "false"),
 
@@ -251,11 +251,11 @@ namespace Duplicati.Library.Main.ForestHash
         }
         
         /// <summary>
-        /// Gets a flag indicating if shadow files should be omitted
+        /// Gets a flag indicating if index files should be omitted
         /// </summary>
-        public bool FhNoShadowfiles
+        public bool FhNoIndexfiles
         {
-            get { return Utility.Utility.ParseBoolOption(m_options, "fh-no-shadowfiles"); }
+            get { return Utility.Utility.ParseBoolOption(m_options, "fh-no-indexfiles"); }
         }
         
         /// <summary>

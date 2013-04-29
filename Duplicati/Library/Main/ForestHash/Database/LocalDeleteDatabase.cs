@@ -438,32 +438,32 @@ namespace Duplicati.Library.Main.ForestHash.Database
 		{
 			using(var cmd = m_connection.CreateCommand())
 			{
-				// Although the generated shadow volumes are always in pairs,
+				// Although the generated index volumes are always in pairs,
 				// this code handles many-to-many relations between
-				// shadow files and block volumes, should this be added later
+				// index files and block volumes, should this be added later
 				var lookupBlock = new Dictionary<string, List<IRemoteVolume>>();
-				var lookupShadow = new Dictionary<string, List<string>>();
+				var lookupIndexfiles = new Dictionary<string, List<string>>();
 				
 				cmd.Transaction = transaction;
-					using(var rd = cmd.ExecuteReader(@"SELECT ""C"".""Name"", ""B"".""Name"", ""B"".""Hash"", ""B"".""Size"" FROM ""ShadowBlockLink"" A, ""RemoteVolume"" B, ""RemoteVolume"" C WHERE ""A"".""ShadowVolumeID"" = ""B"".""ID"" AND ""A"".""BlockVolumeID"" = ""C"".""ID"" "))
+					using(var rd = cmd.ExecuteReader(@"SELECT ""C"".""Name"", ""B"".""Name"", ""B"".""Hash"", ""B"".""Size"" FROM ""IndexBlockLink"" A, ""RemoteVolume"" B, ""RemoteVolume"" C WHERE ""A"".""IndexVolumeID"" = ""B"".""ID"" AND ""A"".""BlockVolumeID"" = ""C"".""ID"" "))
 						while(rd.Read())
 						{
 							var name = rd.GetValue(0).ToString();
-							List<IRemoteVolume> shadowList;
-							if (!lookupBlock.TryGetValue(name, out shadowList))
+							List<IRemoteVolume> indexfileList;
+							if (!lookupBlock.TryGetValue(name, out indexfileList))
 							{	
-								shadowList = new List<IRemoteVolume>();
-								lookupBlock.Add(name, shadowList);
+								indexfileList = new List<IRemoteVolume>();
+								lookupBlock.Add(name, indexfileList);
 							}
 							
 							var v = new RemoteVolume(rd.GetValue(1).ToString(), rd.GetValue(2).ToString(), Convert.ToInt64(rd.GetValue(3)));
-							shadowList.Add(v);
+							indexfileList.Add(v);
 
 							List<string> blockList;
-							if (!lookupShadow.TryGetValue(v.Name, out blockList))
+							if (!lookupIndexfiles.TryGetValue(v.Name, out blockList))
 							{	
 								blockList = new List<string>();
-								lookupShadow.Add(v.Name, blockList);
+								lookupIndexfiles.Add(v.Name, blockList);
 							}
 							blockList.Add(name);
 						}
@@ -472,15 +472,15 @@ namespace Duplicati.Library.Main.ForestHash.Database
 				{
 					// Return the input
 					yield return r;
-					List<IRemoteVolume> shadowList;
-					if (lookupBlock.TryGetValue(r.Name, out shadowList))
-						foreach(var sh in shadowList)
+					List<IRemoteVolume> indexfileList;
+					if (lookupBlock.TryGetValue(r.Name, out indexfileList))
+						foreach(var sh in indexfileList)
 						{
 							List<string> backref;
-							if (lookupShadow.TryGetValue(sh.Name, out backref))
+							if (lookupIndexfiles.TryGetValue(sh.Name, out backref))
 							{
 								//If this is the last reference, 
-								// remove the shadow file as well
+								// remove the index file as well
 								if (backref.Remove(r.Name) && backref.Count == 0)
 									yield return sh;
 							}

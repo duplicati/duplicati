@@ -112,25 +112,25 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     foreach (var fl in remotefiles)
                         volumeIds[fl.File.Name] = backupdb.RegisterRemoteVolume(fl.File.Name, fl.FileType, RemoteVolumeState.Uploaded);
                                        
-                    //We grab all shadow files, and update the block table
+                    //We grab all index files, and update the block table
                     using (var tr = restoredb.BeginTransaction())
                     {
-						var shadowfiles = 
+						var indexfiles = 
 							from n in remotefiles
-							where n.FileType == RemoteVolumeType.Shadow
+							where n.FileType == RemoteVolumeType.Index
 							select new RemoteVolume(n.File) as IRemoteVolume;
 												
-                        foreach (var sf in new AsyncDownloader(shadowfiles.ToList(), backend))
+                        foreach (var sf in new AsyncDownloader(indexfiles.ToList(), backend))
                         using (var tmpfile = sf.Value)
                         {
                             if (sf.Key.Hash != null && sf.Key.Size > 0)
                                 backupdb.UpdateRemoteVolume(sf.Key.Name, RemoteVolumeState.Verified, sf.Key.Size, sf.Key.Hash, tr);
 							
-                            using (var svr = new ShadowVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), tmpfile, m_options, hashsize))
+                            using (var svr = new IndexVolumeReader(RestoreHandler.GetCompressionModule(sf.Key.Name), tmpfile, m_options, hashsize))
                             {
 					        	ForestHash.VerifyParameters(restoredb, m_options);
 
-                                //If there are blocklists in the shadow file, update the blocklists
+                                //If there are blocklists in the index file, update the blocklists
                                 foreach (var b in svr.BlockLists)
                                     restoredb.UpdateBlocklist(b.Hash, b.Blocklist, hashsize, tr);
 
@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                                         backupdb.AddBlock(b.Key, b.Value, volumeID, tr);
 
                                     backupdb.UpdateRemoteVolume(a.Filename, RemoteVolumeState.Verified, a.Length, a.Hash, tr);
-                                    backupdb.AddShadowBlockLink(restoredb.GetRemoteVolumeID(sf.Key.Name), volumeID, tr);
+                                    backupdb.AddIndexBlockLink(restoredb.GetRemoteVolumeID(sf.Key.Name), volumeID, tr);
                                 }
                             }
                         }

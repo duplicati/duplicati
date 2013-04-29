@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -48,6 +48,7 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
                     throw new InvalidManifestException("FileHash", d.FileHash, filehash);
             }
         }
+        
 
         private class ParsedVolume : IParsedVolume
         {
@@ -59,7 +60,25 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
             public string EncryptionModule { get; private set; }
             public Library.Interface.IFileEntry File { get; private set; }
 
-            private static readonly System.Text.RegularExpressions.Regex FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(?<filetype>(" + string.Join(")|(", Enum.GetNames(typeof(RemoteVolumeType))).ToLowerInvariant() + @"))\-(((?<guid>[0-9A-Fa-f]+)|(?<time>\d{8}T\d{6}Z)))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
+	        internal static readonly IDictionary<RemoteVolumeType, string> REMOTE_TYPENAME_MAP;
+	        internal static readonly IDictionary<string, RemoteVolumeType> REVERSE_REMOTE_TYPENAME_MAP;
+            private static readonly System.Text.RegularExpressions.Regex FILENAME_REGEXP;
+
+			static ParsedVolume()
+			{
+				var dict = new Dictionary<RemoteVolumeType, string>();
+				dict[RemoteVolumeType.Blocks] = "dblock";
+				dict[RemoteVolumeType.Files] = "dlist";
+				dict[RemoteVolumeType.Index] = "dindex";
+				
+				var reversedict = new Dictionary<string, RemoteVolumeType>(System.StringComparer.InvariantCultureIgnoreCase);
+				foreach(var x in dict)
+					reversedict[x.Value] = x.Key;
+								
+				REMOTE_TYPENAME_MAP = dict;
+				REVERSE_REMOTE_TYPENAME_MAP = reversedict;
+				FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-((?<guid>[0-9A-Fa-f]+)|(backup\-(?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
+			}
 
             private ParsedVolume() { }
 
@@ -69,10 +88,14 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
                 if (!m.Success || m.Length != filename.Length)
                     return null;
 
+				RemoteVolumeType t;
+				if (!REVERSE_REMOTE_TYPENAME_MAP.TryGetValue(m.Groups["filetype"].Value, out t))
+					return null;
+
                 return new ParsedVolume()
                 {
                     Prefix = m.Groups["prefix"].Value,
-                    FileType = (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), m.Groups["filetype"].Value, true),
+                    FileType = t,
                     Guid = m.Groups["guid"].Success ? m.Groups["guid"].Value : null,
                     Time = m.Groups["time"].Success ? DateTime.ParseExact(m.Groups["time"].Value, "yyyyMMdd'T'HHmmssK", null, System.Globalization.DateTimeStyles.AssumeUniversal).ToUniversalTime() : new DateTime(0, DateTimeKind.Local),
                     CompressionModule = m.Groups["compression"].Value,
@@ -85,10 +108,11 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
 		public static string GenerateFilename(RemoteVolumeType filetype, string prefix, string guid, DateTime timestamp, string compressionmodule, string encryptionmodule)
 		{
 			string volumename;
+
             if (filetype == RemoteVolumeType.Files)
-                volumename = prefix + "-" + (filetype.ToString().ToLowerInvariant()) + "-" + Utility.Utility.SerializeDateTime(timestamp) + "." + compressionmodule;
+                volumename = prefix + "-backup" + "-" + Utility.Utility.SerializeDateTime(timestamp) + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
             else
-                volumename = prefix + "-" + (filetype.ToString().ToLowerInvariant()) + "-" + guid + "." + compressionmodule;
+                volumename = prefix + "-" + guid + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
 
             if (!string.IsNullOrEmpty(encryptionmodule))
                 volumename += "." + encryptionmodule;
@@ -109,8 +133,8 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
         protected const string MANIFEST_FILENAME = "manifest";
         protected const string FILELIST = "filelist.json";
 
-        protected const string SHADOW_VOLUME_FOLDER = "vol/";
-        protected const string SHADOW_BLOCKLIST_FOLDER = "list/";
+        protected const string INDEX_VOLUME_FOLDER = "vol/";
+        protected const string INDEX_BLOCKLIST_FOLDER = "list/";
 
         protected const string CONTROL_FILES_FOLDER = "extra/";
 

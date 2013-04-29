@@ -100,8 +100,6 @@
     <Compile Include="ForestHash\Volumes\IFileEntry.cs" />
     <Compile Include="ForestHash\Volumes\InvalidManifestException.cs" />
     <Compile Include="ForestHash\Volumes\IParsedVolume.cs" />
-    <Compile Include="ForestHash\Volumes\ShadowVolumeReader.cs" />
-    <Compile Include="ForestHash\Volumes\ShadowVolumeWriter.cs" />
     <Compile Include="ForestHash\Volumes\VolumeBase.cs" />
     <Compile Include="ForestHash\Volumes\VolumeReaderBase.cs" />
     <Compile Include="ForestHash\Volumes\VolumeWriterBase.cs" />
@@ -172,6 +170,8 @@
     <Compile Include="ForestHash\AsyncDownloader.cs" />
     <Compile Include="ForestHash\Database\LocalBugReportDatabase.cs" />
     <Compile Include="ForestHash\Operation\CreateBugReportHandler.cs" />
+    <Compile Include="ForestHash\Volumes\IndexVolumeWriter.cs" />
+    <Compile Include="ForestHash\Volumes\IndexVolumeReader.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">

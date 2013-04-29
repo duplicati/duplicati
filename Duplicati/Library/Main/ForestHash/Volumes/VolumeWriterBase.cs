@@ -28,13 +28,23 @@ namespace Duplicati.Library.Main.ForestHash.Volumes
             : this(options, DateTime.UtcNow)
         {
         }
+        
+        private static string GenerateGuid(FhOptions options)
+        {
+        	var s = Guid.NewGuid().ToString("N");
+        	
+        	//We can choose shorter GUIDs here
+        	
+        	return s;
+        	
+        }
 
         public VolumeWriterBase(FhOptions options, DateTime timestamp)
             : base(options)
         {
             m_localfile = new Utility.TempFile();
 
-			m_volumename = GenerateFilename(this.FileType, options.BackupPrefix, Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray()), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+			m_volumename = GenerateFilename(this.FileType, options.BackupPrefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
             AddManifestfile();
         }

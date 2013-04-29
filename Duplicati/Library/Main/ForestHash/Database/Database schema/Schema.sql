@@ -25,15 +25,15 @@ CREATE TABLE "Remotevolume" (
 );
 
 /*
-The shadow-block table contains
+The index-block table contains
 references that explains what block
-files a shadow file references.
-This is used to remove shadow volumes,
+files a index file references.
+This is used to remove index volumes,
 when they no longer reference any
 block volumes	
 */
-CREATE TABLE "ShadowBlockLink" (
-	"ShadowVolumeID" INTEGER NOT NULL,
+CREATE TABLE "IndexBlockLink" (
+	"IndexVolumeID" INTEGER NOT NULL,
 	"BlockVolumeID" INTEGER NOT NULL
 );
 

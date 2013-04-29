@@ -177,11 +177,11 @@
   <data name="FhnobackendverificationShort" xml:space="preserve">
     <value>Do not query backend at startup</value>
   </data>
-  <data name="FhnoshadowfilesLong" xml:space="preserve">
-    <value>If this flag is set, no shadow files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded.</value>
+  <data name="FhnoindexfilesLong" xml:space="preserve">
+    <value>If this flag is set, no index files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded.</value>
   </data>
-  <data name="FhnoshadowfilesShort" xml:space="preserve">
-    <value>Do not upload shadow files</value>
+  <data name="FhnoindexfilesShort" xml:space="preserve">
+    <value>Do not upload index files</value>
   </data>
   <data name="FhmaxwastesizeLong" xml:space="preserve">
     <value>As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value cannot be less than the volumesize, the default value is two times the volumesize.</value>

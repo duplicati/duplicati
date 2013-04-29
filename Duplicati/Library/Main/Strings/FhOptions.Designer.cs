@@ -313,6 +313,24 @@ namespace Duplicati.Library.Main.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to If this flag is set, no index files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded..
+        /// </summary>
+        internal static string FhnoindexfilesLong {
+            get {
+                return ResourceManager.GetString("FhnoindexfilesLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not upload index files.
+        /// </summary>
+        internal static string FhnoindexfilesShort {
+            get {
+                return ResourceManager.GetString("FhnoindexfilesShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Stores empty metadata, such as file timestamps and attributes. This decreases the required storage space as well as the processing time..
         /// </summary>
         internal static string FhnometadataLong {
@@ -327,24 +345,6 @@ namespace Duplicati.Library.Main.Strings {
         internal static string FhnometadataShort {
             get {
                 return ResourceManager.GetString("FhnometadataShort", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to If this flag is set, no shadow files are uploaded to the remote destination. This reduces the required storage as well as the required transfer, but makes restoring slower as more volumes must be downloaded..
-        /// </summary>
-        internal static string FhnoshadowfilesLong {
-            get {
-                return ResourceManager.GetString("FhnoshadowfilesLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Do not upload shadow files.
-        /// </summary>
-        internal static string FhnoshadowfilesShort {
-            get {
-                return ResourceManager.GetString("FhnoshadowfilesShort", resourceCulture);
             }
         }
         

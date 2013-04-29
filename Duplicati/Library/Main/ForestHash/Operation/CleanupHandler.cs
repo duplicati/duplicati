@@ -94,12 +94,12 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 									backend.Put(w);
 								}
 							}
-							else if (n.Type == RemoteVolumeType.Shadow)
+							else if (n.Type == RemoteVolumeType.Index)
 							{
-								var w = new ShadowVolumeWriter(m_options);
+								var w = new IndexVolumeWriter(m_options);
 								w.SetRemoteFilename(n.Name);
 								
-								foreach(var blockvolume in db.GetBlockVolumesFromShadowName(n.Name))
+								foreach(var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
 								{								
 									w.StartVolume(blockvolume.Name);
 									var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.ForestHash.Operation
 								w.Close();
 								
 								if (m_options.FhDryrun)
-									m_stat.LogMessage("[Dryrun] would re-upload shadow file {0}, with size {1}, previous size {2}", n.Name, Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Utility.Utility.FormatSizeString(n.Size));
+									m_stat.LogMessage("[Dryrun] would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Utility.Utility.FormatSizeString(n.Size));
 								else
 								{
 									db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);

@@ -38,21 +38,21 @@ namespace Duplicati.Library.Main.ForestHash
             public object Result;
             public string Hash;
             public long Size;
-            public ShadowVolumeWriter Shadow;
+            public IndexVolumeWriter Indexfile;
 
             private System.Threading.ManualResetEvent DoneEvent;
 
-            public FileEntryItem(OperationType operation, string remotefilename, ShadowVolumeWriter shadow = null)
+            public FileEntryItem(OperationType operation, string remotefilename, IndexVolumeWriter indexfile = null)
             {
                 Operation = operation;
                 RemoteFilename = remotefilename;
-                Shadow = shadow;
+                Indexfile = indexfile;
 
                 DoneEvent = new System.Threading.ManualResetEvent(false);
             }
 
-            public FileEntryItem(OperationType operation, string remotefilename, long size, string hash, ShadowVolumeWriter shadow = null)
-                : this(operation, remotefilename, shadow)
+            public FileEntryItem(OperationType operation, string remotefilename, long size, string hash, IndexVolumeWriter indexfile = null)
+                : this(operation, remotefilename, indexfile)
             {
                 Size = size;
                 Hash = hash;
@@ -370,11 +370,11 @@ namespace Duplicati.Library.Main.ForestHash
             if (item.UpdateHashAndSize(m_options))
             	m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
-            if (item.Shadow != null)
+            if (item.Indexfile != null)
             {
-                item.Shadow.FinishVolume(item.Hash, item.Size);
-                item.Shadow.Close();
-                item.Shadow = null;
+                item.Indexfile.FinishVolume(item.Hash, item.Size);
+                item.Indexfile.Close();
+                item.Indexfile = null;
             }            
 
             m_stats.AddNumberOfRemoteCalls(1);
@@ -558,14 +558,14 @@ namespace Duplicati.Library.Main.ForestHash
             	m_stats.LogMessage("Created target folder");
         }
 
-        public void Put(VolumeWriterBase item, ShadowVolumeWriter shadow = null)
+        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null)
         {
             if (m_lastException != null)
                 throw m_lastException;
             
             item.Close();
             m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-            var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, shadow);
+            var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, indexfile);
             req.LocalFilename = item.LocalFilename;
 
             if (m_queue.Enqueue(req) && !m_options.AsynchronousUpload)
@@ -574,11 +574,11 @@ namespace Duplicati.Library.Main.ForestHash
             if (m_lastException != null)
                 throw m_lastException;
 
-            if (shadow != null)
+            if (indexfile != null)
             {
-                m_db.LogDbUpdate(shadow.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                var req2 = new FileEntryItem(OperationType.Put, shadow.RemoteFilename);
-                req2.LocalFilename = shadow.LocalFilename;
+                m_db.LogDbUpdate(indexfile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                var req2 = new FileEntryItem(OperationType.Put, indexfile.RemoteFilename);
+                req2.LocalFilename = indexfile.LocalFilename;
 
                 if (m_queue.Enqueue(req2) && !m_options.AsynchronousUpload)
                     req2.WaitForComplete();
