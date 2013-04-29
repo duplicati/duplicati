@@ -472,8 +472,13 @@ namespace Duplicati.Library.Main.ForestHash.Database
 					do
 					{
 						var n = new FastSource(rd, m_blocksize);
+						var tid = n.TargetFileID;
 						yield return n;
+						
 						more = n.MoreData;
+						while(more && n.TargetFileID == tid)
+							more = rd.Read();
+
 					} while (more);
 				}
 			}	

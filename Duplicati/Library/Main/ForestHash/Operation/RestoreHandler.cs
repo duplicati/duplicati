@@ -289,46 +289,49 @@ namespace Duplicati.Library.Main.ForestHash.Operation
                     
                 	try
                 	{
-                		using(var targetstream = System.IO.File.Open(targetpath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
-                		{
-                			try
-                			{
-	                    		using(var sourcestream = System.IO.File.Open(sourcepath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
-	                    		{
-	    			                foreach(var block in entry.Blocks)
-	    			                {
-		    			                if (sourcestream.Length > block.Offset)
-			                    		{
-			                    			sourcestream.Position = block.Offset;
-			                    			
-	                                        var size = sourcestream.Read(blockbuffer, 0, blockbuffer.Length);
-	                                        if (size == block.Size)
-	                                        {
-	                                            var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
-	                                            if (key == block.Hash)
-	                                            {
-					                            	if (options.FhDryrun)
-					                            		patched = true;
-				                            		else
-				                            		{
-				                            			targetstream.Position = block.Offset;
-	                                                    targetstream.Write(blockbuffer, 0, size);
-	                                                }
-	                                                    
-	                                                blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size);
-	                                            }
-	                                        }	                    		
+        				if (System.IO.File.Exists(sourcepath))
+        				{
+	                		using(var targetstream = System.IO.File.Open(targetpath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
+	                		{
+	                			try
+	                			{
+		                    		using(var sourcestream = System.IO.File.Open(sourcepath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+		                    		{
+		    			                foreach(var block in entry.Blocks)
+		    			                {
+			    			                if (sourcestream.Length > block.Offset)
+				                    		{
+				                    			sourcestream.Position = block.Offset;
+				                    			
+		                                        var size = sourcestream.Read(blockbuffer, 0, blockbuffer.Length);
+		                                        if (size == block.Size)
+		                                        {
+		                                            var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+		                                            if (key == block.Hash)
+		                                            {
+						                            	if (options.FhDryrun)
+						                            		patched = true;
+					                            		else
+					                            		{
+					                            			targetstream.Position = block.Offset;
+		                                                    targetstream.Write(blockbuffer, 0, size);
+		                                                }
+		                                                    
+		                                                blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size);
+		                                            }
+		                                        }	                    		
+											}
 										}
 									}
-								}
-                			}
-                			catch (Exception ex)
-                			{
-                                stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex);
-                                database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex, null);
-                			}
-                		}	
-                	}
+	                			}
+	                			catch (Exception ex)
+	                			{
+	                                stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex);
+	                                database.LogMessage("Warning", string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex, null);
+	                			}
+	                		}	
+	                	}
+	 				}
                     catch (Exception ex)
                     {
                         stat.LogWarning(string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
