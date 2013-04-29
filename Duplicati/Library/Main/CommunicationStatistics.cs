@@ -262,6 +262,7 @@ namespace Duplicati.Library.Main
         	if (m_stderr == null)
         		m_stderr = new System.IO.StreamWriter(Console.OpenStandardError());
         	m_stderr.WriteLine(message);
+        	m_stderr.Flush();
         }
 	}
 }
