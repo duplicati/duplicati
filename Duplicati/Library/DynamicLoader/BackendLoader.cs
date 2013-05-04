@@ -103,10 +103,10 @@ namespace Duplicati.Library.DynamicLoader
                             var commands = m_interfaces[tmpscheme].SupportedCommands;
                             if (commands != null && (commands.Where(x =>
                                 x.Name.Equals("use-ssl", StringComparison.InvariantCultureIgnoreCase) ||
-                                (x.Aliases != null && x.Aliases.Where(y => y.Equals("use-ssl", StringComparison.InvariantCultureIgnoreCase)))
+                                (x.Aliases != null && x.Aliases.Where(y => y.Equals("use-ssl", StringComparison.InvariantCultureIgnoreCase)).Any())
                                 ).Any()))
                             {
-                                newOpts["use-ssl"] = true;
+                                newOpts["use-ssl"] = "true";
                                 return (IBackend)Activator.CreateInstance(m_interfaces[tmpscheme].GetType(), url, newOpts);
                             }
                         }
