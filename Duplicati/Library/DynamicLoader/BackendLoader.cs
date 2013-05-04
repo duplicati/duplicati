@@ -23,6 +23,7 @@ using System.Text;
 using Duplicati.Library.Interface;
 using System.Collections.Specialized;
 using System.Web;
+using System.Linq;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -94,8 +95,24 @@ namespace Duplicati.Library.DynamicLoader
                 {
                     if (m_interfaces.ContainsKey(scheme))
                         return (IBackend)Activator.CreateInstance(m_interfaces[scheme].GetType(), url, newOpts);
-                    else
-                        return null;
+                    else if (scheme.EndsWith("s"))
+                    {
+                        var tmpscheme = scheme.Substring(0, scheme.Length - 1);
+                        if (m_interfaces.ContainsKey(tmpscheme))
+                        {
+                            var commands = m_interfaces[tmpscheme].SupportedCommands;
+                            if (commands != null && (commands.Where(x =>
+                                x.Name.Equals("use-ssl", StringComparison.InvariantCultureIgnoreCase) ||
+                                (x.Aliases != null && x.Aliases.Where(y => y.Equals("use-ssl", StringComparison.InvariantCultureIgnoreCase)))
+                                ).Any()))
+                            {
+                                newOpts["use-ssl"] = true;
+                                return (IBackend)Activator.CreateInstance(m_interfaces[tmpscheme].GetType(), url, newOpts);
+                            }
+                        }
+                    }
+                    
+                    return null;
                 }
             }
 
