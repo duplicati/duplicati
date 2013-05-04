@@ -577,8 +577,104 @@ namespace Duplicati.Server
 
             private void GetBackupDefaults(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
-                OutputObject(bw, new Serializable.JobSettings());
+                using(var nf = new System.Data.LightDatamodel.DataFetcherNested(Program.DataConnection))
+                {
+                    var sc = nf.Add<Datamodel.Schedule>();
+                    sc.Task = nf.Add<Datamodel.Task>();
+    
+                    ApplyXDoc(System.Xml.Linq.XDocument.Load(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(Program), "backup defaults.xml")), sc);
+                    string extraPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "backup defaults.xml");
+                    if (System.IO.File.Exists(extraPath))
+                        ApplyXDoc(System.Xml.Linq.XDocument.Load(extraPath), sc);
+        
+                    //Since this element is not attached to any database element, set the id to -1
+                    sc.ID = -1;
+                
+                    OutputObject(bw, new
+                    {
+                        success = true,
+                        data = new
+                        {
+                            Schedule = sc,
+                            Task = sc.Task
+                        }
+                    });
+                }
             }
+
+            /// <summary>
+            /// Helper method that applies a partially serialized document to an object.
+            /// </summary>
+            /// <param name="settings">Settings.</param>
+            /// <param name="schedule">Schedule.</param>
+            private static void ApplyXDoc(System.Xml.Linq.XDocument settings, object element)
+            {
+                var el = settings.Element("settings");
+                if (el == null)
+                    return;
+                    
+                ApplyXDoc(el, element);
+            }
+            
+            /// <summary>
+            /// Helper method that applies a partially serialized document to an object.
+            /// </summary>
+            /// <param name="settings">Settings.</param>
+            /// <param name="schedule">Schedule.</param>
+            private static void ApplyXDoc(System.Xml.Linq.XElement el, object element)
+            {
+                foreach(var p in el.Elements())
+                {
+                    var prop = element.GetType().GetProperty(p.Name.LocalName, System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+                    if (prop == null)
+                        continue;
+    
+                    if (prop.PropertyType == typeof(string))
+                    {
+                        prop.SetValue(element, p.Value, null);
+                    }
+                    else if (prop.PropertyType == typeof(bool))
+                    {
+                        prop.SetValue(element, Duplicati.Library.Utility.Utility.ParseBool(p.Value, false), null);
+                    }
+                    else if (prop.PropertyType == typeof(IList<string>))
+                    {
+                        //Use any element name, usually 
+                        //  <value>x</value> 
+                        //  <value>y</value>
+                        //but also accept:
+                        //  <key value="x" />
+                        //  <key value="y" />
+                        //or any mix of that
+                        prop.SetValue(element, p.Elements().Select(x =>
+                        {
+                            if (x.Attribute("value") != null)
+                                return x.Attribute("value").Value;
+                            else
+                                return x.Value;
+                        }).ToList(), null);
+                    }
+                    else if (prop.PropertyType == typeof(IDictionary<string, string>))
+                    {
+                        IDictionary<string, string> props = (IDictionary<string, string>)prop.GetValue(element, null);
+                        foreach (var pe in p.Elements())
+                        {
+                            //using the <key name="xx" value="yy" /> format
+                            if (pe.Name.LocalName == "key" && pe.Attribute("name") != null && pe.Attribute("value") != null)
+                                props[pe.Attribute("name").Value] = pe.Attribute("value").Value;
+                            //using the <name>value</name> format
+                            else
+                                props[pe.Name.LocalName] = pe.Value;
+                        }
+                    }
+                    else
+                    {
+                        var v = prop.GetValue(element, null);
+                        if (v != null)
+                            ApplyXDoc(p, v);
+                    }
+                }
+            }            
 
             private void GetScheduleDetails(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw)
             {
@@ -588,7 +684,7 @@ namespace Duplicati.Server
                     ReportError(response, bw, "Invalid or missing schedule id");
                 else
                 {
-                    Datamodel.Schedule sc = Program.DataConnection.GetObjectById<Datamodel.Schedule>(id);
+                    var sc = Program.DataConnection.GetObjectById<Datamodel.Schedule>(id);
                     OutputObject(bw, new
                     {
                         success = true,

@@ -337,4 +337,8 @@ Errors: {3}</value>
     <value>Found {0} commands but expected {1}, commands: 
 {2}</value>
   </data>
+  <data name="InvalidCommandError" xml:space="preserve">
+    <value>Command not supported: {0} 
+{1}</value>
+  </data>
 </root>

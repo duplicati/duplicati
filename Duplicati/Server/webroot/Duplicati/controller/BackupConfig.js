@@ -10,7 +10,7 @@
         var t = Ext.getCmp('sEncryptionPassword');
         var t2 = Ext.getCmp('sEncryptionPasswordCheck');
         var pwdButton = Ext.getCmp('btnPassword');
-        t.inputEl.dom.type = t2.inputEl.dom.type = ( t.inputEl.dom.type == 'password' )?'text':'text';
+        t.inputEl.dom.type = t2.inputEl.dom.type = 'text';
         pwdButton.setText( 'Hide Password' );
         t.setValue(text);
     },
@@ -44,7 +44,7 @@
             // Save all the stuff and Finish work
             // Checks need to happen here, if everything is filled in proper
             alert( "DONE!!");
-            Ext.getCmp("winBackupConfig").destroy();
+	        button.findParentByType('window').destroy();
         } else {
 	        var wizardTabs = Ext.getCmp('panelWizard');
             wizardTabs.setActiveTab( wizardTabs.getActiveTab().activeItem + 1 );
@@ -69,17 +69,27 @@
     },
 
     onBtnCloseClick: function(button, e, options) {
-        Ext.getCmp("winBackupConfig").destroy();
+        button.findParentByType('window').destroy();
     },
 
-    afterWindowLayout: function(abstractcontainer, layout, options) {
-        var backupJob = Ext.ModelManager.getModel('Duplicati.model.BackupJob');
-        backupJob.load(abstractcontainer.scheduleId, {
-            scope: this,
-            success : function(backupJobResult, operation) {
-                abstractcontainer.loadRecord(backupJobResult);
-            }
-        });
+    afterWindowLayout: function(abstractcontainer, layout, options) {        
+        if (abstractcontainer.scheduleId == null || abstractcontainer.scheduleId < 0)
+        {
+			Duplicati.service.getBackupDefaults(function(data) {
+				var entry = Duplicati.Utility.createRecordFromData('Duplicati.model.BackupJob', data.data);				
+                abstractcontainer.loadRecord(entry);
+			});        	
+        }
+        else
+        {
+	        var backupJobModel = Ext.ModelManager.getModel('Duplicati.model.BackupJob');
+	        backupJobModel.load(abstractcontainer.scheduleId, {
+	            scope: this,
+	            success : function(backupJobResult, operation) {
+	                abstractcontainer.loadRecord(backupJobResult);
+	            }
+	        });
+       	}
     },
 
     onControllerClickStub: function() {

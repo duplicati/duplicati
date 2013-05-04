@@ -12,6 +12,8 @@ Ext.define('Duplicati.view.StatuswindowHeader' ,{
 		xtype: 'button',
 		cls: 'main-button',
 		text: 'Duplicati',
+		iconCls: 'unused-marker',
+		minHeight: 35,
 		id: 'status-window-header-main-button',
 		margin: 10,
 		menu: [{
@@ -105,13 +107,25 @@ Ext.define('Duplicati.view.StatuswindowHeader' ,{
 		xtype: 'button',
 		cls: 'add-new-backup-button',
 		text: 'Add new backup',
+		iconCls: 'unused-marker',
+		minHeight: 35,
 		margin: 10,
-		handler: function() { Ext.create('Duplicati.view.BackupConfig').show(); }
+		handler: function() {
+			Ext.create('Ext.window.Window', {
+			    title: 'Add new backup',
+			    bodyBorder: false,
+			    layout: 'fit',
+			    items: {  
+			        xtype: 'backupconfigpanel'
+			    }
+			}).show();
+		}
 	},{
 		xtype: 'button',
 		id: 'status-window-header-pause-button',
 		cls: 'pause-backup-button',
 		iconCls: 'backups-paused',
+		minHeight: 35,
 		text: 'Pause',
 		margin: 10,
 		handler: function() { Duplicati.service.togglePause(); }

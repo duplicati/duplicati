@@ -215,11 +215,11 @@ Ext.define('Duplicati.view.override.BackupConfig', {
     	this.setValues(schedule, "Schedule")
     	this.setValues(task, "Task")
     	
-    	this.setEncryptionModule(task.EncryptionModule);
-    	this.setEncryptionPassword(task.Encryptionkey);
+    	this.setEncryptionModule(task.getData().EncryptionModule);
+    	this.setEncryptionPassword(task.getData().Encryptionkey);
     	
     	this.setBackupRepeatAndWhen(schedule.getData().Repeat, schedule.getData().When);
-    	this.setAllowedWeekdays(schedule.AllowedWeekdays);
+    	this.setAllowedWeekdays(schedule.getData().AllowedWeekdays);
     	this.setVolumeSize(task.getExtensions().getData().VolumeSize);
     	this.setSourcePaths(task.getData().SourcePath);
     }

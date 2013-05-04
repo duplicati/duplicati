@@ -116,53 +116,8 @@ namespace Duplicati.CommandLine
                 if (!string.IsNullOrEmpty(filter))
                     options["filter"] = filter;
 
-                if (cargs.Count == 1)
-                {
-                    switch (cargs[0].Trim().ToLower())
-                    {
-                        case "purge-signature-cache":
-                            Library.Main.Interface.PurgeSignatureCache(options);
-                            return 0;
-                    }
-                }
-
-                if (cargs.Count < 2 || cargs[0].Trim().Equals("help", StringComparison.InvariantCultureIgnoreCase))
-                {
-                	if (cargs.Count == 1 && !cargs[0].Trim().Equals("help", StringComparison.InvariantCultureIgnoreCase) )
-                	{
-						PrintWrongNumberOfArguments(cargs, 2);              		
-                		return 200;	
-                	}
-                	
-                	if (cargs.Count < 2)
-                        Help.PrintUsage("help", options);
-                    else
-                        Help.PrintUsage(cargs[1], options);
-                    
-
-                    return 0;
-                }
-
-
-                string source = cargs[0];
-                string target = cargs[1];
-                bool operationSpecified = false;
-
-                if (source.Trim().ToLower() == "restore" && cargs.Count == 3)
-                {
-                    source = target;
-                    target = cargs[2];
-                    options["restore"] = null;
-                    cargs.RemoveAt(0);
-                    operationSpecified = true;
-                }
-                else if (source.Trim().ToLower() == "backup" && cargs.Count == 3)
-                {
-                    source = target;
-                    target = cargs[2];
-                    cargs.RemoveAt(0);
-                    operationSpecified = true;
-                }
+                string command = cargs[0];
+                cargs.RemoveAt(0);
 
                 if (!options.ContainsKey("passphrase"))
                     if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
@@ -176,410 +131,39 @@ namespace Duplicati.CommandLine
                     if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("FTP_USERNAME")))
                         options["ftp-username"] = System.Environment.GetEnvironmentVariable("FTP_USERNAME");
 
-                if (source.Trim().ToLower() == "list")
-                    Console.WriteLine(string.Join(Environment.NewLine, Duplicati.Library.Main.Interface.List(target, options)));
-                else if (source.Trim().ToLower() == "list-current-files")
+                var knownCommands = new Dictionary<string, Func<List<string>, Dictionary<string, string>, int>>(StringComparer.InvariantCultureIgnoreCase);
+                knownCommands["purge-signature-cache"] = Commands.PurgeSignatureCache;
+                knownCommands["help"] = Commands.Help;                
+                knownCommands["list"] = Commands.List;
+                knownCommands["list-current-files"] = Commands.ListCurrentFiles;
+                knownCommands["list-source-folders"] = Commands.ListSourceFolders;
+                knownCommands["list-actual-signature-files"] = Commands.ListActualSignatureFiles;
+                knownCommands["collection-status"] = Commands.CollectionStatus;
+                knownCommands["delete-all-but-n-full"] = Commands.DeleteAllButNFull;
+                knownCommands["delete-all-but-n"] = Commands.DeleteAllButN;
+                knownCommands["delete-older-than"] = Commands.DeleteOlderThan;
+                knownCommands["cleanup"] = Commands.Cleanup;
+                knownCommands["create-folder"] = Commands.CreateFolder;
+                knownCommands["find-last-version"] = Commands.FindLastVersion;
+                knownCommands["verify"] = Commands.Verify;
+                knownCommands["restore"] = Commands.Restore;
+                knownCommands["backup"] = Commands.Backup;
+
+                knownCommands["delete-filesets"] = Commands.DeleteFilesets;
+                knownCommands["repair"] = Commands.Repair;
+                knownCommands["compact"] = Commands.Compact;
+                knownCommands["recreate-database"] = Commands.RecreateDatabase;
+                knownCommands["create-bugreport-database"] = Commands.CreateBugreportDatabase;
+                
+                if (knownCommands.ContainsKey(command))
                 {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    Console.WriteLine(string.Join(Environment.NewLine, new List<string>(Duplicati.Library.Main.Interface.ListCurrentFiles(target, options)).ToArray()));
-                }
-                else if (source.Trim().ToLower() == "list-source-folders")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    if (options.ContainsKey("fh-dbpath"))
-                    {
-                    	PrintNotSupportedWithFhdb("list-source-folders");
-                    	return 200;
-                    }
-
-                    Console.WriteLine(string.Join(Environment.NewLine, Duplicati.Library.Main.Interface.ListSourceFolders(target, options) ?? new string[0]));
-                }
-                else if (source.Trim().ToLower() == "list-actual-signature-files")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    if (options.ContainsKey("fh-dbpath"))
-                    {
-                    	PrintNotSupportedWithFhdb("list-actual-signature-files");
-                    	return 200;
-                    }
-
-                    List<KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string>> files = Duplicati.Library.Main.Interface.ListActualSignatureFiles(cargs[0], options);
-
-                    Console.WriteLine("* " + Strings.Program.DeletedFoldersHeader + ":");
-                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFolder)
-                            Console.WriteLine(x.Value);
-
-                    Console.WriteLine();
-                    Console.WriteLine("* " + Strings.Program.AddedFoldersHeader + ":");
-                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedFolder)
-                            Console.WriteLine(x.Value);
-
-                    Console.WriteLine();
-                    Console.WriteLine("* " + Strings.Program.DeletedFilesHeader + ":");
-                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.DeletedFile)
-                            Console.WriteLine(x.Value);
-
-                    bool hasCombinedSignatures = false;
-                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedOrUpdatedFile)
-                        {
-                            hasCombinedSignatures = true;
-                            break;
-                        }
-
-                    if (hasCombinedSignatures)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("* " + Strings.Program.NewOrModifiedFilesHeader + ":");
-                        foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                            if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedOrUpdatedFile)
-                                Console.WriteLine(x.Value);
-                    }
-                    else
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("* " + Strings.Program.NewFilesHeader + ":");
-                        foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                            if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.AddedFile)
-                                Console.WriteLine(x.Value);
-
-                        Console.WriteLine();
-                        Console.WriteLine("* " + Strings.Program.ModifiedFilesHeader + ":");
-                        foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                            if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.UpdatedFile)
-                                Console.WriteLine(x.Value);
-                    }
-
-                    Console.WriteLine();
-                    Console.WriteLine("* " + Strings.Program.ControlFilesHeader + ":");
-                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.ControlFile)
-                            Console.WriteLine(x.Value);
-
-                    Console.WriteLine();
-                    Console.WriteLine("* " + Strings.Program.SymlinksHeader + ":");
-                    foreach (KeyValuePair<Duplicati.Library.Main.RSync.RSyncDir.PatchFileType, string> x in files)
-                        if (x.Key == Duplicati.Library.Main.RSync.RSyncDir.PatchFileType.Symlink)
-                            Console.WriteLine(x.Value);
-                }
-                else if (source.Trim().ToLower() == "collection-status")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-                    
-                    if (options.ContainsKey("fh-dbpath"))
-                    {
-                    	PrintNotSupportedWithFhdb("collection-status");
-                    	return 200;
-                    }
-
-                    List<Duplicati.Library.Main.ManifestEntry> entries = Duplicati.Library.Main.Interface.ParseFileList(cargs[0], options);
-                    
-                    Console.WriteLine(Strings.Program.CollectionStatusHeader.Replace("\\t", "\t"), entries.Count);
-                    
-                    foreach (Duplicati.Library.Main.ManifestEntry m in entries)
-                    {
-                        Console.WriteLine();
-
-                        long size = Math.Max(m.Fileentry.Size ,0);
-                        foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in m.Volumes)
-                            size += Math.Max(x.Key.Fileentry.Size, 0) + Math.Max(x.Value.Fileentry.Size, 0);
-
-                        Console.WriteLine(Strings.Program.CollectionStatusLineFull.Replace("\\t", "\t"), m.Time.ToString(), m.Volumes.Count, Library.Utility.Utility.FormatSizeString(size));
-
-                        foreach (Duplicati.Library.Main.ManifestEntry mi in m.Incrementals)
-                        {
-                            size = Math.Max(mi.Fileentry.Size, 0);
-                            foreach (KeyValuePair<Duplicati.Library.Main.SignatureEntry, Duplicati.Library.Main.ContentEntry> x in mi.Volumes)
-                                size += Math.Max(x.Key.Fileentry.Size, 0) + Math.Max(x.Value.Fileentry.Size, 0);
-
-                            Console.WriteLine(Strings.Program.CollectionStatusLineInc.Replace("\\t", "\t"), mi.Time.ToString(), mi.Volumes.Count, Library.Utility.Utility.FormatSizeString(size));
-                        }
-                    }
-                }
-                else if (source.Trim().ToLower() == "delete-all-but-n-full" || source.Trim().ToLower() == "delete-all-but-n")
-                {
-                    int n = 0;
-                    if (!int.TryParse(target, out n) || n < 0)
-                    {
-                        Console.WriteLine(string.Format(Strings.Program.IntegerParseError, target));
-                        return 200;
-                    }
-
-                    options["delete-all-but-n-full"] = n.ToString();
-
-                    cargs.RemoveAt(0);
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    if (source.Trim().ToLower() == "delete-all-but-n")
-                        Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButN(cargs[0], options));
-                    else
-                        Console.WriteLine(Duplicati.Library.Main.Interface.DeleteAllButNFull(cargs[0], options));
-                }
-                else if (source.Trim().ToLower() == "delete-older-than")
-                {
-                    try
-                    {
-                        Duplicati.Library.Utility.Timeparser.ParseTimeSpan(target);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(string.Format(Strings.Program.TimeParseError, target, ex.Message));
-                        return 200;
-                    }
-
-                    options["delete-older-than"] = target;
-
-                    cargs.RemoveAt(0);
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    Console.WriteLine(Duplicati.Library.Main.Interface.DeleteOlderThan(cargs[0], options));
-                }
-                else if (source.Trim().ToLower() == "delete-filesets")
-                {
-                    cargs.RemoveAt(0);
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-					if (!options.ContainsKey("fh-dbpath"))
-					{
-						PrintRequiresFhDb(source);
-						return 200;
-					}	
-
-                    Console.WriteLine(Duplicati.Library.Main.Interface.DeleteFilesets(cargs[0], target, options, null));
-                }
-                else if (source.Trim().ToLower() == "cleanup")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    Console.WriteLine(Duplicati.Library.Main.Interface.Cleanup(cargs[0], options));
-                }
-                else if (source.Trim().ToLower() == "create-folder")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    Duplicati.Library.Main.Interface.CreateFolder(cargs[0], options);
-                    Console.WriteLine(string.Format(Strings.Program.FolderCreatedMessage, cargs[0]));
-                }
-                else if (source.Trim().ToLower() == "compact")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-					if (!options.ContainsKey("fh-dbpath"))
-					{
-						PrintRequiresFhDb(source);
-						return 200;
-					}	
-					
-                    Console.WriteLine(Duplicati.Library.Main.Interface.CompactBlocks(cargs[0], options, null));
-                }
-                else if (source.Trim().ToLower() == "recreate-database")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-					if (!options.ContainsKey("fh-dbpath"))
-					{
-						PrintRequiresFhDb(source);
-						return 200;
-					}	
-					
-                    Console.WriteLine(Duplicati.Library.Main.Interface.RecreateDatabase(cargs[0], options, null));
-                }                
-                else if (source.Trim().ToLower() == "create-bugreport-database")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-					if (!options.ContainsKey("fh-dbpath"))
-					{
-						PrintRequiresFhDb(source);
-						return 200;
-					}	
-					
-                    Console.WriteLine(Duplicati.Library.Main.Interface.CreateLogDatabase(cargs[0], options, null));
-                }                
-                else if (source.Trim().ToLower() == "find-last-version")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    List<KeyValuePair<string, DateTime>> results = Duplicati.Library.Main.Interface.FindLastFileVersion(cargs[0], options);
-                    Console.WriteLine(Strings.Program.FindLastVersionHeader.Replace("\\t", "\t"));
-                    foreach(KeyValuePair<string, DateTime> k in results)
-                        Console.WriteLine(string.Format(Strings.Program.FindLastVersionEntry.Replace("\\t", "\t"), k.Value.Ticks == 0 ? Strings.Program.FileEntryNotFound : k.Value.ToLocalTime().ToString("yyyyMMdd hhmmss"), k.Key));
-                }
-                else if (source.Trim().ToLower() == "verify")
-                {
-                    cargs.RemoveAt(0);
-
-                    if (cargs.Count != 1)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 1);
-                        return 200;
-                    }
-
-                    List<KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception>> results = Duplicati.Library.Main.Interface.VerifyBackup(cargs[0], options);
-
-                    int manifests = 0;
-                    int signatures = 0;
-                    int contentfiles = 0;
-                    int errors = 0;
-
-                    foreach (KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception> x in results)
-                    {
-                        if (x.Key is Duplicati.Library.Main.ManifestEntry)
-                            manifests++;
-                        else if (x.Key is Duplicati.Library.Main.SignatureEntry)
-                            signatures++;
-                        else if (x.Key is Duplicati.Library.Main.ContentEntry)
-                            contentfiles++;
-
-                        if (x.Value != null)
-                            errors++;
-                    }
-
-                    Console.WriteLine(string.Format(Strings.Program.VerificationCompleted, manifests, signatures, contentfiles, errors));
-                    if (errors > 0)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine(Strings.Program.VerificationErrorHeader);
-                        Console.WriteLine();
-
-                        foreach (KeyValuePair<Duplicati.Library.Main.BackupEntryBase, Exception> x in results)
-                            if (x.Value != null)
-                                Console.WriteLine(string.Format("{0}: {1}", x.Key.Filename, x.Value.Message));
-                    }
-                }
-                else if (source.IndexOf("://") > 0 || options.ContainsKey("restore"))
-                {
-                    if (cargs.Count != 2)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 2);
-                        return 200;
-                    }
-
-                    Console.WriteLine(Duplicati.Library.Main.Interface.Restore(source, target.Split(System.IO.Path.PathSeparator), options));
+                    return knownCommands[command](cargs, options);
                 }
                 else
                 {
-                    if (cargs.Count != 2)
-                    {
-                        PrintWrongNumberOfArguments(cargs, 2);
-                        return 200;
-                    }
-
-                    //Assume file:// if no url fragment is found, but only if "backup" is specified
-                    if (!target.Contains("://") && !operationSpecified)
-                    {
-                        Console.WriteLine(Strings.Program.MissingURISchemeError, "file://", target);
-                        return 200;
-                    }
-
-                    string result = Duplicati.Library.Main.Interface.Backup(source.Split(System.IO.Path.PathSeparator), target, options);
-                    Console.WriteLine(result);
-
-                    Dictionary<string, string> tmp = ParseDuplicatiOutput(result);
-                    
-                    //Interrupted = 50
-                    if (tmp.ContainsKey("PartialBackup"))
-                        return 50;
-
-                    //Completed with warnings = 2
-                    if (tmp.ContainsKey("NumberOfWarnings"))
-                        return 2;
-
-                    //Success, but no upload = 1
-                    if (tmp.ContainsKey("BytesUploaded"))
-                    {
-                        long s;
-                        if (long.TryParse(tmp["BytesUploaded"], out s) && s == 0)
-                            return 1;
-                    }
+                    Commands.PrintInvalidCommand(cargs);
+                    return 200;
                 }
-
-                //Normal operation = 0
-                return 0;
             }
             catch (Exception ex)
             {
@@ -611,31 +195,6 @@ namespace Duplicati.CommandLine
             }
         }
 
-        public static Dictionary<string, string> ParseDuplicatiOutput(string output)
-        {
-            System.Text.RegularExpressions.Regex re = new System.Text.RegularExpressions.Regex("(?<key>[^\\:]+)\\:(?<value>[^\\n]*)", System.Text.RegularExpressions.RegexOptions.Singleline);
-            Dictionary<string, string> res = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-            foreach (System.Text.RegularExpressions.Match m in re.Matches(output))
-                res[m.Groups["key"].Value.Trim()] = m.Groups["value"].Value.Trim();
-
-            return res;
-        }
-
-        private static void PrintWrongNumberOfArguments(List<string> args, int expected)
-        {
-            Console.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2, args.Count, expected, args.Count == 0 ? "" : "\"" + string.Join("\", \"", args.ToArray()) + "\"");
-        }
-
-        private static void PrintRequiresFhDb(string command)
-        {
-            Console.WriteLine(string.Format("The command \"{0}\" requires that the option --{1} is set", command, "fh-dbpath"));
-        }
-
-		private static void PrintNotSupportedWithFhdb(string command)
-		{
-            Console.WriteLine(string.Format("The command \"{0}\" is not supported when the option --{1} is set", command, "fh-dbpath"));
-		}
-
         public static IList<Library.Interface.ICommandLineArgument> SupportedCommands
         {
             get
@@ -662,7 +221,7 @@ namespace Duplicati.CommandLine
                 filter = newfilter;
 
                 Dictionary<string, string> opt = Library.Utility.CommandLineParser.ExtractOptions(fargs);
-                String newsource = null, newtarget = null;
+                string newsource = null, newtarget = null;
                 foreach (KeyValuePair<String, String> keyvalue in opt)
                 {
                     switch (keyvalue.Key.ToLower())
@@ -685,13 +244,11 @@ namespace Duplicati.CommandLine
                 // Note: this block is faily complex due to the way parameters are handled by the rest of the
                 // procedure. It could likely be much simpler and versatile (allow --source and --target on 
                 // restore or other actions) with some refactoring of the parameters decision tree
-                if (!String.IsNullOrEmpty(newsource) || !String.IsNullOrEmpty(newtarget))
+                if (!string.IsNullOrEmpty(newsource) || !string.IsNullOrEmpty(newtarget))
                 {
-                    int offset = cargs.Count > 0 && (cargs[0] == "backup" || cargs[0] == "restore") ? 1 : 0;
-                    bool isrestore = cargs.Count > 0 && cargs[0] == "restore"
-                                    || cargs.Count >= 2 && cargs[0].Contains("://");
+                    bool isrestore = cargs.Count > 0 && cargs[0] == "restore";
 
-                    if (cargs.Count == 0 + offset)
+                    if (cargs.Count == 1 || cargs.Count == 0)
                     {
                         // if either is empty loading will fail later, so we don't really care.
                         if (!String.IsNullOrEmpty(newsource)) cargs.Add(newsource);
@@ -699,28 +256,15 @@ namespace Duplicati.CommandLine
                     }
                     else
                     {
-                        bool isurl = cargs[offset].Contains("://");
-                        bool isdir = !isurl && cargs[offset].IndexOfAny(new char[] { '/', '\\', ':' }) >= 0;
-                        if (offset > 0 || isdir || isurl)
+                        if (isrestore)
                         {
-                            if (cargs.Count == 1 + offset)
-                            {
-                                if (isrestore ^ isurl)
-                                {
-                                    if (!String.IsNullOrEmpty(newtarget)) cargs[offset] = newtarget;
-                                    if (!String.IsNullOrEmpty(newsource)) cargs.Insert(offset, newsource);
-                                }
-                                else
-                                {
-                                    if (!String.IsNullOrEmpty(newtarget)) cargs[offset] = newsource;
-                                    if (!String.IsNullOrEmpty(newsource)) cargs.Add(newtarget);
-                                }
-                            }
-                            else
-                            {
-                                if (!String.IsNullOrEmpty(newsource)) cargs[offset] = newsource;
-                                if (!String.IsNullOrEmpty(newtarget)) cargs[offset + 1] = newtarget;
-                            }
+                            if (!String.IsNullOrEmpty(newtarget)) cargs[1] = newtarget;
+                            if (!String.IsNullOrEmpty(newsource)) cargs.Insert(1, newsource);
+                        }
+                        else
+                        {
+                            if (!String.IsNullOrEmpty(newtarget)) cargs[1] = newsource;
+                            if (!String.IsNullOrEmpty(newsource)) cargs.Add(newtarget);
                         }
                     }
                 }

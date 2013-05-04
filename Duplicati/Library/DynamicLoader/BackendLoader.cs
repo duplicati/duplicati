@@ -21,6 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
+using System.Collections.Specialized;
+using System.Web;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -64,18 +66,34 @@ namespace Duplicati.Library.DynamicLoader
                     throw new ArgumentNullException("url");
 
                 string scheme;
+                NameValueCollection extraOptions = new NameValueCollection();
+                
                 //If possible, we avoid parsing the string as a URL to allow flexible string handling
                 if (url.IndexOf("://") > 0)
+                {
                     scheme = url.Substring(0, url.IndexOf("://"));
+                    var ix = url.IndexOf('?');
+                    if (ix > 0)
+                        extraOptions = HttpUtility.ParseQueryString(url.Substring(ix));
+                }
                 else
-                    scheme = new Uri(url).Scheme.ToLower();
+                {
+                    var uri = new Uri(url);
+                    scheme = uri.Scheme.ToLower();
+                    if (!string.IsNullOrEmpty(uri.Query))
+                        extraOptions = HttpUtility.ParseQueryString(uri.Query);
+                }
 
                 LoadInterfaces();
+                
+                var newOpts = new Dictionary<string, string>(options);
+                foreach(var key in extraOptions.AllKeys)
+                    newOpts[key] = extraOptions[key];
 
                 lock (m_lock)
                 {
                     if (m_interfaces.ContainsKey(scheme))
-                        return (IBackend)Activator.CreateInstance(m_interfaces[scheme].GetType(), url, options);
+                        return (IBackend)Activator.CreateInstance(m_interfaces[scheme].GetType(), url, newOpts);
                     else
                         return null;
                 }

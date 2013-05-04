@@ -22,14 +22,6 @@ namespace Duplicati.Server.Serialization
         }
     }
 
-    public class JobSettingsDataCreator : CustomCreationConverter<IJobSettings>
-    {
-        public override IJobSettings Create(Type objectType)
-        {
-            return new Implementations.JobSettings();
-        }
-    }
-
     public class BackendSettingsCreator : CustomCreationConverter<IBackendSettings>
     {
         public override IBackendSettings Create(Type objectType)

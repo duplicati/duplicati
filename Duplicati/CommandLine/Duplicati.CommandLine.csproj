@@ -71,6 +71,7 @@
       <DependentUpon>Program.resx</DependentUpon>
     </Compile>
     <Compile Include="UnitTest.cs" />
+    <Compile Include="Commands.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">

@@ -364,7 +364,7 @@ namespace Duplicati.CommandLine
 
         private static void PrintFormatted(IEnumerable<string> lines)
         {
-        	int windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth);
+            int windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth);
             foreach (string s in lines)
             {
                 if (string.IsNullOrEmpty(s) || s.Trim().Length == 0)

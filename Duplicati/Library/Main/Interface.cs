@@ -951,6 +951,13 @@ namespace Duplicati.Library.Main
                 }
             }
 
+            // Sanity check to ensure that errors are found as early as possible
+            List<ManifestEntry> newsets = GetBackupSets();
+            List<ManifestEntry> newentries = new List<ManifestEntry>();
+            newentries.Add(newsets[newsets.Count - 1]);
+            newentries.AddRange(newsets[newsets.Count - 1].Incrementals);
+            VerifyBackupChainWithFiles(backend, newentries[newentries.Count - 1]);
+
             bs.EndTime = DateTime.Now;
             m_result = bs;
             return bs.ToString();
@@ -1045,6 +1052,50 @@ namespace Duplicati.Library.Main
                 entry = previous;
             }
         }
+        
+        private Exception CreateMissingFileException(Manifestfile parsed, ManifestEntry entry, string errorMessage)
+        {
+            if (parsed.SignatureHashes.Count != parsed.ContentHashes.Count)
+                return new Exception(string.Format(Strings.Interface.InvalidManifestFileCount, entry.Filename, parsed.SignatureHashes.Count, parsed.ContentHashes.Count));
+            
+            Dictionary<string, bool> lookup = new Dictionary<string, bool>();
+            foreach(Manifestfile.HashEntry he in parsed.ContentHashes)
+                lookup[he.Name] = false;
+            foreach(Manifestfile.HashEntry he in parsed.SignatureHashes)
+                lookup[he.Name] = false;
+            
+            StringBuilder sbextra = new StringBuilder();
+            foreach(KeyValuePair<SignatureEntry, ContentEntry> kvp in entry.Volumes)
+            {
+                if (lookup.ContainsKey(kvp.Key.Filename))
+                    lookup[kvp.Key.Filename] = true;
+                else
+                    sbextra.AppendLine(kvp.Key.Filename);
+                    
+                if (lookup.ContainsKey(kvp.Value.Filename))
+                    lookup[kvp.Value.Filename] = true;
+                else
+                    sbextra.AppendLine(kvp.Value.Filename);
+            }
+            
+            StringBuilder sbmissing = new StringBuilder();
+            sbmissing.AppendLine();
+            foreach(KeyValuePair<string, bool> he in lookup)
+                if (!he.Value)
+                    sbmissing.AppendLine(he.Key);
+                    
+            if (sbextra.Length > 0)
+            {
+                sbmissing.AppendLine();
+                sbmissing.AppendLine(Strings.Interface.ExtraFilesMessage);
+                sbmissing.Append(sbextra);
+            }
+        
+            return new Exception(
+                string.Format(Strings.Interface.MissingFilesDetected, entry.Filename, parsed.ContentHashes.Count, sbmissing.ToString())
+                + errorMessage
+                );
+        }
 
         /// <summary>
         /// Verifies the backup chain for producing a new backup on top.
@@ -1074,10 +1125,7 @@ namespace Duplicati.Library.Main
                     }
                     else
                     {
-                        throw new Exception(
-                            string.Format(Strings.Interface.ManifestAndFileCountMismatchError, entry.Filename, parsed.SignatureHashes.Count, entry.Volumes.Count)
-                            + errorMessage
-                            );
+                        throw CreateMissingFileException(parsed, entry, errorMessage);
                     }
                 }
 
@@ -1451,6 +1499,17 @@ namespace Duplicati.Library.Main
                                                  hasFiles = true;
                                                  rs.LogError(string.Format(Strings.Interface.FileHashFailure, hme.Message), hme);
                                              }
+                                             catch(Exception ex)
+                                             {
+                                                if (m_options.BestEffortRestore)
+                                                {
+                                                    //Assume that we need something here
+                                                    hasFiles = true;
+                                                    rs.LogWarning(string.Format(Strings.Interface.SignatureDownloadBestEffortError, signatureVol.Filename, ex.Message), ex);
+                                                }
+                                                else
+                                                    throw;
+                                             }
 
                                              if (!hasFiles)
                                                  using (CompressionWrapper patch = CompressionWrapper.GetModule(signatureVol.Compression, sigFile, m_options.RawOptions))
@@ -1474,16 +1533,26 @@ namespace Duplicati.Library.Main
                                          }
                                     }
 
-                                     OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
+                                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusDownloadingContentVolume, patchno + 1), "");
 
-                                    using (new Logging.Timer("Get " + contentVol.Filename))
-                                        backend.Get(contentVol, manifest, patchzip, manifest.ContentHashes == null ? null : manifest.ContentHashes[contentVol.Volumenumber - 1]);
-
-                                    OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
-                                    
-                                    using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
-                                    using (CompressionWrapper patch = CompressionWrapper.GetModule(contentVol.Compression, patchzip, m_options.RawOptions))
-                                        sync.Patch(target, patch);
+                                    try
+                                    {
+                                        using (new Logging.Timer("Get " + contentVol.Filename))
+                                            backend.Get(contentVol, manifest, patchzip, manifest.ContentHashes == null ? null : manifest.ContentHashes[contentVol.Volumenumber - 1]);
+    
+                                        OperationProgress(this, DuplicatiOperation.Restore, rs.OperationMode, (int)(m_progress * 100), -1, string.Format(Strings.Interface.StatusPatching, patchno + 1), "");
+                                        
+                                        using (new Logging.Timer((patchno == 0 ? "Full restore to: " : "Incremental restore " + patchno.ToString() + " to: ") + string.Join(System.IO.Path.PathSeparator.ToString(), target)))
+                                        using (CompressionWrapper patch = CompressionWrapper.GetModule(contentVol.Compression, patchzip, m_options.RawOptions))
+                                            sync.Patch(target, patch);
+                                    }
+                                    catch(Exception ex)
+                                    {
+                                        if (m_options.BestEffortRestore)
+                                            rs.LogWarning(string.Format(Strings.Interface.PatchProcessingBestEffortError, contentVol.Filename, ex.Message), ex);
+                                        else
+                                            throw;
+                                    }
                                 }
                                 patchno++;
                             }
@@ -2214,6 +2283,9 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
                 m_hasSetLogging = true;
+                var path = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(m_options.Logfile));
+                if (!System.IO.Directory.Exists(path))
+                    System.IO.Directory.CreateDirectory(path);
                 Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
             }
 
@@ -2468,7 +2540,7 @@ namespace Duplicati.Library.Main
                             VerifyBackupChainWithFiles(backend, me);
 
                             if (mf.SignatureHashes.Count != me.Volumes.Count)
-                                results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, new Exception(string.Format(Strings.Interface.ManifestAndFileCountMismatchError, mf.SelfFilename, mf.SignatureHashes.Count, me.Volumes.Count))));
+                                results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, CreateMissingFileException(mf, me, "")));
                             else
                                 results.Add(new KeyValuePair<BackupEntryBase,Exception>(me, null));
                         }

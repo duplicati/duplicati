@@ -1,3 +1,13 @@
+function parseBool(v) {
+	if (v == null)
+		return false;
+	if (typeof(v) == 'boolean')
+		return v;
+	v = (v + '').toLowerCase();
+	return (v == 'true' || v == 'on' || v == '1');
+}
+
+
 {
 // This helps in a debug setup
 var extdefined = false;

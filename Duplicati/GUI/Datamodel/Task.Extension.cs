@@ -279,12 +279,6 @@ namespace Duplicati.Datamodel
                 set { m_owner.TaskExtensionsLookup[ASYNC_TRANSFER] = value.ToString(); }
             }
 
-            public bool IncludeSetup
-            {
-                get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[INCLUDE_SETUP], true); }
-                set { m_owner.TaskExtensionsLookup[INCLUDE_SETUP] = value.ToString(); }
-            }
-
             public bool IgnoreTimestamps
             {
                 get { return Duplicati.Library.Utility.Utility.ParseBool(m_owner.TaskExtensionsLookup[IGNORE_TIMESTAMPS], false); }

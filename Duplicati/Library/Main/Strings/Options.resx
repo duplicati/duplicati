@@ -555,4 +555,10 @@
   <data name="QuietconsoleShort" xml:space="preserve">
     <value>Disable console output</value>
   </data>
+  <data name="BesteffortrestoreShort" xml:space="preserve">
+    <value>Restore with errors</value>
+  </data>
+  <data name="BesteffortrestoreLong" xml:space="preserve">
+    <value>The restore process will stop if errors are detected to avoid restores with invalid data. Use this option to make Duplicati continue, even if some data is missing</value>
+  </data>
 </root>

@@ -309,9 +309,6 @@
   <data name="DisablingSignatureCacheForVerification" xml:space="preserve">
     <value>The signature cache is disabled when performing verification</value>
   </data>
-  <data name="ManifestAndFileCountMismatchError" xml:space="preserve">
-    <value>The manifest file {0} indicates that there should be {1} volumes, but the file list indicates {2}</value>
-  </data>
   <data name="ManifestsMustBeRead" xml:space="preserve">
     <value>Disabling manifests is only possible on restores, and it should only be used as a last resort.</value>
   </data>
@@ -371,5 +368,20 @@
   </data>
   <data name="MissingDatabasepathError" xml:space="preserve">
     <value>When using the foresthash storage method, the option --{0} must be set</value>
+  </data>
+  <data name="InvalidManifestFileCount" xml:space="preserve">
+    <value>The manifest file {0} is invalid, as it specifies that there should be {1} signature volumes and {2} content volumes.</value>
+  </data>
+  <data name ="ExtraFilesMessage" xml:space="preserve">
+  	<value>Additionally these files were found but are not listed in the manifest:</value>
+  </data>
+  <data name="MissingFilesDetected" xml:space="preserve">
+    <value>The manifest file {0} specifies that there should be {1} volume pairs, but the following pairs were not found: {2}</value>
+  </data>
+  <data name="SignatureDownloadBestEffortError" xml:space="preserve">
+    <value>Failed to download signature file {0}, error message: {1}</value>
+  </data>
+  <data name="PatchProcessingBestEffortError" xml:space="preserve">
+    <value>Failed to apply content file {0}, error message: {1}</value>
   </data>
 </root>
